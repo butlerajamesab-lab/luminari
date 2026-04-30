@@ -32,11 +32,54 @@ const pool = new Pool(
 
 type QueryParams = Array<string | number | boolean | null | undefined>;
 
+const REST_TABLES = [
+  "detected_signals",
+  "atlas_lighthouse_signal_bridge_v1",
+  "live_stream_sources",
+  "live_stream_events",
+  "eligibility_hints",
+  "lighthouse_suggestions",
+  "lighthouse_spotlight",
+  "lighthouse_jobs",
+  "lighthouse_posts",
+  "lighthouse_events",
+  "resources",
+] as const;
+
+async function restRows<T = Record<string, unknown>>(table: string, limit = 50): Promise<T[]> {
+  const baseUrl = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+  if (!baseUrl || !key) return [];
+  const url = new URL(`/rest/v1/${table}`, baseUrl);
+  url.searchParams.set("select", "*");
+  url.searchParams.set("limit", String(limit));
+  const response = await fetch(url, {
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      Prefer: "count=exact",
+    },
+  });
+  if (!response.ok) return [];
+  return (await response.json()) as T[];
+}
+
+function tableFromSql(sql: string): string | null {
+  const lowered = sql.toLowerCase();
+  return REST_TABLES.find((table) => lowered.includes(table)) ?? null;
+}
+
 async function queryRows<T = Record<string, unknown>>(sql: string, params: QueryParams = []): Promise<T[]> {
   try {
     const result = await pool.query(sql, params);
     return result.rows as T[];
   } catch (error) {
+    const table = tableFromSql(sql);
+    if (table) {
+      const limitParam = [...params].reverse().find((value) => typeof value === "number") as number | undefined;
+      const fallback = await restRows<T>(table, limitParam || 50);
+      if (fallback.length > 0) return fallback;
+    }
     console.error("[tRPC Supabase query failed]", sql.replace(/\s+/g, " ").trim(), error);
     return [];
   }
@@ -68,7 +111,13 @@ export const appRouter = router({
     const probe = await queryOne<{ database: string; user: string; project_ref: string; now: string }>(
       "select current_database() as database, current_user as user, 'wepxlinwbjrkqdzkqpar' as project_ref, now()::text as now"
     );
-    return { ok: !!probe, supabaseProject: "wepxlinwbjrkqdzkqpar", database: probe };
+    const liveSignals = probe ? [] : await restRows("detected_signals", 1);
+    return {
+      ok: !!probe || liveSignals.length > 0,
+      supabaseProject: "wepxlinwbjrkqdzkqpar",
+      database: probe,
+      liveSupabaseFallback: probe ? null : { table: "detected_signals", rows: liveSignals.length, sample: liveSignals[0] ?? null },
+    };
   }),
 
   lighthouse: router({
