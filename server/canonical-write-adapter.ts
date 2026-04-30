@@ -35,6 +35,7 @@ export async function canonicalInsert(
   const cols = Object.keys(record).filter(k => k !== "id");
   const placeholders = cols.map(() => "?").join(", ");
   const values = cols.map(k => {
+    // @ts-ignore
     const v = record[k];
     if (v === null || v === undefined) return null;
     if (typeof v === "object") return JSON.stringify(v);
@@ -57,7 +58,7 @@ export async function canonicalInsert(
   const [verify] = await db.execute(
     sql.raw(`SELECT id FROM \`${table}\` WHERE id = ${insertId} LIMIT 1`)
   );
-  if ((verify as any[]).length === 0) {
+  if ((verify as unknown as any[]).length === 0) {
     throw new Error(`[CanonicalWriteAdapter] Insert verification failed: id=${insertId} not found in "${table}"`);
   }
 

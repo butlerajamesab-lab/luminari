@@ -32,7 +32,7 @@ export async function scanSchema(): Promise<{
     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'
     ORDER BY TABLE_NAME
   `);
-  const tables = allTables as any[];
+  const tables = allTables as unknown as any[];
 
   for (const t of tables) {
     const tableName = t.TABLE_NAME;
@@ -42,7 +42,7 @@ export async function scanSchema(): Promise<{
     const [existing] = await db.execute(
       sql`SELECT id FROM table_registry WHERE tableName = ${tableName} LIMIT 1`
     );
-    const existingRows = existing as any[];
+    const existingRows = existing as unknown as any[];
 
     let tableId: number;
 
@@ -54,7 +54,7 @@ export async function scanSchema(): Promise<{
       SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ${tableName}
     `);
-    const columnCount = (cols as any[])[0]?.cnt || 0;
+    const columnCount = (cols as unknown as any[])[0]?.cnt || 0;
 
     if (existingRows.length > 0) {
       tableId = existingRows[0].id;
@@ -83,13 +83,14 @@ export async function scanSchema(): Promise<{
       ORDER BY ORDINAL_POSITION
     `);
 
+    // @ts-ignore - cast is valid at runtime
     for (const f of fields as any[]) {
       const [existingField] = await db.execute(sql`
         SELECT id FROM field_dictionary 
         WHERE table_id = ${tableId} AND fieldName = ${f.COLUMN_NAME} LIMIT 1
       `);
 
-      if ((existingField as any[]).length === 0) {
+      if ((existingField as unknown as any[]).length === 0) {
         await db.execute(sql`
           INSERT INTO field_dictionary (table_id, fieldName, fieldType, isNullable, isPrimaryKey, isIndexed, createdAt)
           VALUES (
@@ -147,7 +148,7 @@ export async function detectDrift(): Promise<{
     LEFT JOIN table_registry tr ON fd.table_id = tr.id
     WHERE tr.id IS NULL
   `);
-  const orphanFields = (orphans as any[])[0]?.cnt || 0;
+  const orphanFields = (orphans as unknown as any[])[0]?.cnt || 0;
 
   // Unknown tables: tables in DB not in table_registry
   const [allTables] = await db.execute(sql`
@@ -155,14 +156,14 @@ export async function detectDrift(): Promise<{
     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'
   `);
   const [registeredRows] = await db.execute(sql`SELECT tableName FROM table_registry`);
-  const registered = new Set((registeredRows as any[]).map(r => r.tableName));
-  const unknown = (allTables as any[]).filter(r => !registered.has(r.TABLE_NAME)).map(r => r.TABLE_NAME);
+  const registered = new Set((registeredRows as unknown as any[]).map(r => r.tableName));
+  const unknown = (allTables as unknown as any[]).filter(r => !registered.has(r.TABLE_NAME)).map(r => r.TABLE_NAME);
 
   return {
     orphanFields,
     unknownTables: unknown.length,
     unknownTableNames: unknown,
-    totalDbTables: (allTables as any[]).length,
+    totalDbTables: (allTables as unknown as any[]).length,
     registeredTables: registered.size,
   };
 }
@@ -205,7 +206,7 @@ export async function validateMetadataCompleteness(runId: string): Promise<{
   const [runRows] = await db.execute(
     sql`SELECT run_id, engine_id, output_refs, status FROM engine_runs WHERE run_id = ${runId}`
   );
-  const runs = runRows as any[];
+  const runs = runRows as unknown as any[];
   if (runs.length === 0) {
     return { valid: false, errors: [`No engine_run found for run_id: ${runId}`] };
   }
@@ -234,7 +235,7 @@ export async function validateMetadataCompleteness(runId: string): Promise<{
     const [trCheck] = await db.execute(
       sql`SELECT id FROM table_registry WHERE tableName = ${table} LIMIT 1`
     );
-    if ((trCheck as any[]).length === 0) {
+    if ((trCheck as unknown as any[]).length === 0) {
       errors.push(`Primary table "${table}" not found in table_registry`);
     }
 
@@ -243,7 +244,7 @@ export async function validateMetadataCompleteness(runId: string): Promise<{
       const [rowCheck] = await db.execute(
         sql.raw(`SELECT id FROM \`${table}\` WHERE id = ${id} LIMIT 1`)
       );
-      if ((rowCheck as any[]).length === 0) {
+      if ((rowCheck as unknown as any[]).length === 0) {
         errors.push(`Primary entity id=${id} not found in ${table}`);
       }
     } catch (e: any) {
@@ -256,14 +257,14 @@ export async function validateMetadataCompleteness(runId: string): Promise<{
         const [artTrCheck] = await db.execute(
           sql`SELECT id FROM table_registry WHERE tableName = ${artifact.table} LIMIT 1`
         );
-        if ((artTrCheck as any[]).length === 0) {
+        if ((artTrCheck as unknown as any[]).length === 0) {
           errors.push(`Artifact table "${artifact.table}" not found in table_registry`);
         }
         try {
           const [artRowCheck] = await db.execute(
             sql.raw(`SELECT id FROM \`${artifact.table}\` WHERE id = ${artifact.id} LIMIT 1`)
           );
-          if ((artRowCheck as any[]).length === 0) {
+          if ((artRowCheck as unknown as any[]).length === 0) {
             errors.push(`Artifact entity id=${artifact.id} not found in ${artifact.table}`);
           }
         } catch (e: any) {
@@ -278,7 +279,7 @@ export async function validateMetadataCompleteness(runId: string): Promise<{
         const [tCheck] = await db.execute(
           sql`SELECT id FROM table_registry WHERE tableName = ${t} LIMIT 1`
         );
-        if ((tCheck as any[]).length === 0) {
+        if ((tCheck as unknown as any[]).length === 0) {
           errors.push(`Meta table "${t}" not found in table_registry`);
         }
       }
@@ -299,7 +300,7 @@ export async function validateRunBeforeSnapshot(runId: string): Promise<{
   const [runRows] = await db.execute(
     sql`SELECT run_id, engine_id, output_refs, status FROM engine_runs WHERE run_id = ${runId}`
   );
-  const runs = runRows as any[];
+  const runs = runRows as unknown as any[];
 
   if (runs.length === 0) {
     return { valid: false, errors: ['No engine_run found'] };
@@ -312,7 +313,7 @@ export async function validateRunBeforeSnapshot(runId: string): Promise<{
     const [engineCheck] = await db.execute(
       sql`SELECT id FROM engine_registry WHERE engine_id_er = ${run.engine_id} LIMIT 1`
     );
-    if ((engineCheck as any[]).length === 0) {
+    if ((engineCheck as unknown as any[]).length === 0) {
       errors.push(`Engine "${run.engine_id}" not found in engine_registry`);
     }
   } else {
@@ -382,7 +383,7 @@ export async function generateOutput(snapshotId: number): Promise<{
     WHERE snapshot_id = ${snapshotId}
     ORDER BY startedAt ASC
   `);
-  const runs = runRows as any[];
+  const runs = runRows as unknown as any[];
 
   if (runs.length === 0) {
     throw new Error(`No engine_runs found for snapshot_id=${snapshotId}`);

@@ -900,6 +900,3 @@ export const lighthouseRouter = router({
   map: mapRouter,
   mapIntake: mapIntakeRouter,
 });
-
-
-// ============================================================

@@ -1,0 +1,667 @@
+[
+  {
+    "bundleId": "TV-EA-001",
+    "pipelineType": "elderabuse",
+    "scenarioName": "Sunrise Meadows Care Center \u2014 Pattern of Neglect",
+    "description": "A family member documents systemic care failures at a 5-star rated skilled nursing facility, including dignity violations, medication mismanagement, infection control failures, and financial exploitation through bed-hold charges. The facility's inspection record shows repeated citations for the same deficiency categories the family is experiencing.",
+    "documents": [
+      {
+        "filename": "01-cms-inspection-report-2024.txt",
+        "description": "CMS standard inspection report showing 11 deficiencies",
+        "type": "Government Record",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/01-cms-inspection-report-2024_56a5cb93.txt"
+      },
+      {
+        "filename": "02-care-plan-resident-thompson.txt",
+        "description": "Facility care plan for resident Harold Thompson",
+        "type": "Medical Record",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/02-care-plan-resident-thompson_1eff3afb.txt"
+      },
+      {
+        "filename": "03-family-observation-log.txt",
+        "description": "Chronological log of observations by family member Margaret Chen",
+        "type": "Personal Notes",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/03-family-observation-log_15fc2324.txt"
+      },
+      {
+        "filename": "04-email-correspondence.txt",
+        "description": "Email chain between family member and facility administration",
+        "type": "Communication Record",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/04-email-correspondence_f299beb9.txt"
+      },
+      {
+        "filename": "05-billing-statements.txt",
+        "description": "Billing records showing bed-hold charges and service fees",
+        "type": "Financial Record",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/05-billing-statements_ebd70a56.txt"
+      },
+      {
+        "filename": "06-ombudsman-complaint.txt",
+        "description": "Complaint filed with State Long-Term Care Ombudsman",
+        "type": "Legal Filing",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/06-ombudsman-complaint_caa25bd5.txt"
+      },
+      {
+        "filename": "07-medication-administration-record.txt",
+        "description": "Monthly medication administration record showing psychotropic prescriptions",
+        "type": "Medical Record",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/07-medication-administration-record_9732a125.txt"
+      }
+    ],
+    "expectedEntities": [
+      "Harold Thompson (Resident)",
+      "Margaret Chen (Family Member / Advocate)",
+      "Sunrise Meadows Care Center (Facility)",
+      "Dr. Patricia Okafor (Attending Physician)",
+      "Nurse Rachel Dominguez (Charge Nurse)",
+      "James Whitfield (Facility Administrator)",
+      "Sandra Liu (Social Worker)",
+      "WA Department of Health (Regulatory Agency)",
+      "Evergreen Pharmacy Services (Pharmacy Provider)",
+      "Pacific Northwest Ombudsman Program (Advocacy Organization)"
+    ],
+    "expectedFindings": [
+      "Repeated dignity violations (F0550) documented by family, matching facility citation history",
+      "Psychotropic medication administered without documented behavioral justification",
+      "Three UTIs within 4 months of admission, suggesting infection control failure (F0880)",
+      "Bed-hold charges of $500/night during hospitalization caused by facility negligence",
+      "Care plan commitments not implemented despite documented meetings",
+      "Records request ignored for 3+ weeks, violating 42 CFR 483.10(g)(2)"
+    ],
+    "expectedCorrelations": [
+      "CMS inspection deficiency F0550 (dignity) correlates with family observation of unauthorized cosmetic procedures",
+      "CMS inspection deficiency F0880 (infection control) correlates with resident UTI pattern",
+      "Care plan meeting notes contradict actual care delivery documented in family observation log"
+    ]
+  },
+  {
+    "bundleId": "TV-INS-001",
+    "pipelineType": "insurance",
+    "scenarioName": "Homeowner's Wind Damage Claim Denial",
+    "description": "A homeowner's legitimate claim for wind damage is denied by their insurance company, which claims the damage is a pre-existing condition. The homeowner provides an independent inspector's report that directly contradicts the insurer's adjuster, leading to a complaint with the state insurance commissioner.",
+    "documents": [
+      {
+        "filename": "01-insurance-policy-excerpt.txt",
+        "description": "Excerpt from the homeowner's insurance policy detailing coverage for windstorms and relevant exclusions.",
+        "type": "Insurance Policy",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/01-insurance-policy-excerpt_a54555e8.txt"
+      },
+      {
+        "filename": "02-denial-letter.txt",
+        "description": "Denial letter from Steadfast National Insurance Company citing pre-existing conditions as the reason for denying the claim.",
+        "type": "Correspondence",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/02-denial-letter_8c67bf54.txt"
+      },
+      {
+        "filename": "03-independent-contractor-inspection-report.txt",
+        "description": "Report from a certified roof inspector detailing clear evidence of wind damage and contradicting the insurance adjuster's findings.",
+        "type": "Expert Report",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/03-independent-contractor-inspection-report_7ab76104.txt"
+      },
+      {
+        "filename": "04-homeowner-timeline.txt",
+        "description": "A timeline of events created by the homeowner, including a log of photos taken after the storm.",
+        "type": "Personal Notes",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/04-homeowner-timeline_ad7c0d31.txt"
+      },
+      {
+        "filename": "05-adjuster-report.txt",
+        "description": "The internal report from the insurance company's adjuster, claiming the damage is from wear and tear.",
+        "type": "Adjuster Report",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/05-adjuster-report_3185d030.txt"
+      },
+      {
+        "filename": "06-state-insurance-commissioner-complaint.txt",
+        "description": "The formal complaint filed by the homeowner with the state's Department of Insurance.",
+        "type": "Legal Filing",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/06-state-insurance-commissioner-complaint_a09c0eac.txt"
+      }
+    ],
+    "expectedEntities": [
+      "Robert Miller (Homeowner)",
+      "Susan Miller (Homeowner)",
+      "Steadfast National Insurance Company (Insurer)",
+      "David Chen (Insurance Adjuster)",
+      "Eleanor Vance (Claims Manager)",
+      "Mark Johnson (Independent Inspector)",
+      "Anystate Department of Insurance (Regulatory Agency)"
+    ],
+    "expectedFindings": [
+      "Claim denied based on pre-existing conditions and wear and tear.",
+      "Independent inspector found definitive evidence of wind damage, including creased and lifted shingles.",
+      "Insurance adjuster's report claims no evidence of a singular wind event.",
+      "Homeowner filed a complaint with the state insurance commissioner alleging bad faith.",
+      "Policy covers windstorm damage but has exclusions for wear and tear."
+    ],
+    "expectedCorrelations": [
+      "The independent inspector's report directly contradicts the insurance adjuster's report on the cause of damage.",
+      "The homeowner's timeline of events corroborates the date of the storm and the discovery of damage.",
+      "The denial letter cites the adjuster's findings as the primary basis for the denial."
+    ]
+  },
+  {
+    "bundleId": "TV-CD-001",
+    "pipelineType": "custody",
+    "scenarioName": "Custody Dispute - False Allegations of Unfitness",
+    "description": "A parent in a contentious divorce is falsely accused of being an unfit and neglectful parent. The court-ordered custody evaluation contains factual errors about missed visitations that are directly contradicted by school records and witness statements, which show the parent and child together at school and community events on the dates in question.",
+    "documents": [
+      {
+        "filename": "01-custody-evaluation-report.txt",
+        "description": "Report by a court-appointed psychologist, which includes the false allegations of missed visitations.",
+        "type": "Legal Document",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/01-custody-evaluation-report_eec3305f.txt"
+      },
+      {
+        "filename": "02-parent-rebuttal-statement.txt",
+        "description": "The father's detailed rebuttal to the evaluation, providing his account of the weekends in question.",
+        "type": "Legal Document",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/02-parent-rebuttal-statement_7865c81d.txt"
+      },
+      {
+        "filename": "03-school-records.txt",
+        "description": "The child's school attendance records and a teacher's report, which contradicts the evaluator's claims by placing the father at a school event with the child.",
+        "type": "Official Record",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/03-school-records_a4c6669f.txt"
+      },
+      {
+        "filename": "04-therapist-letter.txt",
+        "description": "A letter of support from the father's therapist, attesting to his character and parental fitness.",
+        "type": "Professional Correspondence",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/04-therapist-letter_00edbc33.txt"
+      },
+      {
+        "filename": "05-opposing-party-filing.txt",
+        "description": "The mother's initial court filing containing the allegations of neglect and requests for supervised visitation.",
+        "type": "Legal Filing",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/05-opposing-party-filing_5a909297.txt"
+      },
+      {
+        "filename": "06-character-witness-declarations.txt",
+        "description": "Declarations from a friend and a neighbor attesting to the father's character and confirming his presence with his daughter on the disputed dates.",
+        "type": "Legal Document",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/06-character-witness-declarations_17c0b224.txt"
+      }
+    ],
+    "expectedEntities": [
+      "David Thompson (Father/Respondent)",
+      "Sarah Thompson (Mother/Petitioner)",
+      "Emily Thompson (Minor Child)",
+      "Dr. Amanda Sterling (Custody Evaluator)",
+      "Honorable Judge Katherine Rios (Judge)",
+      "Ms. Carol Davis (Teacher)",
+      "Lincoln Elementary School (School)",
+      "Dr. Marcus Thorne (Therapist)",
+      "Mark Chen (Witness)",
+      "Jessica Riley (Witness)"
+    ],
+    "expectedFindings": [
+      "Allegation of missed visitation on October 14-15, 2023, is contradicted by multiple sources.",
+      "Allegation of missed visitation on November 11-12, 2023, is contradicted by witness statements.",
+      "No evidence of parental unfitness or neglect found by the evaluator, other than the disputed missed visitations.",
+      "Child is thriving academically and socially.",
+      "Both parents are described as loving and bonded with the child in direct observations."
+    ],
+    "expectedCorrelations": [
+      "Custody Evaluator's report (01) states father missed Oct 14-15 visitation, but School Records (03) and a Character Witness Declaration (06) confirm father and child attended a school event on Oct 15.",
+      "Opposing Party Filing (05) claims father is neglectful, but Therapist Letter (04) and Character Witness Declarations (06) describe him as a dedicated and loving parent.",
+      "The evaluator's report contains factual errors about visitation dates that are contradicted by school attendance records."
+    ]
+  },
+  {
+    "bundleId": "TV-MED-001",
+    "pipelineType": "medical",
+    "scenarioName": "Memorial Regional Hospital \u2014 Surgical Complication Cover-Up",
+    "description": "A patient undergoes a routine laparoscopic cholecystectomy that results in a bile duct injury. The surgical team fails to disclose the complication during recovery, delays corrective treatment, and the patient develops sepsis requiring emergency intervention. Medical records show inconsistencies between operative notes and nursing observations, suggesting post-hoc documentation changes.",
+    "documents": [
+      {
+        "filename": "01-initial-visit-records.txt",
+        "description": "Initial visit medical records showing symptoms reported",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/01-initial-visit-records_83fefdfa.txt"
+      },
+      {
+        "filename": "02-follow-up-visit-records.txt",
+        "description": "Follow-up visit records showing same symptoms dismissed",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/02-follow-up-visit-records_84d2b92b.txt"
+      },
+      {
+        "filename": "03-eventual-diagnosis-records.txt",
+        "description": "Eventual diagnosis records showing advanced stage",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/03-eventual-diagnosis-records_45c6c800.txt"
+      },
+      {
+        "filename": "04-oncologist-statement.txt",
+        "description": "Oncologist statement on staging and prognosis impact",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/04-oncologist-statement_10f017ed.txt"
+      },
+      {
+        "filename": "05-patient-symptom-diary.txt",
+        "description": "Patient's symptom diary",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/05-patient-symptom-diary_f8ed1875.txt"
+      },
+      {
+        "filename": "06-standard-of-care-guidelines.txt",
+        "description": "Standard of care guidelines for the symptoms presented",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/06-standard-of-care-guidelines_23eb5c4c.txt"
+      }
+    ],
+    "expectedEntities": [
+      "Memorial Regional Hospital",
+      "Dr. James Whitfield (Surgeon)",
+      "Dr. Sarah Chen (Anesthesiologist)",
+      "Patient: Robert Vasquez",
+      "Nurse Patricia Okafor",
+      "Risk Management Department",
+      "State Medical Board"
+    ],
+    "expectedFindings": [
+      "Operative note timestamps inconsistent with nursing observations \u2014 suggests post-hoc modification",
+      "48-hour delay between complication recognition and corrective intervention exceeds standard of care",
+      "Informed consent documentation missing specific bile duct injury risk disclosure",
+      "Discharge instructions omit follow-up for known complication",
+      "Hospital incident report filed 5 days after event \u2014 outside 24-hour policy window"
+    ],
+    "expectedCorrelations": [
+      "Timeline gap between operative note and nursing assessment suggests documentation was altered after the fact",
+      "Billing records show charges for corrective procedure but no corresponding consent form",
+      "Risk management memo references 'similar prior incidents' suggesting pattern"
+    ]
+  },
+  {
+    "bundleId": "TV-WP-001",
+    "pipelineType": "workplace",
+    "scenarioName": "Acme Innovations Inc. - Retaliatory Firing",
+    "description": "Employee fired for 'performance issues' shortly after filing an OSHA complaint about hazardous chemical exposure. Performance reviews prior to the complaint were consistently 'Exceeds Expectations'.",
+    "documents": [
+      {
+        "filename": "01-osha-complaint.txt",
+        "description": "Formal complaint filed with OSHA regarding hazardous conditions.",
+        "type": "Legal Filing",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/01-osha-complaint_dac79b64.txt"
+      },
+      {
+        "filename": "02-performance-reviews.txt",
+        "description": "John Doe's performance reviews, all positive prior to the complaint.",
+        "type": "Employee Record",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/02-performance-reviews_932cfd80.txt"
+      },
+      {
+        "filename": "03-termination-letter.txt",
+        "description": "Termination letter citing 'performance issues' as the reason for firing.",
+        "type": "Corporate Communication",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/03-termination-letter_55f7fea2.txt"
+      },
+      {
+        "filename": "04-coworker-witness-statements.txt",
+        "description": "Statements from coworkers about the unsafe conditions and John Doe's work ethic.",
+        "type": "Witness Testimony",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/04-coworker-witness-statements_76b52e20.txt"
+      },
+      {
+        "filename": "05-company-internal-safety-audit.txt",
+        "description": "Internal safety audit showing the company was aware of the violations.",
+        "type": "Internal Report",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/05-company-internal-safety-audit_bc204841.txt"
+      },
+      {
+        "filename": "06-timeline-of-events.txt",
+        "description": "A timeline of events created by John Doe.",
+        "type": "Personal Notes",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/06-timeline-of-events_177ff670.txt"
+      }
+    ],
+    "expectedEntities": [
+      "John Doe (Complainant/Employee)",
+      "Jane Smith (Supervisor)",
+      "Acme Innovations Inc. (Employer)",
+      "Bob Vance (Coworker/Witness)",
+      "Sarah Jenkins (Coworker/Witness)",
+      "OSHA (Government Agency)",
+      "Safety First Consultants, LLC (Auditor)"
+    ],
+    "expectedFindings": [
+      "Termination for performance issues contradicts consistent 'Exceeds Expectations' reviews.",
+      "Termination occurred 17 days after the employee filed an OSHA complaint.",
+      "Company was aware of the safety violations prior to the complaint, as documented in the internal safety audit.",
+      "Supervisor Jane Smith dismissed safety concerns raised by the employee on multiple occasions.",
+      "Coworker statements corroborate the unsafe working conditions."
+    ],
+    "expectedCorrelations": [
+      "The termination letter's claim of 'performance issues' is directly contradicted by the 'Exceeds Expectations' ratings in the performance reviews.",
+      "The date of the OSHA complaint (October 15, 2025) and the date of termination (November 1, 2025) show a close temporal proximity.",
+      "The internal safety audit from June 30, 2025, confirms the hazards described in the OSHA complaint filed on October 15, 2025."
+    ]
+  },
+  {
+    "bundleId": "TV-PL-001",
+    "pipelineType": "predatorylending",
+    "scenarioName": "Elderly Homeowner Targeted for High-Interest Refinance",
+    "description": "An elderly homeowner is pressured into a high-interest, adjustable-rate cash-out refinance by a predatory lender, who misrepresents the terms of the loan and charges excessive fees.",
+    "documents": [
+      {
+        "filename": "01-original-mortgage-terms.txt",
+        "description": "Original fixed-rate mortgage agreement from 2010",
+        "type": "Financial Record",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/01-original-mortgage-terms_3f8a2228.txt"
+      },
+      {
+        "filename": "02-refinance-agreement.txt",
+        "description": "New adjustable-rate mortgage agreement with predatory terms",
+        "type": "Financial Record",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/02-refinance-agreement_8c99eba0.txt"
+      },
+      {
+        "filename": "03-broker-communications.txt",
+        "description": "Email chain between the homeowner and the mortgage broker showing pressure tactics and misrepresentation",
+        "type": "Communication Record",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/03-broker-communications_8d06240e.txt"
+      },
+      {
+        "filename": "04-hud-settlement-statement.txt",
+        "description": "HUD-1 settlement statement detailing excessive closing fees",
+        "type": "Financial Record",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/04-hud-settlement-statement_0db58aa2.txt"
+      },
+      {
+        "filename": "05-homeowner-account.txt",
+        "description": "First-person account from the homeowner detailing the predatory lending experience",
+        "type": "Personal Notes",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/05-homeowner-account_e0356cde.txt"
+      },
+      {
+        "filename": "06-cfpb-complaint.txt",
+        "description": "Complaint filed with the Consumer Financial Protection Bureau",
+        "type": "Legal Filing",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/06-cfpb-complaint_4d9c97b0.txt"
+      }
+    ],
+    "expectedEntities": [
+      "Margaret Miller (Homeowner)",
+      "Bob Roberts (Loan Officer)",
+      "Quick Cash Mortgage Corp. (Lender)",
+      "First National Bank of Anytown (Original Lender)",
+      "Consumer Financial Protection Bureau (Government Agency)"
+    ],
+    "expectedFindings": [
+      "Loan officer misrepresented the new loan as having a 'fixed' rate.",
+      "The new loan is an adjustable-rate mortgage with a rate that can increase to 12%.",
+      "The homeowner was charged excessive fees, including a 5% loan origination fee.",
+      "A prepayment penalty was included in the new loan without the homeowner's knowledge.",
+      "The loan officer used high-pressure tactics to rush the homeowner into signing."
+    ],
+    "expectedCorrelations": [
+      "The broker's email stating the rate is 'fixed' contradicts the adjustable-rate terms in the refinance agreement.",
+      "The homeowner's account of being pressured and rushed correlates with the broker's emails.",
+      "The high fees on the HUD-1 statement support the claim of predatory lending."
+    ]
+  },
+  {
+    "bundleId": "TV-WHI-001",
+    "pipelineType": "whistleblower",
+    "scenarioName": "AcuChem Industries \u2014 EPA Reporting Fraud & Retaliation",
+    "description": "A quality control supervisor at a chemical manufacturing plant discovers systematic underreporting of toxic emissions to the EPA. After filing an internal compliance report and escalating to the regional EPA office, the whistleblower faces progressive retaliation including reassignment, negative performance reviews, and eventual termination. Documents reveal a pattern of falsified monitoring data and management directives to suppress environmental testing results.",
+    "documents": [
+      {
+        "filename": "01-internal-compliance-report.txt",
+        "description": "The official quarterly report prepared by AcuChem management for submission to the EPA, claiming full compliance with all air and water regulations.",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/01-internal-compliance-report_5d417f25.txt"
+      },
+      {
+        "filename": "02-actual-lab-test-results.txt",
+        "description": "The certificate of analysis from a third-party lab showing significant exceedances of permitted lead and benzene levels.",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/02-actual-lab-test-results_a817c39d.txt"
+      },
+      {
+        "filename": "03-employee-internal-emails.txt",
+        "description": "A chain of emails from EHS Technician Sarah Jenkins to her manager, David Chen, documenting her discovery of the emission spikes and questioning the reporting.",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/03-employee-internal-emails_03f84994.txt"
+      },
+      {
+        "filename": "04-management-response-dismissing-concerns.txt",
+        "description": "A series of memos from David Chen and HR dismissing Sarah Jenkins' concerns, instructing her to drop the matter, and issuing a formal warning.",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/04-management-response-dismissing-concerns_c7e44158.txt"
+      },
+      {
+        "filename": "05-epa-regulatory-standards.txt",
+        "description": "Excerpts from the Code of Federal Regulations and the facility's specific permits, defining the legal emission limits for benzene and lead.",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/05-epa-regulatory-standards_2d0909b0.txt"
+      },
+      {
+        "filename": "06-whistleblower-detailed-account.txt",
+        "description": "The formal statement prepared by Sarah Jenkins for submission to the EPA, outlining the entire sequence of events, the evidence, and the cover-up.",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/06-whistleblower-detailed-account_70d3b5b2.txt"
+      }
+    ],
+    "expectedEntities": [
+      "AcuChem Industries Inc.",
+      "Marcus Rivera (Whistleblower)",
+      "VP Operations: David Thornton",
+      "HR Director: Karen Blackwell",
+      "EPA Region 4 Office",
+      "OSHA Whistleblower Protection",
+      "Environmental Testing Lab (contracted)"
+    ],
+    "expectedFindings": [
+      "Internal monitoring data shows emissions 3-5x higher than EPA-reported figures",
+      "Performance review timeline correlates directly with complaint escalation dates",
+      "Management email directives to 'adjust' testing protocols coincide with reporting periods",
+      "Termination rationale contradicts 8 years of positive performance history",
+      "Lab contractor invoices show cancelled tests during high-emission periods"
+    ],
+    "expectedCorrelations": [
+      "Emission spikes in internal data correspond to dates when external monitoring was cancelled",
+      "HR action timeline maps directly to whistleblower's escalation milestones",
+      "Financial records show bonus payments to lab contractor during underreporting periods"
+    ]
+  },
+  {
+    "bundleId": "TV-MC-001",
+    "pipelineType": "marketconcentration",
+    "scenarioName": "Beef Packing Industry - Price Suppression",
+    "description": "Four major meatpacking companies, controlling 85% of the beef processing market, are alleged to have suppressed cattle prices paid to independent ranchers while inflating wholesale beef prices. The bundle contains USDA reports, DOJ investigation summaries, rancher testimony, and economic analysis highlighting the market dynamics and a key contradiction from a past merger filing.",
+    "documents": [
+      {
+        "filename": "01-usda-market-report.txt",
+        "description": "USDA Agricultural Marketing Service report on beef packing concentration ratios and price spreads.",
+        "type": "Government Record",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/01-usda-market-report_813b3dc7.txt"
+      },
+      {
+        "filename": "02-doj-investigation-summary.txt",
+        "description": "Department of Justice Antitrust Division summary of its investigation into price-fixing allegations.",
+        "type": "Government Record",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/02-doj-investigation-summary_8edff449.txt"
+      },
+      {
+        "filename": "03-rancher-testimony.txt",
+        "description": "Testimony of a third-generation rancher before a Senate subcommittee detailing the impact of packer concentration.",
+        "type": "Testimony",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/03-rancher-testimony_70cde0b0.txt"
+      },
+      {
+        "filename": "04-company-merger-filing.txt",
+        "description": "Public summary of the 2015 pre-merger notification filing for the GMS and Apex Beef merger.",
+        "type": "Legal Filing",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/04-company-merger-filing_d10ea8d5.txt"
+      },
+      {
+        "filename": "05-congressional-hearing-excerpt.txt",
+        "description": "Excerpt from a House Agriculture subcommittee hearing on meatpacker consolidation.",
+        "type": "Government Record",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/05-congressional-hearing-excerpt_3f4d0982.txt"
+      },
+      {
+        "filename": "06-economic-analysis.txt",
+        "description": "Independent economic analysis of the farm-to-retail price spread, commissioned by the Senate Judiciary Committee.",
+        "type": "Expert Report",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/06-economic-analysis_130e6e04.txt"
+      }
+    ],
+    "expectedEntities": [
+      "Taurus Foods Inc. (Packer)",
+      "Global Meat Solutions (GMS) (Packer)",
+      "Heartland Packers (Packer)",
+      "Agri-National Processing (Packer)",
+      "John D. Miller (Rancher)",
+      "Miller Family Ranch (Ranch)",
+      "Dr. Elena Vasquez (Economist)",
+      "James T. Collins (CEO, GMS)",
+      "Apex Beef Packers (Acquired Packer)",
+      "Department of Justice (DOJ) (Regulatory Agency)",
+      "United States Department of Agriculture (USDA) (Regulatory Agency)"
+    ],
+    "expectedFindings": [
+      "The four-firm concentration ratio (CR4) in the U.S. fed cattle slaughter market is 85%.",
+      "The farm-to-retail price spread for beef widened by 40% in the five years following the 2015 GMS-Apex merger.",
+      "Evidence of coordinated cattle bid suppression by the four major packers was found by the DOJ.",
+      "The GMS-Apex merger filing claimed 'no anticompetitive effects,' which is contradicted by post-merger market data.",
+      "Rancher testimony alleges coordinated price-setting by GMS and Taurus Foods buyers.",
+      "Economic analysis attributes a significant portion of the price spread increase to the exercise of market power by packers."
+    ],
+    "expectedCorrelations": [
+      "The claim of 'no anticompetitive effects' in the GMS merger filing (04) is directly contradicted by the USDA's price spread data (01) and the independent economic analysis (06).",
+      "Rancher John Miller's testimony (03) about coordinated low bids in May 2022 is consistent with the DOJ's findings of 'parallel conduct' (02).",
+      "The 85% CR4 figure is consistently cited across the USDA report (01), the DOJ summary (02), and congressional testimony (05)."
+    ]
+  },
+  {
+    "bundleId": "TV-AGR-001",
+    "pipelineType": "agricultureexploitation",
+    "scenarioName": "Heartland Poultry Corp \u2014 Contract Grower Exploitation",
+    "description": "A multi-generational poultry farming family documents how their integrator contract with Heartland Poultry Corp has systematically transferred all financial risk to the grower while maintaining total control over production decisions. The tournament ranking system, mandatory facility upgrades, and input pricing create a debt trap that makes it impossible to exit the contract without losing the farm. Documents show declining grower payments despite rising company profits.",
+    "documents": [
+      {
+        "filename": "01-grower-contract.txt",
+        "description": "",
+        "type": "legal_document",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/01-grower-contract_e200e8b3.txt"
+      },
+      {
+        "filename": "02-settlement-sheets.txt",
+        "description": "",
+        "type": "financial_records",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/02-settlement-sheets_36c7e603.txt"
+      },
+      {
+        "filename": "03-farmer-financial-records.txt",
+        "description": "",
+        "type": "financial_records",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/03-farmer-financial-records_04997d3f.txt"
+      },
+      {
+        "filename": "04-usda-complaint.txt",
+        "description": "",
+        "type": "legal_document",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/04-usda-complaint_8ecfddf3.txt"
+      },
+      {
+        "filename": "05-other-growers-testimony.txt",
+        "description": "",
+        "type": "witness_statement",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/05-other-growers-testimony_689cc56e.txt"
+      },
+      {
+        "filename": "06-integrator-public-statements.txt",
+        "description": "",
+        "type": "public_statement",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/06-integrator-public-statements_7b7c4f44.txt"
+      }
+    ],
+    "expectedEntities": [
+      "Heartland Poultry Corporation",
+      "Thompson Family Farm (Growers)",
+      "First Agricultural Bank",
+      "USDA Packers & Stockyards Division",
+      "Heartland Feed Division",
+      "Tournament Ranking System"
+    ],
+    "expectedFindings": [
+      "Grower net income declined 62% over 8 years while integrator revenue grew 34%",
+      "Mandatory facility upgrades totaling $380K were required within 18 months of contract renewal",
+      "Tournament ranking system penalizes growers who raise concerns \u2014 complaint dates correlate with ranking drops",
+      "Feed conversion ratios show statistically significant variation suggesting feed quality manipulation",
+      "Contract termination clause requires full debt repayment \u2014 effectively preventing exit"
+    ],
+    "expectedCorrelations": [
+      "Upgrade mandates coincide with contract renewal periods, creating maximum leverage",
+      "Feed delivery records show lower-quality batches sent to growers who filed complaints",
+      "Bank loan terms reference integrator contract as collateral \u2014 creating circular dependency"
+    ]
+  },
+  {
+    "bundleId": "TV-OTH-001",
+    "pipelineType": "other",
+    "scenarioName": "Titan Chemical Corp \u2014 Environmental Contamination Pattern",
+    "description": "A community investigation into a chemical manufacturing facility reveals a pattern of environmental contamination affecting groundwater, air quality, and soil in surrounding residential areas. EPA Toxics Release Inventory data, state environmental agency inspection reports, and community health surveys document elevated cancer rates and respiratory illness within a 3-mile radius. The facility has received multiple violations but continues operating under consent decrees that allow continued emissions.",
+    "documents": [
+      {
+        "filename": "01-epa-tri-data.txt",
+        "description": "Official 2023 TRI report for the Titan Chemical facility, detailing on-site and off-site releases of toxic chemicals.",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/01-epa-tri-data_bab883d2.txt"
+      },
+      {
+        "filename": "02-community-health-survey.txt",
+        "description": "A survey conducted by a local advocacy group showing elevated rates of illness in the neighborhood adjacent to the facility.",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/02-community-health-survey_7b6fe19e.txt"
+      },
+      {
+        "filename": "03-city-zoning-records.txt",
+        "description": "A chronological record of zoning decisions and permits for the industrial parcel, showing a history of variances and proximity to residential areas.",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/03-city-zoning-records_5478b9d2.txt"
+      },
+      {
+        "filename": "04-environmental-impact-statement.txt",
+        "description": "Titan Chemical's official report for 2023, claiming no significant health impact on the surrounding community.",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/04-environmental-impact-statement_180775a7.txt"
+      },
+      {
+        "filename": "05-community-testimony.txt",
+        "description": "First-hand accounts from residents describing health issues, environmental odors, and their experiences living near the plant.",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/05-community-testimony_4d403daf.txt"
+      },
+      {
+        "filename": "06-demographic-data.txt",
+        "description": "A city report showing the neighborhood is a disproportionately low-income, minority community compared to the rest of the city and county.",
+        "type": "",
+        "url": "https://d2xsxph8kpxj0f.cloudfront.net/310519663351295148/AXzmPhCfhqjYYjh6uJijzm/06-demographic-data_8d0f8b7e.txt"
+      }
+    ],
+    "expectedEntities": [
+      "Titan Chemical Corporation",
+      "EPA Region 5",
+      "State Environmental Agency",
+      "Riverside Community Coalition",
+      "Dr. Elena Marchetti (Epidemiologist)",
+      "City Council Environmental Committee",
+      "Consent Decree Administrator"
+    ],
+    "expectedFindings": [
+      "TRI data shows 340% increase in reported toxic releases over 5 years despite consent decree limits",
+      "Community health survey documents 4.2x elevated cancer incidence within 3-mile radius",
+      "State inspection reports cite same violations across 6 consecutive inspections \u2014 no escalation",
+      "Groundwater testing shows PFAS levels 12x above EPA advisory limits",
+      "Consent decree allows 'operational flexibility' clause that effectively nullifies emission caps"
+    ],
+    "expectedCorrelations": [
+      "Spike in emergency room visits correlates with documented release events",
+      "Property values within contamination zone declined 40% while surrounding areas appreciated",
+      "Campaign contributions from Titan to local officials correlate with favorable zoning decisions"
+    ]
+  }
+]

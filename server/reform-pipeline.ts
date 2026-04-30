@@ -203,7 +203,7 @@ export async function generateReformAction(params: {
         LIMIT 5`
   );
 
-  const reformPackages: ReformPackageSummary[] = (pkgRows as any[]).map((r) => {
+  const reformPackages: ReformPackageSummary[] = (pkgRows as unknown as any[]).map((r) => {
     const parse = (s: string | null) => { try { return JSON.parse(s || "{}"); } catch { return {}; } };
     const supporting = parse(r.supporting_data_section);
     const reforms = parse(r.recommended_reforms_section);
@@ -232,7 +232,7 @@ export async function generateReformAction(params: {
         LIMIT 5`
   );
 
-  const advocacyTargets: AdvocacyTargetSummary[] = (targetRows as any[]).map((r) => {
+  const advocacyTargets: AdvocacyTargetSummary[] = (targetRows as unknown as any[]).map((r) => {
     const domains = (() => { try { return JSON.parse(r.issue_domains || "[]"); } catch { return []; } })();
     // Extract desired_change and pressure_points from notes field
     const notes = r.notes || "";
@@ -268,7 +268,7 @@ export async function generateReformAction(params: {
         LIMIT 8`
   );
 
-  const legislators: LegislatorSummary[] = (legRows as any[]).map((r) => {
+  const legislators: LegislatorSummary[] = (legRows as unknown as any[]).map((r) => {
     const parse = (s: string | null) => { try { return JSON.parse(s || "[]"); } catch { return []; } };
     return {
       id: r.id,
@@ -300,7 +300,7 @@ export async function generateReformAction(params: {
         LIMIT 6`
   );
 
-  const agencies: AgencySummary[] = (agencyRows as any[]).map((r) => {
+  const agencies: AgencySummary[] = (agencyRows as unknown as any[]).map((r) => {
     const parse = (s: string | null) => { try { return JSON.parse(s || "[]"); } catch { return []; } };
     return {
       id: r.id,
@@ -330,7 +330,7 @@ export async function generateReformAction(params: {
         LIMIT 6`
   );
 
-  const advocacyOrgs: AdvocacyOrgSummary[] = (orgRows as any[]).map((r) => {
+  const advocacyOrgs: AdvocacyOrgSummary[] = (orgRows as unknown as any[]).map((r) => {
     const parse = (s: string | null) => { try { return JSON.parse(s || "[]"); } catch { return []; } };
     return {
       id: r.id,
@@ -358,7 +358,7 @@ export async function generateReformAction(params: {
         LIMIT 5`
   );
 
-  const mediaOutlets: MediaOutletSummary[] = (mediaRows as any[]).map((r) => ({
+  const mediaOutlets: MediaOutletSummary[] = (mediaRows as unknown as any[]).map((r) => ({
     outletId: r.outlet_id,
     outletName: r.outlet_name,
     outletType: r.outlet_type,
@@ -384,7 +384,7 @@ export async function generateReformAction(params: {
         LIMIT 3`
   );
 
-  const activeCampaigns: CampaignSummary[] = (campaignRows as any[]).map((r) => {
+  const activeCampaigns: CampaignSummary[] = (campaignRows as unknown as any[]).map((r) => {
     const parse = (s: string | null) => { try { return JSON.parse(s || "[]"); } catch { return []; } };
     return {
       campaignId: r.campaign_id,
@@ -441,7 +441,7 @@ export async function getReformActionByPatternId(patternId: string): Promise<Ref
         WHERE pattern_id = ${patternId}
         LIMIT 1`
   );
-  const pattern = (rows as any[])[0];
+  const pattern = (rows as unknown as any[])[0];
   if (!pattern) return null;
 
   const harmDomains = (() => {
@@ -470,7 +470,7 @@ export async function getAllReformPackagesSummary() {
         WHERE status = 'published'
         ORDER BY updated_at DESC`
   );
-  return (rows as any[]).map((r) => {
+  return (rows as unknown as any[]).map((r) => {
     const supporting = (() => { try { return JSON.parse(r.supporting_data_section || "{}"); } catch { return {}; } })();
     return {
       packageId: r.package_id,
@@ -514,12 +514,12 @@ export async function getCoalitionIntelligence(domain: string) {
 
   return {
     domain: canonicalDomain,
-    legislators: legRows as any[],
-    agencies: agencyRows as any[],
-    advocacyOrgs: orgRows as any[],
-    mediaOutlets: mediaRows as any[],
-    activeCampaigns: campaignRows as any[],
-    advocacyTargets: targetRows as any[],
+    legislators: legRows as unknown as any[],
+    agencies: agencyRows as unknown as any[],
+    advocacyOrgs: orgRows as unknown as any[],
+    mediaOutlets: mediaRows as unknown as any[],
+    activeCampaigns: campaignRows as unknown as any[],
+    advocacyTargets: targetRows as unknown as any[],
     generatedAt: Date.now(),
   };
 }

@@ -11,6 +11,7 @@
 
 import { db, pool } from "./db";
 import { sql } from "drizzle-orm";
+import { getActiveSignalsByEffect } from "./live-signal-emitter";
 
 // ─── Types ───
 
@@ -423,6 +424,36 @@ export async function matchResources(input: MatchInput): Promise<ScoredResource[
   
   // Phase 2: Score
   const scored = phase2Score(filtered, input);
+
+  // Phase 2b: Signal-aware score adjustment
+  // RESOURCE_STALE signals apply a 0.30 penalty to affected resources
+  // POLICY_CHANGE signals apply a 0.10 boost (resource is newly relevant)
+  try {
+    const [staleSignals, policySignals] = await Promise.all([
+      getActiveSignalsByEffect("RESOURCE_STALE", 200),
+      getActiveSignalsByEffect("POLICY_CHANGE", 200),
+    ]);
+    const staleIds = new Set(
+      staleSignals
+        .filter(s => s.targetTable === "unified_resources" && s.targetId !== null)
+        .map(s => s.targetId as number)
+    );
+    const policyIds = new Set(
+      policySignals
+        .filter(s => s.targetTable === "unified_resources" && s.targetId !== null)
+        .map(s => s.targetId as number)
+    );
+    for (const r of scored) {
+      if (staleIds.has(r.id)) {
+        r.score = Math.max(0, r.score - 0.30);
+        r.matchReasons.push("⚠ Resource flagged as stale — verify before acting");
+      }
+      if (policyIds.has(r.id)) {
+        r.score = Math.min(1.0, r.score + 0.10);
+        r.matchReasons.push("↑ Policy change detected — resource may have new eligibility");
+      }
+    }
+  } catch { /* non-fatal: signal lookup failure should not block matching */ }
   
   // Phase 3: Diversity constraint + limit
   const diversified = enforceDiversity(scored, limit);

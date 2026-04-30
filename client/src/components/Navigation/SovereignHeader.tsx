@@ -1,42 +1,87 @@
-import { Link, useLocation } from "wouter";
-import { cn } from "@/lib/utils";
+import { useInterfaceStore } from "@/store/interfaceStore";
+import { Badge } from "@/components/ui/badge";
+import { Shield, AlertCircle, Loader2 } from "lucide-react";
 
-const links = [
-  { href: "/lighthouse", label: "Lighthouse" },
-  { href: "/civic-map", label: "Civic Map" },
-  { href: "/signal-registry", label: "Signal Registry" },
-  { href: "/mission-control", label: "Mission Control" },
-];
-
+/**
+ * SovereignHeader: Single Visual Truth for Jurisdiction Status
+ * 
+ * Displays the currently matched jurisdiction and its sovereign tier.
+ * Connected to useInterfaceStore for reactive updates.
+ * 
+ * - If isProcessing: Shows "Scanning..." state with spinner
+ * - If activeJurisdiction exists: Shows jurisdiction ID
+ * - If isSovereign is true: Gold badge (high-tier)
+ * - If isSovereign is false: Silver badge (standard)
+ * - If no jurisdiction: Hidden
+ */
 export function SovereignHeader() {
-  const [location] = useLocation();
+  const { activeJurisdiction, isSovereign, isProcessing, confidence } = useInterfaceStore();
+
+  // Show loading state while processing
+  if (isProcessing) {
+    return (
+      <div className="flex items-center gap-2 px-4 py-2 bg-muted/50 border-b border-border">
+        <div className="flex items-center gap-2 flex-1">
+          <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+          <span className="text-sm font-medium text-foreground">
+            Scanning jurisdiction...
+          </span>
+        </div>
+        <Badge
+          variant="outline"
+          className="bg-blue-600/10 text-blue-700 border-blue-600/30"
+        >
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+            Processing
+          </span>
+        </Badge>
+      </div>
+    );
+  }
+
+  // Don't render if no jurisdiction is active
+  if (!activeJurisdiction) {
+    return null;
+  }
 
   return (
-    <header className="mb-6 rounded-2xl border border-border/70 bg-card/75 px-5 py-4 shadow-sm backdrop-blur">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Luminari V1</p>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Sovereign Operations Console</h1>
-        </div>
-        <nav className="flex flex-wrap gap-2" aria-label="Primary workspace navigation">
-          {links.map((link) => (
-            <Link key={link.href} href={link.href}>
-              <span
-                className={cn(
-                  "inline-flex cursor-pointer items-center rounded-full border px-3 py-1.5 text-sm transition-colors",
-                  location === link.href
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-background/70 text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {link.label}
-              </span>
-            </Link>
-          ))}
-        </nav>
+    <div className="flex items-center gap-2 px-4 py-2 bg-muted/50 border-b border-border">
+      {/* Jurisdiction ID Display with Confidence */}
+      <div className="flex items-center gap-2 flex-1">
+        <Shield className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-medium text-foreground">
+          {activeJurisdiction}
+        </span>
+        {confidence && confidence > 0 && (
+          <span className="text-xs text-muted-foreground opacity-75">
+            {Math.round(confidence)}% match
+          </span>
+        )}
       </div>
-    </header>
+
+      {/* Sovereign Status Badge */}
+      {isSovereign ? (
+        <Badge
+          variant="default"
+          className="bg-amber-500 text-slate-950 border border-yellow-400 hover:bg-amber-600 animate-pulse font-semibold shadow-sm"
+        >
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-2 h-2 rounded-full bg-yellow-300 animate-pulse" />
+            Sovereign Gold
+          </span>
+        </Badge>
+      ) : (
+        <Badge
+          variant="secondary"
+          className="bg-slate-600/20 text-slate-700 border-slate-600/30 hover:bg-slate-600/30"
+        >
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-2 h-2 rounded-full bg-slate-600" />
+            Standard
+          </span>
+        </Badge>
+      )}
+    </div>
   );
 }
-
-export default SovereignHeader;

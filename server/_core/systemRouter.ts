@@ -4,15 +4,10 @@ import { adminProcedure, publicProcedure, router } from "./trpc";
 import { pool } from "../db";
 
 export const systemRouter = router({
-  health: publicProcedure
-    .input(
-      z.object({
-        timestamp: z.number().min(0, "timestamp cannot be negative"),
-      })
-    )
-    .query(() => ({
-      ok: true,
-    })),
+  health: publicProcedure.query(() => ({
+    ok: true,
+    supabaseProject: "wepxlinwbjrkqdzkqpar",
+  })),
 
   notifyOwner: adminProcedure
     .input(

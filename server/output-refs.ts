@@ -78,7 +78,7 @@ export async function validateOutputRefs(refs: OutputRefs): Promise<void> {
     const [rows] = await db.execute(
       sql.raw(`SELECT id FROM \`${entity.table}\` WHERE id = ${entity.id} LIMIT 1`)
     );
-    const found = (rows as any[]).length > 0;
+    const found = (rows as unknown as any[]).length > 0;
     if (!found) {
       throw new Error(
         `[OutputRefs] REJECTED: ${entity.type} id=${entity.id} not found in table "${entity.table}". ` +

@@ -38,7 +38,7 @@ async function assertRowExists(table: string, id: number, context: string): Prom
   const [rows] = await db.execute(
     sql.raw(`SELECT id FROM \`${table}\` WHERE id = ${id} LIMIT 1`)
   );
-  if ((rows as any[]).length === 0) {
+  if ((rows as unknown as any[]).length === 0) {
     throw new Error(
       `[PersistEngineOutputs] REJECTED: id=${id} not found in "${table}". ` +
       `Dangling reference. Context: ${context}`
@@ -52,11 +52,11 @@ async function getOrCreateBackboneModule(category: string): Promise<number> {
   const [existing] = await db.execute(
     sql`SELECT id FROM knowledge_modules WHERE moduleName LIKE ${`%${category}%`} LIMIT 1`
   );
-  const rows = existing as any[];
+  const rows = existing as unknown as any[];
   if (rows.length > 0) return rows[0].id;
 
   const [maxRow] = await db.execute(sql`SELECT MAX(id) as maxId FROM knowledge_modules`);
-  const maxId = ((maxRow as any[])[0]?.maxId || 0) + 1;
+  const maxId = ((maxRow as unknown as any[])[0]?.maxId || 0) + 1;
 
   await db.execute(sql`
     INSERT INTO knowledge_modules (id, moduleName, moduleType, description, version, isActive, createdAt, updatedAt, entryCount)
@@ -74,7 +74,7 @@ async function fetchCanonicalRow(table: string, id: number): Promise<any | null>
     const [rows] = await db.execute(
       sql.raw(`SELECT * FROM \`${table}\` WHERE id = ${id} LIMIT 1`)
     );
-    return (rows as any[])[0] || null;
+    return (rows as unknown as any[])[0] || null;
   } catch {
     return null;
   }
@@ -109,7 +109,7 @@ export async function persistEngineOutputs(runId: string): Promise<{
   const [runRows] = await db.execute(
     sql`SELECT run_id, engine_id, output_refs, caseId, status FROM engine_runs WHERE run_id = ${runId}`
   );
-  const runs = runRows as any[];
+  const runs = runRows as unknown as any[];
 
   if (runs.length === 0) {
     result.errors.push(`REJECTED: No engine_run found for run_id: ${runId}`);
@@ -212,7 +212,7 @@ export async function persistEngineOutputs(runId: string): Promise<{
       sql`SELECT id FROM knowledge_entries WHERE entryId = ${entryId} LIMIT 1`
     );
 
-    if ((existingEntries as any[]).length > 0) {
+    if ((existingEntries as unknown as any[]).length > 0) {
       await db.execute(sql`
         UPDATE knowledge_entries 
         SET payload = ${JSON.stringify(payload)}, createdAt = ${Date.now()}
@@ -266,7 +266,7 @@ export async function persistAllOutputsForCase(caseId: number): Promise<{
   const [runRows] = await db.execute(
     sql`SELECT run_id FROM engine_runs WHERE caseId = ${caseId} AND status = 'success' ORDER BY createdAt ASC`
   );
-  const runs = runRows as any[];
+  const runs = runRows as unknown as any[];
 
   const totals = { totalPersisted: 0, totalRejected: 0, totalErrors: [] as string[], runResults: [] as any[] };
 
@@ -291,5 +291,5 @@ export async function getBackboneTableCounts(): Promise<Array<{ table_name: stri
     GROUP BY category
     ORDER BY count DESC
   `);
-  return rows as any[];
+  return rows as unknown as any[];
 }

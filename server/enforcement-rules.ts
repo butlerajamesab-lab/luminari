@@ -27,8 +27,8 @@ export async function enforceRegisteredEngine(engineId: string): Promise<Enforce
   const [rows] = await db.execute(
     sql`SELECT engine_id_er, enabled_er FROM engine_registry WHERE engine_id_er = ${engineId} LIMIT 1`
   );
-  const found = (rows as any[]).length > 0;
-  const enabled = found && (rows as any[])[0].enabled_er === 1;
+  const found = (rows as unknown as any[]).length > 0;
+  const enabled = found && (rows as unknown as any[])[0].enabled_er === 1;
 
   if (!found) {
     return { rule: "NO_UNREGISTERED_ENGINE", passed: false, message: `Engine "${engineId}" not found in engine_registry` };
@@ -54,7 +54,7 @@ export async function enforceNoOrphanOutput(outputRefs: any): Promise<Enforcemen
       const [rows] = await db.execute(
         sql.raw(`SELECT id FROM \`${entity.table}\` WHERE id = ${entity.id} LIMIT 1`)
       );
-      if ((rows as any[]).length === 0) {
+      if ((rows as unknown as any[]).length === 0) {
         orphans.push(`${entity.type}:${entity.id} in ${entity.table}`);
       }
     } catch (e: any) {
@@ -74,7 +74,7 @@ export async function enforceSnapshotValidation(runId: string): Promise<Enforcem
   const [runRows] = await db.execute(
     sql`SELECT run_id, engine_id, status, output_refs, snapshot_id FROM engine_runs WHERE run_id = ${runId}`
   );
-  const runs = runRows as any[];
+  const runs = runRows as unknown as any[];
 
   if (runs.length === 0) {
     return { rule: "NO_SNAPSHOT_WITHOUT_VALIDATION", passed: false, message: `No engine_run found for run_id: ${runId}` };
@@ -88,7 +88,7 @@ export async function enforceSnapshotValidation(runId: string): Promise<Enforcem
     const [engineCheck] = await db.execute(
       sql`SELECT id FROM engine_registry WHERE engine_id_er = ${run.engine_id} LIMIT 1`
     );
-    if ((engineCheck as any[]).length === 0) {
+    if ((engineCheck as unknown as any[]).length === 0) {
       errors.push(`Engine "${run.engine_id}" not in engine_registry`);
     }
   } else {
@@ -161,7 +161,7 @@ export async function enforceAllRules(runId: string): Promise<{
   const [runRows] = await db.execute(
     sql`SELECT run_id, engine_id, status, output_refs, snapshot_id FROM engine_runs WHERE run_id = ${runId}`
   );
-  const runs = runRows as any[];
+  const runs = runRows as unknown as any[];
 
   if (runs.length === 0) {
     return {

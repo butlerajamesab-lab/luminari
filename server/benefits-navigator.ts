@@ -148,9 +148,14 @@ export interface BenefitMatchInput {
 
 function loadRegistry(): BenefitProgram[] {
   const filePath = join(import.meta.dirname, "config", "benefits_registry.json");
-  const raw = readFileSync(filePath, "utf-8");
-  const data = JSON.parse(raw);
-  return data.programs as BenefitProgram[];
+  try {
+    const raw = readFileSync(filePath, "utf-8");
+    const data = JSON.parse(raw);
+    return data.programs as BenefitProgram[];
+  } catch (error: any) {
+    console.warn(`[Benefits] Registry unavailable at startup: ${error?.message ?? error}`);
+    return [];
+  }
 }
 
 export const BENEFIT_PROGRAMS: BenefitProgram[] = loadRegistry();

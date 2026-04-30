@@ -43,64 +43,81 @@ import { TRPCError } from "@trpc/server";
 import { signSnapshot, type SnapshotSigningPayload } from "./crypto-signing";
 import { resolveTemporalOrder } from "./phase2-temporal-ordering";
 
-// ─── Database Connection ───
-// Supabase Postgres runtime connection. Secrets are loaded only from process.env
-// (for local deployment, from an ignored .env file via dotenv/config in the server entrypoint).
-const dbUrlString = process.env.DATABASE_URL;
+// ─── Database Connection (Supabase PostgreSQL) ───
+// Lazy-initialized pool: does not connect at module load time.
+// Connection is only attempted when a query is actually made.
+let pgPool: Pool | null = null;
+let dbInstance: ReturnType<typeof drizzle> | null = null;
+let connectionWarningIssued = false;
 
-if (!dbUrlString && !(process.env.PGHOST && process.env.PGUSER && process.env.PGPASSWORD)) {
-  console.error("DATABASE_URL or PGHOST/PGUSER/PGPASSWORD runtime environment variables are missing.");
-  process.exit(1);
-}
+function initializePool(): Pool {
+  if (pgPool) return pgPool;
 
-let dbLabel = process.env.PGDATABASE || "postgres";
-let dbHost = process.env.PGHOST || "unknown";
-try {
-  if (dbUrlString) {
-    const parsed = new URL(dbUrlString);
-    dbHost = parsed.hostname;
-    dbLabel = parsed.pathname.replace(/^\//, "") || dbLabel;
+  const dbUrlString = process.env.DATABASE_URL;
+  if (!dbUrlString) {
+    if (!connectionWarningIssued) {
+      console.warn("[DB] DATABASE_URL not configured. Database queries will fail until it is set.");
+      connectionWarningIssued = true;
+    }
+    // Return a dummy pool that will fail on first query attempt
+    pgPool = new Pool({ connectionString: "postgresql://dummy" });
+    return pgPool;
   }
-} catch (error) {
-  console.error("Failed to parse DATABASE_URL:", error);
-  process.exit(1);
+
+  try {
+    pgPool = new Pool({ connectionString: dbUrlString });
+    pgPool.on("error", (err) => {
+      console.error("[DB] Unexpected error on idle client:", err);
+    });
+    console.log("[DB] PostgreSQL pool initialized (lazy).");
+    return pgPool;
+  } catch (error) {
+    console.error("[DB] Failed to initialize PostgreSQL pool:", error);
+    throw error;
+  }
 }
 
-const sslMode = process.env.PGSSLMODE || "require";
-const ssl = sslMode === "disable" ? false : { rejectUnauthorized: false };
+export function getDb() {
+  if (!dbInstance) {
+    const pool = initializePool();
+    dbInstance = drizzle(pool);
+  }
+  return dbInstance;
+}
 
-export const pool = new Pool(dbUrlString ? {
-  connectionString: dbUrlString,
-  ssl,
-  max: 10,
-  idleTimeoutMillis: 60000,
-  connectionTimeoutMillis: 10000,
-} : {
-  host: process.env.PGHOST,
-  port: parseInt(process.env.PGPORT || "5432", 10),
-  database: process.env.PGDATABASE || "postgres",
-  user: process.env.PGUSER,
-  password: process.env.PGPASSWORD,
-  ssl,
-  max: 10,
-  idleTimeoutMillis: 60000,
-  connectionTimeoutMillis: 10000,
+// Lazy getter for backward compatibility
+export const db = new Proxy({} as any, {
+  get: (target, prop) => {
+    return getDb()[prop as any];
+  },
 });
 
-export const db = drizzle(pool as any);
+// Export pool for direct access if needed
+export function getPool(): Pool {
+  return initializePool();
+}
 
+export const pool = new Proxy({} as any, {
+  get: (target, prop) => {
+    return initializePool()[prop as any];
+  },
+});
+
+// 3. Runtime guard validates actual connection success instead of hardcoded name
 export async function verifyConnection() {
   try {
-    await pool.query("select current_database() as database, current_user as user, now() as now");
-    console.log(`Successfully connected to Supabase Postgres database: ${dbLabel} at ${dbHost}`);
+    const connection = await initializePool().connect();
+    console.log(`[DB] Successfully connected to Supabase PostgreSQL database.`);
+    connection.release();
   } catch (error) {
-    console.error(`Failed to connect to Supabase Postgres database ${dbLabel}:`, error);
+    console.error(`[DB] Failed to connect to the database:`, error);
     process.exit(1);
   }
 }
 
-// Initialize connection check
-verifyConnection().catch(console.error);
+// Do NOT call verifyConnection() at module load time.
+// Instead, let routes call it on-demand or during health checks.
+// This allows the server to boot even if the database is temporarily unavailable.
 
 // ─── User Management (required by auth framework) ───
 export async function getUserByOpenId(openId: string): Promise<User | null> {

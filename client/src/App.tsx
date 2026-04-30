@@ -140,14 +140,8 @@ function HomeOrWelcome() {
       return;
     }
 
-    // Admin → Mission Control
-    if (user?.role === "admin") {
-      navigate("/mission-control", { replace: true });
-      setChecked(true);
-      return;
-    }
-
-    // DISABLED FOR TESTING - Allow all authenticated users to access dashboard
+    // Allow all authenticated users to access dashboard (including admins)
+    // Admins can still navigate to /mission-control if needed
     setChecked(true);
   }, [cases, isLoading, authLoading, isAuthenticated, user, navigate]);
 
@@ -168,7 +162,7 @@ function DashboardRouter() {
     <DashboardLayout>
       <SovereignHeader />
       <Switch>
-        <Route path="/" component={HomeOrWelcome} />
+        <Route path="/" component={Home} />
         <Route path="/control-room" component={ControlRoom} />
         <Route path="/cases/:id/control-room" component={ControlRoom} />
         <Route path="/cases" component={Cases} />
@@ -241,6 +235,7 @@ function App() {
                 <Route path="/templates" component={CaseTemplates} />
                 <Route path="/import-bundle" component={ImportBundle} />
                 <Route path="/mission-control" component={MissionControl} />
+                <Route path="/" component={HomeOrWelcome} />
                 <Route path="/lighthouse" component={Lighthouse} />
                 <Route path="/civic-map" component={CivicMap} />
                 <Route path="/viewfinder" component={AnomalyViewfinder} />

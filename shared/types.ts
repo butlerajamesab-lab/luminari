@@ -11,3 +11,9 @@ export * from "./_core/errors";
 
 // Minimal schema imports - only export User type if needed
 export type { User, InsertUser } from "../drizzle/schema";
+
+
+
+// ============================================================
+// SECTION: SERVER CORE (Infrastructure) (22 files)
+// ============================================================

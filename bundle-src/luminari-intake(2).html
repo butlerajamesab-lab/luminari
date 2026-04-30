@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Notes</title>
+<style>
+/* ─── Reset & Base ─── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f172a;--bg2:#1e293b;--bg3:#334155;--fg:#f8fafc;--fg2:#94a3b8;--accent:#6366f1;--accent2:#818cf8;--danger:#ef4444;--success:#22c55e;--warning:#f59e0b;--border:#475569;--radius:8px;--shadow:0 4px 6px -1px rgba(0,0,0,.3)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--fg);line-height:1.6;min-height:100vh}
+a{color:var(--accent2);text-decoration:none}
+button{cursor:pointer;font-family:inherit}
+
+/* ─── Quick Exit ─── */
+#quick-exit{position:fixed;top:12px;right:12px;z-index:9999;background:var(--danger);color:#fff;border:none;border-radius:50%;width:36px;height:36px;font-size:18px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);transition:transform .1s}
+#quick-exit:hover{transform:scale(1.1)}
+
+/* ─── Layout ─── */
+.container{max-width:680px;margin:0 auto;padding:16px}
+.header{text-align:center;padding:24px 0 16px;border-bottom:1px solid var(--border);margin-bottom:24px}
+.header h1{font-size:1.5rem;font-weight:700;color:var(--fg)}
+.header p{color:var(--fg2);font-size:.875rem;margin-top:4px}
+
+/* ─── Cards ─── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card h2{font-size:1.125rem;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card h3{font-size:1rem;margin-bottom:8px;color:var(--fg2)}
+
+/* ─── Forms ─── */
+label{display:block;font-size:.875rem;font-weight:500;margin-bottom:4px;color:var(--fg2)}
+input[type="text"],input[type="date"],textarea,select{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--fg);font-size:.9rem;margin-bottom:12px;transition:border-color .2s}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+textarea{min-height:100px;resize:vertical}
+.required::after{content:" *";color:var(--danger)}
+.help-text{font-size:.75rem;color:var(--fg2);margin-top:-8px;margin-bottom:12px}
+
+/* ─── Buttons ─── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:var(--radius);font-size:.9rem;font-weight:500;border:none;transition:all .2s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent2)}
+.btn-secondary{background:var(--bg3);color:var(--fg);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--border)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:#dc2626}
+.btn-success{background:var(--success);color:#fff}
+.btn-success:hover{background:#16a34a}
+.btn-sm{padding:6px 12px;font-size:.8rem}
+.btn-block{width:100%;justify-content:center}
+
+/* ─── Tabs ─── */
+.tabs{display:flex;gap:4px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px}
+.tab{padding:8px 16px;border-radius:var(--radius);font-size:.85rem;font-weight:500;background:transparent;color:var(--fg2);border:1px solid transparent;white-space:nowrap}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tab:hover:not(.active){background:var(--bg3)}
+
+/* ─── Lists ─── */
+.list-item{display:flex;align-items:flex-start;gap:12px;padding:12px;background:var(--bg);border-radius:var(--radius);margin-bottom:8px;border:1px solid var(--border)}
+.list-item .meta{flex:1;min-width:0}
+.list-item .meta h4{font-size:.9rem;margin-bottom:2px}
+.list-item .meta p{font-size:.8rem;color:var(--fg2)}
+.list-item .actions{display:flex;gap:4px;flex-shrink:0}
+
+/* ─── Badges ─── */
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.7rem;font-weight:600;text-transform:uppercase}
+.badge-info{background:var(--accent);color:#fff}
+.badge-warning{background:var(--warning);color:#000}
+.badge-success{background:var(--success);color:#fff}
+
+/* ─── Safety Banner ─── */
+.safety-banner{background:linear-gradient(135deg,#7c3aed,#6366f1);padding:16px;border-radius:var(--radius);margin-bottom:16px;font-size:.85rem;line-height:1.5}
+.safety-banner strong{color:#fbbf24}
+
+/* ─── Storage Bar ─── */
+.storage-bar{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:8px}
+.storage-bar-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s}
+
+/* ─── Multiselect ─── */
+.multiselect{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.multiselect label{display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg);border:1px solid var(--border);border-radius:20px;font-size:.8rem;cursor:pointer;transition:all .2s}
+.multiselect label:has(input:checked){background:var(--accent);border-color:var(--accent);color:#fff}
+.multiselect input{display:none}
+
+/* ─── Toast ─── */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:var(--radius);font-size:.85rem;z-index:9998;animation:slideUp .3s ease;box-shadow:var(--shadow)}
+.toast-success{background:var(--success);color:#fff}
+.toast-error{background:var(--danger);color:#fff}
+.toast-info{background:var(--accent);color:#fff}
+@keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* ─── Private Browsing Warning ─── */
+.private-warning{background:var(--warning);color:#000;padding:12px;border-radius:var(--radius);margin-bottom:16px;font-size:.85rem;display:none}
+
+/* ─── Sections ─── */
+.section{display:none}
+.section.active{display:block}
+
+/* ─── File Input ─── */
+.file-drop{border:2px dashed var(--border);border-radius:var(--radius);padding:32px;text-align:center;color:var(--fg2);cursor:pointer;transition:all .2s;margin-bottom:12px}
+.file-drop:hover,.file-drop.dragover{border-color:var(--accent);background:rgba(99,102,241,.1)}
+.file-drop input{display:none}
+
+/* ─── Responsive ─── */
+@media(max-width:480px){.container{padding:12px}.tabs{gap:2px}.tab{padding:6px 10px;font-size:.75rem}}
+</style>
+</head>
+<body>
+
+<!-- Quick Exit Button -->
+<button id="quick-exit" title="Quick Exit (Escape)" onclick="quickExit()">&times;</button>
+
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <h1>Personal Notes</h1>
+    <p>Your information stays on this device until you choose to upload it.</p>
+  </div>
+
+  <!-- Private Browsing Warning -->
+  <div id="private-warning" class="private-warning">
+    <strong>Private/Incognito Mode Detected.</strong> Your data may not be saved when you close this window. Consider using a regular browser window, or use "Save Backup File" frequently.
+  </div>
+
+  <!-- Storage Indicator -->
+  <div class="card" style="padding:12px 16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:.8rem">
+      <span>Storage: <span id="storage-used">0</span> / <span id="storage-limit">200</span> MB</span>
+      <span id="storage-pct">0%</span>
+    </div>
+    <div class="storage-bar"><div class="storage-bar-fill" id="storage-fill" style="width:0%"></div></div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="tabs" id="nav-tabs">
+    <button class="tab active" data-tab="setup">Setup</button>
+    <button class="tab" data-tab="intake">Your Story</button>
+    <button class="tab" data-tab="timeline">Timeline</button>
+    <button class="tab" data-tab="people">People</button>
+    <button class="tab" data-tab="files">Files</button>
+    <button class="tab" data-tab="notes">Notes</button>
+    <button class="tab" data-tab="sync">Upload</button>
+  </div>
+
+  <!-- ═══════════════ SETUP SECTION ═══════════════ -->
+  <div class="section active" id="section-setup">
+    <div class="card">
+      <h2>Getting Started</h2>
+      <p style="color:var(--fg2);font-size:.9rem;margin-bottom:16px">Choose how you'd like to use this tool. Everything stays on your device until you decide to upload.</p>
+
+      <label class="required">How are you using this?</label>
+      <select id="user-mode" onchange="onUserModeChange()">
+        <option value="https://3000-ice1zn74bmhq0q38qyje9-7e7ca167.manus.space/welcome">Select...</option>
+        <option value="independent">On my own (no advocate yet)</option>
+        <option value="advocate_supported">I have an advocate helping me</option>
+        <option value="emergency">I need emergency guidance</option>
+      </select>
+
+      <div id="advocate-fields" style="display:none">
+        <label>Advocate Name</label>
+        <input type="text" id="advocate-name" placeholder="Jane Rodriguez">
+        <label>Organization</label>
+        <input type="text" id="advocate-org" placeholder="Legal Aid Society">
+        <label>Phone</label>
+        <input type="text" id="advocate-phone" placeholder="555-0123">
+        <label>Email</label>
+        <input type="text" id="advocate-email" placeholder="advocate@example.org">
+      </div>
+
+      <label class="required">What is your situation about?</label>
+      <select id="primary-domain" onchange="onDomainChange()">
+        <option value="">Select your situation...</option>
+        <!-- Populated by JS -->
+      </select>
+
+      <div id="additional-domains-section" style="display:none;margin-top:8px">
+        <label>Additional issues (select all that apply)</label>
+        <div class="multiselect" id="additional-domains">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <label class="required">Give your case a name</label>
+      <input type="text" id="case-name" placeholder="My Insurance Denial Case">
+
+      <div style="margin-top:16px">
+        <button class="btn btn-primary btn-block" onclick="completeSetup()">Continue to Intake</button>
+      </div>
+    </div>
+
+    <!-- Safety & Settings -->
+    <div class="card">
+      <h2>Safety & Settings</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="btn btn-secondary btn-sm" onclick="saveBackup()">Save Backup File</button>
+        <button class="btn btn-secondary btn-sm" onclick="loadBackup()">Load Backup File</button>
+        <button class="btn btn-danger btn-sm" onclick="clearAllData()">Clear All Data</button>
+      </div>
+      <p style="font-size:.75rem;color:var(--fg2);margin-top:8px">
+        <strong>Quick Exit:</strong> Press Escape or click the X button to instantly leave this page.
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══════════════ INTAKE SECTION ═══════════════ -->
+  <div class="section" id="section-intake">
+    <div id="safety-note-banner"></div>
+    <div class="card">
+      <h2 id="intake-title">Tell Us About Your Situation</h2>
+      <div id="domain-questions">
+        <!-- Populated dynamically based on selected domain -->
+      </div>
+      <div style="margin-top:16px;display:flex;gap:8px">
+        <button class="btn btn-secondary" onclick="switchTab('setup')">Back</button>
+        <button class="btn btn-primary" onclick="saveIntakeAnswers(); switchTab('timeline')">Save & Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TIMELINE SECTION ═══════════════ -->
+  <div class="section" id="section-timeline">
+    <div class="card">
+      <h2>Timeline of Events</h2>
+      <p style="color:var(--fg2);font-size:.85rem;margin-bottom:16px">Add important dates and events. These help build a clear picture of what happened.</p>
+
+      <div id="timeline-list"></div>
+
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:8px">
+        <label class="required">Date</label>
+        <input type="date" id="tl-date">
+        <label class="required">What happened?</label>
+        <input type="text" id="tl-title" placeholder="Received denial letter">
+        <label>Details</label>
+        <textarea id="tl-desc" placeholder="Describe what happened..." rows="3"></textarea>
+        <button class="btn btn-primary btn-sm" onclick="addTimelineEntry()">Add Event</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ PEOPLE SECTION ═══════════════ -->
+  <div class="section" id="section-people">
+    <div class="card">
+      <h2>People Involved</h2>
+      <p style="color:var(--fg2);font-size:.85rem;margin-bottom:16px">List the people connected to your situation.</p>
+
+      <div id="people-list"></div>
+
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:8px">
+        <label class="required">Name</label>
+        <input type="text" id="ppl-name" placeholder="Dr. Sarah Chen">
+        <label class="required">Role</label>
+        <select id="ppl-role">
+          <option value="treating_physician">Doctor / Medical Provider</option>
+          <option value="caseworker">Caseworker / Social Worker</option>
+          <option value="attorney">Attorney / Lawyer</option>
+          <option value="judge">Judge</option>
+          <option value="opposing_party">Opposing Party</option>
+          <option value="witness">Witness</option>
+          <option value="employer">Employer / Supervisor</option>
+          <option value="landlord">Landlord / Property Manager</option>
+          <option value="insurance_rep">Insurance Representative</option>
+          <option value="family_member">Family Member</option>
+          <option value="other">Other</option>
+        </select>
+        <label>Relationship to you</label>
+        <input type="text" id="ppl-relationship" placeholder="My surgeon who recommended the procedure">
+        <label>Contact info (optional)</label>
+        <input type="text" id="ppl-contact" placeholder="Phone or email">
+        <button class="btn btn-primary btn-sm" onclick="addPerson()">Add Person</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ FILES SECTION ═══════════════ -->
+  <div class="section" id="section-files">
+    <div class="card">
+      <h2>Documents & Photos</h2>
+      <div id="suggested-docs"></div>
+
+      <div id="file-list"></div>
+
+      <div class="file-drop" id="file-drop" onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" multiple accept="image/*,application/pdf,.doc,.docx,.txt" onchange="handleFiles(this.files)" capture="environment">
+        <p style="font-size:.9rem;margin-bottom:4px">Tap to add files or take a photo</p>
+        <p style="font-size:.75rem">PDF, images, documents (max 100MB each)</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ NOTES SECTION ═══════════════ -->
+  <div class="section" id="section-notes">
+    <div class="card">
+      <h2>Evidence Notes</h2>
+      <p style="color:var(--fg2);font-size:.85rem;margin-bottom:16px">Add any additional notes, observations, or things you want to remember.</p>
+
+      <div id="notes-list"></div>
+
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:8px">
+        <label>Your note</label>
+        <textarea id="note-content" placeholder="Write your note here..." rows="4"></textarea>
+        <button class="btn btn-primary btn-sm" onclick="addNote()">Add Note</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SYNC/UPLOAD SECTION ═══════════════ -->
+  <div class="section" id="section-sync">
+    <div class="card">
+      <h2>Upload to Luminari</h2>
+      <p style="color:var(--fg2);font-size:.85rem;margin-bottom:16px">When you're ready and have internet access, upload your case to Luminari for analysis.</p>
+
+      <div id="sync-summary"></div>
+
+      <label class="required">Luminari URL</label>
+      <input type="text" id="sync-url" placeholder="https://luminari.manus.space" value="">
+      <p class="help-text">Enter the URL of your Luminari instance</p>
+
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px">
+        <button class="btn btn-success btn-block" onclick="uploadToLuminari()" id="upload-btn">
+          Upload Case to Luminari
+        </button>
+      </div>
+
+      <div id="sync-status" style="margin-top:16px;display:none"></div>
+    </div>
+
+    <div class="card">
+      <h2>Backup Options</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="btn btn-secondary" onclick="saveBackup()">Save .luminari Backup</button>
+        <button class="btn btn-secondary" onclick="loadBackup()">Load .luminari Backup</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="color:var(--danger)">Safety</h2>
+      <p style="color:var(--fg2);font-size:.85rem;margin-bottom:12px">Permanently delete all data from this device.</p>
+      <button class="btn btn-danger" onclick="clearAllData()">Clear All Data From Device</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden file input for backup loading -->
+<input type="file" id="backup-input" accept=".luminari,.json" style="display:none" onchange="handleBackupLoad(this.files)">
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   LUMINARI OFFLINE INTAKE BUNDLE — Phase A
+   Self-contained. No external dependencies. No network required.
+   ═══════════════════════════════════════════════════════════ */
+
+// ─── Domain Modules (embedded) ───
+const DOMAINS = [{"id":"domestic_violence","label":"Domestic Violence","icon":"🛡️","description":"Document incidents, gather evidence, and build a safety record.","safetyNote":"Your safety comes first. If you are in immediate danger, call 911 or the National DV Hotline: 1-800-799-7233. You can close this at any time using the X button or pressing Escape.","questions":[{"id":"dv_relationship","text":"What is your relationship to the person?","type":"select","options":["Spouse/Partner","Ex-Spouse/Ex-Partner","Parent","Family Member","Roommate","Other"],"required":true},{"id":"dv_duration","text":"How long has this been happening?","type":"select","options":["Less than 1 month","1-6 months","6-12 months","1-3 years","More than 3 years"]},{"id":"dv_types","text":"What types of abuse have you experienced?","helpText":"Select all that apply","type":"multiselect","options":["Physical violence","Emotional/verbal abuse","Financial control","Isolation from family/friends","Threats","Stalking/monitoring","Sexual abuse","Property destruction","Threats involving children","Threats involving pets"]},{"id":"dv_children","text":"Are children involved or affected?","type":"select","options":["Yes","No","Prefer not to say"]},{"id":"dv_protection_order","text":"Do you have a protection/restraining order?","type":"select","options":["Yes, currently active","Yes, but expired","Applied but denied","No","Not sure"]},{"id":"dv_police_reports","text":"Have you filed any police reports?","type":"select","options":["Yes","No","Tried but was turned away"]},{"id":"dv_safe_contact","text":"Is there a safe way to contact you?","helpText":"Phone, email, or other method that the abuser cannot monitor","type":"textarea"},{"id":"dv_situation","text":"In your own words, describe what has been happening.","helpText":"Take your time. Include dates and details if you can remember them.","type":"textarea","required":true}],"suggestedDocuments":["Photos of injuries or property damage","Screenshots of threatening messages/texts/emails","Police reports or incident numbers","Medical records from related visits","Protection/restraining orders","Witness statements","Journal or diary entries documenting incidents","Financial records showing control","Recordings (where legally permitted)"]},{"id":"custody","label":"Custody / Family Court","icon":"👪","description":"Organize court documents, communication records, and parenting evidence.","safetyNote":null,"questions":[{"id":"cust_status","text":"What is the current custody situation?","type":"select","options":["No custody order yet","Existing order — seeking modification","Emergency custody situation","Visitation dispute","Relocation dispute","Other"],"required":true},{"id":"cust_children_count","text":"How many children are involved?","type":"select","options":["1","2","3","4+"]},{"id":"cust_children_ages","text":"Ages of the children","type":"text"},{"id":"cust_other_parent","text":"Describe the other parent's involvement","type":"textarea"},{"id":"cust_concerns","text":"What are your primary concerns?","type":"multiselect","options":["Child safety","Substance abuse","Domestic violence","Neglect","Parental alienation","Relocation","Financial support","Communication issues","Violation of existing order"]},{"id":"cust_court","text":"Which court is handling (or would handle) the case?","type":"text"},{"id":"cust_situation","text":"Describe the situation in your own words.","helpText":"Include any relevant history and what outcome you are hoping for.","type":"textarea","required":true}],"suggestedDocuments":["Existing court orders","Parenting plan or custody agreement","Communication logs with the other parent","School records","Medical records for children","Photos or evidence of living conditions","Financial records (child support)","Witness statements from family/teachers/counselors","Police reports (if applicable)"]},{"id":"insurance","label":"Insurance Claim Denial","icon":"🛡️","description":"Document your denied claim and build an appeal case.","safetyNote":null,"questions":[{"id":"ins_type","text":"What type of insurance?","type":"select","options":["Health insurance","Auto insurance","Homeowner/renter insurance","Life insurance","Disability insurance","Long-term care","Other"],"required":true},{"id":"ins_company","text":"Insurance company name","type":"text","required":true},{"id":"ins_policy_number","text":"Policy number (if you have it)","type":"text"},{"id":"ins_claim_date","text":"When did you file the claim?","type":"date"},{"id":"ins_denial_date","text":"When was it denied?","type":"date"},{"id":"ins_denial_reason","text":"What reason did they give for the denial?","type":"textarea"},{"id":"ins_appealed","text":"Have you already appealed?","type":"select","options":["No, not yet","Yes, once","Yes, multiple times","Not sure how to"]},{"id":"ins_situation","text":"Describe what happened and what was denied.","helpText":"Include the treatment, repair, or coverage you were seeking.","type":"textarea","required":true}],"suggestedDocuments":["Denial letter from insurance company","Your insurance policy document","Claim submission paperwork","Medical records or bills (for health claims)","Repair estimates (for property claims)","Correspondence with insurance company","Appeal letters (if already submitted)","Doctor's letter of medical necessity","Explanation of Benefits (EOB)"]},{"id":"housing","label":"Housing / Landlord Dispute","icon":"🏠","description":"Document lease violations, repair issues, or eviction concerns.","safetyNote":null,"questions":[{"id":"hous_type","text":"What type of housing issue?","type":"select","options":["Eviction notice","Needed repairs not made","Security deposit dispute","Lease violation by landlord","Discrimination","Habitability issues","Rent increase dispute","Illegal lockout","Other"],"required":true},{"id":"hous_rental_type","text":"Type of housing","type":"select","options":["Apartment","House","Mobile home","Room rental","Public/subsidized housing","Other"]},{"id":"hous_lease","text":"Do you have a written lease?","type":"select","options":["Yes","No — month to month","No — verbal agreement","Not sure"]},{"id":"hous_duration","text":"How long have you lived there?","type":"select","options":["Less than 6 months","6-12 months","1-2 years","2-5 years","More than 5 years"]},{"id":"hous_landlord_contact","text":"Have you contacted the landlord about this?","type":"select","options":["Yes, in writing","Yes, verbally","No","They won't respond"]},{"id":"hous_situation","text":"Describe the situation in your own words.","helpText":"Include dates, what happened, and what you've tried so far.","type":"textarea","required":true}],"suggestedDocuments":["Lease or rental agreement","Eviction notice (if received)","Photos of property conditions/damage","Written communication with landlord","Repair requests (written)","Rent payment receipts","Security deposit receipt","Building inspection reports","Witness statements from neighbors"]},{"id":"workplace","label":"Workplace Retaliation","icon":"💼","description":"Document workplace issues, discrimination, or retaliation.","safetyNote":null,"questions":[{"id":"work_type","text":"What type of workplace issue?","type":"select","options":["Discrimination","Harassment","Retaliation for reporting","Wrongful termination","Wage theft","Unsafe conditions","Disability accommodation denial","FMLA violation","Other"],"required":true},{"id":"work_employer","text":"Employer name","type":"text"},{"id":"work_duration","text":"How long have you worked there?","type":"select","options":["Less than 6 months","6-12 months","1-3 years","3-5 years","More than 5 years","No longer employed there"]},{"id":"work_reported","text":"Have you reported this to HR or management?","type":"select","options":["Yes","No — afraid of retaliation","No — no HR department","Reported to external agency (EEOC, etc.)"]},{"id":"work_filed","text":"Have you filed any formal complaints?","type":"select","options":["No","EEOC charge","State agency complaint","Workers' comp claim","OSHA complaint","Other"]},{"id":"work_situation","text":"Describe what happened.","helpText":"Include dates, names of people involved, and what changed after you reported (if applicable).","type":"textarea","required":true}],"suggestedDocuments":["Employment contract or offer letter","Performance reviews","Written warnings or disciplinary actions","Emails or messages showing discrimination/harassment","HR complaint records","Pay stubs showing wage discrepancies","Medical records (if related to workplace injury/stress)","Witness statements from coworkers","EEOC or agency filings","Termination letter (if applicable)"]}];
+
+// ─── State ───
+const DB_NAME = "luminari_intake_v1";
+const DB_VERSION = 1;
+let db = null;
+let state = {
+  userMode: "",
+  primaryDomain: "",
+  additionalDomains: [],
+  caseName: "",
+  advocateInfo: {},
+  intakeAnswers: {},
+  timeline: [],
+  people: [],
+  attachments: [], // metadata only; blobs stored in IndexedDB
+  evidenceNotes: [],
+  setupComplete: false,
+  createdAt: 0,
+  updatedAt: 0,
+};
+
+// ─── IndexedDB ───
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const idb = e.target.result;
+      if (!idb.objectStoreNames.contains("state")) idb.createObjectStore("state");
+      if (!idb.objectStoreNames.contains("files")) idb.createObjectStore("files");
+    };
+    req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function idbPut(store, key, value) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, "readwrite");
+    tx.objectStore(store).put(value, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function idbGet(store, key) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, "readonly");
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function idbDelete(store, key) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, "readwrite");
+    tx.objectStore(store).delete(key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function idbGetAll(store) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, "readonly");
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function idbGetAllKeys(store) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(store, "readonly");
+    const req = tx.objectStore(store).getAllKeys();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+async function saveState() {
+  state.updatedAt = Date.now();
+  await idbPut("state", "main", state);
+  updateStorageIndicator();
+}
+
+async function loadState() {
+  const saved = await idbGet("state", "main");
+  if (saved) {
+    state = { ...state, ...saved };
+    return true;
+  }
+  return false;
+}
+
+// ─── UUID ───
+function uuid() {
+  return crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+// ─── SHA-256 ───
+async function sha256(buffer) {
+  const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+// ─── Toast ───
+function showToast(message, type = "info") {
+  const existing = document.querySelector(".toast");
+  if (existing) existing.remove();
+  const el = document.createElement("div");
+  el.className = `toast toast-${type}`;
+  el.textContent = message;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ─── Quick Exit ───
+function quickExit() {
+  window.location.replace("https://weather.com");
+}
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") quickExit();
+});
+
+// ─── Tab Navigation ───
+function switchTab(tabId) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === tabId));
+  document.querySelectorAll(".section").forEach(s => s.classList.toggle("active", s.id === `section-${tabId}`));
+  if (tabId === "sync") updateSyncSummary();
+  if (tabId === "files") renderSuggestedDocs();
+}
+document.getElementById("nav-tabs").addEventListener("click", (e) => {
+  if (e.target.classList.contains("tab")) {
+    if (!state.setupComplete && e.target.dataset.tab !== "setup") {
+      showToast("Please complete setup first", "error");
+      return;
+    }
+    switchTab(e.target.dataset.tab);
+  }
+});
+
+// ─── Setup ───
+function populateDomains() {
+  const sel = document.getElementById("primary-domain");
+  DOMAINS.forEach(d => {
+    const opt = document.createElement("option");
+    opt.value = d.id;
+    opt.textContent = `${d.icon} ${d.label}`;
+    sel.appendChild(opt);
+  });
+}
+
+function onUserModeChange() {
+  const mode = document.getElementById("user-mode").value;
+  state.userMode = mode;
+  document.getElementById("advocate-fields").style.display = mode === "advocate_supported" ? "block" : "none";
+  saveState();
+}
+
+function onDomainChange() {
+  const domain = document.getElementById("primary-domain").value;
+  state.primaryDomain = domain;
+
+  // Show additional domains
+  const section = document.getElementById("additional-domains-section");
+  const container = document.getElementById("additional-domains");
+  container.innerHTML = "";
+  if (domain) {
+    section.style.display = "block";
+    DOMAINS.filter(d => d.id !== domain).forEach(d => {
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = d.id;
+      input.onchange = () => {
+        state.additionalDomains = Array.from(container.querySelectorAll("input:checked")).map(i => i.value);
+        saveState();
+      };
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(`${d.icon} ${d.label}`));
+      container.appendChild(label);
+    });
+  } else {
+    section.style.display = "none";
+  }
+  saveState();
+}
+
+function completeSetup() {
+  const mode = document.getElementById("user-mode").value;
+  const domain = document.getElementById("primary-domain").value;
+  const caseName = document.getElementById("case-name").value.trim();
+
+  if (!mode) { showToast("Please select how you're using this tool", "error"); return; }
+  if (!domain) { showToast("Please select your situation type", "error"); return; }
+  if (!caseName) { showToast("Please give your case a name", "error"); return; }
+
+  state.userMode = mode;
+  state.primaryDomain = domain;
+  state.caseName = caseName;
+  state.setupComplete = true;
+  if (!state.createdAt) state.createdAt = Date.now();
+
+  if (mode === "advocate_supported") {
+    state.advocateInfo = {
+      name: document.getElementById("advocate-name").value.trim(),
+      organization: document.getElementById("advocate-org").value.trim(),
+      phone: document.getElementById("advocate-phone").value.trim(),
+      email: document.getElementById("advocate-email").value.trim(),
+    };
+  }
+
+  saveState();
+  renderDomainQuestions();
+  switchTab("intake");
+  showToast("Setup complete! Tell us about your situation.", "success");
+}
+
+// ─── Domain Questions ───
+function renderDomainQuestions() {
+  const container = document.getElementById("domain-questions");
+  const domain = DOMAINS.find(d => d.id === state.primaryDomain);
+  if (!domain) return;
+
+  document.getElementById("intake-title").textContent = `${domain.icon} ${domain.label}`;
+
+  // Safety note
+  const banner = document.getElementById("safety-note-banner");
+  if (domain.safetyNote) {
+    banner.innerHTML = `<div class="safety-banner">${domain.safetyNote}</div>`;
+  } else {
+    banner.innerHTML = "";
+  }
+
+  let html = "";
+  domain.questions.forEach(q => {
+    const saved = state.intakeAnswers[q.id] || "";
+    const reqClass = q.required ? "required" : "";
+
+    if (q.type === "textarea") {
+      html += `<label class="${reqClass}">${q.text}</label>`;
+      if (q.helpText) html += `<p class="help-text">${q.helpText}</p>`;
+      html += `<textarea id="q-${q.id}" rows="4">${saved}</textarea>`;
+    } else if (q.type === "select") {
+      html += `<label class="${reqClass}">${q.text}</label>`;
+      if (q.helpText) html += `<p class="help-text">${q.helpText}</p>`;
+      html += `<select id="q-${q.id}"><option value="">Select...</option>`;
+      q.options.forEach(o => {
+        html += `<option value="${o}" ${saved === o ? "selected" : ""}>${o}</option>`;
+      });
+      html += `</select>`;
+    } else if (q.type === "multiselect") {
+      html += `<label class="${reqClass}">${q.text}</label>`;
+      if (q.helpText) html += `<p class="help-text">${q.helpText}</p>`;
+      const selectedArr = Array.isArray(saved) ? saved : [];
+      html += `<div class="multiselect">`;
+      q.options.forEach(o => {
+        html += `<label><input type="checkbox" value="${o}" data-qid="${q.id}" ${selectedArr.includes(o) ? "checked" : ""}>${o}</label>`;
+      });
+      html += `</div>`;
+    } else if (q.type === "date") {
+      html += `<label class="${reqClass}">${q.text}</label>`;
+      html += `<input type="date" id="q-${q.id}" value="${saved}">`;
+    } else {
+      html += `<label class="${reqClass}">${q.text}</label>`;
+      if (q.helpText) html += `<p class="help-text">${q.helpText}</p>`;
+      html += `<input type="text" id="q-${q.id}" value="${saved}">`;
+    }
+  });
+  container.innerHTML = html;
+}
+
+function saveIntakeAnswers() {
+  const domain = DOMAINS.find(d => d.id === state.primaryDomain);
+  if (!domain) return;
+
+  domain.questions.forEach(q => {
+    if (q.type === "multiselect") {
+      const checks = document.querySelectorAll(`input[data-qid="${q.id}"]:checked`);
+      state.intakeAnswers[q.id] = Array.from(checks).map(c => c.value);
+    } else {
+      const el = document.getElementById(`q-${q.id}`);
+      if (el) state.intakeAnswers[q.id] = el.value;
+    }
+  });
+  saveState();
+  showToast("Answers saved", "success");
+}
+
+// ─── Timeline ───
+function renderTimeline() {
+  const container = document.getElementById("timeline-list");
+  if (state.timeline.length === 0) {
+    container.innerHTML = `<p style="color:var(--fg2);font-size:.85rem;text-align:center;padding:16px">No events added yet.</p>`;
+    return;
+  }
+  const sorted = [...state.timeline].sort((a, b) => a.date.localeCompare(b.date));
+  container.innerHTML = sorted.map(e => `
+    <div class="list-item">
+      <div class="meta">
+        <h4>${e.title}</h4>
+        <p><span class="badge badge-info">${e.date}</span> ${e.description || ""}</p>
+      </div>
+      <div class="actions">
+        <button class="btn btn-danger btn-sm" onclick="removeTimeline('${e.id}')">&times;</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function addTimelineEntry() {
+  const date = document.getElementById("tl-date").value;
+  const title = document.getElementById("tl-title").value.trim();
+  const desc = document.getElementById("tl-desc").value.trim();
+
+  if (!date || !title) { showToast("Date and title are required", "error"); return; }
+
+  state.timeline.push({ id: uuid(), date, title, description: desc, source: "intake_bundle" });
+  saveState();
+  renderTimeline();
+  document.getElementById("tl-date").value = "";
+  document.getElementById("tl-title").value = "";
+  document.getElementById("tl-desc").value = "";
+  showToast("Event added", "success");
+}
+
+function removeTimeline(id) {
+  state.timeline = state.timeline.filter(e => e.id !== id);
+  saveState();
+  renderTimeline();
+}
+
+// ─── People ───
+function renderPeople() {
+  const container = document.getElementById("people-list");
+  if (state.people.length === 0) {
+    container.innerHTML = `<p style="color:var(--fg2);font-size:.85rem;text-align:center;padding:16px">No people added yet.</p>`;
+    return;
+  }
+  container.innerHTML = state.people.map(p => `
+    <div class="list-item">
+      <div class="meta">
+        <h4>${p.name}</h4>
+        <p><span class="badge badge-info">${p.role}</span> ${p.relationship || ""}${p.contact ? ` | ${p.contact}` : ""}</p>
+      </div>
+      <div class="actions">
+        <button class="btn btn-danger btn-sm" onclick="removePerson('${p.id}')">&times;</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function addPerson() {
+  const name = document.getElementById("ppl-name").value.trim();
+  const role = document.getElementById("ppl-role").value;
+  const relationship = document.getElementById("ppl-relationship").value.trim();
+  const contact = document.getElementById("ppl-contact").value.trim();
+
+  if (!name) { showToast("Name is required", "error"); return; }
+
+  state.people.push({ id: uuid(), name, role, relationship, contact });
+  saveState();
+  renderPeople();
+  document.getElementById("ppl-name").value = "";
+  document.getElementById("ppl-relationship").value = "";
+  document.getElementById("ppl-contact").value = "";
+  showToast("Person added", "success");
+}
+
+function removePerson(id) {
+  state.people = state.people.filter(p => p.id !== id);
+  saveState();
+  renderPeople();
+}
+
+// ─── Files ───
+function renderSuggestedDocs() {
+  const container = document.getElementById("suggested-docs");
+  const domain = DOMAINS.find(d => d.id === state.primaryDomain);
+  if (!domain || !domain.suggestedDocuments.length) { container.innerHTML = ""; return; }
+
+  container.innerHTML = `
+    <div style="margin-bottom:16px;padding:12px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border)">
+      <h3 style="font-size:.85rem;margin-bottom:8px;color:var(--accent2)">Suggested documents for ${domain.label}:</h3>
+      <ul style="list-style:disc;padding-left:20px;font-size:.8rem;color:var(--fg2)">
+        ${domain.suggestedDocuments.map(d => `<li>${d}</li>`).join("")}
+      </ul>
+    </div>
+  `;
+}
+
+function renderFiles() {
+  const container = document.getElementById("file-list");
+  if (state.attachments.length === 0) {
+    container.innerHTML = "";
+    return;
+  }
+  container.innerHTML = state.attachments.map(f => `
+    <div class="list-item">
+      <div class="meta">
+        <h4>${f.filename}</h4>
+        <p>${(f.size / 1024).toFixed(1)} KB | ${f.mimeType}${f.notes ? ` | ${f.notes}` : ""}</p>
+      </div>
+      <div class="actions">
+        <button class="btn btn-secondary btn-sm" onclick="addFileNote('${f.id}')">Note</button>
+        <button class="btn btn-danger btn-sm" onclick="removeFile('${f.id}')">&times;</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+async function handleFiles(fileList) {
+  if (state.attachments.length + fileList.length > 20) {
+    showToast("Maximum 20 files allowed", "error");
+    return;
+  }
+
+  for (const file of fileList) {
+    if (file.size > 100 * 1024 * 1024) {
+      showToast(`${file.name} is too large (max 100MB)`, "error");
+      continue;
+    }
+
+    const buffer = await file.arrayBuffer();
+    const hash = await sha256(buffer);
+    const id = uuid();
+
+    // Store blob in IndexedDB
+    await idbPut("files", id, new Uint8Array(buffer));
+
+    state.attachments.push({
+      id,
+      filename: file.name,
+      mimeType: file.type || "application/octet-stream",
+      size: file.size,
+      sha256: hash,
+      capturedAt: Date.now(),
+      notes: "",
+    });
+  }
+
+  await saveState();
+  renderFiles();
+  showToast(`${fileList.length} file(s) added`, "success");
+  document.getElementById("file-input").value = "";
+}
+
+function addFileNote(id) {
+  const att = state.attachments.find(a => a.id === id);
+  if (!att) return;
+  const note = prompt("Add a note about this file:", att.notes || "");
+  if (note !== null) {
+    att.notes = note;
+    saveState();
+    renderFiles();
+  }
+}
+
+async function removeFile(id) {
+  state.attachments = state.attachments.filter(a => a.id !== id);
+  await idbDelete("files", id);
+  await saveState();
+  renderFiles();
+  showToast("File removed", "info");
+}
+
+// ─── Drag & Drop ───
+const fileDrop = document.getElementById("file-drop");
+fileDrop.addEventListener("dragover", (e) => { e.preventDefault(); fileDrop.classList.add("dragover"); });
+fileDrop.addEventListener("dragleave", () => fileDrop.classList.remove("dragover"));
+fileDrop.addEventListener("drop", (e) => {
+  e.preventDefault();
+  fileDrop.classList.remove("dragover");
+  if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+});
+
+// ─── Evidence Notes ───
+function renderNotes() {
+  const container = document.getElementById("notes-list");
+  if (state.evidenceNotes.length === 0) {
+    container.innerHTML = `<p style="color:var(--fg2);font-size:.85rem;text-align:center;padding:16px">No notes yet.</p>`;
+    return;
+  }
+  container.innerHTML = state.evidenceNotes.map(n => `
+    <div class="list-item">
+      <div class="meta">
+        <p style="white-space:pre-wrap;font-size:.85rem">${n.content}</p>
+        <p style="font-size:.7rem;color:var(--fg2);margin-top:4px">${new Date(n.createdAt).toLocaleString()}</p>
+      </div>
+      <div class="actions">
+        <button class="btn btn-danger btn-sm" onclick="removeNote('${n.id}')">&times;</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function addNote() {
+  const content = document.getElementById("note-content").value.trim();
+  if (!content) { showToast("Please write a note first", "error"); return; }
+
+  state.evidenceNotes.push({ id: uuid(), content, createdAt: Date.now() });
+  saveState();
+  renderNotes();
+  document.getElementById("note-content").value = "";
+  showToast("Note added", "success");
+}
+
+function removeNote(id) {
+  state.evidenceNotes = state.evidenceNotes.filter(n => n.id !== id);
+  saveState();
+  renderNotes();
+}
+
+// ─── Sync Summary ───
+function updateSyncSummary() {
+  const container = document.getElementById("sync-summary");
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+      <div style="background:var(--bg);padding:12px;border-radius:var(--radius);text-align:center">
+        <div style="font-size:1.5rem;font-weight:700;color:var(--accent)">${state.timeline.length}</div>
+        <div style="font-size:.75rem;color:var(--fg2)">Timeline Events</div>
+      </div>
+      <div style="background:var(--bg);padding:12px;border-radius:var(--radius);text-align:center">
+        <div style="font-size:1.5rem;font-weight:700;color:var(--accent)">${state.people.length}</div>
+        <div style="font-size:.75rem;color:var(--fg2)">People</div>
+      </div>
+      <div style="background:var(--bg);padding:12px;border-radius:var(--radius);text-align:center">
+        <div style="font-size:1.5rem;font-weight:700;color:var(--accent)">${state.attachments.length}</div>
+        <div style="font-size:.75rem;color:var(--fg2)">Files</div>
+      </div>
+      <div style="background:var(--bg);padding:12px;border-radius:var(--radius);text-align:center">
+        <div style="font-size:1.5rem;font-weight:700;color:var(--accent)">${state.evidenceNotes.length}</div>
+        <div style="font-size:.75rem;color:var(--fg2)">Notes</div>
+      </div>
+    </div>
+    <p style="font-size:.85rem;color:var(--fg2);margin-bottom:8px">
+      <strong>Case:</strong> ${state.caseName || "Unnamed"}<br>
+      <strong>Domain:</strong> ${DOMAINS.find(d => d.id === state.primaryDomain)?.label || "Not set"}
+    </p>
+  `;
+}
+
+// ─── Upload to Luminari ───
+async function uploadToLuminari() {
+  const url = document.getElementById("sync-url").value.trim();
+  if (!url) { showToast("Please enter your Luminari URL", "error"); return; }
+
+  const statusEl = document.getElementById("sync-status");
+  const btn = document.getElementById("upload-btn");
+  btn.disabled = true;
+  btn.textContent = "Uploading...";
+  statusEl.style.display = "block";
+  statusEl.innerHTML = `<p style="color:var(--accent)">Preparing upload...</p>`;
+
+  try {
+    // Build manifest
+    const manifest = buildManifest();
+
+    // Build FormData
+    const formData = new FormData();
+    formData.append("manifest", JSON.stringify(manifest));
+
+    // Add file blobs
+    for (const att of state.attachments) {
+      const blob = await idbGet("files", att.id);
+      if (blob) {
+        formData.append("files", new Blob([blob], { type: att.mimeType }), att.filename);
+      }
+    }
+
+    statusEl.innerHTML = `<p style="color:var(--accent)">Uploading ${state.attachments.length} files...</p>`;
+
+    const response = await fetch(`${url.replace(/\/+$/, "")}/api/bundle-sync`, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+
+    const result = await response.json();
+
+    if (response.ok && result.success) {
+      statusEl.innerHTML = `
+        <div style="background:var(--success);color:#fff;padding:16px;border-radius:var(--radius)">
+          <h3 style="margin-bottom:8px">Upload Successful!</h3>
+          <p>Case "${result.summary.caseName}" created.</p>
+          <p>${result.summary.documentsUploaded} documents uploaded and queued for analysis.</p>
+          <p>${result.summary.eventsCreated} timeline events imported.</p>
+          <p>${result.summary.entitiesCreated} people imported.</p>
+          <p style="margin-top:12px">You can now close this page and view your case in Luminari.</p>
+        </div>
+      `;
+    } else {
+      throw new Error(result.error || "Upload failed");
+    }
+  } catch (err) {
+    statusEl.innerHTML = `
+      <div style="background:var(--danger);color:#fff;padding:16px;border-radius:var(--radius)">
+        <h3 style="margin-bottom:8px">Upload Failed</h3>
+        <p>${err.message}</p>
+        <p style="margin-top:8px;font-size:.85rem">Make sure you are logged in to Luminari and the URL is correct. You can also save a backup file and import it manually.</p>
+      </div>
+    `;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Upload Case to Luminari";
+  }
+}
+
+// ─── Build Manifest ───
+function buildManifest() {
+  const domain = DOMAINS.find(d => d.id === state.primaryDomain);
+
+  // Build situation notes from intake answers
+  let situationNotes = "";
+  if (domain) {
+    domain.questions.forEach(q => {
+      const answer = state.intakeAnswers[q.id];
+      if (answer && (Array.isArray(answer) ? answer.length > 0 : answer.length > 0)) {
+        situationNotes += `${q.text}\n${Array.isArray(answer) ? answer.join(", ") : answer}\n\n`;
+      }
+    });
+  }
+
+  const manifest = {
+    bundleVersion: "1.0.0",
+    luminariVersion: "READ v4.1.0 | model=gemini-2.5-flash | temp=0",
+    createdAt: state.createdAt || Date.now(),
+    updatedAt: Date.now(),
+    manifestHash: "", // Computed below
+    userMode: state.userMode || "independent",
+    caseContext: {
+      name: state.caseName,
+      description: situationNotes.trim(),
+      primaryDomain: state.primaryDomain,
+      additionalDomains: state.additionalDomains || [],
+      situationNotes: situationNotes.trim(),
+    },
+    timeline: state.timeline,
+    people: state.people,
+    attachments: state.attachments,
+    evidenceNotes: state.evidenceNotes,
+    advocateInfo: state.userMode === "advocate_supported" ? state.advocateInfo : undefined,
+    syncMode: "manual",
+    encryption: null,
+    emergencyAlert: null,
+  };
+
+  // Compute manifest hash
+  const hashPayload = JSON.stringify({
+    caseContext: manifest.caseContext,
+    timeline: manifest.timeline,
+    people: manifest.people,
+    attachments: manifest.attachments.map(a => ({ id: a.id, filename: a.filename, sha256: a.sha256, size: a.size })),
+    evidenceNotes: manifest.evidenceNotes,
+    userMode: manifest.userMode,
+  });
+  // Simple hash for offline use (real SHA-256 computed during sync)
+  let hash = 0;
+  for (let i = 0; i < hashPayload.length; i++) {
+    hash = ((hash << 5) - hash + hashPayload.charCodeAt(i)) | 0;
+  }
+  manifest.manifestHash = "bundle-hash-" + Math.abs(hash).toString(16);
+
+  return manifest;
+}
+
+// ─── Backup Save/Load ───
+async function saveBackup() {
+  const manifest = buildManifest();
+  const backup = { manifest, files: {} };
+
+  // Include file blobs as base64
+  for (const att of state.attachments) {
+    const blob = await idbGet("files", att.id);
+    if (blob) {
+      backup.files[att.id] = btoa(String.fromCharCode(...new Uint8Array(blob)));
+    }
+  }
+
+  const json = JSON.stringify(backup);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "notes.luminari";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Backup saved", "success");
+}
+
+function loadBackup() {
+  document.getElementById("backup-input").click();
+}
+
+async function handleBackupLoad(files) {
+  if (!files.length) return;
+  try {
+    const text = await files[0].text();
+    const backup = JSON.parse(text);
+
+    if (!backup.manifest || !backup.manifest.caseContext) {
+      showToast("Invalid backup file", "error");
+      return;
+    }
+
+    // Restore state from manifest
+    const m = backup.manifest;
+    state.userMode = m.userMode || "independent";
+    state.primaryDomain = m.caseContext.primaryDomain;
+    state.additionalDomains = m.caseContext.additionalDomains || [];
+    state.caseName = m.caseContext.name;
+    state.advocateInfo = m.advocateInfo || {};
+    state.timeline = m.timeline || [];
+    state.people = m.people || [];
+    state.attachments = m.attachments || [];
+    state.evidenceNotes = m.evidenceNotes || [];
+    state.setupComplete = true;
+    state.createdAt = m.createdAt;
+    state.updatedAt = Date.now();
+
+    // Restore file blobs
+    if (backup.files) {
+      for (const [id, b64] of Object.entries(backup.files)) {
+        const binary = atob(b64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        await idbPut("files", id, bytes);
+      }
+    }
+
+    await saveState();
+    restoreUI();
+    showToast("Backup loaded successfully", "success");
+  } catch (err) {
+    showToast("Failed to load backup: " + err.message, "error");
+  }
+  document.getElementById("backup-input").value = "";
+}
+
+// ─── Clear Data ───
+async function clearAllData() {
+  if (!confirm("Are you sure you want to permanently delete ALL data from this device?\n\nThis cannot be undone.")) return;
+  if (!confirm("This will delete your case, timeline, people, files, and notes. Are you absolutely sure?")) return;
+
+  try {
+    const keys = await idbGetAllKeys("files");
+    for (const key of keys) await idbDelete("files", key);
+    await idbDelete("state", "main");
+  } catch (e) {
+    // Fallback: delete entire database
+    indexedDB.deleteDatabase(DB_NAME);
+  }
+
+  window.location.replace("https://weather.com");
+}
+
+// ─── Storage Indicator ───
+async function updateStorageIndicator() {
+  try {
+    if (navigator.storage && navigator.storage.estimate) {
+      const est = await navigator.storage.estimate();
+      const usedMB = ((est.usage || 0) / (1024 * 1024)).toFixed(1);
+      const limitMB = Math.min(200, ((est.quota || 0) / (1024 * 1024))).toFixed(0);
+      const pct = est.quota ? Math.min(100, ((est.usage || 0) / est.quota) * 100).toFixed(1) : 0;
+      document.getElementById("storage-used").textContent = usedMB;
+      document.getElementById("storage-limit").textContent = limitMB;
+      document.getElementById("storage-pct").textContent = pct + "%";
+      document.getElementById("storage-fill").style.width = pct + "%";
+      if (pct > 80) document.getElementById("storage-fill").style.background = "var(--warning)";
+      if (pct > 95) document.getElementById("storage-fill").style.background = "var(--danger)";
+    }
+  } catch (e) { /* ignore */ }
+}
+
+// ─── Private Browsing Detection ───
+async function detectPrivateBrowsing() {
+  try {
+    if (navigator.storage && navigator.storage.estimate) {
+      const est = await navigator.storage.estimate();
+      // Most browsers limit storage to ~120MB in private mode
+      if (est.quota && est.quota < 200 * 1024 * 1024) {
+        document.getElementById("private-warning").style.display = "block";
+      }
+    }
+  } catch (e) {
+    document.getElementById("private-warning").style.display = "block";
+  }
+}
+
+// ─── Restore UI from saved state ───
+function restoreUI() {
+  if (state.userMode) document.getElementById("user-mode").value = state.userMode;
+  if (state.primaryDomain) document.getElementById("primary-domain").value = state.primaryDomain;
+  if (state.caseName) document.getElementById("case-name").value = state.caseName;
+  if (state.userMode === "advocate_supported") {
+    document.getElementById("advocate-fields").style.display = "block";
+    document.getElementById("advocate-name").value = state.advocateInfo.name || "";
+    document.getElementById("advocate-org").value = state.advocateInfo.organization || "";
+    document.getElementById("advocate-phone").value = state.advocateInfo.phone || "";
+    document.getElementById("advocate-email").value = state.advocateInfo.email || "";
+  }
+  onDomainChange();
+  if (state.setupComplete) {
+    renderDomainQuestions();
+  }
+  renderTimeline();
+  renderPeople();
+  renderFiles();
+  renderNotes();
+}
+
+// ─── Request Persistent Storage ───
+async function requestPersistentStorage() {
+  try {
+    if (navigator.storage && navigator.storage.persist) {
+      await navigator.storage.persist();
+    }
+  } catch (e) { /* ignore */ }
+}
+
+// ─── Autosave (every 30 seconds) ───
+setInterval(() => {
+  if (state.setupComplete) {
+    saveIntakeAnswers();
+  }
+}, 30000);
+
+// ─── Init ───
+async function init() {
+  try {
+    await openDB();
+    const hadState = await loadState();
+    populateDomains();
+
+    if (hadState && state.setupComplete) {
+      restoreUI();
+      showToast("Welcome back! Your progress has been restored.", "info");
+    }
+
+    await detectPrivateBrowsing();
+    await requestPersistentStorage();
+    await updateStorageIndicator();
+  } catch (err) {
+    console.error("Init error:", err);
+    showToast("Error initializing. Try refreshing the page.", "error");
+  }
+}
+
+init();
+</script>
+</body>
+</html>

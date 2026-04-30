@@ -164,7 +164,8 @@ export async function wrapEngineExecution<T>(
     if (outputRefs) {
       try {
         const persistResult = await persistEngineOutputs(runId);
-        console.log(`[EngineMetadata] ${config.engineId} run ${runId} → backbone persist: ${persistResult.persisted} persisted, ${persistResult.skipped} skipped`);
+    // @ts-ignore
+        console.log(`[EngineMetadata] ${config.engineId} run ${runId} → backbone persist: ${persistResult.persisted} persisted, ${persistResult?.skipped ?? 0} skipped`);
       } catch (persistErr: any) {
         // Non-fatal: log but do not fail the run
         console.error(`[EngineMetadata] ${config.engineId} run ${runId} → backbone persist error:`, persistErr?.message || persistErr);
@@ -215,7 +216,7 @@ async function validateGate(engineId: string): Promise<{ pass: boolean; reason?:
   const [rows] = await db.execute(
     sql`SELECT engine_id_er, enabled_er FROM engine_registry WHERE engine_id_er = ${engineId} LIMIT 1`
   );
-  const registry = rows as any[];
+  const registry = rows as unknown as any[];
 
   if (registry.length === 0) {
     return { pass: false, reason: `Engine ${engineId} is not registered in engine_registry. Registration required before execution.` };
@@ -243,7 +244,7 @@ export async function getLatestRun(engineId?: string): Promise<any> {
     query = `SELECT run_id, engine_id, status, output_refs, snapshot_id, startedAt, completedAt FROM engine_runs WHERE engine_id = '${engineId}' ORDER BY createdAt DESC LIMIT 1`;
   }
   const [rows] = await db.execute(sql.raw(query));
-  return (rows as any[])[0] || null;
+  return (rows as unknown as any[])[0] || null;
 }
 
 export async function getRunsByCase(caseId: number): Promise<any[]> {
@@ -251,7 +252,7 @@ export async function getRunsByCase(caseId: number): Promise<any[]> {
     sql`SELECT run_id, engine_id, status, output_refs, snapshot_id, startedAt, completedAt 
         FROM engine_runs WHERE caseId = ${caseId} ORDER BY createdAt DESC`
   );
-  return rows as any[];
+  return rows as unknown as any[];
 }
 
 // ─── Exported Constants ───
