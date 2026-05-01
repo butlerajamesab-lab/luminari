@@ -1,0 +1,76 @@
+{
+  "source": {
+    "source_key": "wa_dshs_office_locator",
+    "source_name": "Washington DSHS Office Locator",
+    "source_owner": "Washington State Department of Social and Health Services",
+    "source_type": "government_api",
+    "base_url": "https://www.dshs.wa.gov",
+    "documentation_url": "https://www.dshs.wa.gov/office-locations",
+    "jurisdiction_scope": "washington",
+    "geographic_scope": "state",
+    "domain": "benefits_access",
+    "auth_type": "none",
+    "requires_secret": false,
+    "freshness_expectation": "weekly"
+  },
+  "pull_run": {
+    "run_key": "wa_dshs_office_locator_2026_05_01_001",
+    "connector_version": "1.0.0",
+    "parser_version": "1.0.0",
+    "normalization_version": "1.0.0",
+    "started_at": "2026-05-01T00:00:00.000Z",
+    "finished_at": "2026-05-01T00:01:10.000Z",
+    "status": "success",
+    "request_url": "https://www.dshs.wa.gov/office-locations",
+    "request_method": "GET",
+    "request_params": {},
+    "request_headers_safe": {},
+    "response_status": 200,
+    "response_content_type": "application/json",
+    "response_record_count": 1,
+    "source_snapshot_hash": "sha256_source_snapshot_example",
+    "response_body_hash": "sha256_response_body_example"
+  },
+  "records": [
+    {
+      "external_record_id": "dshs-office-example-001",
+      "external_record_url": "https://www.dshs.wa.gov/office-locations",
+      "source_table_or_endpoint": "office_locator",
+      "raw_payload": {
+        "name": "Example Community Services Office",
+        "agency": "Washington DSHS",
+        "address": "123 Example St",
+        "city": "Seattle",
+        "state": "WA",
+        "zip": "98118",
+        "phone": "206-000-0000",
+        "services": ["SNAP", "TANF", "Medicaid support"]
+      },
+      "raw_payload_hash": "sha256_raw_payload_example",
+      "record_fingerprint": "sha256_wa_dshs_office_locator_example_001",
+      "normalized": {
+        "resource_type": "benefit_office",
+        "name": "Example Community Services Office",
+        "description": "Washington DSHS community service access point.",
+        "organization_name": "Washington DSHS",
+        "agency_name": "Washington State Department of Social and Health Services",
+        "address_line1": "123 Example St",
+        "city": "Seattle",
+        "county": "King",
+        "state": "WA",
+        "postal_code": "98118",
+        "country": "US",
+        "geocode_precision": "unmapped",
+        "phone": "206-000-0000",
+        "website_url": "https://www.dshs.wa.gov/office-locations",
+        "service_categories": ["snap", "tanf", "medicaid", "benefits_access"],
+        "eligibility_summary": "Access point for public benefit services.",
+        "hours": {},
+        "languages": [],
+        "accessibility_features": [],
+        "normalization_confidence": 0.82,
+        "normalization_notes": "Example normalized from DSHS office locator payload."
+      }
+    }
+  ]
+}
