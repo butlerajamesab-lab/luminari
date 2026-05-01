@@ -36,7 +36,9 @@ jobs:
     timeout-minutes: 15
 
     env:
-      NODE_ENV: production
+      # Note: do NOT set NODE_ENV=production here — npm skips devDependencies
+      # under that env, and vite (needed by `npm run build`) lives in devDeps.
+      NODE_ENV: development
       # Supabase staging project: wepxlinwbjrkqdzkqpar
       # Build-time env so any client bundle that needs these doesn't crash;
       # safe to leave unset — they're only required at runtime in Manus.
