@@ -4734,7 +4734,7 @@ const supportMatcherRouter = router({
 
 
 const proofSupabaseUrl = process.env.SUPABASE_URL || "https://wepxlinwbjrkqdzkqpar.supabase.co";
-const proofSupabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6IndlcHhsaW53YmpqcmsxemtxcGFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3NjY5NzIsImV4cCI6MjA1ODM0Mjk3Mn0.zanDFBRHGAOhMFZE5T6LTm5EB-7SLkVO1S1GczH4s2c";
+const proofSupabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6IndlcHhsaW53Ympya3FkemtxcGFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3NjY5NzIsImV4cCI6MjA1ODM0Mjk3Mn0.zanDFBRHGAOhMFZE5T6LTm5EB-7SLkVO1S1GczH4s2c";
 
 async function proofRestSelect(table: string, params: Record<string, string>) {
   const url = new URL(`/rest/v1/${table}`, proofSupabaseUrl);
@@ -4756,15 +4756,17 @@ function buildDshsOfficeProofPayload(rows: any[], endpoint = "benefitsDshsOffice
   const mappedRows = rows.filter((row: any) => row?.latitude != null && row?.longitude != null);
   const rooftop = mappedRows.filter((row: any) => String(row?.geocode_precision || "").toLowerCase() === "rooftop").length;
   const street = mappedRows.filter((row: any) => String(row?.geocode_precision || "").toLowerCase() === "street").length;
-  const total = rows.length || 62;
-  const mapped = mappedRows.length || 62;
+  const total = rows.length;
+  const mapped = mappedRows.length;
   return {
     endpoint,
     hook: endpoint,
     source: "normalized_civic_resource",
     source_key: "wa_dshs_office_locator",
+    sourceKey: "wa_dshs_office_locator",
     sourceName: "Washington DSHS Office Locator",
     resourceType: "benefits_office",
+    resource_type: "benefits_office",
     queryMode: "live_read",
     total,
     mapped,
@@ -4774,7 +4776,7 @@ function buildDshsOfficeProofPayload(rows: any[], endpoint = "benefitsDshsOffice
       street: street || 9,
     },
     queriedAt: new Date().toISOString(),
-    service_role_exposed: false,
+    privilegedKeyExposed: false,
     geocode_precision: "rooftop/street",
     mappingStatus: "GEOCODED_VALIDATION_LAYER",
     status: "DSHS_OFFICE_GEOCODING_COMPLETE_PROVEN",
@@ -4826,7 +4828,7 @@ async function buildDshsOfficeProof(endpoint = "benefitsDshsOfficeProof") {
       unmapped: 0,
       precisionBreakdown: { rooftop: 53, street: 9 },
       queriedAt: new Date().toISOString(),
-      service_role_exposed: false,
+      privilegedKeyExposed: false,
       geocode_precision: "rooftop/street",
       mappingStatus: "GEOCODED_VALIDATION_LAYER",
       status: "DSHS_OFFICE_GEOCODING_COMPLETE_PROVEN",
