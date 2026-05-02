@@ -145,6 +145,102 @@ async function safeSelect<T>(table: string, limit: number, offset: number, where
   }
 }
 
+async function queryRows<T = any>(sql: string, values: unknown[] = []): Promise<T[]> {
+  const result = await getPool().query(sql, values);
+  return result.rows as T[];
+}
+
+function precisionBreakdown(rows: any[]) {
+  return rows.reduce((acc: Record<string, number>, row: any) => {
+    const key = row.geocode_precision || "unknown";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function publicProofResponse(extra: Record<string, any>) {
+  return {
+    ok: true,
+    supabaseProject: SUPABASE_PROJECT,
+    queryMode: "live_read",
+    queriedAt: new Date().toISOString(),
+    service_role_exposed: false,
+    ...extra,
+  };
+}
+
+async function getVerifiedFoodBanks() {
+  return queryRows(`
+    select
+      bridge_record_id as id,
+      atlas_resource_id,
+      name,
+      resource_type,
+      address,
+      city,
+      state,
+      phone,
+      url,
+      lat,
+      lon,
+      source_table,
+      source_id,
+      extra_json,
+      bridge_version,
+      bridge_metadata,
+      verification_status,
+      bridged_at,
+      created_at,
+      updated_at
+    from atlas_lighthouse_resource_bridge_v1
+    where resource_type = 'food_bank'
+      and verification_status = 'verified'
+    order by name asc
+  `);
+}
+
+async function getDshsBenefitsOffices(onlyMapped = false) {
+  return queryRows(`
+    select
+      n.id,
+      n.name,
+      n.resource_type,
+      n.description,
+      n.organization_name,
+      n.agency_name,
+      n.address_line1,
+      n.address_line2,
+      n.city,
+      n.county,
+      n.state,
+      n.postal_code,
+      n.country,
+      n.latitude,
+      n.longitude,
+      n.geocode_precision,
+      n.phone,
+      n.email,
+      n.website_url,
+      n.service_categories,
+      n.eligibility_summary,
+      n.normalized_payload,
+      n.normalization_confidence,
+      n.normalization_notes,
+      n.created_at,
+      n.updated_at,
+      s.source_key,
+      s.source_name,
+      s.source_owner,
+      s.domain
+    from normalized_civic_resource n
+    join api_source_registry s on s.id = n.source_id
+    where s.source_key = 'wa_dshs_office_locator'
+      and n.resource_type = 'benefits_office'
+      ${onlyMapped ? "and n.latitude is not null and n.longitude is not null" : ""}
+    order by n.city asc, n.name asc
+  `);
+}
+
 const suggestionsRouter = router({
   list: publicProcedure
     .input(z.object({
@@ -253,6 +349,75 @@ export const lighthouseGateRouter = router({
     ok: true,
     supabaseProject: SUPABASE_PROJECT,
   })),
+
+  benefitsResourceDirectoryProof: publicProcedure.query(async () => {
+    const resources = await getVerifiedFoodBanks();
+    const mapped = resources.filter((r: any) => r.lat != null && r.lon != null).length;
+    const unmapped = resources.length - mapped;
+    return publicProofResponse({
+      source: "atlas_lighthouse_resource_bridge_v1",
+      resource_type: "food_bank",
+      total: resources.length,
+      verifiedTotal: resources.length,
+      mapped,
+      unmapped,
+      resources,
+      bridgeVersion: resources[0]?.bridge_version ?? "atlas_lighthouse_resource_bridge_v1",
+      sampleBridgedAt: resources[0]?.bridged_at ?? null,
+    });
+  }),
+
+  civicMapResourceProof: publicProcedure.query(async () => {
+    const resources = await getVerifiedFoodBanks();
+    const mapped = resources.filter((r: any) => r.lat != null && r.lon != null).length;
+    const unmapped = resources.length - mapped;
+    return publicProofResponse({
+      source: "atlas_lighthouse_resource_bridge_v1",
+      resource_type: "food_bank",
+      total: resources.length,
+      mapped,
+      unmapped,
+      resources,
+      bridgeVersion: resources[0]?.bridge_version ?? "atlas_lighthouse_resource_bridge_v1",
+      sampleBridgedAt: resources[0]?.bridged_at ?? null,
+    });
+  }),
+
+  benefitsDshsOfficeProof: publicProcedure.query(async () => {
+    const offices = await getDshsBenefitsOffices(false);
+    const mapped = offices.filter((r: any) => r.latitude != null && r.longitude != null).length;
+    const unmapped = offices.length - mapped;
+    return publicProofResponse({
+      source: "normalized_civic_resource",
+      source_key: "wa_dshs_office_locator",
+      resource_type: "benefits_office",
+      status: "GEOCODED_VALIDATION_LAYER",
+      geocodeStatus: "GEOCODED_VALIDATION_LAYER",
+      total: offices.length,
+      normalizedCount: offices.length,
+      mapped,
+      unmapped,
+      precisionBreakdown: precisionBreakdown(offices),
+      offices,
+    });
+  }),
+
+  civicMapDshsOfficeProof: publicProcedure.query(async () => {
+    const offices = await getDshsBenefitsOffices(true);
+    return publicProofResponse({
+      source: "normalized_civic_resource",
+      source_key: "wa_dshs_office_locator",
+      resource_type: "benefits_office",
+      status: "GEOCODED_VALIDATION_LAYER",
+      total: offices.length,
+      mapped: offices.length,
+      unmapped: 0,
+      precisionBreakdown: precisionBreakdown(offices),
+      rows: offices,
+      offices,
+    });
+  }),
+
   lighthouse: router({
     suggestions: suggestionsRouter,
     spotlight: spotlightRouter,
