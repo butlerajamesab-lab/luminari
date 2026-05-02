@@ -158,6 +158,14 @@ function precisionBreakdown(rows: any[]) {
   }, {});
 }
 
+function countBy<T extends Record<string, any>>(rows: T[], field: string) {
+  return rows.reduce((acc: Record<string, number>, row: T) => {
+    const key = row[field] == null ? "unknown" : String(row[field]);
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+}
+
 function publicProofResponse(extra: Record<string, any>) {
   return {
     ok: true,
@@ -238,6 +246,92 @@ async function getDshsBenefitsOffices(onlyMapped = false) {
       and n.resource_type = 'benefits_office'
       ${onlyMapped ? "and n.latitude is not null and n.longitude is not null" : ""}
     order by n.city asc, n.name asc
+  `);
+}
+
+async function getLegalBridgeRows() {
+  const statutes = await queryRows(`
+    select
+      b.id as bridge_id,
+      b.bridge_run_id,
+      b.source_project,
+      b.target_project,
+      b.source_table,
+      b.target_table,
+      b.atlas_record_id,
+      b.lighthouse_record_id,
+      b.source_external_id,
+      b.source_url,
+      b.source_record_hash,
+      b.target_record_hash,
+      b.bridge_record_hash,
+      b.bridge_metadata,
+      b.verification_status,
+      b.bridged_at,
+      s.id,
+      s.citation,
+      s.jurisdiction,
+      s.title,
+      s.statute_text,
+      s.metadata,
+      s.created_at
+    from atlas_lighthouse_legal_bridge_v1 b
+    join legal_statutes s on s.id = b.lighthouse_record_id
+    where b.target_table = 'legal_statutes'
+      and b.verification_status = 'verified'
+    order by b.bridged_at desc, s.title asc
+  `);
+
+  const caseLaw = await queryRows(`
+    select
+      b.id as bridge_id,
+      b.bridge_run_id,
+      b.source_project,
+      b.target_project,
+      b.source_table,
+      b.target_table,
+      b.atlas_record_id,
+      b.lighthouse_record_id,
+      b.source_external_id,
+      b.source_url,
+      b.source_record_hash,
+      b.target_record_hash,
+      b.bridge_record_hash,
+      b.bridge_metadata,
+      b.verification_status,
+      b.bridged_at,
+      c.id,
+      c.citation,
+      c.jurisdiction,
+      c.title,
+      c.opinion_text,
+      c.metadata,
+      c.created_at
+    from atlas_lighthouse_legal_bridge_v1 b
+    join legal_case_law c on c.id = b.lighthouse_record_id
+    where b.target_table = 'legal_case_law'
+      and b.verification_status = 'verified'
+    order by b.bridged_at desc, c.title asc
+  `);
+
+  return { statutes, caseLaw };
+}
+
+async function getDetectedSignals() {
+  return queryRows(`
+    select
+      id,
+      case_id,
+      finding_id,
+      snapshot_id,
+      pipeline_run_id,
+      signal_type,
+      signal_description,
+      severity::text as severity,
+      confidence_score,
+      created_at
+    from detected_signals
+    order by created_at desc, signal_type asc
   `);
 }
 
@@ -415,6 +509,41 @@ export const lighthouseGateRouter = router({
       precisionBreakdown: precisionBreakdown(offices),
       rows: offices,
       offices,
+    });
+  }),
+
+  legalLibraryProof: publicProcedure.query(async () => {
+    const { statutes, caseLaw } = await getLegalBridgeRows();
+    const bridgeRows = [...statutes, ...caseLaw];
+    return publicProofResponse({
+      source: "atlas_lighthouse_legal_bridge_v1",
+      status: "LEGAL_LIBRARY_LEGAL_BRIDGE_PROVEN",
+      total: bridgeRows.length,
+      statutesTotal: statutes.length,
+      caseLawTotal: caseLaw.length,
+      statutes,
+      caseLaw,
+      bridgeRows,
+      targetTables: {
+        legal_statutes: statutes.length,
+        legal_case_law: caseLaw.length,
+      },
+      verificationStatus: countBy(bridgeRows, "verification_status"),
+      bridgeVersion: bridgeRows[0]?.bridge_metadata?.bridge_version ?? "atlas_lighthouse_legal_bridge_v1",
+      sampleBridgedAt: bridgeRows[0]?.bridged_at ?? null,
+    });
+  }),
+
+  anomalyViewfinderProof: publicProcedure.query(async () => {
+    const signals = await getDetectedSignals();
+    return publicProofResponse({
+      source: "detected_signals",
+      status: "LIVE_LIGHTHOUSE_SIGNALS",
+      total: signals.length,
+      rows: signals,
+      signals,
+      signalTypeCounts: countBy(signals, "signal_type"),
+      severityCounts: countBy(signals, "severity"),
     });
   }),
 
