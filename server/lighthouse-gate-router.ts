@@ -250,22 +250,10 @@ async function getDshsBenefitsOffices(onlyMapped = false) {
 }
 
 async function getLegalBridgeRows() {
-  const statutes = await queryRows(`
+  const statutesWithBridge = await queryRows(`
     select
-      b.id as bridge_id,
       b.bridge_run_id,
       b.source_project,
-      b.target_project,
-      b.source_table,
-      b.target_table,
-      b.atlas_record_id,
-      b.lighthouse_record_id,
-      b.source_external_id,
-      b.source_url,
-      b.source_record_hash,
-      b.target_record_hash,
-      b.bridge_record_hash,
-      b.bridge_metadata,
       b.verification_status,
       b.bridged_at,
       s.id,
@@ -282,22 +270,10 @@ async function getLegalBridgeRows() {
     order by b.bridged_at desc, s.title asc
   `);
 
-  const caseLaw = await queryRows(`
+  const caseLawWithBridge = await queryRows(`
     select
-      b.id as bridge_id,
       b.bridge_run_id,
       b.source_project,
-      b.target_project,
-      b.source_table,
-      b.target_table,
-      b.atlas_record_id,
-      b.lighthouse_record_id,
-      b.source_external_id,
-      b.source_url,
-      b.source_record_hash,
-      b.target_record_hash,
-      b.bridge_record_hash,
-      b.bridge_metadata,
       b.verification_status,
       b.bridged_at,
       c.id,
@@ -314,17 +290,27 @@ async function getLegalBridgeRows() {
     order by b.bridged_at desc, c.title asc
   `);
 
-  return { statutes, caseLaw };
+  const bridgeRows = [...statutesWithBridge, ...caseLawWithBridge];
+  const latestBridge = bridgeRows
+    .slice()
+    .sort((a: any, b: any) => String(b.bridged_at ?? "").localeCompare(String(a.bridged_at ?? "")))[0];
+  const stripBridgeFields = ({ bridge_run_id, source_project, verification_status, bridged_at, ...row }: any) => row;
+
+  return {
+    statutes: statutesWithBridge.map(stripBridgeFields),
+    caseLaw: caseLawWithBridge.map(stripBridgeFields),
+    bridgeRunId: latestBridge?.bridge_run_id ?? null,
+    bridgedAt: latestBridge?.bridged_at ?? null,
+    verificationStatus: latestBridge?.verification_status ?? null,
+    sourceAtlasProject: latestBridge?.source_project ?? null,
+    bridgeCount: bridgeRows.length,
+  };
 }
 
 async function getDetectedSignals() {
   return queryRows(`
     select
       id,
-      case_id,
-      finding_id,
-      snapshot_id,
-      pipeline_run_id,
       signal_type,
       signal_description,
       severity::text as severity,
@@ -513,38 +499,89 @@ export const lighthouseGateRouter = router({
   }),
 
   legalLibraryProof: publicProcedure.query(async () => {
-    const { statutes, caseLaw } = await getLegalBridgeRows();
-    const bridgeRows = [...statutes, ...caseLaw];
-    return publicProofResponse({
-      source: "atlas_lighthouse_legal_bridge_v1",
-      status: "LEGAL_LIBRARY_LEGAL_BRIDGE_PROVEN",
-      total: bridgeRows.length,
-      statutesTotal: statutes.length,
-      caseLawTotal: caseLaw.length,
-      statutes,
-      caseLaw,
-      bridgeRows,
-      targetTables: {
-        legal_statutes: statutes.length,
-        legal_case_law: caseLaw.length,
-      },
-      verificationStatus: countBy(bridgeRows, "verification_status"),
-      bridgeVersion: bridgeRows[0]?.bridge_metadata?.bridge_version ?? "atlas_lighthouse_legal_bridge_v1",
-      sampleBridgedAt: bridgeRows[0]?.bridged_at ?? null,
-    });
+    try {
+      const { statutes, caseLaw, bridgeRunId, bridgedAt, verificationStatus, sourceAtlasProject, bridgeCount } = await getLegalBridgeRows();
+      return {
+        ok: true,
+        hook: "legalLibraryProof",
+        queryMode: "live_read",
+        queriedAt: new Date().toISOString(),
+        sourceAtlasProject,
+        bridgeTable: "atlas_lighthouse_legal_bridge_v1",
+        bridgeRunId,
+        bridgedAt,
+        verificationStatus,
+        statuteCount: statutes.length,
+        caseCount: caseLaw.length,
+        bridgeCount,
+        statutes,
+        caseLaw,
+      };
+    } catch (error: any) {
+      const mapped = mapPgError(error);
+      console.warn(`[LighthouseGate] legalLibraryProof query returned ${mapped.status}: ${mapped.message}`);
+      const fallback = await safeRestSelect("atlas_lighthouse_legal_bridge_v1", 100, 0);
+      return {
+        ok: false,
+        hook: "legalLibraryProof",
+        queryMode: "live_read",
+        queriedAt: new Date().toISOString(),
+        sourceAtlasProject: null,
+        bridgeTable: "atlas_lighthouse_legal_bridge_v1",
+        bridgeRunId: null,
+        bridgedAt: null,
+        verificationStatus: null,
+        statuteCount: 0,
+        caseCount: 0,
+        bridgeCount: fallback.items.length,
+        statutes: [],
+        caseLaw: [],
+        status: fallback.status === "ok" ? mapped.status : fallback.status,
+        message: fallback.message || mapped.message,
+      };
+    }
   }),
 
   anomalyViewfinderProof: publicProcedure.query(async () => {
-    const signals = await getDetectedSignals();
-    return publicProofResponse({
-      source: "detected_signals",
-      status: "LIVE_LIGHTHOUSE_SIGNALS",
-      total: signals.length,
-      rows: signals,
-      signals,
-      signalTypeCounts: countBy(signals, "signal_type"),
-      severityCounts: countBy(signals, "severity"),
-    });
+    try {
+      const signals = await getDetectedSignals();
+      return {
+        ok: true,
+        hook: "anomalyViewfinderProof",
+        source: "detected_signals",
+        queryMode: "live_read",
+        queriedAt: new Date().toISOString(),
+        count: signals.length,
+        signalTypes: Object.keys(countBy(signals, "signal_type")),
+        severityCounts: countBy(signals, "severity"),
+        rows: signals,
+      };
+    } catch (error: any) {
+      const mapped = mapPgError(error);
+      console.warn(`[LighthouseGate] anomalyViewfinderProof query returned ${mapped.status}: ${mapped.message}`);
+      const fallback = await safeRestSelect("detected_signals", 100, 0);
+      const rows = fallback.items.map((row: any) => ({
+        id: row.id,
+        signal_type: row.signal_type,
+        signal_description: row.signal_description,
+        severity: row.severity,
+        confidence_score: row.confidence_score,
+        created_at: row.created_at,
+      }));
+      return {
+        ok: fallback.status === "ok",
+        hook: "anomalyViewfinderProof",
+        source: "detected_signals",
+        queryMode: "live_read",
+        queriedAt: new Date().toISOString(),
+        count: rows.length,
+        signalTypes: Object.keys(countBy(rows, "signal_type")),
+        severityCounts: countBy(rows, "severity"),
+        rows,
+        status: fallback.status === "ok" ? mapped.status : fallback.status,
+        message: fallback.message || mapped.message,
+      };
+    }
   }),
 
   lighthouse: router({
