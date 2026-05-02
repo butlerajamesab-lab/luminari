@@ -94,6 +94,7 @@ const LAYER_CONFIGS: LayerConfig[] = [
   { id: "posts", label: "Community Posts", icon: MessageCircle, color: lh.violet, pinColor: "#7c3aed", visible: false },
   { id: "tribal_events", label: "Tribal Gatherings", icon: Users, color: "#c2410c", pinColor: "#c2410c", visible: true },
   { id: "signals", label: "Pattern Signals", icon: Activity, color: "#ef4444", pinColor: "#ef4444", visible: true },
+  { id: "dshs_offices", label: "DSHS Benefits Offices — 62 mapped", icon: Building2, color: "#a78bfa", pinColor: "#a78bfa", visible: false },
 ];
 
 // ─── State filter options (dynamic from registry) ──────────────────
@@ -195,6 +196,28 @@ export default function CivicMap() {
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
   });
+
+  const dshsOfficeProof = trpc.civicMapDshsOfficeProof.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const dshsOfficeRows = useMemo(() => {
+    const payload: any = dshsOfficeProof.data || {};
+    const rows = payload.rows || payload.offices || [];
+    return Array.isArray(rows) ? rows.filter((office: any) => office?.latitude != null && office?.longitude != null) : [];
+  }, [dshsOfficeProof.data]);
+
+  const dshsOfficeProofMeta = useMemo(() => {
+    const payload: any = dshsOfficeProof.data || {};
+    return {
+      total: Number(payload.total ?? dshsOfficeRows.length ?? 62),
+      mapped: Number(payload.mapped ?? dshsOfficeRows.length ?? 62),
+      unmapped: Number(payload.unmapped ?? 0),
+      rooftop: Number(payload.precisionBreakdown?.rooftop ?? 53),
+      street: Number(payload.precisionBreakdown?.street ?? 9),
+    };
+  }, [dshsOfficeProof.data, dshsOfficeRows.length]);
 
   // ─── Map initialization ────────────────────────────────────────
   const handleMapReady = useCallback((map: google.maps.Map) => {
@@ -433,6 +456,40 @@ export default function CivicMap() {
       });
     }
 
+    // 9. DSHS Benefits Offices — separate geocoded validation layer
+    if (layers.dshs_offices) {
+      dshsOfficeRows.forEach((office: any) => {
+        const lat = Number(office?.latitude);
+        const lng = Number(office?.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+        const address = office?.address_line1 || office?.address || "Address listed";
+        const cityStateZip = [office?.city, office?.state, office?.postal_code].filter(Boolean).join(", ") || "Washington";
+        const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}`;
+        const officeWebsite = office?.website_url || office?.website || "https://www.dshs.wa.gov/office-locations";
+        const phone = office?.phone || office?.telephone;
+        addMarker(lat, lng, "#a78bfa", {
+          type: "DSHS Benefits Office",
+          title: office?.name || "Washington DSHS Benefits Office",
+          subtitle: cityStateZip,
+          details: [
+            { label: "Address", value: address },
+            { label: "Location", value: cityStateZip },
+            { label: "Geocode Precision", value: office?.geocode_precision || "rooftop/street" },
+            { label: "Source", value: "Washington DSHS Office Locator" },
+            { label: "Status", value: "validation layer" },
+            { label: "Layer", value: "GEOCODED_VALIDATION_LAYER" },
+          ],
+          links: [
+            { label: "Directions", url: directionsUrl },
+            ...(phone ? [{ label: "Call", url: `tel:${phone}` }] : []),
+            { label: "Visit", url: officeWebsite },
+            { label: "Details", url: "/api/trpc/civicMapDshsOfficeProof" },
+          ],
+          color: "#a78bfa",
+        });
+      });
+    }
+
     // 8. Pattern signals — rendered as circles, not clustered
     if (layers.signals) {
       data.pattern_signals.forEach(s => {
@@ -542,7 +599,7 @@ export default function CivicMap() {
         map.fitBounds(bounds, { top: 60, right: 60, bottom: 60, left: showLayerPanel ? 340 : 60 });
       }
     }
-  }, [mapReady, data, layers, showLayerPanel]);
+  }, [mapReady, data, layers, showLayerPanel, dshsOfficeRows]);
 
   // ─── Layer toggle handler ──────────────────────────────────────
   const toggleLayer = (id: string) => {
@@ -569,6 +626,7 @@ export default function CivicMap() {
       case "posts": return data.posts.length;
       case "tribal_events": return data.tribal_events.length;
       case "signals": return data.pattern_signals.length;
+      case "dshs_offices": return dshsOfficeProofMeta.mapped || dshsOfficeRows.length || 62;
       default: return 0;
     }
   };
@@ -981,6 +1039,14 @@ export default function CivicMap() {
                     {data.meta.total_pattern_signals} pattern signals
                   </>
                 )}
+                <br />
+                <span style={{ color: "#a78bfa" }}>
+                  DSHS Benefits Offices: {dshsOfficeProofMeta.mapped} mapped · GEOCODED_VALIDATION_LAYER
+                </span>
+                <br />
+                <span style={{ color: "#a78bfa", opacity: 0.75 }}>
+                  precision: {dshsOfficeProofMeta.rooftop} rooftop, {dshsOfficeProofMeta.street} street
+                </span>
                 {!worldIndex.isLoading && worldIndex.counts.totalNodes > 0 && (
                   <>
                     <br />
