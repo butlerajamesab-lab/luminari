@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: luminari-lighthouse
+    runtime: node
+    plan: starter
+    branch: main
+    buildCommand: >-
+      corepack enable && pnpm install --frozen-lockfile && pnpm build
+    startCommand: >-
+      NODE_ENV=production node dist/index.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+      - key: VITE_APP_ID
+        value: luminari-lighthouse
+      - key: PORT
+        value: "10000"
