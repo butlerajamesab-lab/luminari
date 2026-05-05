@@ -5,7 +5,7 @@ services:
     plan: starter
     branch: main
     buildCommand: >-
-      corepack enable && pnpm install --no-frozen-lockfile && pnpm build
+      corepack enable && pnpm config set allowNonAppliedPatches true && pnpm install --no-frozen-lockfile && pnpm build
     startCommand: >-
       NODE_ENV=production node dist/index.js
     healthCheckPath: /api/health
