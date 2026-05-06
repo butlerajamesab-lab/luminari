@@ -1,84 +1,46 @@
-import { getLoginUrl } from "@/const";
-import { trpc } from "@/lib/trpc";
-import { TRPCClientError } from "@trpc/client";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
   redirectPath?: string;
 };
 
-export function useAuth(options?: UseAuthOptions) {
-  const { redirectOnUnauthenticated = false, redirectPath = getLoginUrl() } =
-    options ?? {};
-  const utils = trpc.useUtils();
-
-  const meQuery = trpc.auth.me.useQuery(undefined, {
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
-
-  const logoutMutation = trpc.auth.logout.useMutation({
-    onSuccess: () => {
-      utils.auth.me.setData(undefined, null);
-    },
-  });
-
+/**
+ * Preview-open auth hook.
+ *
+ * Lighthouse Render is currently a preview surface. The production OAuth/auth
+ * backend is intentionally not enabled yet, and /api/oauth/* is outside the
+ * current backend-lock gate. This hook must therefore avoid creating an
+ * authorization gate or calling auth.me/auth.logout until the auth gate is
+ * deliberately implemented and verified.
+ */
+export function useAuth(_options?: UseAuthOptions) {
   const logout = useCallback(async () => {
     try {
-      await logoutMutation.mutateAsync();
-    } catch (error: unknown) {
-      if (
-        error instanceof TRPCClientError &&
-        error.data?.code === "UNAUTHORIZED"
-      ) {
-        return;
-      }
-      throw error;
-    } finally {
-      utils.auth.me.setData(undefined, null);
-      await utils.auth.me.invalidate();
+      localStorage.removeItem("manus-runtime-user-info");
+    } catch {
+      // Ignore storage errors in preview mode.
     }
-  }, [logoutMutation, utils]);
+  }, []);
 
   const state = useMemo(() => {
-    localStorage.setItem(
-      "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
-    );
+    try {
+      localStorage.setItem("manus-runtime-user-info", "null");
+    } catch {
+      // Ignore storage errors in preview mode.
+    }
+
     return {
-      user: meQuery.data ?? null,
-      loading: meQuery.isLoading || logoutMutation.isPending,
-      error: meQuery.error ?? logoutMutation.error ?? null,
-      isAuthenticated: Boolean(meQuery.data),
+      user: null,
+      loading: false,
+      error: null,
+      isAuthenticated: false,
     };
-  }, [
-    meQuery.data,
-    meQuery.error,
-    meQuery.isLoading,
-    logoutMutation.error,
-    logoutMutation.isPending,
-  ]);
-
-  useEffect(() => {
-    if (!redirectOnUnauthenticated) return;
-    if (meQuery.isLoading || logoutMutation.isPending) return;
-    if (state.user) return;
-    if (typeof window === "undefined") return;
-    if (window.location.pathname === redirectPath) return;
-
-    window.location.href = redirectPath
-  }, [
-    redirectOnUnauthenticated,
-    redirectPath,
-    logoutMutation.isPending,
-    meQuery.isLoading,
-    state.user,
-  ]);
+  }, []);
 
   return {
     ...state,
-    refresh: () => meQuery.refetch(),
+    refresh: async () => null,
     logout,
   };
 }
