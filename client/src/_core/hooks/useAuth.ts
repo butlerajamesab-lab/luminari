@@ -8,12 +8,43 @@ type UseAuthOptions = {
   redirectPath?: string;
 };
 
+const OWNER_RECOVERY_BYPASS = import.meta.env.VITE_OWNER_RECOVERY_BYPASS === "true";
+
+function getOwnerRecoveryUser() {
+  const now = Date.now();
+  const userId = import.meta.env.VITE_OWNER_RECOVERY_USER_ID || "sovereign_admin";
+  const email = import.meta.env.VITE_OWNER_RECOVERY_EMAIL || "owner-recovery@luminari.local";
+  const role = import.meta.env.VITE_OWNER_RECOVERY_ROLE || "admin";
+
+  return {
+    id: -1,
+    openId: userId,
+    name: "Owner Recovery Admin",
+    email,
+    loginMethod: "temporary_owner_recovery_bypass",
+    role,
+    plan: "enterprise",
+    createdAt: now,
+    updatedAt: now,
+    lastSignedIn: now,
+    access_layer: "admin",
+    source: "temporary_owner_recovery_bypass",
+  } as any;
+}
+
 export function useAuth(options?: UseAuthOptions) {
   const { redirectOnUnauthenticated = false, redirectPath = getLoginUrl() } =
     options ?? {};
   const utils = trpc.useUtils();
+  const ownerRecoveryUser = OWNER_RECOVERY_BYPASS ? getOwnerRecoveryUser() : null;
+
+  useEffect(() => {
+    if (!OWNER_RECOVERY_BYPASS) return;
+    console.warn("[OWNER_RECOVERY_BYPASS_ACTIVE] temporary owner recovery access enabled");
+  }, []);
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
+    enabled: !OWNER_RECOVERY_BYPASS,
     retry: false,
     refetchOnWindowFocus: false,
   });
@@ -25,6 +56,11 @@ export function useAuth(options?: UseAuthOptions) {
   });
 
   const logout = useCallback(async () => {
+    if (OWNER_RECOVERY_BYPASS) {
+      console.warn("[OWNER_RECOVERY_BYPASS_ACTIVE] logout ignored while temporary owner recovery bypass is enabled");
+      return;
+    }
+
     try {
       await logoutMutation.mutateAsync();
     } catch (error: unknown) {
@@ -42,17 +78,24 @@ export function useAuth(options?: UseAuthOptions) {
   }, [logoutMutation, utils]);
 
   const state = useMemo(() => {
-    localStorage.setItem(
-      "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
-    );
+    const user = ownerRecoveryUser ?? meQuery.data ?? null;
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        "manus-runtime-user-info",
+        JSON.stringify(user)
+      );
+    }
+
     return {
-      user: meQuery.data ?? null,
-      loading: meQuery.isLoading || logoutMutation.isPending,
-      error: meQuery.error ?? logoutMutation.error ?? null,
-      isAuthenticated: Boolean(meQuery.data),
+      user,
+      loading: OWNER_RECOVERY_BYPASS ? false : meQuery.isLoading || logoutMutation.isPending,
+      error: OWNER_RECOVERY_BYPASS ? null : meQuery.error ?? logoutMutation.error ?? null,
+      isAuthenticated: Boolean(user),
+      ownerRecoveryBypassActive: OWNER_RECOVERY_BYPASS,
     };
   }, [
+    ownerRecoveryUser,
     meQuery.data,
     meQuery.error,
     meQuery.isLoading,
@@ -61,6 +104,7 @@ export function useAuth(options?: UseAuthOptions) {
   ]);
 
   useEffect(() => {
+    if (OWNER_RECOVERY_BYPASS) return;
     if (!redirectOnUnauthenticated) return;
     if (meQuery.isLoading || logoutMutation.isPending) return;
     if (state.user) return;
@@ -78,7 +122,7 @@ export function useAuth(options?: UseAuthOptions) {
 
   return {
     ...state,
-    refresh: () => meQuery.refetch(),
+    refresh: () => OWNER_RECOVERY_BYPASS ? Promise.resolve({ data: ownerRecoveryUser } as any) : meQuery.refetch(),
     logout,
   };
 }
