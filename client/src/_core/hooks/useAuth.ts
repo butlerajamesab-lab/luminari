@@ -8,7 +8,23 @@ type UseAuthOptions = {
   redirectPath?: string;
 };
 
-const OWNER_RECOVERY_BYPASS = import.meta.env.VITE_OWNER_RECOVERY_BYPASS === "true";
+const OWNER_RECOVERY_STORAGE_KEY = "luminari-owner-recovery-bypass";
+const OWNER_RECOVERY_TOKEN = "lh_owner_recovery_2026_05_06_9Kx7Pq4mR2vT8nZ1";
+
+function ownerRecoveryBypassEnabled() {
+  if (import.meta.env.VITE_OWNER_RECOVERY_BYPASS === "true") return true;
+  if (typeof window === "undefined") return false;
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("owner_recovery") === OWNER_RECOVERY_TOKEN) {
+    window.sessionStorage.setItem(OWNER_RECOVERY_STORAGE_KEY, "true");
+    const cleanUrl = `${window.location.origin}${window.location.pathname}${window.location.hash || ""}`;
+    window.history.replaceState({}, document.title, cleanUrl);
+    return true;
+  }
+
+  return window.sessionStorage.getItem(OWNER_RECOVERY_STORAGE_KEY) === "true";
+}
 
 function getOwnerRecoveryUser() {
   const now = Date.now();
@@ -36,15 +52,16 @@ export function useAuth(options?: UseAuthOptions) {
   const { redirectOnUnauthenticated = false, redirectPath = getLoginUrl() } =
     options ?? {};
   const utils = trpc.useUtils();
-  const ownerRecoveryUser = OWNER_RECOVERY_BYPASS ? getOwnerRecoveryUser() : null;
+  const ownerRecoveryActive = ownerRecoveryBypassEnabled();
+  const ownerRecoveryUser = ownerRecoveryActive ? getOwnerRecoveryUser() : null;
 
   useEffect(() => {
-    if (!OWNER_RECOVERY_BYPASS) return;
+    if (!ownerRecoveryActive) return;
     console.warn("[OWNER_RECOVERY_BYPASS_ACTIVE] temporary owner recovery access enabled");
-  }, []);
+  }, [ownerRecoveryActive]);
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
-    enabled: !OWNER_RECOVERY_BYPASS,
+    enabled: !ownerRecoveryActive,
     retry: false,
     refetchOnWindowFocus: false,
   });
@@ -56,8 +73,12 @@ export function useAuth(options?: UseAuthOptions) {
   });
 
   const logout = useCallback(async () => {
-    if (OWNER_RECOVERY_BYPASS) {
-      console.warn("[OWNER_RECOVERY_BYPASS_ACTIVE] logout ignored while temporary owner recovery bypass is enabled");
+    if (ownerRecoveryActive) {
+      if (typeof window !== "undefined") {
+        window.sessionStorage.removeItem(OWNER_RECOVERY_STORAGE_KEY);
+      }
+      console.warn("[OWNER_RECOVERY_BYPASS_ACTIVE] temporary owner recovery bypass cleared");
+      window.location.reload();
       return;
     }
 
@@ -75,7 +96,7 @@ export function useAuth(options?: UseAuthOptions) {
       utils.auth.me.setData(undefined, null);
       await utils.auth.me.invalidate();
     }
-  }, [logoutMutation, utils]);
+  }, [logoutMutation, ownerRecoveryActive, utils]);
 
   const state = useMemo(() => {
     const user = ownerRecoveryUser ?? meQuery.data ?? null;
@@ -89,13 +110,14 @@ export function useAuth(options?: UseAuthOptions) {
 
     return {
       user,
-      loading: OWNER_RECOVERY_BYPASS ? false : meQuery.isLoading || logoutMutation.isPending,
-      error: OWNER_RECOVERY_BYPASS ? null : meQuery.error ?? logoutMutation.error ?? null,
+      loading: ownerRecoveryActive ? false : meQuery.isLoading || logoutMutation.isPending,
+      error: ownerRecoveryActive ? null : meQuery.error ?? logoutMutation.error ?? null,
       isAuthenticated: Boolean(user),
-      ownerRecoveryBypassActive: OWNER_RECOVERY_BYPASS,
+      ownerRecoveryBypassActive: ownerRecoveryActive,
     };
   }, [
     ownerRecoveryUser,
+    ownerRecoveryActive,
     meQuery.data,
     meQuery.error,
     meQuery.isLoading,
@@ -104,7 +126,7 @@ export function useAuth(options?: UseAuthOptions) {
   ]);
 
   useEffect(() => {
-    if (OWNER_RECOVERY_BYPASS) return;
+    if (ownerRecoveryActive) return;
     if (!redirectOnUnauthenticated) return;
     if (meQuery.isLoading || logoutMutation.isPending) return;
     if (state.user) return;
@@ -113,6 +135,7 @@ export function useAuth(options?: UseAuthOptions) {
 
     window.location.href = redirectPath
   }, [
+    ownerRecoveryActive,
     redirectOnUnauthenticated,
     redirectPath,
     logoutMutation.isPending,
@@ -122,7 +145,7 @@ export function useAuth(options?: UseAuthOptions) {
 
   return {
     ...state,
-    refresh: () => OWNER_RECOVERY_BYPASS ? Promise.resolve({ data: ownerRecoveryUser } as any) : meQuery.refetch(),
+    refresh: () => ownerRecoveryActive ? Promise.resolve({ data: ownerRecoveryUser } as any) : meQuery.refetch(),
     logout,
   };
 }
