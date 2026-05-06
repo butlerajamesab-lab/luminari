@@ -14,7 +14,10 @@ Render preview:
 https://luminari.onrender.com
 ```
 
-This pass adds user-side live Render evidence from direct browser checks.
+This pass adds user-side live Render evidence from direct browser checks and corrects two comparison assumptions:
+
+1. `/categories` is not a required original-baseline surface.
+2. CivicMap does not need to match the old original map exactly because the desired direction is the upgraded CivicMap path.
 
 No Atlas changes.
 No Supabase data changes.
@@ -37,8 +40,10 @@ User reported:
 - CivicMap has no visible population/data.
 - `/mudroom` works.
 - `/workshop` works.
-- Architecture Map does not work.
+- `/architecture-map` does not work.
 - Several routes show the wrong screen or not the actual intended surface.
+- `/categories` was never part of the required original product surface.
+- The old original CivicMap does not need to be preserved exactly; the goal is the upgraded CivicMap path.
 
 ### Screenshot comparison evidence
 
@@ -54,12 +59,12 @@ Where is the obstacle showing up in your life right now?
 No categories match ""
 ```
 
-Classification:
+Corrected classification:
 
 - Surface exists.
-- Data/population is missing.
-- Does not match the original populated Pipeline Map expectation.
-- Do not activate yet.
+- It is extra / non-baseline unless explicitly adopted later.
+- It should not block original-to-Render parity because categories were not part of the original required product surface.
+- Preview only.
 
 #### Action Path page
 
@@ -82,6 +87,21 @@ Classification:
 - It does not replace the original landing/intake surface.
 - Preview only.
 
+#### CivicMap
+
+User reported:
+
+```text
+/civic-map page works, but the actual map does not render and no population/data is visible.
+```
+
+Corrected classification:
+
+- CivicMap is an upgrade target, not an exact old-map parity requirement.
+- The missing map/data still matters because the upgraded map must eventually work.
+- This is an upgrade/integration blocker, not proof that the original product comparison failed.
+- Do not activate CivicMap yet.
+
 ---
 
 ## 2. Current comparison board
@@ -92,8 +112,9 @@ Classification:
 | The Lighthouse | Renders from screenshots | Present | Preview only; verify interactions |
 | Mudroom | User reports works | Working | Safe as preview |
 | Workshop | User reports works | Working | Safe as preview |
-| Pipelines / Categories | Shows 0 categories, 0 pipelines, 0 situations mapped | Broken-empty | Do not activate |
-| Civic Map | Shell works, actual map missing, no population visible | Broken/partial | Do not activate |
+| Pipelines | Original had Pipeline Map / Explore Pipelines entry; Render has alternate category/action surfaces | Needs original-route clarification | Preview only |
+| `/categories` | Shows 0 categories, 0 pipelines, 0 situations mapped | Extra / non-baseline route | Not an original-parity blocker; preview only |
+| Civic Map | Shell works, actual map missing, no population visible | Upgrade target incomplete | Do not activate CivicMap yet |
 | Viewfinder | Nav/page evidence exists, full behavior not verified | Unverified | Do not activate |
 | Docket Room | User reports does not work | Broken | Do not activate |
 | Legal Library | Not yet verified in this pass | Unverified | Do not activate |
@@ -116,23 +137,29 @@ Still unverified:
 - Whether `/viewfinder` has live/meaningful data.
 - Whether `/resources` works.
 - Whether CivicMap failure is map-library, data, API, geodata, or CSS/container sizing.
-- Whether pipeline/category empty state is from missing seed data, API failure, or frontend query mismatch.
+- Which route is the correct Render equivalent for original Pipeline Map / Explore Pipelines.
 
 ---
 
 ## 4. Contradictions / Drift
 
+### Drift: `/categories` is required because it exists in Render
+
+False.
+
+User clarified categories were not part of the original required product surface. It is an extra/non-baseline route unless explicitly adopted later.
+
+### Drift: CivicMap must match the old original map exactly
+
+False.
+
+User clarified the upgraded CivicMap is desired. The old original map is not the activation standard. The standard is a working upgraded CivicMap path.
+
 ### Drift: Page renders means surface works
 
 False.
 
-The CivicMap shell renders, but the actual map and population are missing.
-
-### Drift: Pipeline page exists means pipelines are restored
-
-False.
-
-The page currently reports 0 categories, 0 pipelines, and 0 situations mapped.
+The CivicMap shell renders, but the actual upgraded map and population are missing.
 
 ### Drift: Architecture/Integrity is ready
 
@@ -155,7 +182,7 @@ For the next pass, capture or inspect:
 1. `/docket` screenshot and error/state.
 2. `/architecture-map` screenshot and error/state.
 3. `/civic-map` screenshot showing missing map area and any browser-visible errors.
-4. `/categories` or pipeline page network/API response if visible.
+4. Correct Render route for original Pipeline Map / Explore Pipelines.
 5. `/legal-library` status.
 6. `/viewfinder` status.
 7. `/verify` status.
@@ -169,10 +196,10 @@ Patch only comparison-blocking product shell issues, not Atlas.
 
 Priority order:
 
-1. Fix or restore pipeline/category population.
-2. Fix CivicMap map rendering and resource population.
-3. Fix Docket Room route.
-4. Fix Architecture Map route.
+1. Fix Docket Room route.
+2. Fix Architecture Map route.
+3. Identify correct Pipeline Map / Explore Pipelines route and classify it.
+4. Fix upgraded CivicMap map rendering and resource population as an upgrade task.
 5. Verify Legal Library, Viewfinder, Resources, and Verify.
 
 Decision rule:
