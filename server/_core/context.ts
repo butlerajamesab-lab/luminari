@@ -10,12 +10,47 @@ export type TrpcContext = {
   res: CreateExpressContextOptions["res"];
   user: User | null;
   isSystem?: boolean; // System context for internal processing (ingestion, extraction, pattern detection)
+  isInspectionMode?: boolean; // Temporary read/inspection surface for Render preview
 };
+
+function isLighthouseInspectionMode(): boolean {
+  return (
+    process.env.LIGHTHOUSE_INSPECTION_MODE === "true" ||
+    process.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true"
+  );
+}
+
+function createInspectionUser(): User {
+  const now = Date.now();
+  return {
+    id: 0,
+    openId: "inspection_user",
+    name: "Inspection User",
+    email: "inspection@lighthouse.local",
+    loginMethod: "temporary_lighthouse_inspection_mode",
+    role: "admin",
+    plan: "enterprise",
+    createdAt: now,
+    updatedAt: now,
+    lastSignedIn: now,
+  };
+}
 
 export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
   let user: User | null = null;
+  const isInspectionMode = isLighthouseInspectionMode();
+
+  if (isInspectionMode) {
+    return {
+      req: opts.req,
+      res: opts.res,
+      user: createInspectionUser(),
+      isSystem: false,
+      isInspectionMode: true,
+    };
+  }
 
   // Get session from request (populated by sessionMiddleware)
   const session = (opts.req as any).session;
@@ -47,5 +82,6 @@ export async function createContext(
     res: opts.res,
     user,
     isSystem: false,
+    isInspectionMode: false,
   };
 }
