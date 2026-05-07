@@ -321,6 +321,110 @@ async function getDetectedSignals() {
   `);
 }
 
+const docketSampleEntries = [
+  {
+    id: 1,
+    slug: "inspection-preview-seattle-tenant-relocation",
+    title: "Seattle Tenant Relocation Assistance Ordinance",
+    jurisdiction: "Seattle, WA",
+    jurisdictionLevel: "city",
+    lawType: "ordinance",
+    status: "under_review",
+    summary: "Inspection-safe preview record for Docket Room route recovery.",
+    sections: {
+      summary: "Preview-only structural docket entry. Backend gate is active, but no live law ingestion has been activated.",
+      actors: [],
+      impacts: [],
+      implementation: [],
+      loopholes: [],
+      comparative: [],
+      sources: [],
+    },
+    tags: ["inspection", "preview", "docket"],
+    createdAt: "2026-05-06T00:00:00.000Z",
+    updatedAt: "2026-05-06T00:00:00.000Z",
+  },
+];
+
+const docketRouter = router({
+  list: publicProcedure
+    .input(z.object({
+      search: z.string().optional(),
+      jurisdictionLevel: z.string().optional(),
+      limit: z.number().min(1).max(100).default(50),
+      offset: z.number().min(0).default(0),
+    }).optional())
+    .query(({ input }) => {
+      const search = input?.search?.trim().toLowerCase();
+      const jurisdictionLevel = input?.jurisdictionLevel?.trim().toLowerCase();
+      let entries = docketSampleEntries;
+      if (search) {
+        entries = entries.filter(entry =>
+          entry.title.toLowerCase().includes(search) ||
+          entry.jurisdiction.toLowerCase().includes(search) ||
+          entry.summary.toLowerCase().includes(search)
+        );
+      }
+      if (jurisdictionLevel) {
+        entries = entries.filter(entry => entry.jurisdictionLevel === jurisdictionLevel);
+      }
+      return entries;
+    }),
+
+  stats: publicProcedure.query(() => ({
+    total: docketSampleEntries.length,
+    byJurisdictionLevel: countBy(docketSampleEntries, "jurisdictionLevel"),
+    byLawType: countBy(docketSampleEntries, "lawType"),
+    byStatus: countBy(docketSampleEntries, "status"),
+    mode: "inspection_safe_preview",
+    liveIngestionActive: false,
+    atlasTouched: false,
+    supabaseMutated: false,
+  })),
+
+  legistarFeed: publicProcedure
+    .input(z.object({
+      keyword: z.string().optional(),
+      top: z.number().min(1).max(25).default(6),
+    }).optional())
+    .query(({ input }) => ({
+      matters: [],
+      fetchedAt: new Date().toISOString(),
+      keyword: input?.keyword ?? null,
+      top: input?.top ?? 6,
+      mode: "inspection_safe_preview",
+      error: "Live Legistar feed is disabled in the Lighthouse Render preview gate.",
+    })),
+
+  submissions: router({
+    mine: publicProcedure.query(() => []),
+    create: publicProcedure
+      .input(z.object({
+        lawTitle: z.string(),
+        jurisdiction: z.string(),
+        jurisdictionLevel: z.string(),
+        referenceUrl: z.string().optional(),
+        fileUrl: z.string().optional(),
+        fileName: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(({ input }) => ({
+        ok: true,
+        disabled: true,
+        mode: "inspection_safe_preview",
+        message: "Submission was received by the preview gate but not persisted. Production docket submissions are disabled until activation.",
+        received: {
+          lawTitle: input.lawTitle,
+          jurisdiction: input.jurisdiction,
+          jurisdictionLevel: input.jurisdictionLevel,
+          hasReferenceUrl: Boolean(input.referenceUrl),
+          hasFile: Boolean(input.fileUrl || input.fileName),
+          hasNotes: Boolean(input.notes),
+        },
+      })),
+  }),
+});
+
 const suggestionsRouter = router({
   list: publicProcedure
     .input(z.object({
@@ -429,6 +533,8 @@ export const lighthouseGateRouter = router({
     ok: true,
     supabaseProject: SUPABASE_PROJECT,
   })),
+
+  docket: docketRouter,
 
   benefitsResourceDirectoryProof: publicProcedure.query(async () => {
     const resources = await getVerifiedFoodBanks();
