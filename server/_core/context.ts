@@ -13,10 +13,13 @@ export type TrpcContext = {
   isInspectionMode?: boolean; // Temporary read/inspection surface for Render preview
 };
 
-function isLighthouseInspectionMode(): boolean {
+function isLighthouseInspectionMode(req?: CreateExpressContextOptions["req"]): boolean {
+  const headerFlag = req?.headers?.["x-lighthouse-inspection-mode"];
   return (
     process.env.LIGHTHOUSE_INSPECTION_MODE === "true" ||
-    process.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true"
+    process.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true" ||
+    headerFlag === "true" ||
+    headerFlag === "1"
   );
 }
 
@@ -40,7 +43,7 @@ export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
   let user: User | null = null;
-  const isInspectionMode = isLighthouseInspectionMode();
+  const isInspectionMode = isLighthouseInspectionMode(opts.req);
 
   if (isInspectionMode) {
     return {
