@@ -63,7 +63,7 @@ import {
   Library,
   Brain,
   Layers,
-  Radio,
+  RadioTower,
   Ban,
   GitBranch,
   Timer,
@@ -122,7 +122,7 @@ const analyzeItems: NavItem[] = [
   { icon: GitBranch, label: "Doctrine Graph", path: "/doctrine-graph" },
   { icon: FileSearch, label: "Claim Denial Analysis", path: "/cda" },
   { icon: Shield, label: "Provenance Drill-Down", path: "/provenance" },
-  { icon: Radio, label: "Signal Registry", path: "/signal-registry" },
+  { icon: RadioTower, label: "Signal Registry", path: "/signal-registry" },
 ];
 
 const strategizeItems: NavItem[] = [
