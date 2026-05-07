@@ -9,10 +9,11 @@ const inspectionMode = import.meta.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true
 
 const inspectionUser = {
   id: "inspection_user",
-  email: "inspection@luminari.preview",
+  email: "butlerajames.ab@gmail.com",
   name: "Inspection User",
   role: "inspector",
   authenticated: true,
+  source: "temporary_lighthouse_inspection_mode",
   inspectionMode: true,
 };
 
