@@ -9,9 +9,9 @@ const inspectionMode = import.meta.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true
 
 const inspectionUser = {
   id: "inspection_user",
-  email: "butlerajames.ab@gmail.com",
+  email: "inspection@lighthouse.local",
   name: "Inspection User",
-  role: "inspector",
+  role: "admin",
   authenticated: true,
   source: "temporary_lighthouse_inspection_mode",
   inspectionMode: true,
