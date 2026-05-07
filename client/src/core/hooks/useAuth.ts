@@ -8,7 +8,26 @@ type UseAuthOptions = {
   redirectPath?: string;
 };
 
-const inspectionMode = import.meta.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true";
+const INSPECTION_STORAGE_KEY = "lighthouse-inspection-mode";
+
+function getInspectionMode(): boolean {
+  if (import.meta.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true") return true;
+
+  try {
+    if (typeof window === "undefined") return false;
+    const params = new URLSearchParams(window.location.search);
+    const queryFlag = params.get("inspection") ?? params.get("inspect");
+
+    if (queryFlag === "1" || queryFlag === "true") {
+      localStorage.setItem(INSPECTION_STORAGE_KEY, "true");
+      return true;
+    }
+
+    return localStorage.getItem(INSPECTION_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
 
 const inspectionUser = {
   id: "inspection_user",
@@ -23,6 +42,7 @@ const inspectionUser = {
 export function useAuth(options?: UseAuthOptions) {
   const { redirectOnUnauthenticated = false, redirectPath = getLoginUrl() } =
     options ?? {};
+  const inspectionMode = getInspectionMode();
   const utils = trpc.useUtils();
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
@@ -41,6 +61,7 @@ export function useAuth(options?: UseAuthOptions) {
     if (inspectionMode) {
       try {
         localStorage.removeItem("manus-runtime-user-info");
+        localStorage.removeItem(INSPECTION_STORAGE_KEY);
       } catch {
         // Ignore storage errors in inspection mode.
       }
@@ -62,7 +83,7 @@ export function useAuth(options?: UseAuthOptions) {
       await utils.auth.me.invalidate();
       window.location.href = getLoginUrl();
     }
-  }, [logoutMutation, utils]);
+  }, [inspectionMode, logoutMutation, utils]);
 
   const state = useMemo(() => {
     if (inspectionMode) {
@@ -96,6 +117,7 @@ export function useAuth(options?: UseAuthOptions) {
       isInspectionMode: false,
     };
   }, [
+    inspectionMode,
     meQuery.data,
     meQuery.error,
     meQuery.isLoading,
@@ -113,6 +135,7 @@ export function useAuth(options?: UseAuthOptions) {
 
     window.location.href = redirectPath;
   }, [
+    inspectionMode,
     redirectOnUnauthenticated,
     redirectPath,
     logoutMutation.isPending,
