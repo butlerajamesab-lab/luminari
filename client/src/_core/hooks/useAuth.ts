@@ -5,53 +5,30 @@ type UseAuthOptions = {
   redirectPath?: string;
 };
 
-const INSPECTION_STORAGE_KEY = "lighthouse-inspection-mode";
+const PREVIEW_AUTH_STORAGE_KEY = "lighthouse-preview-auth-open";
 
-function getInspectionMode(): boolean {
-  if (import.meta.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true") return true;
-
-  try {
-    if (typeof window === "undefined") return false;
-    const params = new URLSearchParams(window.location.search);
-    const queryFlag = params.get("inspection") ?? params.get("inspect");
-
-    if (queryFlag === "1" || queryFlag === "true") {
-      localStorage.setItem(INSPECTION_STORAGE_KEY, "true");
-      return true;
-    }
-
-    return localStorage.getItem(INSPECTION_STORAGE_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
-
-const inspectionUser = {
-  id: "inspection_user",
-  email: "inspection@lighthouse.local",
-  name: "Inspection User",
-  role: "admin",
+const previewUser = {
+  id: "preview_user",
+  email: "preview@lighthouse.local",
+  name: "Lighthouse Preview User",
+  role: "viewer",
   authenticated: true,
-  source: "temporary_lighthouse_inspection_mode",
-  inspectionMode: true,
+  source: "temporary_lighthouse_preview_auth_open",
+  previewAuthOpen: true,
 };
 
 /**
- * Preview-open auth hook.
+ * Temporary Render preview gate opener.
  *
- * Lighthouse Render is currently a preview/inspection surface. Production
- * OAuth/auth is intentionally not activated here. When inspection mode is
- * enabled, the UI receives a deterministic inspector identity so admin/control
- * pages can be viewed without enabling real auth, mutating Supabase, or
- * exposing service-role keys.
+ * This returns a deterministic preview identity so protected UI shells can be
+ * inspected while production OAuth is offline. Remove this when production auth
+ * is restored.
  */
 export function useAuth(_options?: UseAuthOptions) {
-  const inspectionMode = getInspectionMode();
-
   const logout = useCallback(async () => {
     try {
       localStorage.removeItem("manus-runtime-user-info");
-      localStorage.removeItem(INSPECTION_STORAGE_KEY);
+      localStorage.removeItem(PREVIEW_AUTH_STORAGE_KEY);
     } catch {
       // Ignore storage errors in preview mode.
     }
@@ -59,36 +36,25 @@ export function useAuth(_options?: UseAuthOptions) {
 
   const state = useMemo(() => {
     try {
-      localStorage.setItem(
-        "manus-runtime-user-info",
-        inspectionMode ? JSON.stringify(inspectionUser) : "null"
-      );
+      localStorage.setItem(PREVIEW_AUTH_STORAGE_KEY, "true");
+      localStorage.setItem("manus-runtime-user-info", JSON.stringify(previewUser));
     } catch {
       // Ignore storage errors in preview mode.
     }
 
-    if (inspectionMode) {
-      return {
-        user: inspectionUser,
-        loading: false,
-        error: null,
-        isAuthenticated: true,
-        isInspectionMode: true,
-      };
-    }
-
     return {
-      user: null,
+      user: previewUser,
       loading: false,
       error: null,
-      isAuthenticated: false,
-      isInspectionMode: false,
+      isAuthenticated: true,
+      isInspectionMode: true,
+      isPreviewAuthOpen: true,
     };
-  }, [inspectionMode]);
+  }, []);
 
   return {
     ...state,
-    refresh: async () => (inspectionMode ? inspectionUser : null),
+    refresh: async () => previewUser,
     logout,
   };
 }
