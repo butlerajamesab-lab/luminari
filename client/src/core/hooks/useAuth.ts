@@ -8,6 +8,18 @@ type UseAuthOptions = {
   redirectPath?: string;
 };
 
+const inspectionMode = import.meta.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true";
+
+const inspectionUser = {
+  id: "inspection_user",
+  email: "inspection@lighthouse.local",
+  name: "Inspection User",
+  role: "admin",
+  authenticated: true,
+  source: "temporary_lighthouse_inspection_mode",
+  inspectionMode: true,
+};
+
 export function useAuth(options?: UseAuthOptions) {
   const { redirectOnUnauthenticated = false, redirectPath = getLoginUrl() } =
     options ?? {};
@@ -16,6 +28,7 @@ export function useAuth(options?: UseAuthOptions) {
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
+    enabled: !inspectionMode,
   });
 
   const logoutMutation = trpc.auth.logout.useMutation({
@@ -25,6 +38,15 @@ export function useAuth(options?: UseAuthOptions) {
   });
 
   const logout = useCallback(async () => {
+    if (inspectionMode) {
+      try {
+        localStorage.removeItem("manus-runtime-user-info");
+      } catch {
+        // Ignore storage errors in inspection mode.
+      }
+      return;
+    }
+
     try {
       await logoutMutation.mutateAsync();
     } catch (error: unknown) {
@@ -32,20 +54,36 @@ export function useAuth(options?: UseAuthOptions) {
         error instanceof TRPCClientError &&
         error.data?.code === "UNAUTHORIZED"
       ) {
-        // Already logged out, that's fine
         return;
       }
-      // For any other error, still clear local state
       console.error("[Auth] Logout error:", error);
     } finally {
       utils.auth.me.setData(undefined, null);
       await utils.auth.me.invalidate();
-      // Redirect to login page after logout
       window.location.href = getLoginUrl();
     }
   }, [logoutMutation, utils]);
 
   const state = useMemo(() => {
+    if (inspectionMode) {
+      try {
+        localStorage.setItem(
+          "manus-runtime-user-info",
+          JSON.stringify(inspectionUser)
+        );
+      } catch {
+        // Ignore storage errors in inspection mode.
+      }
+
+      return {
+        user: inspectionUser,
+        loading: false,
+        error: null,
+        isAuthenticated: true,
+        isInspectionMode: true,
+      };
+    }
+
     localStorage.setItem(
       "manus-runtime-user-info",
       JSON.stringify(meQuery.data)
@@ -55,6 +93,7 @@ export function useAuth(options?: UseAuthOptions) {
       loading: meQuery.isLoading || logoutMutation.isPending,
       error: meQuery.error ?? logoutMutation.error ?? null,
       isAuthenticated: Boolean(meQuery.data),
+      isInspectionMode: false,
     };
   }, [
     meQuery.data,
@@ -65,6 +104,7 @@ export function useAuth(options?: UseAuthOptions) {
   ]);
 
   useEffect(() => {
+    if (inspectionMode) return;
     if (!redirectOnUnauthenticated) return;
     if (meQuery.isLoading || logoutMutation.isPending) return;
     if (state.user) return;
@@ -82,7 +122,7 @@ export function useAuth(options?: UseAuthOptions) {
 
   return {
     ...state,
-    refresh: () => meQuery.refetch(),
+    refresh: () => (inspectionMode ? Promise.resolve(inspectionUser) : meQuery.refetch()),
     logout,
   };
 }
