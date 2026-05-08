@@ -18,6 +18,23 @@ function requireInspectionMode(req: any, res: any, next: any) {
   next();
 }
 
+function extractRoutes(stack: any[], prefix = ""): any[] {
+  const routes: any[] = [];
+
+  for (const layer of stack || []) {
+    if (layer.route && layer.route.path) {
+      routes.push({
+        path: `${prefix}${layer.route.path}`,
+        methods: Object.keys(layer.route.methods || {}).map(m => m.toUpperCase()),
+      });
+    } else if (layer.name === "router" && layer.handle?.stack) {
+      routes.push(...extractRoutes(layer.handle.stack, prefix));
+    }
+  }
+
+  return routes;
+}
+
 aiInspectRouter.use(requireInspectionMode);
 
 aiInspectRouter.get("/health", (_req, res) => {
@@ -51,6 +68,27 @@ aiInspectRouter.get("/site-map", (_req, res) => {
     ],
     generatedAt: new Date().toISOString(),
   });
+});
+
+aiInspectRouter.get("/routes", (req: any, res) => {
+  try {
+    const app = req.app;
+    const routerStack = app?._router?.stack || [];
+
+    const routes = extractRoutes(routerStack);
+
+    res.json({
+      ok: true,
+      routeCount: routes.length,
+      generatedAt: new Date().toISOString(),
+      routes,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      ok: false,
+      error: error?.message || "Failed to enumerate routes",
+    });
+  }
 });
 
 aiInspectRouter.get("/runtime", (_req, res) => {
