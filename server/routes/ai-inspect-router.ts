@@ -12,7 +12,6 @@ function requireInspectionMode(req: any, res: any, next: any) {
     return res.status(403).json({
       ok: false,
       error: "AI inspection mode is disabled",
-      hint: "Set VITE_LIGHTHOUSE_INSPECTION_MODE=true or LIGHTHOUSE_INSPECTION_MODE=true to enable read-only inspection endpoints.",
     });
   }
 
@@ -31,35 +30,26 @@ aiInspectRouter.get("/health", (_req, res) => {
   });
 });
 
-aiInspectRouter.get("/manifest", (_req, res) => {
+aiInspectRouter.get("/site-map", (_req, res) => {
   res.json({
     ok: true,
-    service: "ai-inspection",
-    mode: "read_only",
-    purpose: "Expose safe, structured runtime context for AI-assisted Lighthouse/Luminari inspection.",
-    routes: [
-      {
-        method: "GET",
-        path: "/api/ai/health",
-        description: "Confirms inspection endpoint is mounted before Vite/static fallback.",
-      },
-      {
-        method: "GET",
-        path: "/api/ai/manifest",
-        description: "Returns the inspection endpoint manifest.",
-      },
-      {
-        method: "GET",
-        path: "/api/ai/runtime",
-        description: "Returns safe runtime metadata only; no secrets, no database mutation.",
-      },
+    pages: [
+      "/lighthouse",
+      "/mudroom",
+      "/viewfinder",
+      "/civicmap",
+      "/mission-control",
+      "/architecture-map",
+      "/docket-room"
     ],
-    safety: {
-      readOnly: true,
-      exposesSecrets: false,
-      mutatesDatabase: false,
-      productionAuthBypass: false,
-    },
+    systems: [
+      "lighthouse",
+      "atlas",
+      "prism",
+      "rosetta",
+      "esquire"
+    ],
+    generatedAt: new Date().toISOString(),
   });
 });
 
@@ -67,25 +57,12 @@ aiInspectRouter.get("/runtime", (_req, res) => {
   res.json({
     ok: true,
     app: "luminari-lighthouse",
-    nodeEnv: process.env.NODE_ENV || null,
     inspectionMode: true,
+    nodeEnv: process.env.NODE_ENV || null,
     render: {
       serviceName: process.env.RENDER_SERVICE_NAME || null,
       gitCommit: process.env.RENDER_GIT_COMMIT || null,
-      gitBranch: process.env.RENDER_GIT_BRANCH || null,
-      externalHostname: process.env.RENDER_EXTERNAL_HOSTNAME || null,
     },
-    flags: {
-      viteLighthouseInspectionMode:
-        process.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true",
-      lighthouseInspectionMode:
-        process.env.LIGHTHOUSE_INSPECTION_MODE === "true",
-    },
-    safety: {
-      readOnly: true,
-      secretsRedacted: true,
-    },
-    timestamp: new Date().toISOString(),
   });
 });
 
