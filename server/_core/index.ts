@@ -4,6 +4,7 @@ import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { lighthouseGateRouter } from "../lighthouse-gate-router";
+import aiInspectRouter from "../routes/ai-inspect-router";
 import { serveStatic, setupVite } from "./vite";
 
 const SUPABASE_PROJECT = "wepxlinwbjrkqdzkqpar";
@@ -98,6 +99,9 @@ async function startServer() {
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, supabaseProject: SUPABASE_PROJECT });
   });
+
+  // AI inspection routes — MUST be mounted before Vite/static serving
+  app.use("/api/ai", aiInspectRouter);
 
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
