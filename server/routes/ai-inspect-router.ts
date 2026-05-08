@@ -7,6 +7,8 @@ const INSPECTION_MODE_ENABLED =
   process.env.LIGHTHOUSE_INSPECTION_MODE === "true" ||
   process.env.NODE_ENV !== "production";
 
+const runtimeErrors: any[] = [];
+
 function requireInspectionMode(req: any, res: any, next: any) {
   if (!INSPECTION_MODE_ENABLED) {
     return res.status(403).json({
@@ -34,6 +36,26 @@ function extractRoutes(stack: any[], prefix = ""): any[] {
 
   return routes;
 }
+
+function recordRuntimeError(source: string, error: any) {
+  runtimeErrors.unshift({
+    source,
+    message: error?.message || String(error),
+    timestamp: new Date().toISOString(),
+  });
+
+  if (runtimeErrors.length > 100) {
+    runtimeErrors.pop();
+  }
+}
+
+process.on("uncaughtException", error => {
+  recordRuntimeError("uncaughtException", error);
+});
+
+process.on("unhandledRejection", error => {
+  recordRuntimeError("unhandledRejection", error);
+});
 
 aiInspectRouter.use(requireInspectionMode);
 
@@ -84,11 +106,22 @@ aiInspectRouter.get("/routes", (req: any, res) => {
       routes,
     });
   } catch (error: any) {
+    recordRuntimeError("route-enumeration", error);
+
     res.status(500).json({
       ok: false,
       error: error?.message || "Failed to enumerate routes",
     });
   }
+});
+
+aiInspectRouter.get("/errors", (_req, res) => {
+  res.json({
+    ok: true,
+    totalErrors: runtimeErrors.length,
+    generatedAt: new Date().toISOString(),
+    errors: runtimeErrors,
+  });
 });
 
 aiInspectRouter.get("/runtime", (_req, res) => {
