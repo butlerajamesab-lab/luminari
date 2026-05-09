@@ -1,0 +1,35 @@
+{
+  "ok": true,
+  "ingest": {
+    "accepted": true,
+    "ingested_count": 3
+  },
+  "cursor": {
+    "cursor_id": "cur_nr8e4rconp71u9",
+    "stream_id": "open_states",
+    "name": "test-cycle-1778311499892",
+    "current_offset": 10000,
+    "created_by": "test-cycle",
+    "created_at": "2026-05-09T07:25:00.02+00:00",
+    "updated_at": "2026-05-09T07:25:00.02+00:00"
+  },
+  "events": {
+    "count": 3,
+    "from_offset": 10000,
+    "next_offset": 10003
+  },
+  "investigation": {
+    "job_id": "job_r7k4esdrzvy68e",
+    "status": "completed",
+    "emitted_patterns": 1
+  },
+  "patterns": [
+    {
+      "pattern_id": "pp_k55ix5z76hce",
+      "pattern_type": "stream_health_alert",
+      "severity": "low",
+      "confidence": 0.35,
+      "summary": "Stream open_states health issue detected: confidence_distribution."
+    }
+  ]
+}
