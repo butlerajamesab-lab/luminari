@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CivicMap v2 — Lighthouse</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --purple: #a855f7;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+    #map { height: 100vh; width: 100vw; z-index: 1; }
+    .top-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 56px;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      z-index: 1000;
+      gap: 12px;
+    }
+    .logo {
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+    .search-box {
+      flex: 1;
+      max-width: 440px;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 8px 12px 8px 36px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 14px;
+    }
+    .search-box i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+    }
+    .top-actions { display: flex; gap: 8px; }
+    .btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: var(--panel);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn:hover { background: rgba(255,255,255,0.1); }
+    .btn.voice { background: var(--warning); color: #000; border-color: var(--warning); }
+    .btn.voice.listening { animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .layer-panel {
+      position: fixed;
+      top: 72px;
+      left: 16px;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 12px;
+      z-index: 1000;
+      min-width: 230px;
+    }
+    .layer-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    .layer-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .layer-item input { cursor: pointer; }
+    .layer-note { cursor: default; color: var(--muted); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dot.resource { background: var(--success); }
+    .dot.signal { background: var(--danger); }
+    .dot.national { background: var(--accent); }
+    .sidebar {
+      position: fixed;
+      top: 56px;
+      right: -420px;
+      width: 420px;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.98);
+      backdrop-filter: blur(20px);
+      border-left: 1px solid rgba(255,255,255,0.1);
+      z-index: 1001;
+      transition: right 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .sidebar.open { right: 0; }
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .sidebar-title { font-size: 18px; font-weight: 700; line-height: 1.3; }
+    .sidebar-meta {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .sidebar-body { flex: 1; overflow-y: auto; padding: 20px; }
+    .section { margin-bottom: 24px; }
+    .section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 10px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 14px;
+    }
+    .info-row span:last-child { text-align: right; overflow-wrap: anywhere; }
+    .info-label { color: var(--muted); flex-shrink: 0; }
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .action-btn {
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: var(--panel);
+      color: var(--text);
+      text-align: center;
+      cursor: pointer;
+      font-size: 13px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .action-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
+    .action-btn.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+    .action-btn.danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+    .tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+    .tag.resource { background: rgba(34, 197, 94, 0.2); color: var(--success); }
+    .tag.signal { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+    .tag.national { background: rgba(56, 189, 248, 0.2); color: var(--accent); }
+    .tag.medium { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .blocker-item {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .blocker-title { font-weight: 600; color: var(--danger); margin-bottom: 4px; }
+    .related-item {
+      background: var(--panel);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      border: 1px solid rgba(255,255,255,0.05);
+      transition: all 0.2s;
+    }
+    .related-item:hover { border-color: var(--accent); }
+    .voice-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 2000;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .voice-overlay.active { display: flex; }
+    .voice-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: var(--warning);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      color: #000;
+      animation: voicePulse 1.5s infinite;
+    }
+    @keyframes voicePulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } }
+    .voice-text { margin-top: 24px; font-size: 18px; color: var(--text); }
+    .voice-hint { margin-top: 8px; font-size: 14px; color: var(--muted); }
+    .status-badge {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: blink 2s infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    @media (max-width: 768px) {
+      .sidebar { width: 100%; right: -100%; }
+      .search-box { max-width: 220px; }
+      .layer-panel { top: auto; bottom: 80px; left: 10px; }
+      .btn span { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="logo"><i class="fas fa-compass"></i> CivicMap v2</div>
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" id="searchInput" placeholder="Search benefits offices, signals, national resources...">
+    </div>
+    <div class="top-actions">
+      <button class="btn" id="btnExplain" onclick="loadSystemView()">
+        <i class="fas fa-project-diagram"></i> <span>Explain Case</span>
+      </button>
+      <button class="btn voice" id="btnVoice" onclick="toggleVoice()">
+        <i class="fas fa-microphone"></i> <span>Voice</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="layer-panel">
+    <div class="layer-title">Lighthouse Layers</div>
+    <label class="layer-item">
+      <input type="checkbox" id="layerResources" checked onchange="toggleLayer('resources')">
+      <div class="dot resource"></div>
+      <span id="resourcesLayerLabel">Resources</span>
+    </label>
+    <label class="layer-item">
+      <input type="checkbox" id="layerSignals" checked onchange="toggleLayer('signals')">
+      <div class="dot signal"></div>
+      <span id="signalsLayerLabel">Signals</span>
+    </label>
+    <div class="layer-item layer-note">
+      <div class="dot national"></div>
+      <span id="nationalLayerLabel">National Resources</span>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div>
+        <div class="sidebar-title" id="sbTitle">Select an item</div>
+        <div class="sidebar-meta" id="sbMeta">LIGHTHOUSE INTERACTIVE SURFACE</div>
+      </div>
+      <button class="close-btn" onclick="closeSidebar()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="sidebar-body" id="sbBody">
+      <div style="color: var(--muted); text-align: center; padding: 40px 20px;">
+        <i class="fas fa-mouse-pointer" style="font-size: 32px; margin-bottom: 16px; opacity: 0.5;"></i>
+        <p>Click any pin on the map to view details, related resources, and available actions.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="voice-overlay" id="voiceOverlay">
+    <div class="voice-circle"><i class="fas fa-microphone"></i></div>
+    <div class="voice-text" id="voiceText">Listening...</div>
+    <div class="voice-hint">Try: "explain case", "show related", "show location", "show blockers"</div>
+  </div>
+
+  <div class="status-badge">
+    <div class="status-dot"></div>
+    <span id="statusText">Lighthouse Active</span>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://wepxlinwbjrkqdzkqpar.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlcHhsaW53Ympya3FkemtxcGFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzM0OTUsImV4cCI6MjA5MDc0OTQ5NX0.TDEswS4JskimfZjpN-Rrph2Y6WiDUEwEcJXWKhlEWZk';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const WA_CENTER = [47.5, -122.3];
+
+    let map;
+    let layers = { resources: null, signals: null };
+    let data = { resources: [], signals: [], national: [] };
+    let cityCoordinateIndex = new Map();
+    let currentSelection = null;
+    let recognition = null;
+
+    async function init() {
+      map = L.map('map').setView(WA_CENTER, 7);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+      }).addTo(map);
+
+      layers.resources = L.layerGroup().addTo(map);
+      layers.signals = L.layerGroup().addTo(map);
+
+      await loadAllData();
+      setupSearch();
+      setupVoice();
+    }
+
+    async function loadAllData() {
+      try {
+        await loadResources();
+        await Promise.all([loadSignals(), loadNationalResources()]);
+        updateLayerLabels();
+        fitVisibleBounds();
+        updateStatus(`Lighthouse Active — ${data.resources.length} resources, ${data.signals.length} signals, ${data.national.length} national references`);
+      } catch (error) {
+        console.error('Lighthouse load error:', error);
+        updateStatus('Lighthouse Active — some data failed to load');
+      }
+    }
+
+    async function loadResources() {
+      updateStatus('Loading Lighthouse resources...');
+      const { data: rows, error } = await supabaseClient
+        .from('normalized_civic_resource')
+        .select('id,name,resource_type,latitude,longitude,city,address_line1,phone,hours,service_categories,eligibility_summary,organization_name,website_url')
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      data.resources = (rows || []).map(row => ({ ...row, latitude: Number(row.latitude), longitude: Number(row.longitude) }));
+      buildCityCoordinateIndex();
+      renderPins(data.resources, 'resources', '#22c55e', 14);
+    }
+
+    async function loadSignals() {
+      updateStatus('Loading Lighthouse signals...');
+      const { data: rows, error } = await supabaseClient
+        .from('detected_signals')
+        .select('id,case_id,finding_id,snapshot_id,pipeline_run_id,signal_type,signal_description,severity,confidence_score,created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      data.signals = (rows || []).map((row, index) => enrichSignal(row, index));
+      renderSignals(data.signals);
+    }
+
+    async function loadNationalResources() {
+      updateStatus('Loading national reference resources...');
+      const { data: rows, error } = await supabaseClient
+        .from('national_resources')
+        .select('id,resource_id,resource_name,resource_type,jurisdiction,service_category,phone,website,metadata,source_url,created_at')
+        .order('resource_name', { ascending: true });
+
+      if (error) throw error;
+      data.national = rows || [];
+    }
+
+    function buildCityCoordinateIndex() {
+      const grouped = new Map();
+      data.resources.forEach(item => {
+        const city = normalizeCity(item.city);
+        if (!city || !isFinite(item.latitude) || !isFinite(item.longitude)) return;
+        if (!grouped.has(city)) grouped.set(city, []);
+        grouped.get(city).push([item.latitude, item.longitude]);
+      });
+      cityCoordinateIndex = new Map(Array.from(grouped.entries()).map(([city, coords]) => {
+        const lat = coords.reduce((sum, coord) => sum + coord[0], 0) / coords.length;
+        const lng = coords.reduce((sum, coord) => sum + coord[1], 0) / coords.length;
+        return [city, { lat, lng }];
+      }));
+    }
+
+    function enrichSignal(row, index) {
+      const city = extractCityFromSignal(row.signal_description || '');
+      const match = city ? cityCoordinateIndex.get(normalizeCity(city)) : null;
+      const jitter = deterministicJitter(row.id || String(index), match ? 0.035 : 0.9);
+      const baseLat = match ? match.lat : WA_CENTER[0];
+      const baseLng = match ? match.lng : WA_CENTER[1];
+      return {
+        ...row,
+        name: signalTitle(row),
+        description: row.signal_description || '',
+        city: city || 'Washington',
+        geocoded_from_resource: Boolean(match),
+        latitude: baseLat + jitter.lat,
+        longitude: baseLng + jitter.lng,
+        score: typeof row.confidence_score === 'number' ? row.confidence_score : Number(row.confidence_score || 0)
+      };
+    }
+
+    function extractCityFromSignal(description) {
+      const patterns = [
+        /:\s*([A-Za-z][A-Za-z .'-]+?)\s*(?:[-–—]|\(|$)/,
+        /\bin\s+([A-Za-z][A-Za-z .'-]+?)\s*(?:\(|,|\.|$)/i,
+        /coverage\s+in\s+([A-Za-z][A-Za-z .'-]+?)\s*(?:\(|,|\.|$)/i,
+        /activity\s+in\s+([A-Za-z][A-Za-z .'-]+?)\s*(?:\(|,|\.|$)/i
+      ];
+      for (const pattern of patterns) {
+        const match = description.match(pattern);
+        if (match && match[1]) return cleanupCity(match[1]);
+      }
+      return '';
+    }
+
+    function cleanupCity(value) {
+      return value
+        .replace(/\bWashington\b|\bWA\b/gi, '')
+        .replace(/\s+(office|offices|coverage|activity|gap).*$/i, '')
+        .replace(/[–—-].*$/, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function normalizeCity(city) {
+      return (city || '').toString().toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function deterministicJitter(seed, scale) {
+      let hash = 0;
+      for (let i = 0; i < seed.length; i++) hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
+      const x = Math.sin(hash) * 10000;
+      const y = Math.cos(hash) * 10000;
+      return { lat: (x - Math.floor(x) - 0.5) * scale, lng: (y - Math.floor(y) - 0.5) * scale };
+    }
+
+    function signalTitle(item) {
+      const label = (item.signal_type || 'detected_signal').replace(/_/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
+      const city = extractCityFromSignal(item.signal_description || '');
+      return city ? `${label}: ${city}` : label;
+    }
+
+    function renderPins(items, layerName, color, size) {
+      layers[layerName].clearLayers();
+      const icon = L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="background: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2]
+      });
+      items.forEach(item => {
+        if (!isFinite(item.latitude) || !isFinite(item.longitude)) return;
+        const marker = L.marker([item.latitude, item.longitude], { icon });
+        marker.on('click', () => selectItem(item, layerName));
+        layers[layerName].addLayer(marker);
+      });
+    }
+
+    function renderSignals(items) {
+      layers.signals.clearLayers();
+      const icon = L.divIcon({
+        className: 'custom-marker',
+        html: '<div style="background: #ef4444; width: 18px; height: 18px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.4);"></div>',
+        iconSize: [18, 18],
+        iconAnchor: [9, 9]
+      });
+      items.forEach(item => {
+        const marker = L.marker([item.latitude, item.longitude], { icon });
+        marker.on('click', () => selectItem(item, 'signals'));
+        layers.signals.addLayer(marker);
+      });
+    }
+
+    function selectItem(item, type) {
+      currentSelection = { item, type };
+      document.getElementById('sidebar').classList.add('open');
+      const title = document.getElementById('sbTitle');
+      const meta = document.getElementById('sbMeta');
+      const body = document.getElementById('sbBody');
+
+      if (type === 'signals') {
+        title.textContent = item.name || signalTitle(item);
+        meta.textContent = `SIGNAL • ${item.severity || 'Medium'} Severity • Confidence: ${formatScore(item.score)} • ${item.city || 'Washington'}`;
+        body.innerHTML = renderSignalDetails(item);
+      } else {
+        title.textContent = item.name || item.organization_name || 'Unnamed Resource';
+        meta.textContent = `RESOURCE • ${item.city || 'Washington'} • ID: ${shortId(item.id)}`;
+        body.innerHTML = renderResourceDetails(item);
+      }
+    }
+
+    function renderResourceDetails(item) {
+      const categories = toArray(item.service_categories);
+      const website = item.website_url || '';
+      return `
+        <div class="section">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+            <span class="tag resource">Benefits Office</span>
+            <span class="tag medium">${escapeHtml(item.city || 'Unknown City')}</span>
+            ${item.hours ? '<span class="tag national">Hours Listed</span>' : ''}
+            ${!item.phone ? '<span class="tag signal">Phone Missing</span>' : ''}
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title"><i class="fas fa-info-circle"></i> Details</div>
+          <div class="info-row"><span class="info-label">Organization</span><span>${escapeHtml(item.organization_name || item.name || 'Not listed')}</span></div>
+          <div class="info-row"><span class="info-label">Address</span><span>${escapeHtml(item.address_line1 || 'Not listed')}${item.city ? ', ' + escapeHtml(item.city) : ''}</span></div>
+          <div class="info-row"><span class="info-label">Phone</span><span>${escapeHtml(item.phone || 'Not listed')}</span></div>
+          ${item.hours ? `<div class="info-row"><span class="info-label">Hours</span><span>${escapeHtml(item.hours)}</span></div>` : ''}
+          <div class="info-row"><span class="info-label">Resource Type</span><span>${escapeHtml(item.resource_type || 'benefits_office')}</span></div>
+          <div class="info-row"><span class="info-label">Coordinates</span><span>${Number(item.latitude).toFixed(4)}, ${Number(item.longitude).toFixed(4)}</span></div>
+          ${categories.length ? `<div class="info-row"><span class="info-label">Services</span><span>${categories.map(escapeHtml).join(', ')}</span></div>` : ''}
+          ${item.eligibility_summary ? `<div class="info-row"><span class="info-label">Eligibility</span><span>${escapeHtml(item.eligibility_summary)}</span></div>` : ''}
+        </div>
+        <div class="section">
+          <div class="section-title"><i class="fas fa-bolt"></i> Actions</div>
+          <div class="action-grid">
+            <a class="action-btn primary" href="tel:${encodeURIComponent(item.phone || '')}" onclick="return ${item.phone ? 'true' : 'false'}"><i class="fas fa-phone"></i> Call</a>
+            <a class="action-btn" href="https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}" target="_blank" rel="noopener"><i class="fas fa-directions"></i> Directions</a>
+            ${website ? `<a class="action-btn" href="${escapeAttribute(website)}" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Website</a>` : `<button class="action-btn" onclick="updateStatus('No website listed')"><i class="fas fa-globe"></i> Website</button>`}
+            <button class="action-btn" onclick="showRelated('${escapeAttribute(item.id)}', 'resources')"><i class="fas fa-link"></i> Related</button>
+          </div>
+        </div>
+        <div class="section" id="blockersSection">
+          <div class="section-title"><i class="fas fa-exclamation-triangle"></i> Blockers</div>
+          ${renderBlockers(item)}
+        </div>
+        <div class="section" id="relatedSection" style="display: none;">
+          <div class="section-title"><i class="fas fa-project-diagram"></i> Related Records</div>
+          <div id="relatedList"></div>
+        </div>`;
+    }
+
+    function renderSignalDetails(item) {
+      return `
+        <div class="section">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+            <span class="tag signal">Signal</span>
+            <span class="tag medium">${escapeHtml(item.severity || 'Medium')}</span>
+            <span class="tag national">${escapeHtml(item.signal_type || 'detected_signal')}</span>
+            <span class="tag resource">${item.geocoded_from_resource ? 'City matched' : 'WA jittered'}</span>
+          </div>
+          <p style="font-size: 14px; line-height: 1.6; color: var(--text); margin-bottom: 16px;">${escapeHtml(item.description || 'No signal description provided.')}</p>
+        </div>
+        <div class="section">
+          <div class="section-title"><i class="fas fa-crosshairs"></i> Detection Provenance</div>
+          <div class="info-row"><span class="info-label">Signal Type</span><span>${escapeHtml(item.signal_type || 'detected_signal')}</span></div>
+          <div class="info-row"><span class="info-label">City</span><span>${escapeHtml(item.city || 'Washington')}</span></div>
+          <div class="info-row"><span class="info-label">Confidence</span><span>${formatScore(item.score)}</span></div>
+          <div class="info-row"><span class="info-label">Severity</span><span style="color: ${severityColor(item.severity)};">${escapeHtml(item.severity || 'Medium')}</span></div>
+          <div class="info-row"><span class="info-label">Generated</span><span>${item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Not listed'}</span></div>
+          <div class="info-row"><span class="info-label">Coordinates</span><span>${Number(item.latitude).toFixed(4)}, ${Number(item.longitude).toFixed(4)}</span></div>
+          <div class="info-row"><span class="info-label">Case ID</span><span>${escapeHtml(shortId(item.case_id) || 'Not listed')}</span></div>
+        </div>
+        <div class="section">
+          <div class="section-title"><i class="fas fa-info-circle"></i> What This Means</div>
+          <p style="font-size: 13px; line-height: 1.6; color: var(--muted);">This signal represents a detected civic-service condition from Lighthouse. Signals are placed by extracting the city from the signal description and matching it to known benefits office coordinates when possible; otherwise, they are deterministically jittered around the Washington state center.</p>
+        </div>
+        <div class="section">
+          <div class="section-title"><i class="fas fa-bolt"></i> Actions</div>
+          <div class="action-grid">
+            <button class="action-btn danger" onclick="escalateSignal('${escapeAttribute(item.id)}')"><i class="fas fa-flag"></i> Escalate</button>
+            <button class="action-btn" onclick="showRelated('${escapeAttribute(item.id)}', 'signals')"><i class="fas fa-link"></i> Related</button>
+            <button class="action-btn" onclick="showLocation('${escapeAttribute(item.id)}')"><i class="fas fa-map-marker-alt"></i> Location</button>
+            <button class="action-btn" onclick="explainCase('${escapeAttribute(item.case_id || 'system')}')"><i class="fas fa-file-alt"></i> Explain</button>
+          </div>
+        </div>
+        <div class="section" id="relatedSection" style="display: none;">
+          <div class="section-title"><i class="fas fa-project-diagram"></i> Related Records</div>
+          <div id="relatedList"></div>
+        </div>`;
+    }
+
+    function renderBlockers(item) {
+      const blockers = [];
+      if (!item.hours) blockers.push({ title: 'Missing Hours', desc: 'Operating hours are not listed, so accessibility cannot be verified from this record.' });
+      if (!item.phone) blockers.push({ title: 'Missing Phone', desc: 'No contact number is available for coordination.' });
+      if (!item.address_line1) blockers.push({ title: 'Missing Address', desc: 'Physical location details are incomplete.' });
+      if (blockers.length === 0) return '<div style="color: var(--success); font-size: 13px;"><i class="fas fa-check-circle"></i> No blockers detected for this record.</div>';
+      return blockers.map(b => `<div class="blocker-item"><div class="blocker-title"><i class="fas fa-exclamation-triangle"></i> ${b.title}</div><div>${b.desc}</div></div>`).join('');
+    }
+
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+      currentSelection = null;
+    }
+
+    function showRelated(id, type) {
+      const relatedSection = document.getElementById('relatedSection');
+      const relatedList = document.getElementById('relatedList');
+      if (!relatedSection || !relatedList) return;
+      relatedSection.style.display = 'block';
+      relatedList.innerHTML = '<div style="color: var(--muted); padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Loading related records...</div>';
+
+      const currentItem = [...data.resources, ...data.signals].find(item => item.id === id);
+      const queryText = [currentItem?.city, currentItem?.signal_type, currentItem?.resource_type, currentItem?.service_categories, currentItem?.description].flat().filter(Boolean).join(' ').toLowerCase();
+      const nationalMatches = rankNationalResources(queryText).slice(0, 6);
+      const nearbyResources = type === 'signals'
+        ? data.resources.filter(resource => normalizeCity(resource.city) === normalizeCity(currentItem?.city)).slice(0, 5)
+        : data.resources.filter(resource => resource.city === currentItem?.city && resource.id !== id).slice(0, 5);
+
+      const sections = [];
+      if (nearbyResources.length) {
+        sections.push(`<div style="margin-bottom: 12px; color: var(--muted); font-size: 12px;">Local Lighthouse Resources</div>${nearbyResources.map(resource => `
+          <div class="related-item" onclick="selectItemById('${escapeAttribute(resource.id)}', 'resources')">
+            <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(resource.name || resource.organization_name || 'Unnamed Resource')}</div>
+            <div style="color: var(--muted); font-size: 12px;">${escapeHtml(resource.address_line1 || '')} • ${escapeHtml(resource.hours || 'Hours unknown')}</div>
+          </div>`).join('')}`);
+      }
+      if (nationalMatches.length) {
+        sections.push(`<div style="margin: 16px 0 12px; color: var(--muted); font-size: 12px;">National Reference Resources</div>${nationalMatches.map(resource => `
+          <div class="related-item" onclick="showNationalResource('${escapeAttribute(resource.id)}')">
+            <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(resource.resource_name || 'National Resource')}</div>
+            <div style="color: var(--muted); font-size: 12px;">${escapeHtml(resource.service_category || resource.resource_type || 'Reference')} • ${escapeHtml(resource.jurisdiction || 'National')}</div>
+          </div>`).join('')}`);
+      }
+      relatedList.innerHTML = sections.join('') || '<div style="color: var(--muted); padding: 12px;">No related records found.</div>';
+    }
+
+    function rankNationalResources(queryText) {
+      const q = queryText || '';
+      return data.national
+        .map(resource => {
+          const text = [resource.resource_name, resource.resource_type, resource.service_category, resource.jurisdiction, resource.metadata].map(value => typeof value === 'object' ? JSON.stringify(value) : value).filter(Boolean).join(' ').toLowerCase();
+          const score = q.split(/\s+/).filter(token => token.length > 3 && text.includes(token)).length;
+          return { ...resource, _score: score };
+        })
+        .sort((a, b) => b._score - a._score || (a.resource_name || '').localeCompare(b.resource_name || ''));
+    }
+
+    function showNationalResource(id) {
+      const resource = data.national.find(item => item.id === id);
+      if (!resource) return;
+      document.getElementById('sbTitle').textContent = resource.resource_name || 'National Resource';
+      document.getElementById('sbMeta').textContent = `NATIONAL RESOURCE • ${resource.jurisdiction || 'National'} • ID: ${shortId(resource.id)}`;
+      document.getElementById('sbBody').innerHTML = `
+        <div class="section">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+            <span class="tag national">National Resource</span>
+            <span class="tag medium">${escapeHtml(resource.service_category || 'Reference')}</span>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title"><i class="fas fa-info-circle"></i> Details</div>
+          <div class="info-row"><span class="info-label">Resource Type</span><span>${escapeHtml(resource.resource_type || 'Not listed')}</span></div>
+          <div class="info-row"><span class="info-label">Jurisdiction</span><span>${escapeHtml(resource.jurisdiction || 'National')}</span></div>
+          <div class="info-row"><span class="info-label">Service Category</span><span>${escapeHtml(resource.service_category || 'Not listed')}</span></div>
+          <div class="info-row"><span class="info-label">Phone</span><span>${escapeHtml(resource.phone || 'Not listed')}</span></div>
+          ${resource.created_at ? `<div class="info-row"><span class="info-label">Created</span><span>${new Date(resource.created_at).toLocaleDateString()}</span></div>` : ''}
+        </div>
+        <div class="section">
+          <div class="section-title"><i class="fas fa-bolt"></i> Actions</div>
+          <div class="action-grid">
+            <a class="action-btn primary" href="tel:${encodeURIComponent(resource.phone || '')}" onclick="return ${resource.phone ? 'true' : 'false'}"><i class="fas fa-phone"></i> Call</a>
+            ${resource.website ? `<a class="action-btn" href="${escapeAttribute(resource.website)}" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Website</a>` : `<button class="action-btn" onclick="updateStatus('No website listed')"><i class="fas fa-globe"></i> Website</button>`}
+            ${resource.source_url ? `<a class="action-btn" href="${escapeAttribute(resource.source_url)}" target="_blank" rel="noopener"><i class="fas fa-link"></i> Source</a>` : `<button class="action-btn" onclick="updateStatus('No source URL listed')"><i class="fas fa-link"></i> Source</button>`}
+            <button class="action-btn" onclick="loadSystemView()"><i class="fas fa-project-diagram"></i> System</button>
+          </div>
+        </div>`;
+    }
+
+    function selectItemById(id, type) {
+      const item = data[type]?.find(entry => entry.id === id);
+      if (item) selectItem(item, type);
+    }
+
+    function showLocation(id) {
+      const item = [...data.resources, ...data.signals].find(entry => entry.id === id);
+      if (item && isFinite(item.latitude) && isFinite(item.longitude)) map.setView([item.latitude, item.longitude], 14);
+    }
+
+    function explainCase(caseId) {
+      document.getElementById('sidebar').classList.add('open');
+      document.getElementById('sbTitle').textContent = 'Lighthouse Case Explanation';
+      document.getElementById('sbMeta').textContent = `FULL SYSTEM VIEW • ${caseId && caseId !== 'system' ? shortId(caseId) : 'SYSTEM'}`;
+      const signals = caseId && caseId !== 'system' ? data.signals.filter(signal => signal.case_id === caseId) : data.signals;
+      const counts = signals.reduce((acc, signal) => {
+        const key = signal.signal_type || 'detected_signal';
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+      document.getElementById('sbBody').innerHTML = `
+        <div class="section">
+          <div class="section-title"><i class="fas fa-sitemap"></i> Case Chain Overview</div>
+          <p style="font-size: 14px; line-height: 1.6; margin-bottom: 16px;">This Lighthouse view contains <strong>${signals.length} signals</strong>, <strong>${data.resources.length} local benefits-office resources</strong>, and <strong>${data.national.length} national reference resources</strong>.</p>
+          <div class="info-row"><span class="info-label">Resources</span><span>${data.resources.length}</span></div>
+          <div class="info-row"><span class="info-label">Signals</span><span>${signals.length}</span></div>
+          <div class="info-row"><span class="info-label">National References</span><span>${data.national.length}</span></div>
+          <div class="info-row"><span class="info-label">Status</span><span style="color: var(--success);">Lighthouse Active</span></div>
+        </div>
+        <div class="section">
+          <div class="section-title"><i class="fas fa-list"></i> Signal Types</div>
+          ${Object.entries(counts).map(([type, count]) => `<div class="related-item"><div style="display: flex; justify-content: space-between;"><span>${escapeHtml(type)}</span><span>${count}</span></div></div>`).join('') || '<div style="color: var(--muted);">No active signals.</div>'}
+        </div>
+        <div class="section">
+          <div class="section-title"><i class="fas fa-database"></i> Active Signals</div>
+          ${signals.slice(0, 25).map(signal => `
+            <div class="related-item" onclick="selectItemById('${escapeAttribute(signal.id)}', 'signals')">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                <span style="font-weight: 600;">${escapeHtml(signal.city || 'Washington')}</span>
+                <span class="tag ${String(signal.severity || '').toLowerCase().includes('high') ? 'signal' : 'medium'}">${escapeHtml(signal.severity || 'Medium')}</span>
+              </div>
+              <div style="color: var(--muted); font-size: 12px; margin-top: 4px;">${escapeHtml((signal.description || 'Signal detected').slice(0, 110))}...</div>
+            </div>`).join('') || '<div style="color: var(--muted);">No active signals in this case view.</div>'}
+        </div>`;
+      updateStatus('Lighthouse case explanation loaded');
+    }
+
+    function escalateSignal(id) {
+      alert(`Signal ${id} marked for Lighthouse escalation.`);
+    }
+
+    function loadSystemView() { explainCase('system'); }
+
+    function toggleLayer(type) {
+      const checkbox = document.getElementById(`layer${type.charAt(0).toUpperCase() + type.slice(1)}`);
+      if (!layers[type] || !checkbox) return;
+      checkbox.checked ? map.addLayer(layers[type]) : map.removeLayer(layers[type]);
+    }
+
+    function setupSearch() {
+      const input = document.getElementById('searchInput');
+      let debounce;
+      input.addEventListener('input', event => {
+        clearTimeout(debounce);
+        debounce = setTimeout(() => performSearch(event.target.value), 250);
+      });
+    }
+
+    function performSearch(query) {
+      const q = (query || '').trim().toLowerCase();
+      if (!q) {
+        renderPins(data.resources, 'resources', '#22c55e', 14);
+        renderSignals(data.signals);
+        updateStatus(`Lighthouse Active — ${data.resources.length} resources, ${data.signals.length} signals, ${data.national.length} national references`);
+        return;
+      }
+      const resourceMatches = data.resources.filter(item => searchableText(item).includes(q));
+      const signalMatches = data.signals.filter(item => searchableText(item).includes(q));
+      renderPins(resourceMatches, 'resources', '#22c55e', 14);
+      renderSignals(signalMatches);
+      const visibleMarkers = [...layers.resources.getLayers(), ...layers.signals.getLayers()];
+      if (visibleMarkers.length > 0) map.fitBounds(new L.featureGroup(visibleMarkers).getBounds().pad(0.1));
+      updateStatus(`Search: ${resourceMatches.length + signalMatches.length} map results for "${query}"`);
+    }
+
+    function searchableText(item) {
+      return [item.name, item.organization_name, item.resource_type, item.city, item.address_line1, item.phone, item.hours, item.service_categories, item.eligibility_summary, item.signal_type, item.signal_description, item.description, item.severity]
+        .map(value => Array.isArray(value) ? value.join(' ') : value)
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+    }
+
+    function setupVoice() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        document.getElementById('btnVoice').style.display = 'none';
+        return;
+      }
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+      recognition.onresult = event => {
+        const command = event.results[0][0].transcript.toLowerCase();
+        document.getElementById('voiceText').textContent = `"${command}"`;
+        setTimeout(() => {
+          document.getElementById('voiceOverlay').classList.remove('active');
+          processVoiceCommand(command);
+        }, 1000);
+      };
+      recognition.onerror = () => {
+        document.getElementById('voiceText').textContent = 'Error. Try again.';
+        setTimeout(() => document.getElementById('voiceOverlay').classList.remove('active'), 1500);
+      };
+      recognition.onend = () => document.getElementById('btnVoice').classList.remove('listening');
+    }
+
+    function toggleVoice() {
+      if (!recognition) return;
+      const overlay = document.getElementById('voiceOverlay');
+      const btn = document.getElementById('btnVoice');
+      if (overlay.classList.contains('active')) {
+        recognition.stop();
+        overlay.classList.remove('active');
+        btn.classList.remove('listening');
+      } else {
+        overlay.classList.add('active');
+        btn.classList.add('listening');
+        recognition.start();
+      }
+    }
+
+    function processVoiceCommand(command) {
+      if (command.includes('explain') || command.includes('case')) {
+        loadSystemView();
+        updateStatus('Voice: Explain Case executed');
+      } else if (command.includes('related') || command.includes('correlation')) {
+        if (currentSelection) {
+          showRelated(currentSelection.item.id, currentSelection.type);
+          updateStatus('Voice: Show Related executed');
+        } else {
+          updateStatus('Voice: Select an item first');
+        }
+      } else if (command.includes('location') || command.includes('where') || command.includes('map')) {
+        if (currentSelection && currentSelection.item.latitude) {
+          map.setView([currentSelection.item.latitude, currentSelection.item.longitude], 15);
+          updateStatus('Voice: Show Location executed');
+        } else {
+          updateStatus('Voice: No location data');
+        }
+      } else if (command.includes('blocker') || command.includes('problem') || command.includes('issue')) {
+        const blockersSection = document.getElementById('blockersSection');
+        if (blockersSection) {
+          blockersSection.scrollIntoView({ behavior: 'smooth' });
+          blockersSection.style.border = '1px solid var(--danger)';
+          setTimeout(() => blockersSection.style.border = 'none', 2000);
+          updateStatus('Voice: Show Blockers executed');
+        } else {
+          updateStatus('Voice: Select a resource first');
+        }
+      } else {
+        updateStatus('Voice: Command not recognized');
+      }
+    }
+
+    function updateLayerLabels() {
+      document.getElementById('resourcesLayerLabel').textContent = `Resources (${data.resources.length})`;
+      document.getElementById('signalsLayerLabel').textContent = `Signals (${data.signals.length})`;
+      document.getElementById('nationalLayerLabel').textContent = `National Resources (${data.national.length})`;
+    }
+
+    function fitVisibleBounds() {
+      const markers = [...layers.resources.getLayers(), ...layers.signals.getLayers()];
+      if (markers.length > 0) map.fitBounds(new L.featureGroup(markers).getBounds().pad(0.1));
+    }
+
+    function updateStatus(text) { document.getElementById('statusText').textContent = text; }
+    function shortId(id) { return id ? String(id).slice(0, 8) : ''; }
+    function formatScore(score) { return isFinite(score) && Number(score) > 0 ? Number(score).toFixed(2) : 'N/A'; }
+    function severityColor(severity) { return String(severity || '').toLowerCase().includes('high') ? 'var(--danger)' : 'var(--warning)'; }
+    function toArray(value) {
+      if (!value) return [];
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') {
+        try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : [value]; } catch { return value.split(',').map(item => item.trim()).filter(Boolean); }
+      }
+      return [String(value)];
+    }
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
+    }
+    function escapeAttribute(value) { return escapeHtml(value).replace(/`/g, '&#96;'); }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
