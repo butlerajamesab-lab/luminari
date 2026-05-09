@@ -1,21 +1,13 @@
 /**
  * World Index Service
- * Single projection layer that unifies all existing data into one coherent model.
- * 
+ * Single projection layer that unifies existing Lighthouse data into one coherent model.
+ *
  * NO new tables. NO new pipelines. Organization only.
- * Reads from CURRENT Lighthouse tables, normalizes into WorldObject nodes + WorldRelationship edges.
- * 
- * Source map (Lighthouse populated tables):
- *   Jurisdictions → derived from normalized_civic_resource + national_resources geography
- *   Programs/Resources → normalized_civic_resource, national_resources, atlas_lighthouse_resource_bridge_v1
- *   Agencies → agencies_registry, forms_registry, escalation_registry
- *   Signals → detected_signals, atlas_lighthouse_signal_bridge_v1, atlas_lighthouse_judicial_signal_bridge_v1, signal_events
- *   Workflows → workflow_steps, remedy_templates
+ * Reads from CURRENT Lighthouse tables and Atlas -> Lighthouse bridge tables.
+ * FieldAtlas is not canonical here.
  */
 
 import { pool } from "../db";
-
-// ─── STEP 1: Interfaces ───────────────────────────────────────────────
 
 export interface WorldObject {
   id: string;
@@ -40,141 +32,213 @@ export interface WorldIndex {
   edges: WorldRelationship[];
 }
 
-// ─── STEP 2: Load from current Lighthouse tables ──────────────────────
+function safeText(value: unknown, fallback = ''): string {
+  if (value == null) return fallback;
+  const text = String(value).trim();
+  return text || fallback;
+}
+
+function metadataValue(metadata: any, keys: string[], fallback: unknown = null) {
+  if (!metadata || typeof metadata !== 'object') return fallback;
+  for (const key of keys) {
+    if (metadata[key] != null && metadata[key] !== '') return metadata[key];
+  }
+  return fallback;
+}
+
+function firstArrayValue(value: unknown): string | null {
+  if (Array.isArray(value) && value.length > 0) return safeText(value[0], null as any) || null;
+  return null;
+}
 
 async function loadJurisdictions(): Promise<WorldObject[]> {
-  // Derive jurisdictions from distinct state/city in normalized_civic_resource + national_resources
   const [rows] = await pool.query(`
-    SELECT DISTINCT state, city FROM (
-      SELECT state, city FROM normalized_civic_resource WHERE state IS NOT NULL
-      UNION
-      SELECT state, NULL as city FROM national_resources WHERE state IS NOT NULL
-    ) combined
-    ORDER BY state, city
+    select distinct jurisdiction from (
+      select state as jurisdiction from normalized_civic_resource where state is not null
+      union
+      select jurisdiction from national_resources where jurisdiction is not null
+      union
+      select state as jurisdiction from atlas_lighthouse_resource_bridge_v1 where state is not null
+      union
+      select jurisdiction_id as jurisdiction from atlas_lighthouse_signal_bridge_v1 where jurisdiction_id is not null
+      union
+      select jurisdiction_id as jurisdiction from atlas_lighthouse_judicial_signal_bridge_v1 where jurisdiction_id is not null
+    ) j
+    where jurisdiction is not null and jurisdiction <> ''
+    order by jurisdiction
   `) as any;
 
-  const stateSet = new Map<string, { cities: string[] }>();
-  for (const r of rows) {
-    const state = r.state || 'unknown';
-    if (!stateSet.has(state)) stateSet.set(state, { cities: [] });
-    if (r.city) stateSet.get(state)!.cities.push(r.city);
-  }
-
-  const nodes: WorldObject[] = [];
-  let idx = 0;
-  for (const [state, data] of stateSet) {
-    idx++;
-    nodes.push({
-      id: `jurisdiction_state_${state}`,
-      type: 'jurisdiction',
-      jurisdiction: state,
-      domain: 'general',
-      source_table: 'normalized_civic_resource',
-      source_id: String(idx),
-      metadata: {
-        name: state,
-        abbreviation: state,
-        jurisdiction_type: 'state',
-        cities: data.cities.slice(0, 20),
-        city_count: data.cities.length,
-      },
-    });
-  }
-  return nodes;
+  return rows.map((r: any) => ({
+    id: `jurisdiction_${safeText(r.jurisdiction, 'unknown').replace(/[^a-zA-Z0-9_-]/g, '_')}`,
+    type: 'jurisdiction' as const,
+    jurisdiction: safeText(r.jurisdiction, 'unknown'),
+    domain: 'general',
+    source_table: 'derived_lighthouse_jurisdictions',
+    source_id: safeText(r.jurisdiction, 'unknown'),
+    metadata: {
+      name: safeText(r.jurisdiction, 'unknown'),
+      abbreviation: safeText(r.jurisdiction, 'unknown'),
+      jurisdiction_type: 'derived',
+    },
+  }));
 }
 
 async function loadPrograms(): Promise<WorldObject[]> {
   const nodes: WorldObject[] = [];
 
-  // normalized_civic_resource (62 rows)
   const [civicRows] = await pool.query(`
-    SELECT id, name, resource_type, category, state, city, 
-           address, phone, url, description, eligibility,
-           latitude, longitude
-    FROM normalized_civic_resource
+    select
+      id,
+      name,
+      resource_type,
+      description,
+      organization_name,
+      agency_name,
+      address_line1,
+      address_line2,
+      city,
+      county,
+      state,
+      postal_code,
+      latitude,
+      longitude,
+      phone,
+      email,
+      website_url,
+      service_categories,
+      eligibility_summary,
+      normalized_payload,
+      normalization_confidence
+    from normalized_civic_resource
   `) as any;
 
   for (const r of civicRows) {
+    const category = firstArrayValue(r.service_categories) || r.resource_type || 'general';
     nodes.push({
       id: `civic_resource_${r.id}`,
       type: 'program',
-      jurisdiction: r.state || 'unknown',
-      domain: r.category || r.resource_type || 'general',
+      jurisdiction: safeText(r.state, 'unknown'),
+      domain: safeText(category, 'general'),
       source_table: 'normalized_civic_resource',
       source_id: String(r.id),
       metadata: {
         name: r.name,
         resource_type: r.resource_type,
-        category: r.category,
+        category,
+        service_categories: r.service_categories,
+        city: r.city,
+        county: r.county,
+        state: r.state,
+        address: [r.address_line1, r.address_line2].filter(Boolean).join(', '),
+        postal_code: r.postal_code,
+        phone: r.phone,
+        email: r.email,
+        website: r.website_url,
+        contact: r.phone || r.email || r.website_url,
+        description: r.description,
+        eligibility: r.eligibility_summary,
+        organization_name: r.organization_name,
+        agency_name: r.agency_name,
+        latitude: r.latitude,
+        longitude: r.longitude,
+        normalized_payload: r.normalized_payload,
+        normalization_confidence: r.normalization_confidence,
+      },
+    });
+  }
+
+  const [nationalRows] = await pool.query(`
+    select
+      id,
+      resource_id,
+      resource_name,
+      resource_type,
+      jurisdiction,
+      service_category,
+      phone,
+      website,
+      metadata,
+      source_url
+    from national_resources
+  `) as any;
+
+  for (const r of nationalRows) {
+    nodes.push({
+      id: `national_resource_${r.id}`,
+      type: 'program',
+      jurisdiction: safeText(r.jurisdiction, 'us_federal'),
+      domain: safeText(r.service_category || r.resource_type, 'general'),
+      source_table: 'national_resources',
+      source_id: String(r.id),
+      metadata: {
+        name: r.resource_name,
+        resource_id: r.resource_id,
+        resource_type: r.resource_type,
+        category: r.service_category,
+        jurisdiction: r.jurisdiction,
+        phone: r.phone,
+        website: r.website,
+        contact: r.phone || r.website,
+        source_url: r.source_url,
+        scope: 'national',
+        raw_metadata: r.metadata,
+      },
+    });
+  }
+
+  const [bridgeRows] = await pool.query(`
+    select
+      bridge_record_id,
+      atlas_resource_id,
+      name,
+      resource_type,
+      address,
+      city,
+      state,
+      phone,
+      url,
+      lat,
+      lon,
+      source_table,
+      source_id,
+      extra_json,
+      bridge_version,
+      bridge_metadata,
+      verification_status,
+      bridged_at
+    from atlas_lighthouse_resource_bridge_v1
+    limit 500
+  `) as any;
+
+  for (const r of bridgeRows) {
+    const category = metadataValue(r.extra_json, ['category', 'service_category', 'domain'], r.resource_type);
+    nodes.push({
+      id: `bridge_resource_${r.bridge_record_id}`,
+      type: 'program',
+      jurisdiction: safeText(r.state, 'unknown'),
+      domain: safeText(category, 'general'),
+      source_table: 'atlas_lighthouse_resource_bridge_v1',
+      source_id: String(r.bridge_record_id),
+      metadata: {
+        name: r.name,
+        atlas_resource_id: r.atlas_resource_id,
+        resource_type: r.resource_type,
+        category,
         city: r.city,
         state: r.state,
         address: r.address,
         phone: r.phone,
-        url: r.url,
-        description: r.description,
-        eligibility: r.eligibility,
-        latitude: r.latitude,
-        longitude: r.longitude,
-      },
-    });
-  }
-
-  // national_resources (119 rows)
-  const [natRows] = await pool.query(`
-    SELECT id, name, resource_type, category, state, 
-           url, description, eligibility, phone
-    FROM national_resources
-  `) as any;
-
-  for (const r of natRows) {
-    nodes.push({
-      id: `national_resource_${r.id}`,
-      type: 'program',
-      jurisdiction: r.state || 'us_federal',
-      domain: r.category || r.resource_type || 'general',
-      source_table: 'national_resources',
-      source_id: String(r.id),
-      metadata: {
-        name: r.name,
-        resource_type: r.resource_type,
-        category: r.category,
-        state: r.state,
-        url: r.url,
-        description: r.description,
-        eligibility: r.eligibility,
-        phone: r.phone,
-        scope: 'national',
-      },
-    });
-  }
-
-  // atlas_lighthouse_resource_bridge_v1 (268 rows)
-  const [bridgeRows] = await pool.query(`
-    SELECT id, resource_name, resource_type, category, state, city,
-           source_system, atlas_source_id, latitude, longitude
-    FROM atlas_lighthouse_resource_bridge_v1
-    LIMIT 500
-  `) as any;
-
-  for (const r of bridgeRows) {
-    const nodeId = `bridge_resource_${r.id}`;
-    nodes.push({
-      id: nodeId,
-      type: 'program',
-      jurisdiction: r.state || 'unknown',
-      domain: r.category || r.resource_type || 'general',
-      source_table: 'atlas_lighthouse_resource_bridge_v1',
-      source_id: String(r.id),
-      metadata: {
-        name: r.resource_name,
-        resource_type: r.resource_type,
-        category: r.category,
-        city: r.city,
-        state: r.state,
-        source_system: r.source_system,
-        atlas_source_id: r.atlas_source_id,
-        latitude: r.latitude,
-        longitude: r.longitude,
+        website: r.url,
+        contact: r.phone || r.url,
+        latitude: r.lat,
+        longitude: r.lon,
+        source_table: r.source_table,
+        atlas_source_id: r.source_id,
+        extra_json: r.extra_json,
+        bridge_version: r.bridge_version,
+        bridge_metadata: r.bridge_metadata,
+        verification_status: r.verification_status,
+        bridged_at: r.bridged_at,
       },
     });
   }
@@ -185,83 +249,83 @@ async function loadPrograms(): Promise<WorldObject[]> {
 async function loadAgencies(): Promise<WorldObject[]> {
   const nodes: WorldObject[] = [];
 
-  // agencies_registry (160 rows)
   const [agencyRows] = await pool.query(`
-    SELECT id, agency_name, jurisdiction, function_area, 
-           contact_info, website, statute_of_limitations,
-           filing_method, oversight_scope
-    FROM agencies_registry
+    select id, agency_name, jurisdiction, metadata, created_at
+    from agencies_registry
   `) as any;
 
   for (const r of agencyRows) {
+    const domain = metadataValue(r.metadata, ['function_area', 'function', 'domain', 'service_category'], 'general');
     nodes.push({
       id: `agency_${r.id}`,
       type: 'agency',
-      jurisdiction: r.jurisdiction || 'unknown',
-      domain: r.function_area || 'general',
+      jurisdiction: safeText(r.jurisdiction, 'unknown'),
+      domain: safeText(domain, 'general'),
       source_table: 'agencies_registry',
       source_id: String(r.id),
       metadata: {
         name: r.agency_name,
-        function: r.function_area,
+        function: domain,
         jurisdiction_id: r.jurisdiction,
-        contact: r.contact_info,
-        website: r.website,
-        statute_of_limitations: r.statute_of_limitations,
-        filing_method: r.filing_method,
-        oversight_scope: r.oversight_scope,
+        contact: metadataValue(r.metadata, ['contact', 'contact_info', 'phone', 'email', 'website'], null),
+        website: metadataValue(r.metadata, ['website', 'website_url', 'url'], null),
+        raw_metadata: r.metadata,
+        created_at: r.created_at,
       },
     });
   }
 
-  // forms_registry (12 rows)
   const [formRows] = await pool.query(`
-    SELECT id, form_name, agency_id, jurisdiction, 
-           form_type, url, description
-    FROM forms_registry
+    select id, form_name, issuing_agency, jurisdiction, metadata, created_at
+    from forms_registry
   `) as any;
 
   for (const r of formRows) {
+    const formType = metadataValue(r.metadata, ['form_type', 'type', 'category'], 'filing');
     nodes.push({
       id: `form_${r.id}`,
       type: 'agency',
-      jurisdiction: r.jurisdiction || 'unknown',
+      jurisdiction: safeText(r.jurisdiction, 'unknown'),
       domain: 'filing',
       source_table: 'forms_registry',
       source_id: String(r.id),
       metadata: {
         name: r.form_name,
-        form_type: r.form_type,
-        agency_id: r.agency_id,
-        url: r.url,
-        description: r.description,
+        issuing_agency: r.issuing_agency,
+        form_type: formType,
+        agency_name: r.issuing_agency,
+        url: metadataValue(r.metadata, ['url', 'source_url', 'form_url', 'website'], null),
+        description: metadataValue(r.metadata, ['description', 'summary'], null),
         jurisdiction_id: r.jurisdiction,
+        raw_metadata: r.metadata,
+        created_at: r.created_at,
       },
     });
   }
 
-  // escalation_registry (13 rows)
   const [escRows] = await pool.query(`
-    SELECT id, escalation_name, agency_id, jurisdiction,
-           trigger_condition, escalation_path, deadline_days
-    FROM escalation_registry
+    select id, escalation_name, jurisdiction, metadata, created_at
+    from escalation_registry
   `) as any;
 
   for (const r of escRows) {
+    const domain = metadataValue(r.metadata, ['domain', 'case_type', 'category'], 'escalation');
     nodes.push({
       id: `escalation_${r.id}`,
       type: 'agency',
-      jurisdiction: r.jurisdiction || 'unknown',
-      domain: 'escalation',
+      jurisdiction: safeText(r.jurisdiction, 'unknown'),
+      domain: safeText(domain, 'escalation'),
       source_table: 'escalation_registry',
       source_id: String(r.id),
       metadata: {
         name: r.escalation_name,
-        agency_id: r.agency_id,
-        trigger_condition: r.trigger_condition,
-        escalation_path: r.escalation_path,
-        deadline_days: r.deadline_days,
+        trigger_condition: metadataValue(r.metadata, ['trigger_condition', 'trigger', 'condition'], null),
+        escalation_path: metadataValue(r.metadata, ['escalation_path', 'pathway', 'path'], null),
+        deadline_days: metadataValue(r.metadata, ['deadline_days', 'deadline'], null),
+        agency_name: metadataValue(r.metadata, ['agency_name', 'agency', 'issuing_agency'], null),
         jurisdiction_id: r.jurisdiction,
+        raw_metadata: r.metadata,
+        created_at: r.created_at,
       },
     });
   }
@@ -272,59 +336,61 @@ async function loadAgencies(): Promise<WorldObject[]> {
 async function loadWorkflows(): Promise<WorldObject[]> {
   const nodes: WorldObject[] = [];
 
-  // workflow_steps (18 rows)
   const [stepRows] = await pool.query(`
-    SELECT id, workflow_name, step_number, step_name, 
-           jurisdiction, description, deadline_days,
-           required_documents, next_step_id
-    FROM workflow_steps
+    select id, workflow_id, step_order, title, step_type, decision_logic, metadata, source_url, created_at
+    from workflow_steps
   `) as any;
 
   for (const r of stepRows) {
+    const jurisdiction = metadataValue(r.metadata, ['jurisdiction', 'state'], 'unknown');
+    const domain = metadataValue(r.metadata, ['domain', 'case_type', 'category'], r.workflow_id || 'general');
     nodes.push({
       id: `workflow_step_${r.id}`,
       type: 'workflow',
-      jurisdiction: r.jurisdiction || 'unknown',
-      domain: r.workflow_name || 'general',
+      jurisdiction: safeText(jurisdiction, 'unknown'),
+      domain: safeText(domain, 'general'),
       source_table: 'workflow_steps',
       source_id: String(r.id),
       metadata: {
-        workflow_name: r.workflow_name,
-        workflow_type: r.workflow_name,
-        step_number: r.step_number,
-        step_name: r.step_name,
-        description: r.description,
-        deadline_days: r.deadline_days,
-        required_documents: r.required_documents,
-        next_step_id: r.next_step_id,
-        jurisdiction_id: r.jurisdiction,
+        workflow_id: r.workflow_id,
+        workflow_type: r.workflow_id,
+        step_order: r.step_order,
+        title: r.title,
+        step_name: r.title,
+        step_type: r.step_type,
+        decision_logic: r.decision_logic,
+        source_url: r.source_url,
+        jurisdiction_id: jurisdiction,
+        raw_metadata: r.metadata,
+        created_at: r.created_at,
       },
     });
   }
 
-  // remedy_templates (24 rows)
   const [remedyRows] = await pool.query(`
-    SELECT id, remedy_name, case_type, jurisdiction,
-           description, filing_steps, expected_timeline
-    FROM remedy_templates
+    select id, template_id, template_name, template_type, claim_type, jurisdiction, template_text, metadata, source_url, created_at
+    from remedy_templates
   `) as any;
 
   for (const r of remedyRows) {
     nodes.push({
       id: `remedy_${r.id}`,
       type: 'workflow',
-      jurisdiction: r.jurisdiction || 'unknown',
-      domain: r.case_type || 'general',
+      jurisdiction: safeText(r.jurisdiction, 'unknown'),
+      domain: safeText(r.claim_type || r.template_type, 'general'),
       source_table: 'remedy_templates',
       source_id: String(r.id),
       metadata: {
         workflow_type: 'remedy',
-        name: r.remedy_name,
-        case_type: r.case_type,
-        description: r.description,
-        filing_steps: r.filing_steps,
-        expected_timeline: r.expected_timeline,
+        template_id: r.template_id,
+        name: r.template_name,
+        template_type: r.template_type,
+        claim_type: r.claim_type,
+        template_text: r.template_text,
+        source_url: r.source_url,
         jurisdiction_id: r.jurisdiction,
+        raw_metadata: r.metadata,
+        created_at: r.created_at,
       },
     });
   }
@@ -332,18 +398,13 @@ async function loadWorkflows(): Promise<WorldObject[]> {
   return nodes;
 }
 
-// ─── STEP 3: Signal Origin Classification ─────────────────────────────
-
 async function loadSignals(): Promise<WorldObject[]> {
   const nodes: WorldObject[] = [];
   const seen = new Set<string>();
 
-  // detected_signals (111 rows) — primary signal table
   const [detectedRows] = await pool.query(`
-    SELECT id, signal_type, jurisdiction, domain, severity, title,
-           description, confidence_score, status, source_system,
-           case_id, detected_at
-    FROM detected_signals
+    select id, case_id, finding_id, snapshot_id, pipeline_run_id, signal_type, signal_description, severity, confidence_score, created_at
+    from detected_signals
   `) as any;
 
   for (const r of detectedRows) {
@@ -353,115 +414,137 @@ async function loadSignals(): Promise<WorldObject[]> {
     nodes.push({
       id: nodeId,
       type: 'signal',
-      jurisdiction: r.jurisdiction || 'unknown',
-      domain: r.domain || 'general',
+      jurisdiction: 'case_scoped',
+      domain: 'case_signal',
       source_table: 'detected_signals',
       source_id: String(r.id),
       metadata: {
         origin: 'detection',
         signal_type: r.signal_type,
         severity: r.severity,
-        title: r.title,
-        description: r.description,
+        title: r.signal_type,
+        description: r.signal_description,
         confidence_score: r.confidence_score,
-        status: r.status,
-        source_system: r.source_system,
         case_id: r.case_id,
-        detected_at: r.detected_at,
+        finding_id: r.finding_id,
+        snapshot_id: r.snapshot_id,
+        pipeline_run_id: r.pipeline_run_id,
+        detected_at: r.created_at,
       },
     });
   }
 
-  // atlas_lighthouse_signal_bridge_v1 (63 rows)
   const [signalBridgeRows] = await pool.query(`
-    SELECT id, signal_type, jurisdiction, severity, title,
-           source_system, atlas_signal_id, confidence_score,
-           bridged_at
-    FROM atlas_lighthouse_signal_bridge_v1
+    select bridge_record_id, atlas_signal_id, signal_type, source_system, jurisdiction_raw_value, jurisdiction_id, source_url,
+           detected_at, bridged_at, confidence_score, severity, signal_status, rule_id, rule_version,
+           evidence_payload, provenance_metadata, atlas_metadata_json, bridge_metadata
+    from atlas_lighthouse_signal_bridge_v1
   `) as any;
 
   for (const r of signalBridgeRows) {
-    const nodeId = `bridge_signal_${r.id}`;
+    const nodeId = `bridge_signal_${r.bridge_record_id}`;
     if (seen.has(nodeId)) continue;
     seen.add(nodeId);
     nodes.push({
       id: nodeId,
       type: 'signal',
-      jurisdiction: r.jurisdiction || 'unknown',
-      domain: 'general',
+      jurisdiction: safeText(r.jurisdiction_id || r.jurisdiction_raw_value, 'unknown'),
+      domain: safeText(metadataValue(r.atlas_metadata_json, ['domain', 'category'], 'general'), 'general'),
       source_table: 'atlas_lighthouse_signal_bridge_v1',
-      source_id: String(r.id),
+      source_id: String(r.bridge_record_id),
       metadata: {
         origin: 'atlas_bridge',
         signal_type: r.signal_type,
         severity: r.severity,
-        title: r.title,
+        title: metadataValue(r.evidence_payload, ['title', 'name', 'summary'], r.signal_type),
+        description: metadataValue(r.evidence_payload, ['description', 'summary', 'text'], null),
         source_system: r.source_system,
         atlas_signal_id: r.atlas_signal_id,
         confidence_score: r.confidence_score,
+        signal_status: r.signal_status,
+        rule_id: r.rule_id,
+        rule_version: r.rule_version,
+        source_url: r.source_url,
+        detected_at: r.detected_at,
         bridged_at: r.bridged_at,
+        evidence_payload: r.evidence_payload,
+        provenance_metadata: r.provenance_metadata,
+        atlas_metadata_json: r.atlas_metadata_json,
+        bridge_metadata: r.bridge_metadata,
       },
     });
   }
 
-  // atlas_lighthouse_judicial_signal_bridge_v1 (60 rows)
   const [judicialRows] = await pool.query(`
-    SELECT id, signal_type, jurisdiction, severity, title,
-           court, case_name, source_system, atlas_signal_id,
-           bridged_at
-    FROM atlas_lighthouse_judicial_signal_bridge_v1
+    select bridge_record_id, atlas_signal_id, signal_type, source_system, jurisdiction_raw_value, jurisdiction_id, source_url,
+           detected_at, bridged_at, confidence_score, severity, signal_status, rule_id, rule_version,
+           evidence_payload, provenance_metadata, atlas_metadata_json, bridge_metadata
+    from atlas_lighthouse_judicial_signal_bridge_v1
   `) as any;
 
   for (const r of judicialRows) {
-    const nodeId = `judicial_signal_${r.id}`;
+    const nodeId = `judicial_signal_${r.bridge_record_id}`;
     if (seen.has(nodeId)) continue;
     seen.add(nodeId);
     nodes.push({
       id: nodeId,
       type: 'signal',
-      jurisdiction: r.jurisdiction || 'unknown',
+      jurisdiction: safeText(r.jurisdiction_id || r.jurisdiction_raw_value, 'unknown'),
       domain: 'judicial',
       source_table: 'atlas_lighthouse_judicial_signal_bridge_v1',
-      source_id: String(r.id),
+      source_id: String(r.bridge_record_id),
       metadata: {
         origin: 'judicial_bridge',
         signal_type: r.signal_type,
         severity: r.severity,
-        title: r.title,
-        court: r.court,
-        case_name: r.case_name,
+        title: metadataValue(r.evidence_payload, ['title', 'case_name', 'name'], r.signal_type),
+        description: metadataValue(r.evidence_payload, ['description', 'summary', 'text'], null),
         source_system: r.source_system,
         atlas_signal_id: r.atlas_signal_id,
+        confidence_score: r.confidence_score,
+        signal_status: r.signal_status,
+        rule_id: r.rule_id,
+        rule_version: r.rule_version,
+        source_url: r.source_url,
+        detected_at: r.detected_at,
         bridged_at: r.bridged_at,
+        evidence_payload: r.evidence_payload,
+        provenance_metadata: r.provenance_metadata,
+        atlas_metadata_json: r.atlas_metadata_json,
+        bridge_metadata: r.bridge_metadata,
       },
     });
   }
 
-  // signal_events (6 rows) — streaming spine
   const [streamRows] = await pool.query(`
-    SELECT id, stream_id, signal_type, jurisdiction_id,
-           payload, confidence, ingested_at
-    FROM signal_events
+    select stream_id, "offset", timestamp, signal_type, spacetime, provenance, payload, source_id, jurisdiction_id, module_hint, ingested_at
+    from signal_events
   `) as any;
 
   for (const r of streamRows) {
-    const nodeId = `stream_signal_${r.id}`;
+    const nodeId = `stream_signal_${r.stream_id}_${r.offset}`;
     if (seen.has(nodeId)) continue;
     seen.add(nodeId);
     nodes.push({
       id: nodeId,
       type: 'signal',
-      jurisdiction: r.jurisdiction_id || 'unknown',
-      domain: 'stream',
+      jurisdiction: safeText(r.jurisdiction_id || metadataValue(r.spacetime, ['region'], null), 'unknown'),
+      domain: safeText(r.module_hint, 'stream'),
       source_table: 'signal_events',
-      source_id: String(r.id),
+      source_id: `${r.stream_id}:${r.offset}`,
       metadata: {
         origin: 'stream',
         signal_type: r.signal_type,
         stream_id: r.stream_id,
-        confidence: r.confidence,
+        offset: r.offset,
+        timestamp: r.timestamp,
+        source_id: r.source_id,
+        module_hint: r.module_hint,
         ingested_at: r.ingested_at,
+        spacetime: r.spacetime,
+        provenance: r.provenance,
         payload: r.payload,
+        confidence: metadataValue(r.provenance, ['confidence'], null),
       },
     });
   }
@@ -469,66 +552,21 @@ async function loadSignals(): Promise<WorldObject[]> {
   return nodes;
 }
 
-// ─── STEP 4: Build Relationships ──────────────────────────────────────
-
 async function buildRelationships(nodes: WorldObject[]): Promise<WorldRelationship[]> {
   const edges: WorldRelationship[] = [];
   let edgeCounter = 0;
-
   const jurisdictionNodes = nodes.filter(n => n.type === 'jurisdiction');
   const agencyNodes = nodes.filter(n => n.type === 'agency');
 
-  // Helper: find jurisdiction node by state string
-  function findJurisdiction(state: string | null): WorldObject | undefined {
-    if (!state) return undefined;
+  function findJurisdiction(value: string | null | undefined): WorldObject | undefined {
+    if (!value) return undefined;
     return jurisdictionNodes.find(j =>
-      j.metadata.abbreviation === state ||
-      j.metadata.name === state ||
-      j.jurisdiction === state
+      j.jurisdiction === value ||
+      j.metadata.abbreviation === value ||
+      j.metadata.name === value
     );
   }
 
-  // 1. Agencies → jurisdiction (oversight relationship)
-  for (const n of agencyNodes) {
-    if (n.source_table === 'agencies_registry') {
-      const jNode = findJurisdiction(n.metadata.jurisdiction_id);
-      if (jNode) {
-        edges.push({
-          id: `edge_${++edgeCounter}`,
-          from: n.id,
-          to: jNode.id,
-          type: 'oversight',
-          metadata: {
-            agency_name: n.metadata.name,
-            function: n.metadata.function,
-          },
-        });
-      }
-    }
-  }
-
-  // 2. Escalations → agency (escalation relationship)
-  for (const n of nodes) {
-    if (n.source_table === 'escalation_registry' && n.metadata.agency_id) {
-      const agencyNode = agencyNodes.find(a =>
-        a.source_table === 'agencies_registry' && a.source_id === String(n.metadata.agency_id)
-      );
-      if (agencyNode) {
-        edges.push({
-          id: `edge_${++edgeCounter}`,
-          from: n.id,
-          to: agencyNode.id,
-          type: 'escalation',
-          metadata: {
-            trigger: n.metadata.trigger_condition,
-            deadline_days: n.metadata.deadline_days,
-          },
-        });
-      }
-    }
-  }
-
-  // 3. Programs/resources → jurisdiction (program_access relationship)
   for (const n of nodes) {
     if (n.type === 'program') {
       const jNode = findJurisdiction(n.jurisdiction);
@@ -538,17 +576,11 @@ async function buildRelationships(nodes: WorldObject[]): Promise<WorldRelationsh
           from: n.id,
           to: jNode.id,
           type: 'program_access',
-          metadata: {
-            program_name: n.metadata.name,
-            category: n.metadata.category || n.domain,
-          },
+          metadata: { program_name: n.metadata.name, category: n.metadata.category || n.domain },
         });
       }
     }
-  }
 
-  // 4. Signals → jurisdiction (signal_link relationship)
-  for (const n of nodes) {
     if (n.type === 'signal') {
       const jNode = findJurisdiction(n.jurisdiction);
       if (jNode) {
@@ -557,60 +589,60 @@ async function buildRelationships(nodes: WorldObject[]): Promise<WorldRelationsh
           from: n.id,
           to: jNode.id,
           type: 'signal_link',
-          metadata: {
-            signal_type: n.metadata.signal_type,
-            severity: n.metadata.severity,
-            origin: n.metadata.origin,
-          },
+          metadata: { signal_type: n.metadata.signal_type, severity: n.metadata.severity, origin: n.metadata.origin },
         });
       }
     }
-  }
 
-  // 5. Workflows → jurisdiction (program_access relationship)
-  for (const n of nodes) {
     if (n.type === 'workflow') {
-      const jNode = findJurisdiction(n.metadata.jurisdiction_id || n.jurisdiction);
+      const jNode = findJurisdiction(n.jurisdiction);
       if (jNode) {
         edges.push({
           id: `edge_${++edgeCounter}`,
           from: n.id,
           to: jNode.id,
           type: 'program_access',
-          metadata: {
-            workflow_type: n.metadata.workflow_type,
-            name: n.metadata.workflow_name || n.metadata.name,
-          },
+          metadata: { workflow_type: n.metadata.workflow_type, name: n.metadata.name || n.metadata.title },
         });
       }
     }
   }
 
-  // 6. Forms → agency (oversight relationship)
-  for (const n of nodes) {
-    if (n.source_table === 'forms_registry' && n.metadata.agency_id) {
-      const agencyNode = agencyNodes.find(a =>
-        a.source_table === 'agencies_registry' && a.source_id === String(n.metadata.agency_id)
-      );
-      if (agencyNode) {
-        edges.push({
-          id: `edge_${++edgeCounter}`,
-          from: n.id,
-          to: agencyNode.id,
-          type: 'oversight',
-          metadata: {
-            form_name: n.metadata.name,
-            form_type: n.metadata.form_type,
-          },
-        });
-      }
+  for (const agency of agencyNodes) {
+    const jNode = findJurisdiction(agency.jurisdiction);
+    if (jNode) {
+      edges.push({
+        id: `edge_${++edgeCounter}`,
+        from: agency.id,
+        to: jNode.id,
+        type: 'oversight',
+        metadata: { agency_name: agency.metadata.name, function: agency.metadata.function || agency.domain },
+      });
     }
+  }
+
+  const agencyByName = new Map<string, WorldObject>();
+  for (const agency of agencyNodes) {
+    const name = safeText(agency.metadata.name || agency.metadata.agency_name, '').toLowerCase();
+    if (name) agencyByName.set(name, agency);
+  }
+
+  for (const node of nodes) {
+    const agencyName = safeText(node.metadata.issuing_agency || node.metadata.agency_name, '').toLowerCase();
+    if (!agencyName) continue;
+    const agency = agencyByName.get(agencyName);
+    if (!agency || agency.id === node.id) continue;
+    edges.push({
+      id: `edge_${++edgeCounter}`,
+      from: node.id,
+      to: agency.id,
+      type: node.source_table === 'escalation_registry' ? 'escalation' : 'oversight',
+      metadata: { agency_name: agency.metadata.name, source_table: node.source_table },
+    });
   }
 
   return edges;
 }
-
-// ─── STEP 5: Main getIndex function ───────────────────────────────────
 
 export async function getWorldIndex(): Promise<WorldIndex> {
   const [jurisdictions, programs, agencies, workflows, signals] = await Promise.all([
@@ -620,9 +652,7 @@ export async function getWorldIndex(): Promise<WorldIndex> {
     loadWorkflows(),
     loadSignals(),
   ]);
-
   const nodes = [...jurisdictions, ...programs, ...agencies, ...workflows, ...signals];
   const edges = await buildRelationships(nodes);
-
   return { nodes, edges };
 }
