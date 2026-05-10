@@ -93,12 +93,16 @@ const trpcClient = trpc.createClient({
   ],
 });
 
-createRoot(document.getElementById("root")!).render(
-  <trpc.Provider client={trpcClient} queryClient={queryClient}>
+function AppWithProviders() {
+  return (
     <QueryClientProvider client={queryClient}>
-      <ClickToReadProvider>
-        <App />
-      </ClickToReadProvider>
+      <trpc.Provider client={trpcClient} queryClient={queryClient}>
+        <ClickToReadProvider>
+          <App />
+        </ClickToReadProvider>
+      </trpc.Provider>
     </QueryClientProvider>
-  </trpc.Provider>
-);
+  );
+}
+
+createRoot(document.getElementById("root")!).render(<AppWithProviders />);
