@@ -12,8 +12,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet" />
-    <script type="module" crossorigin src="/assets/index-BXkhaGSO.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-C__6vRWJ.css">
+    <script type="module" crossorigin src="/assets/index-CbzGA5b6.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BHkd2i_7.css">
   </head>
 
   <body>
@@ -78,16 +78,51 @@ Error generating stack: `+l.message+`
 </script>
 
     <div id="root"></div>
-    <script
-      defer
-      src="%VITE_ANALYTICS_ENDPOINT%/umami"
-      data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"></script>
+    <script>
+      (() => {
+        const PREVIEW_TEXT = "Preview Mode";
+        const SIGN_IN_TEXT = "Sign In";
+
+        function normalizeSignInControls() {
+          const candidates = document.querySelectorAll("a, button, [role='button']");
+          candidates.forEach((node) => {
+            const text = (node.textContent || "").trim();
+            const href = node.getAttribute?.("href") || "";
+            const isSignIn = text === SIGN_IN_TEXT || href.includes("app-auth") || href.includes("oauth");
+
+            if (!isSignIn) return;
+
+            node.textContent = PREVIEW_TEXT;
+            node.setAttribute?.("aria-disabled", "true");
+            node.setAttribute?.("data-preview-auth-disabled", "true");
+            node.removeAttribute?.("href");
+          });
+        }
+
+        document.addEventListener("click", (event) => {
+          const target = event.target instanceof Element
+            ? event.target.closest("a, button, [role='button']")
+            : null;
+
+          if (!target) return;
+
+          const text = (target.textContent || "").trim();
+          const href = target.getAttribute?.("href") || "";
+          const isAuthControl = text === PREVIEW_TEXT || text === SIGN_IN_TEXT || href.includes("app-auth") || href.includes("oauth");
+
+          if (!isAuthControl) return;
+
+          event.preventDefault();
+          event.stopPropagation();
+          normalizeSignInControls();
+          console.info("Luminari preview mode: sign-in is intentionally disabled until OAuth is verified.");
+        }, true);
+
+        const observer = new MutationObserver(normalizeSignInControls);
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+        window.addEventListener("DOMContentLoaded", normalizeSignInControls);
+      })();
+    </script>
   </body>
 
 </html>
-
-
-
-// ============================================================
-// SECTION: CLIENT ENTRY & ROUTING (4 files)
-// ============================================================
