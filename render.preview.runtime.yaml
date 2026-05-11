@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: luminari-operational-core-preview
+    runtime: node
+    branch: main
+    buildCommand: pnpm install && pnpm build
+    startCommand: pnpm start
+    autoDeploy: false
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: RUNTIME_MODE
+        value: preview-reconstruction
+
+      - key: SUPABASE_PROJECT_REF
+        value: ickuyayatfmbtbayiqvd
+
+      - key: OPERATIONAL_CORE_RUNTIME
+        value: enabled
+
+      - key: OPERATIONAL_CORE_ACTIVATION
+        value: enabled
+
+      - key: ACTIVATION_AWARE_VISIBILITY
+        value: enabled
+
+      - key: DETERMINISTIC_RUNTIME_MODE
+        value: true
+
+      - key: PRODUCTION_PROTECTED
+        value: true
+
+      - key: RECONSTRUCTION_BRANCH_ONLY
+        value: true
