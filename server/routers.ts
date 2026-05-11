@@ -4228,6 +4228,11 @@ import path from "path";
 import { agencyMetricsRouter } from "./routers/agency-metrics";
 import { enforcementIntelligenceRouter } from "./routers/enforcement-intelligence";
 import { architectureMapRouter } from "./routers/architecture-map";
+import { architectureMapCompatRouter } from "./routers/architecture-map-compat-router";
+import { resourceDirectoryCompatRouter } from "./routers/resource-directory-compat-router";
+import { legalLibraryCompatRouter } from "./routers/legal-library-compat-router";
+import { guidedIntakeCompatRouter } from "./routers/guided-intake-compat-router";
+import { missionControlCompatRouter } from "./routers/mission-control-compat-router";
 import { proceduralEngineRouter } from "./routers/procedural-engine";
 import { viabilityEngineRouter } from "./routers/viability-engine";
 import { strategyEngineRouter } from "./routers/strategy-engine";
@@ -4925,13 +4930,16 @@ export const appRouter = router({
   lighthouse: lighthouseRouter,
   docket: docketRouter,
   lumensend: lumensendRouter,
-  legalLibrary: legalLibraryRouter,
+  legalLibrary: legalLibraryCompatRouter,
   civilGideon: civilGideonRouter,
   extraction: extractionRouter,
   categories: categoryRouter,
   agencyMetrics: agencyMetricsRouter,
   enforcementIntel: enforcementIntelligenceRouter,
-  architectureMap: architectureMapRouter,
+  architectureMap: architectureMapCompatRouter,
+  guidedIntake: guidedIntakeCompatRouter,
+  missionControl: missionControlCompatRouter,
+  resources: resourceDirectoryCompatRouter,
   proceduralEngine: proceduralEngineRouter,
   viabilityEngine: viabilityEngineRouter,
   strategyEngine: strategyEngineRouter,
