@@ -1,65 +1,107 @@
 import "dotenv/config";
 import express from "express";
-import cors from "cors";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { appRouter } from "../routers";
-import { createContext } from "./context";
+import { lighthouseGateRouter } from "../lighthouse-gate-router";
+import aiInspectRouter from "../routes/ai-inspect-router";
 import { serveStatic, setupVite } from "./vite";
 
-const SUPABASE_PROJECT = "ckkvxfqqakdzrcbmdimy";
+const SUPABASE_PROJECT = "wepxlinwbjrkqdzkqpar";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
-    const probe = net.createServer();
-    probe.listen(port, () => {
-      probe.close(() => resolve(true));
+    const server = net.createServer();
+    server.listen(port, () => {
+      server.close(() => resolve(true));
     });
-    probe.on("error", () => resolve(false));
+    server.on("error", () => resolve(false));
   });
 }
 
 async function findAvailablePort(startPort: number = 3000): Promise<number> {
   for (let port = startPort; port < startPort + 20; port++) {
-    if (await isPortAvailable(port)) return port;
+    if (await isPortAvailable(port)) {
+      return port;
+    }
   }
   throw new Error(`No available port found starting from ${startPort}`);
+}
+
+function registerOptionalIntegrationStubs(app: express.Express) {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.warn("Stripe disabled: STRIPE_SECRET_KEY not configured");
+  }
+
+  app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), (_req, res) => {
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+      return res.status(503).json({
+        ok: false,
+        disabled: true,
+        message: "Stripe webhook disabled: STRIPE_WEBHOOK_SECRET not configured",
+      });
+    }
+    return res.status(503).json({
+      ok: false,
+      disabled: true,
+      message: "Stripe webhook handler is not enabled for the current Lighthouse backend-lock gate",
+    });
+  });
+
+  app.all("/api/stripe/*", (_req, res) => {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return res.status(503).json({
+        ok: false,
+        disabled: true,
+        message: "Stripe disabled: STRIPE_SECRET_KEY not configured",
+      });
+    }
+    return res.status(503).json({
+      ok: false,
+      disabled: true,
+      message: "Stripe routes are outside the current Lighthouse backend-lock gate",
+    });
+  });
+
+  app.all("/api/oauth/*", (_req, res) => {
+    return res.status(503).json({
+      ok: false,
+      disabled: true,
+      message: "OAuth routes are outside the current Lighthouse backend-lock gate",
+    });
+  });
 }
 
 async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  app.set("trust proxy", 1);
-  app.use(
-    cors({
-      origin: true,
-      credentials: true,
-      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "trpc-accept"],
-    })
-  );
-  app.options("*", cors({ origin: true, credentials: true }));
+  registerOptionalIntegrationStubs(app);
+
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  const createGateContext = ({ req, res }: { req: express.Request; res: express.Response }) => ({
+    req,
+    res,
+    user: null,
+    isSystem: false,
+  });
 
   app.use(
     "/api/trpc",
     createExpressMiddleware({
-      router: appRouter,
-      createContext,
+      router: lighthouseGateRouter,
+      createContext: createGateContext,
     })
   );
 
   app.get("/api/health", (_req, res) => {
-    res.json({
-      ok: true,
-      app: "Prism / Luminari V2",
-      database: "supabase-postgres",
-      supabaseProject: SUPABASE_PROJECT,
-    });
+    res.json({ ok: true, supabaseProject: SUPABASE_PROJECT });
   });
+
+  // AI inspection routes — MUST be mounted before Vite/static serving
+  app.use("/api/ai", aiInspectRouter);
 
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
@@ -67,16 +109,17 @@ async function startServer() {
     serveStatic(app);
   }
 
-  const preferredPort = Number.parseInt(process.env.PORT || "3000", 10);
+  const preferredPort = parseInt(process.env.PORT || "3000", 10);
   const port = await findAvailablePort(preferredPort);
+
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
   server.listen(port, () => {
-    console.log(`Prism server running on http://localhost:${port}/`);
-    console.log(`[Startup] Supabase project: ${SUPABASE_PROJECT}`);
-    console.log("[Startup] tRPC mounted at /api/trpc");
+    console.log(`Lighthouse gate server running on http://localhost:${port}/`);
+    console.log(`[Startup] Lighthouse Supabase project: ${SUPABASE_PROJECT}`);
+    console.log("[Startup] Legacy MySQL/TiDB routers and background jobs are not loaded for this gate");
   });
 
   process.on("SIGTERM", () => {
@@ -89,6 +132,6 @@ async function startServer() {
 }
 
 startServer().catch(error => {
-  console.error("[Startup] Prism server failed:", error);
+  console.error("[Startup] Lighthouse gate server failed:", error);
   process.exit(1);
 });
