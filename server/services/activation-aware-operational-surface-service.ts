@@ -51,6 +51,9 @@ export function getOperationalSurfaceStabilizationSummary() {
   };
 }
 
+// Alias used by compat routers and runtime orchestrator
+export const getOperationalVisibilitySummary = getOperationalSurfaceStabilizationSummary;
+
 function buildActivationAwareSurface(
   namespace: string
 ): ActivationAwareOperationalSurface | null {
