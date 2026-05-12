@@ -37,13 +37,14 @@ export async function completeStrategyPathWithOutcome(params: {
   reEvaluationTriggered: boolean;
 }> {
   // Get path details
-  const [pathRows] = await db.execute(sql`
+  const pathResult = await db.execute(sql`
     SELECT sp.*, sr.strategy_name, sr.strategy_type
     FROM sys_strategy_paths sp
     LEFT JOIN strategy_registry sr ON sp.strategy_id = sr.strategy_id
     WHERE sp.path_id = ${params.pathId}
   `);
-  const path = (pathRows as unknown as any[])[0];
+  const pathRows = Array.isArray(pathResult) ? pathResult : (pathResult as any).rows ?? [];
+  const path = pathRows[0];
   if (!path) throw new Error(`Strategy path ${params.pathId} not found`);
 
   // Mark path as completed
@@ -105,11 +106,12 @@ export async function completeStrategyPathWithOutcome(params: {
   if (params.outcomeStatus !== "successful" && path.pattern_id) {
     try {
       // Check if pattern is still active
-      const [patternRows] = await db.execute(sql`
+      const patternResult = await db.execute(sql`
         SELECT pattern_id, decay_status FROM pattern_registry
         WHERE pattern_id = ${path.pattern_id}
       `);
-      const pattern = (patternRows as unknown as any[])[0];
+      const patternRows = Array.isArray(patternResult) ? patternResult : (patternResult as any).rows ?? [];
+      const pattern = patternRows[0];
       if (pattern && pattern.decay_status === "active") {
         await evaluatePatternsForStrategies();
         reEvaluationTriggered = true;
@@ -134,7 +136,7 @@ export async function processPendingFeedback(): Promise<{
   errors: number;
 }> {
   // Find outcomes that haven't had feedback processed
-  const [pendingRows] = await db.execute(sql`
+  const pendingResult = await db.execute(sql`
     SELECT o.outcome_id
     FROM outcome_registry o
     LEFT JOIN strategy_effectiveness se ON o.strategy_id = se.strategy_id
@@ -144,7 +146,7 @@ export async function processPendingFeedback(): Promise<{
     LIMIT 50
   `);
 
-  const pending = pendingRows as unknown as any[];
+  const pending = Array.isArray(pendingResult) ? pendingResult : (pendingResult as any).rows ?? [];
   let processed = 0;
   let errors = 0;
 
@@ -171,25 +173,27 @@ export async function recalculateStrategyWeights(): Promise<{
   strategiesUpdated: number;
 }> {
   // Recalculate historical_success_rate for all strategies with outcomes
-  const [strategyRows] = await db.execute(sql`
+  const strategyResult = await db.execute(sql`
     SELECT DISTINCT strategy_id FROM strategy_success_rates
   `);
+  const strategyRows = Array.isArray(strategyResult) ? strategyResult : (strategyResult as any).rows ?? [];
 
   let strategiesUpdated = 0;
 
-  for (const row of strategyRows as unknown as any[]) {
+  for (const row of strategyRows as any[]) {
     try {
-      const [rateRows] = await db.execute(sql`
+      const rateResult = await db.execute(sql`
         SELECT SUM(total_attempts) as total, SUM(successful_outcomes) as successes
         FROM strategy_success_rates WHERE strategy_id = ${row.strategy_id}
       `);
-      const r = (rateRows as unknown as any[])[0];
+      const rateRows = Array.isArray(rateResult) ? rateResult : (rateResult as any).rows ?? [];
+      const r = rateRows[0];
       if (r && Number(r.total) > 0) {
         const newRate = Math.round((Number(r.successes) / Number(r.total)) * 10000) / 100;
         await db.execute(sql`
           UPDATE strategy_registry SET
             historical_success_rate = ${newRate},
-            last_updated_from_outcomes = CURDATE(),
+            last_updated_from_outcomes = CURRENT_DATE,
             updated_at = NOW()
           WHERE strategy_id = ${row.strategy_id}
         `);
@@ -245,32 +249,37 @@ export async function getLearningLoopStatus(): Promise<{
   effectivenessRecords: number;
   trendImpactRecords: number;
 }> {
-  const [pendingRows] = await db.execute(sql`
+  const pendingRes = await db.execute(sql`
     SELECT COUNT(*) as cnt FROM outcome_registry WHERE feedback_processed IS NULL AND outcome_status IS NOT NULL
   `);
-  const [totalRows] = await db.execute(sql`
+  const totalRes = await db.execute(sql`
     SELECT COUNT(*) as cnt FROM outcome_registry
   `);
-  const [processedRows] = await db.execute(sql`
+  const processedRes = await db.execute(sql`
     SELECT COUNT(*) as cnt FROM outcome_registry WHERE feedback_processed IS NOT NULL
   `);
-  const [stratRows] = await db.execute(sql`
+  const stratRes = await db.execute(sql`
     SELECT COUNT(DISTINCT strategy_id) as cnt FROM strategy_success_rates
   `);
-  const [effRows] = await db.execute(sql`
+  const effRes = await db.execute(sql`
     SELECT COUNT(*) as cnt FROM strategy_effectiveness
   `);
-  const [impactRows] = await db.execute(sql`
+  const impactRes = await db.execute(sql`
     SELECT COUNT(*) as cnt FROM trend_intervention_impacts
   `);
 
+  const safeFirst = (r: any) => {
+    const rows = Array.isArray(r) ? r : (r as any).rows ?? [];
+    return rows[0];
+  };
+
   return {
-    pendingFeedback: Number((pendingRows as unknown as any[])[0]?.cnt) || 0,
-    totalOutcomes: Number((totalRows as unknown as any[])[0]?.cnt) || 0,
-    processedOutcomes: Number((processedRows as unknown as any[])[0]?.cnt) || 0,
-    strategiesWithData: Number((stratRows as unknown as any[])[0]?.cnt) || 0,
+    pendingFeedback: Number(safeFirst(pendingRes)?.cnt) || 0,
+    totalOutcomes: Number(safeFirst(totalRes)?.cnt) || 0,
+    processedOutcomes: Number(safeFirst(processedRes)?.cnt) || 0,
+    strategiesWithData: Number(safeFirst(stratRes)?.cnt) || 0,
     lastCycleRun: null, // Would need a separate tracking table
-    effectivenessRecords: Number((effRows as unknown as any[])[0]?.cnt) || 0,
-    trendImpactRecords: Number((impactRows as unknown as any[])[0]?.cnt) || 0,
+    effectivenessRecords: Number(safeFirst(effRes)?.cnt) || 0,
+    trendImpactRecords: Number(safeFirst(impactRes)?.cnt) || 0,
   };
 }
