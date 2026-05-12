@@ -8,11 +8,13 @@ Define the canonical reconstruction rules for the upgraded Lighthouse/Luminari d
 
 This document exists to prevent future schema drift and prevent reconstruction from legacy runtime contamination.
 
+It is paired with `docs/DATABASE_CONTINUITY_GUARDRAILS.md`, which forbids using a fresh database as a shortcut around recovery drift; `docs/LUMINARI_FIVE_SUBSTRATE_PLATFORM.md`, which defines Atlas, Lighthouse, Prism, Rosetta, and Esquire ownership boundaries; and `docs/ATLAS_PRISM_MATHEMATICAL_FOUNDATION.md`, which defines the Atlas-Prism signal, convergence, normalization, linking, and prioritization contract.
+
 ---
 
 # Canonical Reconstruction Principle
 
-The upgraded Lighthouse/Luminari architecture is canonical.
+The upgraded Lighthouse/Luminari architecture is canonical within the wider five-substrate Luminari platform.
 
 The old fragmented runtime is not canonical.
 
@@ -21,7 +23,7 @@ The schema must be rebuilt around:
 - upgraded deterministic architecture
 - upgraded runtime spine
 - operational-core domains
-- deterministic mathematical substrate
+- deterministic integration contracts, including the Atlas-Prism mathematical foundation only where Lighthouse depends on Atlas/Prism outputs
 - verified backbone assets
 
 NOT around:
@@ -59,7 +61,7 @@ Canonical schema reconstruction may ONLY derive from:
 
 - canonical layer stack
 - operational core plan
-- deterministic mathematical substrate
+- deterministic integration contracts, including the Atlas-Prism mathematical foundation only where Lighthouse depends on Atlas/Prism outputs
 - canonical runtime recovery state
 
 ---
