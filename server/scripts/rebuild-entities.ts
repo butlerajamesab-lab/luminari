@@ -21,7 +21,7 @@ async function rebuildEntitiesTable() {
     console.log("[3] Creating entities table with exact schema...");
     const createTableSQL = `
       CREATE TABLE entities (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         caseId INT NOT NULL,
         name VARCHAR(512) NOT NULL,
         type VARCHAR(64) NOT NULL,

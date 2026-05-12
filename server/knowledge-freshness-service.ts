@@ -165,7 +165,7 @@ export async function runFreshnessCheck(): Promise<{
 
       try {
         const [countRows]: any = await db.execute(sql.raw(
-          `SELECT COUNT(*) as cnt FROM \`${config.tableName}\``
+          `SELECT COUNT(*) as cnt FROM "${config.tableName}"`
         ));
         recordCount = Number((countRows as any[])[0]?.cnt) || 0;
       } catch (e) {
@@ -177,7 +177,7 @@ export async function runFreshnessCheck(): Promise<{
       // Get latest update timestamp
       try {
         const [maxRows]: any = await db.execute(sql.raw(
-          `SELECT MAX(\`${config.timestampColumn}\`) as maxTs FROM \`${config.tableName}\``
+          `SELECT MAX("${config.timestampColumn}") as maxTs FROM "${config.tableName}"`
         ));
         const maxVal = (maxRows as any[])[0]?.maxTs;
         if (maxVal) {

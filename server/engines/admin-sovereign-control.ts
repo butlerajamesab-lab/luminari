@@ -298,7 +298,7 @@ export async function disableStream(streamId: string, adminId: string, adminName
 // ─── Schema Manager ───
 
 export async function listTables() {
-  const result = await db.execute(sql`SHOW TABLES`);
+  const result = await db.execute(sql`SELECT tablename FROM pg_tables WHERE schemaname = 'public'`);
   const rows = result[0] as unknown as any[];
   const tableNames = rows.map((r: any) => Object.values(r)[0] as string).sort();
 
@@ -320,7 +320,7 @@ export async function inspectTable(tableName: string) {
   // Get CREATE TABLE
   let createStatement = "";
   try {
-    const result = await db.execute(sql.raw(`SHOW CREATE TABLE \`${tableName}\``));
+    const result = await db.execute(sql.raw(`SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = \'public\' AND table_name = \'${tableName}\'`));
     const rows = result[0] as unknown as any[];
     createStatement = (rows[0] as any)?.["Create Table"] || "";
   } catch { /* */ }

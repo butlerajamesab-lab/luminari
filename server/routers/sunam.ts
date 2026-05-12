@@ -1,6 +1,6 @@
 import { router, publicProcedure } from '../_core/trpc';
 import { z } from 'zod';
-import { pool } from '../db';
+import { getPool } from '../db';
 
 export const sunamRouter = router({
   /**
@@ -11,18 +11,17 @@ export const sunamRouter = router({
       protoFormId: z.string(),
     }))
     .mutation(async ({ input }) => {
-      let conn: any;
+      const client = await getPool().connect();
       try {
-        conn = await pool.getConnection();
-        await conn.beginTransaction();
+        await client.query('BEGIN');
 
         // Get proto-form from staging
-        const [protoFormRows] = await conn.query(
-          `SELECT * FROM forms_registry_staging WHERE id = ?`,
+        const { rows: protoFormRows } = await client.query(
+          `SELECT * FROM forms_registry_staging WHERE id = $1`,
           [input.protoFormId]
         );
 
-        const protoForm = (protoFormRows as any[])[0];
+        const protoForm = protoFormRows[0];
         if (!protoForm) {
           throw new Error('Proto-form not found');
         }
@@ -35,11 +34,11 @@ export const sunamRouter = router({
         };
 
         // Insert to detected_signals within transaction
-        const [result] = await conn.query(
+        const { rows: result } = await client.query(
           `INSERT INTO detected_signals (
             signal_type, title, description, severity, confidence, 
             domain, raw_context, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
           [
             'FORM_DETECTION',
             enriched.form_name || 'Form',
@@ -53,27 +52,23 @@ export const sunamRouter = router({
         );
 
         // Commit transaction
-        await conn.commit();
+        await client.query('COMMIT');
 
         return {
           success: true,
-          signalId: (result as any).insertId,
+          signalId: result[0]?.id,
           protoFormId: input.protoFormId,
         };
       } catch (error) {
-        if (conn) {
-          try {
-            await conn.rollback();
-          } catch (e) {
-            console.error('[Sunam] Rollback error:', e);
-          }
+        try {
+          await client.query('ROLLBACK');
+        } catch (e) {
+          console.error('[Sunam] Rollback error:', e);
         }
         console.error('[Sunam] Enrichment failed:', error);
         throw error;
       } finally {
-        if (conn) {
-          conn.release();
-        }
+        client.release();
       }
     }),
 
@@ -85,35 +80,23 @@ export const sunamRouter = router({
       protoFormId: z.string(),
     }))
     .query(async ({ input }) => {
-      let conn: any;
-      try {
-        conn = await pool.getConnection();
-        const [form] = await conn.query(
-          `SELECT enrichment_status, enriched_at FROM forms_registry_staging WHERE id = ?`,
-          [input.protoFormId]
-        );
-        return form || { status: 'not_found' };
-      } finally {
-        if (conn) conn.release();
-      }
+      const { rows } = await getPool().query(
+        `SELECT enrichment_status, enriched_at FROM forms_registry_staging WHERE id = $1`,
+        [input.protoFormId]
+      );
+      return rows[0] || { status: 'not_found' };
     }),
 
   /**
    * List all enriched signals
    */
   listSignals: publicProcedure.query(async () => {
-    let conn: any;
-    try {
-      conn = await pool.getConnection();
-      const [signals] = await conn.query(
-        `SELECT id, signal_type, title, severity, confidence, created_at 
-         FROM detected_signals 
-         ORDER BY created_at DESC 
-         LIMIT 100`
-      );
-      return signals || [];
-    } finally {
-      if (conn) conn.release();
-    }
+    const { rows } = await getPool().query(
+      `SELECT id, signal_type, title, severity, confidence, created_at 
+       FROM detected_signals 
+       ORDER BY created_at DESC 
+       LIMIT 100`
+    );
+    return rows || [];
   }),
 });

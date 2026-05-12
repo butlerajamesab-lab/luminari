@@ -19,30 +19,25 @@ async function setup() {
     console.log('📋 Creating business_baselines table...');
     
     const createTableSQL = `
-      CREATE TABLE IF NOT EXISTS \`business_baselines\` (
-        \`id\` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        \`entity_type\` enum('product','expense_category') NOT NULL,
-        \`entity_id\` varchar(255) NOT NULL,
-        \`avg_amount\` decimal(10,2) NOT NULL,
-        \`stddev_amount\` decimal(10,2),
-        \`sample_count\` int NOT NULL,
-        \`last_updated\` bigint NOT NULL,
-        UNIQUE KEY \`idx_entity_type_id\` (\`entity_type\`,\`entity_id\`),
-        KEY \`idx_entity_type\` (\`entity_type\`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      CREATE TABLE IF NOT EXISTS "business_baselines" (
+        "id" SERIAL PRIMARY KEY,
+        "entity_type" TEXT NOT NULL CHECK (entity_type IN ('product','expense_category')),
+        "entity_id" VARCHAR(255) NOT NULL,
+        "avg_amount" DECIMAL(10,2) NOT NULL,
+        "stddev_amount" DECIMAL(10,2),
+        "sample_count" INT NOT NULL,
+        "last_updated" BIGINT NOT NULL,
+        UNIQUE ("entity_type", "entity_id")
+      );
     `;
     
-    const connection = await pool.getConnection();
-    await connection.query(createTableSQL);
-    connection.release();
+    await pool.query(createTableSQL);
     
     console.log('✅ Table created/verified\n');
 
     // Step 2: Clear existing data
     console.log('🗑️  Clearing existing baselines...');
-    const clearConnection = await pool.getConnection();
-    await clearConnection.query('DELETE FROM business_baselines');
-    clearConnection.release();
+    await pool.query('DELETE FROM business_baselines');
     console.log('✅ Cleared\n');
 
     // Step 3: Seed test data
@@ -67,16 +62,14 @@ async function setup() {
     const allBaselines = [...productBaselines, ...expenseBaselines];
     const now = Date.now();
 
-    const seedConnection = await pool.getConnection();
-    
     for (const baseline of allBaselines) {
-      const sql = `
+      const insertSql = `
         INSERT INTO business_baselines 
         (entity_type, entity_id, avg_amount, stddev_amount, sample_count, last_updated)
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES ($1, $2, $3, $4, $5, $6)
       `;
       
-      await seedConnection.query(sql, [
+      await pool.query(insertSql, [
         baseline.entityType,
         baseline.entityId,
         baseline.avgAmount,
@@ -87,21 +80,17 @@ async function setup() {
       
       console.log(`  ✅ ${baseline.entityType}: ${baseline.entityId} (avg: $${baseline.avgAmount})`);
     }
-    
-    seedConnection.release();
 
     // Step 4: Verify
     console.log('\n✨ Verification:');
     
-    const verifyConnection = await pool.getConnection();
-    const [rows] = await verifyConnection.query('SELECT COUNT(*) as count FROM business_baselines');
-    const [productCount] = await verifyConnection.query("SELECT COUNT(*) as count FROM business_baselines WHERE entity_type = 'product'");
-    const [expenseCount] = await verifyConnection.query("SELECT COUNT(*) as count FROM business_baselines WHERE entity_type = 'expense_category'");
-    verifyConnection.release();
+    const { rows } = await pool.query('SELECT COUNT(*) as count FROM business_baselines');
+    const { rows: productRows } = await pool.query("SELECT COUNT(*) as count FROM business_baselines WHERE entity_type = 'product'");
+    const { rows: expenseRows } = await pool.query("SELECT COUNT(*) as count FROM business_baselines WHERE entity_type = 'expense_category'");
 
     console.log(`  📊 Total baselines: ${rows[0].count}`);
-    console.log(`  📦 Products: ${productCount[0].count}`);
-    console.log(`  💰 Expense Categories: ${expenseCount[0].count}`);
+    console.log(`  📦 Products: ${productRows[0].count}`);
+    console.log(`  💰 Expense Categories: ${expenseRows[0].count}`);
     console.log('\n🎉 Business Analytics Engine is ready!\n');
 
     process.exit(0);

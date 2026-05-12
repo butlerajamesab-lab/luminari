@@ -42,8 +42,8 @@ export async function canonicalInsert(
     return v;
   });
 
-  const colStr = cols.map(c => `\`${c}\``).join(", ");
-  const query = `INSERT INTO \`${table}\` (${colStr}) VALUES (${placeholders})`;
+  const colStr = cols.map(c => `"${c}"`).join(", ");
+  const query = `INSERT INTO "${table}" (${colStr}) VALUES (${placeholders})`;
 
   const [result] = await db.execute(sql.raw(query.replace(/\?/g, () => {
     const val = values.shift();
@@ -56,7 +56,7 @@ export async function canonicalInsert(
 
   // Verify the row exists
   const [verify] = await db.execute(
-    sql.raw(`SELECT id FROM \`${table}\` WHERE id = ${insertId} LIMIT 1`)
+    sql.raw(`SELECT id FROM "${table}" WHERE id = ${insertId} LIMIT 1`)
   );
   if ((verify as unknown as any[]).length === 0) {
     throw new Error(`[CanonicalWriteAdapter] Insert verification failed: id=${insertId} not found in "${table}"`);
@@ -80,14 +80,14 @@ export async function canonicalUpdate(
   const setClauses = Object.entries(record)
     .filter(([k]) => k !== "id")
     .map(([k, v]) => {
-      if (v === null) return `\`${k}\` = NULL`;
-      if (typeof v === "object") return `\`${k}\` = '${JSON.stringify(v).replace(/'/g, "''")}'`;
-      if (typeof v === "number") return `\`${k}\` = ${v}`;
-      return `\`${k}\` = '${String(v).replace(/'/g, "''")}'`;
+      if (v === null) return `"${k}" = NULL`;
+      if (typeof v === "object") return `"${k}" = '${JSON.stringify(v).replace(/'/g, "''")}'`;
+      if (typeof v === "number") return `"${k}" = ${v}`;
+      return `"${k}" = '${String(v).replace(/'/g, "''")}'`;
     })
     .join(", ");
 
-  await db.execute(sql.raw(`UPDATE \`${table}\` SET ${setClauses} WHERE id = ${id}`));
+  await db.execute(sql.raw(`UPDATE "${table}" SET ${setClauses} WHERE id = ${id}`));
 }
 
 // ─── Pattern Engine → canonical_pattern_registry ───

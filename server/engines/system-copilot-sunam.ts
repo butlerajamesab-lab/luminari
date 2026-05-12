@@ -33,7 +33,7 @@ import { uiReadFile, uiWriteFile, uiPatchFile, uiListFiles, uiGetChangeLog, uiRo
 /** Build a system context summary for the LLM */
 export async function buildSystemContext(): Promise<string> {
   // Get table list
-  const tableResult = await db.execute(sql`SHOW TABLES`);
+  const tableResult = await db.execute(sql`SELECT tablename FROM pg_tables WHERE schemaname = 'public'`);
   const tableNames = (tableResult[0] as unknown as any[]).map((r: any) => Object.values(r)[0] as string).sort();
 
   // Get engine list
@@ -634,7 +634,7 @@ async function generateImpactAnalysis(artifactId: number, artifactType: string, 
 export async function inspectTable(tableName: string) {
   let schema = "";
   try {
-    const result = await db.execute(sql.raw(`SHOW CREATE TABLE \`${tableName}\``));
+    const result = await db.execute(sql.raw(`SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = \'public\' AND table_name = \'${tableName}\'`));
     schema = ((result[0] as unknown as any[])[0] as any)?.["Create Table"] || "";
   } catch { /* */ }
 

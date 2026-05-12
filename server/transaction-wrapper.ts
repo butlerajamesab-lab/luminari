@@ -1,34 +1,30 @@
-import { pool } from './db';
+import { getPool } from './db';
 
 /**
  * Standard transaction wrapper for all signal INSERT operations
  * Ensures reliable persistence with explicit commit/rollback
+ * Uses pg Pool client with BEGIN/COMMIT/ROLLBACK
  */
 export async function withTransaction<T>(
-  callback: (conn: any) => Promise<T>
+  callback: (client: any) => Promise<T>
 ): Promise<T> {
-  let conn: any;
+  const client = await getPool().connect();
   try {
-    conn = await pool.getConnection();
-    await conn.beginTransaction();
+    await client.query('BEGIN');
 
-    const result = await callback(conn);
+    const result = await callback(client);
 
-    await conn.commit();
+    await client.query('COMMIT');
     return result;
   } catch (err) {
-    if (conn) {
-      try {
-        await conn.rollback();
-      } catch (e) {
-        console.error('[Transaction] Rollback error:', e);
-      }
+    try {
+      await client.query('ROLLBACK');
+    } catch (e) {
+      console.error('[Transaction] Rollback error:', e);
     }
     throw err;
   } finally {
-    if (conn) {
-      conn.release();
-    }
+    client.release();
   }
 }
 
@@ -43,16 +39,16 @@ export async function insertSignalsBatch(
     description: string;
   }>
 ): Promise<number[]> {
-  return withTransaction(async (conn) => {
+  return withTransaction(async (client) => {
     const insertedIds: number[] = [];
 
     for (const signal of signals) {
-      const [result] = await conn.query(
+      const { rows } = await client.query(
         `INSERT INTO signals (case_id, evidence_id, signal_type, description, created_at)
-         VALUES (?, ?, ?, ?, NOW())`,
+         VALUES ($1, $2, $3, $4, NOW()) RETURNING id`,
         [signal.caseId, signal.evidenceId, signal.signalType, signal.description]
       );
-      insertedIds.push((result as any).insertId);
+      insertedIds.push(rows[0].id);
     }
 
     return insertedIds;
@@ -68,12 +64,12 @@ export async function insertSignal(
   signalType: string,
   description: string
 ): Promise<number> {
-  return withTransaction(async (conn) => {
-    const [result] = await conn.query(
+  return withTransaction(async (client) => {
+    const { rows } = await client.query(
       `INSERT INTO signals (case_id, evidence_id, signal_type, description, created_at)
-       VALUES (?, ?, ?, ?, NOW())`,
+       VALUES ($1, $2, $3, $4, NOW()) RETURNING id`,
       [caseId, evidenceId, signalType, description]
     );
-    return (result as any).insertId;
+    return rows[0].id;
   });
 }

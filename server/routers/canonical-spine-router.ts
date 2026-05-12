@@ -75,11 +75,11 @@ const remedyPathCreateSchema = z.object({
 export const canonicalSpineRouter = router({
   // ─── Status / Health ───
   status: publicProcedure.query(async () => {
-    const [irRows] = await pool.execute(`SELECT COUNT(*) as cnt FROM ingested_records`);
-    const [dsRows] = await pool.execute(`SELECT COUNT(*) as cnt FROM detected_signals`);
-    const [sflRows] = await pool.execute(`SELECT COUNT(*) as cnt FROM signal_flow_logs`);
-    const [wnRows] = await pool.execute(`SELECT COUNT(*) as cnt FROM world_nodes`);
-    const [rpRows] = await pool.execute(`SELECT COUNT(*) as cnt FROM remedy_paths WHERE signal_id_rp IS NOT NULL`);
+    const { rows: irRows } = await pool.query(`SELECT COUNT(*) as cnt FROM ingested_records`);
+    const { rows: dsRows } = await pool.query(`SELECT COUNT(*) as cnt FROM detected_signals`);
+    const { rows: sflRows } = await pool.query(`SELECT COUNT(*) as cnt FROM signal_flow_logs`);
+    const { rows: wnRows } = await pool.query(`SELECT COUNT(*) as cnt FROM world_nodes`);
+    const { rows: rpRows } = await pool.query(`SELECT COUNT(*) as cnt FROM remedy_paths WHERE signal_id_rp IS NOT NULL`);
 
     return {
       ingestedRecords: (irRows as any[])[0]?.cnt ?? 0,
@@ -111,9 +111,9 @@ export const canonicalSpineRouter = router({
       const metaStr = input.metadataL1L2 ? JSON.stringify(input.metadataL1L2) : null;
       const rawStr = JSON.stringify(input.rawJson);
 
-      const [result] = await pool.execute(
+      const { rows: result } = await pool.query(
         `INSERT INTO ingested_records (datasetId_ir, sourceRecordId, rawJson, source_hash, stream_id_ir, metadata_l1_l2, ingestedAt, updatedAt_ir, processed_for_signals)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, false)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false)
          ON DUPLICATE KEY UPDATE updatedAt_ir = VALUES(updatedAt_ir), rawJson = VALUES(rawJson), stream_id_ir = COALESCE(VALUES(stream_id_ir), stream_id_ir), metadata_l1_l2 = COALESCE(VALUES(metadata_l1_l2), metadata_l1_l2)`,
         [input.datasetId, input.sourceRecordId, rawStr, sourceHash, input.streamId ?? null, metaStr, now, now]
       );
@@ -184,13 +184,13 @@ export const canonicalSpineRouter = router({
     .query(async ({ input }) => {
       const safeLimit = Math.min(Math.max(1, input.limit), 1000);
       if (input.signalId) {
-        const [rows] = await pool.query(
-          `SELECT * FROM signal_flow_logs WHERE signal_id_sfl = ? ORDER BY processed_at DESC LIMIT ${safeLimit}`,
+        const { rows: rows } = await pool.query(
+          `SELECT * FROM signal_flow_logs WHERE signal_id_sfl = $1 ORDER BY processed_at DESC LIMIT ${safeLimit}`,
           [input.signalId]
         );
         return rows as any[];
       }
-      const [rows] = await pool.query(
+      const { rows: rows } = await pool.query(
         `SELECT * FROM signal_flow_logs ORDER BY processed_at DESC LIMIT ${safeLimit}`
       );
       return rows as any[];
@@ -216,7 +216,7 @@ export const canonicalSpineRouter = router({
         }
         const safeLimit2 = Math.min(Math.max(1, input.limit), 1000);
         query += ` ORDER BY updated_at_wn DESC LIMIT ${safeLimit2}`;
-        const [rows] = await pool.query(query, params);
+        const { rows: rows } = await pool.query(query, params);
         return (rows as any[]).map(r => ({
           ...r,
           metadataL10: typeof r.metadata_l10 === 'string' ? JSON.parse(r.metadata_l10) : r.metadata_l10,
@@ -226,8 +226,8 @@ export const canonicalSpineRouter = router({
     get: publicProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
-        const [rows] = await pool.execute(
-          `SELECT * FROM world_nodes WHERE id = ? LIMIT 1`,
+        const { rows: rows } = await pool.query(
+          `SELECT * FROM world_nodes WHERE id = $1 LIMIT 1`,
           [input.id]
         );
         const node = (rows as any[])[0];
@@ -248,9 +248,9 @@ export const canonicalSpineRouter = router({
         }
 
         const now = Date.now();
-        const [result] = await pool.execute(
+        const { rows: result } = await pool.query(
           `INSERT INTO world_nodes (biome_type, node_name_wn, latitude, longitude, metadata_l10, active_remedy, last_verified_at_wn, created_at_wn, updated_at_wn)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
           [input.biomeType, input.nodeName, input.latitude ?? null, input.longitude ?? null, JSON.stringify(input.metadataL10), input.activeRemedy, now, now, now]
         );
 
@@ -279,7 +279,7 @@ export const canonicalSpineRouter = router({
         sets.push("updated_at_wn = ?"); params.push(Date.now());
         params.push(input.id);
 
-        await pool.execute(`UPDATE world_nodes SET ${sets.join(", ")} WHERE id = ?`, params);
+        await pool.query(`UPDATE world_nodes SET ${sets.join(", ")} WHERE id = $1`, params);
         return { id: input.id, updated: true };
       }),
   }),
@@ -310,9 +310,9 @@ export const canonicalSpineRouter = router({
         const now = Date.now();
         const status = input.blockReason ? "blocked" : "pending";
 
-        const [result] = await pool.execute(
+        const { rows: result } = await pool.query(
           `INSERT INTO remedy_paths (caseId, userId, title, description, pathType, viability, generatedBy, remedyStatus, createdAt, updatedAt, signal_id_rp, route_direction, target_node_id, block_reason, canonical_remedy_status)
-           VALUES (?, ?, ?, ?, ?, 'moderate', 'system', 'draft', ?, ?, ?, ?, ?, ?, ?)`,
+           VALUES ($1, $2, $3, $4, $5, 'moderate', 'system', 'draft', $6, $7, $8, $9, $10, $11, $12)`,
           [input.caseId, input.userId, input.title, input.description ?? null, input.pathType, now, now, input.signalId, input.routeDirection ?? null, input.targetNodeId ?? null, input.blockReason ?? null, status]
         );
 
@@ -322,8 +322,8 @@ export const canonicalSpineRouter = router({
     bySignal: publicProcedure
       .input(z.object({ signalId: z.string() }))
       .query(async ({ input }) => {
-        const [rows] = await pool.execute(
-          `SELECT * FROM remedy_paths WHERE signal_id_rp = ? ORDER BY createdAt DESC`,
+        const { rows: rows } = await pool.query(
+          `SELECT * FROM remedy_paths WHERE signal_id_rp = $1 ORDER BY createdAt DESC`,
           [input.signalId]
         );
         return rows as any[];
@@ -350,7 +350,7 @@ export const canonicalSpineRouter = router({
     }),
 
   proofStreamCandidates: publicProcedure.query(async () => {
-    const [rows] = await pool.execute(
+    const { rows: rows } = await pool.query(
       `SELECT id, signalType, jurisdiction, domain, severity, title, confidenceScore
        FROM live_signals
        WHERE domain IS NOT NULL AND jurisdiction IS NOT NULL

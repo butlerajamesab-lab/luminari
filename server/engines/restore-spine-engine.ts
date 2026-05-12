@@ -122,7 +122,7 @@ export async function validateBundle(bundleJson: string): Promise<RestorePreview
 
 /** Get current table names */
 async function getCurrentTableNames(): Promise<string[]> {
-  const result = await db.execute(sql`SHOW TABLES`);
+  const result = await db.execute(sql`SELECT tablename FROM pg_tables WHERE schemaname = 'public'`);
   const rows = result[0] as unknown as any[];
   return rows.map((r: any) => Object.values(r)[0] as string).sort();
 }
@@ -293,7 +293,7 @@ export async function executeRestore(
                 });
                 try {
                   await db.execute(sql.raw(
-                    `INSERT IGNORE INTO \`${dataExport.tableName}\` (${cols.map(c => `\`${c}\``).join(",")}) VALUES (${vals.join(",")})`
+                    `INSERT INTO \`${dataExport.tableName}\` (${cols.map(c => `\`${c}\``).join(",")}) VALUES (${vals.join(",")})`
                   ));
                 } catch {
                   // Skip individual row errors

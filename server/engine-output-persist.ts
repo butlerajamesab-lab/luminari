@@ -36,7 +36,7 @@ function assertCanonical(table: string, context: string): void {
 async function assertRowExists(table: string, id: number, context: string): Promise<void> {
   assertCanonical(table, context);
   const [rows] = await db.execute(
-    sql.raw(`SELECT id FROM \`${table}\` WHERE id = ${id} LIMIT 1`)
+    sql.raw(`SELECT id FROM "${table}" WHERE id = ${id} LIMIT 1`)
   );
   if ((rows as unknown as any[]).length === 0) {
     throw new Error(
@@ -72,7 +72,7 @@ async function fetchCanonicalRow(table: string, id: number): Promise<any | null>
   assertCanonical(table, `fetchCanonicalRow`);
   try {
     const [rows] = await db.execute(
-      sql.raw(`SELECT * FROM \`${table}\` WHERE id = ${id} LIMIT 1`)
+      sql.raw(`SELECT * FROM "${table}" WHERE id = ${id} LIMIT 1`)
     );
     return (rows as unknown as any[])[0] || null;
   } catch {

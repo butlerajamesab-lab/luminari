@@ -5,7 +5,7 @@ async function persistSignals() {
     console.log("[Persist] Using app's DB instance");
 
     // Get document using app's db
-    const [docs] = await pool.execute(
+    const { rows: docs } = await pool.query(
       'SELECT id, caseId, textContent FROM documents WHERE id = 60001'
     );
     
@@ -48,9 +48,9 @@ async function persistSignals() {
 
     // CRITICAL: Persist using app's pool with explicit logging
     const insertPromises = signals.map(async (signal) => {
-      const [result] = await pool.execute(
+      const { rows: result } = await pool.query(
         `INSERT INTO signals (case_id, evidence_id, signal_type, description, created_at) 
-         VALUES (?, ?, ?, ?, NOW())`,
+         VALUES ($1, $2, $3, $4, NOW())`,
         [signal.caseId, signal.evidenceId, signal.signalType, signal.description]
       );
       console.log(`[Persist] INSERT RESULT:`, result);
@@ -61,8 +61,8 @@ async function persistSignals() {
     console.log(`[Persist] Persisted ${results.length} signals`);
 
     // Verify persistence
-    const [persisted] = await pool.execute(
-      'SELECT id, case_id, signal_type FROM signals WHERE case_id = ?',
+    const { rows: persisted } = await pool.query(
+      'SELECT id, case_id, signal_type FROM signals WHERE case_id = $1',
       [caseId]
     );
 

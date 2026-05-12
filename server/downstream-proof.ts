@@ -87,8 +87,8 @@ export async function runDownstreamProof(detectedSignalId: number): Promise<Down
     // ═══════════════════════════════════════════════════════════
     // STAGE 0: READ the detected_signal (no mutation)
     // ═══════════════════════════════════════════════════════════
-    const [signals] = await pool.execute(
-      "SELECT * FROM detected_signals WHERE id = ?",
+    const { rows: signals } = await pool.query(
+      "SELECT * FROM detected_signals WHERE id = $1",
       [detectedSignalId]
     );
     const signalRows = signals as any[];
@@ -164,8 +164,8 @@ export async function runDownstreamProof(detectedSignalId: number): Promise<Down
     }));
 
     // Check idempotency
-    const [existingFlow] = await pool.execute(
-      "SELECT id FROM signal_flow_logs WHERE signal_id_sfl = ? AND vector_path = ?",
+    const { rows: existingFlow } = await pool.query(
+      "SELECT id FROM signal_flow_logs WHERE signal_id_sfl = $1 AND vector_path = $2",
       [String(signal.id), vectorPath]
     );
     const existingFlowRows = existingFlow as any[];
@@ -184,9 +184,9 @@ export async function runDownstreamProof(detectedSignalId: number): Promise<Down
       });
     } else {
       // System-level append (not an engine write — this is the pipeline recorder)
-      const [flowResult] = await pool.execute(
+      const { rows: flowResult } = await pool.query(
         `INSERT INTO signal_flow_logs (signal_id_sfl, vector_path, flow_density, visibility_metadata, processed_at)
-         VALUES (?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5)`,
         [String(signal.id), vectorPath, flowDensity, flowVisibilityMetadata, Date.now()]
       );
       flowLogId = (flowResult as any).insertId;
@@ -211,8 +211,8 @@ export async function runDownstreamProof(detectedSignalId: number): Promise<Down
     // Columns: biome_type, node_name_wn, latitude, longitude, metadata_l10, active_remedy, last_verified_at_wn, created_at_wn, updated_at_wn
     // ═══════════════════════════════════════════════════════════
 
-    const [agencyRows] = await pool.execute(
-      "SELECT id, agency, agencyShort, domain, statute, complaintPathway, responseTimelineDays, complaintTypes, commonOutcomes FROM agency_authority_map WHERE domain = ? LIMIT 1",
+    const { rows: agencyRows } = await pool.query(
+      "SELECT id, agency, agencyShort, domain, statute, complaintPathway, responseTimelineDays, complaintTypes, commonOutcomes FROM agency_authority_map WHERE domain = $1 LIMIT 1",
       [agencyDomain]
     );
     const agencies = agencyRows as any[];
@@ -252,8 +252,8 @@ export async function runDownstreamProof(detectedSignalId: number): Promise<Down
     };
 
     // Check idempotency
-    const [existingNodes] = await pool.execute(
-      "SELECT id, metadata_l10 FROM world_nodes WHERE node_name_wn = ? AND biome_type = ?",
+    const { rows: existingNodes } = await pool.query(
+      "SELECT id, metadata_l10 FROM world_nodes WHERE node_name_wn = $1 AND biome_type = $2",
       [agency.agency, agencyDomain]
     );
     const existingNodeRows = existingNodes as any[];
@@ -314,9 +314,9 @@ export async function runDownstreamProof(detectedSignalId: number): Promise<Down
       }
 
       const now = Date.now();
-      const [nodeResult] = await pool.execute(
+      const { rows: nodeResult } = await pool.query(
         `INSERT INTO world_nodes (biome_type, node_name_wn, latitude, longitude, metadata_l10, active_remedy, last_verified_at_wn, created_at_wn, updated_at_wn)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
           agencyDomain,
           agency.agency,
@@ -358,8 +358,8 @@ export async function runDownstreamProof(detectedSignalId: number): Promise<Down
     const routeDirection = "LATERAL"; // We have a real target node (the agency)
 
     // Check idempotency
-    const [existingRemedy] = await pool.execute(
-      "SELECT id FROM remedy_paths WHERE signal_id_rp = ? AND target_node_id = ? AND route_direction = ?",
+    const { rows: existingRemedy } = await pool.query(
+      "SELECT id FROM remedy_paths WHERE signal_id_rp = $1 AND target_node_id = $2 AND route_direction = $3",
       [String(signal.id), worldNodeId, routeDirection]
     );
     const existingRemedyRows = existingRemedy as any[];
@@ -397,9 +397,9 @@ export async function runDownstreamProof(detectedSignalId: number): Promise<Down
       // We use the canonical columns alongside the legacy required columns
       const remedyStatus = "ROUTED";
       const now = Date.now();
-      const [remedyResult] = await pool.execute(
+      const { rows: remedyResult } = await pool.query(
         `INSERT INTO remedy_paths (caseId, userId, title, description, pathType, viability, generatedBy, remedyStatus, createdAt, updatedAt, signal_id_rp, route_direction, target_node_id, block_reason, canonical_remedy_status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
         [
           0, // caseId — no case yet, this is a proof signal
           0, // userId — system-generated
@@ -451,8 +451,8 @@ export async function runDownstreamProof(detectedSignalId: number): Promise<Down
     // STAGE 4: NO DEAD ENDS CHECK
     // ═══════════════════════════════════════════════════════════
 
-    const [remedyCount] = await pool.execute(
-      "SELECT COUNT(*) as cnt FROM remedy_paths WHERE signal_id_rp = ?",
+    const { rows: remedyCount } = await pool.query(
+      "SELECT COUNT(*) as cnt FROM remedy_paths WHERE signal_id_rp = $1",
       [String(signal.id)]
     );
     const remedyCnt = (remedyCount as any[])[0].cnt;

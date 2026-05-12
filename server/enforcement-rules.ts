@@ -52,7 +52,7 @@ export async function enforceNoOrphanOutput(outputRefs: any): Promise<Enforcemen
   for (const entity of allEntities) {
     try {
       const [rows] = await db.execute(
-        sql.raw(`SELECT id FROM \`${entity.table}\` WHERE id = ${entity.id} LIMIT 1`)
+        sql.raw(`SELECT id FROM "${entity.table}" WHERE id = ${entity.id} LIMIT 1`)
       );
       if ((rows as unknown as any[]).length === 0) {
         orphans.push(`${entity.type}:${entity.id} in ${entity.table}`);

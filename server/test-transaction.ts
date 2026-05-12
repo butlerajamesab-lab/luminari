@@ -1,33 +1,31 @@
-import { pool } from "./db";
+import { getPool } from "./db";
 
 async function testTransaction() {
-  let conn: any;
+  const client = await getPool().connect();
   try {
-    console.log("[Transaction] Getting connection from pool");
-    conn = await pool.getConnection();
     console.log("[Transaction] Connection acquired");
 
     console.log("[Transaction] Beginning transaction");
-    await conn.beginTransaction();
+    await client.query('BEGIN');
 
     console.log("[Transaction] Executing INSERT");
-    const insertResult = await conn.query(
+    const insertResult = await client.query(
       `INSERT INTO signals (case_id, evidence_id, signal_type, description, created_at) 
-       VALUES (?, ?, ?, ?, NOW())`,
+       VALUES ($1, $2, $3, $4, NOW()) RETURNING id`,
       [90007, 1, 'engine_test', 'test write']
     );
-    console.log("[Transaction] INSERT RESULT:", insertResult);
+    console.log("[Transaction] INSERT RESULT:", insertResult.rows);
 
     console.log("[Transaction] Executing immediate SELECT");
-    const [rows] = await conn.query(
+    const { rows } = await client.query(
       "SELECT * FROM signals WHERE case_id = 90007"
     );
     console.log("[Transaction] IMMEDIATE READ:", rows);
-    console.log(`[Transaction] Found ${(rows as any[]).length} rows`);
+    console.log(`[Transaction] Found ${rows.length} rows`);
 
-    if ((rows as any[]).length > 0) {
+    if (rows.length > 0) {
       console.log("✅ SUCCESS");
-      (rows as any[]).forEach((r: any) => {
+      rows.forEach((r: any) => {
         console.log(`   - ID ${r.id}: ${r.signal_type}`);
       });
     } else {
@@ -36,26 +34,22 @@ async function testTransaction() {
     }
 
     console.log("[Transaction] Committing");
-    await conn.commit();
+    await client.query('COMMIT');
     console.log("[Transaction] Committed");
 
     process.exit(0);
   } catch (err) {
     console.log(`B) FAILURE: ${(err as any).message}`);
     console.error(err);
-    if (conn) {
-      try {
-        await conn.rollback();
-      } catch (e) {
-        console.error("Rollback error:", e);
-      }
+    try {
+      await client.query('ROLLBACK');
+    } catch (e) {
+      console.error("Rollback error:", e);
     }
     process.exit(1);
   } finally {
-    if (conn) {
-      conn.release();
-      console.log("[Transaction] Connection released");
-    }
+    client.release();
+    console.log("[Transaction] Connection released");
   }
 }
 

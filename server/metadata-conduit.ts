@@ -242,7 +242,7 @@ export async function validateMetadataCompleteness(runId: string): Promise<{
     // Check row exists
     try {
       const [rowCheck] = await db.execute(
-        sql.raw(`SELECT id FROM \`${table}\` WHERE id = ${id} LIMIT 1`)
+        sql.raw(`SELECT id FROM "${table}" WHERE id = ${id} LIMIT 1`)
       );
       if ((rowCheck as unknown as any[]).length === 0) {
         errors.push(`Primary entity id=${id} not found in ${table}`);
@@ -262,7 +262,7 @@ export async function validateMetadataCompleteness(runId: string): Promise<{
         }
         try {
           const [artRowCheck] = await db.execute(
-            sql.raw(`SELECT id FROM \`${artifact.table}\` WHERE id = ${artifact.id} LIMIT 1`)
+            sql.raw(`SELECT id FROM "${artifact.table}" WHERE id = ${artifact.id} LIMIT 1`)
           );
           if ((artRowCheck as unknown as any[]).length === 0) {
             errors.push(`Artifact entity id=${artifact.id} not found in ${artifact.table}`);

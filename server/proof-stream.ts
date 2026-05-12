@@ -78,12 +78,12 @@ async function stageIngest(liveSignalId: number): Promise<PipelineStage> {
   };
 
   // Read the real live_signal (non-_ls columns which have the actual data)
-  const [rows] = await pool.execute(
+  const { rows: rows } = await pool.query(
     `SELECT id, signalType, datasetId, jurisdiction, domain, severity, title,
             explanation, patternSummary, supportingStatistics, confidenceScore,
             detectedAt, ingestRunId, signalFingerprint, entityType,
             canonicalEntityName, entityRole
-     FROM live_signals WHERE id = ?`,
+     FROM live_signals WHERE id = $1`,
     [liveSignalId]
   );
   const signals = rows as any[];
@@ -105,8 +105,8 @@ async function stageIngest(liveSignalId: number): Promise<PipelineStage> {
     .digest("hex");
 
   // Idempotent check
-  const [existing] = await pool.execute(
-    `SELECT id FROM ingested_records WHERE source_hash = ?`,
+  const { rows: existing } = await pool.query(
+    `SELECT id FROM ingested_records WHERE source_hash = $1`,
     [sourceHash]
   );
   if ((existing as any[]).length > 0) {
@@ -133,14 +133,14 @@ async function stageIngest(liveSignalId: number): Promise<PipelineStage> {
   };
 
   // Insert into ingested_records
-  const [result] = await pool.execute(
+  const { rows: result } = await pool.query(
     `INSERT INTO ingested_records
      (source_id, status, record_count, created_at, datasetId_ir, sourceRecordId,
       ingestedAt, updatedAt_ir, normalizedCategory, normalizedEntity,
       normalizedJurisdiction, normalizedState, normalizedStatus,
       normalizedDescription, processed_for_signals, rawJson,
       source_hash, stream_id_ir, metadata_l1_l2)
-     VALUES (?, 'success', 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 0, ?, ?, 'proof_stream', ?)`,
+     VALUES ($1, 'success', 1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', $11, 0, $12, $13, 'proof_stream', $14)`,
     [
       `live_signal_${signal.id}`,
       Date.now(),
@@ -187,12 +187,12 @@ async function stageGate(liveSignalId: number): Promise<PipelineStage> {
   };
 
   // Read the live_signal and build LiveSignalRow from populated columns
-  const [rows] = await pool.execute(
+  const { rows: rows } = await pool.query(
     `SELECT id, signalType, datasetId, jurisdiction, domain, severity, title,
             explanation, patternSummary, supportingStatistics, confidenceScore,
             detectedAt, ingestRunId, signalFingerprint, entityType,
             canonicalEntityName, entityRole
-     FROM live_signals WHERE id = ?`,
+     FROM live_signals WHERE id = $1`,
     [liveSignalId]
   );
   const signals = rows as any[];
@@ -274,8 +274,8 @@ async function stageCanonicalUpdate(
   // Find the detected_signal by signal_id (string) or id (number)
   let dsId: number;
   if (typeof detectedSignalId === "string") {
-    const [dsRows] = await pool.execute(
-      `SELECT id FROM detected_signals WHERE signal_id = ? LIMIT 1`,
+    const { rows: dsRows } = await pool.query(
+      `SELECT id FROM detected_signals WHERE signal_id = $1 LIMIT 1`,
       [detectedSignalId]
     );
     const ds = dsRows as any[];
@@ -289,15 +289,15 @@ async function stageCanonicalUpdate(
   }
 
   // Match proof framework by domain
-  const [pfRows] = await pool.execute(
-    `SELECT id, claimType, elementsOfProof, typicalEvidence FROM proof_frameworks WHERE domain = ? LIMIT 1`,
+  const { rows: pfRows } = await pool.query(
+    `SELECT id, claimType, elementsOfProof, typicalEvidence FROM proof_frameworks WHERE domain = $1 LIMIT 1`,
     [domain]
   );
   const frameworks = pfRows as any[];
 
   // Match doctrines by domain
-  const [docRows] = await pool.execute(
-    `SELECT id, name FROM doctrine_registry WHERE JSON_CONTAINS(domains, ?)`,
+  const { rows: docRows } = await pool.query(
+    `SELECT id, name FROM doctrine_registry WHERE JSON_CONTAINS(domains, $1)`,
     [JSON.stringify(domain)]
   );
   const doctrines = docRows as any[];
@@ -314,12 +314,12 @@ async function stageCanonicalUpdate(
   };
 
   // Update the detected_signal with canonical columns
-  await pool.execute(
+  await pool.query(
     `UPDATE detected_signals
-     SET parent_record_id = ?,
+     SET parent_record_id = $1,
          sunam_status = 'approved',
-         forensic_logic = ?
-     WHERE id = ?`,
+         forensic_logic = $2
+     WHERE id = $3`,
     [ingestedRecordId, JSON.stringify(forensicLogic), dsId]
   );
 
@@ -415,10 +415,10 @@ async function stageWorldNode(domain: string): Promise<PipelineStage> {
   stage.inputHash = hashInput({ domain });
 
   // Find the real agency for this domain
-  const [agRows] = await pool.execute(
+  const { rows: agRows } = await pool.query(
     `SELECT id, agency, domain, complaintPathway, statutoryAuthority,
             complaintTypes, commonOutcomes, responseTimelineDays
-     FROM agency_authority_map WHERE domain = ? ORDER BY id ASC LIMIT 1`,
+     FROM agency_authority_map WHERE domain = $1 ORDER BY id ASC LIMIT 1`,
     [domain]
   );
   const agencies = agRows as any[];
@@ -432,8 +432,8 @@ async function stageWorldNode(domain: string): Promise<PipelineStage> {
   const nodeName = agency.agency;
 
   // Idempotent check
-  const [existingNode] = await pool.execute(
-    `SELECT id FROM world_nodes WHERE node_name_wn = ? AND biome_type = ?`,
+  const { rows: existingNode } = await pool.query(
+    `SELECT id FROM world_nodes WHERE node_name_wn = $1 AND biome_type = $2`,
     [nodeName, biomeType]
   );
   if ((existingNode as any[]).length > 0) {
@@ -446,22 +446,22 @@ async function stageWorldNode(domain: string): Promise<PipelineStage> {
   }
 
   // Find matching escalation route
-  const [erRows] = await pool.execute(
-    `SELECT id, title FROM escalation_routes WHERE id = ?`,
+  const { rows: erRows } = await pool.query(
+    `SELECT id, title FROM escalation_routes WHERE id = $1`,
     [agency.id]
   );
   const routes = erRows as any[];
 
   // Find matching unified resources
-  const [urRows] = await pool.execute(
-    `SELECT id, sourceId FROM unified_resources WHERE domain = ? LIMIT 5`,
+  const { rows: urRows } = await pool.query(
+    `SELECT id, sourceId FROM unified_resources WHERE domain = $1 LIMIT 5`,
     [domain]
   );
   const resources = urRows as any[];
 
   // Find matching registry programs (ontology term keys)
-  const [rpRows] = await pool.execute(
-    `SELECT sourceId FROM registry_programs WHERE domain = ? LIMIT 5`,
+  const { rows: rpRows } = await pool.query(
+    `SELECT sourceId FROM registry_programs WHERE domain = $1 LIMIT 5`,
     [domain]
   );
   const programs = rpRows as any[];
@@ -500,10 +500,10 @@ async function stageWorldNode(domain: string): Promise<PipelineStage> {
 
   // Insert world_node from real entity
   const now = Date.now();
-  const [wnResult] = await pool.execute(
+  const { rows: wnResult } = await pool.query(
     `INSERT INTO world_nodes
      (biome_type, node_name_wn, latitude, longitude, metadata_l10, active_remedy, last_verified_at_wn, created_at_wn, updated_at_wn)
-     VALUES (?, ?, 0, 0, ?, 1, ?, ?, ?)`,
+     VALUES ($1, $2, 0, 0, $3, 1, $4, $5, $6)`,
     [biomeType, nodeName, JSON.stringify(metadataL10), now, now, now]
   );
 
@@ -560,12 +560,12 @@ async function stageRemedyPath(
       return stage;
     }
 
-    const [rpResult] = await pool.execute(
+    const { rows: rpResult } = await pool.query(
       `INSERT INTO remedy_paths
        (signalId, pathType, viability, generatedBy, remedyStatus, createdAt, updatedAt,
         signal_id_rp, route_direction, target_node_id, block_reason, canonical_remedy_status)
-       VALUES (?, 'blocked', 'non_viable', 'proof_stream', 'active', ?, ?,
-               ?, NULL, NULL, ?, 'blocked')`,
+       VALUES ($1, 'blocked', 'non_viable', 'proof_stream', 'active', $2, $3,
+               $4, NULL, NULL, $5, 'blocked')`,
       [detectedSignalDbId, Date.now(), Date.now(), detectedSignalId, blockReason]
     );
 
@@ -578,10 +578,10 @@ async function stageRemedyPath(
   }
 
   // Find matching escalation route for routing direction
-  const [erRows] = await pool.execute(
+  const { rows: erRows } = await pool.query(
     `SELECT id, title, routes, escalationPriority
      FROM escalation_routes
-     WHERE id IN (SELECT id FROM agency_authority_map WHERE domain = ?)
+     WHERE id IN (SELECT id FROM agency_authority_map WHERE domain = $1)
      LIMIT 1`,
     [domain]
   );
@@ -615,8 +615,8 @@ async function stageRemedyPath(
   }
 
   // Idempotent check
-  const [existingRp] = await pool.execute(
-    `SELECT id FROM remedy_paths WHERE signal_id_rp = ? AND target_node_id = ?`,
+  const { rows: existingRp } = await pool.query(
+    `SELECT id FROM remedy_paths WHERE signal_id_rp = $1 AND target_node_id = $2`,
     [detectedSignalId, worldNodeId]
   );
   if ((existingRp as any[]).length > 0) {
@@ -629,13 +629,13 @@ async function stageRemedyPath(
   }
 
   // Insert remedy path
-  const [rpResult] = await pool.execute(
+  const { rows: rpResult } = await pool.query(
     `INSERT INTO remedy_paths
      (signalId, title, description, pathType, viability, generatedBy, remedyStatus,
       createdAt, updatedAt,
       signal_id_rp, route_direction, target_node_id, block_reason, canonical_remedy_status)
-     VALUES (?, ?, ?, 'enforcement', 'viable', 'proof_stream', 'active', ?, ?,
-             ?, ?, ?, NULL, 'routed')`,
+     VALUES ($1, $2, $3, 'enforcement', 'viable', 'proof_stream', 'active', $4, $5,
+             $6, $7, $8, NULL, 'routed')`,
     [
       detectedSignalDbId,
       `Proof Stream Remedy: ${routeDirection} → ${domain}`,
@@ -747,8 +747,8 @@ export async function runProofStream(liveSignalId: number): Promise<ProofStreamR
 
     // Stage 3: CANONICAL UPDATE — add forensic_logic and parent_record_id
     // Find the detected_signal's DB id
-    const [dsLookup] = await pool.execute(
-      `SELECT id FROM detected_signals WHERE signal_id = ? LIMIT 1`,
+    const { rows: dsLookup } = await pool.query(
+      `SELECT id FROM detected_signals WHERE signal_id = $1 LIMIT 1`,
       [detectedSignalId]
     );
     const dsRows = dsLookup as any[];

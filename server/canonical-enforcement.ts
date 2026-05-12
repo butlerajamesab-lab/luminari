@@ -73,9 +73,9 @@ export async function appendSignalFlowLog(entry: {
   const check = enforceSignalFlowReadOnly("INSERT");
   if (!check.passed) throw new Error(check.message);
 
-  const [result] = await pool.execute(
+  const { rows: result } = await pool.query(
     `INSERT INTO signal_flow_logs (signal_id_sfl, vector_path, flow_density, visibility_metadata, processed_at)
-     VALUES (?, ?, ?, ?, ?)`,
+     VALUES ($1, $2, $3, $4, $5)`,
     [entry.signalId, entry.vectorPath, entry.flowDensity, JSON.stringify(entry.visibilityMetadata), Date.now()]
   );
   return { id: (result as any).insertId };
@@ -84,8 +84,8 @@ export async function appendSignalFlowLog(entry: {
 // ─── Rule 7: NO_DEAD_ENDS ───
 
 export async function enforceNoDeadEnds(signalId: string): Promise<CanonicalEnforcementResult> {
-  const [signalRows] = await pool.execute(
-    `SELECT signal_id FROM detected_signals WHERE signal_id = ? LIMIT 1`,
+  const { rows: signalRows } = await pool.query(
+    `SELECT signal_id FROM detected_signals WHERE signal_id = $1 LIMIT 1`,
     [signalId]
   );
   if ((signalRows as any[]).length === 0) {
@@ -96,8 +96,8 @@ export async function enforceNoDeadEnds(signalId: string): Promise<CanonicalEnfo
     };
   }
 
-  const [remedyRows] = await pool.execute(
-    `SELECT id, block_reason, canonical_remedy_status FROM remedy_paths WHERE signal_id_rp = ?`,
+  const { rows: remedyRows } = await pool.query(
+    `SELECT id, block_reason, canonical_remedy_status FROM remedy_paths WHERE signal_id_rp = $1`,
     [signalId]
   );
   const remedies = remedyRows as any[];
@@ -141,7 +141,7 @@ export async function auditDeadEnds(): Promise<{
   deadEnds: string[];
   compliant: number;
 }> {
-  const [allSignals] = await pool.execute(
+  const { rows: allSignals } = await pool.query(
     `SELECT ds.signal_id,
             COUNT(rp.id) as remedy_count,
             SUM(CASE WHEN rp.block_reason IS NOT NULL AND rp.block_reason != '' THEN 1 ELSE 0 END) as blocked_count,
@@ -230,8 +230,8 @@ export function validateWorldNodeMetadata(metadata: any): CanonicalEnforcementRe
  * Validate that a world_node can be used as a remedy target.
  */
 export async function validateWorldNodeForRemedy(nodeId: number): Promise<CanonicalEnforcementResult> {
-  const [rows] = await pool.execute(
-    `SELECT id, active_remedy, metadata_l10, last_verified_at_wn FROM world_nodes WHERE id = ? LIMIT 1`,
+  const { rows: rows } = await pool.query(
+    `SELECT id, active_remedy, metadata_l10, last_verified_at_wn FROM world_nodes WHERE id = $1 LIMIT 1`,
     [nodeId]
   );
   const nodes = rows as any[];
