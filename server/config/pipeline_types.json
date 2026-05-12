@@ -345,5 +345,6 @@
         }
       ]
     }
-  }
+  },
+  "preserved_legacy_types": []
 }
