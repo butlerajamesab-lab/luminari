@@ -1,30 +1,46 @@
 import { router, publicProcedure } from "../_core/trpc";
-import { sql } from "drizzle-orm";
-import { getDb, getPool } from "../db";
 
 export const debugDbRouter = router({
   connectionStatus: publicProcedure.query(async () => {
     const dbUrl = process.env.DATABASE_URL;
     const hasUrl = !!dbUrl;
-    const urlHost = dbUrl ? new URL(dbUrl).hostname : "NOT_SET";
-    const urlPort = dbUrl ? new URL(dbUrl).port : "NOT_SET";
+    let urlHost = "NOT_SET";
+    let urlPort = "NOT_SET";
+    
+    if (dbUrl) {
+      try {
+        const parsed = new URL(dbUrl);
+        urlHost = parsed.hostname;
+        urlPort = parsed.port || "5432";
+      } catch (e: any) {
+        urlHost = `PARSE_ERROR: ${e.message}`;
+      }
+    }
     
     let canConnect = false;
     let queryResult: any = null;
     let errorMsg: string | null = null;
     
-    try {
-      const pool = getPool();
-      const client = await Promise.race([
-        pool.connect(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Connection timeout after 5s")), 5000))
-      ]) as any;
-      canConnect = true;
-      const res = await client.query("SELECT COUNT(*) as cnt FROM legal_statutes");
-      queryResult = res.rows[0];
-      client.release();
-    } catch (e: any) {
-      errorMsg = e.message;
+    if (dbUrl && dbUrl !== "postgresql://dummy") {
+      try {
+        const { Pool } = await import("pg");
+        const testPool = new Pool({ 
+          connectionString: dbUrl, 
+          max: 1,
+          connectionTimeoutMillis: 5000,
+          idleTimeoutMillis: 1000,
+        });
+        const client = await testPool.connect();
+        canConnect = true;
+        const res = await client.query("SELECT COUNT(*) as cnt FROM legal_statutes");
+        queryResult = res.rows[0];
+        client.release();
+        await testPool.end();
+      } catch (e: any) {
+        errorMsg = e.message;
+      }
+    } else {
+      errorMsg = dbUrl ? "DATABASE_URL is dummy placeholder" : "DATABASE_URL is not set";
     }
     
     return {

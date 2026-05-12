@@ -59,17 +59,17 @@ function initializePool(): Pool {
       console.warn("[DB] DATABASE_URL not configured. Database queries will fail until it is set.");
       connectionWarningIssued = true;
     }
-    // Return a dummy pool that will fail on first query attempt
-    pgPool = new Pool({ connectionString: "postgresql://dummy" });
+    // Return a dummy pool that will fail FAST (localhost:1 = ECONNREFUSED, not DNS hang)
+    pgPool = new Pool({ connectionString: "postgresql://x:x@127.0.0.1:1/x", connectionTimeoutMillis: 1000 });
     return pgPool;
   }
 
   try {
-    pgPool = new Pool({ connectionString: dbUrlString });
+    pgPool = new Pool({ connectionString: dbUrlString, connectionTimeoutMillis: 10000 });
     pgPool.on("error", (err) => {
       console.error("[DB] Unexpected error on idle client:", err);
     });
-    console.log("[DB] PostgreSQL pool initialized (lazy).");
+    console.log(`[DB] PostgreSQL pool initialized (lazy). Host: ${new URL(dbUrlString).hostname}`);
     return pgPool;
   } catch (error) {
     console.error("[DB] Failed to initialize PostgreSQL pool:", error);
