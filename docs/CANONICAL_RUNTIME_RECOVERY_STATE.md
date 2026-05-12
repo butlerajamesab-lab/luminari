@@ -51,13 +51,14 @@ Critical constraint:
 
 ## Canonical Recovery Direction
 
-The upgraded Lighthouse/Luminari architecture is canonical.
+The upgraded Lighthouse/Luminari architecture is canonical. It is one substrate within the wider five-substrate Luminari platform defined in `docs/LUMINARI_FIVE_SUBSTRATE_PLATFORM.md`: Atlas, Lighthouse, Prism, Rosetta, and Esquire.
 
 Do NOT revert to legacy Lighthouse runtime.
 
 Correct direction:
 
 - preserve upgraded deterministic architecture
+- preserve Atlas mathematical primitives as the cross-domain signal substrate
 - rebuild implementation clean
 
 ## Canonical Layer Stack
@@ -79,6 +80,7 @@ L11 UI Surfaces
 
 Do NOT:
 
+- create a fresh canonical database to bypass schema/runtime drift in any substrate
 - mount routers-complete.ts yet
 - run broad migrations
 - run broad RLS passes
@@ -87,6 +89,7 @@ Do NOT:
 
 Do:
 
+- preserve existing substrate database lineages and reconcile them through `docs/DATABASE_CONTINUITY_GUARDRAILS.md`
 - build canonical schema skeleton
 - reconcile runtime namespaces against schema
 - classify namespaces by dependency completeness
