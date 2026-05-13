@@ -8,7 +8,7 @@ Define the canonical reconstruction rules for the upgraded Lighthouse/Luminari d
 
 This document exists to prevent future schema drift and prevent reconstruction from legacy runtime contamination.
 
-It is paired with `docs/DATABASE_CONTINUITY_GUARDRAILS.md`, which forbids using a fresh database as a shortcut around recovery drift; `docs/LUMINARI_FIVE_SUBSTRATE_PLATFORM.md`, which defines Atlas, Lighthouse, Prism, Rosetta, and Esquire ownership boundaries; and `docs/ATLAS_PRISM_MATHEMATICAL_FOUNDATION.md`, which defines the Atlas-Prism signal, convergence, normalization, linking, and prioritization contract.
+It is paired with `docs/DATABASE_CONTINUITY_GUARDRAILS.md`, which forbids using a fresh database as a shortcut around recovery drift; `docs/LUMINARI_FIVE_SUBSTRATE_PLATFORM.md`, which defines Atlas, Lighthouse, Prism, Rosetta, and Esquire ownership boundaries; `docs/ATLAS_PRISM_MATHEMATICAL_FOUNDATION.md`, which defines the Atlas-Prism signal, convergence, normalization, linking, and prioritization contract; `docs/ROSETTA_V3_LOCKED_MACHINE_CONTRACT.md`, which defines the Rosetta V3 law-to-constants output contract consumed by Lighthouse only as validated external output; `docs/ATLAS_CURRENT_STATE_AND_LIGHTHOUSE_BRIDGE.md`, which defines the verified Atlas production-view bridge boundary; and `docs/ESQUIRE_PROCEDURAL_CONTINUITY_ROLE.md`, which defines Esquire's downstream procedural-continuity boundary.
 
 ---
 
@@ -23,7 +23,7 @@ The schema must be rebuilt around:
 - upgraded deterministic architecture
 - upgraded runtime spine
 - operational-core domains
-- deterministic integration contracts, including the Atlas-Prism mathematical foundation only where Lighthouse depends on Atlas/Prism outputs
+- deterministic integration contracts, including Atlas production bridge views, Atlas-Prism outputs, Rosetta V3 locked-machine outputs, and Esquire procedural-continuity outputs only where Lighthouse depends on validated external substrate outputs
 - verified backbone assets
 
 NOT around:
@@ -61,7 +61,7 @@ Canonical schema reconstruction may ONLY derive from:
 
 - canonical layer stack
 - operational core plan
-- deterministic integration contracts, including the Atlas-Prism mathematical foundation only where Lighthouse depends on Atlas/Prism outputs
+- deterministic integration contracts, including Atlas production bridge views, Atlas-Prism outputs, Rosetta V3 locked-machine outputs, and Esquire procedural-continuity outputs only where Lighthouse depends on validated external substrate outputs
 - canonical runtime recovery state
 
 ---

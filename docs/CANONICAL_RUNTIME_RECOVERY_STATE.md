@@ -59,6 +59,9 @@ Correct direction:
 
 - preserve upgraded deterministic architecture
 - preserve Atlas-Prism mathematical outputs as external integration contracts, not Lighthouse-owned runtime authority
+- preserve Rosetta V3 law-to-constants outputs as validated external integration contracts, not Lighthouse-owned schema authority
+- consume Atlas production bridge views as verified external context, not raw Atlas tables
+- preserve Esquire procedural-continuity outputs as downstream user-action contracts, not Lighthouse-owned case authority
 - rebuild implementation clean
 
 ## Canonical Layer Stack
