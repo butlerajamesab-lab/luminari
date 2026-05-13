@@ -265,6 +265,19 @@ export function mapSignalFlags(flagTypes: string[]): EvidenceSignal[] {
 let cachedRegistry: LensRegistry | null = null;
 let cachedRegistryHash: string | null = null;
 
+function normalizeLensRegistry(registry: LensRegistry): LensRegistry {
+  return {
+    ...registry,
+    structural_lenses: Array.isArray(registry?.structural_lenses) ? registry.structural_lenses : [],
+    domain_lenses: Array.isArray(registry?.domain_lenses) ? registry.domain_lenses : [],
+    interpretive_lenses: Array.isArray(registry?.interpretive_lenses) ? registry.interpretive_lenses : [],
+    signals: Array.isArray(registry?.signals) ? registry.signals : [],
+    mutual_exclusion_groups: Array.isArray(registry?.mutual_exclusion_groups)
+      ? registry.mutual_exclusion_groups
+      : [],
+  };
+}
+
 /**
  * Compute a deterministic SHA-256 hash of the registry content.
  * Used for stamping LensContext so downstream systems can detect registry changes.
@@ -433,6 +446,8 @@ export function loadLensRegistry(registryData?: LensRegistry): {
     const raw = readFileSync(filePath, "utf-8");
     data = JSON.parse(raw) as LensRegistry;
   }
+
+  data = normalizeLensRegistry(data);
 
   const errors = validateRegistry(data);
   if (errors.length > 0) {

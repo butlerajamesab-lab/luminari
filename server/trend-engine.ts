@@ -506,7 +506,7 @@ export async function getTrendDashboard(filters?: {
   const total = Number(countResult[0]?.total) || 0;
 
   const [trends] = await db.execute(sql`
-    SELECT tr.*, pr.pattern_type, pr.pattern_name, pr.confidence_score, pr.jurisdiction_scope
+    SELECT tr.*, pr.pattern_type, pr.pattern_type AS pattern_name, pr.confidence_score, pr.jurisdiction_scope
      FROM trend_registry tr
      LEFT JOIN pattern_registry pr ON tr.pattern_id = pr.pattern_id
      WHERE ${whereFragment}
@@ -543,7 +543,7 @@ export async function getTrendDetail(patternId: string): Promise<{
   alerts: TriggeredAlert[];
 }> {
   const [trendRows] = await db.execute(sql`
-    SELECT tr.*, pr.pattern_type, pr.pattern_name, pr.confidence_score, pr.jurisdiction_scope, pr.related_laws, pr.related_agencies
+    SELECT tr.*, pr.pattern_type, pr.pattern_type AS pattern_name, pr.confidence_score, pr.jurisdiction_scope, pr.related_laws, pr.related_agencies
      FROM trend_registry tr
      LEFT JOIN pattern_registry pr ON tr.pattern_id = pr.pattern_id
      WHERE tr.pattern_id = ${patternId} AND tr.is_current = TRUE
@@ -604,7 +604,7 @@ export async function getMissionControlSummary(): Promise<{
   const [topCritical] = await db.execute(sql`
     SELECT tr.trend_id, tr.pattern_id, tr.trend_classification, tr.pressure_index, 
             tr.growth_rate_30d, tr.momentum_direction,
-            pr.pattern_name, pr.pattern_type, pr.confidence_score
+            pr.pattern_type AS pattern_name, pr.pattern_type, pr.confidence_score
      FROM trend_registry tr
      LEFT JOIN pattern_registry pr ON tr.pattern_id = pr.pattern_id
      WHERE tr.is_current = TRUE AND tr.trend_classification IN ('critical', 'accelerating')
@@ -613,7 +613,7 @@ export async function getMissionControlSummary(): Promise<{
 
   const [recentAlerts] = await db.execute(sql`
     SELECT tpm.pattern_id, tpm.pressure_index, tpm.alert_level, tpm.snapshot_date,
-            pr.pattern_name, pr.pattern_type
+            pr.pattern_type AS pattern_name, pr.pattern_type
      FROM trend_pressure_metrics tpm
      LEFT JOIN pattern_registry pr ON tpm.pattern_id = pr.pattern_id
      WHERE tpm.alert_triggered = TRUE

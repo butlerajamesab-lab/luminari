@@ -183,10 +183,10 @@ export async function checkPatternTriggers(
     if (signalCount >= threshold.signals) {
       // Check if pattern already exists
       const [existingPattern] = await db.execute(sql`
-        SELECT pattern_id, pattern_name, signal_count FROM pattern_registry
+        SELECT pattern_id, pattern_type AS pattern_name, signal_count FROM pattern_registry
         WHERE pattern_type = ${patternType}
           AND jurisdiction_scope = ${jurisdiction}
-          AND LOWER(pattern_name) LIKE ${`%${signalType.replace(/_/g, '%')}%`}
+          AND LOWER(pattern_type) LIKE ${`%${signalType.replace(/_/g, '%')}%`}
         LIMIT 1
       `);
 
@@ -229,7 +229,7 @@ export async function linkCaseToPatterns(
     const [patterns] = await db.execute(sql`
       SELECT pattern_id FROM pattern_registry
       WHERE jurisdiction_scope = ${sig.jurisdiction_scope}
-        AND LOWER(pattern_name) LIKE ${`%${sig.signal_type.replace(/_/g, '%')}%`}
+        AND LOWER(pattern_type) LIKE ${`%${sig.signal_type.replace(/_/g, '%')}%`}
     `);
 
     for (const p of patterns as unknown as any[]) {
@@ -271,12 +271,12 @@ export async function getSystemImpact(caseId: number): Promise<{
 
   // Get patterns linked to this case
   const [patternRows] = await db.execute(sql`
-    SELECT pr.pattern_id, pr.pattern_name, pr.pattern_type, pr.confidence_score,
+    SELECT pr.pattern_id, pr.pattern_type AS pattern_name, pr.pattern_type, pr.confidence_score,
            pr.signal_count, pr.jurisdiction_scope, MAX(cpl.confidence_score) as link_confidence
     FROM pattern_registry pr
     JOIN case_pattern_links cpl ON pr.pattern_id = cpl.pattern_id
     WHERE cpl.case_id = ${caseId}
-    GROUP BY pr.pattern_id, pr.pattern_name, pr.pattern_type, pr.confidence_score,
+    GROUP BY pr.pattern_id, pr.pattern_type, pr.confidence_score,
              pr.signal_count, pr.jurisdiction_scope
   `);
 

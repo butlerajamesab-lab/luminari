@@ -377,7 +377,7 @@ export async function getOutcomeDashboard(): Promise<{
            o.overall_effectiveness_score, o.lessons_learned,
            o.created_at,
            sr.strategy_name, sr.strategy_type,
-           pr.pattern_name, pr.pattern_type
+           pr.pattern_type AS pattern_name, pr.pattern_type
     FROM outcome_registry o
     LEFT JOIN strategy_registry sr ON o.strategy_id = sr.strategy_id
     LEFT JOIN pattern_registry pr ON o.pattern_id = pr.pattern_id
@@ -461,7 +461,7 @@ export async function getMissionControlOutcomeSummary(): Promise<{
     : null;
 
   const [recentRows] = await db.execute(sql`
-    SELECT pr.pattern_name, o.outcome_status, o.overall_effectiveness_score
+    SELECT pr.pattern_type AS pattern_name, o.outcome_status, o.overall_effectiveness_score
     FROM outcome_registry o
     LEFT JOIN pattern_registry pr ON o.pattern_id = pr.pattern_id
     ORDER BY o.created_at DESC

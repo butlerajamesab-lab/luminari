@@ -162,9 +162,13 @@ export function loadPipelineRegistry(configDir?: string): PipelineRegistryCache 
     legacyMap.set(legacy.toLowerCase().trim(), target);
   }
 
-  // Preserved legacy types should NOT overlap with canonical IDs
+  // Preserved legacy types should NOT overlap with canonical IDs. Older registry
+  // payloads may omit this field, so default it to an empty array before iterating.
+  const preservedLegacyTypes = Array.isArray(aliasesConfig.preserved_legacy_types)
+    ? aliasesConfig.preserved_legacy_types
+    : [];
   const preservedLegacy = new Set<string>();
-  for (const legacyType of aliasesConfig.preserved_legacy_types) {
+  for (const legacyType of preservedLegacyTypes) {
     const normalized = legacyType.toLowerCase().trim();
     if (canonicalIds.has(normalized)) {
       throw new Error(

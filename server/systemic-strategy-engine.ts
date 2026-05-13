@@ -259,7 +259,7 @@ export async function evaluatePatternsForStrategies(): Promise<{
 }> {
   // Get active patterns that don't already have an active strategy path
   const [patterns] = await db.execute(sql`
-    SELECT pr.pattern_id, pr.pattern_name, pr.pattern_type, pr.signal_count,
+    SELECT pr.pattern_id, pr.pattern_type AS pattern_name, pr.pattern_type, pr.signal_count,
            tr.trend_classification, tr.pressure_index, pr.geographic_spread
     FROM pattern_registry pr
     LEFT JOIN trend_registry tr ON pr.pattern_id = tr.pattern_id
@@ -377,7 +377,7 @@ export async function getStrategyDashboard(filters?: {
            sp.trend_classification_at_creation, sp.pressure_index_at_creation,
            sp.signal_count_at_creation, sp.assigned_lead,
            sr.strategy_name, sr.strategy_type, sr.lead_agency,
-           pr.pattern_type, pr.pattern_name, pr.confidence_score, pr.signal_count,
+           pr.pattern_type, pr.pattern_type AS pattern_name, pr.confidence_score, pr.signal_count,
            (SELECT COUNT(*) FROM strategy_steps ss WHERE ss.path_id = sp.path_id) as total_steps
     FROM sys_strategy_paths sp
     JOIN strategy_registry sr ON sp.strategy_id = sr.strategy_id
@@ -401,7 +401,7 @@ export async function getStrategyPathDetail(pathId: string): Promise<{
   const [pathRows] = await db.execute(sql`
     SELECT sp.*, sr.strategy_name, sr.strategy_type, sr.lead_agency,
            sr.supporting_agencies, sr.primary_laws, sr.strategy_description,
-           pr.pattern_name, pr.pattern_type, pr.confidence_score
+           pr.pattern_type AS pattern_name, pr.pattern_type, pr.confidence_score
     FROM sys_strategy_paths sp
     JOIN strategy_registry sr ON sp.strategy_id = sr.strategy_id
     LEFT JOIN pattern_registry pr ON sp.pattern_id = pr.pattern_id

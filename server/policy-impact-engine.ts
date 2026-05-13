@@ -150,7 +150,7 @@ export async function measurePolicyImpact(params: {
 
   // Get pattern name for the correlation statement
   const [patternRows] = await db.execute(sql`
-    SELECT pattern_name FROM pattern_registry WHERE pattern_id = ${params.patternId} LIMIT 1
+    SELECT pattern_type AS pattern_name FROM pattern_registry WHERE pattern_id = ${params.patternId} LIMIT 1
   `);
   const patternName = (patternRows as unknown as any[])[0]?.pattern_name || "Unknown pattern";
 
@@ -198,7 +198,7 @@ export async function getImpactsForPattern(patternId: string): Promise<any[]> {
 
 export async function getImpactsForPolicy(policyId: string): Promise<any[]> {
   const [rows] = await db.execute(sql`
-    SELECT ppi.*, pr.pattern_name, pr.pattern_type
+    SELECT ppi.*, pr.pattern_type AS pattern_name, pr.pattern_type
     FROM policy_pattern_impacts ppi
     JOIN pattern_registry pr ON ppi.pattern_id = pr.pattern_id
     WHERE ppi.policy_id = ${policyId}
@@ -229,7 +229,7 @@ export async function getPolicyDashboard(): Promise<{
     ORDER BY pe.effective_date DESC
   `);
   const [impactRows] = await db.execute(sql`
-    SELECT ppi.*, pe.policy_name, pe.policy_type, pr.pattern_name, pr.pattern_type
+    SELECT ppi.*, pe.policy_name, pe.policy_type, pr.pattern_type AS pattern_name, pr.pattern_type
     FROM policy_pattern_impacts ppi
     JOIN policy_events pe ON ppi.policy_id = pe.policy_id
     JOIN pattern_registry pr ON ppi.pattern_id = pr.pattern_id

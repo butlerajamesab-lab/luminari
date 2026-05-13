@@ -37,7 +37,7 @@ export async function approveStrategy(params: {
   // 2. Get path details for remedy creation
   const [pathRows] = await db.execute(sql`
     SELECT sp.*, sr.strategy_name, sr.strategy_type, sr.lead_agency,
-           pr.pattern_type, pr.pattern_name, pr.jurisdiction_scope
+           pr.pattern_type, pr.pattern_type AS pattern_name, pr.jurisdiction_scope
     FROM sys_strategy_paths sp
     LEFT JOIN strategy_registry sr ON sp.strategy_id = sr.strategy_id
     LEFT JOIN pattern_registry pr ON sp.pattern_id = pr.pattern_id
@@ -216,7 +216,7 @@ export async function exportStrategyPlan(pathId: string): Promise<{
   const [pathRows] = await db.execute(sql`
     SELECT sp.*, sr.strategy_name, sr.strategy_type, sr.lead_agency,
            sr.supporting_agencies, sr.primary_laws, sr.secondary_laws,
-           pr.pattern_type, pr.pattern_name, pr.confidence_score,
+           pr.pattern_type, pr.pattern_type AS pattern_name, pr.confidence_score,
            pr.related_laws, pr.related_agencies
     FROM sys_strategy_paths sp
     LEFT JOIN strategy_registry sr ON sp.strategy_id = sr.strategy_id

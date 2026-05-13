@@ -22,6 +22,24 @@ import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { bulkUpdatePercentageChange } from "./signal-governance";
 
+function getExecuteRows(result: unknown): any[] {
+  if (Array.isArray(result)) {
+    return Array.isArray(result[0]) ? result[0] : result;
+  }
+  const maybeRows = (result as { rows?: unknown })?.rows;
+  return Array.isArray(maybeRows) ? maybeRows : [];
+}
+
+function getAffectedRows(result: unknown): number {
+  const candidate = Array.isArray(result) ? result[0] : result;
+  return Number(
+    (candidate as { affectedRows?: unknown; rowCount?: unknown; changes?: unknown })?.affectedRows ??
+    (candidate as { rowCount?: unknown })?.rowCount ??
+    (candidate as { changes?: unknown })?.changes ??
+    0
+  ) || 0;
+}
+
 // ─── OFS1. Configuration ─────────────────────────────────────────────────────
 
 /** Default interval: 6 hours in milliseconds */
@@ -150,7 +168,7 @@ async function updateInterventionSuccessMetrics(): Promise<{
 }> {
   try {
     // Update strategy_effectiveness from completed outcomes
-    const [result] = await db.execute(sql`
+    const result = await db.execute(sql`
       UPDATE strategy_effectiveness se
       SET
         total_deployments = (
@@ -180,7 +198,7 @@ async function updateInterventionSuccessMetrics(): Promise<{
         SELECT 1 FROM outcome_registry o WHERE o.strategy_id = se.strategy_id
       )
     `);
-    return { updated: (result as any).affectedRows || 0 };
+    return { updated: getAffectedRows(result) };
   } catch (e) {
     console.warn("[OutcomeFeedbackScheduler] Intervention metrics update partial:", e);
     return { updated: 0 };
@@ -194,7 +212,7 @@ async function correlateOutcomesWithPolicy(): Promise<{
 }> {
   try {
     // Find outcomes that occurred after policy events and update impact scores
-    const [rows] = await db.execute(sql`
+    const rows = getExecuteRows(await db.execute(sql`
       SELECT ppi.policy_id, ppi.pattern_id,
              COUNT(o.outcome_id) as outcome_count,
              AVG(CASE WHEN o.outcome_status = 'successful' THEN 1 ELSE 0 END) as success_rate
@@ -203,10 +221,10 @@ async function correlateOutcomesWithPolicy(): Promise<{
       JOIN policy_events pe ON pe.policy_id = ppi.policy_id
       WHERE o.created_at > pe.effective_date
       GROUP BY ppi.policy_id, ppi.pattern_id
-    `);
+    `));
 
     let updated = 0;
-    for (const row of rows as unknown as any[]) {
+    for (const row of rows) {
       if (Number(row.outcome_count) > 0) {
         await db.execute(sql`
           UPDATE policy_pattern_impacts
@@ -285,7 +303,7 @@ async function updateTrendClassifications(): Promise<{
 }> {
   try {
     // Recalculate trend classifications based on recent outcome data
-    const [result] = await db.execute(sql`
+    const result = await db.execute(sql`
       UPDATE trend_registry tr
       SET
         trend_classification = CASE
@@ -304,10 +322,10 @@ async function updateTrendClassifications(): Promise<{
         updated_at = NOW()
       WHERE tr.is_current = 1
     `);
-    const updated = (result as any).affectedRows || 0;
+    const updated = getAffectedRows(result);
 
     // Update pressure index based on signal density and geographic spread
-    const [pressureResult] = await db.execute(sql`
+    const pressureResult = await db.execute(sql`
       UPDATE trend_registry tr
       SET pressure_index = LEAST(
         GREATEST(
@@ -324,7 +342,7 @@ async function updateTrendClassifications(): Promise<{
       updated_at = NOW()
       WHERE tr.is_current = 1
     `);
-    const pressureUpdated = (pressureResult as any).affectedRows || 0;
+    const pressureUpdated = getAffectedRows(pressureResult);
 
     return { updated, pressureUpdated };
   } catch (e) {
@@ -378,10 +396,9 @@ async function logFeedbackRun(params: {
 // ─── OFS10. Get Feedback History ────────────────────────────────────────────
 export async function getFeedbackHistory(limit: number = 20): Promise<any[]> {
   try {
-    const [rows] = await db.execute(sql`
+    return getExecuteRows(await db.execute(sql`
       SELECT * FROM feedback_scheduler_log ORDER BY run_timestamp DESC LIMIT ${limit}
-    `);
-    return rows as unknown as any[];
+    `));
   } catch (e) {
     console.warn("[OutcomeFeedbackScheduler] History read failed:", e);
     return [];
