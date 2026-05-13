@@ -26,9 +26,3 @@ services:
         value: luminari-lighthouse
       - key: PORT
         value: "10000"
-      - key: GITHUB_OAUTH_CLIENT_ID
-        sync: false
-      - key: GITHUB_OAUTH_CLIENT_SECRET
-        sync: false
-      - key: JWT_SECRET
-        sync: false

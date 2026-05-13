@@ -1,11 +1,7 @@
 export const ENV = {
   appId: process.env.VITE_APP_ID ?? "",
-  cookieSecret: process.env.JWT_SECRET ?? "luminari-dev-secret-change-me",
+  cookieSecret: process.env.JWT_SECRET ?? "",
   databaseUrl: process.env.DATABASE_URL ?? "",
-  // GitHub OAuth (replaces dead Manus WebDev OAuth)
-  githubClientId: process.env.GITHUB_OAUTH_CLIENT_ID ?? "",
-  githubClientSecret: process.env.GITHUB_OAUTH_CLIENT_SECRET ?? "",
-  // Legacy key kept for backward compat
   oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
   isProduction: process.env.NODE_ENV === "production",
