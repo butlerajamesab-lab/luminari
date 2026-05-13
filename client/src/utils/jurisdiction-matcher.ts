@@ -17,9 +17,9 @@ export interface JurisdictionMatch {
 
 /**
  * Local Sovereign Registry
- * Expanded with 10 new jurisdictions (3 Gold tier, 7 Silver tier, 10 Bronze tier)
+ * Expanded with 20 new jurisdictions (3 Gold tier, 7 Silver tier, 10 Bronze tier)
  */
-const SOVEREIGN_REGISTRY: Record<string, JurisdictionMatch> = {
+export const sovereignRegistry: Record<string, JurisdictionMatch> = {
   // Original Auburn jurisdictions
   "AL-AUBURN-001": {
     id: "AL-AUBURN-001",
@@ -212,7 +212,7 @@ const SOVEREIGN_REGISTRY: Record<string, JurisdictionMatch> = {
  * - Remove extra spaces
  */
 function normalizeQuery(query: string): string {
-  return query.toLowerCase().trim().replace(/\s+/g, " ");
+  return query.toLowerCase().replace(/[,.]/g, " ").trim().replace(/\s+/g, " ");
 }
 
 /**
@@ -228,16 +228,23 @@ export function matchJurisdiction(query: string): JurisdictionMatch | null {
   const normalized = normalizeQuery(query);
 
   // Try exact ID match first
-  if (SOVEREIGN_REGISTRY[normalized.toUpperCase()]) {
-    return SOVEREIGN_REGISTRY[normalized.toUpperCase()];
+  const exactId = Object.keys(sovereignRegistry).find((id) => normalizeQuery(id) === normalized);
+  if (exactId) {
+    return sovereignRegistry[exactId];
   }
 
-  // Try partial matches against name and state
-  for (const [_id, jurisdiction] of Object.entries(SOVEREIGN_REGISTRY)) {
-    const nameMatch = jurisdiction.name.toLowerCase().includes(normalized);
-    const stateMatch = jurisdiction.state.toLowerCase().includes(normalized);
+  const queryTokens = normalized.split(" ").filter(Boolean);
 
-    if (nameMatch || stateMatch) {
+  // Try partial matches against name, state, and ID tokens.
+  // This supports punctuation variants like "Auburn Alabama" and "Auburn, AL".
+  for (const [id, jurisdiction] of Object.entries(sovereignRegistry)) {
+    const searchableTokens = normalizeQuery([
+      id,
+      jurisdiction.name,
+      jurisdiction.state,
+    ].join(" ")).split(" ");
+
+    if (queryTokens.every((token) => searchableTokens.includes(token))) {
       return jurisdiction;
     }
   }
@@ -249,5 +256,5 @@ export function matchJurisdiction(query: string): JurisdictionMatch | null {
  * Get all jurisdictions from the registry
  */
 export function getAllJurisdictions(): JurisdictionMatch[] {
-  return Object.values(SOVEREIGN_REGISTRY);
+  return Object.values(sovereignRegistry);
 }

@@ -9,6 +9,7 @@ describe('useInterfaceStore', () => {
       activeJurisdiction: null,
       isSovereign: false,
       confidence: 0,
+      isProcessing: false,
     });
   });
 
@@ -106,15 +107,30 @@ describe('useInterfaceStore', () => {
     });
   });
 
+  describe('Processing State', () => {
+    it('should initialize with isProcessing as false', () => {
+      const state = useInterfaceStore.getState();
+      expect(state.isProcessing).toBe(false);
+    });
+
+    it('should update isProcessing', () => {
+      const { setIsProcessing } = useInterfaceStore.getState();
+      setIsProcessing(true);
+      const state = useInterfaceStore.getState();
+      expect(state.isProcessing).toBe(true);
+    });
+  });
+
   describe('Reset Function', () => {
     it('should reset all state to initial values', () => {
-      const { setSearchQuery, setActiveJurisdiction, setIsSovereign, setConfidence, reset } = useInterfaceStore.getState();
+      const { setSearchQuery, setActiveJurisdiction, setIsSovereign, setConfidence, setIsProcessing, reset } = useInterfaceStore.getState();
       
       // Set all values
       setSearchQuery('Auburn Alabama');
       setActiveJurisdiction('AL-AUBURN-001');
       setIsSovereign(true);
       setConfidence(0.95);
+      setIsProcessing(true);
       
       // Reset
       reset();
@@ -124,6 +140,7 @@ describe('useInterfaceStore', () => {
       expect(state.activeJurisdiction).toBeNull();
       expect(state.isSovereign).toBe(false);
       expect(state.confidence).toBe(0);
+      expect(state.isProcessing).toBe(false);
     });
   });
 

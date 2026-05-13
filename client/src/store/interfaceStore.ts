@@ -4,7 +4,7 @@ import { create } from 'zustand';
  * Interface Store: Single Source of Truth
  * 
  * This store manages all jurisdiction and search state in one place.
- * No redundancy. No quadruple-diving. Just the essentials.
+ * No redundancy. No duplicate state plumbing. Just the essentials.
  */
 
 export interface InterfaceState {
