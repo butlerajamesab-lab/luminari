@@ -82,7 +82,7 @@ describe('Jurisdiction Matcher', () => {
       expect(result?.id).toBe('AL-AUBURN-001');
     });
 
-    it('should distinguish between AL and WA Auburn', () => {
+    it('should distinguish between AL and WA Auburn without punctuation', () => {
       const alResult = matchJurisdiction('Auburn Alabama');
       const waResult = matchJurisdiction('Auburn Washington');
       
@@ -104,6 +104,11 @@ describe('Jurisdiction Matcher', () => {
 
     it('should prioritize state-specific match over generic Auburn', () => {
       const result = matchJurisdiction('Auburn, AL');
+      expect(result?.id).toBe('AL-AUBURN-001');
+    });
+
+    it('should handle state-specific matches without comma punctuation', () => {
+      const result = matchJurisdiction('Auburn AL');
       expect(result?.id).toBe('AL-AUBURN-001');
     });
   });
