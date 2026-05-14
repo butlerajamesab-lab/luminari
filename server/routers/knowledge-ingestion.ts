@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { router, protectedProcedure } from "../_core/trpc";
+import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
-import { db } from "../db";
-import { sql, count } from "drizzle-orm";
+import { db, getPool } from "../db";
+import { sql } from "drizzle-orm";
 import {
   legalStatutes,
   legalCaseLaw,
@@ -179,32 +179,27 @@ const advocacyOrgImportSchema = z.object({
 /* ─── Knowledge Ingestion Router ─── */
 export const knowledgeIngestionRouter = router({
   /* ── Population Stats (all knowledge tables) ── */
-  populationStats: protectedProcedure.query(async () => {
-    // Tables with Drizzle schema definitions
-    const drizzleTables = [
-      { name: "legal_statutes", label: "Statutes", table: legalStatutes, target: 900 },
-      { name: "legal_case_law", label: "Case Law", table: legalCaseLaw, target: 400 },
-      { name: "agency_authority_map", label: "Agency Authorities", table: agencyAuthorityMap, target: 200 },
-      { name: "strategy_claim_catalog", label: "Claim Catalog", table: strategyClaimCatalog, target: 100 },
-      { name: "lumensend_templates", label: "LumenSend Templates", table: lumensendTemplates, target: 50 },
-      { name: "assembly_section_library", label: "Section Library", table: assemblySectionLibrary, target: 60 },
-      { name: "legislator_contacts", label: "Legislator Contacts", table: legislatorContacts, target: 65 },
-      { name: "advocacy_organizations", label: "Advocacy Organizations", table: advocacyOrganizations, target: 100 },
-      { name: "doctrine_registry", label: "Doctrine Registry", table: doctrineRegistry, target: 100 },
-      { name: "court_directory", label: "Court Directory", table: courtDirectory, target: 180 },
-      { name: "workflow_master", label: "Workflows", table: workflowMaster, target: 100 },
-      { name: "evidence_profiles", label: "Evidence Profiles", table: evidenceProfiles, target: 50 },
-      { name: "deadline_rules", label: "Deadline Rules", table: deadlineRules, target: 100 },
-      { name: "escalation_routes", label: "Escalation Routes", table: escalationRoutes, target: 50 },
-      { name: "weak_joint_triggers", label: "Weak Joint Registry", table: weakJointTriggers, target: 50 },
-      { name: "proof_frameworks", label: "Proof Frameworks", table: proofFrameworks, target: 90 },
-      { name: "signal_registry", label: "Signal Registry", table: signalRegistry, target: 100 },
-      { name: "pattern_registry", label: "Pattern Registry", table: patternRegistry, target: 50 },
-      { name: "settlement_formulas", label: "Settlement Formulas", table: settlementFormulas, target: 70 },
-    ];
-
-    // Tables created via raw SQL (no Drizzle schema) — query via raw SQL
-    const rawSqlTables = [
+  populationStats: publicProcedure.query(async () => {
+    const tables = [
+      { name: "legal_statutes", label: "Statutes", target: 900 },
+      { name: "legal_case_law", label: "Case Law", target: 400 },
+      { name: "agency_authority_map", label: "Agency Authorities", target: 200 },
+      { name: "strategy_claim_catalog", label: "Claim Catalog", target: 100 },
+      { name: "lumensend_templates", label: "LumenSend Templates", target: 50 },
+      { name: "assembly_section_library", label: "Section Library", target: 60 },
+      { name: "legislator_contacts", label: "Legislator Contacts", target: 65 },
+      { name: "advocacy_organizations", label: "Advocacy Organizations", target: 100 },
+      { name: "doctrine_registry", label: "Doctrine Registry", target: 100 },
+      { name: "court_directory", label: "Court Directory", target: 180 },
+      { name: "workflow_master", label: "Workflows", target: 100 },
+      { name: "evidence_profiles", label: "Evidence Profiles", target: 50 },
+      { name: "deadline_rules", label: "Deadline Rules", target: 100 },
+      { name: "escalation_routes", label: "Escalation Routes", target: 50 },
+      { name: "weak_joint_triggers", label: "Weak Joint Registry", target: 50 },
+      { name: "proof_frameworks", label: "Proof Frameworks", target: 90 },
+      { name: "signal_registry", label: "Signal Registry", target: 100 },
+      { name: "pattern_registry", label: "Pattern Registry", target: 50 },
+      { name: "settlement_formulas", label: "Settlement Formulas", target: 70 },
       { name: "evidence_confidence_rules", label: "Evidence Confidence Rules", target: 70 },
       { name: "claim_validation_rules", label: "Claim Validation Rules", target: 220 },
       { name: "remedy_feasibility_rules", label: "Remedy Feasibility Rules", target: 30 },
@@ -218,14 +213,12 @@ export const knowledgeIngestionRouter = router({
       { name: "campaigns", label: "Campaigns", target: 3 },
       { name: "reform_package_versions", label: "Reform Package Versions", target: 3 },
       { name: "reform_strategy_memory", label: "Strategy Memory", target: 5 },
-      // Session 63: Public dataset tables
       { name: "data_stream_registry", label: "Data Stream Registry", target: 15 },
       { name: "consumer_complaints", label: "Consumer Complaints", target: 200 },
       { name: "campaign_finance_records", label: "Campaign Finance", target: 150 },
       { name: "legal_enforcement_records", label: "Enforcement Records", target: 900 },
       { name: "legal_weak_joints", label: "Weak Joint Registry (Legal)", target: 100 },
       { name: "policy_change_registry", label: "Policy Changes", target: 25 },
-      // Canonical Registry tables
       { name: "registry_jurisdictions", label: "Registry Jurisdictions", target: 50 },
       { name: "registry_programs", label: "Registry Programs", target: 500 },
       { name: "registry_oversight_bodies", label: "Oversight Bodies", target: 70 },
@@ -235,26 +228,13 @@ export const knowledgeIngestionRouter = router({
       { name: "registry_signals", label: "Registry Signals", target: 200 },
     ];
 
-    // Query Drizzle tables
-    const drizzleResults = await Promise.all(
-      drizzleTables.map(async (t) => {
-        const [row] = await db.select({ cnt: count() }).from(t.table);
-        return {
-          name: t.name,
-          label: t.label,
-          count: row?.cnt ?? 0,
-          target: t.target,
-          coverage: Math.min(100, Math.round(((row?.cnt ?? 0) / t.target) * 100)),
-        };
-      })
-    );
+    const quoteIdentifier = (identifier: string) => `"${identifier.replace(/"/g, '""')}"`;
 
-    // Query raw SQL tables
-    const rawResults = await Promise.all(
-      rawSqlTables.map(async (t) => {
+    const results = await Promise.all(
+      tables.map(async (t) => {
         try {
-          const [rows] = await db.execute(sql`SELECT COUNT(*) as cnt FROM ${sql.raw(t.name)}`);
-          const cnt = Number((rows as unknown as any[])[0]?.cnt ?? 0);
+          const { rows } = await getPool().query(`SELECT COUNT(*)::int AS cnt FROM ${quoteIdentifier(t.name)}`);
+          const cnt = Number(rows[0]?.cnt ?? 0);
           return {
             name: t.name,
             label: t.label,
@@ -268,7 +248,6 @@ export const knowledgeIngestionRouter = router({
       })
     );
 
-    const results = [...drizzleResults, ...rawResults];
     const totalPopulated = results.reduce((s, r) => s + r.count, 0);
     const totalTarget = results.reduce((s, r) => s + r.target, 0);
     const criticallyLow = results.filter((r) => r.count === 0);
@@ -279,7 +258,7 @@ export const knowledgeIngestionRouter = router({
       summary: {
         totalPopulated,
         totalTarget,
-        overallCoverage: Math.round((totalPopulated / totalTarget) * 100),
+        overallCoverage: totalTarget ? Math.round((totalPopulated / totalTarget) * 100) : 0,
         criticallyLow: criticallyLow.map((r) => r.label),
         underPopulated: underPopulated.map((r) => r.label),
       },

@@ -15,23 +15,21 @@
  */
 
 import { sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { createDatabasePool } from "../pg-config";
+
+let registryDb: ReturnType<typeof drizzle> | null = null;
 
 /**
- * Create a separate database connection to luminari_registry
+ * Shared read-only database connection for the registry service.
+ * Render provides the Supabase PostgreSQL URL only through DATABASE_URL;
+ * legacy LUMINARI_DB_* / localhost defaults must not be used in production.
  */
-async function getLuminariDb() {
-  const { drizzle } = await import("drizzle-orm/node-postgres");
-  const { Pool } = await import("pg");
-
-  const pool = new Pool({
-    host: process.env.LUMINARI_DB_HOST || "localhost",
-    port: parseInt(process.env.LUMINARI_DB_PORT || "5432"),
-    database: process.env.LUMINARI_DB_NAME || "luminari_registry",
-    user: process.env.LUMINARI_DB_USER || "postgres",
-    password: process.env.LUMINARI_DB_PASSWORD || "postgres",
-  });
-
-  return drizzle(pool);
+function getLuminariDb() {
+  if (!registryDb) {
+    registryDb = drizzle(createDatabasePool({ label: "RegistryService", connectionTimeoutMillis: 10000 }));
+  }
+  return registryDb;
 }
 
 /**

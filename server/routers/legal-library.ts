@@ -13,6 +13,7 @@ import { LEGAL_DOMAINS, type LegalDomain } from "../../drizzle/schema";
 
 const domainEnum = z.enum(LEGAL_DOMAINS as unknown as [string, ...string[]]);
 const castDomains = (d: string[]) => d as LegalDomain[];
+const legalRecordId = z.string().uuid();
 
 export const legalLibraryRouter = router({
   // ─── Stats (canonical tables only) ───
@@ -37,7 +38,7 @@ export const legalLibraryRouter = router({
     }),
 
   getStatute: publicProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: legalRecordId }))
     .query(async ({ input }) => {
       return getStatuteById(input.id);
     }),
@@ -63,7 +64,7 @@ export const legalLibraryRouter = router({
 
   updateStatute: protectedProcedure
     .input(z.object({
-      id: z.number(),
+      id: legalRecordId,
       citation: z.string().optional(),
       title: z.string().optional(),
       fullText: z.string().optional(),
@@ -80,7 +81,7 @@ export const legalLibraryRouter = router({
     }),
 
   deleteStatute: protectedProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: legalRecordId }))
     .mutation(async ({ input }) => {
       await deleteStatute(input.id);
       return { success: true };
@@ -101,7 +102,7 @@ export const legalLibraryRouter = router({
     }),
 
   getCaseLaw: publicProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: legalRecordId }))
     .query(async ({ input }) => {
       return getCaseLawById(input.id);
     }),
@@ -139,7 +140,7 @@ export const legalLibraryRouter = router({
     }),
 
   getEnforcement: publicProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: legalRecordId }))
     .query(async ({ input }) => {
       return getEnforcementRecordById(input.id);
     }),
@@ -177,7 +178,7 @@ export const legalLibraryRouter = router({
     }),
 
   getWeakJoint: publicProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: legalRecordId }))
     .query(async ({ input }) => {
       return getWeakJointById(input.id);
     }),
@@ -237,7 +238,7 @@ export const legalLibraryRouter = router({
     }),
   // ─── Statute Clauses (X-Ray) ───
   getStatuteWithClauses: publicProcedure
-    .input(z.object({ statuteId: z.number() }))
+    .input(z.object({ statuteId: legalRecordId }))
     .query(async ({ input }) => {
       return getStatuteWithClauses(input.statuteId);
     }),

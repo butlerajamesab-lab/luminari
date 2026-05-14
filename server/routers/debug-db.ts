@@ -1,4 +1,5 @@
 import { router, publicProcedure } from "../_core/trpc";
+import { createDatabasePool } from "../pg-config";
 
 export const debugDbRouter = router({
   connectionStatus: publicProcedure.query(async () => {
@@ -23,12 +24,10 @@ export const debugDbRouter = router({
     
     if (dbUrl && dbUrl !== "postgresql://dummy") {
       try {
-        const { Pool } = await import("pg");
-        const testPool = new Pool({ 
-          connectionString: dbUrl, 
+        const testPool = createDatabasePool({
+          label: "DebugDb",
           max: 1,
           connectionTimeoutMillis: 5000,
-          idleTimeoutMillis: 1000,
         });
         const client = await testPool.connect();
         canConnect = true;

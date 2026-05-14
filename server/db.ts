@@ -3,6 +3,7 @@ import { compareDateOccurred, normalizeDateForSort, isPreModernDate } from "./da
 import { runPhoenixDetection, emitPhoenixSignal } from "./engines/phoenix-detector";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
+import { createDatabasePool } from "./pg-config";
 import {
   users, cases, documents, quotes, entities, entityRoles,
   relationships, relationshipEvidence, claims, findings,
@@ -48,37 +49,10 @@ import { resolveTemporalOrder } from "./phase2-temporal-ordering";
 // Connection is only attempted when a query is actually made.
 let pgPool: Pool | null = null;
 let dbInstance: ReturnType<typeof drizzle> | null = null;
-let connectionWarningIssued = false;
-
 function initializePool(): Pool {
   if (pgPool) return pgPool;
-
-  const dbUrlString = process.env.DATABASE_URL;
-  if (!dbUrlString) {
-    if (!connectionWarningIssued) {
-      console.warn("[DB] DATABASE_URL not configured. Database queries will fail until it is set.");
-      connectionWarningIssued = true;
-    }
-    // Return a dummy pool that will fail FAST (localhost:1 = ECONNREFUSED, not DNS hang)
-    pgPool = new Pool({ connectionString: "postgresql://x:x@127.0.0.1:1/x", connectionTimeoutMillis: 1000 });
-    return pgPool;
-  }
-
-  try {
-    pgPool = new Pool({
-      connectionString: dbUrlString,
-      connectionTimeoutMillis: 10000,
-      ssl: { rejectUnauthorized: false },
-    });
-    pgPool.on("error", (err) => {
-      console.error("[DB] Unexpected error on idle client:", err);
-    });
-    console.log(`[DB] PostgreSQL pool initialized (lazy). Host: ${new URL(dbUrlString).hostname}`);
-    return pgPool;
-  } catch (error) {
-    console.error("[DB] Failed to initialize PostgreSQL pool:", error);
-    throw error;
-  }
+  pgPool = createDatabasePool({ label: "DB", connectionTimeoutMillis: 10000 });
+  return pgPool;
 }
 
 export function getDb() {

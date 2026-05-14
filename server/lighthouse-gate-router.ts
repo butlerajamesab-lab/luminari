@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { Pool } from "pg";
 import { router, publicProcedure } from "./_core/trpc";
+import { createDatabasePool, getDatabaseUrl } from "./pg-config";
 
 const SUPABASE_PROJECT = "wepxlinwbjrkqdzkqpar";
 
@@ -9,20 +10,11 @@ let warnedMissingDatabaseUrl = false;
 
 function getPool(): Pool {
   if (pool) return pool;
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    if (!warnedMissingDatabaseUrl) {
-      console.warn("[LighthouseGate] DATABASE_URL not configured; Supabase-backed routes will return safe empty results.");
-      warnedMissingDatabaseUrl = true;
-    }
-    pool = new Pool({ connectionString: "postgresql://invalid" });
-    return pool;
+  if (!getDatabaseUrl() && !warnedMissingDatabaseUrl) {
+    console.warn("[LighthouseGate] DATABASE_URL not configured; Supabase-backed routes will return safe empty results.");
+    warnedMissingDatabaseUrl = true;
   }
-  pool = new Pool({ connectionString });
-  pool.on("error", (err) => {
-    console.error("[LighthouseGate] Unexpected PostgreSQL pool error:", err);
-  });
-  console.log(`[LighthouseGate] Supabase PostgreSQL pool initialized for project ${SUPABASE_PROJECT}.`);
+  pool = createDatabasePool({ label: "LighthouseGate", connectionTimeoutMillis: 10000 });
   return pool;
 }
 
@@ -36,7 +28,7 @@ type SafeRowsResult<T> = {
 };
 
 function mapPgError(error: any): { status: SafeRowsResult<unknown>["status"]; message: string } {
-  if (!process.env.DATABASE_URL) {
+  if (!getDatabaseUrl()) {
     return { status: "unconfigured", message: "DATABASE_URL is not configured for direct PostgreSQL access." };
   }
   if (error?.code === "42P01") {

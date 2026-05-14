@@ -1,24 +1,49 @@
+import { eq, and, ilike, desc, sql } from "drizzle-orm";
 import { db } from "./db";
-import { eq, and, like, desc, sql, inArray } from "drizzle-orm";
 import {
-  legalStatutes, legalCaseLaw, legalEnforcementRecords,
-  legalWeakJoints, legalContradictions, legalStatuteClauses,
-  type InsertLegalStatute, type InsertLegalCaseLaw,
-  type InsertLegalEnforcementRecord, type InsertLegalWeakJoint,
-  type InsertLegalContradiction, type InsertLegalStatuteClause, type LegalDomain,
+  legalStatutes,
+  legalCaseLaw,
+  legalEnforcementRecords,
+  legalWeakJoints,
+  legalContradictions,
+  legalStatuteClauses,
+  type InsertLegalStatute,
+  type InsertLegalCaseLaw,
+  type InsertLegalEnforcementRecord,
+  type InsertLegalWeakJoint,
+  type InsertLegalContradiction,
+  type LegalDomain,
 } from "../drizzle/schema";
 
-const now = () => Date.now();
+export type LegalRecordId = string;
+
+const textSearch = (query: string, ...columns: any[]) => {
+  const pattern = `%${query}%`;
+  return sql`(${sql.join(columns.map((column) => sql`COALESCE(${column}::text, '') ILIKE ${pattern}`), sql` OR `)})`;
+};
+
+const metadataContainsDomain = (metadataColumn: any, domain: LegalDomain) => {
+  const pattern = `%${domain}%`;
+  return sql`COALESCE(${metadataColumn}::text, '') ILIKE ${pattern}`;
+};
+
+const countValue = (value: unknown): number => Number(value ?? 0);
 
 // ─── Statutes ───
 
-export async function createStatute(data: Omit<InsertLegalStatute, "id" | "createdAt" | "updatedAt">) {
-  const [result] = await db.insert(legalStatutes).values({ ...data, createdAt: now(), updatedAt: now() });
-  return result.insertId;
+export async function createStatute(data: Omit<InsertLegalStatute, "id" | "createdAt"> & Record<string, unknown>) {
+  const [row] = await db.insert(legalStatutes).values({
+    citation: String(data.citation ?? "Untitled statute"),
+    jurisdiction: (data.jurisdiction as string | undefined) ?? null,
+    title: (data.title as string | undefined) ?? null,
+    statuteText: (data.statuteText as string | undefined) ?? (data.fullText as string | undefined) ?? null,
+    metadata: { ...data, created_via: "legal_library_router" },
+  }).returning({ id: legalStatutes.id });
+  return row.id;
 }
 
-export async function getStatuteById(id: number) {
-  const [row] = await db.select().from(legalStatutes).where(eq(legalStatutes.id, id));
+export async function getStatuteById(id: LegalRecordId) {
+  const [row] = await db.select().from(legalStatutes).where(eq(legalStatutes.id, id)).limit(1);
   return row ?? null;
 }
 
@@ -32,47 +57,53 @@ export async function searchStatutes(opts: {
 }) {
   const conditions = [];
   if (opts.jurisdiction) conditions.push(eq(legalStatutes.jurisdiction, opts.jurisdiction));
-  if (opts.sourceType) conditions.push(eq(legalStatutes.sourceType, opts.sourceType as any));
-  if (opts.query) {
-    conditions.push(
-      sql`(${legalStatutes.citation} LIKE ${`%${opts.query}%`} OR ${legalStatutes.title} LIKE ${`%${opts.query}%`} OR ${legalStatutes.summary} LIKE ${`%${opts.query}%`})`
-    );
-  }
-  if (opts.domain) {
-    conditions.push(sql`JSON_CONTAINS(${legalStatutes.domains}, ${JSON.stringify(opts.domain)})`);
-  }
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
-  const rows = await db.select().from(legalStatutes)
-    .where(where)
-    .orderBy(desc(legalStatutes.updatedAt))
+  if (opts.sourceType) conditions.push(sql`${legalStatutes.metadata}->>'source_type' = ${opts.sourceType} OR ${legalStatutes.metadata}->>'connector' = ${opts.sourceType}`);
+  if (opts.query) conditions.push(textSearch(opts.query, legalStatutes.citation, legalStatutes.title, legalStatutes.statuteText, legalStatutes.metadata));
+  if (opts.domain) conditions.push(metadataContainsDomain(legalStatutes.metadata, opts.domain));
+
+  const query = db.select().from(legalStatutes)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(legalStatutes.createdAt))
     .limit(opts.limit ?? 50)
     .offset(opts.offset ?? 0);
-  return rows;
+  return query;
 }
 
 export async function countStatutes(jurisdiction?: string) {
-  const conditions = jurisdiction ? eq(legalStatutes.jurisdiction, jurisdiction) : undefined;
-  const [row] = await db.select({ count: sql<number>`COUNT(*)` }).from(legalStatutes).where(conditions);
-  return row?.count ?? 0;
+  const [row] = await db.select({ count: sql<number>`COUNT(*)::int` }).from(legalStatutes)
+    .where(jurisdiction ? eq(legalStatutes.jurisdiction, jurisdiction) : undefined);
+  return countValue(row?.count);
 }
 
-export async function updateStatute(id: number, data: Partial<Omit<InsertLegalStatute, "id" | "createdAt">>) {
-  await db.update(legalStatutes).set({ ...data, updatedAt: now() }).where(eq(legalStatutes.id, id));
+export async function updateStatute(id: LegalRecordId, data: Partial<InsertLegalStatute> & Record<string, unknown>) {
+  await db.update(legalStatutes).set({
+    ...(data.citation !== undefined ? { citation: String(data.citation) } : {}),
+    ...(data.jurisdiction !== undefined ? { jurisdiction: data.jurisdiction as string | null } : {}),
+    ...(data.title !== undefined ? { title: data.title as string | null } : {}),
+    ...(data.statuteText !== undefined || data.fullText !== undefined ? { statuteText: (data.statuteText as string | undefined) ?? (data.fullText as string | undefined) ?? null } : {}),
+    metadata: sql`COALESCE(${legalStatutes.metadata}, '{}'::jsonb) || ${JSON.stringify(data)}::jsonb`,
+  }).where(eq(legalStatutes.id, id));
 }
 
-export async function deleteStatute(id: number) {
+export async function deleteStatute(id: LegalRecordId) {
   await db.delete(legalStatutes).where(eq(legalStatutes.id, id));
 }
 
 // ─── Case Law ───
 
-export async function createCaseLaw(data: Omit<InsertLegalCaseLaw, "id" | "createdAt" | "updatedAt">) {
-  const [result] = await db.insert(legalCaseLaw).values({ ...data, createdAt: now(), updatedAt: now() });
-  return result.insertId;
+export async function createCaseLaw(data: Omit<InsertLegalCaseLaw, "id" | "createdAt"> & Record<string, unknown>) {
+  const [row] = await db.insert(legalCaseLaw).values({
+    citation: String(data.citation ?? data.caseName ?? "Untitled case"),
+    jurisdiction: (data.jurisdiction as string | undefined) ?? (data.court as string | undefined) ?? null,
+    title: (data.title as string | undefined) ?? (data.caseName as string | undefined) ?? null,
+    opinionText: (data.opinionText as string | undefined) ?? (data.holding as string | undefined) ?? null,
+    metadata: { ...data, court: data.court, created_via: "legal_library_router" },
+  }).returning({ id: legalCaseLaw.id });
+  return row.id;
 }
 
-export async function getCaseLawById(id: number) {
-  const [row] = await db.select().from(legalCaseLaw).where(eq(legalCaseLaw.id, id));
+export async function getCaseLawById(id: LegalRecordId) {
+  const [row] = await db.select().from(legalCaseLaw).where(eq(legalCaseLaw.id, id)).limit(1);
   return row ?? null;
 }
 
@@ -86,39 +117,42 @@ export async function searchCaseLaw(opts: {
 }) {
   const conditions = [];
   if (opts.jurisdiction) conditions.push(eq(legalCaseLaw.jurisdiction, opts.jurisdiction));
-  if (opts.court) conditions.push(like(legalCaseLaw.court, `%${opts.court}%`));
-  if (opts.query) {
-    conditions.push(
-      sql`(${legalCaseLaw.citation} LIKE ${`%${opts.query}%`} OR ${legalCaseLaw.caseName} LIKE ${`%${opts.query}%`} OR ${legalCaseLaw.holding} LIKE ${`%${opts.query}%`})`
-    );
-  }
-  if (opts.domain) {
-    conditions.push(sql`JSON_CONTAINS(${legalCaseLaw.domains}, ${JSON.stringify(opts.domain)})`);
-  }
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
-  const rows = await db.select().from(legalCaseLaw)
-    .where(where)
-    .orderBy(desc(legalCaseLaw.yearDecided))
+  if (opts.court) conditions.push(sql`(${legalCaseLaw.jurisdiction} ILIKE ${`%${opts.court}%`} OR ${legalCaseLaw.metadata}->>'court' ILIKE ${`%${opts.court}%`})`);
+  if (opts.query) conditions.push(textSearch(opts.query, legalCaseLaw.citation, legalCaseLaw.title, legalCaseLaw.opinionText, legalCaseLaw.metadata));
+  if (opts.domain) conditions.push(metadataContainsDomain(legalCaseLaw.metadata, opts.domain));
+
+  return db.select().from(legalCaseLaw)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(legalCaseLaw.createdAt))
     .limit(opts.limit ?? 50)
     .offset(opts.offset ?? 0);
-  return rows;
 }
 
 export async function countCaseLaw(jurisdiction?: string) {
-  const conditions = jurisdiction ? eq(legalCaseLaw.jurisdiction, jurisdiction) : undefined;
-  const [row] = await db.select({ count: sql<number>`COUNT(*)` }).from(legalCaseLaw).where(conditions);
-  return row?.count ?? 0;
+  const [row] = await db.select({ count: sql<number>`COUNT(*)::int` }).from(legalCaseLaw)
+    .where(jurisdiction ? eq(legalCaseLaw.jurisdiction, jurisdiction) : undefined);
+  return countValue(row?.count);
 }
 
 // ─── Enforcement Records ───
 
-export async function createEnforcementRecord(data: Omit<InsertLegalEnforcementRecord, "id" | "createdAt" | "updatedAt">) {
-  const [result] = await db.insert(legalEnforcementRecords).values({ ...data, createdAt: now(), updatedAt: now() });
-  return result.insertId;
+export async function createEnforcementRecord(data: Omit<InsertLegalEnforcementRecord, "id" | "createdAt"> & Record<string, unknown>) {
+  const [row] = await db.insert(legalEnforcementRecords).values({
+    agencyName: (data.agencyName as string | undefined) ?? null,
+    jurisdiction: (data.jurisdiction as string | undefined) ?? null,
+    state: (data.state as string | undefined) ?? null,
+    programArea: (data.programArea as string | undefined) ?? (data.complaintType as string | undefined) ?? null,
+    statutoryAuthority: (data.statutoryAuthority as string | undefined) ?? (data.statuteCitation as string | undefined) ?? (data.statutoryRequirement as string | undefined) ?? null,
+    responseDeadline: data.requiredResponseDays !== undefined ? `${data.requiredResponseDays} days` : null,
+    patternDescription: (data.patternDescription as string | undefined) ?? null,
+    sourceUrl: (data.sourceUrl as string | undefined) ?? (data.dataSource as string | undefined) ?? null,
+    metadata: { ...data, created_via: "legal_library_router" },
+  }).returning({ id: legalEnforcementRecords.id });
+  return row.id;
 }
 
-export async function getEnforcementRecordById(id: number) {
-  const [row] = await db.select().from(legalEnforcementRecords).where(eq(legalEnforcementRecords.id, id));
+export async function getEnforcementRecordById(id: LegalRecordId) {
+  const [row] = await db.select().from(legalEnforcementRecords).where(eq(legalEnforcementRecords.id, id)).limit(1);
   return row ?? null;
 }
 
@@ -131,28 +165,34 @@ export async function searchEnforcementRecords(opts: {
 }) {
   const conditions = [];
   if (opts.jurisdiction) conditions.push(eq(legalEnforcementRecords.jurisdiction, opts.jurisdiction));
-  if (opts.agency) conditions.push(like(legalEnforcementRecords.agencyName, `%${opts.agency}%`));
-  if (opts.domain) {
-    conditions.push(sql`JSON_CONTAINS(${legalEnforcementRecords.domains}, ${JSON.stringify(opts.domain)})`);
-  }
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
-  const rows = await db.select().from(legalEnforcementRecords)
-    .where(where)
-    .orderBy(desc(legalEnforcementRecords.updatedAt))
+  if (opts.agency) conditions.push(ilike(legalEnforcementRecords.agencyName, `%${opts.agency}%`));
+  if (opts.domain) conditions.push(metadataContainsDomain(legalEnforcementRecords.metadata, opts.domain));
+
+  return db.select().from(legalEnforcementRecords)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(legalEnforcementRecords.createdAt))
     .limit(opts.limit ?? 50)
     .offset(opts.offset ?? 0);
-  return rows;
 }
 
 // ─── Weak Joints ───
 
-export async function createWeakJoint(data: Omit<InsertLegalWeakJoint, "id" | "createdAt" | "updatedAt">) {
-  const [result] = await db.insert(legalWeakJoints).values({ ...data, createdAt: now(), updatedAt: now() });
-  return result.insertId;
+export async function createWeakJoint(data: Omit<InsertLegalWeakJoint, "id" | "createdAt"> & Record<string, unknown>) {
+  const [row] = await db.insert(legalWeakJoints).values({
+    weakJointId: (data.weakJointId as string | undefined) ?? null,
+    title: (data.title as string | undefined) ?? (data.statuteCitation as string | undefined) ?? null,
+    description: (data.description as string | undefined) ?? (data.divergenceDescription as string | undefined) ?? null,
+    severityLevel: (data.severityLevel as string | undefined) ?? (data.severity as string | undefined) ?? null,
+    severityRationale: (data.severityRationale as string | undefined) ?? null,
+    reformStatus: (data.reformStatus as string | undefined) ?? null,
+    sourceUrl: (data.sourceUrl as string | undefined) ?? null,
+    metadata: { ...data, created_via: "legal_library_router" },
+  }).returning({ id: legalWeakJoints.id });
+  return row.id;
 }
 
-export async function getWeakJointById(id: number) {
-  const [row] = await db.select().from(legalWeakJoints).where(eq(legalWeakJoints.id, id));
+export async function getWeakJointById(id: LegalRecordId) {
+  const [row] = await db.select().from(legalWeakJoints).where(eq(legalWeakJoints.id, id)).limit(1);
   return row ?? null;
 }
 
@@ -164,29 +204,30 @@ export async function searchWeakJoints(opts: {
   offset?: number;
 }) {
   const conditions = [];
-  if (opts.jurisdiction) conditions.push(eq(legalWeakJoints.jurisdiction, opts.jurisdiction));
-  if (opts.severity) conditions.push(eq(legalWeakJoints.severity, opts.severity as any));
-  if (opts.domain) {
-    conditions.push(sql`JSON_CONTAINS(${legalWeakJoints.domains}, ${JSON.stringify(opts.domain)})`);
-  }
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
-  const rows = await db.select().from(legalWeakJoints)
-    .where(where)
-    .orderBy(desc(legalWeakJoints.severity))
+  if (opts.jurisdiction) conditions.push(sql`${legalWeakJoints.metadata}->>'jurisdiction' = ${opts.jurisdiction}`);
+  if (opts.severity) conditions.push(eq(legalWeakJoints.severityLevel, opts.severity));
+  if (opts.domain) conditions.push(metadataContainsDomain(legalWeakJoints.metadata, opts.domain));
+
+  return db.select().from(legalWeakJoints)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(legalWeakJoints.createdAt))
     .limit(opts.limit ?? 50)
     .offset(opts.offset ?? 0);
-  return rows;
 }
 
 // ─── Contradictions ───
 
-export async function createContradiction(data: Omit<InsertLegalContradiction, "id" | "createdAt" | "updatedAt">) {
-  const [result] = await db.insert(legalContradictions).values({ ...data, createdAt: now(), updatedAt: now() });
-  return result.insertId;
+export async function createContradiction(data: Omit<InsertLegalContradiction, "id" | "createdAt" | "updatedAt"> & Record<string, unknown>) {
+  const [row] = await db.insert(legalContradictions).values({
+    ...data,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  } as any).returning({ id: legalContradictions.id });
+  return row.id;
 }
 
 export async function getContradictionById(id: number) {
-  const [row] = await db.select().from(legalContradictions).where(eq(legalContradictions.id, id));
+  const [row] = await db.select().from(legalContradictions).where(eq(legalContradictions.id, id)).limit(1);
   return row ?? null;
 }
 
@@ -198,40 +239,36 @@ export async function listContradictions(opts: {
 }) {
   const conditions = [];
   if (opts.jurisdiction) conditions.push(eq(legalContradictions.jurisdiction, opts.jurisdiction));
-  if (opts.domain) {
-    conditions.push(sql`JSON_CONTAINS(${legalContradictions.domains}, ${JSON.stringify(opts.domain)})`);
-  }
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
-  const rows = await db.select().from(legalContradictions)
-    .where(where)
+  if (opts.domain) conditions.push(sql`${legalContradictions.domains} @> ${JSON.stringify([opts.domain])}::jsonb`);
+  return db.select().from(legalContradictions)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(legalContradictions.updatedAt))
     .limit(opts.limit ?? 50)
     .offset(opts.offset ?? 0);
-  return rows;
 }
 
 // ─── Stats ───
 
 export async function getLegalLibraryStats(jurisdiction?: string) {
-  const jFilter = jurisdiction ? eq(legalStatutes.jurisdiction, jurisdiction) : undefined;
-  const [statutes] = await db.select({ count: sql<number>`COUNT(*)` }).from(legalStatutes).where(jFilter);
-  const jFilter2 = jurisdiction ? eq(legalCaseLaw.jurisdiction, jurisdiction) : undefined;
-  const [cases] = await db.select({ count: sql<number>`COUNT(*)` }).from(legalCaseLaw).where(jFilter2);
-  const jFilter3 = jurisdiction ? eq(legalEnforcementRecords.jurisdiction, jurisdiction) : undefined;
-  const [enforcement] = await db.select({ count: sql<number>`COUNT(*)` }).from(legalEnforcementRecords).where(jFilter3);
-  const jFilter4 = jurisdiction ? eq(legalWeakJoints.jurisdiction, jurisdiction) : undefined;
-  const [weakJoints] = await db.select({ count: sql<number>`COUNT(*)` }).from(legalWeakJoints).where(jFilter4);
-  const jFilter5 = jurisdiction ? eq(legalContradictions.jurisdiction, jurisdiction) : undefined;
-  const [contradictions] = await db.select({ count: sql<number>`COUNT(*)` }).from(legalContradictions).where(jFilter5);
+  const [statutes] = await db.select({ count: sql<number>`COUNT(*)::int` }).from(legalStatutes)
+    .where(jurisdiction ? eq(legalStatutes.jurisdiction, jurisdiction) : undefined);
+  const [cases] = await db.select({ count: sql<number>`COUNT(*)::int` }).from(legalCaseLaw)
+    .where(jurisdiction ? eq(legalCaseLaw.jurisdiction, jurisdiction) : undefined);
+  const [enforcement] = await db.select({ count: sql<number>`COUNT(*)::int` }).from(legalEnforcementRecords)
+    .where(jurisdiction ? eq(legalEnforcementRecords.jurisdiction, jurisdiction) : undefined);
+  const [weakJoints] = await db.select({ count: sql<number>`COUNT(*)::int` }).from(legalWeakJoints)
+    .where(jurisdiction ? sql`${legalWeakJoints.metadata}->>'jurisdiction' = ${jurisdiction}` : undefined);
+  const [contradictions] = await db.select({ count: sql<number>`COUNT(*)::int` }).from(legalContradictions)
+    .where(jurisdiction ? eq(legalContradictions.jurisdiction, jurisdiction) : undefined);
+
   return {
-    statutes: statutes?.count ?? 0,
-    caseLaw: cases?.count ?? 0,
-    enforcementRecords: enforcement?.count ?? 0,
-    weakJoints: weakJoints?.count ?? 0,
-    contradictions: contradictions?.count ?? 0,
+    statutes: countValue(statutes?.count),
+    caseLaw: countValue(cases?.count),
+    enforcementRecords: countValue(enforcement?.count),
+    weakJoints: countValue(weakJoints?.count),
+    contradictions: countValue(contradictions?.count),
   };
 }
-
 
 // ─── Statute Clauses (X-Ray) ───
 export async function getClausesByStatuteId(statuteId: number) {
@@ -240,11 +277,10 @@ export async function getClausesByStatuteId(statuteId: number) {
     .orderBy(legalStatuteClauses.sortOrder);
 }
 
-export async function getStatuteWithClauses(statuteId: number) {
+export async function getStatuteWithClauses(statuteId: LegalRecordId) {
   const statute = await db.select().from(legalStatutes).where(eq(legalStatutes.id, statuteId)).limit(1);
   if (!statute.length) return null;
-  const clauses = await getClausesByStatuteId(statuteId);
-  return { ...statute[0], clauses };
+  return { ...statute[0], clauses: [] };
 }
 
 export async function searchEnrichedStatutes(opts: {
@@ -253,17 +289,12 @@ export async function searchEnrichedStatutes(opts: {
   limit?: number;
 }) {
   const conditions: any[] = [];
-  if (opts.domain) {
-    conditions.push(sql`JSON_CONTAINS(${legalStatutes.domains}, ${JSON.stringify(opts.domain)})`);
-  }
-  if (opts.jurisdiction) {
-    conditions.push(eq(legalStatutes.jurisdiction, opts.jurisdiction));
-  }
-  // Only return statutes that have enriched metadata
-  conditions.push(sql`${legalStatutes.keyProvisions} IS NOT NULL`);
+  if (opts.domain) conditions.push(metadataContainsDomain(legalStatutes.metadata, opts.domain));
+  if (opts.jurisdiction) conditions.push(eq(legalStatutes.jurisdiction, opts.jurisdiction));
+  conditions.push(sql`${legalStatutes.metadata} IS NOT NULL`);
 
   return db.select().from(legalStatutes)
-    .where(conditions.length > 1 ? and(...conditions) : conditions[0])
-    .orderBy(desc(legalStatutes.updatedAt))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(legalStatutes.createdAt))
     .limit(opts.limit ?? 50);
 }
