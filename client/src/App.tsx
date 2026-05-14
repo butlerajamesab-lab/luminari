@@ -44,7 +44,6 @@ import GuidedIntake from "./pages/GuidedIntake";
 import GuidedIntakeNew from "./pages/GuidedIntakeNew";
 import BenefitsNavigator from "./pages/BenefitsNavigator";
 import GuidedDashboard from "./pages/GuidedDashboard";
-import ActionPath from "./pages/ActionPath";
 import SharedCaseView from "./pages/SharedCaseView";
 import AdminFeedback from "./pages/AdminFeedback";
 import AdminAnalytics from "./pages/AdminAnalytics";
@@ -186,7 +185,6 @@ function DashboardRouter() {
         <Route path="/extraction-failures" component={ExtractionFailures} />
         <Route path="/integrity" component={IntegrityDashboard} />
         <Route path="/spine/:caseId/:snapshotId" component={SpineViewer} />
-        <Route path="/action-path" component={ActionPath} />
         <Route path="/foia" component={FoiaTracking} />
         <Route path="/narrative" component={StatementOfFacts} />
         <Route path="/patterns" component={Patterns} />

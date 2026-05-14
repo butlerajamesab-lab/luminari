@@ -377,19 +377,6 @@ function ActionPath({ caseId }: { caseId: number }) {
                   </Button>
                 )}
               </div>
-              {/* Action Path CTA */}
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
-                <ArrowRight className="h-5 w-5 text-primary shrink-0" />
-                <div>
-                  <p className="text-xs font-medium text-foreground">See Your Next Steps</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    Get a plain-language action plan based on what the engine found.
-                  </p>
-                </div>
-                <Button size="sm" className="shrink-0 ml-auto gap-1" onClick={() => setLocation(`/action-path?caseId=${caseId}`)}>
-                  <ArrowRight className="h-3.5 w-3.5" /> Go
-                </Button>
-              </div>
             </>
           )}
         </div>
