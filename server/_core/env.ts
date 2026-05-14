@@ -11,4 +11,7 @@ export const ENV = {
   // GitHub OAuth
   githubOAuthClientId: process.env.GITHUB_OAUTH_CLIENT_ID ?? "",
   githubOAuthClientSecret: process.env.GITHUB_OAUTH_CLIENT_SECRET ?? "",
+  // Lighthouse Supabase (canonical governed views — read-only)
+  lighthouseSupabaseUrl: process.env.SUPABASE_URL ?? "",
+  lighthouseSupabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
 };

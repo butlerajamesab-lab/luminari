@@ -4217,6 +4217,11 @@ const categoryRouter = router({
 import { caseRepairRouter } from "./routers/case-repair";
 import { cdaRouter } from "./routers/cda";
 import { lighthouseRouter } from "./routers/lighthouse";
+import { lighthouseLineageRouter } from "./routers/lighthouse/lineage";
+import { lighthousePatternsRouter } from "./routers/lighthouse/patterns";
+import { lighthouseTrendsRouter } from "./routers/lighthouse/trends";
+import { lighthouseStrategiesRouter } from "./routers/lighthouse/strategies";
+import { lighthouseGovernanceRouter } from "./routers/lighthouse/governance";
 import { docketRouter } from "./routers/docket";
 import { lumensendRouter } from "./routers/lumensend";
 import { legalLibraryRouter } from "./routers/legal-library";
@@ -4929,6 +4934,11 @@ export const appRouter = router({
   discovery: discoveryRouter,
   legalRegistry: legalRegistryRouter,
   lighthouse: lighthouseRouter,
+  lighthouseLineage: lighthouseLineageRouter,
+  lighthousePatterns: lighthousePatternsRouter,
+  lighthouseTrends: lighthouseTrendsRouter,
+  lighthouseStrategies: lighthouseStrategiesRouter,
+  lighthouseGovernance: lighthouseGovernanceRouter,
   docket: docketRouter,
   lumensend: lumensendRouter,
   legalLibrary: legalLibraryRouter,

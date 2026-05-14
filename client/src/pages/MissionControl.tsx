@@ -41,6 +41,12 @@ import { CommitToCase } from "@/components/CommitToCase";
 import { PatternRegistryPanel } from "@/components/mission/PatternRegistryPanel";
 import { StrategyPathsPanel } from "@/components/mission/StrategyPathsPanel";
 import { OutcomesPanel } from "@/components/mission/OutcomesPanel";
+import { SignalLineagePanel } from "@/components/lighthouse/SignalLineagePanel";
+import { GateReviewPanel } from "@/components/lighthouse/GateReviewPanel";
+import { PatternRegistryPanel as LighthousePatternRegistryPanel } from "@/components/lighthouse/PatternRegistryPanel";
+import { TrendPressurePanel as LighthouseTrendPressurePanel } from "@/components/lighthouse/TrendPressurePanel";
+import { StrategyProjectionPanel } from "@/components/lighthouse/StrategyProjectionPanel";
+import { PipelineHealthPanel } from "@/components/lighthouse/PipelineHealthPanel";
 
 /* ═══════════════════════════════════════════════════════════════════════
    LUMINARI — MISSION CONTROL (Admin Operational Dashboard)
@@ -9421,6 +9427,24 @@ export default function MissionControl() {
             {shouldRenderPanel("export-readiness") && <TabsTrigger value="export-readiness" className="gap-1.5">
               <FileOutput className="h-3.5 w-3.5" /> Export Readiness
             </TabsTrigger>}
+            <TabsTrigger value="lh-lineage" className="gap-1.5">
+              <GitBranch className="h-3.5 w-3.5" /> Signal Lineage
+            </TabsTrigger>
+            <TabsTrigger value="lh-gate-review" className="gap-1.5">
+              <Shield className="h-3.5 w-3.5" /> Gate Review
+            </TabsTrigger>
+            <TabsTrigger value="lh-patterns" className="gap-1.5">
+              <Fingerprint className="h-3.5 w-3.5" /> LH Patterns
+            </TabsTrigger>
+            <TabsTrigger value="lh-trends" className="gap-1.5">
+              <TrendingUp className="h-3.5 w-3.5" /> LH Trends
+            </TabsTrigger>
+            <TabsTrigger value="lh-strategies" className="gap-1.5">
+              <Target className="h-3.5 w-3.5" /> LH Strategies
+            </TabsTrigger>
+            <TabsTrigger value="lh-health" className="gap-1.5">
+              <HeartPulse className="h-3.5 w-3.5" /> LH Health
+            </TabsTrigger>
             <TabsTrigger value="flags" className="gap-1.5">
               <Flag className="h-3.5 w-3.5" /> Flags
             </TabsTrigger>
@@ -9686,6 +9710,24 @@ export default function MissionControl() {
           {shouldRenderPanel("export-readiness") && <TabsContent value="export-readiness" className="space-y-6">
             <Card><CardContent className="pt-6"><ExportReadinessPanel /></CardContent></Card>
           </TabsContent>}
+          <TabsContent value="lh-lineage" className="space-y-6">
+            <Card><CardContent className="pt-6"><SignalLineagePanel /></CardContent></Card>
+          </TabsContent>
+          <TabsContent value="lh-gate-review" className="space-y-6">
+            <Card><CardContent className="pt-6"><GateReviewPanel /></CardContent></Card>
+          </TabsContent>
+          <TabsContent value="lh-patterns" className="space-y-6">
+            <Card><CardContent className="pt-6"><LighthousePatternRegistryPanel /></CardContent></Card>
+          </TabsContent>
+          <TabsContent value="lh-trends" className="space-y-6">
+            <Card><CardContent className="pt-6"><LighthouseTrendPressurePanel /></CardContent></Card>
+          </TabsContent>
+          <TabsContent value="lh-strategies" className="space-y-6">
+            <Card><CardContent className="pt-6"><StrategyProjectionPanel /></CardContent></Card>
+          </TabsContent>
+          <TabsContent value="lh-health" className="space-y-6">
+            <Card><CardContent className="pt-6"><PipelineHealthPanel /></CardContent></Card>
+          </TabsContent>
           <TabsContent value="flags" className="space-y-6">
             <Card>
               <CardContent className="pt-6">
