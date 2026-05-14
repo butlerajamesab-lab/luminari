@@ -47,6 +47,7 @@ import { PatternRegistryPanel as LighthousePatternRegistryPanel } from "@/compon
 import { TrendPressurePanel as LighthouseTrendPressurePanel } from "@/components/lighthouse/TrendPressurePanel";
 import { StrategyProjectionPanel } from "@/components/lighthouse/StrategyProjectionPanel";
 import { PipelineHealthPanel } from "@/components/lighthouse/PipelineHealthPanel";
+import { LiveIntakeOperationsPanel } from "@/components/lighthouse/LiveIntakeOperationsPanel";
 
 /* ═══════════════════════════════════════════════════════════════════════
    LUMINARI — MISSION CONTROL (Admin Operational Dashboard)
@@ -9483,6 +9484,12 @@ export default function MissionControl() {
             <Card>
               <CardContent className="pt-6">
                 <CanonicalSpineDashboard />
+              </CardContent>
+            </Card>
+            {/* Row 0.75: Live Intake Operations — Lighthouse canonical intake telemetry */}
+            <Card>
+              <CardContent className="pt-6">
+                <LiveIntakeOperationsPanel />
               </CardContent>
             </Card>
             {/* Row 1: System Health + Knowledge */}

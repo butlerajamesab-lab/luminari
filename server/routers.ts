@@ -4222,6 +4222,7 @@ import { lighthousePatternsRouter } from "./routers/lighthouse/patterns";
 import { lighthouseTrendsRouter } from "./routers/lighthouse/trends";
 import { lighthouseStrategiesRouter } from "./routers/lighthouse/strategies";
 import { lighthouseGovernanceRouter } from "./routers/lighthouse/governance";
+import { lighthouseOperationsRouter } from "./routers/lighthouse/operations";
 import { docketRouter } from "./routers/docket";
 import { lumensendRouter } from "./routers/lumensend";
 import { legalLibraryRouter } from "./routers/legal-library";
@@ -4939,6 +4940,7 @@ export const appRouter = router({
   lighthouseTrends: lighthouseTrendsRouter,
   lighthouseStrategies: lighthouseStrategiesRouter,
   lighthouseGovernance: lighthouseGovernanceRouter,
+  lighthouseOperations: lighthouseOperationsRouter,
   docket: docketRouter,
   lumensend: lumensendRouter,
   legalLibrary: legalLibraryRouter,

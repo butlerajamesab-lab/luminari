@@ -189,6 +189,26 @@ export interface LighthousePipelineHealth {
   pattern_engine_health: string;
 }
 
+export interface LighthouseLiveIntakeOperation {
+  stream_id: string;
+  stream_status: string | null;
+  last_signal_at: string | null;
+  signal_age_seconds: number | null;
+  events_scanned_24h: number;
+  signals_promoted_24h: number;
+  signals_staged_24h: number;
+  signals_rejected_24h: number;
+  bridge_lag_seconds: number | null;
+  failed_promotions_24h: number;
+  last_detector_run_at: string | null;
+  last_pattern_run_at: string | null;
+  last_trend_run_at: string | null;
+  last_strategy_run_at: string | null;
+  staging_backlog_count: number;
+  retry_count: number;
+  health_classification: "healthy" | "degraded" | "stalled" | "backlogged" | "retrying" | "quarantined" | string;
+}
+
 // ── Internal fetch helpers ────────────────────────────────────────────────────
 
 const TIMEOUT_MS = 12_000;
@@ -338,6 +358,12 @@ export async function getStagedSignals(): Promise<LighthouseStagedSignal[]> {
 
 export async function getPipelineHealth(): Promise<LighthousePipelineHealth | null> {
   return fetchSingleRow<LighthousePipelineHealth>("v_pipeline_health");
+}
+
+export async function getLiveIntakeOperations(): Promise<LighthouseLiveIntakeOperation[]> {
+  return fetchView<LighthouseLiveIntakeOperation>("v_live_intake_operations", {
+    order: "health_classification.asc,stream_id.asc",
+  });
 }
 
 export async function checkLighthouseConnectivity(): Promise<boolean> {
