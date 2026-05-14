@@ -8,4 +8,7 @@ export const ENV = {
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   collaborationEnabled: process.env.COLLABORATION_ENABLED === "true",
+  // GitHub OAuth
+  githubOAuthClientId: process.env.GITHUB_OAUTH_CLIENT_ID ?? "",
+  githubOAuthClientSecret: process.env.GITHUB_OAUTH_CLIENT_SECRET ?? "",
 };
