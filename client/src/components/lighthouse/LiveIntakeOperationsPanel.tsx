@@ -174,7 +174,7 @@ function EngineCadenceRow({ label, value, icon }: { label: string; value: string
 }
 
 export function LiveIntakeOperationsPanel() {
-  const { data, isLoading, refetch } = trpc.lighthouseOperations.liveIntakeOperations.useQuery(undefined, {
+  const { data, isLoading, error, refetch } = trpc.lighthouseOperations.liveIntakeOperations.useQuery(undefined, {
     refetchInterval: 30_000,
   });
 
@@ -209,6 +209,10 @@ export function LiveIntakeOperationsPanel() {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
           <span className="ml-2 text-sm text-slate-400">Loading live intake operations...</span>
+        </div>
+      ) : error ? (
+        <div className="rounded-lg border border-red-900/50 bg-red-950/20 p-4 text-sm text-red-300">
+          Live intake operations are unavailable: {error.message}
         </div>
       ) : operations.length === 0 ? (
         <div className="rounded-lg border border-slate-800 bg-slate-950/30 py-12 text-center text-sm text-slate-500">
