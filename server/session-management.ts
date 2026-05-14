@@ -1,7 +1,7 @@
 /**
  * Session Management Service
  * 
- * Manages the continuous execution loop between Tsunam and Manus.
+ * Manages the continuous execution loop between Tsunam and Luminari.
  * Every session is anchored to a verified governance state.
  * All actions flow through governance hooks.
  */
@@ -34,7 +34,7 @@ export type SessionHandoff = {
 /**
  * Start a new session anchored to the current verified governance state
  */
-export async function startSession(actorType: "tsunam" | "manus") {
+export async function startSession(actorType: "tsunam" | "luminari") {
   // Verify the current chain state
   const chainStatus = await verifyGovernanceChain(db);
   if (!chainStatus.valid) {
@@ -71,7 +71,7 @@ export async function startSession(actorType: "tsunam" | "manus") {
 /**
  * Get the current session for an actor type
  */
-export async function getCurrentSession(actorType: "tsunam" | "manus") {
+export async function getCurrentSession(actorType: "tsunam" | "luminari") {
   const [session] = await db
     .select()
     .from(sessionLog)
@@ -239,7 +239,7 @@ export async function getSessionHandoff(sessionId: string): Promise<SessionHando
  * Get session history for an actor
  */
 export async function getSessionHistory(
-  actorType: "tsunam" | "manus",
+  actorType: "tsunam" | "luminari",
   limit: number = 10
 ) {
   const sessions = await db

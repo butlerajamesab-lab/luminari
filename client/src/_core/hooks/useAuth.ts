@@ -27,7 +27,7 @@ const previewUser = {
 export function useAuth(_options?: UseAuthOptions) {
   const logout = useCallback(async () => {
     try {
-      localStorage.removeItem("manus-runtime-user-info");
+      localStorage.removeItem(AUTH_USER_STORAGE_KEY);
       localStorage.removeItem(PREVIEW_AUTH_STORAGE_KEY);
     } catch {
       // Ignore storage errors in preview mode.
@@ -37,7 +37,7 @@ export function useAuth(_options?: UseAuthOptions) {
   const state = useMemo(() => {
     try {
       localStorage.setItem(PREVIEW_AUTH_STORAGE_KEY, "true");
-      localStorage.setItem("manus-runtime-user-info", JSON.stringify(previewUser));
+      localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(previewUser));
     } catch {
       // Ignore storage errors in preview mode.
     }

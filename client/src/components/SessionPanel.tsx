@@ -27,7 +27,7 @@ export function SessionPanel({ autoRefresh = true, refreshInterval = 5000 }: Ses
 
   // Get current session
   const { data: session, isLoading: sessionLoading } = trpc.session.getCurrentSession.useQuery(
-    { actorType: "manus" },
+    { actorType: "luminari" },
     { enabled: !!sessionId || refreshKey > 0 }
   );
 

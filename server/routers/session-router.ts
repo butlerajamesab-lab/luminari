@@ -1,7 +1,7 @@
 /**
  * Session Router — tRPC procedures for session lifecycle
  * 
- * Admin-only procedures for managing the Tsunam ↔ Manus execution loop.
+ * Admin-only procedures for managing the Tsunam ↔ Luminari execution loop.
  */
 
 import { router, adminProcedure } from "../_core/trpc.ts";
@@ -20,7 +20,7 @@ export const sessionRouter = router({
    * Start a new session anchored to the current verified governance state
    */
   startSession: adminProcedure
-    .input(z.enum(["tsunam", "manus"]))
+    .input(z.enum(["tsunam", "luminari"]))
     .mutation(async ({ input: actorType }) => {
       return await startSession(actorType);
     }),
@@ -29,7 +29,7 @@ export const sessionRouter = router({
    * Get the current active session for an actor
    */
   getCurrentSession: adminProcedure
-    .input(z.enum(["tsunam", "manus"]))
+    .input(z.enum(["tsunam", "luminari"]))
     .query(async ({ input: actorType }) => {
       const session = await getCurrentSession(actorType);
       if (!session) {
@@ -111,7 +111,7 @@ export const sessionRouter = router({
   getHistory: adminProcedure
     .input(
       z.object({
-        actorType: z.enum(["tsunam", "manus"]),
+        actorType: z.enum(["tsunam", "luminari"]),
         limit: z.number().min(1).max(100).default(10),
       })
     )
