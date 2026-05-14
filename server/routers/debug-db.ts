@@ -54,7 +54,7 @@ export const debugDbRouter = router({
       errorMsg,
       nodeEnv: process.env.NODE_ENV,
       timestamp: new Date().toISOString(),
-      deployVersion: "1050a24-v2",
+      deployVersion: "f622979-v3",
     };
   }),
 
@@ -90,7 +90,7 @@ export const debugDbRouter = router({
       drizzleError,
       poolResult,
       poolError,
-      deployVersion: "1050a24-v2",
+      deployVersion: "f622979-v3",
       timestamp: new Date().toISOString(),
     };
   }),
