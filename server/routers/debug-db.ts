@@ -1,5 +1,8 @@
 import { router, publicProcedure } from "../_core/trpc";
 import { createDatabasePool } from "../pg-config";
+import { db, getPool } from "../db";
+import { sql } from "drizzle-orm";
+import { legalStatutes } from "../../drizzle/schema";
 
 export const debugDbRouter = router({
   connectionStatus: publicProcedure.query(async () => {
@@ -50,6 +53,44 @@ export const debugDbRouter = router({
       queryResult,
       errorMsg,
       nodeEnv: process.env.NODE_ENV,
+      timestamp: new Date().toISOString(),
+      deployVersion: "1050a24-v2",
+    };
+  }),
+
+  // Test Drizzle layer directly
+  drizzleTest: publicProcedure.query(async () => {
+    let drizzleResult: any = null;
+    let drizzleError: string | null = null;
+    let poolResult: any = null;
+    let poolError: string | null = null;
+
+    // Test 1: Drizzle ORM query
+    try {
+      const [row] = await db.select({ count: sql<number>`COUNT(*)::int` }).from(legalStatutes);
+      drizzleResult = row;
+    } catch (e: any) {
+      drizzleError = e.message;
+      if (e.cause) drizzleError += ` | cause: ${e.cause.message}`;
+    }
+
+    // Test 2: Raw pool query via getPool()
+    try {
+      const client = await getPool().connect();
+      const res = await client.query("SELECT COUNT(*)::int as cnt FROM legal_statutes");
+      poolResult = res.rows[0];
+      client.release();
+    } catch (e: any) {
+      poolError = e.message;
+      if (e.cause) poolError += ` | cause: ${e.cause.message}`;
+    }
+
+    return {
+      drizzleResult,
+      drizzleError,
+      poolResult,
+      poolError,
+      deployVersion: "1050a24-v2",
       timestamp: new Date().toISOString(),
     };
   }),
