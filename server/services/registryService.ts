@@ -15,21 +15,14 @@
  */
 
 import { sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { createDatabasePool } from "../pg-config";
-
-let registryDb: ReturnType<typeof drizzle> | null = null;
+import { db as canonicalDb } from "../db";
 
 /**
  * Shared read-only database connection for the registry service.
- * Render provides the Supabase PostgreSQL URL only through DATABASE_URL;
- * legacy LUMINARI_DB_* / localhost defaults must not be used in production.
+ * Uses the canonical pool from server/db.ts — see DATABASE_ACCESS_CONSTITUTION.md.
  */
 function getLuminariDb() {
-  if (!registryDb) {
-    registryDb = drizzle(createDatabasePool({ label: "RegistryService", connectionTimeoutMillis: 10000 }));
-  }
-  return registryDb;
+  return canonicalDb;
 }
 
 /**

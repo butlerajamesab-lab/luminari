@@ -1,21 +1,14 @@
 import { z } from "zod";
 import { Pool } from "pg";
 import { router, publicProcedure } from "./_core/trpc";
-import { createDatabasePool, getDatabaseUrl } from "./pg-config";
+import { getPool as getCanonicalPool } from "./db";
+import { getDatabaseUrl } from "./pg-config";
 
 const SUPABASE_PROJECT = "wepxlinwbjrkqdzkqpar";
 
-let pool: Pool | null = null;
-let warnedMissingDatabaseUrl = false;
-
+// Use the canonical pool from server/db.ts — see DATABASE_ACCESS_CONSTITUTION.md
 function getPool(): Pool {
-  if (pool) return pool;
-  if (!getDatabaseUrl() && !warnedMissingDatabaseUrl) {
-    console.warn("[LighthouseGate] DATABASE_URL not configured; Supabase-backed routes will return safe empty results.");
-    warnedMissingDatabaseUrl = true;
-  }
-  pool = createDatabasePool({ label: "LighthouseGate", connectionTimeoutMillis: 10000 });
-  return pool;
+  return getCanonicalPool();
 }
 
 type SafeRowsResult<T> = {

@@ -1,13 +1,15 @@
 /**
  * PostgreSQL Connection Pool
  *
- * Shared Supabase PostgreSQL connection for registry and case services.
- * Render only provides DATABASE_URL, so this helper must not fall back to
- * localhost-style component variables.
+ * Re-exports the canonical shared pool from server/db.ts.
+ * DO NOT create a separate pool here — see DATABASE_ACCESS_CONSTITUTION.md.
  */
 
-import { createDatabasePool } from "../pg-config";
+import { getPool } from "../db";
 
-const pool = createDatabasePool({ label: "CorePool", connectionTimeoutMillis: 10000 });
+// Re-export the canonical pool so existing imports continue to work
+const pool = new Proxy({} as any, {
+  get: (_target, prop) => (getPool() as any)[prop],
+});
 
 export { pool };
