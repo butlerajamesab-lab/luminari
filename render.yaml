@@ -34,3 +34,7 @@ services:
         sync: false
       - key: VITE_GITHUB_OAUTH_CLIENT_ID
         sync: false
+      - key: LIGHTHOUSE_SUPABASE_URL
+        value: https://wepxlinwbjrkqdzkqpar.supabase.co
+      - key: LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlcHhsaW53Ympya3FkemtxcGFyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTE3MzQ5NSwiZXhwIjoyMDkwNzQ5NDk1fQ.2g35OKWh5yaz3qwseO7qmtgtNiAArb6EfFJUv7kMtmI
