@@ -6,12 +6,12 @@
  * All procedures are read-only.
  */
 import { z } from "zod";
-import { router, protectedProcedure } from "../../_core/trpc.js";
+import { router, publicProcedure } from "../../_core/trpc.js";
 import { getActiveTrends } from "../../services/lighthouseClient.js";
 
 export const lighthouseTrendsRouter = router({
   /** List active trends with optional filters */
-  list: protectedProcedure
+  list: publicProcedure
     .input(
       z.object({
         jurisdiction: z.string().optional(),
@@ -29,7 +29,7 @@ export const lighthouseTrendsRouter = router({
     }),
 
   /** Get a single trend by trend_id */
-  getById: protectedProcedure
+  getById: publicProcedure
     .input(z.object({ trendId: z.string() }))
     .query(async ({ input }) => {
       const all = await getActiveTrends({ limit: 500 });
@@ -38,7 +38,7 @@ export const lighthouseTrendsRouter = router({
     }),
 
   /** Pressure summary — top trends by pressure_index */
-  pressureSummary: protectedProcedure
+  pressureSummary: publicProcedure
     .input(z.object({ topN: z.number().int().min(1).max(50).default(10) }))
     .query(async ({ input }) => {
       const trends = await getActiveTrends({ limit: 500 });

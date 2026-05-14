@@ -4,12 +4,12 @@
  * Read-only operational observability endpoints for canonical Lighthouse intake telemetry.
  * The database view performs all aggregation and freshness/health classification.
  */
-import { router, protectedProcedure } from "../../_core/trpc.js";
+import { router, publicProcedure } from "../../_core/trpc.js";
 import { getLiveIntakeOperations } from "../../services/lighthouseClient.js";
 
 export const lighthouseOperationsRouter = router({
   /** Stream-level Live Intake Operations panel state. */
-  liveIntakeOperations: protectedProcedure.query(async () => {
+  liveIntakeOperations: publicProcedure.query(async () => {
     const operations = await getLiveIntakeOperations();
     return {
       operations,

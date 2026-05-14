@@ -6,12 +6,12 @@
  * All procedures are read-only.
  */
 import { z } from "zod";
-import { router, protectedProcedure } from "../../_core/trpc.js";
+import { router, publicProcedure } from "../../_core/trpc.js";
 import { getActivePatterns } from "../../services/lighthouseClient.js";
 
 export const lighthousePatternsRouter = router({
   /** List active patterns with optional filters */
-  list: protectedProcedure
+  list: publicProcedure
     .input(
       z.object({
         jurisdiction: z.string().optional(),
@@ -29,7 +29,7 @@ export const lighthousePatternsRouter = router({
     }),
 
   /** Get a single pattern by pattern_id */
-  getById: protectedProcedure
+  getById: publicProcedure
     .input(z.object({ patternId: z.string() }))
     .query(async ({ input }) => {
       const all = await getActivePatterns({ limit: 500 });
@@ -38,7 +38,7 @@ export const lighthousePatternsRouter = router({
     }),
 
   /** Summary stats across all active patterns */
-  summary: protectedProcedure.query(async () => {
+  summary: publicProcedure.query(async () => {
     const patterns = await getActivePatterns({ limit: 500 });
     const byJurisdiction: Record<string, number> = {};
     const byPatternType: Record<string, number> = {};

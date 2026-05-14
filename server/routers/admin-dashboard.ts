@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, protectedProcedure } from "../_core/trpc";
+import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { db } from "../db";
 import { sql, count, desc, eq, gte, and, inArray } from "drizzle-orm";
@@ -27,7 +27,7 @@ const adminProcedure2 = protectedProcedure.use(({ ctx, next }) => {
 
 export const adminDashboardRouter = router({
   /* ── Panel 1: System Health ── */
-  systemHealth: adminProcedure2.query(async () => {
+  systemHealth: publicProcedure.query(async () => {
     const now = Date.now();
     const oneDayAgo = now - 86400000;
     const oneHourAgo = now - 3600000;
@@ -71,7 +71,7 @@ export const adminDashboardRouter = router({
   }),
 
   /* ── Panel 3: Case Activity ── */
-  caseActivity: adminProcedure2.query(async () => {
+  caseActivity: publicProcedure.query(async () => {
     const now = Date.now();
     const oneDayAgo = now - 86400000;
     const oneWeekAgo = now - 604800000;
@@ -103,7 +103,7 @@ export const adminDashboardRouter = router({
   }),
 
   /* ── Panel 4: Structural Signals (aggregated) ── */
-  structuralSignals: adminProcedure2.query(async () => {
+  structuralSignals: publicProcedure.query(async () => {
     // Count findings by severity across all cases
     const severityCounts = await db
       .select({ severity: findings.confidence, cnt: count() })
@@ -140,7 +140,7 @@ export const adminDashboardRouter = router({
   }),
 
   /* ── Panel 5: Work Queue ── */
-  workQueue: adminProcedure2.query(async () => {
+  workQueue: publicProcedure.query(async () => {
     // Pending/running engine runs
     const pendingRuns = await db
       .select({
@@ -192,7 +192,7 @@ export const adminDashboardRouter = router({
   }),
 
   /* ── Findings drill-through by severity ── */
-  findingsBySeverity: adminProcedure2
+  findingsBySeverity: publicProcedure
     .input(z.object({ severity: z.string().optional() }))
     .query(async ({ input }) => {
       const rows = await db

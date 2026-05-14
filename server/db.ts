@@ -65,7 +65,11 @@ function initializePool(): Pool {
   }
 
   try {
-    pgPool = new Pool({ connectionString: dbUrlString, connectionTimeoutMillis: 10000 });
+    pgPool = new Pool({
+      connectionString: dbUrlString,
+      connectionTimeoutMillis: 10000,
+      ssl: { rejectUnauthorized: false },
+    });
     pgPool.on("error", (err) => {
       console.error("[DB] Unexpected error on idle client:", err);
     });

@@ -6,12 +6,12 @@
  * All procedures are read-only.
  */
 import { z } from "zod";
-import { router, protectedProcedure } from "../../_core/trpc.js";
+import { router, publicProcedure } from "../../_core/trpc.js";
 import { getSignalLineage } from "../../services/lighthouseClient.js";
 
 export const lighthouseLineageRouter = router({
   /** Full lineage trace with optional filters */
-  list: protectedProcedure
+  list: publicProcedure
     .input(
       z.object({
         signalType: z.string().optional(),
@@ -29,7 +29,7 @@ export const lighthouseLineageRouter = router({
     }),
 
   /** Get full lineage for a single signal by signal_id */
-  getBySignalId: protectedProcedure
+  getBySignalId: publicProcedure
     .input(z.object({ signalId: z.string().uuid() }))
     .query(async ({ input }) => {
       const all = await getSignalLineage({ limit: 500 });
@@ -38,7 +38,7 @@ export const lighthouseLineageRouter = router({
     }),
 
   /** Lineage coverage stats */
-  coverageStats: protectedProcedure.query(async () => {
+  coverageStats: publicProcedure.query(async () => {
     const lineage = await getSignalLineage({ limit: 500 });
     let fullChain = 0;
     let patternLinked = 0;

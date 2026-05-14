@@ -6,12 +6,12 @@
  * All procedures are read-only.
  */
 import { z } from "zod";
-import { router, protectedProcedure } from "../../_core/trpc.js";
+import { router, publicProcedure } from "../../_core/trpc.js";
 import { getActiveStrategies } from "../../services/lighthouseClient.js";
 
 export const lighthouseStrategiesRouter = router({
   /** List active strategies with optional filters */
-  list: protectedProcedure
+  list: publicProcedure
     .input(
       z.object({
         jurisdictionScope: z.string().optional(),
@@ -31,7 +31,7 @@ export const lighthouseStrategiesRouter = router({
     }),
 
   /** Get a single strategy by strategy_id */
-  getById: protectedProcedure
+  getById: publicProcedure
     .input(z.object({ strategyId: z.string() }))
     .query(async ({ input }) => {
       const all = await getActiveStrategies({ limit: 500 });
@@ -40,7 +40,7 @@ export const lighthouseStrategiesRouter = router({
     }),
 
   /** Summary breakdown by urgency, scope, and jurisdiction */
-  summary: protectedProcedure.query(async () => {
+  summary: publicProcedure.query(async () => {
     const strategies = await getActiveStrategies({ limit: 500 });
     const byUrgency: Record<string, number> = {};
     const byScope: Record<string, number> = {};

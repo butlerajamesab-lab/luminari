@@ -6,7 +6,7 @@
  * All procedures are read-only.
  */
 import { z } from "zod";
-import { router, protectedProcedure } from "../../_core/trpc.js";
+import { router, publicProcedure } from "../../_core/trpc.js";
 import {
   getGateDecisions,
   getStagedSignals,
@@ -15,7 +15,7 @@ import {
 
 export const lighthouseGovernanceRouter = router({
   /** Gate decision log with optional filters */
-  gateDecisions: protectedProcedure
+  gateDecisions: publicProcedure
     .input(
       z.object({
         decision: z.enum(["PROMOTE", "STAGE", "HOLD", "REJECT", "ESCALATE_REVIEW"]).optional(),
@@ -33,13 +33,13 @@ export const lighthouseGovernanceRouter = router({
     }),
 
   /** Staged signals pending admin review */
-  stagedSignals: protectedProcedure.query(async () => {
+  stagedSignals: publicProcedure.query(async () => {
     const staged = await getStagedSignals();
     return { staged, count: staged.length };
   }),
 
   /** Gate decision distribution summary */
-  decisionSummary: protectedProcedure.query(async () => {
+  decisionSummary: publicProcedure.query(async () => {
     const decisions = await getGateDecisions({ limit: 500 });
     const byDecision: Record<string, number> = {};
     const bySource: Record<string, number> = {};
@@ -64,7 +64,7 @@ export const lighthouseGovernanceRouter = router({
   }),
 
   /** Pipeline health — single-row operational summary */
-  pipelineHealth: protectedProcedure.query(async () => {
+  pipelineHealth: publicProcedure.query(async () => {
     const health = await getPipelineHealth();
     return { health };
   }),
