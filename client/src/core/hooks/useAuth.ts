@@ -9,6 +9,7 @@ type UseAuthOptions = {
 };
 
 const INSPECTION_STORAGE_KEY = "lighthouse-inspection-mode";
+const AUTH_USER_STORAGE_KEY = "luminari-auth-user-info";
 
 function getInspectionMode(): boolean {
   if (import.meta.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true") return true;
@@ -60,7 +61,7 @@ export function useAuth(options?: UseAuthOptions) {
   const logout = useCallback(async () => {
     if (inspectionMode) {
       try {
-        localStorage.removeItem("manus-runtime-user-info");
+        localStorage.removeItem(AUTH_USER_STORAGE_KEY);
         localStorage.removeItem(INSPECTION_STORAGE_KEY);
       } catch {
         // Ignore storage errors in inspection mode.
@@ -89,7 +90,7 @@ export function useAuth(options?: UseAuthOptions) {
     if (inspectionMode) {
       try {
         localStorage.setItem(
-          "manus-runtime-user-info",
+          AUTH_USER_STORAGE_KEY,
           JSON.stringify(inspectionUser)
         );
       } catch {
@@ -106,7 +107,7 @@ export function useAuth(options?: UseAuthOptions) {
     }
 
     localStorage.setItem(
-      "manus-runtime-user-info",
+      AUTH_USER_STORAGE_KEY,
       JSON.stringify(meQuery.data)
     );
     return {

@@ -870,7 +870,7 @@ export type GovernanceEventType = typeof GOVERNANCE_EVENT_TYPES[number];
 
 
 /**
- * Session Log — Continuous execution loop between Tsunam and Manus
+ * Session Log — Continuous execution loop between Tsunam and Luminari
  * 
  * Every session:
  * - Starts from a verified governance state (governance_anchor)
@@ -902,7 +902,7 @@ export type TsunamHandoff = {
   }>;
 };
 
-export type ManusHandoff = {
+export type LuminariHandoff = {
   sessionId: string;
   objective: string;
   scope: string[];
@@ -9281,7 +9281,7 @@ export const sessionLog = pgTable("session_log", {
   completedAt: bigint("completed_at", { mode: "number" }), // null if still running
   
   // Actor type
-  actorType: varchar("actor_type", { length: 20 }).notNull(), // "tsunam" | "manus"
+  actorType: varchar("actor_type", { length: 20 }).notNull(), // "tsunam" | "luminari"
   
   // Governance anchor — the verified seq_no this session started from
   governanceAnchor: integer("governance_anchor").notNull(), // last_verified_seq_no at session start

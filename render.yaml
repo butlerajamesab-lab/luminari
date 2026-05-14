@@ -28,10 +28,6 @@ services:
         value: "10000"
       - key: JWT_SECRET
         value: 5vRQLhxdDGPW5HquH7C4u7
-      - key: OAUTH_SERVER_URL
-        value: https://api.manus.im
-      - key: VITE_OAUTH_PORTAL_URL
-        value: https://manus.im
       - key: GITHUB_OAUTH_CLIENT_ID
         value: Ov23linMaBZYR98r9PeG
       - key: GITHUB_OAUTH_CLIENT_SECRET
