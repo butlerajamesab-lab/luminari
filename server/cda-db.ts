@@ -1,9 +1,9 @@
 /**
- * CDA v1.0-PATCH3 — Database Helpers
+ * CDA v2.0 — Database Helpers
  *
- * CRUD for all S1–S8 tables + run management.
+ * CRUD for all S0–S8 tables + run management.
  * Returns raw Drizzle rows. No business logic.
- * Wipe-and-rebuild for idempotent dev re-runs.
+ * UUID-based (forward direction — PostgreSQL/Supabase).
  */
 
 import { eq, sql, desc, and } from "drizzle-orm";
@@ -22,24 +22,24 @@ import {
 // ═══════════════════════════════════════════════════════════════════════
 
 export async function createRun(data: {
-  caseId: number;
-  userId: number;
-  policyDocId: number;
-  denialDocId: number;
-  claimSummaryDocId: number;
-}): Promise<number> {
+  caseId?: string | null;
+  userId?: number | null;
+  policyDocId?: string | null;
+  denialDocId?: string | null;
+  claimSummaryDocId?: string | null;
+}): Promise<string> {
   const [result] = await db.insert(cdaRuns).values({
-    caseId: data.caseId,
-    userId: data.userId,
-    policyDocId: data.policyDocId,
-    denialDocId: data.denialDocId,
-    claimSummaryDocId: data.claimSummaryDocId,
+    caseId: data.caseId ?? undefined,
+    userId: data.userId ?? undefined,
+    policyDocId: data.policyDocId ?? undefined,
+    denialDocId: data.denialDocId ?? undefined,
+    claimSummaryDocId: data.claimSummaryDocId ?? undefined,
     startedAt: Date.now(),
-  });
-  return result.insertId;
+  }).returning({ id: cdaRuns.id });
+  return result.id;
 }
 
-export async function getRun(runId: number): Promise<CdaRun | null> {
+export async function getRun(runId: string): Promise<CdaRun | null> {
   const [row] = await db.select().from(cdaRuns).where(eq(cdaRuns.id, runId));
   return row ?? null;
 }
@@ -50,14 +50,14 @@ export async function listRunsForUser(userId: number): Promise<CdaRun[]> {
     .orderBy(desc(cdaRuns.startedAt));
 }
 
-export async function listRunsForCase(caseId: number): Promise<CdaRun[]> {
+export async function listRunsForCase(caseId: string): Promise<CdaRun[]> {
   return db.select().from(cdaRuns)
     .where(eq(cdaRuns.caseId, caseId))
     .orderBy(desc(cdaRuns.startedAt));
 }
 
 export async function updateRunStatus(
-  runId: number,
+  runId: string,
   status: string,
   extra?: {
     endConditionMet?: boolean;
@@ -78,10 +78,10 @@ export async function updateRunStatus(
 
 /** Find an active (non-terminal) CDA run for the same case + same doc IDs */
 export async function findActiveRunForDocs(
-  caseId: number,
-  policyDocId: number,
-  denialDocId: number,
-  claimSummaryDocId: number,
+  caseId: string,
+  policyDocId: string,
+  denialDocId: string,
+  claimSummaryDocId: string,
 ): Promise<CdaRun | null> {
   const activeStatuses = [
     "created", "classifying", "extracting", "normalizing",
@@ -95,7 +95,6 @@ export async function findActiveRunForDocs(
       eq(cdaRuns.denialDocId, denialDocId),
       eq(cdaRuns.claimSummaryDocId, claimSummaryDocId),
     ));
-  // Filter in JS since status enum check is complex in SQL
   return runs.find(r => activeStatuses.includes(r.status)) ?? null;
 }
 
@@ -104,21 +103,21 @@ export async function findActiveRunForDocs(
 // ═══════════════════════════════════════════════════════════════════════
 
 export async function insertDocument(data: {
-  runId: number;
+  runId: string;
   docType: string;
   receivedDate?: string | null;
   fileName: string;
   source?: string;
   pageCount?: number;
   hash: string;
-  sourceDocumentId?: number | null;
+  sourceDocumentId?: string | null;
   classificationRule?: string | null;
-}): Promise<number> {
-  const [result] = await db.insert(cdaDocuments).values(data as any);
-  return result.insertId;
+}): Promise<string> {
+  const [result] = await db.insert(cdaDocuments).values(data as any).returning({ id: cdaDocuments.id });
+  return result.id;
 }
 
-export async function getDocuments(runId: number): Promise<CdaDocument[]> {
+export async function getDocuments(runId: string): Promise<CdaDocument[]> {
   return db.select().from(cdaDocuments).where(eq(cdaDocuments.runId, runId));
 }
 
@@ -127,8 +126,8 @@ export async function getDocuments(runId: number): Promise<CdaDocument[]> {
 // ═══════════════════════════════════════════════════════════════════════
 
 export async function insertQuote(data: {
-  runId: number;
-  docId: number;
+  runId: string;
+  docId: string;
   page?: number | null;
   locationHint?: string | null;
   quoteText: string;
@@ -136,14 +135,14 @@ export async function insertQuote(data: {
   extractionMethod?: string;
   confidence?: string;
   infoLayer?: string;
-}): Promise<number> {
-  const [result] = await db.insert(cdaQuotes).values(data as any);
-  return result.insertId;
+}): Promise<string> {
+  const [result] = await db.insert(cdaQuotes).values(data as any).returning({ id: cdaQuotes.id });
+  return result.id;
 }
 
 export async function insertQuotes(data: Array<{
-  runId: number;
-  docId: number;
+  runId: string;
+  docId: string;
   page?: number | null;
   locationHint?: string | null;
   quoteText: string;
@@ -151,9 +150,9 @@ export async function insertQuotes(data: Array<{
   extractionMethod?: string;
   confidence?: string;
   infoLayer?: string;
-}>): Promise<number[]> {
+}>): Promise<string[]> {
   if (data.length === 0) return [];
-  const results: number[] = [];
+  const results: string[] = [];
   for (const row of data) {
     const id = await insertQuote(row);
     results.push(id);
@@ -161,7 +160,7 @@ export async function insertQuotes(data: Array<{
   return results;
 }
 
-export async function getQuotes(runId: number): Promise<CdaQuote[]> {
+export async function getQuotes(runId: string): Promise<CdaQuote[]> {
   return db.select().from(cdaQuotes).where(eq(cdaQuotes.runId, runId));
 }
 
@@ -170,7 +169,7 @@ export async function getQuotes(runId: number): Promise<CdaQuote[]> {
 // ═══════════════════════════════════════════════════════════════════════
 
 export async function insertClaimLedger(data: {
-  runId: number;
+  runId: string;
   claimId?: string | null;
   policyNumber?: string | null;
   insuredName?: string | null;
@@ -182,14 +181,14 @@ export async function insertClaimLedger(data: {
   claimedAmount?: string | null;
   paidAmount?: string | null;
   communicationChannels?: string[] | null;
-  sourceQuotes?: Array<{ field: string; quoteId: number; label?: string }> | null;
+  sourceQuotes?: Array<{ field: string; quoteId: string; label?: string }> | null;
   formatInferredFields?: string[] | null;
-}): Promise<number> {
-  const [result] = await db.insert(cdaClaimLedger).values(data as any);
-  return result.insertId;
+}): Promise<string> {
+  const [result] = await db.insert(cdaClaimLedger).values(data as any).returning({ id: cdaClaimLedger.id });
+  return result.id;
 }
 
-export async function getClaimLedger(runId: number): Promise<CdaClaimLedger | null> {
+export async function getClaimLedger(runId: string): Promise<CdaClaimLedger | null> {
   const [row] = await db.select().from(cdaClaimLedger).where(eq(cdaClaimLedger.runId, runId));
   return row ?? null;
 }
@@ -199,20 +198,20 @@ export async function getClaimLedger(runId: number): Promise<CdaClaimLedger | nu
 // ═══════════════════════════════════════════════════════════════════════
 
 export async function insertDenialReason(data: {
-  runId: number;
+  runId: string;
   claimId?: string | null;
   reasonTextVerbatim: string;
   normalizedReasonCode: string;
   citedPolicyRefsVerbatim?: string | null;
   citedFactsVerbatim?: string | null;
-  sourceQuoteIds?: number[] | null;
+  sourceQuoteIds?: string[] | null;
   infoLayer?: string;
-}): Promise<number> {
-  const [result] = await db.insert(cdaDenialReasons).values(data as any);
-  return result.insertId;
+}): Promise<string> {
+  const [result] = await db.insert(cdaDenialReasons).values(data as any).returning({ id: cdaDenialReasons.id });
+  return result.id;
 }
 
-export async function getDenialReasons(runId: number): Promise<CdaDenialReason[]> {
+export async function getDenialReasons(runId: string): Promise<CdaDenialReason[]> {
   return db.select().from(cdaDenialReasons).where(eq(cdaDenialReasons.runId, runId));
 }
 
@@ -221,20 +220,20 @@ export async function getDenialReasons(runId: number): Promise<CdaDenialReason[]
 // ═══════════════════════════════════════════════════════════════════════
 
 export async function insertPolicyClause(data: {
-  runId: number;
+  runId: string;
   clauseTextVerbatim: string;
   sectionHeading?: string | null;
   clauseType: string;
   definedTerms?: string[] | null;
   effectiveScopeNote?: string | null;
-  sourceQuoteIds?: number[] | null;
+  sourceQuoteIds?: string[] | null;
   infoLayer?: string;
-}): Promise<number> {
-  const [result] = await db.insert(cdaPolicyClauses).values(data as any);
-  return result.insertId;
+}): Promise<string> {
+  const [result] = await db.insert(cdaPolicyClauses).values(data as any).returning({ id: cdaPolicyClauses.id });
+  return result.id;
 }
 
-export async function getPolicyClauses(runId: number): Promise<CdaPolicyClause[]> {
+export async function getPolicyClauses(runId: string): Promise<CdaPolicyClause[]> {
   return db.select().from(cdaPolicyClauses).where(eq(cdaPolicyClauses.runId, runId));
 }
 
@@ -243,37 +242,37 @@ export async function getPolicyClauses(runId: number): Promise<CdaPolicyClause[]
 // ═══════════════════════════════════════════════════════════════════════
 
 export async function insertComparisonRow(data: {
-  runId: number;
-  reasonId: number;
-  clauseId?: number | null;
+  runId: string;
+  reasonId?: string | null;
+  clauseId?: string | null;
   linkingBasis: string;
   matchType?: string | null;
   mismatchType?: string | null;
   requiredEvidence?: string | null;
   missingEvidence?: string | null;
   conflictEvidence?: string | null;
-  supportingQuoteIds?: number[] | null;
+  supportingQuoteIds?: string[] | null;
   notes?: string | null;
-}): Promise<number> {
-  const [result] = await db.insert(cdaComparisonMatrix).values(data as any);
-  return result.insertId;
+}): Promise<string> {
+  const [result] = await db.insert(cdaComparisonMatrix).values(data as any).returning({ id: cdaComparisonMatrix.id });
+  return result.id;
 }
 
-export async function getComparisonMatrix(runId: number): Promise<CdaComparisonRow[]> {
+export async function getComparisonMatrix(runId: string): Promise<CdaComparisonRow[]> {
   return db.select().from(cdaComparisonMatrix).where(eq(cdaComparisonMatrix.runId, runId));
 }
 
 export async function updateComparisonRow(
-  rowId: number,
+  rowId: string,
   data: {
     matchType?: string | null;
     mismatchType?: string | null;
     requiredEvidence?: string | null;
     missingEvidence?: string | null;
     conflictEvidence?: string | null;
-    supportingQuoteIds?: number[] | null;
-    resolutionMethod?: string | null;
-    t7TranscriptId?: string | null;
+    supportingQuoteIds?: string[] | null;
+    resolutionStatus?: string | null;
+    resolutionNotes?: string | null;
     notes?: string | null;
   },
 ): Promise<void> {
@@ -285,21 +284,19 @@ export async function updateComparisonRow(
 // ═══════════════════════════════════════════════════════════════════════
 
 export async function insertEvidenceGap(data: {
-  runId: number;
+  runId: string;
   gapType: string;
-  requiredItem: string;
-  whyRequired: string;
-  howToObtain?: string | null;
-  priorityLevel: string;
-  linkedReasonIds?: number[] | null;
-  linkedTransformation?: string | null;
+  description: string;
+  linkedReasonIds?: string[] | null;
+  linkedClauseIds?: string[] | null;
+  severity?: string | null;
   failureFlag?: string | null;
-}): Promise<number> {
-  const [result] = await db.insert(cdaEvidenceGaps).values(data as any);
-  return result.insertId;
+}): Promise<string> {
+  const [result] = await db.insert(cdaEvidenceGaps).values(data as any).returning({ id: cdaEvidenceGaps.id });
+  return result.id;
 }
 
-export async function getEvidenceGaps(runId: number): Promise<CdaEvidenceGap[]> {
+export async function getEvidenceGaps(runId: string): Promise<CdaEvidenceGap[]> {
   return db.select().from(cdaEvidenceGaps).where(eq(cdaEvidenceGaps.runId, runId));
 }
 
@@ -308,19 +305,19 @@ export async function getEvidenceGaps(runId: number): Promise<CdaEvidenceGap[]> 
 // ═══════════════════════════════════════════════════════════════════════
 
 export async function insertContradiction(data: {
-  runId: number;
+  runId: string;
   conflictType: string;
   claimReference?: string | null;
   denialReference?: string | null;
   policyReference?: string | null;
   explanation: string;
-  linkedQuoteIds?: number[] | null;
-}): Promise<number> {
-  const [result] = await db.insert(cdaContradictions).values(data as any);
-  return result.insertId;
+  linkedQuoteIds?: string[] | null;
+}): Promise<string> {
+  const [result] = await db.insert(cdaContradictions).values(data as any).returning({ id: cdaContradictions.id });
+  return result.id;
 }
 
-export async function getContradictions(runId: number): Promise<CdaContradiction[]> {
+export async function getContradictions(runId: string): Promise<CdaContradiction[]> {
   return db.select().from(cdaContradictions).where(eq(cdaContradictions.runId, runId));
 }
 
@@ -328,7 +325,7 @@ export async function getContradictions(runId: number): Promise<CdaContradiction
 // Bulk Snapshot — for end condition validator
 // ═══════════════════════════════════════════════════════════════════════
 
-export async function getFullRunSnapshot(runId: number) {
+export async function getFullRunSnapshot(runId: string) {
   const [run, s1, s2, s3, s4, s5, s6, s7, s8] = await Promise.all([
     getRun(runId),
     getDocuments(runId),
@@ -357,13 +354,13 @@ export async function getFullRunSnapshot(runId: number) {
 // Row Counts — for end condition validator
 // ═══════════════════════════════════════════════════════════════════════
 
-export async function getRunRowCounts(runId: number) {
+export async function getRunRowCounts(runId: string) {
   const countQuery = async (table: any) => {
     const [result] = await db
       .select({ count: sql<number>`count(*)` })
       .from(table)
       .where(eq(table.runId, runId));
-    return result?.count ?? 0;
+    return Number(result?.count ?? 0);
   };
 
   const [s1, s2, s3, s4, s5, s6, s7, s8] = await Promise.all([
@@ -397,24 +394,24 @@ export async function getRunRowCounts(runId: number) {
  * Delete all data from a given stage onwards for a run.
  * Use before re-running the pipeline from that stage.
  */
-export async function wipeFromStage(runId: number, fromStage: "T2" | "T3" | "T4" | "T5" | "T6" | "T7" | "T8" | "T9"): Promise<void> {
+export async function wipeFromStage(runId: string, fromStage: "T2" | "T3" | "T4" | "T5" | "T6" | "T7" | "T8" | "T9"): Promise<void> {
   const stageOrder = ["T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9"];
   const idx = stageOrder.indexOf(fromStage);
 
   // Wipe in reverse dependency order
-  if (idx <= 7) await db.delete(cdaContradictions).where(eq(cdaContradictions.runId, runId));  // S8
-  if (idx <= 6) await db.delete(cdaEvidenceGaps).where(eq(cdaEvidenceGaps.runId, runId));     // S7
-  if (idx <= 5) await db.delete(cdaComparisonMatrix).where(eq(cdaComparisonMatrix.runId, runId)); // S6
-  if (idx <= 3) await db.delete(cdaPolicyClauses).where(eq(cdaPolicyClauses.runId, runId));   // S5
-  if (idx <= 2) await db.delete(cdaDenialReasons).where(eq(cdaDenialReasons.runId, runId));   // S4
-  if (idx <= 1) await db.delete(cdaClaimLedger).where(eq(cdaClaimLedger.runId, runId));       // S3
-  if (idx <= 0) await db.delete(cdaQuotes).where(eq(cdaQuotes.runId, runId));                 // S2
+  if (idx <= 7) await db.delete(cdaContradictions).where(eq(cdaContradictions.runId, runId));
+  if (idx <= 6) await db.delete(cdaEvidenceGaps).where(eq(cdaEvidenceGaps.runId, runId));
+  if (idx <= 5) await db.delete(cdaComparisonMatrix).where(eq(cdaComparisonMatrix.runId, runId));
+  if (idx <= 3) await db.delete(cdaPolicyClauses).where(eq(cdaPolicyClauses.runId, runId));
+  if (idx <= 2) await db.delete(cdaDenialReasons).where(eq(cdaDenialReasons.runId, runId));
+  if (idx <= 1) await db.delete(cdaClaimLedger).where(eq(cdaClaimLedger.runId, runId));
+  if (idx <= 0) await db.delete(cdaQuotes).where(eq(cdaQuotes.runId, runId));
 }
 
 /**
  * Delete ALL data for a run (S1–S8 + run record). Full reset.
  */
-export async function deleteRunData(runId: number): Promise<void> {
+export async function deleteRunData(runId: string): Promise<void> {
   await db.delete(cdaContradictions).where(eq(cdaContradictions.runId, runId));
   await db.delete(cdaEvidenceGaps).where(eq(cdaEvidenceGaps.runId, runId));
   await db.delete(cdaComparisonMatrix).where(eq(cdaComparisonMatrix.runId, runId));
