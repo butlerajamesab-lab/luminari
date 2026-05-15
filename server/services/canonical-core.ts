@@ -327,8 +327,9 @@ export async function getCanonicalCoreHealth(): Promise<{
 
   for (const { table, category } of canonicalTables) {
     try {
-      const [rows] = await db.execute(sql.raw(`SELECT COUNT(*) as c FROM \`${table}\``));
-      const count = Number((rows as any)[0]?.c) || 0;
+      const result = await db.execute(sql.raw(`SELECT COUNT(*) as c FROM "${table}"`));
+      const rows = (result as any).rows ?? result;
+      const count = Number(rows?.[0]?.c) || 0;
       results.push({ table, category, count });
       totalRecords += count;
       if (count > 0) populatedTables++;

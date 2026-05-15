@@ -216,6 +216,9 @@ const ingestionRouter = router({
   listRuns: publicProcedure.input(z.object({ limit: z.number().default(10) }).optional()).query(async () => []),
   listLiveSignals: publicProcedure.input(z.object({ limit: z.number().default(20) }).optional()).query(async ({ input }) => { const r = await restSelect("detected_signals", { limit: input?.limit ?? 20, order: "id.desc" }); return r.items; }),
   datasetRunStatus: publicProcedure.input(z.any().optional()).query(async () => ({ status: "idle" })),
+  seedDefaultDatasets: publicProcedure.mutation(async () => ({ success: true })),
+  triggerIngestion: publicProcedure.input(z.any().optional()).mutation(async () => ({ success: true })),
+  toggleDataset: publicProcedure.input(z.any().optional()).mutation(async () => ({ success: true })),
 });
 
 // ─── Knowledge Ingestion Router ───
@@ -223,6 +226,80 @@ const knowledgeIngestionRouter = router({
   populationStats: publicProcedure.query(async () => {
     const [entries, modules, freshness, coverage] = await Promise.all([countTable("knowledge_entries"), countTable("knowledge_modules"), countTable("knowledge_freshness"), countTable("knowledge_coverage_metrics")]);
     return { entries, modules, freshness, coverage };
+  }),
+  getJurisdictions: publicProcedure.query(async () => {
+    const r = await restSelect("registry_jurisdictions", { limit: 200, select: "abbreviation,name" });
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const j of (r.items || [])) {
+      const label = j.name || j.abbreviation || "";
+      if (label && !seen.has(label)) { seen.add(label); result.push(label); }
+    }
+    // Also pull distinct jurisdictions from legal_statutes
+    const ls = await restSelect("legal_statutes", { limit: 1000, select: "jurisdiction" });
+    for (const row of (ls.items || [])) {
+      const j = row.jurisdiction;
+      if (j && j !== "state" && !seen.has(j)) { seen.add(j); result.push(j); }
+    }
+    return result.sort((a, b) => a === "Federal" ? -1 : b === "Federal" ? 1 : a.localeCompare(b));
+  }),
+  getDomains: publicProcedure.query(async () => {
+    const r = await restSelect("legal_statutes", { limit: 1000, select: "domains" });
+    const domainSet = new Set<string>();
+    for (const row of (r.items || [])) {
+      try {
+        const parsed = typeof row.domains === "string" ? JSON.parse(row.domains) : row.domains;
+        if (Array.isArray(parsed)) parsed.forEach((d: string) => domainSet.add(d));
+        else if (typeof parsed === "string" && parsed) domainSet.add(parsed);
+      } catch { /* skip */ }
+    }
+    return Array.from(domainSet).sort();
+  }),
+  browseStatutes: publicProcedure.input(z.object({ search: z.string().optional(), jurisdiction: z.string().optional(), domain: z.string().optional(), limit: z.number().default(50), offset: z.number().default(0) }).optional()).query(async ({ input }) => {
+    const filters: RestFilter[] = [];
+    if (input?.search) filters.push({ column: "title", operator: "ilike", value: input.search });
+    if (input?.jurisdiction) filters.push({ column: "jurisdiction", operator: "eq", value: input.jurisdiction });
+    const r = await safeSelect("legal_statutes", input?.limit ?? 50, input?.offset ?? 0, filters, "id.desc");
+    return { rows: r.items || [], total: (r.items || []).length };
+  }),
+  browseCaseLaw: publicProcedure.input(z.object({ search: z.string().optional(), jurisdiction: z.string().optional(), domain: z.string().optional(), limit: z.number().default(50), offset: z.number().default(0) }).optional()).query(async ({ input }) => {
+    const filters: RestFilter[] = [];
+    if (input?.search) filters.push({ column: "case_name", operator: "ilike", value: input.search });
+    if (input?.jurisdiction) filters.push({ column: "jurisdiction", operator: "eq", value: input.jurisdiction });
+    const r = await safeSelect("legal_case_law", input?.limit ?? 50, input?.offset ?? 0, filters, "id.desc");
+    return { rows: r.items || [], total: (r.items || []).length };
+  }),
+  browseAgencies: publicProcedure.input(z.object({ search: z.string().optional(), jurisdiction: z.string().optional(), limit: z.number().default(50), offset: z.number().default(0) }).optional()).query(async ({ input }) => {
+    const filters: RestFilter[] = [];
+    if (input?.search) filters.push({ column: "agency_name_rob", operator: "ilike", value: input.search });
+    const r = await safeSelect("registry_oversight_bodies", input?.limit ?? 50, input?.offset ?? 0, filters, "id.desc");
+    return { rows: r.items || [], total: (r.items || []).length };
+  }),
+  browseCourts: publicProcedure.input(z.object({ search: z.string().optional(), jurisdiction: z.string().optional(), limit: z.number().default(50), offset: z.number().default(0) }).optional()).query(async ({ input }) => {
+    const filters: RestFilter[] = [];
+    if (input?.search) filters.push({ column: "agency_name_rob", operator: "ilike", value: input.search });
+    const r = await safeSelect("registry_oversight_bodies", input?.limit ?? 50, input?.offset ?? 0, filters, "id.desc");
+    return { rows: r.items || [], total: (r.items || []).length };
+  }),
+  browseTargets: publicProcedure.input(z.object({ search: z.string().optional(), limit: z.number().default(50), offset: z.number().default(0) }).optional()).query(async ({ input }) => {
+    const filters: RestFilter[] = [];
+    if (input?.search) filters.push({ column: "name_rp", operator: "ilike", value: input.search });
+    const r = await safeSelect("registry_programs", input?.limit ?? 50, input?.offset ?? 0, filters, "id.desc");
+    return { rows: r.items || [], total: (r.items || []).length };
+  }),
+  browseFormulas: publicProcedure.input(z.object({ search: z.string().optional(), limit: z.number().default(50), offset: z.number().default(0) }).optional()).query(async ({ input }) => {
+    const r = await safeSelect("settlement_formulas", input?.limit ?? 50, input?.offset ?? 0, [], "formula_id.desc");
+    return { rows: r.items || [], total: (r.items || []).length };
+  }),
+  browseAdvocacyTargets: publicProcedure.input(z.object({ search: z.string().optional(), limit: z.number().default(50), offset: z.number().default(0) }).optional()).query(async ({ input }) => {
+    const filters: RestFilter[] = [];
+    if (input?.search) filters.push({ column: "name_rp", operator: "ilike", value: input.search });
+    const r = await safeSelect("registry_programs", input?.limit ?? 50, input?.offset ?? 0, filters, "id.desc");
+    return { rows: r.items || [], total: (r.items || []).length };
+  }),
+  browseSettlementFormulas: publicProcedure.input(z.object({ search: z.string().optional(), limit: z.number().default(50), offset: z.number().default(0) }).optional()).query(async ({ input }) => {
+    const r = await safeSelect("settlement_formulas", input?.limit ?? 50, input?.offset ?? 0, [], "formula_id.desc");
+    return { rows: r.items || [], total: (r.items || []).length };
   }),
 });
 
@@ -276,7 +353,7 @@ const benefitsRouter = router({
   match: publicProcedure.input(z.any().optional()).query(async () => ({ matches: [], score: 0 })),
   categories: publicProcedure.query(async () => []),
   documentChecklist: publicProcedure.input(z.any().optional()).query(async () => []),
-  statesWithOverlays: publicProcedure.query(async () => { const r = await restSelect("registry_jurisdictions", { limit: 100, select: "abbreviation,name" }); return r.items; }),
+  statesWithOverlays: publicProcedure.query(async () => { const r = await restSelect("registry_jurisdictions", { limit: 100, select: "abbreviation,name" }); return (r.items || []).map((j: any) => j.abbreviation || j.name || "").filter(Boolean); }),
 });
 
 // ─── Agency Metrics Router ───
@@ -300,6 +377,7 @@ const analyticsRouter = router({
 // ─── Lighthouse Sub-Router ───
 const lighthouseSubRouter = router({
   suggestions: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), myVotes: publicProcedure.query(async () => []), create: publicProcedure.input(z.any()).mutation(async () => ({ id: "stub" })), vote: publicProcedure.input(z.any()).mutation(async () => ({ success: true })), unvote: publicProcedure.input(z.any()).mutation(async () => ({ success: true })) }),
+  categories: router({ list: publicProcedure.input(z.any().optional()).query(async () => []) }),
   spotlight: router({ list: publicProcedure.input(z.any().optional()).query(async () => []) }),
   jobs: router({ list: publicProcedure.input(z.any().optional()).query(async () => []) }),
   posts: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), create: publicProcedure.input(z.any()).mutation(async () => ({ id: "stub" })) }),
@@ -383,7 +461,7 @@ export const lighthouseGateRouter = router({
   notifications: stubList,
   usersAdmin: router({ list: publicProcedure.query(async () => []), updateRole: publicProcedure.input(z.any()).mutation(async () => ({ success: true })), updatePlan: publicProcedure.input(z.any()).mutation(async () => ({ success: true })) }),
   invites: router({ list: publicProcedure.query(async () => []), create: publicProcedure.input(z.any()).mutation(async () => ({ id: "stub", success: true })), revoke: publicProcedure.input(z.any()).mutation(async () => ({ success: true })) }),
-  uploadSessions: router({ list: publicProcedure.input(z.any().optional()).query(async () => { const r = await restSelect("upload_sessions", { limit: 50, order: "id.desc" }); return r.items; }) }),
+  uploadSessions: router({ list: publicProcedure.input(z.any().optional()).query(async () => { const r = await restSelect("upload_sessions", { limit: 50, order: "id.desc" }); return r.items; }), getActive: publicProcedure.query(async () => { const r = await restSelect("upload_sessions", { limit: 10, order: "id.desc" }); return r.items; }) }),
   caseTemplates: stubList,
   testScenarios: router({ listBundles: publicProcedure.query(async () => []), loadBundle: publicProcedure.input(z.any()).mutation(async () => ({ success: true })), getBundleDetails: publicProcedure.input(z.any()).query(async () => null) }),
   dedup: stubList,
@@ -403,32 +481,32 @@ export const lighthouseGateRouter = router({
   civilGideon: stubList,
   extraction: stubList,
   categories: stubList,
-  proceduralEngine: stubList,
+  proceduralEngine: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), listJurisdictions: publicProcedure.query(async () => []), dashboard: publicProcedure.query(async () => ({ jurisdictions: [] })), missionControlSummary: publicProcedure.query(async () => ({ total: 0 })) }),
   viabilityEngine: stubList,
   strategyEngine: stubList,
   assemblyEngine: stubList,
-  patternEngine: stubList,
+  patternEngine: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), getEntityClusters: publicProcedure.input(z.any().optional()).query(async () => []), getConductClusters: publicProcedure.input(z.any().optional()).query(async () => []), getOutcomeAnalytics: publicProcedure.input(z.any().optional()).query(async () => []) }),
   pipeline: stubList,
   knowledgeBackbone: stubList,
-  signalGovernance: stubList,
+  signalGovernance: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), escalationSummary: publicProcedure.query(async () => ({ total: 0, escalated: 0, resolved: 0 })), escalationThresholds: publicProcedure.query(async () => []), auditTrail: publicProcedure.input(z.any().optional()).query(async () => []) }),
   meaningLayer: stubList,
   unifiedOutput: stubList,
   workbench: stubList,
   remedy: stubList,
   paperwork: stubList,
   patternRegistry: stubList,
-  trendEngine: stubList,
+  trendEngine: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), dashboard: publicProcedure.query(async () => ({ trends: [] })), missionControlSummary: publicProcedure.query(async () => ({ total: 0 })), alertRules: publicProcedure.query(async () => []) }),
   systemicStrategy: router({ dashboard: publicProcedure.query(async () => ({ strategies: [] })) }),
-  outcomeEngine: router({ dashboard: publicProcedure.query(async () => ({ outcomes: [] })) }),
-  interventionNetwork: router({ dashboard: publicProcedure.query(async () => ({ interventions: [] })) }),
-  policyImpact: stubList,
+  outcomeEngine: router({ dashboard: publicProcedure.query(async () => ({ outcomes: [] })), effectivenessReport: publicProcedure.query(async () => ({ effectiveness: 0 })), missionControlSummary: publicProcedure.query(async () => ({ total: 0 })) }),
+  interventionNetwork: router({ dashboard: publicProcedure.query(async () => ({ interventions: [] })), missionControlSummary: publicProcedure.query(async () => ({ total: 0 })) }),
+  policyImpact: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), dashboard: publicProcedure.query(async () => ({ policies: [] })) }),
   learningLoop: stubList,
   submissionWorkflow: stubList,
   settlementCalculator: router({ calculate: publicProcedure.input(z.any()).mutation(async () => ({ estimate: 0 })) }),
-  remedyTemplate: stubList,
+  remedyTemplate: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), dashboard: publicProcedure.query(async () => ({ templates: [] })), missionControlSummary: publicProcedure.query(async () => ({ total: 0 })) }),
   operationalWorkflow: stubList,
-  memoryOverlay: stubList,
-  reformPackage: stubList,
+  memoryOverlay: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), missionControlMetrics: publicProcedure.query(async () => ({ total: 0, active: 0 })) }),
+  reformPackage: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), dashboard: publicProcedure.query(async () => ({ packages: [] })), generate: publicProcedure.input(z.any()).mutation(async () => ({ success: true })), updateStatus: publicProcedure.input(z.any()).mutation(async () => ({ success: true })) }),
   coalitionAdvocacy: stubList,
   evidenceConfidence: stubList,
   claimValidation: stubList,
@@ -442,8 +520,8 @@ export const lighthouseGateRouter = router({
   casePatternBridge: stubList,
   streams: stubList,
   timeTravel: stubList,
-  signalExtraction: stubList,
-  sunam: stubList,
+  signalExtraction: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), stats: publicProcedure.input(z.any().optional()).query(async () => ({ total: 0, extracted: 0 })) }),
+  sunam: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), getStatus: publicProcedure.query(async () => ({ status: "idle", lastRun: null })) }),
   governance: stubList,
   session: stubList,
   business: stubList,
@@ -452,13 +530,14 @@ export const lighthouseGateRouter = router({
   supportMatcher: stubList,
   resourceVerification: stubList,
   caseState: stubGet,
-  canonicalSpine: stubList,
+  canonicalSpine: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), status: publicProcedure.query(async () => ({ ok: true, tables: [], totalRecords: 0, populatedTables: 0, emptyTables: 0 })), auditDeadEnds: publicProcedure.query(async () => []), flowLogs: publicProcedure.input(z.any().optional()).query(async () => []), worldNodes: router({ list: publicProcedure.input(z.any().optional()).query(async () => { const r = await restSelect("registry_programs", { limit: 20, order: "id.desc" }); return r.items; }), create: publicProcedure.input(z.any()).mutation(async () => ({ id: "stub", success: true })) }) }),
   issueReports: stubList,
   analyze: router({ run: publicProcedure.input(z.any()).mutation(async () => ({ success: true })) }),
   phoenix: stubList,
   luminari: stubList,
   dualLens: stubList,
   evidenceLayer: stubList,
+  s76: router({ execution: router({ getSchedulerStatus: publicProcedure.query(async () => ({ status: "idle", lastRun: null, nextRun: null, activeJobs: 0 })) }) }),
 });
 
 export type LighthouseGateRouter = typeof lighthouseGateRouter;
