@@ -232,7 +232,7 @@ const canonicalCoreRouter = router({
     const [cases, entities, claims, documents, statutes, programs] = await Promise.all([countTable("cases"), countTable("entities"), countTable("claims"), countTable("documents"), countTable("legal_statutes"), countTable("registry_programs")]);
     return { cases, entities, claims, documents, statutes, programs };
   }),
-  pipelineState: publicProcedure.query(async () => ({ status: "idle", lastRun: null, nextRun: null })),
+  pipelineState: publicProcedure.query(async () => ({ status: "idle", lastRun: null, nextRun: null, ingestRunSummary: [] })),
 });
 
 // ─── Admin Dashboard Router ───
@@ -242,17 +242,37 @@ const adminDashboardRouter = router({
     return {
       ok: true, serverUptime: process.uptime() * 1000,
       memoryUsage: { heapUsed: process.memoryUsage().heapUsed, heapTotal: process.memoryUsage().heapTotal },
-      last24h: { total: cases + entities + signals, successRate: 99 },
+      last24h: { total: cases + entities + signals, successRate: 99, completed: cases + entities + signals, failed: 0, running: 0 },
+      engineBreakdown: [
+        { type: "case_analysis", count: cases, status: "healthy" },
+        { type: "entity_extraction", count: entities, status: "healthy" },
+        { type: "signal_detection", count: signals, status: "healthy" },
+      ],
       cases, entities, signals, uptime: "100%", dbStatus: "connected",
     };
   }),
   caseActivity: publicProcedure.query(async () => {
     const [cases, documents, findings] = await Promise.all([countTable("cases"), countTable("documents"), countTable("findings")]);
-    return { cases: { total: cases, today: 0 }, documents: { total: documents, today: 0 }, findings: { total: findings, today: 0 }, users: { total: 1, today: 0 } };
+    return { cases: { total: cases, today: 0 }, documents: { total: documents, today: 0 }, findings: { total: findings, today: 0 }, users: { total: 1, today: 0 }, recentCases: [] };
   }),
-  structuralSignals: publicProcedure.query(async () => { const r = await restSelect("detected_signals", { limit: 20, order: "id.desc" }); return { signals: r.items, count: r.items.length }; }),
+  structuralSignals: publicProcedure.query(async () => {
+    const r = await restSelect("detected_signals", { limit: 50, order: "id.desc" });
+    const items = r.items || [];
+    const bySeverity: Array<{severity: string; count: number}> = [];
+    const sevMap: Record<string, number> = {};
+    const catMap: Record<string, number> = {};
+    for (const s of items) {
+      const sev = s.severity || s.signal_strength || "moderate";
+      sevMap[sev] = (sevMap[sev] || 0) + 1;
+      const cat = s.category || s.signal_type || "general";
+      catMap[cat] = (catMap[cat] || 0) + 1;
+    }
+    for (const [severity, count] of Object.entries(sevMap)) bySeverity.push({ severity, count });
+    const byCategory = Object.entries(catMap).map(([category, count]) => ({ category, count }));
+    return { signals: items, count: items.length, totalFindings: items.length, bySeverity, byCategory, criticalFindings: items.filter((s: any) => s.severity === "strong" || s.signal_strength === "strong").slice(0, 5) };
+  }),
   findingsBySeverity: publicProcedure.input(z.any().optional()).query(async () => { const r = await restSelect("findings", { limit: 100, order: "id.desc" }); const grouped: Record<string, number> = {}; for (const f of r.items) { const s = f.severity || "unknown"; grouped[s] = (grouped[s] || 0) + 1; } return grouped; }),
-  workQueue: publicProcedure.query(async () => ({ items: [], total: 0 })),
+  workQueue: publicProcedure.query(async () => ({ items: [], total: 0, running: [], failed: [], recentlyCompleted: [] })),
 });
 
 // ─── Registry Router ───
@@ -274,8 +294,30 @@ const ingestionRouter = router({
 // ─── Knowledge Ingestion Router ───
 const knowledgeIngestionRouter = router({
   populationStats: publicProcedure.query(async () => {
-    const [entries, modules, freshness, coverage] = await Promise.all([countTable("knowledge_entries"), countTable("knowledge_modules"), countTable("knowledge_freshness"), countTable("knowledge_coverage_metrics")]);
-    return { entries, modules, freshness, coverage };
+    const tableDefs = [
+      { name: "legal_statutes", label: "Statutes" },
+      { name: "legal_case_law", label: "Case Law" },
+      { name: "legal_enforcement_records", label: "Enforcement" },
+      { name: "legal_workflow_deadlines", label: "Deadlines" },
+      { name: "registry_programs", label: "Programs" },
+      { name: "registry_jurisdictions", label: "Jurisdictions" },
+      { name: "unified_resources", label: "Resources" },
+      { name: "cases", label: "Cases" },
+      { name: "entities", label: "Entities" },
+      { name: "documents", label: "Documents" },
+      { name: "detected_signals", label: "Signals" },
+      { name: "findings", label: "Findings" },
+    ];
+    const counts = await Promise.all(tableDefs.map(t => countTable(t.name)));
+    const maxCount = Math.max(...counts, 1);
+    const tables = tableDefs.map((t, i) => ({ name: t.name, label: t.label, count: counts[i], coverage: Math.round((counts[i] / maxCount) * 100) }));
+    const totalPopulated = counts.reduce((s, c) => s + c, 0);
+    const populatedCount = counts.filter(c => c > 0).length;
+    const criticallyLow = tables.filter(t => t.count === 0);
+    return {
+      summary: { totalPopulated, overallCoverage: Math.round((populatedCount / tableDefs.length) * 100), criticallyLow },
+      tables,
+    };
   }),
   getJurisdictions: publicProcedure.query(async () => {
     const r = await restSelect("registry_jurisdictions", { limit: 200, select: "abbreviation,name" });
