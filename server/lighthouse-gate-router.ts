@@ -188,7 +188,35 @@ const enforcementIntelRouter = router({
 
 // ─── Canonical Core Router (Mission Control) ───
 const canonicalCoreRouter = router({
-  health: publicProcedure.query(async () => { const cases = await countTable("cases"); return { ok: true, tables: 148, totalRows: 68000, cases, supabaseProject: SUPABASE_PROJECT }; }),
+  health: publicProcedure.query(async () => {
+    const canonicalTables = [
+      { table: "legal_statutes", category: "Legal" },
+      { table: "legal_case_law", category: "Legal" },
+      { table: "legal_enforcement", category: "Legal" },
+      { table: "legal_workflow_deadlines", category: "Legal" },
+      { table: "registry_programs", category: "Registry" },
+      { table: "registry_jurisdictions", category: "Registry" },
+      { table: "registry_oversight_bodies", category: "Registry" },
+      { table: "unified_resources", category: "Registry" },
+      { table: "cases", category: "Core" },
+      { table: "entities", category: "Core" },
+      { table: "documents", category: "Core" },
+      { table: "claims", category: "Core" },
+      { table: "findings", category: "Core" },
+      { table: "detected_signals", category: "Signals" },
+      { table: "settlement_formulas", category: "Legal" },
+    ];
+    const tables: Array<{ table: string; category: string; count: number }> = [];
+    let totalRecords = 0;
+    let populatedTables = 0;
+    for (const { table, category } of canonicalTables) {
+      const count = await countTable(table);
+      tables.push({ table, category, count });
+      totalRecords += count;
+      if (count > 0) populatedTables++;
+    }
+    return { ok: true, tables, totalRecords, populatedTables, emptyTables: canonicalTables.length - populatedTables, supabaseProject: SUPABASE_PROJECT };
+  }),
   summary: publicProcedure.query(async () => {
     const [cases, entities, claims, documents, statutes, programs] = await Promise.all([countTable("cases"), countTable("entities"), countTable("claims"), countTable("documents"), countTable("legal_statutes"), countTable("registry_programs")]);
     return { cases, entities, claims, documents, statutes, programs };
