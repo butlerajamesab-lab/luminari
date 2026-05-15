@@ -176,6 +176,9 @@ importers:
       multer:
         specifier: ^2.0.2
         version: 2.1.1
+      mysql2:
+        specifier: ^3.11.0
+        version: 3.22.3(@types/node@24.12.3)
       nanoid:
         specifier: ^3.3.11
         version: 3.3.12
@@ -1257,9 +1260,6 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
-
-  '@medv/finder@4.0.2':
-    resolution: {integrity: sha512-RraNY9SCcx4KZV0Dh6BEW6XEW2swkqYca74pkFFRw6hHItSHiy+O/xMnpbofjYbzXj0tSpBGthUF1hHTsr3vIQ==}
 
   '@mermaid-js/parser@1.1.0':
     resolution: {integrity: sha512-gxK9ZX2+Fex5zu8LhRQoMeMPEHbc73UKZ0FQ54YrQtUxE1VVhMwzeNtKRPAu5aXks4FasbMe4xB4bWrmq6Jlxw==}
@@ -4302,9 +4302,6 @@ packages:
   mkdirp-classic@0.5.3:
     resolution: {integrity: sha512-gKLcREMhtuZRwRAfqP3RFW+TK4JqApVBtOIftVgjuABpAtpxhPGaDcfvbhNvD0B8iD1oUr/txX35NjcaY6Ns/A==}
 
-  modern-screenshot@4.7.0:
-    resolution: {integrity: sha512-9YxN+ddPSMMlhylOv25VHzXrl9u67QRxoh7+SEewGtgUw7t6hHTrjptSDJUSne9oG4Xk/h2cwG15nIt4Hc9ujg==}
-
   motion-dom@12.38.0:
     resolution: {integrity: sha512-pdkHLD8QYRp8VfiNLb8xIBJis1byQ9gPT3Jnh2jqfFtAsWUA3dEepDlsWe/xMpO8McV+VdpKVcp+E+TGJEtOoA==}
 
@@ -4334,11 +4331,6 @@ packages:
   nanoid@3.3.12:
     resolution: {integrity: sha512-ZB9RH/39qpq5Vu6Y+NmUaFhQR6pp+M2Xt76XBnEwDaGcVAqhlvxrl3B2bKS5D3NH3QR76v3aSrKaF/Kiy7lEtQ==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
-    hasBin: true
-
-  nanoid@5.1.11:
-    resolution: {integrity: sha512-v+KEsUv2ps74PaSKv0gHTxTCgMXOIfBEbaqa6w6ISIGC7ZsvHN4N9oJ8d4cmf0n5oTzQz2SLmThbQWhjd/8eKg==}
-    engines: {node: ^18 || >=20}
     hasBin: true
 
   napi-build-utils@2.0.0:
@@ -6355,8 +6347,6 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@medv/finder@4.0.2': {}
-
   '@mermaid-js/parser@1.1.0':
     dependencies:
       langium: 4.2.3
@@ -8050,8 +8040,7 @@ snapshots:
       postcss: 8.5.14
       postcss-value-parser: 4.2.0
 
-  aws-ssl-profiles@1.1.2:
-    optional: true
+  aws-ssl-profiles@1.1.2: {}
 
   axios@1.16.0:
     dependencies:
@@ -8565,8 +8554,7 @@ snapshots:
 
   delayed-stream@1.0.0: {}
 
-  denque@2.1.0:
-    optional: true
+  denque@2.1.0: {}
 
   depd@2.0.0: {}
 
@@ -8959,7 +8947,6 @@ snapshots:
   generate-function@2.3.1:
     dependencies:
       is-property: 1.0.2
-    optional: true
 
   gensync@1.0.0-beta.2: {}
 
@@ -9169,7 +9156,6 @@ snapshots:
   iconv-lite@0.7.2:
     dependencies:
       safer-buffer: 2.1.2
-    optional: true
 
   ieee754@1.2.1: {}
 
@@ -9209,8 +9195,7 @@ snapshots:
 
   is-plain-obj@4.1.0: {}
 
-  is-property@1.0.2:
-    optional: true
+  is-property@1.0.2: {}
 
   is-stream@2.0.1: {}
 
@@ -9327,8 +9312,7 @@ snapshots:
 
   lodash@4.18.1: {}
 
-  long@5.3.2:
-    optional: true
+  long@5.3.2: {}
 
   longest-streak@3.1.0: {}
 
@@ -9344,8 +9328,7 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
-  lru.min@1.1.4:
-    optional: true
+  lru.min@1.1.4: {}
 
   lucide-react@0.453.0(react@19.2.6):
     dependencies:
@@ -9819,8 +9802,6 @@ snapshots:
 
   mkdirp-classic@0.5.3: {}
 
-  modern-screenshot@4.7.0: {}
-
   motion-dom@12.38.0:
     dependencies:
       motion-utils: 12.36.0
@@ -9849,16 +9830,12 @@ snapshots:
       lru.min: 1.1.4
       named-placeholders: 1.1.6
       sql-escaper: 1.3.3
-    optional: true
 
   named-placeholders@1.1.6:
     dependencies:
       lru.min: 1.1.4
-    optional: true
 
   nanoid@3.3.12: {}
-
-  nanoid@5.1.11: {}
 
   napi-build-utils@2.0.0: {}
 
@@ -10515,8 +10492,7 @@ snapshots:
 
   split2@4.2.0: {}
 
-  sql-escaper@1.3.3:
-    optional: true
+  sql-escaper@1.3.3: {}
 
   stackback@0.0.2: {}
 
