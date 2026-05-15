@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "state": "MD",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "Maryland DHS",
+      "role": "SNAP/TANF/Medicaid",
+      "phone": "800-332-6347",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "211 Maryland",
+      "role": "Social services referral",
+      "phone": "211",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "MD Legal Aid Bureau",
+      "role": "Statewide legal aid",
+      "phone": "410-539-5340",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "MD DOL",
+      "role": "UI Appeals",
+      "phone": "410-949-0022",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "MIA",
+      "role": "Insurance complaints",
+      "phone": "410-468-2000",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "MCCR",
+      "role": "Civil rights (6-month SOL)",
+      "phone": "410-767-8600",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "MD DV Hotline",
+      "role": "Domestic violence crisis",
+      "phone": "800-634-3577",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "CASA",
+      "role": "Immigrant services",
+      "phone": "301-431-4185",
+      "email": null,
+      "hours": null
+    }
+  ],
+  "regions": [],
+  "missing_sections": []
+}

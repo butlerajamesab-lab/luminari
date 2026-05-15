@@ -1,0 +1,69 @@
+{
+  "state": "AS",
+  "state_name": "American Samoa",
+  "version": "3.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-09",
+  "source": "luminari-as-registry.docx",
+  "datasets": [
+    "food",
+    "cash_assistance",
+    "healthcare",
+    "employment",
+    "legal",
+    "general",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "disability_claim",
+    "employment_dispute",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "utility_dispute",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "landlord",
+    "general",
+    "insurer",
+    "utility"
+  ],
+  "policy_flags": [
+    "as_us_nationals_not_citizens",
+    "as_no_unemployment_insurance",
+    "as_faasamoa_communal_system",
+    "as_eeoc_contested_jurisdiction",
+    "as_medicaid_block_grant_smallest"
+  ],
+  "statistics": {
+    "total_flags": 5,
+    "total_programs": 8,
+    "total_oversight_bodies": 3,
+    "total_workflows": 3,
+    "total_help_contacts": 7
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "employment",
+    "food"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ],
+  "portability_score": "28%",
+  "notes": "Lowest portability in registry (28%). US nationals not citizens. No UI program. Only hospital is LBJ Tropical Medical Center. Fa'asamoa communal system provides invisible safety net."
+}

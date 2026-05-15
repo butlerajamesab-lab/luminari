@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "state": "WV",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "wv_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "wv_west_virginia_snap",
+        "wv_west_virginia_wic",
+        "wv_west_virginia_bureau_of_senior_services_"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "wv_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "wv_west_virginia_tanf_west_virginia_works",
+        "wv_wv_child_care_assistance_ccdf",
+        "wv_wv_dhhr_child_protective_services"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "wv_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "wv_wv_housing_development_fund_wvhdf",
+        "wv_liheap_west_virginia",
+        "wv_mountain_state_justice_wv_legal_aid"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "wv_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "wv_west_virginia_medicaid_wv_bureau_for_med",
+        "wv_west_virginia_chip_wvchip",
+        "wv_west_virginia_unemployment_insurance",
+        "wv_wv_division_of_rehabilitation_services_d",
+        "wv_wv_dhhr_substance_use_prevention_omhsas"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    }
+  ]
+}

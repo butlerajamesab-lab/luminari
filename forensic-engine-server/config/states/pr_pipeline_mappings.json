@@ -1,0 +1,296 @@
+{
+  "meta": {
+    "state": "PR",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "pr_banco_de_alimentos_de_pr_food_bank",
+        "pr_centro_m_dico_upr_medical_center_san_jua",
+        "pr_servicios_legales_de_pr_puerto_rico_lega",
+        "pr_puerto_rico_ui_dtrh",
+        "pr_fondos_unidos_de_puerto_rico_united_way_",
+        "pr_pr_veterans_services_va_caribbean_health"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord"
+      ],
+      "flags": [
+        "pr_territory"
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "pr_wic_puerto_rico",
+        "pr_pr_tanf_asistencia_econ_mica_adsef"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord"
+      ],
+      "flags": [
+        "pr_territory"
+      ]
+    },
+    {
+      "pipeline_id": "consumer_protection",
+      "programs": [
+        "pr_servicios_legales_de_pr_puerto_rico_lega"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord"
+      ],
+      "flags": [
+        "pr_territory"
+      ]
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "pr_puerto_rico_nap_nutrition_assistance_pro",
+        "pr_wic_puerto_rico",
+        "pr_pr_tanf_asistencia_econ_mica_adsef",
+        "pr_liheap_puerto_rico_adsef",
+        "pr_fema_individual_assistance_disaster_reli"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord"
+      ],
+      "flags": [
+        "pr_territory"
+      ]
+    },
+    {
+      "pipeline_id": "employment_dispute",
+      "programs": [
+        "pr_immigrant_returnee_services_centro_para_"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord"
+      ],
+      "flags": [
+        "pr_territory"
+      ]
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "pr_corporaci_n_de_vivienda_p_blica_cvp_publ",
+        "pr_servicios_legales_de_pr_puerto_rico_lega",
+        "pr_casa_protegida_julia_de_burgos_coordinad"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord"
+      ],
+      "flags": [
+        "pr_territory"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "pr_puerto_rico_medicaid_mi_salud_ases",
+        "pr_pr_community_health_centers_fqhcs_assal",
+        "pr_pr_veterans_services_va_caribbean_health"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord"
+      ],
+      "flags": [
+        "pr_territory"
+      ]
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "pr_liheap_puerto_rico_adsef"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord"
+      ],
+      "flags": [
+        "pr_territory"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "pr_involuntary_hold_law",
+        "pr_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "pr_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "pr_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "pr_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "pr_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "pr_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "pr_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "pr_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "pr_restraint_seclusion_limits",
+        "pr_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "pr_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "pr_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "pr_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

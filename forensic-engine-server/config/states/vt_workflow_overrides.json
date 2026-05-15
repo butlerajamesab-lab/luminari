@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "state": "VT",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "standard_appeal",
+      "state": "VT",
+      "override_type": "timeline",
+      "description": "Vermont standard appeal timeline",
+      "source": "registry"
+    },
+    {
+      "workflow_id": "expedited_review",
+      "state": "VT",
+      "override_type": "eligibility",
+      "description": "Vermont expedited review criteria",
+      "source": "registry"
+    }
+  ]
+}

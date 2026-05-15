@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "state": "MP",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "CNMI DCCA (SNAP/TANF)",
+      "role": "Benefits",
+      "phone": "670-664-2584",
+      "website": "https://cnmidcca.com",
+      "address": "Capitol Hill, Saipan, MP 96950"
+    },
+    {
+      "contact_name": "Commonwealth Health Center",
+      "role": "Primary hospital — Saipan, Tinian, Rota",
+      "phone": "670-234-8950",
+      "website": "https://chcc.gov.mp",
+      "address": "Garapan, Saipan, MP 96950"
+    },
+    {
+      "contact_name": "CNMI Legal Services Corporation",
+      "role": "Civil legal aid — immigration, housing, employment, CW-1",
+      "phone": "670-234-7223",
+      "website": "https://cnmilsc.org",
+      "address": "PO Box 506919, Saipan, MP 96950"
+    },
+    {
+      "contact_name": "CNMI DOLI (UI & Labor)",
+      "role": "UI claims, labor standards",
+      "phone": "670-664-2039",
+      "website": "https://doli.gov.mp",
+      "address": "Caller Box 10007, Saipan, MP 96950"
+    },
+    {
+      "contact_name": "WHD Saipan",
+      "role": "Federal wage enforcement",
+      "phone": "670-233-0222",
+      "website": "https://dol.gov/whd",
+      "address": "P.O. Box 504127, Saipan, MP 96950"
+    },
+    {
+      "contact_name": "CNMI Housing Authority",
+      "role": "Public housing, Section 8, Typhoon Yutu recovery",
+      "phone": "670-234-6866",
+      "website": "https://cnmihousing.com",
+      "address": "P.O. Box 504149, Saipan, MP 96950"
+    },
+    {
+      "contact_name": "CNMI Human Rights Commission",
+      "role": "Employment/housing discrimination — 180-day SOL",
+      "phone": "670-664-2370",
+      "website": "https://cnmihrc.net",
+      "address": "P.O. Box 504379, Saipan, MP 96950"
+    },
+    {
+      "contact_name": "CNMI Division of Cultural Affairs",
+      "role": "Chamorro/Carolinian indigenous services",
+      "phone": "670-664-2120",
+      "website": "https://cnmidcca.com",
+      "address": "Capitol Hill, Saipan, MP 96950"
+    },
+    {
+      "contact_name": "EEOC Honolulu (covers CNMI)",
+      "role": "Federal employment discrimination",
+      "phone": "808-541-3118",
+      "website": "https://eeoc.gov"
+    },
+    {
+      "contact_name": "FEMA Disaster Assistance",
+      "role": "Typhoon Yutu recovery",
+      "phone": "800-621-3362",
+      "website": "https://disasterassistance.gov"
+    }
+  ]
+}

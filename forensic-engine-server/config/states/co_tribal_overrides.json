@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "state": "CO",
+    "version": "3.0"
+  },
+  "tribal_context": "Colorado tribal nations and urban Indian programs",
+  "tribal_entities": [
+    {
+      "tribal_entity_id": "southern_ute_indian_tribe",
+      "tribal_entity_name": "Southern Ute Indian Tribe",
+      "tribal_role": "tribal_government",
+      "tribe": "Southern Ute Indian Tribe",
+      "address": "",
+      "phone": "",
+      "portal": "",
+      "region": "Southwestern Colorado",
+      "federal_interface": "BIA",
+      "services": "Comprehensive tribal services",
+      "jurisdiction_notes": "Federally recognized tribe with its own social services and tribal court.",
+      "icwa_authority": true,
+      "city": "Durango",
+      "state": "CO"
+    },
+    {
+      "tribal_entity_id": "ute_mountain_ute_tribe",
+      "tribal_entity_name": "Ute Mountain Ute Tribe",
+      "tribal_role": "tribal_government",
+      "tribe": "Ute Mountain Ute Tribe",
+      "address": "",
+      "phone": "",
+      "portal": "",
+      "region": "Southwestern Colorado",
+      "federal_interface": "BIA",
+      "services": "Comprehensive tribal services",
+      "jurisdiction_notes": "Federally recognized tribe with lands in Colorado, Utah, and New Mexico. Operates its own health center and social services.",
+      "icwa_authority": true,
+      "city": "Durango",
+      "state": "CO"
+    }
+  ],
+  "icwa_activation_rules": [
+    {
+      "rule_id": "co_icwa_child_welfare",
+      "trigger_pipeline": "child_welfare",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Apply federal ICWA standards per 25 U.S.C. §§ 1901-1963",
+        "Verify tribal enrollment or eligibility",
+        "Notify relevant tribe(s) of proceedings"
+      ]
+    }
+  ],
+  "urban_indian_programs": [
+    {
+      "program_id": "denver_indian_health_and_family_services",
+      "program_name": "Denver Indian Health and Family Services",
+      "services": "Health services, social services, cultural programs, and ICWA navigation for urban American Indian and Alaska Native residents.",
+      "region": "Denver",
+      "status": "active",
+      "notes": "",
+      "city": "Denver",
+      "state": "CO"
+    }
+  ],
+  "tribal_courts": []
+}

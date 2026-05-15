@@ -1,0 +1,400 @@
+{
+  "meta": {
+    "state": "MP",
+    "version": "3.0",
+    "date": "2026-03-08",
+    "date_verified": "2026-03-09"
+  },
+  "programs": [
+    {
+      "program_id": "mp_cnmi_medicaid_micare",
+      "program_name": "CNMI Medicaid (MiCare)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "CNMI Medicaid",
+      "phone": "670-664-4485",
+      "website": "https://chcc.gov.mp",
+      "eligibility": "Income \u2264138% FPL. Block-capped (lower match than states). CW-1 workers generally excluded.",
+      "apply_notes": "Block-capped Medicaid equivalent. Federal match lower than any state. Covers low-income residents including lawful permanent residents.",
+      "source": "luminari-northern-mariana-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MP",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mp_cnmi_snap",
+      "program_name": "CNMI SNAP",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "CNMI SNAP",
+      "phone": "670-664-2584",
+      "website": "https://cnmidcca.com",
+      "eligibility": "Income \u2264130% FPL. US citizens and eligible immigrants.",
+      "apply_notes": "Federal SNAP benefits. Block-grant structured. Administered through the Department of Community and Cultural Affairs.",
+      "source": "luminari-northern-mariana-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "MP",
+      "address": "Capitol Hill, Saipan, MP 96950",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mp_cnmi_tanf_cash_assistance",
+      "program_name": "CNMI TANF (Cash Assistance)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "CNMI TANF",
+      "phone": "670-664-2584",
+      "website": "https://cnmidcca.com",
+      "eligibility": "Families with minor children. 60-month federal lifetime limit.",
+      "apply_notes": "Temporary cash aid for families with minor children. 60-month federal lifetime limit. Apply through DCCA.",
+      "source": "luminari-northern-mariana-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "MP",
+      "address": "Capitol Hill, Saipan, MP 96950",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mp_cnmi_unemployment_insurance_doli",
+      "program_name": "CNMI Unemployment Insurance (DOLI)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial",
+        "insurance_claim_denial",
+        "employment_dispute"
+      ],
+      "agency": "CNMI Unemployment Insurance",
+      "phone": "670-664-2039",
+      "website": "https://doli.gov.mp",
+      "eligibility": "Up to ~$484/week, 26 weeks. CW-1 workers face special eligibility rules.",
+      "apply_notes": "UI benefits. Max ~$420/week. Duration up to 26 weeks. CW-1 workers may face special rules\u2014verify eligibility.",
+      "source": "luminari-northern-mariana-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MP",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mp_commonwealth_health_care_corporation_chc",
+      "program_name": "Commonwealth Health Care Corporation (CHCC)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Commonwealth Health Care Corporation",
+      "phone": "670-234-8950",
+      "website": "https://chcc.gov.mp",
+      "eligibility": "Primary hospital and clinics on Saipan, Tinian, Rota. Sliding fee scale.",
+      "apply_notes": "Commonwealth hospital and clinic system on Saipan, Tinian, Rota. Primary care, emergency, specialty services. Sliding fee scale.",
+      "source": "luminari-northern-mariana-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MP",
+      "address": "Garapan, Saipan, MP 96950",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mp_cnmi_division_of_cultural_affairs",
+      "program_name": "CNMI Division of Cultural Affairs",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "CNMI Division of Cultural Affairs",
+      "phone": "670-664-2120",
+      "website": "https://cnmidcca.com",
+      "eligibility": "Services for indigenous Chamorro and Carolinian peoples. NOT a substitute for IHS.",
+      "apply_notes": "Services for indigenous Chamorro (southern) and Carolinian (northern island) peoples. Cultural preservation, social services. NOT a substitute for IHS\u2014these groups not federally recognized.",
+      "source": "luminari-northern-mariana-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MP",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mp_cnmi_wic",
+      "program_name": "CNMI WIC",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare"
+      ],
+      "agency": "CNMI WIC",
+      "phone": "670-664-4486",
+      "website": "https://chcc.gov.mp",
+      "eligibility": "Pregnant/postpartum, infants, children under 5. Income \u2264185% FPL.",
+      "apply_notes": "Women, Infants and Children nutrition program. Provided through CHCC.",
+      "source": "luminari-northern-mariana-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "MP",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mp_cnmi_housing_authority",
+      "program_name": "CNMI Housing Authority",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "CNMI Housing Authority",
+      "phone": "670-234-6866",
+      "website": "https://cnmihousing.com",
+      "eligibility": "Public housing and Section 8. Long waitlists. Typhoon Yutu damaged housing stock.",
+      "apply_notes": "Public housing and Section 8 vouchers. Long waitlists. Typhoon Yutu (2018) severely damaged housing stock.",
+      "source": "luminari-northern-mariana-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "MP",
+      "address": "P.O. Box 504149, Saipan, MP 96950",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mp_cnmi_legal_services_corporation",
+      "program_name": "CNMI Legal Services Corporation",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "employment_dispute"
+      ],
+      "agency": "CNMI Legal Services Corporation",
+      "phone": "670-234-7223",
+      "website": "https://cnmilsc.org",
+      "eligibility": "Immigration, housing, family law, employment \u2014 critical for CW-1 population.",
+      "apply_notes": "Free civil legal aid for low-income residents. Immigration, housing, family law, employment\u2014critical for CW-1 population.",
+      "source": "luminari-northern-mariana-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "MP",
+      "address": "PO Box 506919, Saipan, MP 96950",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mp_cnmi_division_of_vocational_rehabilitati",
+      "program_name": "CNMI Division of Vocational Rehabilitation",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "CNMI Division of Vocational Rehabilitation",
+      "phone": "670-664-6538",
+      "website": "https://doli.gov.mp",
+      "eligibility": "Employment services for people with disabilities.",
+      "apply_notes": "Employment services and job training for people with disabilities.",
+      "source": "luminari-northern-mariana-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MP",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mp_cnmi_liheap_energy_assistance",
+      "program_name": "CNMI LIHEAP (Energy Assistance)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "consumer_protection",
+        "utility_dispute"
+      ],
+      "agency": "CNMI LIHEAP",
+      "phone": "670-664-2584",
+      "website": "https://cnmidcca.com",
+      "eligibility": "Income \u2264150% FPL. Limited availability.",
+      "apply_notes": "Home energy assistance. Limited availability. Saipan Power Authority service complaints handled through public utility commission.",
+      "source": "luminari-northern-mariana-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "MP",
+      "address": "Capitol Hill, Saipan, MP 96950",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mp_cnmi_head_start",
+      "program_name": "CNMI Head Start",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare"
+      ],
+      "agency": "CNMI Head Start",
+      "phone": "670-664-2584",
+      "website": "https://cnmidcca.com",
+      "eligibility": "Ages 3-5. Income \u2264100% FPL.",
+      "apply_notes": "Early childhood education for low-income children ages 3\u20135. Run through DCCA community partners.",
+      "source": "luminari-northern-mariana-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "MP",
+      "address": "Capitol Hill, Saipan, MP 96950",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mp_humanities_council",
+      "program_name": "CNMI Humanities Council",
+      "layer": "territory",
+      "benefit_category": "cultural",
+      "pipeline_ids": [],
+      "agency": "CNMI Humanities Council",
+      "phone": "670-664-2117",
+      "website": "https://cnmihumanities.org",
+      "address": "",
+      "eligibility": "Cultural preservation programs.",
+      "apply_notes": "",
+      "source": "luminari-mp-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "cultural"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cultural"
+      ],
+      "urgency": "standard",
+      "region": "territory-wide",
+      "category": "cultural",
+      "city": "Saipan",
+      "state": "MP",
+      "federal_interface": false
+    }
+  ]
+}

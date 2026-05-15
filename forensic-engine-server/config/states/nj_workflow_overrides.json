@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "state": "NJ",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "standard_appeal",
+      "state": "NJ",
+      "override_type": "timeline",
+      "description": "New Jersey standard appeal timeline",
+      "source": "registry"
+    },
+    {
+      "workflow_id": "expedited_review",
+      "state": "NJ",
+      "override_type": "eligibility",
+      "description": "New Jersey expedited review criteria",
+      "source": "registry"
+    }
+  ]
+}

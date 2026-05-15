@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "state": "OK",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "regions": [
+    "statewide"
+  ],
+  "county_overrides": [],
+  "resolution_chain": [
+    "county",
+    "region",
+    "state"
+  ]
+}

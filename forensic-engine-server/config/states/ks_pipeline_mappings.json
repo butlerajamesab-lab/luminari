@@ -1,0 +1,285 @@
+{
+  "meta": {
+    "state": "KS",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "ks_kansas_snap_food_assistance",
+        "ks_kansas_legal_services_kls"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ],
+      "flags": [
+        "ks_portability"
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "ks_kansas_medicaid_kancare",
+        "ks_kansas_chip_healthwave",
+        "ks_kansas_wic",
+        "ks_kansas_child_care_assistance_ccap"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ],
+      "flags": [
+        "ks_portability"
+      ]
+    },
+    {
+      "pipeline_id": "consumer_protection",
+      "programs": [
+        "ks_kansas_legal_services_kls"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ],
+      "flags": [
+        "ks_portability"
+      ]
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "ks_kansas_snap_food_assistance",
+        "ks_kansas_tanf_kansas_works",
+        "ks_kansas_housing_resources_corporation_khr",
+        "ks_kansas_child_care_assistance_ccap",
+        "ks_kansas_aging_and_disability_services_ads",
+        "ks_kansas_vocational_rehabilitation_vr"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ],
+      "flags": [
+        "ks_portability"
+      ]
+    },
+    {
+      "pipeline_id": "employment_dispute",
+      "programs": [
+        "ks_kansas_unemployment_insurance",
+        "ks_kansas_vocational_rehabilitation_vr"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ],
+      "flags": [
+        "ks_portability"
+      ]
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "ks_kansas_housing_resources_corporation_khr",
+        "ks_kansas_tribal_nations_programs",
+        "ks_kansas_legal_services_kls",
+        "ks_211_kansas"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ],
+      "flags": [
+        "ks_portability"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "ks_kansas_medicaid_kancare",
+        "ks_kansas_chip_healthwave",
+        "ks_kansas_unemployment_insurance",
+        "ks_kansas_tribal_nations_programs",
+        "ks_211_kansas",
+        "ks_kdads_behavioral_health_services"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ],
+      "flags": [
+        "ks_portability"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ks_involuntary_hold_law",
+        "ks_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ks_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ks_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ks_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ks_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ks_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "ks_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ks_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ks_restraint_seclusion_limits",
+        "ks_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ks_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "ks_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ks_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

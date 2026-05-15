@@ -1,0 +1,172 @@
+{
+  "meta": {
+    "state": "WI",
+    "version": "3.0"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "housing_violation",
+      "state": "WI",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document All Violations",
+          "deadline": "",
+          "documents": [
+            "Dated photos, texts/emails, records, lease + ATCP 134 disclosure if applicable",
+            "Written repair notice, certified mail receipt",
+            "Written complaint with photos",
+            "All documentation from steps 1-3",
+            "Timeline, dated records, evidence of discrimination"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Send Written Repair Notice",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File Code Enforcement",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Contact Legal Aid Immediately for Eviction",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 5,
+          "action": "Assert Fair Housing Protection",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft",
+      "state": "WI",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document Wages Owed",
+          "deadline": "",
+          "documents": [
+            "Pay stubs, time records, offer letter",
+            "Written demand with calculation",
+            "Demand + documentation",
+            "Same documentation"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Send Written Wage Demand",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File Wisconsin DWD Wage Claim",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "File Federal WHD Simultaneously",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial",
+      "state": "WI",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Review Notice of Action",
+          "deadline": "",
+          "documents": [
+            "Notice, case number, documentation",
+            "Written hearing request",
+            "All documentation",
+            "Denial notice, employment records"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Request State Hearing + Aid-Continuing",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "Contact Legal Aid",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Wisconsin UI Appeals (DWD)",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_denial",
+      "state": "WI",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document Denial",
+          "deadline": "",
+          "documents": [
+            "Denial letter/EOB, policy, medical records, physician letter",
+            "Written appeal with medical necessity",
+            "Internal denial + records",
+            "All documentation"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Internal Appeal",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "Wisconsin OCI External Review",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "BadgerCare+ State Fair Hearing",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    }
+  ]
+}

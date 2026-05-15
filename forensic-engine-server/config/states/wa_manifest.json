@@ -1,0 +1,121 @@
+{
+  "state": "WA",
+  "state_name": "Washington",
+  "version": "1.0.0",
+  "schema": "luminari-registry-v1",
+  "date_created": "2026-03-06",
+  "date_verified": "2026-03-06",
+  "source": "Luminari WA Master Template v1.0 \u2014 Northwest Hope Foundation",
+  "datasets": [
+    "programs",
+    "workflows",
+    "oversight",
+    "layer0_flags",
+    "layer1_cards",
+    "county_overrides",
+    "tribal_overrides",
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings",
+    "foia",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "domestic_violence",
+    "elder_abuse",
+    "immigration_case",
+    "insurance_claim_denial",
+    "snap_denial",
+    "tenant_rights",
+    "wage_theft",
+    "workplace_discrimination",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "family_court",
+    "government_agency",
+    "insurer",
+    "landlord",
+    "law_enforcement",
+    "nursing_home"
+  ],
+  "policy_flags": [
+    "cold_weather_rule_active",
+    "medicaid_expansion_state",
+    "right_to_counsel_seattle",
+    "just_cause_eviction_seattle",
+    "paid_family_leave_active",
+    "long_term_care_trust_act"
+  ],
+  "statistics": {
+    "programs": {
+      "total_programs": 95,
+      "categories": {
+        "food": 17,
+        "cash_assistance": 1,
+        "healthcare": 21,
+        "dv_safety": 19,
+        "crisis_hotline": 1,
+        "housing": 21,
+        "legal_aid": 13,
+        "community_navigation": 2
+      },
+      "layers": [
+        "city",
+        "community",
+        "county",
+        "nonprofit",
+        "state",
+        "tribal"
+      ]
+    },
+    "workflows": {
+      "total_workflows": 6,
+      "total_steps": 36
+    },
+    "oversight": {
+      "total_entity_types": 7,
+      "total_oversight_bodies": 38,
+      "pattern_threshold_coverage": "38/38",
+      "total_oversight_chains": 7
+    },
+    "layer0_flags": 7,
+    "layer1_cards": 19,
+    "pipeline_mappings": 10,
+    "lens_mappings": 9,
+    "workflow_mappings": 7
+  },
+  "status": "active",
+  "validation_status": "complete",
+  "date_activated": "2026-03-06",
+  "regions": [
+    "king_county",
+    "pierce_county",
+    "snohomish_county",
+    "spokane_metro",
+    "yakima_valley"
+  ],
+  "completed_domains": [
+    "programs",
+    "workflows",
+    "oversight",
+    "layer0_flags",
+    "layer1_cards",
+    "county_overrides",
+    "tribal_overrides",
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings",
+    "foia"
+  ],
+  "pending_domains": [],
+  "missing_sections": []
+}

@@ -1,0 +1,795 @@
+{
+  "meta": {
+    "state": "OR",
+    "state_name": "Oregon",
+    "layer": "oversight",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "date_verified": "2026-03-06",
+    "source": "Luminari Oregon State Three-Layer Registry \u2014 Northwest Hope Foundation, March 2026"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "insurer",
+      "state": "OR",
+      "bodies": [
+        {
+          "oversight_body": "Oregon Division of Financial Regulation (DFR)",
+          "jurisdiction": "primary",
+          "phone": "888-877-4894",
+          "complaint_portal": "https://dfr.oregon.gov/consumers/file-complaint",
+          "what_to_report": "Claim denial, bad faith, coverage dispute, unfair settlement practices",
+          "legal_threshold": "Insurer violates ORS 746.230 (Unfair Claims Settlement Practices Act) or Oregon insurance regulations",
+          "response_timeline": "Response within 15 business days typically",
+          "escalation_next": "Oregon Attorney General \u2014 Consumer Protection",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://dfr.oregon.gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Oregon Health Authority (OHA) \u2014 OHP Complaints",
+          "jurisdiction": "primary",
+          "phone": "800-699-9075",
+          "complaint_portal": "https://ONE.oregon.gov",
+          "what_to_report": "OHP/Medicaid managed care denial, access to care issues",
+          "legal_threshold": "Coordinated Care Organization (CCO) violates OHP contract or federal Medicaid rules",
+          "response_timeline": "30 days for standard grievance, 72 hours for urgent",
+          "escalation_next": "Oregon Office of Administrative Hearings",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://ONE.oregon.gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Oregon Attorney General \u2014 Consumer Protection",
+          "jurisdiction": "state_escalation",
+          "phone": "877-877-9392",
+          "complaint_portal": "https://doj.state.or.us/consumer-protection/file-a-complaint",
+          "what_to_report": "Pattern of consumer fraud, systemic bad faith, unfair trade practices",
+          "legal_threshold": "Pattern of unfair or deceptive practices under Oregon Unlawful Trade Practices Act (ORS 646.608)",
+          "response_timeline": "Escalate if DFR does not act within 60 days",
+          "escalation_next": "CFPB (federal)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://doj.state.or.us",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Consumer Financial Protection Bureau (CFPB)",
+          "jurisdiction": "federal",
+          "phone": "855-411-2372",
+          "complaint_portal": "https://consumerfinance.gov/complaint",
+          "what_to_report": "Billing disputes, ERISA plan issues, financial product complaints",
+          "legal_threshold": "Federal jurisdiction for ERISA employer plans",
+          "response_timeline": "Federal investigation timeline",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "CFPB",
+          "pattern_threshold": 10,
+          "source": "https://consumerfinance.gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CMS (Centers for Medicare & Medicaid Services)",
+          "jurisdiction": "federal",
+          "phone": "800-633-4227",
+          "complaint_portal": "https://cms.gov/Medicare/CMS-Forms/CMS-Forms/CMS-Forms-Items/CMS012207",
+          "what_to_report": "Medicare/Medicaid plan violations, access to care denials",
+          "legal_threshold": "Federal Medicare/Medicaid program violations",
+          "response_timeline": "Federal investigation timeline",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "CMS",
+          "pattern_threshold": 10,
+          "source": "https://cms.gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "landlord",
+      "state": "OR",
+      "bodies": [
+        {
+          "oversight_body": "Portland Bureau of Development Services (BDS)",
+          "jurisdiction": "primary",
+          "phone": "503-823-7300",
+          "complaint_portal": "https://portland.gov/bds/report-a-problem",
+          "what_to_report": "Housing code violations, uninhabitable conditions, building safety",
+          "legal_threshold": "Violation of Portland Housing Code or Oregon Structural Specialty Code",
+          "response_timeline": "Inspection within 1-2 weeks typically",
+          "escalation_next": "Fair Housing Council of Oregon",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://portland.gov/bds",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Local Code Enforcement (County/City)",
+          "jurisdiction": "primary",
+          "phone": "211 (for local referral)",
+          "complaint_portal": null,
+          "what_to_report": "Housing code violations outside Portland city limits",
+          "legal_threshold": "Violation of local housing/building codes",
+          "response_timeline": "Varies by jurisdiction",
+          "escalation_next": "Fair Housing Council of Oregon",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://211info.org",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Fair Housing Council of Oregon (FHCO)",
+          "jurisdiction": "state_escalation",
+          "phone": "503-223-8197",
+          "complaint_portal": "https://fhco.org",
+          "what_to_report": "Housing discrimination based on race, color, national origin, religion, sex, familial status, disability, source of income, sexual orientation, gender identity, marital status, domestic violence survivor status",
+          "legal_threshold": "Violation of Oregon Fair Housing Act (ORS 659A.145) or Federal Fair Housing Act",
+          "response_timeline": "Intake within 1 week, investigation 30-100 days",
+          "escalation_next": "HUD (federal)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://fhco.org",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Oregon Attorney General \u2014 Consumer Protection",
+          "jurisdiction": "state_escalation",
+          "phone": "877-877-9392",
+          "complaint_portal": "https://doj.state.or.us/consumer-protection/file-a-complaint",
+          "what_to_report": "Landlord unfair trade practices, security deposit theft, illegal eviction patterns",
+          "legal_threshold": "Violation of Oregon Unlawful Trade Practices Act (ORS 646.608)",
+          "response_timeline": "Escalate if local enforcement insufficient",
+          "escalation_next": "HUD (federal)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://doj.state.or.us",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Oregon Bureau of Labor and Industries (BOLI) \u2014 Civil Rights Division",
+          "jurisdiction": "state_escalation",
+          "phone": "971-245-3844",
+          "complaint_portal": "https://oregon.gov/boli/civil-rights/pages/file-a-complaint.aspx",
+          "what_to_report": "Housing discrimination (BOLI enforces Oregon civil rights laws)",
+          "legal_threshold": "Violation of ORS 659A (Oregon Civil Rights Act) in housing",
+          "response_timeline": "1 year to file, investigation 60-180 days",
+          "escalation_next": "HUD (federal)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://oregon.gov/boli",
+          "street_address": "800 NE Oregon St Ste 1045",
+          "city": "Portland",
+          "state_code": "OR",
+          "zip": "97232",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "HUD (U.S. Department of Housing and Urban Development)",
+          "jurisdiction": "federal",
+          "phone": "800-669-9777",
+          "complaint_portal": "https://hud.gov/program_offices/fair_housing_equal_opp/online-complaint",
+          "what_to_report": "Federal fair housing violations, discrimination in federally funded housing",
+          "legal_threshold": "Violation of Federal Fair Housing Act (42 USC 3601)",
+          "response_timeline": "Federal investigation timeline \u2014 1 year to file",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "HUD",
+          "pattern_threshold": 5,
+          "source": "https://hud.gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "employer",
+      "state": "OR",
+      "bodies": [
+        {
+          "oversight_body": "Oregon Bureau of Labor and Industries (BOLI)",
+          "jurisdiction": "primary",
+          "phone": "971-245-3844",
+          "complaint_portal": "https://oregon.gov/boli/workers/pages/wage-claim.aspx",
+          "what_to_report": "Wage theft, unpaid wages, overtime violations, workplace discrimination, retaliation",
+          "legal_threshold": "Violation of ORS 652/653 (wages), ORS 659A (discrimination/retaliation)",
+          "response_timeline": "Wage claims: investigation within 30-90 days. Civil rights: 1 year to file",
+          "escalation_next": "EEOC / DOL WHD",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://oregon.gov/boli",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Oregon OSHA (Occupational Safety and Health Administration)",
+          "jurisdiction": "primary",
+          "phone": "800-922-2689",
+          "complaint_portal": "https://osha.oregon.gov/workers/pages/file-a-complaint.aspx",
+          "what_to_report": "Unsafe working conditions, workplace hazards, retaliation for safety complaints",
+          "legal_threshold": "Violation of Oregon Safe Employment Act (ORS 654) or federal OSHA standards",
+          "response_timeline": "Imminent danger: 24 hours. Serious: 7 days. Other: 30 days",
+          "escalation_next": "Federal OSHA",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://osha.oregon.gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "EEOC (Equal Employment Opportunity Commission) \u2014 Portland Office",
+          "jurisdiction": "federal",
+          "phone": "800-669-4000",
+          "complaint_portal": "https://eeoc.gov/filing-charge-discrimination",
+          "what_to_report": "Employment discrimination based on race, color, religion, sex, national origin, age, disability, genetic information",
+          "legal_threshold": "Violation of Title VII, ADA, ADEA, GINA (employers with 15+ employees)",
+          "response_timeline": "300 days to file (with state agency cross-filing)",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "EEOC",
+          "pattern_threshold": 10,
+          "source": "https://eeoc.gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "US Department of Labor \u2014 Wage and Hour Division (Portland District)",
+          "jurisdiction": "federal",
+          "phone": "503-326-3057",
+          "complaint_portal": "https://dol.gov/agencies/whd/contact/complaints",
+          "what_to_report": "FLSA violations: overtime, minimum wage, misclassification, child labor",
+          "legal_threshold": "Violation of Fair Labor Standards Act (FLSA)",
+          "response_timeline": "2 years (3 if willful) to file",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "DOL WHD",
+          "pattern_threshold": 10,
+          "source": "https://dol.gov/agencies/whd",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "NLRB (National Labor Relations Board) \u2014 Region 19 (Portland)",
+          "jurisdiction": "federal",
+          "phone": "503-326-3085",
+          "complaint_portal": "https://nlrb.gov/about-nlrb/what-we-do/investigate-charges",
+          "what_to_report": "Unfair labor practices, union interference, retaliation for organizing",
+          "legal_threshold": "Violation of National Labor Relations Act (NLRA)",
+          "response_timeline": "6 months to file charge",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "NLRB",
+          "pattern_threshold": 10,
+          "source": "https://nlrb.gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Oregon Attorney General \u2014 Consumer Protection (Employer Fraud)",
+          "jurisdiction": "state_escalation",
+          "phone": "877-877-9392",
+          "complaint_portal": "https://doj.state.or.us/consumer-protection/file-a-complaint",
+          "what_to_report": "Employer fraud, pattern of wage theft, deceptive business practices",
+          "legal_threshold": "Pattern of unfair or deceptive practices under ORS 646.608",
+          "response_timeline": "Escalate if BOLI does not resolve",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://doj.state.or.us",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "government_agency",
+      "state": "OR",
+      "bodies": [
+        {
+          "oversight_body": "Oregon Office of Administrative Hearings (OAH)",
+          "jurisdiction": "primary",
+          "phone": "503-947-1918",
+          "complaint_portal": "https://oregon.gov/oah",
+          "what_to_report": "Benefits denial, agency action you disagree with, SNAP/TANF/OHP denials",
+          "legal_threshold": "Agency action affecting individual rights under ORS 183.413 (Contested Case Hearings)",
+          "response_timeline": "Hearing scheduled within 30-90 days of request",
+          "escalation_next": "Oregon Circuit Court (judicial review)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 1,
+          "source": "https://oregon.gov/oah",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Oregon Health Authority (OHA) \u2014 Ombudsman",
+          "jurisdiction": "primary",
+          "phone": "800-699-9075",
+          "complaint_portal": "https://ONE.oregon.gov",
+          "what_to_report": "OHP access issues, CCO complaints, quality of care",
+          "legal_threshold": "OHP member rights violations",
+          "response_timeline": "30 days for standard, 72 hours for urgent",
+          "escalation_next": "Oregon Office of Administrative Hearings",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://ONE.oregon.gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Oregon Employment Department \u2014 Appeals",
+          "jurisdiction": "primary",
+          "phone": "877-345-3484",
+          "complaint_portal": "https://oregon.gov/employ/unemployment/pages/appeals.aspx",
+          "what_to_report": "Unemployment insurance denial or overpayment dispute",
+          "legal_threshold": "OED action affecting UI benefits",
+          "response_timeline": "20 days to file appeal from denial date",
+          "escalation_next": "Employment Appeals Board",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 1,
+          "source": "https://oregon.gov/employ",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Oregon Governor's Office \u2014 Constituent Services",
+          "jurisdiction": "state_escalation",
+          "phone": "503-378-3111",
+          "complaint_portal": "https://oregon.gov/gov/pages/contact.aspx",
+          "what_to_report": "Systemic agency failures, unresponsive state agencies",
+          "legal_threshold": "Pattern of agency non-compliance or constituent harm",
+          "response_timeline": "Response within 2-4 weeks",
+          "escalation_next": "Oregon Legislature",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://oregon.gov/gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Oregon Legislature \u2014 Constituent Services",
+          "jurisdiction": "state_escalation",
+          "phone": "800-332-2313",
+          "complaint_portal": "https://oregonlegislature.gov",
+          "what_to_report": "Systemic policy failures, legislative oversight needed",
+          "legal_threshold": "Pattern affecting multiple constituents",
+          "response_timeline": "Varies by legislator",
+          "escalation_next": "Federal HHS/CMS",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 10,
+          "source": "https://oregonlegislature.gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "HHS / CMS (Federal)",
+          "jurisdiction": "federal",
+          "phone": "800-332-2313",
+          "complaint_portal": "https://hhs.gov/civil-rights/filing-a-complaint",
+          "what_to_report": "State agency violating federal program rules (SNAP, Medicaid, TANF)",
+          "legal_threshold": "Federal program violations by state agency",
+          "response_timeline": "Federal investigation timeline",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "HHS/CMS",
+          "pattern_threshold": 10,
+          "source": "https://hhs.gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "nursing_home",
+      "state": "OR",
+      "bodies": [
+        {
+          "oversight_body": "Oregon DHS Aging and People with Disabilities (APD)",
+          "jurisdiction": "primary",
+          "phone": "800-282-8096",
+          "complaint_portal": "https://oregon.gov/odhs/aging-disability/pages/report-abuse.aspx",
+          "what_to_report": "Abuse, neglect, exploitation of residents in long-term care facilities",
+          "legal_threshold": "Violation of Oregon Long-Term Care Facility licensing standards or ORS 441",
+          "response_timeline": "Immediate response for imminent danger, 5 business days for standard complaints",
+          "escalation_next": "Oregon Long-Term Care Ombudsman",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://oregon.gov/odhs",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Oregon Adult Protective Services (APS)",
+          "jurisdiction": "primary",
+          "phone": "855-503-7233",
+          "complaint_portal": "https://oregon.gov/odhs/aging-disability/pages/report-abuse.aspx",
+          "what_to_report": "Elder abuse, neglect, financial exploitation, self-neglect",
+          "legal_threshold": "Suspected abuse or neglect of vulnerable adult (ORS 124.050)",
+          "response_timeline": "24 hours for imminent danger, 5 business days for standard",
+          "escalation_next": "Oregon Long-Term Care Ombudsman",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 1,
+          "source": "https://oregon.gov/odhs",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Oregon Long-Term Care Ombudsman",
+          "jurisdiction": "state_escalation",
+          "phone": "800-522-2602",
+          "complaint_portal": "https://ltco.oregon.gov",
+          "what_to_report": "Quality of care, resident rights violations, facility complaints",
+          "legal_threshold": "Resident rights violations under ORS 441.605 or federal Nursing Home Reform Act",
+          "response_timeline": "Investigation within 10 business days",
+          "escalation_next": "CMS (federal)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://ltco.oregon.gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Oregon Department of Justice \u2014 Elder Abuse Prevention",
+          "jurisdiction": "state_escalation",
+          "phone": "503-378-5348",
+          "complaint_portal": "https://doj.state.or.us/crime-victims/elder-abuse",
+          "what_to_report": "Financial exploitation, criminal elder abuse, systemic facility abuse",
+          "legal_threshold": "Criminal conduct or pattern of exploitation (ORS 163.200-163.208)",
+          "response_timeline": "Criminal referral timeline",
+          "escalation_next": "DOJ Elder Justice Initiative (federal)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://doj.state.or.us",
+          "street_address": "1162 Court St NE",
+          "city": "Salem",
+          "state_code": "OR",
+          "zip": "97301",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CMS \u2014 Survey and Certification (Federal)",
+          "jurisdiction": "federal",
+          "phone": "800-633-4227",
+          "complaint_portal": "https://cms.gov/Medicare/Provider-Enrollment-and-Certification/CertificationandComplianc",
+          "what_to_report": "Medicare/Medicaid certified facility violations, life safety code violations",
+          "legal_threshold": "Federal nursing home standards violations (42 CFR Part 483)",
+          "response_timeline": "Federal survey timeline",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "CMS",
+          "pattern_threshold": 10,
+          "source": "https://cms.gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "DOJ Elder Justice Initiative (Federal)",
+          "jurisdiction": "federal",
+          "phone": "800-677-1116",
+          "complaint_portal": "https://justice.gov/elderjustice",
+          "what_to_report": "Systemic elder abuse, fraud, exploitation patterns",
+          "legal_threshold": "Federal Elder Justice Act violations",
+          "response_timeline": "Federal investigation timeline",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "DOJ Elder Justice",
+          "pattern_threshold": 10,
+          "source": "https://justice.gov/elderjustice",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "family_court",
+      "state": "OR",
+      "bodies": [
+        {
+          "oversight_body": "Oregon Judicial Department \u2014 Court Facilitator Program",
+          "jurisdiction": "primary",
+          "phone": "503-986-5500",
+          "complaint_portal": "https://courts.oregon.gov/courts/Pages/default.aspx",
+          "what_to_report": "Procedural questions, self-help resources, family court navigation",
+          "legal_threshold": "Navigational assistance \u2014 not complaint-based",
+          "response_timeline": "Immediate assistance at courthouse",
+          "escalation_next": "Oregon State Bar \u2014 Client Assistance Office",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://courts.oregon.gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Oregon State Bar \u2014 Client Assistance Office",
+          "jurisdiction": "primary",
+          "phone": "503-620-0222",
+          "complaint_portal": "https://osbar.org/public/complaintprocess",
+          "what_to_report": "Attorney misconduct, ethical violations, inadequate representation",
+          "legal_threshold": "Violation of Oregon Rules of Professional Conduct",
+          "response_timeline": "Intake within 2 weeks, investigation 60-180 days",
+          "escalation_next": "Oregon Court of Appeals",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://osbar.org",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Oregon DHS Child Welfare Division",
+          "jurisdiction": "primary",
+          "phone": "855-503-7233",
+          "complaint_portal": "https://oregon.gov/odhs/child-welfare/pages/report-abuse.aspx",
+          "what_to_report": "Child abuse/neglect, custody concerns involving child safety",
+          "legal_threshold": "Mandatory reporting under ORS 419B.010",
+          "response_timeline": "24 hours for imminent danger, 5 days for standard",
+          "escalation_next": "Oregon Court of Appeals",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 1,
+          "source": "https://oregon.gov/odhs",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Oregon Court of Appeals",
+          "jurisdiction": "state_escalation",
+          "phone": "503-986-5555",
+          "complaint_portal": "https://courts.oregon.gov/courts/appellate/pages/default.aspx",
+          "what_to_report": "Appeal of family court order \u2014 custody, support, restraining order",
+          "legal_threshold": "Error of law or abuse of discretion by trial court",
+          "response_timeline": "30 days to file notice of appeal from final judgment",
+          "escalation_next": "DOJ Civil Rights Division (federal)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://courts.oregon.gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "DOJ Civil Rights Division (Federal)",
+          "jurisdiction": "federal",
+          "phone": "202-514-4609",
+          "complaint_portal": "https://civilrights.justice.gov/report",
+          "what_to_report": "Systemic civil rights violations in state court system",
+          "legal_threshold": "Pattern of constitutional violations (42 USC 1983)",
+          "response_timeline": "Federal investigation timeline",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "DOJ CRT",
+          "pattern_threshold": 10,
+          "source": "https://civilrights.justice.gov",
+          "city": "Salem",
+          "state": "OR",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "or_med_board",
+          "name": "Oregon Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Oregon Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "OR"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "or_patient_adv",
+          "name": "Oregon Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Oregon Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "OR"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "or_health_dept",
+          "name": "Oregon Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Oregon Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "OR"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "OR"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "or_pharm_board",
+          "name": "Oregon Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Oregon Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "OR"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "or_pa",
+          "name": "Oregon Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Oregon Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "OR"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "or_mha",
+          "name": "Oregon Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Oregon Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "OR"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "OR"
+    }
+  ]
+}

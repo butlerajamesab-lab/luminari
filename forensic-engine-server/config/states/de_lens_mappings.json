@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "state": "DE",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "de_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "de_delaware_medicaid_dmap",
+        "de_delaware_healthy_children_program_chip",
+        "de_delaware_snap_food_supplement_program",
+        "de_delaware_unemployment_insurance_dddol",
+        "de_delaware_paid_family_and_medical_leave_d",
+        "de_delaware_division_of_services_for_aging_"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "de_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "de_delaware_wic"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "de_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "de_delaware_tanf_delaware_temporary_assista",
+        "de_delaware_child_care_subsidy_ccap",
+        "de_delaware_liheap_energy_assistance"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "de_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "de_delaware_state_housing_authority_dsha",
+        "de_community_legal_aid_society_of_delaware_"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "de_lens_employment",
+      "lens_type": "employment",
+      "programs": [
+        "de_delaware_vocational_rehabilitation_dvr"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    }
+  ]
+}

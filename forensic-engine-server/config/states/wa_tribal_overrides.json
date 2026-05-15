@@ -1,0 +1,233 @@
+{
+  "meta": {
+    "state": "WA",
+    "layer": "tribal_overrides",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "source": "Luminari WA Registry v1.0 \u2014 Northwest Hope Foundation",
+    "note": "Washington has 29 federally recognized tribes. WICWA (RCW 13.38) provides protections beyond federal ICWA."
+  },
+  "icwa_activation_rules": [
+    {
+      "rule_id": "wa_wicwa_child_welfare",
+      "trigger_pipeline": "child_welfare",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Apply WICWA (RCW 13.38) standards \u2014 broader than federal ICWA",
+        "Identify specific tribal affiliation and notify tribe within 24 hours",
+        "Contact DCYF ICWA/WICWA liaison for placement preferences",
+        "Document active efforts per RCW 13.38.040 (beyond reasonable efforts)"
+      ],
+      "routing_note": "WA has 29 federally recognized tribes. Route to specific tribe. For urban Natives, contact Seattle Indian Health Board or tribal liaison."
+    },
+    {
+      "rule_id": "wa_wicwa_domestic_violence",
+      "trigger_pipeline": "domestic_violence",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Check if children are involved \u2014 if so, apply WICWA",
+        "Contact tribal DV advocate for culturally appropriate services",
+        "Coordinate with tribal court if tribal jurisdiction applies"
+      ],
+      "routing_note": "Some tribes have concurrent jurisdiction. Check if tribal court has issued any existing orders."
+    },
+    {
+      "rule_id": "wa_tribal_tanf",
+      "trigger_pipeline": "benefits_denial",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Check eligibility for Tribal TANF (may have different requirements than state WorkFirst)",
+        "Contact tribal TANF office for the specific tribe",
+        "Note: Tribal TANF may offer culturally appropriate employment services"
+      ],
+      "routing_note": "Multiple WA tribes operate their own TANF programs with distinct eligibility criteria."
+    }
+  ],
+  "tribal_entities": [
+    {
+      "tribal_entity_id": "wa_tulalip_tribes",
+      "tribal_entity_name": "Tulalip Tribes",
+      "entity_type": "federally_recognized_tribe",
+      "region": "snohomish_county",
+      "services": [
+        "tribal court",
+        "tribal TANF",
+        "ICWA/WICWA services",
+        "housing",
+        "health clinic"
+      ],
+      "phone": "360-716-4000",
+      "website": "https://www.tulaliptribes.com",
+      "has_tribal_court": true,
+      "has_tribal_tanf": true,
+      "federal_interface": true,
+      "city": "Seattle",
+      "state": "WA"
+    },
+    {
+      "tribal_entity_id": "wa_muckleshoot_tribe",
+      "tribal_entity_name": "Muckleshoot Indian Tribe",
+      "entity_type": "federally_recognized_tribe",
+      "region": "king_county",
+      "services": [
+        "tribal court",
+        "tribal TANF",
+        "ICWA/WICWA services",
+        "health services",
+        "housing"
+      ],
+      "phone": "253-939-3311",
+      "website": "https://www.muckleshoot.nsn.us",
+      "has_tribal_court": true,
+      "has_tribal_tanf": true,
+      "federal_interface": true,
+      "street_address": "39015 172nd Ave SE",
+      "city": "Auburn",
+      "state_code": "WA",
+      "zip": "98092"
+    },
+    {
+      "tribal_entity_id": "wa_puyallup_tribe",
+      "tribal_entity_name": "Puyallup Tribe of Indians",
+      "entity_type": "federally_recognized_tribe",
+      "region": "pierce_county",
+      "services": [
+        "tribal court",
+        "tribal TANF",
+        "ICWA/WICWA services",
+        "health clinic",
+        "housing",
+        "elder services"
+      ],
+      "phone": "253-573-7800",
+      "website": "https://www.puyalluptribe-nsn.gov",
+      "has_tribal_court": true,
+      "has_tribal_tanf": true,
+      "federal_interface": true,
+      "city": "Seattle",
+      "state": "WA"
+    },
+    {
+      "tribal_entity_id": "wa_yakama_nation",
+      "tribal_entity_name": "Confederated Tribes and Bands of the Yakama Nation",
+      "entity_type": "federally_recognized_tribe",
+      "region": "yakima_valley",
+      "services": [
+        "tribal court",
+        "tribal TANF",
+        "ICWA/WICWA services",
+        "health services",
+        "housing",
+        "natural resources"
+      ],
+      "phone": "509-865-5121",
+      "website": "https://www.yakama.com",
+      "has_tribal_court": true,
+      "has_tribal_tanf": true,
+      "federal_interface": true,
+      "city": "Seattle",
+      "state": "WA"
+    },
+    {
+      "tribal_entity_id": "wa_spokane_tribe",
+      "tribal_entity_name": "Spokane Tribe of Indians",
+      "entity_type": "federally_recognized_tribe",
+      "region": "spokane_metro",
+      "services": [
+        "tribal court",
+        "ICWA/WICWA services",
+        "health clinic",
+        "housing"
+      ],
+      "phone": "509-258-4581",
+      "website": "https://www.spokanetribe.com",
+      "has_tribal_court": true,
+      "has_tribal_tanf": false,
+      "federal_interface": true,
+      "city": "Seattle",
+      "state": "WA"
+    },
+    {
+      "tribal_entity_id": "wa_sihb",
+      "tribal_entity_name": "Seattle Indian Health Board",
+      "entity_type": "urban_indian_organization",
+      "region": "king_county",
+      "services": [
+        "primary care",
+        "dental",
+        "behavioral health",
+        "traditional healing",
+        "WIC",
+        "community health"
+      ],
+      "phone": "206-324-9360",
+      "website": "https://www.sihb.org",
+      "has_tribal_court": false,
+      "has_tribal_tanf": false,
+      "federal_interface": true,
+      "city": "Seattle",
+      "state": "WA"
+    },
+    {
+      "tribal_entity_id": "ihs_portland",
+      "tribal_entity_name": "IHS Portland Area Office",
+      "entity_type": "federal_health_service",
+      "region": "statewide",
+      "services": [
+        "healthcare referral",
+        "contract health services",
+        "tribal health coordination"
+      ],
+      "phone": "503-414-5555",
+      "website": "https://www.ihs.gov/portland",
+      "has_tribal_court": false,
+      "has_tribal_tanf": false,
+      "federal_interface": true,
+      "city": "Seattle",
+      "state": "WA"
+    }
+  ],
+  "tribal_courts": [
+    {
+      "court_id": "wa_tulalip_tribal_court",
+      "tribe": "Tulalip Tribes",
+      "jurisdiction": "civil and criminal within reservation",
+      "phone": "360-716-4773",
+      "website": "https://www.tulaliptribes.com/tribal-court",
+      "concurrent_state_jurisdiction": true,
+      "note": "Has concurrent jurisdiction with Snohomish County for certain matters"
+    },
+    {
+      "court_id": "wa_muckleshoot_tribal_court",
+      "tribe": "Muckleshoot Indian Tribe",
+      "jurisdiction": "civil and criminal within reservation",
+      "phone": "253-876-3203",
+      "website": "https://www.muckleshoot.nsn.us/tribal-court",
+      "concurrent_state_jurisdiction": true,
+      "note": "Has concurrent jurisdiction with King County for certain matters"
+    },
+    {
+      "court_id": "wa_puyallup_tribal_court",
+      "tribe": "Puyallup Tribe of Indians",
+      "jurisdiction": "civil and criminal within reservation",
+      "phone": "253-573-7950",
+      "website": "https://www.puyalluptribe-nsn.gov/tribal-court",
+      "concurrent_state_jurisdiction": true,
+      "note": "Has concurrent jurisdiction with Pierce County for certain matters"
+    },
+    {
+      "court_id": "wa_yakama_tribal_court",
+      "tribe": "Confederated Tribes and Bands of the Yakama Nation",
+      "jurisdiction": "civil and criminal within reservation",
+      "phone": "509-865-5121",
+      "website": "https://www.yakama.com/tribal-court",
+      "concurrent_state_jurisdiction": true,
+      "note": "Has concurrent jurisdiction with Yakima County for certain matters"
+    }
+  ],
+  "urban_indian_programs": [],
+  "tribal_context": {
+    "federally_recognized_tribes_in_state": 7,
+    "notes": "WA tribal context"
+  }
+}

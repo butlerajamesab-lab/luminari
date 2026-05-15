@@ -1,0 +1,285 @@
+{
+  "meta": {
+    "state": "AR",
+    "version": "3.0",
+    "date": "2026-03-09"
+  },
+  "oversight_chains": [
+    {
+      "chain": "insurance",
+      "bodies": [
+        {
+          "body_id": "ar_insurance_dept",
+          "oversight_body": "ar_insurance_dept",
+          "name": "ar_insurance_dept",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AR"
+    },
+    {
+      "chain": "discrimination",
+      "bodies": [
+        {
+          "body_id": "eeoc_little_rock",
+          "oversight_body": "eeoc_little_rock",
+          "name": "eeoc_little_rock",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AR"
+    },
+    {
+      "chain": "labor",
+      "bodies": [
+        {
+          "body_id": "whd_little_rock",
+          "oversight_body": "whd_little_rock",
+          "name": "whd_little_rock",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AR"
+    },
+    {
+      "chain": "benefits",
+      "bodies": [
+        {
+          "body_id": "ar_dhs_hearings",
+          "oversight_body": "ar_dhs_hearings",
+          "name": "ar_dhs_hearings",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "body_id": "ar_adws_ui_appeals",
+          "oversight_body": "ar_adws_ui_appeals",
+          "name": "ar_adws_ui_appeals",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AR"
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "ar_med_board",
+          "name": "Arkansas Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Arkansas Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AR"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "ar_patient_adv",
+          "name": "Arkansas Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Arkansas Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AR"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "ar_health_dept",
+          "name": "Arkansas Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Arkansas Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AR"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AR"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "ar_pharm_board",
+          "name": "Arkansas Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Arkansas Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AR"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "ar_pa",
+          "name": "Arkansas Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Arkansas Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AR"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "ar_mha",
+          "name": "Arkansas Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Arkansas Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AR"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AR"
+    }
+  ],
+  "bodies": [
+    {
+      "body_id": "ar_insurance_dept",
+      "name": "Arkansas Insurance Department",
+      "jurisdiction": "Primary \u2014 insurance",
+      "phone": "800-852-5494",
+      "website": "insurance.arkansas.gov",
+      "reports": "Claim denial, bad faith",
+      "sol": "180 days"
+    },
+    {
+      "body_id": "eeoc_little_rock",
+      "name": "EEOC - Little Rock",
+      "jurisdiction": "Federal hook",
+      "phone": "501-324-5060",
+      "website": "eeoc.gov",
+      "address": "820 Louisiana St Ste 200, Little Rock, AR 72201",
+      "reports": "Employment discrimination",
+      "sol": "300 days \u2014 FATAL"
+    },
+    {
+      "body_id": "whd_little_rock",
+      "name": "DOL Wage and Hour - Little Rock",
+      "jurisdiction": "Federal hook \u2014 PRIMARY",
+      "phone": "501-324-5292",
+      "website": "dol.gov/whd",
+      "reports": "FLSA wage claims",
+      "sol": "2 years (3 if willful)"
+    },
+    {
+      "body_id": "ar_dhs_hearings",
+      "name": "AR DHS Fair Hearings",
+      "jurisdiction": "State \u2014 benefits",
+      "phone": "501-682-8375",
+      "website": "humanservices.arkansas.gov",
+      "reports": "SNAP/ARHOME/TANF hearings",
+      "sol": "30 days \u2014 FATAL"
+    },
+    {
+      "body_id": "ar_adws_ui_appeals",
+      "name": "AR ADWS - UI Appeals",
+      "jurisdiction": "State \u2014 UI",
+      "phone": "501-682-2121",
+      "website": "dws.arkansas.gov",
+      "reports": "UI denials",
+      "sol": "20 days \u2014 FATAL"
+    }
+  ]
+}

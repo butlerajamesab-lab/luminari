@@ -1,0 +1,478 @@
+{
+  "meta": {
+    "state": "MT",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "mt_montana_snap_food_assistance_dphhs",
+      "program_name": "Montana SNAP / Food Assistance (DPHHS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Montana SNAP / Food Assistance",
+      "phone": "888-706-1535",
+      "website": "https://dphhs.mt.gov/snap",
+      "eligibility": "Income < 130% FPL. BenefitsMT.gov \u2014 apply online. Cascade County (Great Falls): 406-454-6950. Yellowstone County (Billings): 406-256-2700. Missoula: 406-329-5900. Glacier County (Cut Bank \u2014 Blackfeet): 406-873-2213.",
+      "apply_notes": "Monthly food assistance \u2014 56 county offices",
+      "source": "luminari-montana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "MT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mt_montana_food_bank_network_statewide",
+      "program_name": "Montana Food Bank Network (Statewide)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Montana Food Bank Network",
+      "phone": "406-523-3663",
+      "website": "https://mfbn.org",
+      "eligibility": "Anyone in need. mfbn.org. High Plains Food Bank (Havre \u2014 Hi-Line: 406-265-6478). Billings Food Bank (406-259-2856). Helena Food Share (406-443-3663).",
+      "apply_notes": "Statewide food bank coordination \u2014 150+ partner agencies",
+      "source": "luminari-montana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "MT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mt_wic_montana",
+      "program_name": "WIC Montana",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WIC Montana",
+      "phone": "406-444-5580",
+      "website": "https://dphhs.mt.gov/wic",
+      "eligibility": "Pregnant, postpartum women, infants, children under 5. Income < 185% FPL. dphhs.mt.gov/wic \u2014 local clinics statewide.",
+      "apply_notes": "Nutrition assistance for women, infants, children",
+      "source": "luminari-montana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "MT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mt_montana_medicaid_help_act_dphhs",
+      "program_name": "Montana Medicaid / HELP Act (DPHHS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Montana Medicaid / HELP Act",
+      "phone": "800-362-8312",
+      "website": "https://dphhs.mt.gov/medicaid",
+      "eligibility": "Adults 19\u201364 to 138% FPL (HELP Act). Children, families, elderly, disabled. BenefitsMT.gov. No active work requirement (CMS blocked).",
+      "apply_notes": "Medicaid \u2014 expanded 2016, covers adults 19-64 to 138% FPL",
+      "source": "luminari-montana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mt_billings_clinic_eastern_mt_safety_net",
+      "program_name": "Billings Clinic (Eastern MT Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Billings Clinic",
+      "phone": "406-657-4000",
+      "website": "https://billingsclinic.com",
+      "eligibility": "Eastern MT. Charity care income < 200% FPL. Also SCL Health St. Vincent (Billings: 406-237-7000).",
+      "apply_notes": "Regional medical center \u2014 Level 1 trauma, charity care",
+      "source": "luminari-montana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mt_providence_st_patrick_hospital_western_m",
+      "program_name": "Providence St. Patrick Hospital (Western MT)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Providence St. Patrick Hospital",
+      "phone": "406-543-7271",
+      "website": "https://providence.org/st-patricks",
+      "eligibility": "Western MT. Charity care income < 200% FPL. Also Community Medical Center (Missoula: 406-728-4100). Benefis Health (Great Falls: 406-455-5000).",
+      "apply_notes": "Missoula major hospital \u2014 charity care, trauma center",
+      "source": "luminari-montana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "MT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mt_montana_primary_care_association_fqhcs",
+      "program_name": "Montana Primary Care Association (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Montana Primary Care Association",
+      "phone": "406-442-2750",
+      "website": "https://mtpca.org",
+      "eligibility": "Anyone. 14+ FQHCs. Key: Partnership Health Center (Missoula: 406-327-4200), Rimrock Foundation (Billings: 406-248-3175), District 7 Health Center (Lewistown: 406-535-5241).",
+      "apply_notes": "Federally qualified health centers \u2014 sliding scale, statewide",
+      "source": "luminari-montana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mt_ihs_billings_area_office_all_7_mt_tribes",
+      "program_name": "IHS Billings Area Office (All 7 MT Tribes)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "IHS Billings Area Office",
+      "phone": "406-247-7107",
+      "website": "https://ihs.gov/billings",
+      "eligibility": "Enrolled members. Each reservation has own service unit. Blackfeet: 406-338-6100. Crow: 406-638-3330. Fort Peck: 406-768-3491. Fort Belknap: 406-353-3100. Rocky Boy's: 406-395-4386. Northern Cheyenne: 406-477-4970. CSKT Flathead: 406-675-2700.",
+      "apply_notes": "IHS health coordination for all 7 Montana federally recognized tribes",
+      "source": "luminari-montana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mt_montana_housing_mboh_board_of_housing",
+      "program_name": "Montana Housing / MBOH (Board of Housing)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Montana Housing / MBOH",
+      "phone": "406-841-2840",
+      "website": "https://housing.mt.gov",
+      "eligibility": "Low-income MT renters. housing.mt.gov. Billings HUD: 406-247-7000.",
+      "apply_notes": "Section 8/HCV, HOME program, rental assistance",
+      "source": "luminari-montana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "MT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mt_montana_legal_services_association_mlsa",
+      "program_name": "Montana Legal Services Association (MLSA)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute"
+      ],
+      "agency": "Montana Legal Services Association",
+      "phone": "800-666-6899",
+      "website": "https://montanalegal.org",
+      "eligibility": "Income < 200% FPL. Only legal aid covering all 56 counties \u2014 critical for Hi-Line and reservation corridor. montanalegal.org.",
+      "apply_notes": "Free civil legal aid \u2014 all 56 counties, housing, benefits, DV, tribal",
+      "source": "luminari-montana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "MT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mt_montana_tanf_dphhs",
+      "program_name": "Montana TANF (DPHHS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "Montana TANF",
+      "phone": "888-706-1535",
+      "website": "https://dphhs.mt.gov/tanf",
+      "eligibility": "Families with children \u2014 up to $502/month for family of 3. 60-month limit. Work requirement enforced. BenefitsMT.gov.",
+      "apply_notes": "Cash assistance for families with children",
+      "source": "luminari-montana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "MT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mt_montana_ui_dli",
+      "program_name": "Montana UI (DLI)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Montana UI",
+      "phone": "406-444-2545",
+      "website": "https://uid.dli.mt",
+      "eligibility": "Workers who lost job through no fault. uid.dli.mt.gov \u2014 file online. Appeal: 20 days from mailing.",
+      "apply_notes": "Weekly income replacement \u2014 up to $552/week, 28 weeks",
+      "source": "luminari-montana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "MT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mt_montana_liheap_dphhs_community_action",
+      "program_name": "Montana LIHEAP (DPHHS / Community Action)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Montana LIHEAP",
+      "phone": "888-706-1535",
+      "website": "https://dphhs.mt.gov/liheap",
+      "eligibility": "Income < 60% state median. Apply through local Community Action Agency. Big Sky Community Action (406-587-4486). Action Inc. Great Falls (406-761-0310).",
+      "apply_notes": "Heating assistance \u2014 critical in Montana winters",
+      "source": "luminari-montana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "MT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mt_montana_urban_indian_health_billings",
+      "program_name": "Montana Urban Indian Health (Billings)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Montana Urban Indian Health",
+      "phone": "406-245-2334",
+      "website": "https://muih.org",
+      "eligibility": "Urban American Indian/Alaska Native in Billings area. Also Native Health Billings (406-252-1510).",
+      "apply_notes": "Urban AI/AN health services in Billings metro",
+      "source": "luminari-montana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mt_montana_dv_services_mcadsv",
+      "program_name": "Montana DV Services (MCADSV)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Montana DV Services",
+      "phone": "406-443-7794",
+      "website": "https://macaconnect.org",
+      "eligibility": "Anyone experiencing DV. MCADSV (406-443-7794). Billings DV Center (406-259-6506).",
+      "apply_notes": "Statewide DV coalition \u2014 hotline, shelter referral, 30+ programs",
+      "source": "luminari-montana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "MT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "mt_veterans_services_montana_vso_network",
+      "program_name": "Veterans Services Montana (VSO Network)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Veterans Services Montana",
+      "phone": "406-324-3740",
+      "website": "https://mtvet.com",
+      "eligibility": "MT veterans and families. Fort Harrison VA (406-442-6410). State VSO network: mtvet.com.",
+      "apply_notes": "VA benefits navigation, state veterans services",
+      "source": "luminari-montana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "MT",
+      "federal_interface": false
+    }
+  ]
+}

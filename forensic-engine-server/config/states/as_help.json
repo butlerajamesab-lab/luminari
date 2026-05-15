@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "state": "AS",
+    "version": "3.0",
+    "date": "2026-03-09"
+  },
+  "routing_index": [
+    {
+      "service": "AS DHSS (All Benefits)",
+      "phone": "684-633-1187",
+      "website": "dhss.as.gov",
+      "address": "Tafuna, American Samoa, AS 96799"
+    },
+    {
+      "service": "LBJ Tropical Medical Center",
+      "phone": "684-633-1222",
+      "website": "lbjtmc.org",
+      "address": "Fagaalu, Pago Pago, AS 96799"
+    },
+    {
+      "service": "AS Bar Association / Legal Aid",
+      "phone": "684-633-4163"
+    },
+    {
+      "service": "EEOC Honolulu (verify jurisdiction)",
+      "phone": "808-541-3118",
+      "website": "eeoc.gov"
+    },
+    {
+      "service": "AS Community College",
+      "phone": "684-699-9155",
+      "website": "amsamoa.edu"
+    },
+    {
+      "service": "AS Attorney General",
+      "phone": "684-633-4163",
+      "website": "as.gov"
+    },
+    {
+      "service": "AS Department of Commerce - Labor",
+      "phone": "684-633-5497",
+      "website": "as.gov"
+    }
+  ]
+}

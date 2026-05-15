@@ -1,0 +1,156 @@
+{
+  "meta": {
+    "state": "WA",
+    "layer": "lens_mappings",
+    "version": "1.0.0",
+    "date_created": "2026-03-06"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "housing",
+      "activation_pipelines": [
+        "tenant_rights"
+      ],
+      "state_parameters": {
+        "just_cause_eviction": true,
+        "eviction_notice_days": 14,
+        "statute_reference": "RCW 59.18.650",
+        "rent_control": false,
+        "winter_shutoff_ban": true,
+        "winter_shutoff_months": [
+          "november",
+          "december",
+          "january",
+          "february",
+          "march"
+        ]
+      },
+      "county_lens_overrides": true,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "consumer",
+      "activation_pipelines": [
+        "insurance_claim_denial",
+        "benefits_denial"
+      ],
+      "state_parameters": {
+        "consumer_protection_act": true,
+        "statute_reference": "RCW 19.86",
+        "private_right_of_action": true,
+        "treble_damages": true
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "workplace",
+      "activation_pipelines": [
+        "wage_theft",
+        "workplace_discrimination"
+      ],
+      "state_parameters": {
+        "minimum_wage": 16.28,
+        "state_minimum_above_federal": true,
+        "paid_family_leave": true,
+        "pfml_weeks": 12,
+        "statute_reference": "RCW 49.46",
+        "statute_of_limitations_years": 3
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "domestic_violence",
+      "activation_pipelines": [
+        "domestic_violence"
+      ],
+      "state_parameters": {
+        "protection_order_available": true,
+        "protection_order_statute": "RCW 7.105",
+        "protection_order_duration_years": 1,
+        "firearms_surrender": true,
+        "address_confidentiality": true,
+        "acp_program": true
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "insurance",
+      "activation_pipelines": [
+        "insurance_claim_denial"
+      ],
+      "state_parameters": {
+        "oic_complaint_process": true,
+        "external_review": true,
+        "internal_appeal_days": 180,
+        "external_review_days": 120,
+        "apple_health_expansion": true,
+        "statute_reference": "RCW 48.43"
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "vulnerable_population",
+      "activation_pipelines": [
+        "elder_abuse",
+        "child_welfare"
+      ],
+      "state_parameters": {
+        "mandatory_reporting": true,
+        "reporting_deadline_hours": 48,
+        "statute_reference": "RCW 74.34.035",
+        "aps_available": true
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "custody",
+      "activation_pipelines": [
+        "domestic_violence",
+        "child_welfare"
+      ],
+      "state_parameters": {
+        "best_interest_standard": true,
+        "dv_factor_in_custody": true,
+        "wicwa_applies": true,
+        "statute_reference": "RCW 26.09.187",
+        "relocation_notice_days": 60
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "elder_abuse",
+      "activation_pipelines": [
+        "elder_abuse"
+      ],
+      "state_parameters": {
+        "aps_intake_phone": "866-363-4276",
+        "mandatory_reporting": true,
+        "financial_exploitation_statute": "RCW 74.34.020",
+        "long_term_care_ombudsman": true
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "medical",
+      "activation_pipelines": [
+        "insurance_claim_denial"
+      ],
+      "state_parameters": {
+        "medicaid_expansion": true,
+        "apple_health_fpl": 138,
+        "chip_program": true,
+        "chip_income_limit_fpl": 312,
+        "behavioral_health_parity": true
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    }
+  ]
+}

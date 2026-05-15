@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "state": "OR",
+    "status": "placeholder",
+    "schema": "luminari-foia-v1"
+  },
+  "statute": {
+    "name": "Oregon Public Records Law",
+    "citation": "Oregon state law",
+    "response_deadline_days": 10,
+    "fee_waiver_available": true
+  },
+  "agencies": [],
+  "structured_rules": [],
+  "appeals_workflow": {
+    "steps": []
+  },
+  "request_templates": []
+}

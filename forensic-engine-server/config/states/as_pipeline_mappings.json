@@ -1,0 +1,275 @@
+{
+  "meta": {
+    "state": "AS",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "as_lbj_tropical_medical_center_only_hospita",
+        "as_as_bar_association_legal_aid_referral",
+        "as_as_economic_development_planning_office_",
+        "as_veterans_services_as_national_guard_va_h",
+        "as_as_visitors_bureau_emergency_management_"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "general",
+        "insurer",
+        "utility"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "as_american_samoa_tanf_dhss",
+        "as_as_dhss_central_social_services_agency",
+        "as_fa_asamoa_communal_safety_net_invisible_",
+        "as_wic_american_samoa",
+        "as_american_samoa_head_start"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "general",
+        "insurer",
+        "utility"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "as_american_samoa_snap_nutrition_assistance",
+        "as_american_samoa_tanf_dhss",
+        "as_as_dhss_central_social_services_agency",
+        "as_liheap_american_samoa",
+        "as_american_samoa_community_college_ascc",
+        "as_as_department_of_education"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "general",
+        "insurer",
+        "utility"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "employment_dispute",
+      "programs": [
+        "as_no_unemployment_insurance_critical"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "general",
+        "insurer",
+        "utility"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "as_fa_asamoa_communal_safety_net_invisible_"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "general",
+        "insurer",
+        "utility"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "as_american_samoa_medicaid_asdhss",
+        "as_no_unemployment_insurance_critical",
+        "as_as_dhss_central_social_services_agency"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "general",
+        "insurer",
+        "utility"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "as_liheap_american_samoa"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "general",
+        "insurer",
+        "utility"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "as_involuntary_hold_law",
+        "as_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "as_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "as_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "as_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "as_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "as_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "as_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "as_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "as_restraint_seclusion_limits",
+        "as_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "as_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "as_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "as_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

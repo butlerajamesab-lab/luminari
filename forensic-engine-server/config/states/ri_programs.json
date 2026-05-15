@@ -1,0 +1,478 @@
+{
+  "meta": {
+    "state": "RI",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "ri_rhode_island_snap_eohhs_dhs",
+      "program_name": "Rhode Island SNAP (EOHHS / DHS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Rhode Island SNAP",
+      "phone": "855-697-4347",
+      "website": "https://dhs.ri.gov",
+      "eligibility": "Income < 130% FPL. myRIbenefits.ri.gov \u2014 apply online. Providence: 401-462-2130. Cranston: 401-462-3000. Pawtucket: 401-462-2000. Woonsocket: 401-767-2900.",
+      "apply_notes": "Monthly food assistance through DHS",
+      "source": "luminari-rhode-island-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "RI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ri_rhode_island_community_food_bank",
+      "program_name": "Rhode Island Community Food Bank",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Rhode Island Community Food Bank",
+      "phone": "401-942-6325",
+      "website": "https://rifoodbank.org",
+      "eligibility": "Anyone in need. rifoodbank.org. Also Amos House (Providence: 401-272-0220 \u2014 drop-in resource center). Crossroads RI (Providence: 401-521-2255).",
+      "apply_notes": "Primary RI food bank \u2014 statewide distribution through 150+ partner agencies",
+      "source": "luminari-rhode-island-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "RI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ri_wic_rhode_island",
+      "program_name": "WIC Rhode Island",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WIC Rhode Island",
+      "phone": "401-222-4622",
+      "website": "https://health.ri.gov/programs/wic",
+      "eligibility": "Pregnant, postpartum women, infants, children under 5. Income < 185% FPL. health.ri.gov/programs/wic.",
+      "apply_notes": "Nutrition assistance for women, infants, children",
+      "source": "luminari-rhode-island-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "RI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ri_rite_care_neighborhood_health_plan_medic",
+      "program_name": "RIte Care / Neighborhood Health Plan (Medicaid)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "RIte Care / Neighborhood Health Plan",
+      "phone": "401-462-0311",
+      "website": "https://eohhs.ri.gov",
+      "eligibility": "Adults 19\u201364 to 138% FPL. Children to 261% FPL. Elderly, disabled. myRIbenefits.ri.gov. Plans: Neighborhood Health Plan, UnitedHealthcare Community.",
+      "apply_notes": "Medicaid \u2014 expanded 2014, managed care via RIte Care",
+      "source": "luminari-rhode-island-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "RI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ri_rhode_island_hospital_lifespan_providenc",
+      "program_name": "Rhode Island Hospital / Lifespan (Providence Safety Net)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Rhode Island Hospital / Lifespan",
+      "phone": "401-444-4000",
+      "website": "https://lifespan.org",
+      "eligibility": "Providence metro. Charity care income < 200% FPL. Also Roger Williams Medical Center (401-456-2000). Memorial Hospital of RI (Pawtucket: 401-729-2000).",
+      "apply_notes": "Primary academic safety net \u2014 charity care, Level 1 trauma",
+      "source": "luminari-rhode-island-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "RI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ri_rhode_island_primary_care_association_fq",
+      "program_name": "Rhode Island Primary Care Association (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Rhode Island Primary Care Association",
+      "phone": "401-274-6770",
+      "website": "https://ripca.org",
+      "eligibility": "Anyone. ripca.org / findahealthcenter.hrsa.gov. Key: Thundermist Health Center (Woonsocket: 401-767-4100 / West Warwick: 401-615-2900 \u2014 large Latino population). Providence Community Health Centers (401-444-0400). Blackstone Valley Community Health Center (401-334-5228).",
+      "apply_notes": "Federally qualified health centers \u2014 sliding scale statewide",
+      "source": "luminari-rhode-island-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "RI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ri_rhode_island_housing_rihousing",
+      "program_name": "Rhode Island Housing (RIHousing)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Rhode Island Housing",
+      "phone": "401-457-1234",
+      "website": "https://rihousing.com",
+      "eligibility": "Low-income RI renters. rihousing.com. Providence Housing Authority: 401-751-5566. Woonsocket Housing: 401-762-1680.",
+      "apply_notes": "Section 8/HCV, HOME program, rental assistance, foreclosure prevention",
+      "source": "luminari-rhode-island-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "RI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ri_rhode_island_legal_services_rils",
+      "program_name": "Rhode Island Legal Services (RILS)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute",
+        "consumer_protection"
+      ],
+      "agency": "Rhode Island Legal Services",
+      "phone": "800-662-5034",
+      "website": "https://rils.org",
+      "eligibility": "Income < 125% FPL (expanded for seniors and housing). rils.org. Providence: 401-274-2652. Newport: 401-846-7580.",
+      "apply_notes": "Statewide civil legal aid \u2014 housing, benefits, family, consumer, immigration, elder law",
+      "source": "luminari-rhode-island-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "RI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ri_rhode_island_works_tanf_dhs",
+      "program_name": "Rhode Island Works / TANF (DHS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Rhode Island Works / TANF",
+      "phone": "401-462-2130",
+      "website": "https://dhs.ri.gov/ri-works",
+      "eligibility": "Families with children. 24/60-month hybrid limit. Work requirements apply. myRIbenefits.ri.gov.",
+      "apply_notes": "Cash assistance \u2014 $554/month family of 3; 24-month state limit within 60-month federal period",
+      "source": "luminari-rhode-island-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "RI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ri_rhode_island_ui_dlt",
+      "program_name": "Rhode Island UI (DLT)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Rhode Island UI",
+      "phone": "401-415-6772",
+      "website": "https://dlt.ri.gov/individuals/unemployment-insurance",
+      "eligibility": "Workers who lost job through no fault. dlt.ri.gov. Appeal: 15 days from mailing.",
+      "apply_notes": "Weekly income replacement \u2014 up to $823/week, 26 weeks (among highest in registry)",
+      "source": "luminari-rhode-island-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "RI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ri_rhode_island_tdi_tci_paid_leave_dlt",
+      "program_name": "Rhode Island TDI / TCI \u2014 Paid Leave (DLT)",
+      "layer": "state",
+      "benefit_category": "family",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Rhode Island TDI / TCI \u2014 Paid Leave",
+      "phone": "401-462-8420",
+      "website": "https://dlt.ri.gov/tdi",
+      "eligibility": "RI-covered employees. TCI: new child or ill family member. TDI: own illness/injury. Up to ~85% of wages. SCREEN FOR BOTH AT EVERY INTAKE. dlt.ri.gov/tdi.",
+      "apply_notes": "UNIQUE RI BENEFIT: TDI (up to 30 weeks for own illness) + TCI (up to 6 weeks family leave) \u2014 employee-funded, comprehensive",
+      "source": "luminari-rhode-island-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "family"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "family"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "family",
+      "city": "",
+      "state": "RI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ri_rhode_island_liheap_office_of_energy_res",
+      "program_name": "Rhode Island LIHEAP / Office of Energy Resources",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Rhode Island LIHEAP / Office of Energy Resources",
+      "phone": "401-574-9100",
+      "website": "https://energy.ri.gov",
+      "eligibility": "Income < 60% state median. Also Low Income Home Energy Assistance. National Grid low-income rate: 800-322-3223. Providence Energy: 800-696-1234.",
+      "apply_notes": "Heating and utility assistance",
+      "source": "luminari-rhode-island-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "RI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ri_dare_centro_de_ayuda_immigrant_latino_se",
+      "program_name": "DARE / Centro de Ayuda (Immigrant/Latino Services)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "DARE / Centro de Ayuda",
+      "phone": "401-461-5516",
+      "website": "https://dareprogram.org",
+      "eligibility": "Immigrant communities \u2014 Dominican, Guatemalan, Central American Providence metro. dareprogram.org. Also RI Center for Freedom and Prosperity (immigration: 401-274-6440).",
+      "apply_notes": "Immigration legal services, DV advocacy, and Latino community services in Providence",
+      "source": "luminari-rhode-island-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "",
+      "state": "RI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ri_day_one_ri_dv_services",
+      "program_name": "Day One RI (DV Services)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Day One RI",
+      "phone": "800-494-8100",
+      "website": "https://dayoneri.org",
+      "eligibility": "Anyone experiencing DV. dayoneri.org. Elizabeth Buffum Chace Center (Warwick: 401-738-1700). Womens Center of RI (Providence: 401-861-2760).",
+      "apply_notes": "24/7 DV and sexual assault crisis line and services statewide",
+      "source": "luminari-rhode-island-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "RI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ri_rhode_island_veterans_services_ridmva",
+      "program_name": "Rhode Island Veterans Services (RIDMVA)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Rhode Island Veterans Services",
+      "phone": "401-462-0324",
+      "website": "https://vets.ri.gov",
+      "eligibility": "RI veterans and families. Providence VA Medical Center: 401-273-7100.",
+      "apply_notes": "VA benefits navigation, state veterans services",
+      "source": "luminari-rhode-island-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "RI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ri_ri_division_of_elderly_affairs_dea",
+      "program_name": "RI Division of Elderly Affairs (DEA)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "RI Division of Elderly Affairs",
+      "phone": "401-462-0503",
+      "website": "https://dea.ri.gov",
+      "eligibility": "Adults 60+. Six Area Agencies on Aging. dea.ri.gov.",
+      "apply_notes": "Services for adults 60+ \u2014 Meals on Wheels, transportation, elder rights, caregiver support",
+      "source": "luminari-rhode-island-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "RI",
+      "federal_interface": false
+    }
+  ]
+}

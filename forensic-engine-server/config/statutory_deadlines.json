@@ -1,0 +1,528 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "description": "Statutory deadlines by pipeline. Each deadline has a federal baseline and optional state overrides. The engine calculates remaining days from the triggering event date.",
+    "date_created": "2026-03-06",
+    "pipelines_covered": 9,
+    "disclaimer": "General guidance — not legal advice. Deadlines may vary by jurisdiction, case facts, and tolling provisions. Consult legal aid for time-sensitive matters."
+  },
+  "deadlines": [
+    {
+      "pipeline_id": "domestic_violence",
+      "deadlines": [
+        {
+          "deadline_id": "dv_protective_order",
+          "action": "File for protective/restraining order",
+          "trigger_event": "incident_date",
+          "federal": {
+            "days": null,
+            "statute": null,
+            "notes": "No federal deadline — state law governs"
+          },
+          "states": {
+            "WA": { "days": null, "statute": "RCW 7.105", "notes": "No strict deadline. Temporary order issued same day; full hearing within 14 days." },
+            "OR": { "days": null, "statute": "ORS 107.718", "notes": "No strict deadline. Temporary order ex parte; hearing within 21 days." },
+            "CA": { "days": null, "statute": "CA Fam Code §6300", "notes": "No strict deadline. TRO issued same day; hearing within 21-25 days." }
+          },
+          "urgency": "critical",
+          "category": "safety"
+        },
+        {
+          "deadline_id": "dv_police_report",
+          "action": "File police report for domestic violence incident",
+          "trigger_event": "incident_date",
+          "federal": {
+            "days": null,
+            "statute": null,
+            "notes": "No federal deadline — report as soon as possible"
+          },
+          "states": {
+            "WA": { "days": 365, "statute": "RCW 9A.36 (misdemeanor SOL)", "notes": "Misdemeanor DV: 1 year. Felony DV: 3 years (RCW 9A.04.080)." },
+            "OR": { "days": 730, "statute": "ORS 131.125", "notes": "Misdemeanor: 2 years. Felony: 3-6 years depending on class." },
+            "CA": { "days": 365, "statute": "CA PC §802", "notes": "Misdemeanor: 1 year. Felony: 3 years. Aggravated DV: no limit." }
+          },
+          "urgency": "high",
+          "category": "documentation"
+        },
+        {
+          "deadline_id": "dv_vawa_petition",
+          "action": "File VAWA self-petition (immigration)",
+          "trigger_event": "separation_or_divorce_date",
+          "federal": {
+            "days": 730,
+            "statute": "INA §204(a)(1)(A)(iii)-(iv)",
+            "notes": "Must file within 2 years of divorce from abuser. No deadline if still married."
+          },
+          "states": {},
+          "urgency": "high",
+          "category": "immigration"
+        }
+      ]
+    },
+    {
+      "pipeline_id": "tenant_rights",
+      "deadlines": [
+        {
+          "deadline_id": "tr_respond_eviction",
+          "action": "Respond to eviction notice / unlawful detainer",
+          "trigger_event": "notice_served_date",
+          "federal": {
+            "days": null,
+            "statute": null,
+            "notes": "No federal deadline — state law governs"
+          },
+          "states": {
+            "WA": { "days": 20, "statute": "RCW 59.12.030", "notes": "20 days to respond to unlawful detainer summons. 14-day pay-or-vacate for nonpayment." },
+            "OR": { "days": 7, "statute": "ORS 105.135", "notes": "7 days to appear after service. 72-hour notice for nonpayment (13 days if first offense)." },
+            "CA": { "days": 5, "statute": "CCP §1167", "notes": "5 days to respond to unlawful detainer. 3-day pay-or-quit for nonpayment." }
+          },
+          "urgency": "critical",
+          "category": "legal_response"
+        },
+        {
+          "deadline_id": "tr_habitability_complaint",
+          "action": "File habitability complaint with code enforcement",
+          "trigger_event": "notice_to_landlord_date",
+          "federal": {
+            "days": null,
+            "statute": null,
+            "notes": "No federal deadline — file after landlord fails to repair within reasonable time"
+          },
+          "states": {
+            "WA": { "days": 30, "statute": "RCW 59.18.070", "notes": "Landlord has 10 days to begin repair after written notice. File complaint if no action within 30 days." },
+            "OR": { "days": 30, "statute": "ORS 90.360", "notes": "Landlord has 7 days for emergency repairs, 30 days for non-emergency. File after deadline passes." },
+            "CA": { "days": 30, "statute": "CC §1942", "notes": "Landlord has 30 days after notice. Tenant may repair-and-deduct or withhold rent after 30 days." }
+          },
+          "urgency": "high",
+          "category": "complaint"
+        },
+        {
+          "deadline_id": "tr_security_deposit",
+          "action": "Demand return of security deposit",
+          "trigger_event": "move_out_date",
+          "federal": {
+            "days": null,
+            "statute": null,
+            "notes": "No federal deadline — state law governs"
+          },
+          "states": {
+            "WA": { "days": 21, "statute": "RCW 59.18.280", "notes": "Landlord must return deposit or itemized deductions within 21 days." },
+            "OR": { "days": 31, "statute": "ORS 90.300", "notes": "Landlord has 31 days to return deposit with itemized statement." },
+            "CA": { "days": 21, "statute": "CC §1950.5", "notes": "Landlord has 21 days to return deposit with itemized statement. 2x penalty for bad faith." }
+          },
+          "urgency": "medium",
+          "category": "financial"
+        },
+        {
+          "deadline_id": "tr_fair_housing_complaint",
+          "action": "File housing discrimination complaint",
+          "trigger_event": "discriminatory_act_date",
+          "federal": {
+            "days": 365,
+            "statute": "42 USC §3610(a)(1)(A)",
+            "notes": "File with HUD within 1 year of discriminatory act."
+          },
+          "states": {
+            "WA": { "days": 365, "statute": "RCW 49.60.230", "notes": "File with WSHRC within 1 year." },
+            "OR": { "days": 365, "statute": "ORS 659A.820", "notes": "File with BOLI within 1 year." },
+            "CA": { "days": 1095, "statute": "Gov Code §12960", "notes": "File with CRD within 3 years (extended from 1 year in 2024)." }
+          },
+          "urgency": "high",
+          "category": "discrimination"
+        }
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "deadlines": [
+        {
+          "deadline_id": "ins_internal_appeal",
+          "action": "File internal appeal of claim denial",
+          "trigger_event": "denial_notice_date",
+          "federal": {
+            "days": 180,
+            "statute": "29 CFR §2560.503-1(h)",
+            "notes": "ERISA plans: 180 days for internal appeal. ACA plans: 180 days."
+          },
+          "states": {
+            "WA": { "days": 180, "statute": "WAC 284-43-3130", "notes": "180 days from denial. Insurer must respond within 30 days (urgent: 72 hours)." },
+            "OR": { "days": 180, "statute": "ORS 743B.080", "notes": "180 days from denial. Insurer must respond within 30 days." },
+            "CA": { "days": 180, "statute": "CA Health & Safety Code §1368", "notes": "180 days from denial. HMO: file with DMHC. PPO: file with CDI." }
+          },
+          "urgency": "critical",
+          "category": "appeal"
+        },
+        {
+          "deadline_id": "ins_external_review",
+          "action": "Request external/independent review",
+          "trigger_event": "internal_appeal_denial_date",
+          "federal": {
+            "days": 120,
+            "statute": "42 USC §300gg-19(b)",
+            "notes": "ACA: 4 months from internal appeal denial for external review."
+          },
+          "states": {
+            "WA": { "days": 180, "statute": "RCW 48.43.535", "notes": "180 days from internal appeal denial. File with OIC for IRO review." },
+            "OR": { "days": 180, "statute": "ORS 743B.253", "notes": "180 days. File with DCBS for independent review." },
+            "CA": { "days": 180, "statute": "CA Health & Safety Code §1374.30", "notes": "HMO: 180 days for IMR through DMHC (free, binding). PPO: 180 days through CDI." }
+          },
+          "urgency": "critical",
+          "category": "appeal"
+        },
+        {
+          "deadline_id": "ins_state_complaint",
+          "action": "File complaint with state insurance regulator",
+          "trigger_event": "denial_notice_date",
+          "federal": {
+            "days": null,
+            "statute": null,
+            "notes": "No federal deadline — file with state regulator anytime"
+          },
+          "states": {
+            "WA": { "days": null, "statute": "RCW 48.02", "notes": "No deadline. File with OIC anytime. OIC investigates within 30 days." },
+            "OR": { "days": null, "statute": "ORS 731.264", "notes": "No deadline. File with DCBS anytime." },
+            "CA": { "days": null, "statute": "CA Ins Code §790.03", "notes": "No deadline. HMO: DMHC (888-466-2219). PPO: CDI (800-927-4357)." }
+          },
+          "urgency": "high",
+          "category": "complaint"
+        },
+        {
+          "deadline_id": "ins_bad_faith_lawsuit",
+          "action": "File bad faith insurance lawsuit",
+          "trigger_event": "denial_notice_date",
+          "federal": {
+            "days": null,
+            "statute": null,
+            "notes": "State law governs SOL for bad faith claims"
+          },
+          "states": {
+            "WA": { "days": 1095, "statute": "RCW 4.16.080", "notes": "3-year SOL for bad faith (contract) or CPA violation." },
+            "OR": { "days": 2190, "statute": "ORS 12.080", "notes": "6-year SOL for breach of contract / bad faith." },
+            "CA": { "days": 730, "statute": "CCP §339", "notes": "2-year SOL for bad faith tort. 4 years for breach of written contract." }
+          },
+          "urgency": "medium",
+          "category": "litigation"
+        }
+      ]
+    },
+    {
+      "pipeline_id": "wage_theft",
+      "deadlines": [
+        {
+          "deadline_id": "wt_wage_claim",
+          "action": "File wage claim with state labor agency",
+          "trigger_event": "last_unpaid_date",
+          "federal": {
+            "days": 730,
+            "statute": "29 USC §255(a)",
+            "notes": "FLSA: 2 years for non-willful, 3 years for willful violations."
+          },
+          "states": {
+            "WA": { "days": 1095, "statute": "RCW 49.48.083", "notes": "3 years. File with L&I. Double damages for willful violations." },
+            "OR": { "days": 730, "statute": "ORS 652.150", "notes": "2 years. File with BOLI. Penalty wages up to 30 days." },
+            "CA": { "days": 1095, "statute": "LC §98.2", "notes": "3 years for unpaid wages. File with DLSE (Labor Commissioner). 4 years for written contract." }
+          },
+          "urgency": "critical",
+          "category": "complaint"
+        },
+        {
+          "deadline_id": "wt_final_paycheck",
+          "action": "Demand final paycheck after termination",
+          "trigger_event": "termination_date",
+          "federal": {
+            "days": null,
+            "statute": null,
+            "notes": "No federal deadline — state law governs final pay timing"
+          },
+          "states": {
+            "WA": { "days": null, "statute": "RCW 49.48.010", "notes": "Due at next regular payday. Double damages if willfully withheld." },
+            "OR": { "days": 1, "statute": "ORS 652.140", "notes": "If fired: due by end of next business day. If quit with 48hr notice: due on last day." },
+            "CA": { "days": 0, "statute": "LC §201-202", "notes": "If fired: due immediately. If quit with 72hr notice: due on last day. Waiting time penalty: up to 30 days' wages." }
+          },
+          "urgency": "critical",
+          "category": "financial"
+        },
+        {
+          "deadline_id": "wt_discrimination_complaint",
+          "action": "File workplace discrimination/retaliation complaint",
+          "trigger_event": "discriminatory_act_date",
+          "federal": {
+            "days": 300,
+            "statute": "42 USC §2000e-5(e)",
+            "notes": "EEOC: 300 days in states with FEP agency. 180 days otherwise."
+          },
+          "states": {
+            "WA": { "days": 300, "statute": "RCW 49.60.230", "notes": "File with WSHRC within 300 days (worksharing with EEOC)." },
+            "OR": { "days": 365, "statute": "ORS 659A.820", "notes": "File with BOLI within 1 year." },
+            "CA": { "days": 1095, "statute": "Gov Code §12960", "notes": "File with CRD within 3 years (extended 2024). Worksharing with EEOC." }
+          },
+          "urgency": "high",
+          "category": "discrimination"
+        }
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "deadlines": [
+        {
+          "deadline_id": "cw_shelter_care_hearing",
+          "action": "Attend shelter care / detention hearing",
+          "trigger_event": "child_removal_date",
+          "federal": {
+            "days": null,
+            "statute": null,
+            "notes": "State law governs — typically 24-72 hours after removal"
+          },
+          "states": {
+            "WA": { "days": 3, "statute": "RCW 13.34.065", "notes": "Shelter care hearing within 72 hours of removal (excluding weekends/holidays)." },
+            "OR": { "days": 1, "statute": "ORS 419B.183", "notes": "Shelter hearing within 24 hours (next judicial day)." },
+            "CA": { "days": 2, "statute": "WIC §315", "notes": "Detention hearing within 48 hours of removal (next court day)." }
+          },
+          "urgency": "critical",
+          "category": "legal_response"
+        },
+        {
+          "deadline_id": "cw_icwa_notice",
+          "action": "Verify ICWA notice was properly sent to tribe",
+          "trigger_event": "child_removal_date",
+          "federal": {
+            "days": null,
+            "statute": "25 USC §1912(a)",
+            "notes": "ICWA requires notice to tribe by registered mail. No specific day count but must be 'timely.' Tribe has 20 days to respond."
+          },
+          "states": {
+            "WA": { "days": null, "statute": "RCW 13.38.070", "notes": "WA ICWA (WICWA) requires notice. Active efforts required, not just reasonable efforts." },
+            "OR": { "days": null, "statute": "ORS 419B.875", "notes": "OR ICWA requires notice. Must make active efforts to prevent breakup of Indian family." },
+            "CA": { "days": null, "statute": "WIC §224.2", "notes": "CA ICWA requires inquiry at every hearing. Notice must be sent if reason to know child is AI/AN." }
+          },
+          "urgency": "critical",
+          "category": "tribal_rights"
+        },
+        {
+          "deadline_id": "cw_permanency_hearing",
+          "action": "Permanency hearing — reunification deadline",
+          "trigger_event": "child_removal_date",
+          "federal": {
+            "days": 365,
+            "statute": "42 USC §675(5)(C)",
+            "notes": "ASFA: permanency hearing within 12 months of removal. TPR petition if child in care 15 of last 22 months."
+          },
+          "states": {
+            "WA": { "days": 365, "statute": "RCW 13.34.145", "notes": "12 months. Reunification services typically 6-12 months." },
+            "OR": { "days": 365, "statute": "ORS 419B.476", "notes": "12 months. Permanency plan required." },
+            "CA": { "days": 365, "statute": "WIC §366.21", "notes": "6-month review + 12-month permanency hearing. 18 months max for reunification services." }
+          },
+          "urgency": "high",
+          "category": "legal_response"
+        }
+      ]
+    },
+    {
+      "pipeline_id": "debt_collection_abuse",
+      "deadlines": [
+        {
+          "deadline_id": "dc_dispute_debt",
+          "action": "Dispute debt in writing after validation notice",
+          "trigger_event": "validation_notice_date",
+          "federal": {
+            "days": 30,
+            "statute": "15 USC §1692g(b)",
+            "notes": "FDCPA: 30 days to dispute in writing. Collector must cease until verified."
+          },
+          "states": {
+            "WA": { "days": 30, "statute": "RCW 19.16.250", "notes": "30 days (follows FDCPA). WA Collection Agency Act provides additional protections." },
+            "OR": { "days": 30, "statute": "ORS 646.639", "notes": "30 days (follows FDCPA). OR Unlawful Debt Collection Practices Act." },
+            "CA": { "days": 30, "statute": "CC §1788.14", "notes": "30 days (follows FDCPA). Rosenthal Fair Debt Collection Practices Act extends to original creditors." }
+          },
+          "urgency": "critical",
+          "category": "legal_response"
+        },
+        {
+          "deadline_id": "dc_fdcpa_lawsuit",
+          "action": "File FDCPA violation lawsuit",
+          "trigger_event": "violation_date",
+          "federal": {
+            "days": 365,
+            "statute": "15 USC §1692k(d)",
+            "notes": "1 year from violation. Statutory damages up to $1,000 + actual damages + attorney fees."
+          },
+          "states": {
+            "WA": { "days": 1460, "statute": "RCW 19.16.440", "notes": "4 years for WA CPA violations. FDCPA: 1 year (federal)." },
+            "OR": { "days": 365, "statute": "ORS 646.641", "notes": "1 year for OR UDCPA. $200 statutory damages per violation." },
+            "CA": { "days": 365, "statute": "CC §1788.30", "notes": "1 year for Rosenthal Act. Statutory damages up to $1,000." }
+          },
+          "urgency": "high",
+          "category": "litigation"
+        },
+        {
+          "deadline_id": "dc_sol_expired_debt",
+          "action": "Assert statute of limitations defense on old debt",
+          "trigger_event": "last_payment_date",
+          "federal": {
+            "days": null,
+            "statute": null,
+            "notes": "State law governs SOL on debt. Collector cannot sue on time-barred debt."
+          },
+          "states": {
+            "WA": { "days": 2190, "statute": "RCW 4.16.040", "notes": "6 years for written contracts. 3 years for oral contracts." },
+            "OR": { "days": 2190, "statute": "ORS 12.080", "notes": "6 years for written contracts. 6 years for oral contracts." },
+            "CA": { "days": 1460, "statute": "CCP §337", "notes": "4 years for written contracts. 2 years for oral contracts." }
+          },
+          "urgency": "medium",
+          "category": "defense"
+        }
+      ]
+    },
+    {
+      "pipeline_id": "guardianship_abuse",
+      "deadlines": [
+        {
+          "deadline_id": "ga_contest_guardianship",
+          "action": "File objection to guardianship petition",
+          "trigger_event": "petition_notice_date",
+          "federal": {
+            "days": null,
+            "statute": null,
+            "notes": "State law governs — typically 10-30 days after notice"
+          },
+          "states": {
+            "WA": { "days": 20, "statute": "RCW 11.130.305", "notes": "Object within 20 days of notice. Right to counsel." },
+            "OR": { "days": 15, "statute": "ORS 125.060", "notes": "Object within 15 days of notice." },
+            "CA": { "days": 15, "statute": "Prob Code §1461", "notes": "Object at or before hearing. Typically 15 days notice required." }
+          },
+          "urgency": "critical",
+          "category": "legal_response"
+        },
+        {
+          "deadline_id": "ga_annual_accounting",
+          "action": "Demand guardian's annual accounting",
+          "trigger_event": "guardianship_anniversary_date",
+          "federal": {
+            "days": null,
+            "statute": null,
+            "notes": "State law governs — guardians typically must file annual reports"
+          },
+          "states": {
+            "WA": { "days": 90, "statute": "RCW 11.130.510", "notes": "Guardian must file annual report within 90 days of anniversary. Court can remove for failure." },
+            "OR": { "days": 30, "statute": "ORS 125.325", "notes": "Annual report due within 30 days of anniversary." },
+            "CA": { "days": 90, "statute": "Prob Code §2620", "notes": "Accounting due within 90 days of anniversary. Biennial for established guardianships." }
+          },
+          "urgency": "medium",
+          "category": "oversight"
+        }
+      ]
+    },
+    {
+      "pipeline_id": "elder_abuse",
+      "deadlines": [
+        {
+          "deadline_id": "ea_aps_report",
+          "action": "Report suspected elder abuse to APS",
+          "trigger_event": "discovery_date",
+          "federal": {
+            "days": null,
+            "statute": "42 USC §3058i",
+            "notes": "Elder Justice Act encourages reporting. No federal deadline — state law governs mandatory reporting."
+          },
+          "states": {
+            "WA": { "days": 2, "statute": "RCW 74.34.035", "notes": "Mandatory reporters: within 48 hours. Anyone can report. APS: 866-363-4276." },
+            "OR": { "days": 1, "statute": "ORS 124.060", "notes": "Mandatory reporters: immediately (within 24 hours). Anyone can report. APS: 855-503-7233." },
+            "CA": { "days": 2, "statute": "WIC §15630", "notes": "Mandatory reporters: within 2 working days (phone report immediately). APS: 833-401-0832." }
+          },
+          "urgency": "critical",
+          "category": "safety"
+        },
+        {
+          "deadline_id": "ea_nursing_home_complaint",
+          "action": "File complaint against nursing home/facility",
+          "trigger_event": "incident_date",
+          "federal": {
+            "days": null,
+            "statute": "42 CFR §488.325",
+            "notes": "CMS requires states to investigate within 2-10 days depending on severity. No filing deadline."
+          },
+          "states": {
+            "WA": { "days": null, "statute": "RCW 18.51.009", "notes": "No deadline. File with DSHS RCS (800-562-6078) or LTC Ombudsman (800-562-6028)." },
+            "OR": { "days": null, "statute": "ORS 441.630", "notes": "No deadline. File with DHS Aging & People with Disabilities or LTC Ombudsman (800-522-2602)." },
+            "CA": { "days": null, "statute": "HSC §1418", "notes": "No deadline. File with CDPH (800-236-9747) or LTC Ombudsman (800-231-4024)." }
+          },
+          "urgency": "high",
+          "category": "complaint"
+        },
+        {
+          "deadline_id": "ea_financial_exploitation",
+          "action": "Report financial exploitation of elder",
+          "trigger_event": "discovery_date",
+          "federal": {
+            "days": null,
+            "statute": null,
+            "notes": "Report to APS and local law enforcement. Consider SAR filing if financial institution involved."
+          },
+          "states": {
+            "WA": { "days": 5, "statute": "RCW 74.34.020", "notes": "Financial institutions: report within 5 business days. Others: report to APS." },
+            "OR": { "days": 1, "statute": "ORS 124.060", "notes": "Same as abuse — mandatory reporters must report immediately." },
+            "CA": { "days": 2, "statute": "WIC §15630.1", "notes": "Financial institutions: report within 2 business days. Others: report to APS." }
+          },
+          "urgency": "critical",
+          "category": "financial"
+        }
+      ]
+    },
+    {
+      "pipeline_id": "family_separation_case",
+      "deadlines": [
+        {
+          "deadline_id": "fs_custody_modification",
+          "action": "File motion to modify custody order",
+          "trigger_event": "change_of_circumstances_date",
+          "federal": {
+            "days": null,
+            "statute": null,
+            "notes": "State law governs. Must show substantial change in circumstances."
+          },
+          "states": {
+            "WA": { "days": null, "statute": "RCW 26.09.260", "notes": "No deadline but must show adequate cause. 2-year waiting period unless child's health at risk." },
+            "OR": { "days": null, "statute": "ORS 107.135", "notes": "No deadline. Must show substantial change in circumstances." },
+            "CA": { "days": null, "statute": "Fam Code §3022", "notes": "No deadline. Must show changed circumstances. Emergency ex parte if child at risk." }
+          },
+          "urgency": "high",
+          "category": "legal_response"
+        },
+        {
+          "deadline_id": "fs_appeal_custody_order",
+          "action": "Appeal custody/visitation order",
+          "trigger_event": "order_date",
+          "federal": {
+            "days": null,
+            "statute": null,
+            "notes": "State law governs appellate deadlines"
+          },
+          "states": {
+            "WA": { "days": 30, "statute": "RAP 5.2", "notes": "30 days from entry of order to file notice of appeal." },
+            "OR": { "days": 30, "statute": "ORS 19.255", "notes": "30 days from entry of judgment." },
+            "CA": { "days": 60, "statute": "CRC 8.104", "notes": "60 days from notice of entry of judgment. 180 days if no notice served." }
+          },
+          "urgency": "critical",
+          "category": "legal_response"
+        },
+        {
+          "deadline_id": "fs_contempt_motion",
+          "action": "File contempt motion for custody order violation",
+          "trigger_event": "violation_date",
+          "federal": {
+            "days": null,
+            "statute": null,
+            "notes": "No federal deadline — state law governs"
+          },
+          "states": {
+            "WA": { "days": null, "statute": "RCW 26.09.160", "notes": "No strict deadline. File promptly. Court can impose sanctions, modify custody." },
+            "OR": { "days": null, "statute": "ORS 33.015", "notes": "No strict deadline. File promptly. Court can impose fines, jail, modify custody." },
+            "CA": { "days": null, "statute": "CCP §1218", "notes": "No strict deadline. File promptly. Court can impose fines up to $1,000, jail up to 5 days per violation." }
+          },
+          "urgency": "high",
+          "category": "enforcement"
+        }
+      ]
+    }
+  ]
+}

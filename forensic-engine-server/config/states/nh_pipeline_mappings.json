@@ -1,0 +1,285 @@
+{
+  "meta": {
+    "state": "NH",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "nh_nh_food_bank_manchester_statewide",
+        "nh_legal_aid_nh_legal_assistance_nhla",
+        "nh_nh_rapid_response_emergency_services_211",
+        "nh_nh_refugee_and_immigrant_support_service",
+        "nh_nh_veterans_services_nhvac",
+        "nh_granite_united_way_statewide_benefits_na"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ],
+      "flags": [
+        "nh_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "nh_wic_new_hampshire",
+        "nh_nh_tanf_family_assistance_program_dhhs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ],
+      "flags": [
+        "nh_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "nh_nh_snap_food_assistance_dhhs",
+        "nh_wic_new_hampshire",
+        "nh_nh_housing_finance_authority_nhhfa",
+        "nh_legal_aid_nh_legal_assistance_nhla",
+        "nh_nh_tanf_family_assistance_program_dhhs",
+        "nh_nh_liheap_home_energy_assistance_dhhs",
+        "nh_nh_veterans_services_nhvac"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ],
+      "flags": [
+        "nh_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "employment_dispute",
+      "programs": [
+        "nh_nh_unemployment_insurance_nhes"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ],
+      "flags": [
+        "nh_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "nh_nh_housing_finance_authority_nhhfa",
+        "nh_legal_aid_nh_legal_assistance_nhla",
+        "nh_nh_dv_hotline_crisis_line"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ],
+      "flags": [
+        "nh_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "nh_nh_granite_advantage_medicaid_dhhs",
+        "nh_concord_hospital_dartmouth_health_safety",
+        "nh_nh_community_health_centers_fqhcs",
+        "nh_nh_unemployment_insurance_nhes",
+        "nh_riverbend_community_mental_health_concor"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ],
+      "flags": [
+        "nh_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "nh_nh_liheap_home_energy_assistance_dhhs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ],
+      "flags": [
+        "nh_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nh_involuntary_hold_law",
+        "nh_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nh_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nh_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nh_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nh_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nh_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "nh_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nh_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nh_restraint_seclusion_limits",
+        "nh_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nh_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "nh_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nh_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

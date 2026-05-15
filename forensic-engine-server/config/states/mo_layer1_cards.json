@@ -1,0 +1,1347 @@
+{
+  "meta": {
+    "state": "MO",
+    "state_name": "Missouri",
+    "schema_version": "1.0.0",
+    "last_updated": "2026-03-06",
+    "description": "Layer 1 help cards \u2014 8 problem-cluster-organized guidance cards covering Food, Healthcare, Housing/Utilities, DV/Safety, Legal Aid, Children/Families, Cash Assistance, Immigration"
+  },
+  "clusters": [
+    {
+      "cluster_id": "mo_food",
+      "cluster_name": "Food Assistance",
+      "icon": "utensils",
+      "cards": [
+        {
+          "card_id": "mo_food_snap_apply",
+          "title": "Apply for SNAP (Food Stamps)",
+          "summary": "Missouri SNAP provides monthly food benefits via EBT card. Maximum $292/month for individual, $535 for family of 3. In-person application required at FSD office.",
+          "who_qualifies": "Income at or below 130% FPL (gross) and 100% FPL (net). Assets under $2,750 ($4,250 if elderly/disabled). ABAWDs aged 18-49 must meet 80-hour/month work requirement.",
+          "how_to_apply": "Apply in person at local Family Support Division (FSD) office. Bring ID, proof of income, proof of residence, and Social Security numbers for all household members.",
+          "phone": "855-373-4636",
+          "website": "https://mydss.mo.gov/food-assistance",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income (pay stubs, SSI letter)",
+            "Proof of residence",
+            "Social Security cards",
+            "Utility bills"
+          ],
+          "program_ids": [
+            "mo_snap"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "food",
+            "snap",
+            "ebt",
+            "hungry",
+            "groceries"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_food_emergency",
+          "title": "Emergency Food \u2014 Food Banks & Pantries",
+          "summary": "No waiting period. Walk-in food pantries and mobile distributions available across Missouri. No income verification required at most locations.",
+          "who_qualifies": "Anyone in need. No income verification at most pantries. Some require proof of residence in service area.",
+          "how_to_apply": "Walk in during operating hours. Call 211 or visit feedingmissouri.org to find nearest pantry.",
+          "phone": "211",
+          "website": "https://feedingmissouri.org",
+          "documents_needed": [
+            "Photo ID (some locations)",
+            "Proof of address (some locations)"
+          ],
+          "program_ids": [
+            "mo_harvesters",
+            "mo_stl_foodbank",
+            "mo_ozarks_food_harvest",
+            "mo_feeding_missouri"
+          ],
+          "urgency": "immediate",
+          "routing_tags": [
+            "food",
+            "hungry",
+            "emergency",
+            "pantry",
+            "food bank"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_food_wic",
+          "title": "WIC \u2014 Women, Infants & Children",
+          "summary": "Supplemental nutrition for pregnant/postpartum women, infants, and children under 5. Provides specific food packages (milk, eggs, cereal, fruits/vegetables) plus nutrition education.",
+          "who_qualifies": "Pregnant, postpartum (up to 6 months), breastfeeding (up to 12 months), infants, and children under 5. Income at or below 185% FPL.",
+          "how_to_apply": "Contact local WIC clinic. Appointments available. Bring proof of income, ID, proof of residence, and immunization records for children.",
+          "phone": "800-392-8209",
+          "website": "https://health.mo.gov/living/families/wic/",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "Proof of residence",
+            "Child immunization records",
+            "Proof of pregnancy (if applicable)"
+          ],
+          "program_ids": [
+            "mo_wic"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "food",
+            "wic",
+            "pregnant",
+            "baby",
+            "infant",
+            "children",
+            "nutrition"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_food_school_meals",
+          "title": "Free & Reduced School Meals",
+          "summary": "Free breakfast and lunch for children in qualifying households. Application through school district. Some districts participate in Community Eligibility Provision (CEP) providing universal free meals.",
+          "who_qualifies": "Children in households at or below 130% FPL (free) or 185% FPL (reduced). Automatic qualification if receiving SNAP, TANF, or FDPIR.",
+          "how_to_apply": "Submit application through child's school district. Many districts offer online applications.",
+          "phone": "573-751-3526",
+          "website": "https://dese.mo.gov/financial-admin-services/food-nutrition-services",
+          "documents_needed": [
+            "Household income information",
+            "Child's school enrollment"
+          ],
+          "program_ids": [
+            "mo_school_meals"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "food",
+            "school",
+            "children",
+            "lunch",
+            "breakfast",
+            "meals"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_food_seniors",
+          "title": "Senior Nutrition Programs",
+          "summary": "Congregate meals at senior centers and home-delivered meals (Meals on Wheels) for homebound seniors. No income requirement for most programs.",
+          "who_qualifies": "Adults aged 60+ (congregate meals). Homebound adults 60+ (home-delivered meals). Spouses of eligible individuals regardless of age.",
+          "how_to_apply": "Contact local Area Agency on Aging or call Missouri Senior Services hotline.",
+          "phone": "800-235-5503",
+          "website": "https://health.mo.gov/seniors/seniorservices/",
+          "documents_needed": [
+            "Proof of age",
+            "Proof of residence"
+          ],
+          "program_ids": [
+            "mo_meals_on_wheels",
+            "mo_senior_nutrition"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "food",
+            "senior",
+            "elderly",
+            "meals on wheels",
+            "homebound"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        }
+      ]
+    },
+    {
+      "cluster_id": "mo_healthcare",
+      "cluster_name": "Healthcare Access",
+      "icon": "heart-pulse",
+      "cards": [
+        {
+          "card_id": "mo_health_healthnet",
+          "title": "MO HealthNet (Medicaid)",
+          "summary": "Missouri expanded Medicaid in 2021 to cover adults aged 19-64 with income at or below 138% FPL. Covers doctor visits, hospital, prescriptions, mental health, dental (limited), and vision.",
+          "who_qualifies": "Adults 19-64 at or below 138% FPL ($20,783/individual, $35,532/family of 3). Children under 19 at higher income thresholds. Pregnant women up to 300% FPL.",
+          "how_to_apply": "Apply online at mydss.mo.gov, by phone, or in person at FSD office. Processing takes up to 45 days (90 days for disability-based).",
+          "phone": "573-751-2005",
+          "website": "https://mydss.mo.gov/healthcare",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "Social Security number",
+            "Proof of residence",
+            "Proof of citizenship/immigration status"
+          ],
+          "program_ids": [
+            "mo_healthnet"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "healthcare",
+            "medicaid",
+            "healthnet",
+            "insurance",
+            "doctor",
+            "hospital"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_health_fqhc",
+          "title": "Community Health Centers (FQHCs)",
+          "summary": "Federally Qualified Health Centers provide primary care, dental, mental health, and pharmacy services on a sliding-fee scale. Available to everyone regardless of insurance or immigration status.",
+          "who_qualifies": "Anyone. Sliding fee scale based on income. No one turned away for inability to pay. No insurance required. No immigration status requirement.",
+          "how_to_apply": "Call or walk in to nearest FQHC. Find locations at findahealthcenter.hrsa.gov.",
+          "phone": "816-753-5144",
+          "website": "https://findahealthcenter.hrsa.gov",
+          "documents_needed": [
+            "Proof of income (for sliding scale)",
+            "Photo ID (preferred but not required)"
+          ],
+          "program_ids": [
+            "mo_kc_care",
+            "mo_samuel_rodgers",
+            "mo_swope_health",
+            "mo_affinia_healthcare"
+          ],
+          "urgency": "immediate",
+          "routing_tags": [
+            "healthcare",
+            "clinic",
+            "uninsured",
+            "sliding scale",
+            "community health",
+            "fqhc"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_health_mental",
+          "title": "Mental Health & Crisis Services",
+          "summary": "Missouri Department of Mental Health provides crisis intervention, outpatient counseling, substance use treatment, and psychiatric services. 988 Suicide & Crisis Lifeline available 24/7.",
+          "who_qualifies": "Anyone experiencing mental health crisis. Ongoing services based on income and clinical need. No insurance required for crisis services.",
+          "how_to_apply": "Crisis: Call 988 or text MO to 741741. Non-crisis: Contact local Community Mental Health Center or call DMH Access Crisis Intervention line.",
+          "phone": "988",
+          "website": "https://dmh.mo.gov/mental-illness",
+          "documents_needed": [
+            "Photo ID (for ongoing services)",
+            "Insurance card (if applicable)",
+            "Referral (not required for crisis)"
+          ],
+          "program_ids": [
+            "mo_dmh_crisis",
+            "mo_community_mental_health"
+          ],
+          "urgency": "immediate",
+          "routing_tags": [
+            "mental health",
+            "crisis",
+            "counseling",
+            "depression",
+            "anxiety",
+            "suicide",
+            "substance use"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_health_marketplace",
+          "title": "ACA Marketplace Insurance",
+          "summary": "Health insurance plans with income-based premium subsidies and cost-sharing reductions. Open enrollment November 1 \u2013 January 15 annually. Special enrollment for qualifying life events.",
+          "who_qualifies": "Individuals/families with income above 138% FPL (above Medicaid threshold). Lawfully present immigrants qualify for subsidies. Special enrollment for job loss, marriage, birth, move.",
+          "how_to_apply": "Apply at healthcare.gov or call the Marketplace. Free navigator assistance available.",
+          "phone": "800-318-2596",
+          "website": "https://www.healthcare.gov",
+          "documents_needed": [
+            "Social Security numbers",
+            "Income documentation",
+            "Immigration documents (if applicable)",
+            "Current insurance information"
+          ],
+          "program_ids": [
+            "mo_marketplace_navigator"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "healthcare",
+            "insurance",
+            "marketplace",
+            "aca",
+            "obamacare",
+            "premium",
+            "subsidy"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_health_prescription",
+          "title": "Prescription Assistance Programs",
+          "summary": "Multiple programs help cover prescription costs: MO HealthNet pharmacy benefit, MO Rx Plan (state discount program), manufacturer patient assistance programs, and 340B pharmacy pricing.",
+          "who_qualifies": "Varies by program. MO Rx: uninsured/underinsured residents. PAPs: income-based, typically under 300% FPL. 340B: patients of qualifying health centers.",
+          "how_to_apply": "MO Rx: Apply through DSS. PAPs: Apply through manufacturer websites or NeedyMeds.org. 340B: Use qualifying pharmacy.",
+          "phone": "573-751-2005",
+          "website": "https://www.needymeds.org",
+          "documents_needed": [
+            "Prescription information",
+            "Proof of income",
+            "Insurance status documentation"
+          ],
+          "program_ids": [
+            "mo_rx_plan"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "prescription",
+            "medication",
+            "pharmacy",
+            "drug costs",
+            "rx"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        }
+      ]
+    },
+    {
+      "cluster_id": "mo_housing_utilities",
+      "cluster_name": "Housing & Utilities",
+      "icon": "home",
+      "cards": [
+        {
+          "card_id": "mo_housing_emergency",
+          "title": "Emergency Shelter & Homeless Services",
+          "summary": "Emergency shelters, transitional housing, and rapid rehousing programs available across Missouri. Call 211 for immediate placement assistance.",
+          "who_qualifies": "Anyone experiencing homelessness or imminent risk of homelessness. Priority for families with children, veterans, and DV survivors.",
+          "how_to_apply": "Call 211 or contact local Continuum of Care provider. Walk-in available at most shelters.",
+          "phone": "211",
+          "website": "https://coeh.mo.gov/homeless-services",
+          "documents_needed": [
+            "Photo ID (helpful but not required)",
+            "Proof of homelessness or eviction notice (if available)"
+          ],
+          "program_ids": [
+            "mo_coc_shelters",
+            "mo_salvation_army_shelter"
+          ],
+          "urgency": "immediate",
+          "routing_tags": [
+            "housing",
+            "homeless",
+            "shelter",
+            "emergency",
+            "eviction",
+            "street"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_housing_rental_assistance",
+          "title": "Rental Assistance Programs",
+          "summary": "Emergency rental assistance through Community Action Agencies and local housing authorities. Helps with back rent, security deposits, and first month's rent.",
+          "who_qualifies": "Income at or below 50% AMI (varies by county). Must demonstrate housing instability or risk of eviction. Priority for households with children or elderly.",
+          "how_to_apply": "Contact local Community Action Agency or housing authority. Applications typically require income verification and landlord cooperation.",
+          "phone": "573-634-2297",
+          "website": "https://www.communityaction.org/find-a-cap/",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "Lease agreement",
+            "Eviction notice (if applicable)",
+            "Landlord contact information"
+          ],
+          "program_ids": [
+            "mo_community_action",
+            "mo_era"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "housing",
+            "rent",
+            "rental assistance",
+            "eviction",
+            "behind on rent",
+            "deposit"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_housing_section8",
+          "title": "Section 8 / Housing Choice Voucher",
+          "summary": "Federal rental subsidy paying the difference between 30% of household income and fair market rent. Administered by local Public Housing Authorities (PHAs). Long waitlists in most areas.",
+          "who_qualifies": "Income at or below 50% AMI. Priority for extremely low income (30% AMI), elderly, disabled, and families with children.",
+          "how_to_apply": "Apply through local PHA when waitlist opens. KC: HAKC (816-968-4100). STL: SLHA (314-531-4770).",
+          "phone": "816-968-4100",
+          "website": "https://www.hakc.org",
+          "documents_needed": [
+            "Photo ID for all adults",
+            "Birth certificates for children",
+            "Social Security cards",
+            "Proof of income",
+            "Background check consent"
+          ],
+          "program_ids": [
+            "mo_hakc_section8",
+            "mo_slha_section8"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "housing",
+            "section 8",
+            "voucher",
+            "hud",
+            "public housing",
+            "subsidized"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_housing_tenant_rights",
+          "title": "Tenant Rights & Eviction Defense",
+          "summary": "Missouri tenants have rights under RSMo Chapter 441. Landlords must provide 10-day notice for nonpayment, maintain habitable conditions, and follow legal eviction procedures. Free legal aid available.",
+          "who_qualifies": "Any Missouri tenant facing eviction, habitability issues, security deposit disputes, or landlord harassment.",
+          "how_to_apply": "Contact Legal Aid of Western Missouri (KC) or Legal Services of Eastern Missouri (STL) for free representation.",
+          "phone": "816-474-6750",
+          "website": "https://lawmo.org",
+          "documents_needed": [
+            "Lease agreement",
+            "Eviction notice",
+            "Photos of habitability issues",
+            "Communication records with landlord",
+            "Rent payment receipts"
+          ],
+          "program_ids": [
+            "mo_lawmo",
+            "mo_lsem"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "housing",
+            "tenant",
+            "eviction",
+            "landlord",
+            "lease",
+            "habitability",
+            "repair"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_utilities_liheap",
+          "title": "LIHEAP \u2014 Utility Assistance",
+          "summary": "Low Income Home Energy Assistance Program helps pay heating and cooling bills. One-time payment per season. Apply through FSD.",
+          "who_qualifies": "Income at or below 135% FPL. Must be responsible for home energy costs (directly or included in rent).",
+          "how_to_apply": "Apply at local FSD office or Community Action Agency. Heating season: October\u2013March. Cooling season: April\u2013September.",
+          "phone": "855-373-4636",
+          "website": "https://mydss.mo.gov/utility-assistance",
+          "documents_needed": [
+            "Photo ID",
+            "Social Security cards",
+            "Proof of income",
+            "Most recent utility bill",
+            "Proof of residence"
+          ],
+          "program_ids": [
+            "mo_liheap"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "utilities",
+            "electric",
+            "gas",
+            "heating",
+            "cooling",
+            "energy",
+            "liheap",
+            "shutoff"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        }
+      ]
+    },
+    {
+      "cluster_id": "mo_dv_safety",
+      "cluster_name": "Domestic Violence & Safety",
+      "icon": "shield",
+      "cards": [
+        {
+          "card_id": "mo_dv_crisis",
+          "title": "DV Crisis Hotline & Immediate Safety",
+          "summary": "24/7 crisis support, safety planning, and emergency shelter placement. Confidential. Available in multiple languages.",
+          "who_qualifies": "Anyone experiencing domestic violence, sexual assault, stalking, or human trafficking. No income requirement. No immigration status requirement.",
+          "how_to_apply": "Call the Missouri DV hotline or National DV Hotline. No appointment needed. Confidential.",
+          "phone": "800-799-7233",
+          "website": "https://www.thehotline.org",
+          "documents_needed": [
+            "None required for crisis services"
+          ],
+          "program_ids": [
+            "mo_ndvh",
+            "mo_mcadsv"
+          ],
+          "urgency": "immediate",
+          "routing_tags": [
+            "domestic violence",
+            "abuse",
+            "safety",
+            "shelter",
+            "crisis",
+            "stalking",
+            "dv"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_dv_protection_order",
+          "title": "Order of Protection (Restraining Order)",
+          "summary": "Missouri courts issue Orders of Protection (RSMo \u00a7455) against abusers. Ex parte (temporary) orders issued same day without abuser present. Full order after hearing within 15 days.",
+          "who_qualifies": "Any person who has been subject to domestic violence, stalking, or sexual assault by a household/family member or intimate partner.",
+          "how_to_apply": "File petition at county circuit court. Free filing. Victim advocates available to assist. No attorney required.",
+          "phone": "816-474-6750",
+          "website": "https://www.courts.mo.gov/page.jsp?id=533",
+          "documents_needed": [
+            "Photo ID",
+            "Documentation of abuse (police reports, photos, medical records)",
+            "Abuser's identifying information (name, address, description)"
+          ],
+          "program_ids": [
+            "mo_protection_order"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "protection order",
+            "restraining order",
+            "domestic violence",
+            "abuse",
+            "court",
+            "safety"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_dv_shelter",
+          "title": "DV Shelter & Transitional Housing",
+          "summary": "Confidential emergency shelters across Missouri for DV survivors and their children. Transitional housing programs provide 6-24 months of supported housing after shelter.",
+          "who_qualifies": "DV survivors and their children. No income requirement. Immigration status not a barrier.",
+          "how_to_apply": "Call local DV shelter or Missouri MCADSV hotline for placement. Intake is confidential.",
+          "phone": "573-634-4161",
+          "website": "https://www.mocadsv.org",
+          "documents_needed": [
+            "None required for emergency shelter. Transitional housing may require ID and income documentation."
+          ],
+          "program_ids": [
+            "mo_mcadsv_shelters",
+            "mo_rose_brooks",
+            "mo_safe_connections"
+          ],
+          "urgency": "immediate",
+          "routing_tags": [
+            "shelter",
+            "domestic violence",
+            "safe house",
+            "transitional housing",
+            "dv shelter"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_dv_legal",
+          "title": "DV Legal Advocacy & Representation",
+          "summary": "Free legal representation for DV survivors in protection orders, custody, divorce, immigration relief (VAWA/U-visa), and housing. Available through legal aid and DV agencies.",
+          "who_qualifies": "DV survivors. Income guidelines apply for legal aid (typically 125% FPL). DV agency legal advocates available regardless of income.",
+          "how_to_apply": "Contact Legal Aid of Western Missouri, Legal Services of Eastern Missouri, or local DV agency legal advocate.",
+          "phone": "816-474-6750",
+          "website": "https://lawmo.org",
+          "documents_needed": [
+            "Documentation of DV (police reports, protection orders, photos)",
+            "Income verification (for legal aid)",
+            "Immigration documents (for VAWA/U-visa cases)"
+          ],
+          "program_ids": [
+            "mo_lawmo_dv",
+            "mo_lsem_dv"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "legal",
+            "domestic violence",
+            "custody",
+            "divorce",
+            "vawa",
+            "u-visa",
+            "protection order"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_dv_children",
+          "title": "Children's Services \u2014 DV Impact",
+          "summary": "Specialized services for children exposed to domestic violence: counseling, advocacy, supervised visitation, and school-based support programs.",
+          "who_qualifies": "Children who have witnessed or been affected by domestic violence. Services available through DV shelters and Children's Division.",
+          "how_to_apply": "Contact local DV agency or Missouri Children's Division. School counselors can also make referrals.",
+          "phone": "800-392-3738",
+          "website": "https://dss.mo.gov/cd/",
+          "documents_needed": [
+            "Child's identifying information",
+            "Documentation of DV exposure (if available)"
+          ],
+          "program_ids": [
+            "mo_childrens_division"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "children",
+            "domestic violence",
+            "counseling",
+            "custody",
+            "supervised visitation"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        }
+      ]
+    },
+    {
+      "cluster_id": "mo_legal",
+      "cluster_name": "Legal Aid & Rights",
+      "icon": "scale",
+      "cards": [
+        {
+          "card_id": "mo_legal_aid_general",
+          "title": "Free Legal Aid \u2014 Civil Matters",
+          "summary": "Legal Aid of Western Missouri (KC region) and Legal Services of Eastern Missouri (STL region) provide free civil legal representation for low-income residents in housing, benefits, family law, consumer, and employment matters.",
+          "who_qualifies": "Income at or below 125% FPL. Priority for seniors, veterans, DV survivors, and individuals with disabilities.",
+          "how_to_apply": "Call intake line during business hours. Online applications available. Walk-in clinics at some locations.",
+          "phone": "816-474-6750",
+          "website": "https://lawmo.org",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "Documents related to legal issue"
+          ],
+          "program_ids": [
+            "mo_lawmo",
+            "mo_lsem"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "legal",
+            "lawyer",
+            "attorney",
+            "free legal",
+            "legal aid",
+            "civil"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_legal_wage_theft",
+          "title": "Wage Theft & Employment Rights",
+          "summary": "File wage claims with Missouri Department of Labor and Industrial Relations (DLS). Covers unpaid wages, overtime violations, minimum wage violations, and misclassification.",
+          "who_qualifies": "Any worker in Missouri regardless of immigration status. Claims must be filed within 2 years of violation (3 years for willful violations under FLSA).",
+          "how_to_apply": "File complaint online with MO DLS or contact legal aid for representation.",
+          "phone": "573-751-3403",
+          "website": "https://labor.mo.gov/DLS/General",
+          "documents_needed": [
+            "Pay stubs",
+            "Time records",
+            "Employment contract/offer letter",
+            "Communication with employer about wages",
+            "Bank statements showing deposits"
+          ],
+          "program_ids": [
+            "mo_dls_wage_claim"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "wage theft",
+            "unpaid wages",
+            "overtime",
+            "minimum wage",
+            "employment",
+            "labor"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_legal_discrimination",
+          "title": "Discrimination Complaints \u2014 MCHR",
+          "summary": "Missouri Commission on Human Rights (MCHR) investigates complaints of discrimination in employment, housing, and public accommodations based on race, color, religion, national origin, sex, disability, age, and familial status.",
+          "who_qualifies": "Anyone who has experienced discrimination in Missouri. Must file within 180 days of discriminatory act (300 days if dual-filed with EEOC).",
+          "how_to_apply": "File complaint with MCHR online, by mail, or in person. MCHR will investigate and attempt conciliation.",
+          "phone": "573-751-3325",
+          "website": "https://labor.mo.gov/mohumanrights",
+          "documents_needed": [
+            "Description of discriminatory act",
+            "Dates and locations",
+            "Names of individuals involved",
+            "Supporting evidence (emails, witnesses, records)"
+          ],
+          "program_ids": [
+            "mo_mchr"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "discrimination",
+            "civil rights",
+            "employment discrimination",
+            "housing discrimination",
+            "mchr",
+            "eeoc"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_legal_benefits_appeal",
+          "title": "Benefits Denial Appeal Process",
+          "summary": "If denied SNAP, MO HealthNet, TANF, or other DSS benefits, you have the right to a fair hearing. Must request within 90 days of adverse action. Free legal representation available.",
+          "who_qualifies": "Anyone denied, reduced, or terminated from a DSS-administered benefit program.",
+          "how_to_apply": "Request fair hearing in writing to MO DSS or through local FSD office. Legal aid can represent at hearing.",
+          "phone": "573-751-3221",
+          "website": "https://dss.mo.gov/fsd/fair-hearings.htm",
+          "documents_needed": [
+            "Denial/termination notice",
+            "Application documents",
+            "Income verification",
+            "Medical records (if disability-related)"
+          ],
+          "program_ids": [
+            "mo_dss_fair_hearing"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "benefits",
+            "denied",
+            "appeal",
+            "fair hearing",
+            "snap denied",
+            "medicaid denied",
+            "tanf denied"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_legal_immigration",
+          "title": "Immigration Legal Services",
+          "summary": "Free or low-cost immigration legal services for asylum, VAWA, U-visa, T-visa, DACA, TPS, and naturalization. Available through legal aid and DOJ-accredited organizations.",
+          "who_qualifies": "Immigrants in Missouri regardless of current status. Priority for DV survivors, trafficking victims, unaccompanied minors, and asylum seekers.",
+          "how_to_apply": "Contact legal aid immigration unit or local DOJ-accredited representative. Intake by phone or in person.",
+          "phone": "816-474-6750",
+          "website": "https://lawmo.org/immigration",
+          "documents_needed": [
+            "Passport or travel documents",
+            "Immigration documents (visa, I-94, EAD)",
+            "Documentation supporting claim (for asylum, VAWA, U-visa)"
+          ],
+          "program_ids": [
+            "mo_lawmo_immigration",
+            "mo_lsem_immigration"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "immigration",
+            "asylum",
+            "vawa",
+            "u-visa",
+            "daca",
+            "deportation",
+            "citizenship"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        }
+      ]
+    },
+    {
+      "cluster_id": "mo_children_families",
+      "cluster_name": "Children & Families",
+      "icon": "\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66",
+      "cards": [
+        {
+          "card_id": "mo_cf_tanf",
+          "title": "TANF (Temporary Assistance for Needy Families)",
+          "summary": "Monthly cash assistance for families with children under 18. Missouri maximum $292/month for family of 3. 45-month lifetime limit (state) within federal 60-month cap.",
+          "who_qualifies": "Families with dependent children under 18 (or 19 if in school). Income below TANF limits (varies by family size). Must comply with work requirements and Personal Responsibility Plan.",
+          "how_to_apply": "Apply at local FSD office or mydss.mo.gov. Interview required within 30 days.",
+          "phone": "855-373-4636",
+          "website": "https://mydss.mo.gov",
+          "documents_needed": [
+            "photo_id",
+            "birth_certificates_children",
+            "proof_of_income",
+            "proof_of_residence",
+            "social_security_cards"
+          ],
+          "program_ids": [
+            "mo_tanf"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "tanf",
+            "cash",
+            "children",
+            "families",
+            "welfare",
+            "temporary assistance"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_cf_childcare_subsidy",
+          "title": "Child Care Subsidy Program",
+          "summary": "Missouri subsidizes child care for working families and those in education/training. Co-pay based on income. Covers licensed centers, family homes, and in-home providers.",
+          "who_qualifies": "Families with children under 13 (or under 19 if disabled). Must be working, in school, or in approved training. Income at or below 185% FPL.",
+          "how_to_apply": "Apply through local FSD office. Provider must be registered with MO DSS.",
+          "phone": "855-373-4636",
+          "website": "https://dss.mo.gov/fsd/child-care/",
+          "documents_needed": [
+            "proof_of_employment_or_enrollment",
+            "proof_of_income",
+            "child_birth_certificate",
+            "provider_registration"
+          ],
+          "program_ids": [
+            "mo_childcare_subsidy"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "childcare",
+            "daycare",
+            "children",
+            "working families",
+            "subsidy"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_cf_foster_kinship",
+          "title": "Foster Care & Kinship Placement Support",
+          "summary": "Missouri Children's Division provides foster care services and kinship placement support. Kinship caregivers may receive financial assistance and case management.",
+          "who_qualifies": "Children removed from home due to abuse/neglect. Kinship caregivers (relatives caring for children). Foster families licensed through MO Children's Division.",
+          "how_to_apply": "Contact Children's Division at 573-751-3171. Report abuse/neglect to the Child Abuse Hotline: 800-392-3738.",
+          "phone": "573-751-3171",
+          "website": "https://dss.mo.gov/cd/",
+          "documents_needed": [
+            "background_check_consent",
+            "home_study_application",
+            "photo_id",
+            "proof_of_residence"
+          ],
+          "program_ids": [
+            "mo_childrens_division"
+          ],
+          "urgency": "immediate",
+          "routing_tags": [
+            "foster care",
+            "kinship",
+            "children",
+            "abuse",
+            "neglect",
+            "placement",
+            "custody"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_cf_head_start",
+          "title": "Head Start & Early Head Start",
+          "summary": "Free early childhood education for children birth to 5 from low-income families. Includes health screenings, nutrition, and family support services.",
+          "who_qualifies": "Children birth to 5 in families at or below 100% FPL. Foster children, homeless children, and TANF/SSI recipients automatically eligible.",
+          "how_to_apply": "Contact local Head Start program. Find locations at eclkc.ohs.acf.hhs.gov.",
+          "phone": "866-763-6481",
+          "website": "https://eclkc.ohs.acf.hhs.gov/center-locator",
+          "documents_needed": [
+            "child_birth_certificate",
+            "proof_of_income",
+            "immunization_records",
+            "proof_of_residence"
+          ],
+          "program_ids": [
+            "mo_head_start"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "head start",
+            "preschool",
+            "early childhood",
+            "children",
+            "education"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_cf_child_support",
+          "title": "Child Support Enforcement",
+          "summary": "Missouri Family Support Division enforces child support orders, locates absent parents, and establishes paternity. Services available to custodial and non-custodial parents.",
+          "who_qualifies": "Custodial parents seeking child support. Non-custodial parents needing modification. TANF recipients (automatically referred).",
+          "how_to_apply": "Apply at local FSD Child Support office or online at mydss.mo.gov.",
+          "phone": "800-859-7999",
+          "website": "https://dss.mo.gov/cse/",
+          "documents_needed": [
+            "court_order",
+            "child_birth_certificate",
+            "proof_of_income",
+            "photo_id"
+          ],
+          "program_ids": [
+            "mo_child_support"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "child support",
+            "custody",
+            "paternity",
+            "enforcement",
+            "children"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        }
+      ]
+    },
+    {
+      "cluster_id": "mo_cash_assistance",
+      "cluster_name": "Cash Assistance & Income Support",
+      "icon": "\ud83d\udcb5",
+      "cards": [
+        {
+          "card_id": "mo_cash_ssi_ssdi",
+          "title": "SSI & SSDI \u2014 Disability Income",
+          "summary": "Federal disability benefits for individuals unable to work. SSI for low-income/limited resources ($943/month max 2024). SSDI based on work history.",
+          "who_qualifies": "SSI: Disabled, blind, or aged 65+ with limited income and resources. SSDI: Disabled with sufficient work credits (typically 5 of last 10 years).",
+          "how_to_apply": "Apply at local Social Security office, online at ssa.gov, or by phone 800-772-1213.",
+          "phone": "800-772-1213",
+          "website": "https://www.ssa.gov/disability/",
+          "documents_needed": [
+            "medical_records",
+            "work_history",
+            "photo_id",
+            "birth_certificate",
+            "social_security_card"
+          ],
+          "program_ids": [
+            "mo_ssa_office"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "disability",
+            "ssi",
+            "ssdi",
+            "social security",
+            "income",
+            "cash"
+          ],
+          "region": "statewide",
+          "federal_interface": true
+        },
+        {
+          "card_id": "mo_cash_unemployment",
+          "title": "Unemployment Insurance (UI)",
+          "summary": "Weekly cash benefits for workers who lost their job through no fault of their own. Missouri max $320/week for up to 20 weeks. Must actively seek work.",
+          "who_qualifies": "Workers who lost employment through no fault of their own. Must have earned minimum base period wages. Must be able and available to work and actively seeking employment.",
+          "how_to_apply": "File online at uinteract.labor.mo.gov within 7 days of last day worked.",
+          "phone": "800-320-2519",
+          "website": "https://uinteract.labor.mo.gov",
+          "documents_needed": [
+            "employer_information",
+            "social_security_number",
+            "photo_id",
+            "work_search_log"
+          ],
+          "program_ids": [
+            "mo_ui"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "unemployment",
+            "job loss",
+            "laid off",
+            "fired",
+            "income",
+            "cash",
+            "ui"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "mo_cash_eitc",
+          "title": "Earned Income Tax Credit (EITC)",
+          "summary": "Federal tax credit for low-to-moderate income workers. Up to $7,430 for families with 3+ children (2024). Missouri does not have a state EITC.",
+          "who_qualifies": "Workers with earned income below thresholds (varies by filing status and children). Must file federal tax return even if no tax owed.",
+          "how_to_apply": "Claim on federal tax return (Form 1040). Free tax preparation available through VITA sites.",
+          "phone": "800-906-9887",
+          "website": "https://www.irs.gov/credits-deductions/individuals/earned-income-tax-credit-eitc",
+          "documents_needed": [
+            "w2_forms",
+            "social_security_cards_all_family",
+            "photo_id",
+            "proof_of_income"
+          ],
+          "program_ids": [
+            "mo_vita_sites"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "tax credit",
+            "eitc",
+            "income",
+            "taxes",
+            "earned income",
+            "refund"
+          ],
+          "region": "statewide",
+          "federal_interface": true
+        },
+        {
+          "card_id": "mo_cash_general_relief",
+          "title": "General Relief (County-Level Cash Aid)",
+          "summary": "County-administered cash assistance for adults without children who do not qualify for TANF. Varies by county \u2014 not all counties participate. Very limited amounts.",
+          "who_qualifies": "Adults without dependent children. Must be ineligible for TANF. Income and resource limits vary by county. Must cooperate with work requirements where applicable.",
+          "how_to_apply": "Contact county FSD office. Availability varies \u2014 Jackson County (KC) and St. Louis City have programs.",
+          "phone": "855-373-4636",
+          "website": "https://mydss.mo.gov",
+          "documents_needed": [
+            "photo_id",
+            "proof_of_income",
+            "proof_of_residence",
+            "social_security_card"
+          ],
+          "program_ids": [
+            "mo_general_relief"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "cash",
+            "general relief",
+            "welfare",
+            "adults",
+            "no children"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        }
+      ]
+    },
+    {
+      "cluster_id": "mo_immigration",
+      "cluster_name": "Immigration & Refugee Services",
+      "icon": "\ud83c\udf0d",
+      "cards": [
+        {
+          "card_id": "mo_imm_legal_services",
+          "title": "Immigration Legal Services",
+          "summary": "Free or low-cost immigration legal representation through Legal Aid of Western Missouri and Legal Services of Eastern Missouri. Covers asylum, VAWA, U-visa, DACA, naturalization.",
+          "who_qualifies": "Immigrants and refugees in Missouri needing legal assistance. Income-eligible individuals. Priority for asylum seekers, DV survivors (VAWA), crime victims (U-visa).",
+          "how_to_apply": "Contact LAWMO (KC): 816-474-6750 or LSEM (STL): 314-534-4200. Intake screening required.",
+          "phone": "816-474-6750",
+          "website": "https://lawmo.org/immigration",
+          "documents_needed": [
+            "passport_or_travel_document",
+            "immigration_court_notice",
+            "work_authorization_card",
+            "asylum_receipt_notice",
+            "photo_id"
+          ],
+          "program_ids": [
+            "mo_lawmo_immigration",
+            "mo_lsem_immigration"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "immigration",
+            "asylum",
+            "vawa",
+            "u-visa",
+            "daca",
+            "deportation",
+            "citizenship",
+            "legal"
+          ],
+          "region": "statewide",
+          "federal_interface": true,
+          "pipeline_documents": [
+            "work_authorization_card",
+            "asylum_receipt_notice",
+            "immigration_court_notice",
+            "passport_or_travel_document",
+            "i94_arrival_record",
+            "ead_card"
+          ]
+        },
+        {
+          "card_id": "mo_imm_refugee_resettlement",
+          "title": "Refugee Resettlement Services",
+          "summary": "Missouri has federally-funded refugee resettlement agencies in KC and STL. Services include initial housing, employment assistance, English classes, cultural orientation, and case management for 90 days to 5 years.",
+          "who_qualifies": "Refugees admitted through USRAP. Asylees granted asylum. SIV holders (Afghan/Iraqi). Cuban/Haitian entrants. Victims of trafficking (T-visa).",
+          "how_to_apply": "Assigned through federal resettlement process. Self-referral available for asylees \u2014 contact local resettlement agency.",
+          "phone": "314-678-2600",
+          "website": "https://www.iistl.org/",
+          "documents_needed": [
+            "i94_arrival_record",
+            "refugee_travel_document",
+            "social_security_card",
+            "ead_card"
+          ],
+          "program_ids": [
+            "mo_iistl",
+            "mo_della_lamb"
+          ],
+          "urgency": "immediate",
+          "routing_tags": [
+            "refugee",
+            "resettlement",
+            "asylum",
+            "immigration",
+            "newcomer"
+          ],
+          "region": "statewide",
+          "federal_interface": true,
+          "pipeline_documents": [
+            "i94_arrival_record",
+            "refugee_travel_document",
+            "social_security_card",
+            "ead_card"
+          ]
+        },
+        {
+          "card_id": "mo_imm_daca_renewal",
+          "title": "DACA Renewal Assistance",
+          "summary": "Legal assistance for DACA renewal applications. Missouri legal aid organizations provide free help with renewal paperwork and fee waivers. Note: New DACA applications are currently blocked by federal court order.",
+          "who_qualifies": "Current DACA recipients needing renewal. Must have existing DACA grant. Renewal must be filed before expiration (recommended 150 days before).",
+          "how_to_apply": "Contact LAWMO or LSEM immigration unit. Also available through Immigrant Law Center of Kansas City.",
+          "phone": "816-474-6750",
+          "website": "https://lawmo.org/immigration",
+          "documents_needed": [
+            "current_ead_card",
+            "previous_i797_approval_notice",
+            "passport_photos",
+            "filing_fee_or_fee_waiver"
+          ],
+          "program_ids": [
+            "mo_lawmo_immigration"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "daca",
+            "renewal",
+            "dreamer",
+            "immigration",
+            "work permit"
+          ],
+          "region": "statewide",
+          "federal_interface": true,
+          "pipeline_documents": [
+            "current_ead_card",
+            "previous_i797_approval_notice",
+            "passport_photos"
+          ]
+        },
+        {
+          "card_id": "mo_imm_interpreter_services",
+          "title": "Language Access & Interpreter Services",
+          "summary": "Free interpreter services at Missouri government offices (required by federal law). Includes court interpreters, medical interpreters, and school interpreters.",
+          "who_qualifies": "Any individual with limited English proficiency (LEP) accessing government services, healthcare, courts, or schools in Missouri.",
+          "how_to_apply": "Request interpreter at any government office. For courts: contact court clerk. For medical: inform provider of language needs.",
+          "phone": "800-392-3738",
+          "website": "https://www.lep.gov/",
+          "documents_needed": [],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "interpreter",
+            "language",
+            "translation",
+            "lep",
+            "immigration",
+            "access"
+          ],
+          "region": "statewide",
+          "federal_interface": true
+        },
+        {
+          "card_id": "mo_imm_naturalization",
+          "title": "Citizenship & Naturalization Assistance",
+          "summary": "Free citizenship classes and naturalization application assistance through Missouri legal aid and community organizations. Covers N-400 preparation, interview prep, and civics test study.",
+          "who_qualifies": "Lawful permanent residents (green card holders) who meet residency requirements (typically 5 years, or 3 years if married to US citizen). Must be 18+.",
+          "how_to_apply": "Contact IISTL (STL) or Della Lamb (KC) for citizenship classes. Legal aid for N-400 filing assistance.",
+          "phone": "314-678-2600",
+          "website": "https://www.iistl.org/citizenship",
+          "documents_needed": [
+            "green_card",
+            "passport",
+            "tax_returns_5_years",
+            "travel_history",
+            "photo_id"
+          ],
+          "program_ids": [
+            "mo_iistl",
+            "mo_della_lamb"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "citizenship",
+            "naturalization",
+            "green card",
+            "immigration",
+            "n400"
+          ],
+          "region": "statewide",
+          "federal_interface": true
+        }
+      ]
+    },
+    {
+      "cluster_id": "mo_mental_health",
+      "cluster_name": "Mental Health System",
+      "icon": "brain",
+      "cards": [
+        {
+          "card_id": "mo_mh_crisis_line",
+          "title": "988 Suicide & Crisis Lifeline",
+          "summary": "Call or text 988 for immediate mental health crisis support. Free, confidential, 24/7. Trained counselors can help with suicidal thoughts, emotional distress, substance use, and mental health crises. Also available via chat at 988lifeline.org.",
+          "who_qualifies": "Anyone experiencing a mental health crisis, suicidal thoughts, or emotional distress.",
+          "how_to_access": "Call or text 988. Chat at 988lifeline.org. For veterans, press 1 after dialing 988.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "mo_mh_nami",
+          "title": "NAMI Helpline & Support Groups",
+          "summary": "National Alliance on Mental Illness provides free peer support, education, and advocacy. NAMI HelpLine: 1-800-950-NAMI (6264). Family-to-Family program helps families understand mental health conditions and navigate the system.",
+          "who_qualifies": "Individuals with mental health conditions and their family members.",
+          "how_to_access": "Call 1-800-950-NAMI or text 'HELPLINE' to 62640. Find local NAMI affiliate at nami.org/find-support.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "mo_mh_protection_advocacy",
+          "title": "Protection & Advocacy Organization",
+          "summary": "Every state has a federally mandated Protection & Advocacy (P&A) organization with legal authority to investigate abuse and neglect in psychiatric facilities. P&A organizations can enter any facility, access records, and file lawsuits. This is often the most powerful tool available for people harmed in the mental health system.",
+          "who_qualifies": "Anyone with a disability who has experienced abuse, neglect, or rights violations in a facility.",
+          "how_to_access": "Find your state P&A at ndrn.org/about/ndrn-member-agencies/ or call the NDRN at 202-408-9514.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "mo_mh_know_your_rights",
+          "title": "Know Your Rights: Missouri 96-Hour Hold",
+          "summary": "If you are placed on an involuntary hold in MO, you have rights: the initial hold cannot exceed 96 hours without a court hearing. You have the right to an attorney at the hearing. You have the right to present evidence and call witnesses. You have the right to an independent psychiatric evaluation. You can challenge the hold at any time.",
+          "who_qualifies": "Anyone placed on an involuntary psychiatric hold or facing commitment proceedings.",
+          "how_to_access": "Request to speak with the patient advocate. Ask for a copy of your patient rights. Contact your state's Protection & Advocacy organization.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "mo_mh_records_rights",
+          "title": "Your Right to Your Psychiatric Records",
+          "summary": "Under HIPAA (45 CFR \u00a7 164.524), you have the right to access your complete medical record, including psychiatric treatment records. The facility must respond within 30 days. If they deny access, you can file a complaint with HHS Office for Civil Rights. Under HIPAA \u00a7 164.526, you also have the right to request amendments to inaccurate records.",
+          "who_qualifies": "Any current or former psychiatric patient.",
+          "how_to_access": "Submit a written request to the facility's Health Information Management department. If denied, file complaint at hhs.gov/ocr.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "mo_mh_samhsa",
+          "title": "SAMHSA National Helpline",
+          "summary": "Free, confidential, 24/7 treatment referral and information service for mental health and substance use disorders. Available in English and Spanish. Provides referrals to local treatment facilities, support groups, and community-based organizations.",
+          "who_qualifies": "Anyone seeking mental health or substance use treatment information and referrals.",
+          "how_to_access": "Call 1-800-662-HELP (4357) or visit findtreatment.gov.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        }
+      ]
+    }
+  ]
+}

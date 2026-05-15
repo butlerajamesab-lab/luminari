@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "state": "WY",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "wy_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "wy_wyoming_community_development_authority_",
+        "wy_wyoming_legal_services_only_statewide_le"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "wy_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "wy_wyoming_tanf_dfs",
+        "wy_wyoming_ui_dws",
+        "wy_wyoming_liheap_dfs",
+        "wy_wyoming_veterans_commission"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "wy_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "wy_wyoming_medicaid_dfs_categorical_only",
+        "wy_wyoming_coverage_gap_routing_non_categor",
+        "wy_ihs_wind_river_service_unit_eastern_shos",
+        "wy_wyoming_primary_care_association_fqhcs",
+        "wy_eastern_shoshone_tribe_social_services",
+        "wy_northern_arapaho_tribe_social_services"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "wy_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "wy_wyoming_snap_food_assistance_dfs",
+        "wy_wyoming_food_for_thought_food_bank_of_wy",
+        "wy_wic_wyoming"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "wy_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "wy_wyoming_dv_services_wdvsa"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    }
+  ]
+}

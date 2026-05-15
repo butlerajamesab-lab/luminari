@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "state": "AK",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "ak_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "ak_alaska_permanent_fund_dividend_pfd",
+        "ak_211_alaska_statewide_navigation"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ak_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "ak_alaska_housing_finance_corporation_ahfc",
+        "ak_12_ancsa_regional_corporations_subsidiar"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ak_lens_tribal",
+      "lens_type": "tribal",
+      "programs": [
+        "ak_alaska_native_women_s_resource_center_an"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ak_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "ak_alaska_medicaid_dhss_dpa",
+        "ak_anthc_alaska_native_tribal_health_consor",
+        "ak_providence_alaska_medical_center_anchora",
+        "ak_alaska_primary_care_association_fqhcs",
+        "ak_alaska_veterans_services_vso_va"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ak_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "ak_alaska_snap_dhss",
+        "ak_food_bank_of_alaska_anchorage_statewide",
+        "ak_wic_alaska"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ak_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "ak_alaska_tanf_alaska_temporary_assistance_",
+        "ak_alaska_ui_dolwd",
+        "ak_alaska_liheap_ahfc_heating_program"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ak_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "ak_alaska_legal_services_corporation_alsc"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    }
+  ]
+}

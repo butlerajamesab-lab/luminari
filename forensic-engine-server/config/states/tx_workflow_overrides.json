@@ -1,0 +1,128 @@
+{
+  "workflow_overrides": [
+    {
+      "pipeline_id": "benefits_denial",
+      "state": "TX",
+      "resolution_order": [
+        "intake",
+        "evidence_collection",
+        "filing",
+        "escalation",
+        "resolution"
+      ],
+      "notes": "Standard benefits_denial workflow for TX",
+      "workflow_id": "benefits_denial_workflow",
+      "steps": [
+        {
+          "step_id": "intake",
+          "label": "Intake & Assessment",
+          "order": 1
+        },
+        {
+          "step_id": "evidence_collection",
+          "label": "Evidence Collection",
+          "order": 2
+        },
+        {
+          "step_id": "filing",
+          "label": "Filing & Documentation",
+          "order": 3
+        },
+        {
+          "step_id": "escalation",
+          "label": "Escalation & Review",
+          "order": 4
+        },
+        {
+          "step_id": "resolution",
+          "label": "Resolution & Follow-up",
+          "order": 5
+        }
+      ]
+    },
+    {
+      "pipeline_id": "elder_abuse",
+      "state": "TX",
+      "resolution_order": [
+        "intake",
+        "evidence_collection",
+        "filing",
+        "escalation",
+        "resolution"
+      ],
+      "notes": "Standard elder_abuse workflow for TX",
+      "workflow_id": "elder_abuse_workflow",
+      "steps": [
+        {
+          "step_id": "intake",
+          "label": "Intake & Assessment",
+          "order": 1
+        },
+        {
+          "step_id": "evidence_collection",
+          "label": "Evidence Collection",
+          "order": 2
+        },
+        {
+          "step_id": "filing",
+          "label": "Filing & Documentation",
+          "order": 3
+        },
+        {
+          "step_id": "escalation",
+          "label": "Escalation & Review",
+          "order": 4
+        },
+        {
+          "step_id": "resolution",
+          "label": "Resolution & Follow-up",
+          "order": 5
+        }
+      ]
+    },
+    {
+      "pipeline_id": "tenant_rights",
+      "state": "TX",
+      "resolution_order": [
+        "intake",
+        "evidence_collection",
+        "filing",
+        "escalation",
+        "resolution"
+      ],
+      "notes": "Standard housing_violation workflow for TX",
+      "workflow_id": "tenant_rights_workflow",
+      "steps": [
+        {
+          "step_id": "intake",
+          "label": "Intake & Assessment",
+          "order": 1
+        },
+        {
+          "step_id": "evidence_collection",
+          "label": "Evidence Collection",
+          "order": 2
+        },
+        {
+          "step_id": "filing",
+          "label": "Filing & Documentation",
+          "order": 3
+        },
+        {
+          "step_id": "escalation",
+          "label": "Escalation & Review",
+          "order": 4
+        },
+        {
+          "step_id": "resolution",
+          "label": "Resolution & Follow-up",
+          "order": 5
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "state": "TX",
+    "version": "3.0"
+  }
+}

@@ -1,0 +1,345 @@
+{
+  "meta": {
+    "state": "MA",
+    "version": "2.0",
+    "date": "2026-03-08",
+    "total_chains": 5,
+    "total_bodies": 11,
+    "entity_types": [
+      "employer",
+      "insurer",
+      "general",
+      "landlord",
+      "consumer"
+    ],
+    "source": "luminari-ma-registry.docx"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "employer",
+      "state": "MA",
+      "bodies": [
+        {
+          "oversight_body": "Massachusetts Commission Against Discrimination (MCAD)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Employment, housing, public accommodation, credit \u2014 MCRA. Covers LGBTQ+, marital status, national origin, military status. 300-day SOL.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "300 days \u2014 FATAL. File EEOC simultaneously.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC \u2014 Boston Area Office",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Federal employment discrimination \u2014 300-day deadline. Workshares with MCAD.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "300 days \u2014 FATAL. File MCAD simultaneously.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOL WHD \u2014 Boston (MA Primary Wage)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "FLSA enforcement. MA Wage Act MGL c.149 \u00a7150: treble damages, private right of action, 3-year SOL \u2014 always file state claim.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "2 yrs FLSA / 3 yrs MA Wage Act \u2014 ALWAYS USE STATE. FATAL.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "MA Attorney General \u2014 Fair Labor Division",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "MA Wage Act MGL c.149 \u00a7150 \u2014 treble damages, private right of action. AG office investigates; private lawsuit also available.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "3 years \u2014 FATAL. Private lawsuit with treble damages often exceeds admin recovery.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "NLRB \u2014 Region 1 Boston (Labor Relations)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Unfair labor practices, union organizing rights, retaliation.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "6 months \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "insurer",
+      "state": "MA",
+      "bodies": [
+        {
+          "oversight_body": "MA DTA \u2014 Benefits Fair Hearings",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "SNAP, MassHealth, TAFDC fair hearings \u2014 90-day window (longer than most states).",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "90 days from notice \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "MA Division of Insurance (DOI)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Health/property insurance complaints, external review, rate regulation.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "180 days from denial",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "general",
+      "state": "MA",
+      "bodies": [
+        {
+          "oversight_body": "MA DUA \u2014 UI Appeals Board",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "UI denial appeals \u2014 10-day deadline from mailing.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "10 days \u2014 FATAL. Contact GBLS (617-603-1700) within 5 days.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "landlord",
+      "state": "MA",
+      "bodies": [
+        {
+          "oversight_body": "HUD \u2014 New England Regional Office (Fair Housing)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Fair Housing Act enforcement in Massachusetts.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "1 year \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "MA Courts \u2014 Housing Court (Eviction Defense)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "MA Housing Court: specialized eviction defense, rent withholding, repair and deduct rights. Right to counsel expanding in Boston.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "Same day as any notice to quit or summons",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "consumer",
+      "state": "MA",
+      "bodies": [
+        {
+          "oversight_body": "MA AG \u2014 Consumer Protection (Chapter 93A)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Chapter 93A: treble damages up to $25K for unfair/deceptive practices \u2014 strongest consumer statute in registry.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "4 years (Chapter 93A)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "ma_med_board",
+          "name": "Massachusetts Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Massachusetts Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MA"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "ma_patient_adv",
+          "name": "Massachusetts Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Massachusetts Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MA"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "ma_health_dept",
+          "name": "Massachusetts Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Massachusetts Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MA"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MA"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "ma_pharm_board",
+          "name": "Massachusetts Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Massachusetts Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MA"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "ma_pa",
+          "name": "Massachusetts Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Massachusetts Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MA"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "ma_mha",
+          "name": "Massachusetts Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Massachusetts Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MA"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MA"
+    }
+  ]
+}

@@ -1,0 +1,165 @@
+{
+  "meta": {
+    "state": "OR",
+    "layer": "county_overrides",
+    "version": "1.0.0",
+    "last_updated": "2026-03-06"
+  },
+  "regions": {
+    "portland_metro": {
+      "description": "portland_metro"
+    },
+    "willamette_valley": {
+      "description": "willamette_valley"
+    },
+    "southern_or": {
+      "description": "southern_or"
+    },
+    "eastern_or": {
+      "description": "eastern_or"
+    },
+    "coast": {
+      "description": "coast"
+    },
+    "tribal_nation": {
+      "description": "tribal_nation"
+    },
+    "statewide": {
+      "description": "statewide"
+    }
+  },
+  "county_overrides": [
+    {
+      "county_id": "or_multnomah",
+      "county_name": "Multnomah County",
+      "fips_code": "41051",
+      "region": "portland_metro",
+      "population_estimate": 815000,
+      "courts": {
+        "circuit_court": {
+          "name": "Multnomah County Circuit Court",
+          "address": "1021 SW 4th Ave, Portland, OR 97204",
+          "phone": "503-988-3022",
+          "portal": "https://courts.oregon.gov/courts/multnomah",
+          "divisions": [
+            "civil",
+            "criminal",
+            "family",
+            "probate",
+            "juvenile"
+          ]
+        }
+      },
+      "prosecutor": {
+        "office": "Multnomah County District Attorney",
+        "address": "1021 SW 4th Ave, Portland, OR 97204",
+        "phone": "503-988-3162",
+        "portal": "https://mcda.us",
+        "victim_services_phone": "503-988-3222"
+      },
+      "housing_authority": {
+        "name": "Home Forward (Portland Housing Authority)",
+        "address": "135 SW Ash St, Portland, OR 97204",
+        "phone": "503-802-8300",
+        "portal": "https://homeforward.org",
+        "programs": [
+          "Section 8 HCV",
+          "Public Housing",
+          "VASH",
+          "Family Self-Sufficiency",
+          "Short-Term Rent Assistance"
+        ],
+        "waitlist_status": "Check portal for current openings"
+      },
+      "legal_aid": {
+        "primary": {
+          "name": "Legal Aid Services of Oregon (LASO) \u2014 Portland",
+          "phone": "503-224-4086",
+          "portal": "https://lasoregon.org",
+          "coverage": "Multnomah County \u2014 housing, benefits, DV, family law, consumer"
+        },
+        "secondary": {
+          "name": "Metropolitan Public Defender",
+          "phone": "503-225-9100",
+          "portal": "https://mpdlaw.com"
+        },
+        "specialized": {
+          "name": "Eviction Defense Project",
+          "phone": "503-224-4086",
+          "portal": "https://lasoregon.org",
+          "coverage": "Eviction defense for Multnomah County tenants"
+        }
+      },
+      "child_welfare": {
+        "office": "DHS Child Welfare \u2014 Multnomah County",
+        "phone": "503-731-3100",
+        "portal": "https://oregon.gov/dhs/children",
+        "hotline": "855-503-SAFE (855-503-7233)"
+      },
+      "law_enforcement": {
+        "primary": {
+          "name": "Portland Police Bureau",
+          "phone": "503-823-3333",
+          "oversight": "Portland Committee on Community-Engaged Policing (PCCEP)",
+          "oversight_phone": "503-823-4064",
+          "portal": "https://portland.gov/police"
+        }
+      },
+      "utilities": {
+        "electric": [
+          {
+            "name": "Portland General Electric (PGE)",
+            "phone": "503-228-6322",
+            "assistance": "PGE Income-Qualified Bill Discount"
+          },
+          {
+            "name": "Pacific Power",
+            "phone": "888-221-7070",
+            "assistance": "Low-Income Bill Assistance"
+          }
+        ],
+        "gas": [
+          {
+            "name": "NW Natural",
+            "phone": "800-422-4012",
+            "assistance": "OLGA program"
+          }
+        ],
+        "disconnect_protection": "ORS 757.750 \u2014 medical certificate disconnect protection"
+      },
+      "additional_resources": {
+        "code_enforcement": {
+          "name": "Portland Bureau of Development Services (BDS)",
+          "phone": "503-823-2633",
+          "portal": "https://portland.gov/bds"
+        },
+        "fair_housing": {
+          "name": "Fair Housing Council of Oregon (FHCO)",
+          "phone": "800-424-3247",
+          "portal": "https://fhco.org"
+        }
+      }
+    }
+  ],
+  "resolution_chain": {
+    "description": "County override resolution chain",
+    "order": [
+      {
+        "layer": "pipeline_defaults",
+        "priority": 1
+      },
+      {
+        "layer": "state_registry",
+        "priority": 2
+      },
+      {
+        "layer": "county_override",
+        "priority": 3
+      },
+      {
+        "layer": "tribal_override",
+        "priority": 4
+      }
+    ]
+  }
+}

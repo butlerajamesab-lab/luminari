@@ -1,0 +1,122 @@
+{
+  "state": "OH",
+  "state_name": "Ohio",
+  "version": "1.0.0",
+  "schema": "luminari-registry-v1",
+  "date_created": "2026-03-07",
+  "date_verified": "2026-03-07",
+  "source": "Luminari OH Three-Layer Registry \u2014 Session 34 \u2014 Engine fd24ed71",
+  "datasets": [
+    "programs",
+    "workflows",
+    "oversight",
+    "layer0_flags",
+    "layer1_cards",
+    "county_overrides",
+    "tribal_overrides",
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings",
+    "foia",
+    "help",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "insurance_claim_denial",
+    "medicaid_denial",
+    "police_misconduct",
+    "snap_denial",
+    "tenant_rights",
+    "wage_theft",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "benefits_agency",
+    "employer",
+    "family_court",
+    "insurer",
+    "landlord",
+    "law_enforcement",
+    "nursing_home"
+  ],
+  "policy_flags": [
+    "oh_snap_abawd",
+    "oh_medicaid_expansion",
+    "oh_minimum_wage",
+    "oh_tanf_36month",
+    "oh_heap_season",
+    "oh_eviction_fast",
+    "oh_ui_21day",
+    "oh_ocrc_2year"
+  ],
+  "statistics": {
+    "programs": {
+      "total_programs": 23,
+      "categories": {
+        "food": 5,
+        "healthcare": 5,
+        "housing": 2,
+        "legal_aid": 7,
+        "dv_safety": 1,
+        "cash_assistance": 2,
+        "utilities": 1
+      }
+    },
+    "workflows": {
+      "total_workflows": 4
+    },
+    "oversight": {
+      "total_oversight_bodies": 17,
+      "total_oversight_chains": 7
+    }
+  },
+  "status": "active",
+  "missing_sections": [],
+  "completed_domains": [
+    "food",
+    "healthcare",
+    "housing",
+    "legal_aid",
+    "cash_assistance",
+    "utilities",
+    "domestic_violence",
+    "tribal",
+    "law_enforcement",
+    "family_court",
+    "insurance",
+    "employment"
+  ],
+  "pending_domains": [],
+  "regions": [
+    "Columbus",
+    "Cleveland",
+    "Cincinnati",
+    "Akron",
+    "Toledo",
+    "Dayton",
+    "Youngstown",
+    "Appalachian_SE"
+  ],
+  "validation_status": "complete",
+  "date_activated": "2026-03-07",
+  "layers": {
+    "layer0": "oh_layer0_flags.json",
+    "layer1_programs": "oh_programs.json",
+    "layer1_cards": "oh_layer1_cards.json",
+    "layer2_workflows": "oh_workflow_overrides.json",
+    "layer3_oversight": "oh_oversight.json",
+    "help": "oh_help.json",
+    "foia": "oh_foia.json",
+    "tribal": "oh_tribal_overrides.json",
+    "county": "oh_county_overrides.json",
+    "pipeline_mappings": "oh_pipeline_mappings.json",
+    "lens_mappings": "oh_lens_mappings.json",
+    "workflow_mappings": "oh_workflow_mappings.json"
+  }
+}

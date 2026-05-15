@@ -1,0 +1,128 @@
+{
+  "workflow_overrides": [
+    {
+      "pipeline_id": "benefits_denial",
+      "state": "FL",
+      "resolution_order": [
+        "intake",
+        "evidence_collection",
+        "filing",
+        "escalation",
+        "resolution"
+      ],
+      "notes": "Standard benefits_denial workflow for FL",
+      "workflow_id": "benefits_denial_workflow",
+      "steps": [
+        {
+          "step_id": "intake",
+          "label": "Intake & Assessment",
+          "order": 1
+        },
+        {
+          "step_id": "evidence_collection",
+          "label": "Evidence Collection",
+          "order": 2
+        },
+        {
+          "step_id": "filing",
+          "label": "Filing & Documentation",
+          "order": 3
+        },
+        {
+          "step_id": "escalation",
+          "label": "Escalation & Review",
+          "order": 4
+        },
+        {
+          "step_id": "resolution",
+          "label": "Resolution & Follow-up",
+          "order": 5
+        }
+      ]
+    },
+    {
+      "pipeline_id": "elder_abuse",
+      "state": "FL",
+      "resolution_order": [
+        "intake",
+        "evidence_collection",
+        "filing",
+        "escalation",
+        "resolution"
+      ],
+      "notes": "Standard elder_abuse workflow for FL",
+      "workflow_id": "elder_abuse_workflow",
+      "steps": [
+        {
+          "step_id": "intake",
+          "label": "Intake & Assessment",
+          "order": 1
+        },
+        {
+          "step_id": "evidence_collection",
+          "label": "Evidence Collection",
+          "order": 2
+        },
+        {
+          "step_id": "filing",
+          "label": "Filing & Documentation",
+          "order": 3
+        },
+        {
+          "step_id": "escalation",
+          "label": "Escalation & Review",
+          "order": 4
+        },
+        {
+          "step_id": "resolution",
+          "label": "Resolution & Follow-up",
+          "order": 5
+        }
+      ]
+    },
+    {
+      "pipeline_id": "tenant_rights",
+      "state": "FL",
+      "resolution_order": [
+        "intake",
+        "evidence_collection",
+        "filing",
+        "escalation",
+        "resolution"
+      ],
+      "notes": "Standard housing_violation workflow for FL",
+      "workflow_id": "tenant_rights_workflow",
+      "steps": [
+        {
+          "step_id": "intake",
+          "label": "Intake & Assessment",
+          "order": 1
+        },
+        {
+          "step_id": "evidence_collection",
+          "label": "Evidence Collection",
+          "order": 2
+        },
+        {
+          "step_id": "filing",
+          "label": "Filing & Documentation",
+          "order": 3
+        },
+        {
+          "step_id": "escalation",
+          "label": "Escalation & Review",
+          "order": 4
+        },
+        {
+          "step_id": "resolution",
+          "label": "Resolution & Follow-up",
+          "order": 5
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "state": "FL",
+    "version": "3.0"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "state": "ND",
+  "state_name": "North Dakota",
+  "version": "3.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-09",
+  "source": "luminari-nd-registry.docx",
+  "datasets": [
+    "food",
+    "cash_assistance",
+    "housing",
+    "healthcare",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "disability_claim",
+    "employment_dispute",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "utility_dispute",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "general",
+    "insurer",
+    "utility"
+  ],
+  "policy_flags": [
+    "nd_medicaid_not_expanded",
+    "nd_mha_nation_bakken_oil",
+    "nd_5_tribes_complex_routing",
+    "nd_hrc_300day_no_lgbtq",
+    "nd_ui_12day_appeal"
+  ],
+  "statistics": {
+    "total_programs": 18,
+    "total_oversight_chains": 4,
+    "total_oversight_bodies": 7,
+    "total_flags": 5,
+    "total_workflows": 3
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "food",
+    "healthcare"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ]
+}

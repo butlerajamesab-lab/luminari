@@ -1,0 +1,244 @@
+{
+  "meta": {
+    "state": "AZ",
+    "layer": "tribal_overrides",
+    "version": "1.0.0",
+    "last_updated": "2026-03-06"
+  },
+  "tribal_context": "Arizona has 22 federally recognized tribes \u2014 the third most of any state. The Inter Tribal Council of Arizona (ITCA) represents 21 tribes. The Navajo Nation is the largest reservation in the US, spanning AZ/NM/UT. ICWA applies to all child welfare cases involving AI/AN children.",
+  "icwa_activation_rules": [
+    {
+      "rule_id": "az_icwa_child_welfare",
+      "trigger_pipeline": "child_welfare",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Apply federal ICWA (25 USC \u00a71901) standards for placement preferences",
+        "Notify ITCA (602-248-0071) if specific tribe unknown",
+        "Contact specific tribal ICWA office if tribe identified",
+        "DCS must provide active efforts to prevent removal (higher than reasonable efforts)",
+        "Qualified expert witness required for foster care placement or TPR"
+      ],
+      "routing_entities": [
+        "itca",
+        "navajo_nation_icwa",
+        "gric_icwa",
+        "tohono_oodham_icwa"
+      ]
+    },
+    {
+      "rule_id": "az_icwa_healthcare",
+      "trigger_pipeline": "medicaid_denial",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Check IHS eligibility before AHCCCS application",
+        "AI/AN members exempt from AHCCCS cost-sharing",
+        "Route to nearest IHS facility or tribal health program",
+        "Contact ITCA for tribal health coordination"
+      ],
+      "routing_entities": [
+        "ihs_phoenix",
+        "ihs_navajo",
+        "itca"
+      ]
+    },
+    {
+      "rule_id": "az_tribal_housing",
+      "trigger_pipeline": "tenant_rights",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Check tribal housing authority for on-reservation housing",
+        "Section 184 Indian Home Loan Guarantee for homebuyers",
+        "Tribal VASH for AI/AN veterans",
+        "Contact HUD ONAP Phoenix for federal tribal housing programs"
+      ],
+      "routing_entities": [
+        "nnha",
+        "gric_housing",
+        "hud_onap_phoenix"
+      ]
+    }
+  ],
+  "tribal_entities": [
+    {
+      "tribal_entity_id": "az_itca",
+      "tribal_entity_name": "Inter Tribal Council of Arizona (ITCA)",
+      "tribal_role": "coordination",
+      "tribe": "21 AZ tribes",
+      "address": "2214 N. Central Ave, Suite 100, Phoenix, AZ 85004",
+      "phone": "602-248-0071",
+      "portal": "https://itcaonline.com",
+      "services": [
+        "tribal_referral",
+        "program_coordination",
+        "policy_advocacy",
+        "FDPIR",
+        "VAWA"
+      ],
+      "coverage": "statewide",
+      "street_address": "2214 N Central Ave Ste 100",
+      "city": "Phoenix",
+      "state_code": "AZ",
+      "zip": "85004"
+    },
+    {
+      "tribal_entity_id": "az_navajo_nation",
+      "tribal_entity_name": "Navajo Nation Division of Social Services",
+      "tribal_role": "social_services",
+      "tribe": "Navajo Nation",
+      "address": "Window Rock, AZ 86515",
+      "phone": "928-871-6800",
+      "portal": "https://nndss.navajo-nsn.gov",
+      "services": [
+        "social_services",
+        "FDPIR",
+        "TANF",
+        "child_welfare",
+        "ICWA"
+      ],
+      "coverage": "navajo_nation",
+      "city": "Phoenix",
+      "state": "AZ"
+    },
+    {
+      "tribal_entity_id": "az_gric",
+      "tribal_entity_name": "Gila River Indian Community (GRIC)",
+      "tribal_role": "social_services",
+      "tribe": "Gila River Indian Community",
+      "address": "Sacaton, AZ 85147",
+      "phone": "520-562-3311",
+      "portal": "https://gilariver.org",
+      "services": [
+        "social_services",
+        "housing",
+        "health",
+        "ICWA"
+      ],
+      "coverage": "gric_reservation",
+      "city": "Phoenix",
+      "state": "AZ"
+    },
+    {
+      "tribal_entity_id": "az_tohono_oodham",
+      "tribal_entity_name": "Tohono O'odham Nation",
+      "tribal_role": "social_services",
+      "tribe": "Tohono O'odham Nation",
+      "address": "Sells, AZ 85634",
+      "phone": "520-383-2028",
+      "portal": "https://tonation-nsn.gov",
+      "services": [
+        "social_services",
+        "housing",
+        "health",
+        "ICWA"
+      ],
+      "coverage": "tohono_oodham_reservation",
+      "city": "Phoenix",
+      "state": "AZ"
+    },
+    {
+      "tribal_entity_id": "az_salt_river",
+      "tribal_entity_name": "Salt River Pima-Maricopa Indian Community (SRPMIC)",
+      "tribal_role": "social_services",
+      "tribe": "Salt River Pima-Maricopa",
+      "address": "10005 E. Osborn Rd, Scottsdale, AZ 85256",
+      "phone": "480-362-7400",
+      "portal": "https://srpmic-nsn.gov",
+      "services": [
+        "social_services",
+        "housing",
+        "health",
+        "ICWA"
+      ],
+      "coverage": "srpmic_reservation",
+      "city": "Phoenix",
+      "state": "AZ"
+    },
+    {
+      "tribal_entity_id": "az_dna_legal",
+      "tribal_entity_name": "DNA People's Legal Services",
+      "tribal_role": "legal_aid",
+      "tribe": "Navajo Nation, Hopi, surrounding areas",
+      "address": "Window Rock, AZ 86515",
+      "phone": "928-871-4151",
+      "portal": "https://dnapeople.org",
+      "services": [
+        "legal_aid",
+        "housing",
+        "DV",
+        "family_law",
+        "tribal_courts"
+      ],
+      "coverage": "navajo_hopi_region",
+      "city": "Phoenix",
+      "state": "AZ"
+    },
+    {
+      "tribal_entity_id": "az_ihs_phoenix",
+      "tribal_entity_name": "IHS Phoenix Area Office",
+      "tribal_role": "healthcare",
+      "tribe": "All AZ tribes",
+      "address": "40 N. Central Ave, Suite 600, Phoenix, AZ 85004",
+      "phone": "602-364-5039",
+      "portal": "https://ihs.gov/phoenix",
+      "services": [
+        "healthcare",
+        "dental",
+        "behavioral_health",
+        "pharmacy"
+      ],
+      "coverage": "statewide",
+      "city": "Phoenix",
+      "state": "AZ"
+    },
+    {
+      "tribal_entity_id": "az_ihs_navajo",
+      "tribal_entity_name": "IHS Navajo Area Office",
+      "tribal_role": "healthcare",
+      "tribe": "Navajo Nation",
+      "address": "Window Rock, AZ 86515",
+      "phone": "928-871-5811",
+      "portal": "https://ihs.gov/navajo",
+      "services": [
+        "healthcare",
+        "dental",
+        "behavioral_health",
+        "pharmacy"
+      ],
+      "coverage": "navajo_nation",
+      "city": "Phoenix",
+      "state": "AZ"
+    }
+  ],
+  "urban_indian_programs": [
+    {
+      "program_id": "az_native_health_phoenix",
+      "name": "Native Health (Phoenix)",
+      "phone": "602-279-5262",
+      "portal": "https://nativehealthphoenix.org",
+      "services": [
+        "primary_care",
+        "behavioral_health",
+        "WIC",
+        "community_health"
+      ],
+      "coverage": "phoenix_metro",
+      "city": "Phoenix",
+      "state": "AZ"
+    },
+    {
+      "program_id": "az_native_connections",
+      "name": "Native Connections (Phoenix)",
+      "phone": "602-254-3247",
+      "portal": "https://nativeconnections.org",
+      "services": [
+        "food_pantry",
+        "emergency_assistance",
+        "youth_programs"
+      ],
+      "coverage": "phoenix_metro",
+      "city": "Phoenix",
+      "state": "AZ"
+    }
+  ],
+  "tribal_courts": []
+}

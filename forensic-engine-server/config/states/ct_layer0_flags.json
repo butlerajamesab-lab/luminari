@@ -1,0 +1,208 @@
+{
+  "meta": {
+    "state": "CT",
+    "version": "3.0",
+    "date": "2026-03-09",
+    "flag_count": 8
+  },
+  "flags": [
+    {
+      "flag_id": "ct_min_wage_highest",
+      "severity": "info",
+      "title": "$16.35/Hour Minimum Wage \u2014 Highest in Registry, Indexed to Inflation",
+      "summary": "$16.35/hr (2024), rising to $17.50 by 2026, then indexed to employment cost index \u2014 first state to fully index. CT Wage and Salary Act (WSA): 2-year SOL plus liquidated damages. CT Wage Theft Act (2022): criminal penalties. Always assess CT wage claims before defaulting to FLSA."
+    },
+    {
+      "flag_id": "ct_hartford_poverty",
+      "severity": "alert",
+      "title": "Hartford \u2014 Highest Poverty Rate of Any State Capital (30%+)",
+      "summary": "Hartford poverty rate exceeds 30% \u2014 highest of any state capital. 40%+ Puerto Rican/Latino. Significant housing instability, high energy burden, food insecurity. CLS Hartford: 860-344-0380. InterCommunity Health Care FQHC: 860-569-5900. Charter Oak Health Center: 860-550-7500. Hartford just cause eviction ordinance applies within city."
+    },
+    {
+      "flag_id": "ct_chro_300_day",
+      "severity": "info",
+      "title": "CHRO 300-Day SOL \u2014 Broadest Protected Classes in Region",
+      "summary": "CT Commission on Human Rights and Opportunities (CHRO) processes employment, housing, and public accommodation complaints with 300-day SOL matching EEOC. CFEPA protected classes: race, color, religion, national origin, sex, age, marital status, sexual orientation, gender identity, civil status, disability, and more. File CHRO AND EEOC simultaneously. CHRO: 860-541-3400."
+    },
+    {
+      "flag_id": "ct_tribal_casino_infrastructure",
+      "severity": "info",
+      "title": "Mashantucket Pequot and Mohegan Tribes \u2014 Casino-Funded Tribal Infrastructure",
+      "summary": "Two federally recognized tribes with extensive casino revenue funding comprehensive tribal services. Mashantucket Pequot (Foxwoods): 860-396-6500 / mptn-nsn.gov. Mohegan Tribe (Mohegan Sun): 860-862-6100 / mohegan.com. Services: health, housing, education, elder care. Route enrolled members to tribal programs first. ICWA applies."
+    },
+    {
+      "flag_id": "ct_danbury_immigrant_ice",
+      "severity": "warning",
+      "title": "Danbury \u2014 Dense Central American Immigrant Community, ICE Presence",
+      "summary": "Danbury (Fairfield County) has one of densest Guatemalan/Ecuadoran immigrant populations in Northeast (~40% Latin American). ICE operations have historically targeted Danbury area. Make the Road CT: 203-553-4340. CLS Danbury: 203-917-0141. HUSKY Health: undocumented adults emergency Medicaid only unless specific categorical eligibility."
+    },
+    {
+      "flag_id": "ct_husky_health_comprehensive",
+      "severity": "info",
+      "title": "HUSKY Health (Medicaid) \u2014 Comprehensive Expansion Including Undocumented Children",
+      "summary": "HUSKY A (children/parents), B (CHIP), C (elderly/disabled), D (expanded adults 19-64 to 138% FPL; undocumented children CT-specific state-funded). Apply: AccessHealthCT.com or HUSKY directly. Managed Care: Aetna Better Health, Anthem BCBS CT, CHN, Wellcare. Phone: 877-284-8759."
+    },
+    {
+      "flag_id": "ct_tfa_21_month_limit",
+      "severity": "warning",
+      "title": "CT TFA (TANF) \u2014 21-Month State Limit, Safety Net Program Available",
+      "summary": "Connecticut TFA (Temporary Family Assistance) has 21-month state lifetime limit \u2014 shorter than federal 60-month. After TFA exhausted, Safety Net program available. Screen for Safety Net BEFORE case closes. Never let TFA expire without assessing Safety Net eligibility. ~$698/month family of 3."
+    },
+    {
+      "flag_id": "ct_winter_shutoff_moratorium",
+      "severity": "info",
+      "title": "Winter Shutoff Moratorium \u2014 November 1 to May 1",
+      "summary": "Connecticut winter shutoff moratorium: utilities cannot terminate service for low-income customers who enter payment arrangement from November 1 through May 1. Surface this protection prominently in any utility disconnection case during winter months."
+    },
+    {
+      "flag_id": "ct_involuntary_hold_law",
+      "title": "Involuntary Hold: Connecticut Emergency Certificate",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "CT involuntary psychiatric hold law: Connecticut Emergency Certificate. Statutory authority: Conn. Gen. Stat. \u00a7 17a-502. Maximum initial hold duration: 72 hours. Legal standard: danger to self/others. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 72 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "Conn. Gen. Stat. \u00a7 17a-502"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "ct_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in CT retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "ct_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in CT: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "ct_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Connecticut Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "ct_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Connecticut Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "ct_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Connecticut Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

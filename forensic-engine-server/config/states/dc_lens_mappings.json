@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "state": "DC",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "dc_lens_childcare",
+      "lens_type": "childcare",
+      "programs": [
+        "dc_child_care_subsidy_ccdf_dc"
+      ],
+      "oversight_chains": [
+        "civil_rights",
+        "employer",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "dc_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "dc_dc_medicaid",
+        "dc_dc_alliance",
+        "dc_dc_unemployment_insurance_does",
+        "dc_dc_wic",
+        "dc_dc_paid_family_leave_dcfmla",
+        "dc_dc_department_of_behavioral_health_dbh"
+      ],
+      "oversight_chains": [
+        "civil_rights",
+        "employer",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "dc_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "dc_dc_snap_food_stamp_program",
+        "dc_dc_office_on_aging_dcoa"
+      ],
+      "oversight_chains": [
+        "civil_rights",
+        "employer",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "dc_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "dc_dc_tanf_temporary_assistance_for_needy_f",
+        "dc_dc_child_and_family_services_agency_cfsa",
+        "dc_dc_liheap_energy_assistance"
+      ],
+      "oversight_chains": [
+        "civil_rights",
+        "employer",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "dc_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "dc_dc_housing_authority_dcha",
+        "dc_dc_permanent_supportive_housing_psh",
+        "dc_dc_legal_aid_society_of_dc"
+      ],
+      "oversight_chains": [
+        "civil_rights",
+        "employer",
+        "insurer",
+        "consumer"
+      ]
+    }
+  ]
+}

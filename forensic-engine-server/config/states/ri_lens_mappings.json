@@ -1,0 +1,123 @@
+{
+  "meta": {
+    "state": "RI",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "ri_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "ri_rhode_island_snap_eohhs_dhs",
+        "ri_rhode_island_community_food_bank",
+        "ri_wic_rhode_island"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ri_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "ri_rhode_island_works_tanf_dhs",
+        "ri_rhode_island_ui_dlt",
+        "ri_rhode_island_liheap_office_of_energy_res"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ri_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "ri_rhode_island_housing_rihousing",
+        "ri_rhode_island_legal_services_rils"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ri_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "ri_rite_care_neighborhood_health_plan_medic",
+        "ri_rhode_island_primary_care_association_fq",
+        "ri_ri_division_of_elderly_affairs_dea"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ri_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "ri_rhode_island_hospital_lifespan_providenc",
+        "ri_day_one_ri_dv_services",
+        "ri_rhode_island_veterans_services_ridmva"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ri_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "ri_dare_centro_de_ayuda_immigrant_latino_se"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ri_lens_family",
+      "lens_type": "family",
+      "programs": [
+        "ri_rhode_island_tdi_tci_paid_leave_dlt"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    }
+  ]
+}

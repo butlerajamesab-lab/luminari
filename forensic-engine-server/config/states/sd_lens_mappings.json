@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "state": "SD",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "sd_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "sd_south_dakota_medicaid_expanded",
+        "sd_south_dakota_chip_healthy_kids",
+        "sd_south_dakota_unemployment_insurance",
+        "sd_south_dakota_wic",
+        "sd_sd_division_of_aging_ageoptions",
+        "sd_sd_behavioral_health_services"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "sd_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "sd_south_dakota_snap"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "sd_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "sd_south_dakota_tanf_family_assistance",
+        "sd_liheap_south_dakota",
+        "sd_east_river_dakota_plains_legal_services"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "sd_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "sd_south_dakota_housing_development_authori",
+        "sd_nine_tribal_nations_programs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "sd_lens_employment",
+      "lens_type": "employment",
+      "programs": [
+        "sd_south_dakota_vocational_rehabilitation"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    }
+  ]
+}

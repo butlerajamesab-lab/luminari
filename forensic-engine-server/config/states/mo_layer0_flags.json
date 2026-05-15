@@ -1,0 +1,337 @@
+{
+  "meta": {
+    "state": "MO",
+    "state_name": "Missouri",
+    "schema_version": "1.0.0",
+    "last_updated": "2026-03-06",
+    "description": "Layer 0 policy flags \u2014 always-on contextual warnings activated by pipeline and user context"
+  },
+  "flags": [
+    {
+      "flag_id": "mo_snap_application_barrier",
+      "title": "SNAP Application Barrier + Work Rule",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "benefits_denial",
+          "snap_denial"
+        ],
+        "benefit_categories": [
+          "food"
+        ],
+        "conditions": []
+      },
+      "message": "Missouri requires in-person application at a Family Support Division (FSD) office for SNAP. Online applications are not available for initial enrollment. Missouri also enforces an 80-hour monthly work requirement for able-bodied adults without dependents (ABAWDs) aged 18-49. Failure to meet work requirements results in a 3-month benefit limit per 36-month period.",
+      "action_items": [
+        "Locate nearest FSD office: mydss.mo.gov/food-assistance",
+        "Confirm work requirement exemptions (disability, pregnancy, caretaker status)",
+        "If ABAWD, document work hours or apply for exemption before 3-month limit"
+      ],
+      "legal_basis": "RSMo \u00a7208.017; 7 CFR \u00a7273.24 (ABAWD time limits)",
+      "bundle_pairings": []
+    },
+    {
+      "flag_id": "mo_healthnet_renewal_churn",
+      "title": "MO HealthNet Renewal Churn Risk",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "benefits_denial",
+          "insurance_claim_denial"
+        ],
+        "benefit_categories": [
+          "healthcare"
+        ],
+        "conditions": []
+      },
+      "message": "Missouri MO HealthNet (Medicaid) has a 12-month eligibility period with redetermination. Post-unwinding from the COVID continuous enrollment provision, Missouri has experienced significant renewal churn \u2014 eligible individuals losing coverage due to procedural failures (returned mail, missed deadlines). Track renewal dates proactively.",
+      "action_items": [
+        "Verify current enrollment status at mydss.mo.gov",
+        "Update mailing address with MO DSS immediately if changed",
+        "Set 60-day advance reminder before renewal date",
+        "If terminated, request reinstatement within 90 days of adverse action",
+        "Contact MO HealthNet hotline: 573-751-2005"
+      ],
+      "legal_basis": "42 CFR \u00a7435.916 (Medicaid renewal); RSMo \u00a7208.151",
+      "bundle_pairings": []
+    },
+    {
+      "flag_id": "mo_noncitizen_medicaid_restriction",
+      "title": "Non-Citizen Medicaid Eligibility Restriction (Oct 1, 2026)",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "benefits_denial",
+          "insurance_claim_denial",
+          "immigration_case"
+        ],
+        "benefit_categories": [
+          "healthcare"
+        ],
+        "conditions": [
+          "non_citizen",
+          "immigration"
+        ]
+      },
+      "message": "Effective October 1, 2026, Missouri will end MO HealthNet coverage for non-citizens who currently qualify under federal emergency Medicaid or state-funded programs. This affects lawfully present immigrants, DACA recipients, and refugees whose coverage was extended under prior policy. Individuals must transition to alternative coverage before the cutoff date.",
+      "action_items": [
+        "Identify current coverage type (emergency Medicaid, state-funded, federal match)",
+        "Explore ACA Marketplace plans at healthcare.gov (lawfully present immigrants qualify for subsidies)",
+        "Contact FQHC network for sliding-scale uninsured care (KC CARE: 816-753-5144, Samuel U Rodgers: 816-474-4920)",
+        "If refugee/asylee, contact MO Office of Refugee Administration: 573-751-3221",
+        "Document coverage transition timeline \u2014 apply for alternative before September 2026"
+      ],
+      "legal_basis": "Missouri HB 2634 (2026); 8 USC \u00a71611 (federal public benefits restriction)",
+      "bundle_pairings": [
+        "mo_fqhc_network",
+        "mo_marketplace_navigator"
+      ]
+    },
+    {
+      "flag_id": "mo_tanf_structural_insufficiency",
+      "title": "TANF Structural Insufficiency \u2014 Force Bundle Pairing",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "benefits_denial"
+        ],
+        "benefit_categories": [
+          "cash_assistance"
+        ],
+        "conditions": []
+      },
+      "message": "Missouri TANF (Temporary Assistance) provides a maximum of $292/month for a family of 3 \u2014 one of the lowest benefit levels in the country and insufficient to cover basic needs. TANF alone cannot sustain a household. The engine must automatically pair TANF with supplemental programs.",
+      "action_items": [
+        "Apply simultaneously for SNAP (food), MO HealthNet (healthcare), and LIHEAP (utilities)",
+        "Contact local Community Action Agency for emergency funds",
+        "Explore Harvesters (KC) or St. Louis Area Foodbank for immediate food assistance",
+        "If employed, verify EITC eligibility for tax credit"
+      ],
+      "legal_basis": "RSMo \u00a7208.040 (TANF benefit levels)",
+      "bundle_pairings": [
+        "mo_snap",
+        "mo_healthnet",
+        "mo_liheap",
+        "mo_harvesters",
+        "mo_stl_foodbank",
+        "mo_community_action"
+      ]
+    },
+    {
+      "flag_id": "mo_no_state_paid_leave",
+      "title": "No State Paid Family/Medical Leave",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "wage_theft",
+          "benefits_denial"
+        ],
+        "benefit_categories": [
+          "cash_assistance"
+        ],
+        "conditions": [
+          "illness",
+          "childbirth",
+          "caregiving",
+          "family_medical"
+        ]
+      },
+      "message": "Missouri has no state-mandated paid family or medical leave program. Workers must rely on unpaid federal FMLA (if employer has 50+ employees and worker has 12+ months tenure), employer-provided leave policies, or short-term disability insurance. This is a critical coverage gap for illness, childbirth, and caregiving situations.",
+      "action_items": [
+        "Verify FMLA eligibility (50+ employees, 12+ months, 1,250+ hours worked)",
+        "Check employer's voluntary leave policy and short-term disability coverage",
+        "If no FMLA coverage, explore MO HealthNet for medical costs",
+        "Contact Legal Aid of Western Missouri (816-474-6750) for wrongful termination if fired for medical absence",
+        "Document all communications with employer about leave requests"
+      ],
+      "legal_basis": "29 USC \u00a72601 (FMLA); Missouri has no state equivalent",
+      "bundle_pairings": [
+        "mo_healthnet",
+        "mo_tanf"
+      ]
+    },
+    {
+      "flag_id": "mo_cold_weather_rule",
+      "title": "Cold Weather Rule Protection (Nov 1 \u2013 Mar 31)",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "housing_violation",
+          "benefits_denial"
+        ],
+        "benefit_categories": [
+          "utilities"
+        ],
+        "conditions": [
+          "utility_shutoff",
+          "heating",
+          "winter"
+        ]
+      },
+      "message": "Missouri's Cold Weather Rule (4 CSR 240-13.055) prohibits gas and electric utilities from disconnecting residential heating service between November 1 and March 31 when the temperature is forecast to drop below 32\u00b0F within the next 24 hours. Customers must register with their utility and may be required to enter a payment plan. If disconnection occurs during a protected period, it may be illegal.",
+      "action_items": [
+        "Contact utility provider immediately to register for Cold Weather Rule protection",
+        "If already disconnected during protected period, file complaint with Missouri PSC: 800-392-4211",
+        "Apply for LIHEAP heating assistance: 855-373-4636 or mydss.mo.gov",
+        "Contact local Community Action Agency for emergency utility funds",
+        "Document all disconnection notices with dates and temperatures"
+      ],
+      "legal_basis": "4 CSR 240-13.055 (Missouri Cold Weather Rule); RSMo \u00a7393.130",
+      "bundle_pairings": [
+        "mo_liheap",
+        "mo_community_action",
+        "mo_psc_complaint"
+      ]
+    },
+    {
+      "flag_id": "mo_involuntary_hold_law",
+      "title": "Involuntary Hold: Missouri 96-Hour Hold",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "MO involuntary psychiatric hold law: Missouri 96-Hour Hold. Statutory authority: Mo. Rev. Stat. \u00a7 632.305. Maximum initial hold duration: 96 hours. Legal standard: danger to self/others. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 96 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "Mo. Rev. Stat. \u00a7 632.305"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "mo_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in MO retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "mo_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in MO: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "mo_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Missouri Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "mo_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Missouri Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "mo_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Missouri Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

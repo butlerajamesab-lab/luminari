@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "state": "KS",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "ks_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "ks_kansas_medicaid_kancare",
+        "ks_kansas_chip_healthwave",
+        "ks_kansas_unemployment_insurance",
+        "ks_kansas_tribal_nations_programs",
+        "ks_211_kansas",
+        "ks_kdads_behavioral_health_services"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ks_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "ks_kansas_snap_food_assistance",
+        "ks_kansas_wic",
+        "ks_kansas_aging_and_disability_services_ads"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ks_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "ks_kansas_tanf_kansas_works",
+        "ks_kansas_child_care_assistance_ccap"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ks_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "ks_kansas_housing_resources_corporation_khr",
+        "ks_kansas_legal_services_kls"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ks_lens_employment",
+      "lens_type": "employment",
+      "programs": [
+        "ks_kansas_vocational_rehabilitation_vr"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,395 @@
+{
+  "meta": {
+    "state": "MI",
+    "version": "3.0",
+    "chain_count": 5
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "insurer",
+      "state": "MI",
+      "bodies": [
+        {
+          "oversight_body": "MI Dept of Insurance & Financial Services (DIFS)",
+          "jurisdiction": "primary",
+          "phone": "877-999-6442",
+          "complaint_portal": "https://www.michigan.gov/difs",
+          "what_to_report": "Insurance regulation, claim denials",
+          "legal_threshold": "Primary insurance regulator, external review",
+          "city": "Lansing",
+          "state": "MI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "MI LARA (Licensing & Regulatory Affairs)",
+          "jurisdiction": "primary",
+          "phone": "517-241-6180",
+          "complaint_portal": "https://www.michigan.gov/lara",
+          "what_to_report": "Professional licensing, occupational safety",
+          "legal_threshold": "Licensing enforcement, MIOSHA",
+          "city": "Lansing",
+          "state": "MI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "MI LEO (Labor & Economic Opportunity)",
+          "jurisdiction": "primary",
+          "phone": "855-464-9243",
+          "complaint_portal": "https://www.michigan.gov/leo",
+          "what_to_report": "Wage theft, unemployment insurance, workforce",
+          "legal_threshold": "Wage & Hour enforcement, UIA oversight",
+          "city": "Lansing",
+          "state": "MI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "MI Public Service Commission (MPSC)",
+          "jurisdiction": "primary",
+          "phone": "800-292-9555",
+          "complaint_portal": "https://www.michigan.gov/mpsc",
+          "what_to_report": "Utility regulation, shutoff rules",
+          "legal_threshold": "Utility rate regulation, shutoff moratorium enforcement",
+          "city": "Lansing",
+          "state": "MI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "employer",
+      "state": "MI",
+      "bodies": [
+        {
+          "oversight_body": "Michigan Attorney General",
+          "jurisdiction": "primary",
+          "phone": "877-765-8388",
+          "complaint_portal": "https://www.michigan.gov/ag",
+          "what_to_report": "Consumer protection, civil rights enforcement",
+          "legal_threshold": "Consumer fraud, wage theft enforcement",
+          "city": "Lansing",
+          "state": "MI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "benefits_agency",
+      "state": "MI",
+      "bodies": [
+        {
+          "oversight_body": "DHHS Office of Inspector General",
+          "jurisdiction": "primary",
+          "phone": "855-643-7283",
+          "complaint_portal": "https://www.michigan.gov/mdhhs",
+          "what_to_report": "Benefits fraud, waste, abuse",
+          "legal_threshold": "Investigates DHHS program fraud",
+          "city": "Lansing",
+          "state": "MI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "MI Dept of Civil Rights",
+          "jurisdiction": "primary",
+          "phone": "800-482-3604",
+          "complaint_portal": "https://www.michigan.gov/mdcr",
+          "what_to_report": "Employment, housing, public accommodation discrimination",
+          "legal_threshold": "Elliott-Larsen Civil Rights Act enforcement",
+          "city": "Lansing",
+          "state": "MI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Michigan Ombudsman",
+          "jurisdiction": "primary",
+          "phone": "517-373-3947",
+          "complaint_portal": "https://www.michigan.gov/ombudsman",
+          "what_to_report": "State agency complaints",
+          "legal_threshold": "Citizen complaint resolution",
+          "city": "Lansing",
+          "state": "MI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Michigan State Police",
+          "jurisdiction": "primary",
+          "phone": "517-332-2521",
+          "complaint_portal": "https://www.michigan.gov/msp",
+          "what_to_report": "Law enforcement oversight",
+          "legal_threshold": "State-level law enforcement",
+          "city": "Lansing",
+          "state": "MI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "MI Children's Ombudsman",
+          "jurisdiction": "primary",
+          "phone": "800-642-4326",
+          "complaint_portal": "https://www.michigan.gov/oco",
+          "what_to_report": "Child welfare, foster care, ICWA",
+          "legal_threshold": "Child welfare complaint investigation",
+          "city": "Lansing",
+          "state": "MI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "HUD Detroit Field Office",
+          "jurisdiction": "primary",
+          "phone": "313-226-7900",
+          "complaint_portal": "https://www.hud.gov",
+          "what_to_report": "Federal housing discrimination, FHA enforcement",
+          "legal_threshold": "Fair Housing Act enforcement",
+          "city": "Detroit",
+          "state": "MI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC Detroit District Office",
+          "jurisdiction": "primary",
+          "phone": "800-669-4000",
+          "complaint_portal": "https://www.eeoc.gov",
+          "what_to_report": "Federal employment discrimination",
+          "legal_threshold": "Title VII, ADA, ADEA enforcement",
+          "city": "Detroit",
+          "state": "MI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "NLRB Region 7 (Detroit)",
+          "jurisdiction": "primary",
+          "phone": "313-226-3200",
+          "complaint_portal": "https://www.nlrb.gov",
+          "what_to_report": "Unfair labor practices, union rights",
+          "legal_threshold": "NLRA enforcement",
+          "city": "Detroit",
+          "state": "MI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "US DOL Wage & Hour (Detroit)",
+          "jurisdiction": "primary",
+          "phone": "313-226-7447",
+          "complaint_portal": "https://www.dol.gov/agencies/whd",
+          "what_to_report": "Federal wage theft, FLSA enforcement",
+          "legal_threshold": "FLSA, FMLA enforcement",
+          "city": "Detroit",
+          "state": "MI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "law_enforcement",
+      "state": "MI",
+      "bodies": [
+        {
+          "oversight_body": "Michigan Auditor General",
+          "jurisdiction": "primary",
+          "phone": "517-334-8050",
+          "complaint_portal": "https://audgen.michigan.gov",
+          "what_to_report": "State agency performance audits",
+          "legal_threshold": "Legislative audit authority",
+          "city": "Lansing",
+          "state": "MI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "family_court",
+      "state": "MI",
+      "bodies": [
+        {
+          "oversight_body": "State Court Administrative Office (SCAO)",
+          "jurisdiction": "primary",
+          "phone": "517-373-0128",
+          "complaint_portal": "https://courts.michigan.gov",
+          "what_to_report": "Court administration, eviction proceedings",
+          "legal_threshold": "Court rules, judicial oversight",
+          "city": "Lansing",
+          "state": "MI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "mi_med_board",
+          "name": "Michigan Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Michigan Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MI"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "mi_patient_adv",
+          "name": "Michigan Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Michigan Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MI"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "mi_health_dept",
+          "name": "Michigan Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Michigan Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MI"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MI"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "mi_pharm_board",
+          "name": "Michigan Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Michigan Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MI"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "mi_pa",
+          "name": "Michigan Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Michigan Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MI"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "mi_mha",
+          "name": "Michigan Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Michigan Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MI"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MI"
+    }
+  ]
+}

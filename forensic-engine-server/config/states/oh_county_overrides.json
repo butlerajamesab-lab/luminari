@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "state": "OH",
+    "state_name": "Ohio",
+    "layer": "county_overrides",
+    "version": "1.0.0",
+    "date_created": "2026-03-07",
+    "source": "Luminari OH Three-Layer Registry",
+    "override_count": 1
+  },
+  "regions": [
+    "Cleveland/Cuyahoga County"
+  ],
+  "county_overrides": [
+    {
+      "county": "Cuyahoga",
+      "city": "Cleveland",
+      "region": "Cleveland",
+      "context": "Cleveland has Ohio's highest poverty concentration — approximately 30% of residents below poverty line. Cuyahoga County layers additional programs on top of state. Key distinction: Cleveland City and Cuyahoga County are different jurisdictions. Many programs serve county-wide but administer through the City of Cleveland or MetroHealth. Always confirm whether program serves City only vs. full county.",
+      "additional_resources": [
+        {
+          "name": "MetroHealth System",
+          "phone": "216-778-7800",
+          "website": "metrohealth.org",
+          "notes": "Level 1 trauma, 20+ community health centers"
+        },
+        {
+          "name": "Cuyahoga County SNAP/Medicaid/OWF",
+          "phone": "216-987-7000",
+          "website": "cuyahogajfs.com",
+          "notes": "County JFS for benefits"
+        },
+        {
+          "name": "Legal Aid Society of Cleveland",
+          "phone": "216-687-1900",
+          "website": "lasclev.org",
+          "notes": "Largest legal aid in NE Ohio"
+        },
+        {
+          "name": "Greater Cleveland Food Bank",
+          "phone": "216-738-2265",
+          "website": "greaterclevelandfoodbank.org",
+          "notes": "Largest food bank in NE Ohio"
+        },
+        {
+          "name": "Cleveland Community Police Commission",
+          "phone": "216-623-6000",
+          "website": "clevelandcpc.org",
+          "notes": "DOJ consent decree oversight"
+        }
+      ],
+      "policy_differences": [
+        "Cleveland under DOJ consent decree for police reform",
+        "Cuyahoga County has separate JFS office from state",
+        "MetroHealth serves as safety-net hospital system for county",
+        "30% poverty rate — highest in Ohio"
+      ],
+      "county_id": "cuyahoga",
+      "county_name": "Cuyahoga"
+    }
+  ],
+  "resolution_chain": [
+    "state_baseline",
+    "county_override",
+    "city_specific"
+  ]
+}

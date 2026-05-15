@@ -1,0 +1,151 @@
+{
+  "meta": {
+    "state": "MO",
+    "type": "lens_mappings",
+    "version": "1.0.0",
+    "status": "active",
+    "description": "Maps canonical lens IDs to MO-specific activation rules, pipeline associations, and state-specific parameters"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "housing",
+      "activation_pipelines": ["tenant_rights"],
+      "state_parameters": {
+        "rent_control": false,
+        "eviction_notice_days": 10,
+        "statute_reference": "RSMo §441.040",
+        "cold_weather_rule": true,
+        "cold_weather_months": ["november", "december", "january", "february", "march"]
+      },
+      "county_lens_overrides": true,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "insurance",
+      "activation_pipelines": ["insurance_claim_denial"],
+      "state_parameters": {
+        "external_review_available": true,
+        "doi_complaint_url": "https://insurance.mo.gov/consumers/complaints/",
+        "statute_reference": "RSMo §376.1350",
+        "bad_faith_cause_of_action": true
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "workplace",
+      "activation_pipelines": ["wage_theft", "workers_compensation"],
+      "state_parameters": {
+        "right_to_work": true,
+        "minimum_wage": 13.75,
+        "minimum_wage_year": 2026,
+        "wage_claim_sol_years": 2,
+        "statute_reference": "RSMo §290.527",
+        "dolir_filing_url": "https://labor.mo.gov/DLS/WageHour"
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "domestic_violence",
+      "activation_pipelines": ["domestic_violence"],
+      "state_parameters": {
+        "full_order_of_protection": true,
+        "ex_parte_available": true,
+        "statute_reference": "RSMo §455.010-§455.085",
+        "firearms_surrender": true,
+        "address_confidentiality_program": true
+      },
+      "county_lens_overrides": true,
+      "priority_boost": 2
+    },
+    {
+      "lens_id": "custody",
+      "activation_pipelines": ["domestic_violence"],
+      "state_parameters": {
+        "best_interest_standard": true,
+        "guardian_ad_litem_required": true,
+        "statute_reference": "RSMo §452.375"
+      },
+      "county_lens_overrides": true,
+      "priority_boost": 1
+    },
+    {
+      "lens_id": "elder_abuse",
+      "activation_pipelines": [],
+      "state_parameters": {
+        "mandatory_reporting": true,
+        "aps_hotline": "1-800-392-0210",
+        "statute_reference": "RSMo §660.250-§660.295"
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "consumer",
+      "activation_pipelines": ["benefits_denial", "public_assistance_dispute", "snap_denial"],
+      "state_parameters": {
+        "ag_consumer_protection": true,
+        "ag_complaint_url": "https://ago.mo.gov/civil-division/consumer",
+        "statute_reference": "RSMo §407.010-§407.145",
+        "treble_damages_available": true
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "medical",
+      "activation_pipelines": ["disability_claim_denial", "insurance_claim_denial"],
+      "state_parameters": {
+        "medicaid_expansion": true,
+        "medicaid_expansion_year": 2021,
+        "managed_care_regions": 3,
+        "statute_reference": "RSMo §208"
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "trauma_informed",
+      "activation_pipelines": ["domestic_violence", "asylum_claim"],
+      "state_parameters": {
+        "trauma_screening_required": false,
+        "victim_advocate_available": true
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 1
+    },
+    {
+      "lens_id": "safety_risk",
+      "activation_pipelines": ["domestic_violence"],
+      "state_parameters": {
+        "lethality_assessment_protocol": true,
+        "statute_reference": "RSMo §455.513"
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 3
+    },
+    {
+      "lens_id": "public_records_escalation",
+      "activation_pipelines": [],
+      "state_parameters": {
+        "foia_statute": "Missouri Sunshine Law",
+        "foia_citation": "RSMo §610.010-§610.035",
+        "response_deadline_days": 3,
+        "appeal_path": "AG → State Auditor → Circuit Court"
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "vulnerable_population",
+      "activation_pipelines": ["asylum_claim", "immigration_case", "immigration_benefits", "work_authorization_dispute"],
+      "state_parameters": {
+        "language_access_required": true,
+        "interpreter_services": true
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 1
+    }
+  ]
+}

@@ -1,0 +1,338 @@
+{
+  "meta": {
+    "state": "MT",
+    "version": "2.0",
+    "date": "2026-03-08",
+    "total_chains": 4,
+    "total_bodies": 11,
+    "entity_types": [
+      "employer",
+      "general",
+      "insurer",
+      "consumer"
+    ],
+    "source": "luminari-mt-registry.docx"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "employer",
+      "state": "MT",
+      "bodies": [
+        {
+          "oversight_body": "Montana Human Rights Commission (MHRC)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Employment, housing, public accommodation discrimination. Montana Human Rights Act: disability, national origin, sex, age, race. LGBTQ+ added 2021. 180-day SOL.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "180 days \u2014 FATAL. File EEOC simultaneously.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC \u2014 Seattle Field Office (covers MT)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Federal employment discrimination \u2014 300-day deadline.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "300 days \u2014 FATAL. File MHRC simultaneously.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOL WHD \u2014 Great Falls (MT Primary Wage)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "FLSA wage enforcement. MT Wage Act MCA \u00a739-3-201 provides 5-year SOL \u2014 far exceeds FLSA.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "2 yrs FLSA / 5 yrs MT Wage Act \u2014 ALWAYS USE STATE. FATAL.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Montana DLI \u2014 Wage and Hour",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "MT Wage Payment Act MCA \u00a739-3-201 \u2014 5-year SOL, private civil action available.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "5 years \u2014 FATAL (but longest window)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "HUD \u2014 Denver Regional Office (covers MT, Fair Housing)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Fair Housing Act housing discrimination complaints.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "1 year \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Montana Department of Labor and Industry (Full)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Comprehensive labor law enforcement \u2014 wage, safety, discrimination coordination.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "Varies by claim type",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "general",
+      "state": "MT",
+      "bodies": [
+        {
+          "oversight_body": "Montana OAH \u2014 Benefits Appeals",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "SNAP, Medicaid, TANF fair hearings.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "30 days from notice \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Montana DLI \u2014 UI Appeals",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "UI denial appeals \u2014 20-day deadline from mailing.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "20 days \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "BIA \u2014 Rocky Mountain Regional Office (Tribal)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Bureau of Indian Affairs \u2014 tribal land, trust, enrollment disputes for MT tribal members.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "Varies \u2014 consult tribal attorney or MLSA",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "insurer",
+      "state": "MT",
+      "bodies": [
+        {
+          "oversight_body": "Montana Insurance Commissioner",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Private insurance complaints, external review.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "180 days from denial",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "consumer",
+      "state": "MT",
+      "bodies": [
+        {
+          "oversight_body": "Montana AG \u2014 Consumer Protection Office",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Consumer fraud, predatory lending, deceptive practices.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "5 years (MT general civil)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "mt_med_board",
+          "name": "Montana Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Montana Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MT"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "mt_patient_adv",
+          "name": "Montana Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Montana Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MT"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "mt_health_dept",
+          "name": "Montana Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Montana Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MT"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MT"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "mt_pharm_board",
+          "name": "Montana Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Montana Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MT"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "mt_pa",
+          "name": "Montana Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Montana Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MT"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "mt_mha",
+          "name": "Montana Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Montana Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MT"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MT"
+    }
+  ]
+}

@@ -1,0 +1,424 @@
+{
+  "meta": {
+    "state": "WV",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "wv_west_virginia_medicaid_wv_bureau_for_med",
+      "program_name": "West Virginia Medicaid (WV Bureau for Medical Services)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "West Virginia Medicaid",
+      "phone": "800-642-8589",
+      "website": "https://dhhr.wv.gov/bms",
+      "eligibility": "Adults \u2264138% FPL; children \u2264300% FPL; elderly/disabled",
+      "apply_notes": "Expanded Medicaid. Covers adults 19\u201364 up to 138% FPL. Home-based and community services waivers for elderly and disabled.",
+      "source": "luminari-west-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "WV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wv_west_virginia_chip_wvchip",
+      "program_name": "West Virginia CHIP (WVCHIP)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "West Virginia CHIP",
+      "phone": "877-982-2447",
+      "website": "https://chip.wv.gov",
+      "eligibility": "Children under 19; income 138\u2013300% FPL",
+      "apply_notes": "Children's health coverage above Medicaid threshold.",
+      "source": "luminari-west-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "WV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wv_west_virginia_snap",
+      "program_name": "West Virginia SNAP",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "West Virginia SNAP",
+      "phone": "304-558-0684",
+      "website": "https://dhhr.wv.gov/bcf/snap",
+      "eligibility": "Income \u2264130% FPL; work requirements for ABD adults",
+      "apply_notes": "SNAP benefits through DHHR. Apply at local DHHR offices or online.",
+      "source": "luminari-west-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "WV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wv_west_virginia_tanf_west_virginia_works",
+      "program_name": "West Virginia TANF (West Virginia Works)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "West Virginia TANF",
+      "phone": "304-558-0684",
+      "website": "https://dhhr.wv.gov/bcf",
+      "eligibility": "Families with minor children; income and asset limits",
+      "apply_notes": "Cash assistance: $340/month (family of 3). 60-month lifetime limit. Work requirements apply.",
+      "source": "luminari-west-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "WV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wv_west_virginia_unemployment_insurance",
+      "program_name": "West Virginia Unemployment Insurance",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "employment_dispute"
+      ],
+      "agency": "West Virginia Unemployment Insurance",
+      "phone": "800-379-1032",
+      "website": "https://workforcewv.org/ui",
+      "eligibility": "Involuntary separation; base period earnings required",
+      "apply_notes": "UI: max $424/week. Duration 26 weeks. Administered by WorkForce West Virginia.",
+      "source": "luminari-west-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "WV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wv_wv_housing_development_fund_wvhdf",
+      "program_name": "WV Housing Development Fund (WVHDF)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "WV Housing Development Fund",
+      "phone": "304-345-6475",
+      "website": "https://wvhdf.com",
+      "eligibility": "Income-based; varies by program",
+      "apply_notes": "Affordable housing, homebuyer assistance, rental assistance. Rural housing deterioration is a chronic issue.",
+      "source": "luminari-west-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "WV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wv_west_virginia_wic",
+      "program_name": "West Virginia WIC",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare"
+      ],
+      "agency": "West Virginia WIC",
+      "phone": "304-558-0050",
+      "website": "https://wvdhhr.org/wic",
+      "eligibility": "Pregnant/postpartum women, infants, children under 5; income \u2264185% FPL",
+      "apply_notes": "Women, Infants and Children nutrition through DHHR.",
+      "source": "luminari-west-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "WV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wv_wv_child_care_assistance_ccdf",
+      "program_name": "WV Child Care Assistance (CCDF)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WV Child Care Assistance",
+      "phone": "304-558-0684",
+      "website": "https://dhhr.wv.gov/childcare",
+      "eligibility": "Working families; income \u226485% SMI; children under 13",
+      "apply_notes": "Subsidized childcare for working families through DHHR.",
+      "source": "luminari-west-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "WV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wv_west_virginia_bureau_of_senior_services_",
+      "program_name": "West Virginia Bureau of Senior Services (BOSS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "West Virginia Bureau of Senior Services",
+      "phone": "304-558-3317",
+      "website": "https://wvseniorservices.gov",
+      "eligibility": "Adults 60+; income-based for some services",
+      "apply_notes": "Services for adults 60+: Meals on Wheels, transportation, caregiver support, elder rights. Area Agencies on Aging in 7 regions.",
+      "source": "luminari-west-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "WV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wv_wv_division_of_rehabilitation_services_d",
+      "program_name": "WV Division of Rehabilitation Services (DRS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "WV Division of Rehabilitation Services",
+      "phone": "800-642-8207",
+      "website": "https://wvdrs.org",
+      "eligibility": "Documented disability; employment goal",
+      "apply_notes": "Employment services for people with disabilities. Critical given WV's high disability rate.",
+      "source": "luminari-west-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "WV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wv_wv_dhhr_substance_use_prevention_omhsas",
+      "program_name": "WV DHHR Substance Use Prevention (OMHSAS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "WV DHHR Substance Use Prevention",
+      "phone": "844-435-7498",
+      "website": "https://dhhr.wv.gov/bhhf",
+      "eligibility": "All residents; Medicaid accepted; priority for opioid use disorder",
+      "apply_notes": "Mental health and substance use treatment. WV has highest per-capita overdose rate in US. Treatment on Demand initiative. Crisis line: 844-HELP4WV (844-435-7498).",
+      "source": "luminari-west-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "WV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wv_liheap_west_virginia",
+      "program_name": "LIHEAP West Virginia",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "LIHEAP West Virginia",
+      "phone": "800-642-8589",
+      "website": "https://dhhr.wv.gov/liheap",
+      "eligibility": "Income \u2264150% FPL",
+      "apply_notes": "Home energy assistance through DHHR. Critical for heating in Appalachian winters. Also: Emergency Rental and Mortgage Assistance.",
+      "source": "luminari-west-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "WV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wv_mountain_state_justice_wv_legal_aid",
+      "program_name": "Mountain State Justice / WV Legal Aid",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute",
+        "consumer_protection"
+      ],
+      "agency": "Mountain State Justice / WV Legal Aid",
+      "phone": "304-344-3144",
+      "website": "https://msjlaw.org",
+      "eligibility": "Income \u2264125% FPL; some programs higher",
+      "apply_notes": "Free civil legal services. Housing, benefits, family, consumer, domestic violence, coalfield communities. Mountain State Justice focuses on systemic advocacy.",
+      "source": "luminari-west-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "WV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wv_wv_dhhr_child_protective_services",
+      "program_name": "WV DHHR Child Protective Services",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare"
+      ],
+      "agency": "WV DHHR Child Protective Services",
+      "phone": "304-558-0628",
+      "website": "https://dhhr.wv.gov/bcf/cps",
+      "eligibility": "WV children and families",
+      "apply_notes": "Child welfare services, family preservation, foster care, and adoption.",
+      "source": "luminari-west-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "WV",
+      "federal_interface": false
+    }
+  ]
+}

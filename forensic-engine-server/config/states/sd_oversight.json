@@ -1,0 +1,259 @@
+{
+  "meta": {
+    "state": "SD",
+    "version": "2.0",
+    "date": "2026-03-08",
+    "total_chains": 3,
+    "total_bodies": 5,
+    "entity_types": [
+      "employer",
+      "utility",
+      "insurer"
+    ],
+    "source": "luminari-sd-registry.docx"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "employer",
+      "state": "SD",
+      "bodies": [
+        {
+          "oversight_body": "South Dakota Division of Human Rights",
+          "jurisdiction": "primary",
+          "phone": "605-773-4493",
+          "complaint_portal": "https://dlr.sd.gov/humanrights",
+          "what_to_report": "State civil rights enforcement. SOL: 180 days. Employment, housing, public accommodations discrimination.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "180 days",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC Minneapolis Area Office (covers SD)",
+          "jurisdiction": "primary",
+          "phone": "800-669-4000",
+          "complaint_portal": "https://eeoc.gov",
+          "what_to_report": "Federal employment discrimination. Dual-file with SD Division of Human Rights.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "300 days (with state agency charge)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "South Dakota Department of Labor (SDDOL)",
+          "jurisdiction": "primary",
+          "phone": "605-626-2452",
+          "complaint_portal": "https://dlr.sd.gov",
+          "what_to_report": "Wage enforcement, labor standards, workplace safety compliance.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "2 years (wage claims)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "utility",
+      "state": "SD",
+      "bodies": [
+        {
+          "oversight_body": "South Dakota Public Utilities Commission (PUC)",
+          "jurisdiction": "primary",
+          "phone": "800-332-1782",
+          "complaint_portal": "https://puc.sd.gov",
+          "what_to_report": "Electric, gas, telecom utility regulation. File billing and service complaints.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "Varies",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "insurer",
+      "state": "SD",
+      "bodies": [
+        {
+          "oversight_body": "South Dakota Division of Insurance",
+          "jurisdiction": "primary",
+          "phone": "605-773-3563",
+          "complaint_portal": "https://dlr.sd.gov/insurance",
+          "what_to_report": "Health, property, auto insurance complaints and denials.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "Varies",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "sd_med_board",
+          "name": "South Dakota Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "South Dakota Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "SD"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "sd_patient_adv",
+          "name": "South Dakota Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "South Dakota Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "SD"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "sd_health_dept",
+          "name": "South Dakota Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "South Dakota Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "SD"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "SD"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "sd_pharm_board",
+          "name": "South Dakota Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "South Dakota Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "SD"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "sd_pa",
+          "name": "South Dakota Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "South Dakota Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "SD"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "sd_mha",
+          "name": "South Dakota Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "South Dakota Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "SD"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "SD"
+    }
+  ]
+}

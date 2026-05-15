@@ -1,0 +1,199 @@
+{
+  "meta": {
+    "state": "DC",
+    "version": "3.0",
+    "date": "2026-03-09",
+    "flag_count": 6
+  },
+  "flags": [
+    {
+      "flag_id": "dc_alliance_undocumented",
+      "severity": "info",
+      "title": "DC Alliance \u2014 Medicaid for Undocumented Adults (Unique in Registry)",
+      "summary": "DC Healthcare Alliance provides Medicaid-equivalent coverage for undocumented adults \u2014 the only program of its kind in the registry. Income limit: 200% FPL. DC Health Link: 855-532-5465 / dchealthlink.com. DHCF: 202-442-5988."
+    },
+    {
+      "flag_id": "dc_highest_minimum_wage",
+      "severity": "info",
+      "title": "$17.50/hr Minimum Wage \u2014 Highest in Registry",
+      "summary": "DC's minimum wage of $17.50/hr is the highest in the entire registry. Tipped minimum: $8.00/hr. For wage claims: DC DOES: 202-671-1880 / does.dc.gov. Also file federal WHD."
+    },
+    {
+      "flag_id": "dc_ohr_broadest_classes",
+      "severity": "info",
+      "title": "DC OHR 1-Year SOL \u2014 Broadest Protected Classes in Registry",
+      "summary": "DC Office of Human Rights has a 1-year SOL and the broadest set of protected classes in the registry: race, color, religion, national origin, sex, age, marital status, personal appearance, sexual orientation, gender identity, familial status, family responsibilities, matriculation, political affiliation, genetic information, disability, source of income, place of residence, and homeless status. DC OHR: 202-727-4559 / ohr.dc.gov."
+    },
+    {
+      "flag_id": "dc_wards_7_8_poverty",
+      "severity": "warning",
+      "title": "Wards 7 & 8 \u2014 25-35% Poverty vs NW DC $120k+ Median Income",
+      "summary": "DC has extreme income inequality. Wards 7 and 8 (east of the Anacostia River) have 25-35% poverty rates while Northwest DC has median incomes exceeding $120,000. Services in Wards 7 & 8 are limited. Bread for the City: 202-265-1234 / breadforthecity.org. Legal Aid Society of DC: 202-628-1161 / legalaiddc.org."
+    },
+    {
+      "flag_id": "dc_no_congressional_representation",
+      "severity": "warning",
+      "title": "No Congressional Representation \u2014 Federal Override of DC Law",
+      "summary": "DC residents have no voting representation in Congress. Congress can override DC laws, including budget decisions. This affects local policy stability. DC Council: 202-724-8000 / dccouncil.gov."
+    },
+    {
+      "flag_id": "dc_no_voting_representation",
+      "flag_type": "policy",
+      "severity": "info",
+      "title": "No voting representation in Congress",
+      "description": "Documented in Washington DC registry.",
+      "source": "luminari registry",
+      "date_verified": "2026-03-08"
+    },
+    {
+      "flag_id": "dc_involuntary_hold_law",
+      "title": "Involuntary Hold: DC Emergency Hospitalization",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "DC involuntary psychiatric hold law: DC Emergency Hospitalization. Statutory authority: D.C. Code \u00a7 21-521. Maximum initial hold duration: 48 hours. Legal standard: danger to self/others. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 48 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "D.C. Code \u00a7 21-521"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "dc_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in DC retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "dc_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in DC: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "dc_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "District of Columbia Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "dc_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "District of Columbia Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "dc_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "District of Columbia Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

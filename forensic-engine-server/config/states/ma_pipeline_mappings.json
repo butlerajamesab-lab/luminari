@@ -1,0 +1,259 @@
+{
+  "meta": {
+    "state": "MA",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "ma_greater_boston_food_bank_western_ma_food",
+        "ma_greater_boston_legal_services_gbls",
+        "ma_massachusetts_ui_dua",
+        "ma_massachusetts_immigrant_and_refugee_advo",
+        "ma_massachusetts_veterans_services_dvs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "ma_wic_massachusetts",
+        "ma_ma_tafdc_tanf_dta"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "ma_massachusetts_snap_dta_food_assistance",
+        "ma_wic_massachusetts",
+        "ma_massachusetts_housing_finance_agency_mhf",
+        "ma_ma_tafdc_tanf_dta",
+        "ma_massachusetts_liheap_fuel_assistance_eoe"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "ma_massachusetts_housing_finance_agency_mhf",
+        "ma_jane_doe_inc_ma_dv_coalition"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "ma_masshealth_chapter_58_medicaid",
+        "ma_boston_medical_center_boston_safety_net",
+        "ma_cambridge_health_alliance_mass_general_a",
+        "ma_massachusetts_league_of_community_health"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "ma_massachusetts_liheap_fuel_assistance_eoe"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ma_involuntary_hold_law",
+        "ma_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ma_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ma_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ma_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ma_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ma_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "ma_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ma_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ma_restraint_seclusion_limits",
+        "ma_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ma_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "ma_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ma_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

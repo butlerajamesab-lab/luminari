@@ -1,0 +1,25 @@
+{
+  "foia_templates": [],
+  "agency_targets": [],
+  "statute": {
+    "name": "Florida Public Records Act",
+    "citation": "Fla. Stat. § 119"
+  },
+  "agencies": [
+    {
+      "agency_id": "fl_records_custodian",
+      "name": "Agency Records Custodian",
+      "url": ""
+    }
+  ],
+  "structured_rules": [
+    {
+      "rule_id": "fl_public_records",
+      "domain": "public_records"
+    }
+  ],
+  "meta": {
+    "state": "FL",
+    "version": "3.0"
+  }
+}

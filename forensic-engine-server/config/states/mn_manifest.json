@@ -1,0 +1,92 @@
+{
+  "state": "MN",
+  "state_name": "Minnesota",
+  "version": "1.0.0",
+  "schema": "luminari-registry-v1",
+  "date_created": "2026-03-08",
+  "layers": {
+    "layer0": "mn_layer0_flags.json",
+    "layer1_programs": "mn_programs.json",
+    "layer1_cards": "mn_layer1_cards.json",
+    "layer2_workflows": "mn_workflow_overrides.json",
+    "layer3_oversight": "mn_oversight.json",
+    "help": "mn_help.json",
+    "foia": "mn_foia.json",
+    "tribal": "mn_tribal_overrides.json",
+    "county": "mn_county_overrides.json",
+    "pipeline_mappings": "mn_pipeline_mappings.json",
+    "lens_mappings": "mn_lens_mappings.json",
+    "workflow_mappings": "mn_workflow_mappings.json"
+  },
+  "status": "active",
+  "validation_status": "complete",
+  "datasets": [
+    "programs",
+    "workflows",
+    "oversight",
+    "layer0_flags",
+    "layer1_cards",
+    "county_overrides",
+    "tribal_overrides",
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings",
+    "foia",
+    "help",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "civil_rights_violation",
+    "disability_rights",
+    "family_law",
+    "health_insurance_denial",
+    "immigration_case",
+    "medicaid_denial",
+    "snap_denial",
+    "tenant_rights",
+    "wage_theft",
+    "workplace_discrimination",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "benefits_agency",
+    "insurer"
+  ],
+  "policy_flags": [
+    "mn_minnesota_snap_abawd",
+    "mn_minnesota_minnesotacare",
+    "mn_minnesota_tanf_mfip",
+    "mn_east_african_somali_hmong_karen_community_context",
+    "mn_minnesota_civil_rights",
+    "mn_minnesota_ui",
+    "mn_minnesota_tribal_context",
+    "mn_minneapolis_rent_control_tenant_protections"
+  ],
+  "statistics": {
+    "programs": {
+      "total_programs": 21,
+      "categories": {
+        "community_navigation": 7,
+        "healthcare": 6,
+        "housing": 2,
+        "legal_aid": 2,
+        "children_families": 2,
+        "disability": 1,
+        "immigration": 1
+      }
+    },
+    "workflows": {
+      "total_workflows": 4
+    },
+    "oversight": {
+      "total_oversight_bodies": 13,
+      "total_oversight_chains": 2
+    }
+  }
+}

@@ -1,0 +1,208 @@
+{
+  "meta": {
+    "state": "AR",
+    "version": "3.0",
+    "date": "2026-03-09",
+    "flag_count": 8
+  },
+  "flags": [
+    {
+      "flag_id": "ar_arhome_private_option",
+      "severity": "warning",
+      "title": "ARHOME (Private Option) \u2014 Expanded But Private Insurance Model",
+      "summary": "Arkansas expanded Medicaid via 'Private Option' \u2014 now ARHOME. Adults 19-64 below 138% FPL enrolled in private marketplace plans with Medicaid funding. Functions differently from standard Medicaid \u2014 verify network adequacy. Plans: Arkansas Blue Cross, Ambetter. Apply: access.arkansas.gov. Phone: 888-987-1200."
+    },
+    {
+      "flag_id": "ar_ui_16_weeks_shortest",
+      "severity": "alert",
+      "title": "UI 16 Weeks Maximum \u2014 Shortest Duration in Entire Registry",
+      "summary": "Arkansas UI maximum duration is 16 weeks \u2014 the absolute shortest in the registry. Max benefit: $451/week. Appeal deadline: 20 days. Route to emergency food, SNAP, and energy assistance PROACTIVELY when UI is filed, not when it runs out. ADWS: 501-682-2121 / dws.arkansas.gov."
+    },
+    {
+      "flag_id": "ar_tanf_204_24month",
+      "severity": "warning",
+      "title": "TANF (TEA) $204/Month, 24-Month State Limit \u2014 Near Bottom of Registry",
+      "summary": "Arkansas TANF (TEA) pays $204/month for family of 3 \u2014 near bottom of registry. 24-month STATE lifetime limit (shorter than federal 60-month). Work requirement strictly enforced. Pair with SNAP, ARHOME, child care (CAPS), LIHEAP, food banks."
+    },
+    {
+      "flag_id": "ar_nwa_poultry_latino",
+      "severity": "info",
+      "title": "Northwest Arkansas Poultry / Latino Workforce \u2014 Tyson Corridor",
+      "summary": "Bentonville-Fayetteville-Springdale-Rogers metro has highest Latino concentration in AR (~30%+ of Springdale) working in Tyson Foods and poultry processing. Key issues: wage theft, workers comp, OSHA violations, housing cost pressure from Walmart/tech growth. COMPIE: 479-316-0050. CALS Fayetteville: 479-442-0600."
+    },
+    {
+      "flag_id": "ar_marshallese_cofa",
+      "severity": "info",
+      "title": "Marshallese Community \u2014 Springdale, Largest Outside Pacific Islands",
+      "summary": "Springdale has the largest Marshallese population outside the Marshall Islands (15,000+). COFA migrants have unique federal benefit eligibility \u2014 were excluded from Medicaid until 2020 fix; verify current eligibility. COMPIE: 479-316-0050."
+    },
+    {
+      "flag_id": "ar_delta_rural_poverty",
+      "severity": "warning",
+      "title": "Arkansas Delta \u2014 Concentrated Rural Black Poverty, Limited Services",
+      "summary": "East Arkansas Delta counties (Phillips, St. Francis, Crittenden, Lee, Monroe, Desha, Chicot, Jefferson) mirror Mississippi Delta in poverty, health disparities, and service scarcity. Legal Aid of Arkansas (Jonesboro): 870-932-5765. Delta AHEC: 870-738-3804. Assume limited digital access."
+    },
+    {
+      "flag_id": "ar_eviction_3_day_notice",
+      "severity": "alert",
+      "title": "3-Day Eviction Notice \u2014 Fastest Timeline in Registry",
+      "summary": "Arkansas Residential Landlord-Tenant Act (Ark. Code \u00a718-16-101): 3-day written notice for nonpayment. Unlawful detainer hearing can be within 5 days of filing. Contact legal aid SAME DAY as any notice. CALS: 501-376-3423. Legal Aid AR: 870-932-5765."
+    },
+    {
+      "flag_id": "ar_no_lgbtq_protection",
+      "severity": "warning",
+      "title": "No State LGBTQ+ Protection \u2014 EEOC Only, State Preempts Local Ordinances",
+      "summary": "Arkansas does not protect sexual orientation or gender identity in state law. Has passed legislation limiting local nondiscrimination ordinances. All LGBTQ+ employment discrimination must route through federal EEOC only. EEOC Little Rock: 501-324-5060."
+    },
+    {
+      "flag_id": "ar_involuntary_hold_law",
+      "title": "Involuntary Hold: Arkansas Emergency Admission",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "AR involuntary psychiatric hold law: Arkansas Emergency Admission. Statutory authority: Ark. Code \u00a7 20-47-210. Maximum initial hold duration: 72 hours. Legal standard: danger to self/others or gravely disabled. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 72 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "Ark. Code \u00a7 20-47-210"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "ar_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in AR retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "ar_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in AR: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "ar_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Arkansas Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "ar_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Arkansas Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "ar_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Arkansas Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

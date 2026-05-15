@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "state": "NM",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "nm_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "nm_new_mexico_legal_aid_statewide"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "nm_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "nm_dna_legal_services_navajo_nation_legal_a",
+        "nm_nm_mortgage_finance_authority_mfa_housin",
+        "nm_nm_dv_crisis_line_nm_cadsv"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "nm_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "nm_nm_tanf_new_mexico_works_hsd",
+        "nm_nm_ui_dws",
+        "nm_nm_liheap_low_income_energy_assistance_h"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "nm_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "nm_nm_medicaid_centennial_care_hsd",
+        "nm_unm_hospital_albuquerque_safety_net",
+        "nm_nm_primary_care_association_fqhcs",
+        "nm_la_clinica_de_familia_colonias_border_co"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "nm_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "nm_new_mexico_snap_yesnm_hsd",
+        "nm_roadrunner_food_bank_albuquerque_high_de",
+        "nm_wic_new_mexico"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "nm_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "nm_ihs_albuquerque_area_office_all_nm_tribe",
+        "nm_nm_veterans_services_nmvsd"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ]
+    }
+  ]
+}

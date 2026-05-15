@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "state": "LA",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "standard_appeal",
+      "state": "LA",
+      "override_type": "timeline",
+      "description": "Louisiana standard appeal timeline",
+      "source": "registry"
+    },
+    {
+      "workflow_id": "expedited_review",
+      "state": "LA",
+      "override_type": "eligibility",
+      "description": "Louisiana expedited review criteria",
+      "source": "registry"
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "state": "GA",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "GA DFCS General",
+      "role": "Benefits enrollment",
+      "phone": "877-423-4746",
+      "email": "",
+      "hours": "M-F 8am-5pm",
+      "specialty": "SNAP, TANF, Medicaid"
+    },
+    {
+      "contact_name": "GA 211",
+      "role": "Social services referral",
+      "phone": "211",
+      "email": "",
+      "hours": "M-F 8am-5pm",
+      "specialty": "All services"
+    },
+    {
+      "contact_name": "OCI Consumer",
+      "role": "Insurance complaints",
+      "phone": "800-656-2298",
+      "email": "",
+      "hours": "M-F 8am-5pm",
+      "specialty": "Insurance"
+    },
+    {
+      "contact_name": "GA Attorney General Consumer",
+      "role": "Consumer protection",
+      "phone": "404-651-8600",
+      "email": "",
+      "hours": "M-F 8am-5pm",
+      "specialty": "Consumer fraud"
+    },
+    {
+      "contact_name": "Atlanta Legal Aid",
+      "role": "Emergency eviction defense",
+      "phone": "404-524-5811",
+      "email": "",
+      "hours": "M-F 8am-5pm",
+      "specialty": "Legal aid"
+    },
+    {
+      "contact_name": "GLSP",
+      "role": "Civil legal aid statewide",
+      "phone": "800-498-9469",
+      "email": "",
+      "hours": "M-F 8am-5pm",
+      "specialty": "Legal aid"
+    },
+    {
+      "contact_name": "GA DV Hotline",
+      "role": "Domestic violence crisis",
+      "phone": "800-334-2836",
+      "email": "",
+      "hours": "M-F 8am-5pm",
+      "specialty": "Safety"
+    },
+    {
+      "contact_name": "GA DOL UI",
+      "role": "Unemployment insurance",
+      "phone": "877-709-8185",
+      "email": "",
+      "hours": "M-F 8am-5pm",
+      "specialty": "Employment"
+    },
+    {
+      "contact_name": "DCA Housing",
+      "role": "Housing assistance",
+      "phone": "404-679-4940",
+      "email": "",
+      "hours": "M-F 8am-5pm",
+      "specialty": "Housing"
+    },
+    {
+      "contact_name": "IRC Atlanta",
+      "role": "Refugee services",
+      "phone": "404-292-7800",
+      "email": "",
+      "hours": "M-F 8am-5pm",
+      "specialty": "Immigration"
+    }
+  ],
+  "regions": [],
+  "missing_sections": []
+}

@@ -1,0 +1,177 @@
+{
+  "meta": {
+    "state": "DE",
+    "version": "3.0",
+    "date": "2026-03-09",
+    "program_count": 15
+  },
+  "programs": [
+    {
+      "program_id": "de_snap",
+      "program_name": "SNAP / Food Assistance",
+      "category": "food",
+      "phone": "302-255-9500",
+      "website": "compass.dhss.delaware.gov",
+      "address": "1901 N DuPont Hwy, New Castle, DE 19720",
+      "eligibility": "Income <130% FPL. 3 county offices.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "de_medicaid",
+      "program_name": "Medicaid (Diamond State Health Plan)",
+      "category": "healthcare",
+      "phone": "800-372-2022",
+      "website": "medicaid.dhss.delaware.gov",
+      "eligibility": "Adults 19-64 to 138% FPL.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "de_chip",
+      "program_name": "CHIP (Delaware Healthy Children Program)",
+      "category": "healthcare",
+      "phone": "800-372-2022",
+      "website": "dhss.delaware.gov/chip",
+      "eligibility": "Children under 19; income 138-212% FPL.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "de_tanf",
+      "program_name": "TANF",
+      "category": "cash_assistance",
+      "phone": "302-255-9500",
+      "website": "compass.dhss.delaware.gov",
+      "eligibility": "$338/month for family of 3. 48-month state limit.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "de_ui",
+      "program_name": "Unemployment Insurance",
+      "category": "employment",
+      "phone": "302-761-8446",
+      "website": "ui.delawareworks.com",
+      "eligibility": "$400/week, 26 weeks. 10-day appeal \u2014 FATAL.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "de_wic",
+      "program_name": "WIC",
+      "category": "food",
+      "phone": "302-741-2960",
+      "website": "dhss.delaware.gov/wic",
+      "eligibility": "Pregnant/postpartum, infants, children under 5. Income \u2264185% FPL.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "de_liheap",
+      "program_name": "LIHEAP",
+      "category": "energy",
+      "phone": "800-464-4357",
+      "website": "dss.delaware.gov/energy",
+      "eligibility": "Income \u2264150% FPL.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "de_pfml",
+      "program_name": "Delaware Paid Family and Medical Leave",
+      "category": "employment",
+      "phone": "302-761-8200",
+      "website": "dol.delaware.gov/pfml",
+      "notes": "Effective Jan 2026 for employers with 10+ workers.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "de_housing_authority",
+      "program_name": "Delaware State Housing Authority",
+      "category": "housing",
+      "phone": "302-739-4263",
+      "website": "destatehousing.com",
+      "notes": "Section 8 vouchers, rental assistance.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "de_aging",
+      "program_name": "Delaware Division of Services for Aging",
+      "category": "social_services",
+      "phone": "800-223-9074",
+      "website": "dhss.delaware.gov/dsaapd",
+      "notes": "Meals on Wheels, elder rights.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "de_dvr",
+      "program_name": "Delaware Vocational Rehabilitation",
+      "category": "employment",
+      "phone": "302-761-8275",
+      "website": "delawareworks.com/dvr",
+      "notes": "Employment services for people with disabilities.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "de_christiana",
+      "program_name": "Christiana Care Health System",
+      "category": "healthcare",
+      "phone": "302-733-1000",
+      "website": "christianacare.org",
+      "address": "4755 Ogletown-Stanton Rd, Newark, DE 19718",
+      "notes": "Level 1 trauma + charity care.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "de_food_bank",
+      "program_name": "Food Bank of Delaware",
+      "category": "food",
+      "phone": "302-292-1305",
+      "website": "fbd.org",
+      "address": "222 Lake Dr, Newark, DE 19702",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "de_clasi",
+      "program_name": "Delaware Community Legal Aid Society (CLASI)",
+      "category": "legal",
+      "phone": "302-575-0660",
+      "website": "declasi.org",
+      "address": "100 W 10th St Ste 801, Wilmington, DE 19801",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "de_la_esperanza",
+      "program_name": "La Esperanza (Sussex County - bilingual)",
+      "category": "immigrant_services",
+      "phone": "302-856-6310",
+      "website": "laesperanzadelaware.com",
+      "address": "PO Box 735, Georgetown, DE 19947",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    }
+  ]
+}

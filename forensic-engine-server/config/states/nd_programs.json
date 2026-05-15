@@ -1,0 +1,555 @@
+{
+  "meta": {
+    "state": "ND",
+    "version": "3.0",
+    "date": "2026-03-08",
+    "date_verified": "2026-03-09"
+  },
+  "programs": [
+    {
+      "program_id": "nd_north_dakota_medicaid",
+      "program_name": "North Dakota Medicaid",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "North Dakota Medicaid",
+      "phone": "800-755-2604",
+      "website": "https://hhs.nd.gov/medicaid",
+      "eligibility": "Categorical only (not expanded).",
+      "apply_notes": "Expanded Medicaid 2014. Covers adults 19\u201364 to 138% FPL. Administered through ND Dept. of Human Services.",
+      "source": "luminari-north-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ND",
+      "address": "600 E Boulevard Ave Dept 325, Bismarck, ND 58505",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_north_dakota_chip_healthy_steps",
+      "program_name": "North Dakota CHIP (Healthy Steps)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "North Dakota CHIP",
+      "phone": "800-755-2604",
+      "website": "https://hhs.nd.gov",
+      "eligibility": "Children under 19, pregnant women.",
+      "apply_notes": "Child health coverage for families above Medicaid threshold.",
+      "source": "luminari-north-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ND",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_north_dakota_snap",
+      "program_name": "North Dakota SNAP",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "North Dakota SNAP",
+      "phone": "800-472-2622",
+      "website": "https://hhs.nd.gov/snap",
+      "eligibility": "Income <130% FPL. Apply online.",
+      "apply_notes": "SNAP benefits administered by ND DHS. Apply online, by phone, or at county office.",
+      "source": "luminari-north-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "ND",
+      "address": "600 E Boulevard Ave, Bismarck, ND 58505",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_tanf_north_dakota",
+      "program_name": "TANF North Dakota",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "TANF North Dakota",
+      "phone": "800-755-2604",
+      "website": "https://hhs.nd.gov",
+      "eligibility": "Up to $477/month (family of 3). 60-month federal limit.",
+      "apply_notes": "Cash assistance $477/month (family of 3). 60-month federal lifetime limit. Work requirements apply.",
+      "source": "luminari-north-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "ND",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_north_dakota_unemployment_insurance",
+      "program_name": "North Dakota Unemployment Insurance",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "employment_dispute"
+      ],
+      "agency": "North Dakota Unemployment Insurance",
+      "phone": "701-328-4995",
+      "website": "https://jobsnd.com",
+      "eligibility": "Up to $618/week, 26 weeks. 12-DAY appeal \u2014 FATAL.",
+      "apply_notes": "UI: max $618/week. Duration up to 26 weeks. Administered by Job Service ND.",
+      "source": "luminari-north-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ND",
+      "address": "1000 E Divide Ave, Bismarck, ND 58501",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_north_dakota_housing_finance_agency_ndhf",
+      "program_name": "North Dakota Housing Finance Agency (NDHFA)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "North Dakota Housing Finance Agency",
+      "phone": "800-292-8621",
+      "website": "https://ndhfa.org",
+      "eligibility": "Income-based; varies by program",
+      "apply_notes": "Affordable housing programs, Section 8, homebuyer assistance. Rural housing programs for agricultural communities.",
+      "source": "luminari-north-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "ND",
+      "address": "2624 9th Ave SW, Fargo, ND 58103",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_north_dakota_wic",
+      "program_name": "North Dakota WIC",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "North Dakota WIC",
+      "phone": "800-472-2286",
+      "website": "https://health.nd.gov/wic",
+      "eligibility": "Pregnant/postpartum, infants, children under 5. Income <185% FPL.",
+      "apply_notes": "Women, Infants and Children nutrition support through ND Dept. of Health.",
+      "source": "luminari-north-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ND",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_nd_tribal_nations_health_social_services",
+      "program_name": "ND Tribal Nations Health & Social Services",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "housing_dispute"
+      ],
+      "agency": "ND Tribal Nations Health & Social Services",
+      "phone": "",
+      "website": "https://bia.gov/regional-offices/great-plains",
+      "eligibility": "Tribal enrollment; IHS: tribal enrollment or eligible descendant",
+      "apply_notes": "Five reservations (Standing Rock, Turtle Mountain, Fort Berthold/MHA Nation, Spirit Lake, Sisseton-Wahpeton). IHS service units at each reservation. Tribes offer independent health, housing, and social programs.",
+      "source": "luminari-north-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ND",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_north_dakota_aging_services",
+      "program_name": "North Dakota Aging Services",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "North Dakota Aging Services",
+      "phone": "800-451-8693",
+      "website": "https://hhs.nd.gov/aging",
+      "eligibility": "Adults 60+; low-income priority",
+      "apply_notes": "Services for adults 60+: Meals on Wheels, home care, caregiver support. Area Agencies on Aging statewide.",
+      "source": "luminari-north-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "ND",
+      "address": "600 E Boulevard Ave, Bismarck, ND 58505",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_north_dakota_vocational_rehabilitation",
+      "program_name": "North Dakota Vocational Rehabilitation",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "North Dakota Vocational Rehabilitation",
+      "phone": "800-755-2745",
+      "website": "https://vr.nd.gov",
+      "eligibility": "Documented disability; employment goal",
+      "apply_notes": "Employment services for people with disabilities. Job training, placement, assistive technology.",
+      "source": "luminari-north-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "ND",
+      "address": "1237 W Divide Ave #1C, Bismarck, ND 58501",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_community_action_agencies_211_north_dako",
+      "program_name": "Community Action Agencies / 211 North Dakota",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Community Action Agencies / 211 North Dakota",
+      "phone": "",
+      "website": "https://211.org",
+      "eligibility": "Open to all",
+      "apply_notes": "2-1-1 connects to food, shelter, energy assistance, and social services. LIHEAP through community action agencies.",
+      "source": "luminari-north-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "ND",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_legal_services_of_north_dakota",
+      "program_name": "Legal Services of North Dakota",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute"
+      ],
+      "agency": "Legal Services of North Dakota",
+      "phone": "800-634-5263",
+      "website": "https://legalassist.org",
+      "eligibility": "Income \u2264125% FPL",
+      "apply_notes": "Free civil legal aid. Housing, benefits, family law, domestic violence, tribal court matters.",
+      "source": "luminari-north-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "ND",
+      "address": "418 E Broadway Ste 321, Bismarck, ND 58501",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_nd_department_of_human_services_behavior",
+      "program_name": "ND Department of Human Services \u2013 Behavioral Health",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "ND Department of Human Services \u2013 Behavioral Health",
+      "phone": "800-472-2622",
+      "website": "https://hhs.nd.gov/behavioral-health",
+      "eligibility": "Crisis: 988.",
+      "apply_notes": "Mental health, substance use, and addiction services. Crisis line: 988. Regional service providers statewide.",
+      "source": "luminari-north-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ND",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_prairie_st_johns",
+      "program_name": "Prairie St. John's (Behavioral Health \u2014 Fargo)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Prairie St. John's",
+      "phone": "701-476-7200",
+      "website": "",
+      "address": "510 4th St S, Fargo, ND 58103",
+      "eligibility": "Behavioral health services.",
+      "apply_notes": "Key resource for non-expansion coverage gap.",
+      "source": "luminari-nd-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "healthcare",
+        "behavioral"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "Fargo",
+      "category": "healthcare",
+      "city": "Fargo",
+      "state": "ND",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_altru_health",
+      "program_name": "Altru Health System (Grand Forks \u2014 Charity Care)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Altru Health System",
+      "phone": "701-780-5000",
+      "website": "",
+      "address": "1000 S Columbia Rd, Grand Forks, ND 58201",
+      "eligibility": "Charity care available.",
+      "apply_notes": "Grand Forks safety net hospital.",
+      "source": "luminari-nd-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "Grand Forks",
+      "category": "healthcare",
+      "city": "Grand Forks",
+      "state": "ND",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_sanford_health",
+      "program_name": "Sanford Health (Fargo \u2014 Charity Care)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Sanford Health",
+      "phone": "701-234-2000",
+      "website": "",
+      "address": "801 N Broadway, Fargo, ND 58122",
+      "eligibility": "Charity care available.",
+      "apply_notes": "Fargo safety net hospital.",
+      "source": "luminari-nd-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "Fargo",
+      "category": "healthcare",
+      "city": "Fargo",
+      "state": "ND",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_ndpca_fqhcs",
+      "program_name": "North Dakota Primary Care Association (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "ND Primary Care Association",
+      "phone": "701-224-0793",
+      "website": "https://ndpca.org",
+      "address": "",
+      "eligibility": "Sliding fee scale.",
+      "apply_notes": "FQHCs statewide \u2014 critical for non-expansion coverage gap.",
+      "source": "luminari-nd-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ND",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nd_capnd",
+      "program_name": "Community Action Partnership of ND (Statewide)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Community Action Partnership of ND",
+      "phone": "701-232-2452",
+      "website": "https://capnd.org",
+      "address": "",
+      "eligibility": "LIHEAP, weatherization, emergency assistance.",
+      "apply_notes": "Statewide coordination for community action agencies.",
+      "source": "luminari-nd-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "general",
+        "energy"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "ND",
+      "federal_interface": false
+    }
+  ]
+}

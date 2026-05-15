@@ -1,0 +1,217 @@
+{
+  "meta": {
+    "state": "VA",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "clusters": [
+    {
+      "cluster_id": "va_food",
+      "category": "food",
+      "programs": [
+        "va_virginia_snap_food_assistance_dss",
+        "va_feeding_america_southwest_virginia_roano",
+        "va_capital_area_food_bank_richmond_central_",
+        "va_wic_virginia"
+      ]
+    },
+    {
+      "cluster_id": "va_healthcare",
+      "category": "healthcare",
+      "programs": [
+        "va_virginia_medicaid_famis_ccc_plus_dmas",
+        "va_vcu_health_medical_college_of_virginia_r",
+        "va_inova_health_system_northern_virginia_sa",
+        "va_virginia_community_healthcare_associatio",
+        "va_virginia_tanf_view_virginia_initiative_f",
+        "va_pamunkey_indian_tribe_tribal_government",
+        "va_ihs_nashville_area_office_covers_pamunke",
+        "va_virginia_bureau_of_insurance_boi_scc",
+        "va_virginia_dmas_medicaid_managed_care_appe",
+        "va_virginia_doli_labor_and_employment_law_d"
+      ]
+    },
+    {
+      "cluster_id": "va_housing",
+      "category": "housing",
+      "programs": [
+        "va_virginia_housing_vhda_virginia_housing_d",
+        "va_virginia_sexual_and_domestic_violence_ac",
+        "va_virginia_council_on_human_rights_vchr_ho"
+      ]
+    },
+    {
+      "cluster_id": "va_legal",
+      "category": "legal",
+      "programs": [
+        "va_central_virginia_legal_aid_society_cvlas",
+        "va_legal_aid_justice_center_lajc",
+        "va_southwest_virginia_legal_aid_society_svl",
+        "va_safeplace_richmond_area_dv",
+        "va_virginia_legal_aid_society_vlas_hampton_",
+        "va_blue_ridge_legal_services_brls_shenandoa",
+        "va_legal_services_of_northern_virginia_lsnv",
+        "va_central_virginia_legal_aid_society_cvlas",
+        "va_richmond_office_of_community_wealth_buil"
+      ]
+    },
+    {
+      "cluster_id": "va_cash_assistance",
+      "category": "cash_assistance",
+      "programs": [
+        "va_virginia_ui_vec_virginia_employment_comm",
+        "va_virginia_liheap_fuel_assistance_dss",
+        "va_state_corporation_commission_scc_utility",
+        "va_virginia_employment_commission_vec_appea"
+      ]
+    },
+    {
+      "cluster_id": "va_tribal",
+      "category": "tribal",
+      "programs": [
+        "va_virginia_council_on_indians"
+      ]
+    },
+    {
+      "cluster_id": "va_employment",
+      "category": "employment",
+      "programs": [
+        "va_virginia_council_on_human_rights_vchr_em"
+      ]
+    },
+    {
+      "cluster_id": "va_general",
+      "category": "general",
+      "programs": [
+        "va_virginia_dss_office_of_hearing_and_appea"
+      ]
+    },
+    {
+      "cluster_id": "va_mental_health",
+      "cluster_name": "Mental Health System",
+      "icon": "brain",
+      "cards": [
+        {
+          "card_id": "va_mh_crisis_line",
+          "title": "988 Suicide & Crisis Lifeline",
+          "summary": "Call or text 988 for immediate mental health crisis support. Free, confidential, 24/7. Trained counselors can help with suicidal thoughts, emotional distress, substance use, and mental health crises. Also available via chat at 988lifeline.org.",
+          "who_qualifies": "Anyone experiencing a mental health crisis, suicidal thoughts, or emotional distress.",
+          "how_to_access": "Call or text 988. Chat at 988lifeline.org. For veterans, press 1 after dialing 988.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "va_mh_nami",
+          "title": "NAMI Helpline & Support Groups",
+          "summary": "National Alliance on Mental Illness provides free peer support, education, and advocacy. NAMI HelpLine: 1-800-950-NAMI (6264). Family-to-Family program helps families understand mental health conditions and navigate the system.",
+          "who_qualifies": "Individuals with mental health conditions and their family members.",
+          "how_to_access": "Call 1-800-950-NAMI or text 'HELPLINE' to 62640. Find local NAMI affiliate at nami.org/find-support.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "va_mh_protection_advocacy",
+          "title": "Protection & Advocacy Organization",
+          "summary": "Every state has a federally mandated Protection & Advocacy (P&A) organization with legal authority to investigate abuse and neglect in psychiatric facilities. P&A organizations can enter any facility, access records, and file lawsuits. This is often the most powerful tool available for people harmed in the mental health system.",
+          "who_qualifies": "Anyone with a disability who has experienced abuse, neglect, or rights violations in a facility.",
+          "how_to_access": "Find your state P&A at ndrn.org/about/ndrn-member-agencies/ or call the NDRN at 202-408-9514.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "va_mh_know_your_rights",
+          "title": "Know Your Rights: Virginia Emergency Custody Order",
+          "summary": "If you are placed on an involuntary hold in VA, you have rights: the initial hold cannot exceed 72 hours without a court hearing. You have the right to an attorney at the hearing. You have the right to present evidence and call witnesses. You have the right to an independent psychiatric evaluation. You can challenge the hold at any time.",
+          "who_qualifies": "Anyone placed on an involuntary psychiatric hold or facing commitment proceedings.",
+          "how_to_access": "Request to speak with the patient advocate. Ask for a copy of your patient rights. Contact your state's Protection & Advocacy organization.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "va_mh_records_rights",
+          "title": "Your Right to Your Psychiatric Records",
+          "summary": "Under HIPAA (45 CFR \u00a7 164.524), you have the right to access your complete medical record, including psychiatric treatment records. The facility must respond within 30 days. If they deny access, you can file a complaint with HHS Office for Civil Rights. Under HIPAA \u00a7 164.526, you also have the right to request amendments to inaccurate records.",
+          "who_qualifies": "Any current or former psychiatric patient.",
+          "how_to_access": "Submit a written request to the facility's Health Information Management department. If denied, file complaint at hhs.gov/ocr.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "va_mh_samhsa",
+          "title": "SAMHSA National Helpline",
+          "summary": "Free, confidential, 24/7 treatment referral and information service for mental health and substance use disorders. Available in English and Spanish. Provides referrals to local treatment facilities, support groups, and community-based organizations.",
+          "who_qualifies": "Anyone seeking mental health or substance use treatment information and referrals.",
+          "how_to_access": "Call 1-800-662-HELP (4357) or visit findtreatment.gov.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        }
+      ]
+    }
+  ]
+}

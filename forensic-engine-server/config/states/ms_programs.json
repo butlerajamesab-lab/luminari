@@ -1,0 +1,485 @@
+{
+  "meta": {
+    "state": "MS",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "ms_mississippi_snap_dhs_food_assistance_mdh",
+      "program_name": "Mississippi SNAP / DHS Food Assistance (MDHS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Mississippi SNAP / DHS Food Assistance",
+      "phone": "601-359-4500",
+      "website": "https://mdhs.ms.gov",
+      "eligibility": "Income < 130% FPL. mdhs.ms.gov. Hinds County (Jackson): 601-362-3100. Harrison County (Biloxi): 228-388-6400. DeSoto County (Southaven): 662-393-5321. Sunflower County (Delta): 662-887-6500.",
+      "apply_notes": "Monthly food assistance \u2014 county DFCS offices statewide",
+      "source": "luminari-mississippi-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "MS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ms_delta_health_center_mound_bayou_oldest_r",
+      "program_name": "Delta Health Center (Mound Bayou \u2014 Oldest Rural FQHC in US)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Delta Health Center",
+      "phone": "662-741-2151",
+      "website": "https://deltahealthcenter.org",
+      "eligibility": "Bolivar, Sunflower and surrounding Delta counties. deltahealthcenter.org. Established 1965. No insurance required. Primary safety net for worst-poverty ZIP codes in the US.",
+      "apply_notes": "CRITICAL: Oldest rural FQHC in the US \u2014 primary resource for Delta counties with no hospital access",
+      "source": "luminari-mississippi-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ms_mississippi_food_network_mid_south_food_",
+      "program_name": "Mississippi Food Network / Mid-South Food Bank",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Mississippi Food Network / Mid-South Food Bank",
+      "phone": "601-353-7286",
+      "website": "https://msfoodnet.org",
+      "eligibility": "Anyone in need. msfoodnet.org. Also Mid-South Food Bank (Memphis: 901-527-0841) for N Mississippi Delta. Feeding the Gulf Coast (251-653-1617) for south MS.",
+      "apply_notes": "Statewide food bank coordination",
+      "source": "luminari-mississippi-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "MS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ms_wic_mississippi",
+      "program_name": "WIC Mississippi",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WIC Mississippi",
+      "phone": "601-576-7462",
+      "website": "https://msdh.ms.gov/wic",
+      "eligibility": "Pregnant, postpartum women, infants, children under 5. Income < 185% FPL. msdh.ms.gov/wic.",
+      "apply_notes": "Nutrition assistance for women, infants, children",
+      "source": "luminari-mississippi-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "MS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ms_mississippi_medicaid_dom_categorical_onl",
+      "program_name": "Mississippi Medicaid (DOM) \u2014 Categorical Only",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Mississippi Medicaid",
+      "phone": "800-421-2408",
+      "website": "https://medicaid.ms.gov",
+      "eligibility": "Children, pregnant women, parents < 29% FPL, elderly, disabled \u2014 NOT expanded. medicaid.ms.gov. ALL Kids CHIP for children: 888-421-0781. No pathway for adults in coverage gap.",
+      "apply_notes": "CRITICAL: Most restrictive categorical Medicaid in nation \u2014 parents only below ~29% FPL",
+      "source": "luminari-mississippi-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ms_ummc_university_of_mississippi_medical_c",
+      "program_name": "UMMC (University of Mississippi Medical Center)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "UMMC",
+      "phone": "601-984-1000",
+      "website": "https://umc.edu",
+      "eligibility": "Jackson and statewide referrals. Charity care income < 200% FPL. Primary safety net for uninsured adults in coverage gap.",
+      "apply_notes": "Statewide academic safety net hospital \u2014 charity care, Level 1 trauma, Batson Children's Hospital",
+      "source": "luminari-mississippi-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ms_mississippi_primary_health_care_associat",
+      "program_name": "Mississippi Primary Health Care Association (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "disability_claim"
+      ],
+      "agency": "Mississippi Primary Health Care Association",
+      "phone": "601-353-0552",
+      "website": "https://mphca.com",
+      "eligibility": "Anyone. mphca.com / findahealthcenter.hrsa.gov. Key: Voice of Calvary (Jackson: 601-353-1635). Coastal Family Health Center (Biloxi: 228-435-7900). Aaron E. Henry Community Health Center (Clarksdale \u2014 Delta: 662-624-3500).",
+      "apply_notes": "Federally qualified health centers \u2014 sliding scale statewide",
+      "source": "luminari-mississippi-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ms_choctaw_health_center_mississippi_band_o",
+      "program_name": "Choctaw Health Center (Mississippi Band of Choctaw Indians)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "disability_claim"
+      ],
+      "agency": "Choctaw Health Center",
+      "phone": "601-656-2211",
+      "website": "https://choctaw.org",
+      "eligibility": "Enrolled Mississippi Band of Choctaw Indians members. choctaw.org. Route enrolled MBCI members here first. Casino revenues fund comprehensive tribal services.",
+      "apply_notes": "Comprehensive IHS health for enrolled MBCI members \u2014 Pearl River Reservation",
+      "source": "luminari-mississippi-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ms_mississippi_center_for_justice_mcj",
+      "program_name": "Mississippi Center for Justice (MCJ)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute",
+        "disability_claim",
+        "consumer_protection",
+        "utility_dispute"
+      ],
+      "agency": "Mississippi Center for Justice",
+      "phone": "601-352-2269",
+      "website": "https://mscenterforjustice.org",
+      "eligibility": "Statewide. mscenterforjustice.org. 5 Old River Pl, Jackson MS 39202. Primary Jackson water crisis advocacy.",
+      "apply_notes": "Statewide civil legal aid advocacy \u2014 housing, consumer, benefits, water crisis, civil rights",
+      "source": "luminari-mississippi-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "MS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ms_coast_legal_services_gulf_coast",
+      "program_name": "Coast Legal Services (Gulf Coast)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Coast Legal Services",
+      "phone": "228-374-4656",
+      "website": "https://coastlegal.org",
+      "eligibility": "Income < 200% FPL in Gulf Coast counties. coastlegal.org. 1800 Williamsburg Dr, Biloxi MS.",
+      "apply_notes": "Free civil legal aid \u2014 Gulf Coast counties (Harrison, Hancock, Jackson)",
+      "source": "luminari-mississippi-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "",
+      "state": "MS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ms_mississippi_tanf_mdhs",
+      "program_name": "Mississippi TANF (MDHS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Mississippi TANF",
+      "phone": "601-359-4500",
+      "website": "https://mdhs.ms.gov",
+      "eligibility": "Families with children. $170/month \u2014 lowest in registry. 60-month limit. Pair with SNAP, WIC, food bank, every available resource immediately.",
+      "apply_notes": "Cash assistance \u2014 $170/month family of 3, absolute lowest in registry",
+      "source": "luminari-mississippi-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "MS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ms_mississippi_ui_mdes",
+      "program_name": "Mississippi UI (MDES)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Mississippi UI",
+      "phone": "888-844-3577",
+      "website": "https://mdes.ms.gov",
+      "eligibility": "Workers who lost job through no fault. $235/week \u2014 absolute lowest. CRITICAL: 14-day appeal deadline \u2014 contact legal aid within 7 days of any denial. mdes.ms.gov.",
+      "apply_notes": "Weekly income replacement \u2014 $235/week max, lowest in registry",
+      "source": "luminari-mississippi-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "MS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ms_mississippi_liheap_mdhs",
+      "program_name": "Mississippi LIHEAP (MDHS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Mississippi LIHEAP",
+      "phone": "601-359-4500",
+      "website": "https://mdhs.ms.gov",
+      "eligibility": "Income < 60% state median. Apply through MDHS or community action agencies. Mississippi Action for Community Education (MACE): 662-335-3523.",
+      "apply_notes": "Energy assistance \u2014 heating and cooling",
+      "source": "luminari-mississippi-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "MS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ms_ms_band_of_choctaw_indians_social_servic",
+      "program_name": "MS Band of Choctaw Indians \u2014 Social Services",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "MS Band of Choctaw Indians \u2014 Social Services",
+      "phone": "601-650-1623",
+      "website": "https://choctaw.org",
+      "eligibility": "Enrolled MBCI members. choctaw.org. Tribal TANF, housing authority, child welfare all through tribal government.",
+      "apply_notes": "Comprehensive tribal social services \u2014 TANF, housing, education, elder care",
+      "source": "luminari-mississippi-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "MS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ms_ms_dv_program_hotline",
+      "program_name": "MS DV Program Hotline",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "MS DV Program Hotline",
+      "phone": "800-898-3234",
+      "website": "https://domesticviolenceresourcems.com",
+      "eligibility": "Anyone experiencing DV. Also shelter referrals through 211 Mississippi (ms211.org).",
+      "apply_notes": "24/7 DV crisis line and shelter referral statewide",
+      "source": "luminari-mississippi-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "MS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ms_mississippi_veterans_affairs_board",
+      "program_name": "Mississippi Veterans Affairs Board",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial",
+        "disability_claim"
+      ],
+      "agency": "Mississippi Veterans Affairs Board",
+      "phone": "601-576-4850",
+      "website": "https://vab.ms.gov",
+      "eligibility": "MS veterans and families. G.V. (Sonny) Montgomery VAMC (Jackson: 601-364-1201). Biloxi VAMC: 228-523-5000.",
+      "apply_notes": "VA benefits navigation, state veterans services",
+      "source": "luminari-mississippi-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "MS",
+      "federal_interface": false
+    }
+  ]
+}

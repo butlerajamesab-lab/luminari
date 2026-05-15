@@ -1,0 +1,54 @@
+{
+  "meta": {
+    "state": "WV",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "workflow_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "workflows": [
+        "standard_appeal",
+        "expedited_review"
+      ],
+      "state": "WV"
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "workflows": [
+        "standard_appeal",
+        "expedited_review"
+      ],
+      "state": "WV"
+    },
+    {
+      "pipeline_id": "consumer_protection",
+      "workflows": [
+        "standard_appeal",
+        "expedited_review"
+      ],
+      "state": "WV"
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "workflows": [
+        "standard_appeal",
+        "expedited_review"
+      ],
+      "state": "WV"
+    },
+    {
+      "pipeline_id": "employment_dispute",
+      "workflows": [
+        "standard_appeal",
+        "expedited_review"
+      ],
+      "state": "WV"
+    }
+  ],
+  "resolution_order": [
+    "state_override",
+    "pipeline_default",
+    "federal_baseline"
+  ]
+}

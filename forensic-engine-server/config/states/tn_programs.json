@@ -1,0 +1,653 @@
+{
+  "meta": {
+    "state": "TN",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "tn_tennessee_snap_food_stamps_dhs",
+      "program_name": "Tennessee SNAP / Food Stamps (DHS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Tennessee SNAP / Food Stamps",
+      "phone": "615-313-4700",
+      "website": "https://accesstn.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: accesstn.org \u2014 apply online. ABAWD work requirements active. Shelby County DHS (Memphis): 901-320-5200. Davidson County DHS (Nashville): 615-532-0600.",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Nashville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_second_harvest_food_bank_of_middle_tenne",
+      "program_name": "Second Harvest Food Bank of Middle Tennessee (Nashville)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Second Harvest Food Bank of Middle Tennessee",
+      "phone": "615-329-3491",
+      "website": "https://secondharvestmidtn.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: secondharvestmidtn.org \u2014 primary Nashville food bank. Also Mid-South Food Bank (Memphis: 901-527-0841) for Shelby County and surrounding.",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Nashville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_second_harvest_food_bank_of_east_tenness",
+      "program_name": "Second Harvest Food Bank of East Tennessee (Knoxville)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Second Harvest Food Bank of East Tennessee",
+      "phone": "865-521-0000",
+      "website": "https://secondharvestknox.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: secondharvestknox.org \u2014 primary Knoxville area food bank.",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Knoxville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_wic_tennessee",
+      "program_name": "WIC Tennessee",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "WIC Tennessee",
+      "phone": "615-741-7218",
+      "website": "https://tn.gov/health/wic",
+      "eligibility": "",
+      "apply_notes": "",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_tenncare_tennessee_medicaid_ohip",
+      "program_name": "TennCare (Tennessee Medicaid \u2014 OHIP)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial",
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "TennCare",
+      "phone": "800-342-3145",
+      "website": "https://tenncare.gov",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: accesstn.org or county DHS. Strict categorical eligibility. Children: CoverKids (up to 250% FPL). CoverRx for low-income seniors.",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Nashville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_regional_one_health_memphis_regional_med",
+      "program_name": "Regional One Health (Memphis Regional Medical Center)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "disability_claim"
+      ],
+      "agency": "Regional One Health",
+      "phone": "901-545-7100",
+      "website": "https://regionalonehealth.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: regionalonehealth.org \u2014 primary Memphis safety net. Compassionate Care covers income < 200% FPL. Level 1 trauma center.",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Memphis",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_vanderbilt_university_medical_center_nas",
+      "program_name": "Vanderbilt University Medical Center (Nashville Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Vanderbilt University Medical Center",
+      "phone": "615-322-5000",
+      "website": "https://vanderbilthealth.com",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: vanderbilthealth.com \u2014 charity care for income < 200% FPL. Also Nashville General Hospital (public): 615-341-4000.",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Nashville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_tennessee_primary_care_association_fqhcs",
+      "program_name": "Tennessee Primary Care Association (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Tennessee Primary Care Association",
+      "phone": "615-782-7400",
+      "website": "https://tnpca.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: tnpca.org / findahealthcenter.hrsa.gov \u2014 Key: Church Health (Memphis: 901-272-0003 \u2014 major uninsured adult safety net), Neighborhood Health (Nashville: 615-321-4470), Cherokee Health Systems (Knoxville: 865-524-4673 \u2014 also behavioral health).",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Nashville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_church_health_memphis_major_safety_net_f",
+      "program_name": "Church Health (Memphis \u2014 Major Safety Net for Uninsured Adults)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Church Health",
+      "phone": "901-272-0003",
+      "website": "https://churchhealth.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: churchhealth.org \u2014 largest private non-profit provider of health care for the working uninsured in the US. Critical Memphis resource for adults in TennCare coverage gap.",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Memphis",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_tennessee_housing_development_agency_thd",
+      "program_name": "Tennessee Housing Development Agency (THDA)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Tennessee Housing Development Agency",
+      "phone": "615-815-2200",
+      "website": "https://thda.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: thda.org \u2014 state-level coordination. Metropolitan Development and Housing Agency (MDHA \u2014 Nashville): 615-252-8400. Memphis Housing Authority: 901-544-1100.",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Nashville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_legal_aid_society_of_middle_tennessee_an",
+      "program_name": "Legal Aid Society of Middle Tennessee and the Cumberlands",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Legal Aid Society of Middle Tennessee and the Cumberlands",
+      "phone": "615-244-6610",
+      "website": "https://las.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: las.org \u2014 Nashville primary legal aid. Same-day eviction triage.",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Nashville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_memphis_area_legal_services_mals",
+      "program_name": "Memphis Area Legal Services (MALS)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Memphis Area Legal Services",
+      "phone": "901-523-8822",
+      "website": "https://malsi.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: malsi.org \u2014 Memphis primary legal aid. Emergency eviction triage.",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Memphis",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_legal_aid_of_east_tennessee_laet",
+      "program_name": "Legal Aid of East Tennessee (LAET)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Legal Aid of East Tennessee",
+      "phone": "865-637-0484",
+      "website": "https://laet.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: laet.org \u2014 Knoxville area primary legal aid.",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Knoxville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_tennessee_coalition_to_end_domestic_and_",
+      "program_name": "Tennessee Coalition to End Domestic and Sexual Violence",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Tennessee Coalition to End Domestic and Sexual Violence",
+      "phone": "1-888-772-7233",
+      "website": "https://tncoalition.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: tncoalition.org \u2014 Tennessee statewide DV hotline. Also Tennessee Sexual Assault Center Hotline: 1-888-772-7233.",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "Nashville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_tennessee_tanf_families_first_dhs",
+      "program_name": "Tennessee TANF / Families First (DHS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "utility_dispute"
+      ],
+      "agency": "Tennessee TANF / Families First",
+      "phone": "615-313-4700",
+      "website": "https://accesstn.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: accesstn.org \u2014 lowest TANF in registry. Never standalone \u2014 pair with SNAP, TennCare (if eligible), child care, LIHEAP, food bank, and every available community resource.",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Nashville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_tennessee_liheap_low_income_home_energy_",
+      "program_name": "Tennessee LIHEAP / Low-Income Home Energy Assistance (DHS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Tennessee LIHEAP / Low-Income Home Energy Assistance",
+      "phone": "800-882-5583",
+      "website": "https://tn.gov/humanservices/liheap",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: tn.gov/humanservices/liheap \u2014 apply through local DHS or Community Action Agency. Opens October. Tennessee Valley Authority (TVA) Low-Income Energy Efficiency Program supplements: 800-882-5583.",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "Nashville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_tennessee_dept_of_commerce_and_insurance",
+      "program_name": "Tennessee Dept of Commerce and Insurance (TDCI)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "consumer_protection"
+      ],
+      "agency": "Tennessee Dept of Commerce and Insurance",
+      "phone": "615-741-2218",
+      "website": "https://tn.gov/commerce",
+      "eligibility": "",
+      "apply_notes": "Escalation: TN AG Consumer Protection",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Nashville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_tenncare_office_of_appeals",
+      "program_name": "TennCare Office of Appeals",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "TennCare Office of Appeals",
+      "phone": "855-259-0701",
+      "website": "https://tenncare.gov",
+      "eligibility": "",
+      "apply_notes": "Escalation: TN Circuit Court for adverse decisions",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "Nashville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_tennessee_human_rights_commission_thrc",
+      "program_name": "Tennessee Human Rights Commission (THRC)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Tennessee Human Rights Commission",
+      "phone": "615-741-5825",
+      "website": "https://tn.gov/humanrights",
+      "eligibility": "",
+      "apply_notes": "Escalation: Dual-file EEOC and HUD always",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Nashville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_tennessee_dol_and_workforce_development",
+      "program_name": "Tennessee DOL and Workforce Development",
+      "layer": "state",
+      "benefit_category": "employment",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Tennessee DOL and Workforce Development",
+      "phone": "615-741-2858",
+      "website": "https://tn.gov/workforce",
+      "eligibility": "",
+      "apply_notes": "Escalation: Federal WHD is primary",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "employment"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "employment"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "employment",
+      "city": "Nashville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_tennessee_dhs_appeals",
+      "program_name": "Tennessee DHS \u2014 Appeals",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Tennessee DHS \u2014 Appeals",
+      "phone": "615-313-4700",
+      "website": "https://tn.gov/humanservices",
+      "eligibility": "",
+      "apply_notes": "Escalation: TN Circuit Court for adverse decisions",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "Nashville",
+      "state": "TN",
+      "federal_interface": false
+    },
+    {
+      "program_id": "tn_tn_lwd_ui_appeals_board",
+      "program_name": "TN LWD \u2014 UI Appeals Board",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "TN LWD \u2014 UI Appeals Board",
+      "phone": "844-224-5818",
+      "website": "https://jobs.tennessee.gov",
+      "eligibility": "",
+      "apply_notes": "Escalation: Contact legal aid within 7 days of any UI denial",
+      "source": "luminari-tennessee-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Nashville",
+      "state": "TN",
+      "federal_interface": false
+    }
+  ]
+}

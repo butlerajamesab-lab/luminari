@@ -1,0 +1,194 @@
+{
+  "meta": {
+    "state": "ND",
+    "version": "3.0",
+    "flag_count": 5
+  },
+  "flags": [
+    {
+      "flag_id": "nd_medicaid_not_expanded",
+      "severity": "alert",
+      "title": "MEDICAID NOT EXPANDED \u2014 Coverage Gap, Agricultural/Oil Worker Population",
+      "summary": "North Dakota has NOT expanded Medicaid. Coverage gap for non-categorical adults. Route: Prairie St. John's behavioral health (701-476-7200), Altru Health charity care (701-780-5000), Sanford Health charity care (701-234-2000), ND Primary Care Association FQHCs (701-224-0793), Ryan White HIV/AIDS (701-328-2378).",
+      "affected_programs": []
+    },
+    {
+      "flag_id": "nd_mha_nation_bakken_oil",
+      "severity": "warning",
+      "title": "MHA Nation (Three Affiliated Tribes) \u2014 Oil Revenue + Bakken Disruption",
+      "summary": "MHA Nation (Mandan, Hidatsa, Arikara) at Fort Berthold Reservation sits in heart of Bakken oil field. Oil royalties fund significant tribal services, but man-camp culture brought crime, substance abuse, human trafficking. MHA Social Services: 701-627-4781. MHA Health: 701-627-4100.",
+      "affected_programs": []
+    },
+    {
+      "flag_id": "nd_5_tribes_complex_routing",
+      "severity": "info",
+      "title": "5 Federally Recognized Tribes \u2014 Complex Multi-Tribe Routing",
+      "summary": "MHA Nation (701-627-4781), Spirit Lake Nation (701-766-4221), Turtle Mountain Band of Chippewa (701-477-6451), Standing Rock Sioux Tribe (701-854-7201), Sisseton Wahpeton Oyate (605-698-3911). IHS Bismarck Area: 701-355-2280. Each tribe has distinct services and enrollment requirements.",
+      "affected_programs": []
+    },
+    {
+      "flag_id": "nd_hrc_300day_no_lgbtq",
+      "severity": "info",
+      "title": "NDHRC 300-Day SOL \u2014 LGBTQ+ Not Explicitly Covered",
+      "summary": "ND Human Rights Commission has 300-day SOL \u2014 matching EEOC. However, ND state law does NOT explicitly protect sexual orientation or gender identity. All LGBTQ+ claims must route through federal EEOC Bostock doctrine. File NDHRC AND EEOC simultaneously. NDHRC: 701-328-2660. EEOC Minneapolis: 612-334-4040.",
+      "affected_programs": []
+    },
+    {
+      "flag_id": "nd_ui_12day_appeal",
+      "severity": "warning",
+      "title": "ND UI \u2014 $618/Week, 12-Day Appeal Deadline \u2014 FATAL",
+      "summary": "UI max $618/week, 26 weeks. Appeal deadline: 12 DAYS from mailing \u2014 FATAL. Contact Legal Services ND within 5 days of any denial. Job Service ND: 701-328-4995.",
+      "affected_programs": []
+    },
+    {
+      "flag_id": "nd_involuntary_hold_law",
+      "title": "Involuntary Hold: North Dakota Emergency Admission",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "ND involuntary psychiatric hold law: North Dakota Emergency Admission. Statutory authority: N.D.C.C. \u00a7 25-03.1-25. Maximum initial hold duration: 72 hours. Legal standard: danger to self/others. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 72 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "N.D.C.C. \u00a7 25-03.1-25"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "nd_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in ND retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "nd_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in ND: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "nd_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "North Dakota Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "nd_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "North Dakota Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "nd_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "North Dakota Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

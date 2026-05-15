@@ -1,0 +1,507 @@
+{
+  "meta": {
+    "state": "AK",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "ak_alaska_snap_dhss",
+      "program_name": "Alaska SNAP (DHSS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Alaska SNAP",
+      "phone": "907-465-3347",
+      "website": "https://dhss.alaska.gov/dpa",
+      "eligibility": "Income < 130% FPL. Apply at myALASKA.gov. Anchorage: 907-269-6529. ABAWD active with some rural exceptions. Bush clients: phone intake essential.",
+      "apply_notes": "Monthly food assistance \u2014 24 offices statewide, many accessible only by phone for Bush clients",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ak_food_bank_of_alaska_anchorage_statewide",
+      "program_name": "Food Bank of Alaska (Anchorage / Statewide)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Food Bank of Alaska",
+      "phone": "907-222-3663",
+      "website": "https://foodbankofalaska.org",
+      "eligibility": "Anyone in need. foodbankofalaska.org. Also Fairbanks Community Food Bank (907-456-8653). Southeast Alaska Food Bank (Sitka: 907-747-8688).",
+      "apply_notes": "Primary Alaska food bank \u2014 statewide distribution including Bush deliveries via regional hubs",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ak_wic_alaska",
+      "program_name": "WIC Alaska",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WIC Alaska",
+      "phone": "907-465-3100",
+      "website": "https://dhss.alaska.gov/dph/wcw/wic",
+      "eligibility": "Pregnant, postpartum women, infants, children under 5. Income < 185% FPL. dhss.alaska.gov/dph/wcw/wic \u2014 find local clinic. Phone intake available for Bush communities.",
+      "apply_notes": "Nutrition assistance for women, infants, children",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ak_alaska_medicaid_dhss_dpa",
+      "program_name": "Alaska Medicaid (DHSS / DPA)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Alaska Medicaid",
+      "phone": "800-780-9972",
+      "website": "https://dhss.alaska.gov/medicaid",
+      "eligibility": "Adults 19\u201364 to 138% FPL. Children, families, elderly, disabled. myALASKA.gov. NOTE: PFD receipt in October may temporarily spike income \u2014 plan ahead for eligibility gap.",
+      "apply_notes": "Medicaid \u2014 expanded 2015, fee-for-service primary model",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ak_anthc_alaska_native_tribal_health_consor",
+      "program_name": "ANTHC \u2014 Alaska Native Tribal Health Consortium",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "ANTHC \u2014 Alaska Native Tribal Health Consortium",
+      "phone": "907-729-1900",
+      "website": "https://anthc.org",
+      "eligibility": "Enrolled Alaska Native members. Route ALL enrolled Alaska Native clients here first. IHS Alaska Area Office: 907-729-3686. 229 tribal health programs coordinated through ANTHC.",
+      "apply_notes": "Primary health delivery system for Alaska Native people statewide \u2014 Alaska Native Medical Center (Level 1 trauma)",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ak_providence_alaska_medical_center_anchora",
+      "program_name": "Providence Alaska Medical Center (Anchorage)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Providence Alaska Medical Center",
+      "phone": "907-562-2211",
+      "website": "https://providence.org/locations/ak/alaska-medical-center",
+      "eligibility": "Anchorage. Charity care income < 200% FPL. Also Fairbanks Memorial Hospital (907-452-8181). Bartlett Regional (Juneau: 907-796-8900).",
+      "apply_notes": "Major regional medical center \u2014 charity care, Level 2 trauma (ANMC is Level 1 for Alaska Native)",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ak_alaska_primary_care_association_fqhcs",
+      "program_name": "Alaska Primary Care Association (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Alaska Primary Care Association",
+      "phone": "907-929-2722",
+      "website": "https://ak-pca.org",
+      "eligibility": "Anyone regardless of insurance. ak-pca.org. Key: Anchorage Neighborhood Health Center (907-743-7200). Kodiak Area Native Association (907-486-9800). Southeast Alaska Regional Health Consortium (Sitka: 907-966-8700).",
+      "apply_notes": "Federally qualified health centers \u2014 sliding scale statewide",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ak_alaska_legal_services_corporation_alsc",
+      "program_name": "Alaska Legal Services Corporation (ALSC)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Alaska Legal Services Corporation",
+      "phone": "907-272-9431",
+      "website": "https://alsc-law.org",
+      "eligibility": "Statewide including all 229 tribal villages. 800-478-9431 toll-free. Phone intake essential for Bush communities. Housing, family, benefits, DV, tribal, consumer.",
+      "apply_notes": "ONLY statewide civil legal aid \u2014 covers all Bush Alaska by phone intake",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ak_alaska_housing_finance_corporation_ahfc",
+      "program_name": "Alaska Housing Finance Corporation (AHFC)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Alaska Housing Finance Corporation",
+      "phone": "907-338-6100",
+      "website": "https://ahfc.us",
+      "eligibility": "Low-income AK residents. ahfc.us. Anchorage: 907-279-3161. Rural Housing: ahfc.us/rural. Critical: Bush Alaska has severe housing shortages and overcrowding.",
+      "apply_notes": "Section 8/HCV, HOME program, rural housing, homelessness prevention",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ak_alaska_tanf_alaska_temporary_assistance_",
+      "program_name": "Alaska TANF / Alaska Temporary Assistance (DHSS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "Alaska TANF / Alaska Temporary Assistance",
+      "phone": "907-465-3347",
+      "website": "https://dhss.alaska.gov/dpa/tanf",
+      "eligibility": "Families with children \u2014 up to $923/month family of 3 (higher than most states to offset AK cost of living). 60-month limit. Work requirements apply. myALASKA.gov.",
+      "apply_notes": "Cash assistance for families with children",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ak_alaska_ui_dolwd",
+      "program_name": "Alaska UI (DOLWD)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Alaska UI",
+      "phone": "907-269-4700",
+      "website": "https://jobs.alaska.gov/ui",
+      "eligibility": "Workers who lost job through no fault. $370/week max. CRITICAL: 30-day appeal window \u2014 longest in registry, but contact ALSC within 15 days regardless. jobs.alaska.gov/ui.",
+      "apply_notes": "Weekly income replacement \u2014 $370/week max (lowest in registry for expansion state)",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ak_alaska_permanent_fund_dividend_pfd",
+      "program_name": "Alaska Permanent Fund Dividend (PFD)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Alaska Permanent Fund Dividend",
+      "phone": "907-465-2326",
+      "website": "https://pfd.alaska.gov",
+      "eligibility": "All eligible AK residents \u2014 1 year residency. pfd.alaska.gov. CRITICAL: Counts as income for SNAP/Medicaid in receipt month (October) \u2014 plan ahead to avoid eligibility gaps.",
+      "apply_notes": "UNIQUE AK BENEFIT: Annual dividend paid to all eligible AK residents (~$1,312 in 2023)",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ak_alaska_liheap_ahfc_heating_program",
+      "program_name": "Alaska LIHEAP / AHFC Heating Program",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Alaska LIHEAP / AHFC Heating Program",
+      "phone": "907-338-6100",
+      "website": "https://ahfc.us/heating",
+      "eligibility": "Income < 60% state median. ahfc.us/heating. Community Action Agencies: CCSS Anchorage (907-743-1111). Interior: Tanana Chiefs Conference (907-452-8251).",
+      "apply_notes": "Heating assistance \u2014 critical in Alaska winters, especially for off-road communities",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ak_alaska_native_women_s_resource_center_an",
+      "program_name": "Alaska Native Women's Resource Center (ANWRC \u2014 DV)",
+      "layer": "state",
+      "benefit_category": "tribal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Alaska Native Women's Resource Center",
+      "phone": "907-745-4728",
+      "website": "https://anwrc.org",
+      "eligibility": "Alaska Native women experiencing DV. anwrc.org. Also STAR (Standing Together Against Rape, Anchorage: 907-276-7279). Emergency airfare for rural DV escape available through some programs.",
+      "apply_notes": "DV services for Alaska Native women \u2014 emergency transportation funding for rural/Bush escape",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "tribal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "tribal",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ak_12_ancsa_regional_corporations_subsidiar",
+      "program_name": "12 ANCSA Regional Corporations (Subsidiary Social Services)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "employment_dispute"
+      ],
+      "agency": "12 ANCSA Regional Corporations",
+      "phone": "907-274-8638",
+      "website": "https://ciri.com",
+      "eligibility": "Enrolled Alaska Native shareholders. CIRI (Cook Inlet: 907-274-8638). Doyon (Interior: 907-452-4755). NANA (NW Arctic: 907-442-3301). Sealaska (SE AK: 907-586-1512). Each has separate social services.",
+      "apply_notes": "ANCSA regional corporations with subsidiary social services \u2014 education, scholarship, employment, housing",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ak_alaska_veterans_services_vso_va",
+      "program_name": "Alaska Veterans Services (VSO / VA)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial",
+        "insurance_claim_denial"
+      ],
+      "agency": "Alaska Veterans Services",
+      "phone": "907-257-4700",
+      "website": "https://alaska.va.gov",
+      "eligibility": "AK veterans and families. Anchorage VA Medical Center: 907-257-4700. Fairbanks CBOC: 907-361-6000. Juneau CBOC: 907-586-2920.",
+      "apply_notes": "VA healthcare, benefits navigation, state veterans services",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ak_211_alaska_statewide_navigation",
+      "program_name": "211 Alaska (Statewide Navigation)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "211 Alaska",
+      "phone": "",
+      "website": "https://alaska211.org",
+      "eligibility": "Anyone. alaska211.org. Primary triage for communities with no local services.",
+      "apply_notes": "Statewide resource navigation \u2014 critical for Bush communities",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "AK",
+      "federal_interface": false
+    }
+  ]
+}

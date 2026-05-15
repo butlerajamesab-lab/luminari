@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "state": "AR",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "ar_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "ar_arhome_arkansas_medicaid_dhs",
+        "ar_uams_medical_center_little_rock_safety_n",
+        "ar_arkansas_primary_care_association_fqhcs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ar_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "ar_center_for_arkansas_legal_services_cals",
+        "ar_legal_aid_of_arkansas_ne_delta"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ar_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "ar_arkansas_development_finance_authority_a",
+        "ar_arkansas_dv_hotline"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ar_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "ar_arkansas_snap_dhs_food_assistance",
+        "ar_arkansas_food_bank_nw_arkansas_food_bank",
+        "ar_wic_arkansas"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ar_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "ar_compie_center_for_marshallese_and_pacifi",
+        "ar_arkansas_211_statewide_navigation"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ar_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "ar_arkansas_tanf_tea_dhs",
+        "ar_arkansas_ui_adws",
+        "ar_arkansas_liheap_dhs_community_action",
+        "ar_arkansas_veterans_benefits_ar_veterans_c"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "state": "HI",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "hi_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "hi_hawaii_medicaid_quest_integration_dhs",
+        "hi_the_queen_s_medical_center_oahu_safety_n",
+        "hi_hawaii_community_health_centers_fqhcs",
+        "hi_office_of_hawaiian_affairs_oha",
+        "hi_hawaii_veterans_services_vhso"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "hi_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "hi_legal_aid_society_of_hawaii_lash",
+        "hi_catholic_charities_hawaii_immigrant_refu"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "hi_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "hi_hawaii_public_housing_authority_hpha",
+        "hi_hawaii_dv_domestic_violence_action_cente"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "hi_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "hi_hawaii_snap_food_assistance_dhs",
+        "hi_hawaii_foodbank_maui_food_bank",
+        "hi_wic_hawaii",
+        "hi_helping_hands_hawaii_oahu_emergency"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "hi_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "hi_aloha_united_way_211_hawaii"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "hi_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "hi_hawaii_tanf_tanf_up_dhs",
+        "hi_hawaii_ui_dlir",
+        "hi_hawaii_liheap_low_income_home_energy_ass"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ]
+    }
+  ]
+}

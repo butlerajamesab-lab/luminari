@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "state": "WY",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "standard_appeal",
+      "state": "WY",
+      "override_type": "timeline",
+      "description": "Wyoming standard appeal timeline",
+      "source": "registry"
+    },
+    {
+      "workflow_id": "expedited_review",
+      "state": "WY",
+      "override_type": "eligibility",
+      "description": "Wyoming expedited review criteria",
+      "source": "registry"
+    }
+  ]
+}

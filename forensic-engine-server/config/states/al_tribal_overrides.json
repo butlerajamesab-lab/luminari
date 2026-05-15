@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "state": "AL",
+    "version": "3.0"
+  },
+  "tribal_context": "Alabama tribal nations and urban Indian programs",
+  "tribal_entities": [
+    {
+      "tribal_entity_id": "poarch_band_of_creek_indians",
+      "tribal_entity_name": "Poarch Band of Creek Indians",
+      "tribal_role": "tribal_government",
+      "tribe": "Poarch Band of Creek Indians",
+      "address": "",
+      "city": "Atmore"
+    }
+  ],
+  "icwa_activation_rules": [
+    {
+      "rule_id": "al_icwa_child_welfare",
+      "trigger_pipeline": "child_welfare",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Verify tribal enrollment or eligibility",
+        "Notify tribe within 24 hours",
+        "Route to tribal ICWA coordinator"
+      ]
+    }
+  ],
+  "urban_indian_programs": []
+}

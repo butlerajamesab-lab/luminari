@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "state": "GA",
+    "version": "3.0"
+  },
+  "workflow_mappings": [
+    {
+      "workflow_id": "ga_housing_workflow",
+      "trigger_pipelines": [
+        "tenant_rights",
+        "tenant_rights"
+      ],
+      "trigger_conditions": {
+        "state": "GA"
+      },
+      "escalation_rules": [],
+      "foia_restrictions": [],
+      "county_resolution_chain": [],
+      "tribal_activation": false
+    },
+    {
+      "workflow_id": "ga_employment_workflow",
+      "trigger_pipelines": [
+        "wage_theft",
+        "workplace_discrimination"
+      ],
+      "trigger_conditions": {
+        "state": "GA"
+      },
+      "escalation_rules": [],
+      "foia_restrictions": [],
+      "county_resolution_chain": [],
+      "tribal_activation": false
+    },
+    {
+      "workflow_id": "ga_benefits_workflow",
+      "trigger_pipelines": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "trigger_conditions": {
+        "state": "GA"
+      },
+      "escalation_rules": [],
+      "foia_restrictions": [],
+      "county_resolution_chain": [],
+      "tribal_activation": false
+    },
+    {
+      "workflow_id": "ga_insurance_workflow",
+      "trigger_pipelines": [
+        "health_insurance_denial",
+        "insurance_claim_denial"
+      ],
+      "trigger_conditions": {
+        "state": "GA"
+      },
+      "escalation_rules": [],
+      "foia_restrictions": [],
+      "county_resolution_chain": [],
+      "tribal_activation": false
+    }
+  ],
+  "resolution_order": [
+    "federal_baseline",
+    "state_registry",
+    "county_override",
+    "tribal_override",
+    "pipeline_rule_injection"
+  ]
+}

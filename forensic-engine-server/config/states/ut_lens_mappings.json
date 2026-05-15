@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "state": "UT",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "ut_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "ut_utah_legal_services_statewide"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ut_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "ut_utah_housing_corporation_uhc",
+        "ut_utah_dv_coalition_udvc"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ut_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "ut_utah_tanf_dws",
+        "ut_utah_ui_dws",
+        "ut_utah_heat_home_energy_assistance_target_"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ut_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "ut_utah_medicaid_utah_access_plus_dhhs",
+        "ut_university_of_utah_health_salt_lake_safe",
+        "ut_association_for_utah_community_health_fq",
+        "ut_utah_navajo_health_system_san_juan_count",
+        "ut_ihs_uintah_basin_northern_ute_fort_duche"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ut_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "ut_utah_snap_food_assistance_dws",
+        "ut_utah_food_bank_food_bank_of_utah",
+        "ut_wic_utah"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ut_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "ut_irc_salt_lake_city_refugees_pacific_isla",
+        "ut_utah_veterans_services_udvs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "state": "KY",
+    "version": "3.0"
+  },
+  "regions": [],
+  "county_overrides": [
+    {
+      "county_id": "louisville_metrojefferson_county",
+      "county_name": "Louisville Metro/Jefferson County",
+      "fips_code": "",
+      "region": "statewide",
+      "population_estimate": "",
+      "courts": [],
+      "prosecutor": "",
+      "housing_authority": "",
+      "legal_aid": "",
+      "child_welfare": "",
+      "law_enforcement": "",
+      "utilities": "",
+      "override_details": "Consolidated government, immigrant hub, active tenant movement. Louisville Metro Human Relations Commission (LMHRC) handles local civil rights complaints with a 1-year filing deadline - longer than state KCHR 180 days for Louisville-specific violations.",
+      "affected_programs": []
+    },
+    {
+      "county_id": "eastern_kentucky_appalachian_corridor",
+      "county_name": "Eastern Kentucky Appalachian Corridor",
+      "fips_code": "",
+      "region": "statewide",
+      "population_estimate": "",
+      "courts": [],
+      "prosecutor": "",
+      "housing_authority": "",
+      "legal_aid": "",
+      "child_welfare": "",
+      "law_enforcement": "",
+      "utilities": "",
+      "override_details": "Thin infrastructure, high need, remote access. AppalReD is the only civil legal aid provider for most of the 29-county region. Food banks are sparse. Broadband is limited. Intersection of disability (SSDI/SSI), opioid recovery, and housing instability is the predominant presenting situation.",
+      "affected_programs": []
+    }
+  ],
+  "resolution_chain": []
+}

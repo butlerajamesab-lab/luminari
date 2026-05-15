@@ -1,0 +1,259 @@
+{
+  "meta": {
+    "state": "WA",
+    "layer": "county_overrides",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "source": "Luminari WA Registry v1.0 \u2014 Northwest Hope Foundation"
+  },
+  "resolution_chain": [
+    "pipeline_defaults",
+    "state_registry",
+    "county_override",
+    "tribal_override"
+  ],
+  "county_overrides": [
+    {
+      "county_id": "king",
+      "county_name": "King County",
+      "region": "king_county",
+      "population": 2269675,
+      "services": {
+        "superior_court": {
+          "name": "King County Superior Court",
+          "phone": "206-477-1300",
+          "website": "https://www.kingcounty.gov/courts/superior-court"
+        },
+        "prosecutor": {
+          "name": "King County Prosecuting Attorney",
+          "phone": "206-477-1200",
+          "website": "https://www.kingcounty.gov/depts/prosecutor"
+        },
+        "housing_authority": {
+          "name": "King County Housing Authority (KCHA)",
+          "phone": "206-574-1100",
+          "website": "https://www.kcha.org"
+        },
+        "legal_aid": {
+          "name": "Housing Justice Project (King County Bar)",
+          "phone": "206-267-7070",
+          "website": "https://www.kcba.org/For-the-Public/Housing-Justice-Project"
+        },
+        "child_welfare": {
+          "name": "DCYF Region 4 (King County)",
+          "phone": "866-363-4276",
+          "website": "https://www.dcyf.wa.gov"
+        },
+        "law_enforcement": {
+          "name": "King County Sheriff's Office",
+          "phone": "206-296-3311",
+          "website": "https://www.kingcounty.gov/depts/sheriff"
+        },
+        "utilities": {
+          "name": "Puget Sound Energy",
+          "phone": "888-225-5773",
+          "disconnect_protection": true,
+          "winter_moratorium": "November 15 \u2013 March 15",
+          "statute": "WAC 480-100-128"
+        }
+      }
+    },
+    {
+      "county_id": "pierce",
+      "county_name": "Pierce County",
+      "region": "pierce_county",
+      "population": 921130,
+      "services": {
+        "superior_court": {
+          "name": "Pierce County Superior Court",
+          "phone": "253-798-7455",
+          "website": "https://www.piercecountywa.gov/courts"
+        },
+        "prosecutor": {
+          "name": "Pierce County Prosecuting Attorney",
+          "phone": "253-798-7400",
+          "website": "https://www.piercecountywa.gov/prosecutor"
+        },
+        "housing_authority": {
+          "name": "Tacoma Housing Authority",
+          "phone": "253-207-4400",
+          "website": "https://www.tacomahousing.net"
+        },
+        "legal_aid": {
+          "name": "Tacoma-Pierce County Volunteer Legal Services",
+          "phone": "253-572-5134",
+          "website": "https://www.tvls.org"
+        },
+        "child_welfare": {
+          "name": "DCYF Region 5 (Pierce County)",
+          "phone": "866-363-4276",
+          "website": "https://www.dcyf.wa.gov"
+        },
+        "law_enforcement": {
+          "name": "Pierce County Sheriff",
+          "phone": "253-798-7530",
+          "website": "https://www.piercecountywa.gov/sheriff"
+        },
+        "utilities": {
+          "name": "Tacoma Public Utilities",
+          "phone": "253-502-8600",
+          "disconnect_protection": true,
+          "winter_moratorium": "November 15 \u2013 March 15",
+          "statute": "WAC 480-100-128"
+        }
+      }
+    },
+    {
+      "county_id": "snohomish",
+      "county_name": "Snohomish County",
+      "region": "snohomish_county",
+      "population": 827957,
+      "services": {
+        "superior_court": {
+          "name": "Snohomish County Superior Court",
+          "phone": "425-388-3421",
+          "website": "https://www.snohomishcountywa.gov/courts"
+        },
+        "prosecutor": {
+          "name": "Snohomish County Prosecuting Attorney",
+          "phone": "425-388-3333",
+          "website": "https://www.snohomishcountywa.gov/prosecutor"
+        },
+        "housing_authority": {
+          "name": "Housing Authority of Snohomish County",
+          "phone": "425-290-8499",
+          "website": "https://www.hasco.org"
+        },
+        "legal_aid": {
+          "name": "Northwest Justice Project \u2014 Everett",
+          "phone": "888-201-1014",
+          "website": "https://nwjustice.org"
+        },
+        "child_welfare": {
+          "name": "DCYF Region 3 (Snohomish County)",
+          "phone": "866-363-4276",
+          "website": "https://www.dcyf.wa.gov"
+        },
+        "law_enforcement": {
+          "name": "Snohomish County Sheriff",
+          "phone": "425-388-3393",
+          "website": "https://www.snohomishcountywa.gov/sheriff"
+        },
+        "utilities": {
+          "name": "Snohomish County PUD",
+          "phone": "425-783-1000",
+          "disconnect_protection": true,
+          "winter_moratorium": "November 15 \u2013 March 15",
+          "statute": "WAC 480-100-128"
+        }
+      }
+    },
+    {
+      "county_id": "spokane",
+      "county_name": "Spokane County",
+      "region": "spokane_metro",
+      "population": 539339,
+      "services": {
+        "superior_court": {
+          "name": "Spokane County Superior Court",
+          "phone": "509-477-4764",
+          "website": "https://www.spokanecounty.org/courts"
+        },
+        "prosecutor": {
+          "name": "Spokane County Prosecuting Attorney",
+          "phone": "509-477-3662",
+          "website": "https://www.spokanecounty.org/prosecutor"
+        },
+        "housing_authority": {
+          "name": "Spokane Housing Authority",
+          "phone": "509-328-2953",
+          "website": "https://www.spokanehousing.org"
+        },
+        "legal_aid": {
+          "name": "Northwest Justice Project \u2014 Spokane",
+          "phone": "888-201-1014",
+          "website": "https://nwjustice.org"
+        },
+        "child_welfare": {
+          "name": "DCYF Region 1 (Spokane)",
+          "phone": "866-363-4276",
+          "website": "https://www.dcyf.wa.gov"
+        },
+        "law_enforcement": {
+          "name": "Spokane County Sheriff",
+          "phone": "509-477-3000",
+          "website": "https://www.spokanecounty.org/sheriff"
+        },
+        "utilities": {
+          "name": "Avista Utilities",
+          "phone": "800-227-9187",
+          "disconnect_protection": true,
+          "winter_moratorium": "November 15 \u2013 March 15",
+          "statute": "WAC 480-100-128"
+        }
+      }
+    },
+    {
+      "county_id": "yakima",
+      "county_name": "Yakima County",
+      "region": "yakima_valley",
+      "population": 256728,
+      "services": {
+        "superior_court": {
+          "name": "Yakima County Superior Court",
+          "phone": "509-574-1800",
+          "website": "https://www.yakimacounty.us/courts"
+        },
+        "prosecutor": {
+          "name": "Yakima County Prosecuting Attorney",
+          "phone": "509-574-1210",
+          "website": "https://www.yakimacounty.us/prosecutor"
+        },
+        "housing_authority": {
+          "name": "Yakima Housing Authority",
+          "phone": "509-453-3106",
+          "website": "https://www.yakimahousing.org"
+        },
+        "legal_aid": {
+          "name": "Northwest Justice Project \u2014 Yakima",
+          "phone": "888-201-1014",
+          "website": "https://nwjustice.org"
+        },
+        "child_welfare": {
+          "name": "DCYF Region 2 (Yakima)",
+          "phone": "866-363-4276",
+          "website": "https://www.dcyf.wa.gov"
+        },
+        "law_enforcement": {
+          "name": "Yakima County Sheriff",
+          "phone": "509-574-2500",
+          "website": "https://www.yakimacounty.us/sheriff"
+        },
+        "utilities": {
+          "name": "Pacific Power",
+          "phone": "888-221-7070",
+          "disconnect_protection": true,
+          "winter_moratorium": "November 15 \u2013 March 15",
+          "statute": "WAC 480-100-128"
+        }
+      }
+    }
+  ],
+  "regions": {
+    "king_county": {
+      "description": "king_county"
+    },
+    "pierce_county": {
+      "description": "pierce_county"
+    },
+    "snohomish_county": {
+      "description": "snohomish_county"
+    },
+    "spokane_metro": {
+      "description": "spokane_metro"
+    },
+    "yakima_valley": {
+      "description": "yakima_valley"
+    }
+  }
+}

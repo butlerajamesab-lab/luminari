@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "state": "OH",
+    "state_name": "Ohio",
+    "layer": "help",
+    "version": "1.0.0",
+    "date_created": "2026-03-07",
+    "source": "Luminari OH Three-Layer Registry",
+    "contact_count": 20
+  },
+  "routing_index": {
+    "food": {
+      "layer0_flags": [
+        "oh_snap_abawd"
+      ],
+      "layer1_cluster": "oh_food",
+      "primary_pipeline": "benefits_denial",
+      "secondary_pipelines": [
+        "snap_denial"
+      ]
+    },
+    "healthcare": {
+      "layer0_flags": [
+        "oh_medicaid_expansion"
+      ],
+      "layer1_cluster": "oh_healthcare",
+      "primary_pipeline": "insurance_claim_denial",
+      "secondary_pipelines": [
+        "benefits_denial",
+        "medicaid_denial"
+      ]
+    },
+    "housing": {
+      "layer0_flags": [
+        "oh_eviction_fast"
+      ],
+      "layer1_cluster": "oh_housing",
+      "primary_pipeline": "tenant_rights",
+      "secondary_pipelines": [
+        "benefits_denial"
+      ]
+    },
+    "legal_aid": {
+      "layer0_flags": [],
+      "layer1_cluster": "oh_legal",
+      "primary_pipeline": "tenant_rights",
+      "secondary_pipelines": [
+        "wage_theft",
+        "benefits_denial"
+      ]
+    },
+    "cash_assistance": {
+      "layer0_flags": [
+        "oh_tanf_36month",
+        "oh_ui_21day"
+      ],
+      "layer1_cluster": "oh_cash",
+      "primary_pipeline": "benefits_denial",
+      "secondary_pipelines": []
+    },
+    "utilities": {
+      "layer0_flags": [
+        "oh_heap_season"
+      ],
+      "layer1_cluster": "oh_utilities",
+      "primary_pipeline": "benefits_denial",
+      "secondary_pipelines": []
+    },
+    "domestic_violence": {
+      "layer0_flags": [],
+      "layer1_cluster": "oh_dv",
+      "primary_pipeline": "tenant_rights",
+      "secondary_pipelines": []
+    },
+    "employment": {
+      "layer0_flags": [
+        "oh_minimum_wage"
+      ],
+      "layer1_cluster": "oh_civil_rights",
+      "primary_pipeline": "wage_theft",
+      "secondary_pipelines": [
+        "benefits_denial"
+      ]
+    },
+    "discrimination": {
+      "layer0_flags": [
+        "oh_ocrc_2year"
+      ],
+      "layer1_cluster": "oh_civil_rights",
+      "primary_pipeline": "police_misconduct",
+      "secondary_pipelines": [
+        "tenant_rights",
+        "wage_theft"
+      ]
+    }
+  },
+  "regions": [
+    "Columbus",
+    "Cleveland",
+    "Cincinnati",
+    "Akron",
+    "Toledo",
+    "Dayton",
+    "Youngstown",
+    "Appalachian_SE"
+  ],
+  "missing_sections": []
+}

@@ -1,0 +1,2124 @@
+{
+  "oversight_bodies": [
+    {
+      "oversight_body_id": "wa-ob-001",
+      "jurisdiction_id": "wa-state",
+      "name": "Washington State Office of Insurance Commissioner",
+      "abbreviation": "OIC",
+      "authority_type": "regulatory",
+      "authority_level": "primary",
+      "jurisdiction_scope": "state",
+      "website": "insurance.wa.gov",
+      "complaint_url": "oic.wa.gov/file-complaint",
+      "phone_primary": "800-562-6900",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "PO Box 40255, Olympia, WA 98504",
+      "authority_description": "Regulates insurance companies in WA. Primary authority over claim denials, bad faith, mental health parity violations, discriminatory coverage.",
+      "investigation_powers": [
+        "Investigate insurer complaints",
+        "Order compliance",
+        "Impose fines",
+        "Suspend/revoke licenses",
+        "Order external review"
+      ],
+      "enforcement_actions": [
+        "Fines",
+        "License revocation",
+        "Consent orders",
+        "Mandatory compliance",
+        "Referral to AG"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "Main",
+          "value": "800-562-6900",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        },
+        {
+          "contact_type": "portal",
+          "label": "Online complaint form",
+          "value": "oic.wa.gov/file-complaint",
+          "hours_text": "24/7 online",
+          "is_primary": false,
+          "is_24_7": true,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "OIC Headquarters",
+          "address_1": "PO Box 40255",
+          "address_2": "",
+          "city": "Olympia",
+          "state_code": "WA",
+          "postal_code": "98504",
+          "county": "Thurston",
+          "phone": "800-562-6900",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "insurance.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-002",
+      "jurisdiction_id": "wa-state",
+      "name": "Washington State Attorney General - Consumer Protection",
+      "abbreviation": "WA AG Consumer",
+      "authority_type": "regulatory",
+      "authority_level": "state_escalation",
+      "jurisdiction_scope": "state",
+      "website": "ag.wa.gov/consumer",
+      "complaint_url": "ag.wa.gov/consumer/file-complaint",
+      "phone_primary": "800-551-4636",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "1125 Washington St SE, Olympia, WA 98501",
+      "authority_description": "Consumer protection enforcement under RCW 19.86. Escalation route for pattern of insurer fraud or systemic bad faith when OIC does not act.",
+      "investigation_powers": [
+        "Pattern and practice investigations",
+        "Civil enforcement actions",
+        "Consumer restitution orders"
+      ],
+      "enforcement_actions": [
+        "Civil lawsuits",
+        "Consent decrees",
+        "Consumer restitution",
+        "Injunctions"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "Consumer Protection Hotline",
+          "value": "800-551-4636",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "AG Headquarters",
+          "address_1": "1125 Washington St SE",
+          "address_2": "",
+          "city": "Olympia",
+          "state_code": "WA",
+          "postal_code": "98501",
+          "county": "Thurston",
+          "phone": "360-753-6200",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "ag.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-003",
+      "jurisdiction_id": "us-federal",
+      "name": "CFPB (Consumer Financial Protection Bureau)",
+      "abbreviation": "CFPB",
+      "authority_type": "federal",
+      "authority_level": "federal_hook",
+      "jurisdiction_scope": "federal",
+      "website": "consumerfinance.gov",
+      "complaint_url": "consumerfinance.gov/complaint",
+      "phone_primary": "855-411-2372",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "1700 G Street NW, Washington DC 20552",
+      "authority_description": "Federal jurisdiction for ERISA employer health plans, billing disputes, federal consumer financial laws.",
+      "investigation_powers": [
+        "Federal ERISA plan investigations",
+        "Consumer complaint intake"
+      ],
+      "enforcement_actions": [
+        "Enforcement actions",
+        "Restitution orders"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "CFPB Hotline",
+          "value": "855-411-2372",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "consumerfinance.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-004",
+      "jurisdiction_id": "us-federal",
+      "name": "CMS (Centers for Medicare & Medicaid Services)",
+      "abbreviation": "CMS",
+      "authority_type": "federal",
+      "authority_level": "federal_hook",
+      "jurisdiction_scope": "federal",
+      "website": "cms.gov",
+      "complaint_url": "cms.gov/medicare/appeals",
+      "phone_primary": "800-633-4227",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Federal jurisdiction for Medicare Advantage and Medicaid managed care plan denials.",
+      "investigation_powers": [
+        "Medicare/Medicaid plan oversight",
+        "Appeals process administration"
+      ],
+      "enforcement_actions": [
+        "Plan sanctions",
+        "Coverage requirements"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "CMS",
+          "value": "800-633-4227",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "cms.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-005",
+      "jurisdiction_id": "wa-seattle",
+      "name": "Seattle Office of Housing",
+      "abbreviation": "SOH",
+      "authority_type": "administrative",
+      "authority_level": "primary",
+      "jurisdiction_scope": "city",
+      "website": "seattle.gov/housing",
+      "complaint_url": "seattle.gov/housing/report-a-problem",
+      "phone_primary": "206-684-0383",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Primary authority for Seattle housing code violations, illegal lockouts, utility shutoffs. Inspector dispatched within days for urgent complaints.",
+      "investigation_powers": [
+        "Housing inspections",
+        "Code enforcement",
+        "Citation authority"
+      ],
+      "enforcement_actions": [
+        "Fines",
+        "Orders to comply",
+        "Emergency orders"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "Housing Code",
+          "value": "206-684-0383",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "seattle.gov/housing",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-006",
+      "jurisdiction_id": "wa-king-county",
+      "name": "King County Code Enforcement",
+      "abbreviation": "KC Code",
+      "authority_type": "administrative",
+      "authority_level": "primary",
+      "jurisdiction_scope": "county",
+      "website": "kingcounty.gov/code-enforcement",
+      "complaint_url": "kingcounty.gov/code-enforcement",
+      "phone_primary": "206-296-6600",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Primary for unincorporated King County housing code violations.",
+      "investigation_powers": [
+        "Code inspections",
+        "Citation authority"
+      ],
+      "enforcement_actions": [
+        "Fines",
+        "Orders to comply"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "Code Enforcement",
+          "value": "206-296-6600",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "kingcounty.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-007",
+      "jurisdiction_id": "wa-state",
+      "name": "WA Attorney General - Renters' Rights Hotline",
+      "abbreviation": "WA AG Renters",
+      "authority_type": "advocacy",
+      "authority_level": "state_escalation",
+      "jurisdiction_scope": "state",
+      "website": "ag.wa.gov/renters-rights",
+      "complaint_url": "ag.wa.gov/renters-rights",
+      "phone_primary": "833-457-4922",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Navigation and referral for tenant rights. Not direct enforcement \u2014 routes complaints and provides information.",
+      "investigation_powers": [],
+      "enforcement_actions": [],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "Renters' Rights Hotline",
+          "value": "833-457-4922",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": "Not enforcement \u2014 navigation and referral"
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "ag.wa.gov/renters-rights",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-008",
+      "jurisdiction_id": "us-federal",
+      "name": "HUD Fair Housing (Discrimination)",
+      "abbreviation": "HUD",
+      "authority_type": "federal",
+      "authority_level": "federal_hook",
+      "jurisdiction_scope": "federal",
+      "website": "hud.gov",
+      "complaint_url": "hud.gov/program_offices/fair_housing",
+      "phone_primary": "800-669-9777",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "909 First Ave Suite 200, Seattle WA 98104",
+      "authority_description": "Federal jurisdiction for housing discrimination based on protected class. 1-year SOL from date of discrimination.",
+      "investigation_powers": [
+        "Fair housing investigations",
+        "Conciliation",
+        "Administrative hearings"
+      ],
+      "enforcement_actions": [
+        "Fines",
+        "Injunctions",
+        "Compensatory damages",
+        "Civil rights referrals"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "HUD Fair Housing",
+          "value": "800-669-9777",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "HUD Seattle Regional Office",
+          "address_1": "909 First Ave Suite 200",
+          "address_2": "",
+          "city": "Seattle",
+          "state_code": "WA",
+          "postal_code": "98104",
+          "county": "King",
+          "phone": "800-877-0246",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "hud.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-009",
+      "jurisdiction_id": "wa-seattle",
+      "name": "Seattle Office for Civil Rights (SOCR)",
+      "abbreviation": "SOCR",
+      "authority_type": "administrative",
+      "authority_level": "primary",
+      "jurisdiction_scope": "city",
+      "website": "seattle.gov/civilrights",
+      "complaint_url": "seattle.gov/civilrights/file-complaint",
+      "phone_primary": "206-684-4500",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "810 Third Ave Suite 750, Seattle WA 98104",
+      "authority_description": "City of Seattle civil rights enforcement. Employment, housing, public accommodation discrimination. Protections include criminal history, military status, gender identity. Covers employers with 1+ employees. Broader than WLAD in some areas.",
+      "investigation_powers": [
+        "Discrimination investigations",
+        "Complaint intake",
+        "Mediation",
+        "Hearing process"
+      ],
+      "enforcement_actions": [
+        "Fines",
+        "Remediation orders",
+        "Compliance monitoring"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "SOCR",
+          "value": "206-684-4500",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": "Interpreter available"
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "SOCR Office",
+          "address_1": "810 Third Ave Suite 750",
+          "address_2": "",
+          "city": "Seattle",
+          "state_code": "WA",
+          "postal_code": "98104",
+          "county": "King",
+          "phone": "206-684-4500",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "seattle.gov/civilrights",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-010",
+      "jurisdiction_id": "wa-state",
+      "name": "WA Adult Protective Services (APS)",
+      "abbreviation": "APS",
+      "authority_type": "administrative",
+      "authority_level": "primary",
+      "jurisdiction_scope": "state",
+      "website": "dshs.wa.gov/aps",
+      "complaint_url": "dshs.wa.gov/aps",
+      "phone_primary": "866-363-4276",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "1115 Washington St SE, Olympia WA 98501",
+      "authority_description": "Primary state authority for investigating abuse, neglect, and exploitation of vulnerable adults in any setting. 24/7 intake. Investigates within 24-72 hours.",
+      "investigation_powers": [
+        "Mandatory abuse investigations",
+        "Emergency protective orders",
+        "Safety planning"
+      ],
+      "enforcement_actions": [
+        "Emergency protection orders",
+        "Referrals to law enforcement",
+        "DSHS/RCS coordination"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "hotline",
+          "label": "APS 24/7 Hotline",
+          "value": "866-363-4276",
+          "hours_text": "24/7",
+          "is_primary": true,
+          "is_24_7": true,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "dshs.wa.gov/aps",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-011",
+      "jurisdiction_id": "wa-state",
+      "name": "WA DSHS Residential Care Services (RCS)",
+      "abbreviation": "DSHS RCS",
+      "authority_type": "regulatory",
+      "authority_level": "primary",
+      "jurisdiction_scope": "state",
+      "website": "dshs.wa.gov/rcs",
+      "complaint_url": "dshs.wa.gov/rcs/file-complaint",
+      "phone_primary": "800-562-6078",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Licenses and inspects nursing homes, assisted living, and other residential care facilities. Investigates licensing violations and care standards.",
+      "investigation_powers": [
+        "Facility inspections",
+        "License revocation",
+        "Enforcement actions"
+      ],
+      "enforcement_actions": [
+        "License revocation",
+        "Fines",
+        "Corrective action plans",
+        "State guardianship referrals"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "RCS Complaint Line",
+          "value": "800-562-6078",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "dshs.wa.gov/rcs",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-012",
+      "jurisdiction_id": "wa-state",
+      "name": "WA Long-Term Care Ombudsman",
+      "abbreviation": "LTC Ombudsman",
+      "authority_type": "ombudsman",
+      "authority_level": "ombudsman",
+      "jurisdiction_scope": "state",
+      "website": "waombudsman.org",
+      "complaint_url": "waombudsman.org/file-complaint",
+      "phone_primary": "800-562-6028",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Advocates specifically for nursing home and assisted living residents. Free and confidential. Resident rights, care quality, discharge disputes.",
+      "investigation_powers": [
+        "Complaint investigation",
+        "Facility access",
+        "Resident advocacy"
+      ],
+      "enforcement_actions": [
+        "Advocacy",
+        "Mediation",
+        "Referrals to RCS/APS"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "LTC Ombudsman",
+          "value": "800-562-6028",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": "Free and confidential"
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "waombudsman.org",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-013",
+      "jurisdiction_id": "us-federal",
+      "name": "DOJ Elder Justice Initiative",
+      "abbreviation": "DOJ Elder Justice",
+      "authority_type": "federal",
+      "authority_level": "federal_escalation",
+      "jurisdiction_scope": "federal",
+      "website": "justice.gov/elderjustice",
+      "complaint_url": "justice.gov/elderjustice/elder-fraud-hotline",
+      "phone_primary": "833-372-8311",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Federal escalation for criminal elder abuse, fraud, systematic neglect. Elder Fraud Hotline.",
+      "investigation_powers": [
+        "Criminal investigations",
+        "Federal prosecution referrals"
+      ],
+      "enforcement_actions": [
+        "Criminal prosecution",
+        "Federal fraud referrals"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "hotline",
+          "label": "Elder Fraud Hotline",
+          "value": "833-372-8311",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": "For criminal conduct or federal fraud"
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "justice.gov/elderjustice",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-014",
+      "jurisdiction_id": "wa-state",
+      "name": "Washington State Department of Labor & Industries (L&I) - Labor Standards",
+      "abbreviation": "L&I",
+      "authority_type": "regulatory",
+      "authority_level": "primary",
+      "jurisdiction_scope": "state",
+      "website": "lni.wa.gov",
+      "complaint_url": "lni.wa.gov/workers-rights/file-complaint",
+      "phone_primary": "866-219-7321",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "7273 Linderson Way SW, Tumwater WA 98501",
+      "authority_description": "Primary WA state authority for wage theft, overtime, minimum wage, final paycheck, equal pay, workplace safety, workers comp. Authority: RCW 49.46, 49.48, 49.58, 49.78, 51.04. WA: 3-year SOL.",
+      "investigation_powers": [
+        "Wage investigations",
+        "Workplace inspections",
+        "Citation authority",
+        "Subpoena power"
+      ],
+      "enforcement_actions": [
+        "Wage recovery orders",
+        "Double damages for willful violations",
+        "Fines",
+        "Stop-work orders"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "L&I Labor Standards",
+          "value": "866-219-7321",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        },
+        {
+          "contact_type": "phone",
+          "label": "L&I General",
+          "value": "800-423-7233",
+          "hours_text": "Business hours",
+          "is_primary": false,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "L&I Headquarters",
+          "address_1": "7273 Linderson Way SW",
+          "address_2": "",
+          "city": "Tumwater",
+          "state_code": "WA",
+          "postal_code": "98501",
+          "county": "Thurston",
+          "phone": "360-902-5800",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "lni.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-015",
+      "jurisdiction_id": "wa-state",
+      "name": "Washington State Human Rights Commission (WSHRC)",
+      "abbreviation": "WSHRC",
+      "authority_type": "regulatory",
+      "authority_level": "primary",
+      "jurisdiction_scope": "state",
+      "website": "hum.wa.gov",
+      "complaint_url": "hum.wa.gov/file-complaint",
+      "phone_primary": "800-233-3247",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "711 S Capitol Way Suite 402, Olympia WA 98501",
+      "authority_description": "State civil rights enforcement under RCW 49.60 (WLAD). Employment, housing, public accommodations, credit, insurance discrimination. 6-month SOL (1 year for housing/whistleblower).",
+      "investigation_powers": [
+        "Discrimination investigations",
+        "Conciliation",
+        "Hearing process",
+        "Subpoena power"
+      ],
+      "enforcement_actions": [
+        "Damages awards",
+        "Injunctions",
+        "Compliance orders"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "WSHRC",
+          "value": "800-233-3247",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "WSHRC Headquarters",
+          "address_1": "711 S Capitol Way Suite 402",
+          "address_2": "",
+          "city": "Olympia",
+          "state_code": "WA",
+          "postal_code": "98501",
+          "county": "Thurston",
+          "phone": "800-233-3247",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        },
+        {
+          "office_name": "Spokane Office",
+          "address_1": "",
+          "address_2": "",
+          "city": "Spokane",
+          "state_code": "WA",
+          "postal_code": "",
+          "county": "Spokane",
+          "phone": "",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "hum.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-016",
+      "jurisdiction_id": "us-federal",
+      "name": "EEOC Seattle Field Office",
+      "abbreviation": "EEOC",
+      "authority_type": "federal",
+      "authority_level": "federal_hook",
+      "jurisdiction_scope": "federal",
+      "website": "eeoc.gov",
+      "complaint_url": "publicportal.eeoc.gov",
+      "phone_primary": "800-669-4000",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "909 First Ave Suite 400, Seattle WA 98104",
+      "authority_description": "Federal employment discrimination: Title VII, ADA, ADEA, Equal Pay Act, GINA, pregnancy discrimination. Work-sharing agreement with WSHRC. File within 300 days (WA). Required before federal lawsuit.",
+      "investigation_powers": [
+        "Charge investigation",
+        "Conciliation",
+        "Subpoena power"
+      ],
+      "enforcement_actions": [
+        "Conciliation agreements",
+        "Right-to-sue letters",
+        "Pattern/practice suits"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "EEOC",
+          "value": "800-669-4000",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "EEOC Seattle Field Office",
+          "address_1": "909 First Ave Suite 400",
+          "address_2": "",
+          "city": "Seattle",
+          "state_code": "WA",
+          "postal_code": "98104",
+          "county": "King",
+          "phone": "800-669-4000",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "eeoc.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-017",
+      "jurisdiction_id": "us-federal",
+      "name": "DOL Wage and Hour Division (WHD) - Seattle",
+      "abbreviation": "WHD",
+      "authority_type": "federal",
+      "authority_level": "federal_hook",
+      "jurisdiction_scope": "federal",
+      "website": "dol.gov/agencies/whd",
+      "complaint_url": "dol.gov/agencies/whd/contact",
+      "phone_primary": "866-487-9243",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "300 Fifth Ave Suite 1050, Seattle WA 98104",
+      "authority_description": "FLSA violations \u2014 federal overtime, minimum wage, child labor. FMLA. H-2A/H-2B worker rights. Federal: 2-year SOL (3 if willful).",
+      "investigation_powers": [
+        "Wage investigations",
+        "FMLA investigations",
+        "Child labor enforcement"
+      ],
+      "enforcement_actions": [
+        "Back wage orders",
+        "Civil penalties",
+        "Injunctions"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "WHD Seattle",
+          "value": "866-487-9243",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "WHD Seattle District",
+          "address_1": "300 Fifth Ave Suite 1050",
+          "address_2": "",
+          "city": "Seattle",
+          "state_code": "WA",
+          "postal_code": "98104",
+          "county": "King",
+          "phone": "866-487-9243",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "dol.gov/agencies/whd",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-018",
+      "jurisdiction_id": "us-federal",
+      "name": "NLRB Seattle Regional Office",
+      "abbreviation": "NLRB",
+      "authority_type": "federal",
+      "authority_level": "federal_hook",
+      "jurisdiction_scope": "federal",
+      "website": "nlrb.gov",
+      "complaint_url": "nlrb.gov/case-activity/file-charge",
+      "phone_primary": "206-220-6300",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Labor relations violations, union rights, retaliation. File within 6 months of violation.",
+      "investigation_powers": [
+        "Unfair labor practice investigations"
+      ],
+      "enforcement_actions": [
+        "Back pay orders",
+        "Reinstatement orders",
+        "Posting requirements"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "NLRB Seattle",
+          "value": "206-220-6300",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "nlrb.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-019",
+      "jurisdiction_id": "wa-state",
+      "name": "WA DSHS Office of Administrative Hearings (OAH)",
+      "abbreviation": "OAH",
+      "authority_type": "appellate",
+      "authority_level": "primary",
+      "jurisdiction_scope": "state",
+      "website": "oah.wa.gov",
+      "complaint_url": "oah.wa.gov",
+      "phone_primary": "360-407-2700",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "PO Box 42488, Olympia WA 98504",
+      "authority_description": "Administrative hearings for DSHS, L&I, ESD, and 30+ state agencies. Benefits denials, license revocations, agency disputes. Benefits may continue pending appeal if timely requested.",
+      "investigation_powers": [
+        "Administrative hearings",
+        "Evidence review",
+        "ALJ decisions"
+      ],
+      "enforcement_actions": [
+        "Benefits restoration orders",
+        "Administrative decisions"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "OAH",
+          "value": "360-407-2700",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": "Hearings conducted statewide by phone/video/in-person"
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "OAH",
+          "address_1": "PO Box 42488",
+          "address_2": "",
+          "city": "Olympia",
+          "state_code": "WA",
+          "postal_code": "98504",
+          "county": "Thurston",
+          "phone": "360-407-2700",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "oah.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-020",
+      "jurisdiction_id": "wa-state",
+      "name": "WA Health Care Authority (HCA) Appeals",
+      "abbreviation": "HCA Appeals",
+      "authority_type": "appellate",
+      "authority_level": "primary",
+      "jurisdiction_scope": "state",
+      "website": "hca.wa.gov",
+      "complaint_url": "hca.wa.gov/appeals-and-grievances",
+      "phone_primary": "800-562-3022",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Primary appeal route for Apple Health (Medicaid) denials. File within 90 days.",
+      "investigation_powers": [
+        "Medicaid appeals review"
+      ],
+      "enforcement_actions": [
+        "Benefits restoration"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "HCA",
+          "value": "800-562-3022",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "hca.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-021",
+      "jurisdiction_id": "wa-state",
+      "name": "WA Employment Security Department (ESD) Appeals",
+      "abbreviation": "ESD Appeals",
+      "authority_type": "appellate",
+      "authority_level": "primary",
+      "jurisdiction_scope": "state",
+      "website": "esd.wa.gov",
+      "complaint_url": "esd.wa.gov/unemployment/appeals",
+      "phone_primary": "800-318-6022",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "212 Maple Park Ave SE, Olympia WA 98504",
+      "authority_description": "Unemployment insurance denial or overpayment appeals. Appeal within 30 days of initial determination.",
+      "investigation_powers": [
+        "UI appeals review"
+      ],
+      "enforcement_actions": [
+        "Benefits restoration",
+        "Overpayment adjustments"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "ESD",
+          "value": "800-318-6022",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "esd.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-022",
+      "jurisdiction_id": "wa-state",
+      "name": "WA Governor's Constituent Services",
+      "abbreviation": "WA Governor",
+      "authority_type": "administrative",
+      "authority_level": "state_escalation",
+      "jurisdiction_scope": "state",
+      "website": "governor.wa.gov",
+      "complaint_url": "governor.wa.gov/contact",
+      "phone_primary": "360-902-4111",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Systemic agency failures, non-responsive agencies. Escalate if OAH or agency unresponsive.",
+      "investigation_powers": [
+        "Constituent advocacy",
+        "Agency inquiry"
+      ],
+      "enforcement_actions": [],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "Governor's Office",
+          "value": "360-902-4111",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "governor.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-023",
+      "jurisdiction_id": "us-federal",
+      "name": "HHS / CMS (Federal Medicaid Oversight)",
+      "abbreviation": "HHS/CMS",
+      "authority_type": "federal",
+      "authority_level": "federal_hook",
+      "jurisdiction_scope": "federal",
+      "website": "cms.gov",
+      "complaint_url": "cms.gov/about-cms/contact-cms",
+      "phone_primary": "877-267-2323",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Federal jurisdiction over systemic Medicaid issues or federal program violations involving federal Medicaid dollars.",
+      "investigation_powers": [
+        "Federal Medicaid compliance oversight"
+      ],
+      "enforcement_actions": [
+        "Federal funding conditions",
+        "Compliance requirements"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "HHS/CMS",
+          "value": "877-267-2323",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "cms.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-024",
+      "jurisdiction_id": "wa-seattle",
+      "name": "Seattle Office of Police Accountability (OPA)",
+      "abbreviation": "OPA",
+      "authority_type": "administrative",
+      "authority_level": "primary",
+      "jurisdiction_scope": "city",
+      "website": "seattle.gov/opa",
+      "complaint_url": "seattle.gov/opa/file-a-complaint",
+      "phone_primary": "206-233-5030",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Investigates SPD officer misconduct complaints. OPA investigates SPD officer conduct.",
+      "investigation_powers": [
+        "SPD officer complaint investigation",
+        "Disciplinary recommendations"
+      ],
+      "enforcement_actions": [
+        "Disciplinary recommendations",
+        "Public reports"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "OPA",
+          "value": "206-233-5030",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "seattle.gov/opa",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-025",
+      "jurisdiction_id": "wa-state",
+      "name": "WA State Patrol - Internal Affairs",
+      "abbreviation": "WSP IA",
+      "authority_type": "administrative",
+      "authority_level": "primary",
+      "jurisdiction_scope": "state",
+      "website": "wsp.wa.gov",
+      "complaint_url": "wsp.wa.gov/about/internal-affairs",
+      "phone_primary": "360-596-4000",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "WSP officer misconduct. File complaint in writing to WSP IA.",
+      "investigation_powers": [
+        "WSP officer investigations"
+      ],
+      "enforcement_actions": [
+        "Disciplinary actions"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "WSP IA",
+          "value": "360-596-4000",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "wsp.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-026",
+      "jurisdiction_id": "wa-king-county",
+      "name": "King County Sheriff - Office of Police Ombudsman (OPO)",
+      "abbreviation": "KCSO OPO",
+      "authority_type": "ombudsman",
+      "authority_level": "ombudsman",
+      "jurisdiction_scope": "county",
+      "website": "kingcounty.gov/elected/sheriff/opo",
+      "complaint_url": "kingcounty.gov/elected/sheriff/opo",
+      "phone_primary": "206-296-9199",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "KCSO deputy misconduct. Office of Police Ombudsman.",
+      "investigation_powers": [
+        "KCSO deputy complaint review"
+      ],
+      "enforcement_actions": [
+        "Recommendations to Sheriff"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "OPO",
+          "value": "206-296-9199",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "kingcounty.gov/elected/sheriff",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-027",
+      "jurisdiction_id": "wa-state",
+      "name": "WA State Criminal Justice Training Commission (CJTC)",
+      "abbreviation": "CJTC",
+      "authority_type": "regulatory",
+      "authority_level": "state_escalation",
+      "jurisdiction_scope": "state",
+      "website": "cjtc.wa.gov",
+      "complaint_url": "cjtc.wa.gov/about/executive-director",
+      "phone_primary": "206-835-7300",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Officer certification issues, training violations. Can decertify officers for misconduct.",
+      "investigation_powers": [
+        "Officer certification review",
+        "Decertification authority"
+      ],
+      "enforcement_actions": [
+        "Officer decertification",
+        "Training sanctions"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "CJTC",
+          "value": "206-835-7300",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "cjtc.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-028",
+      "jurisdiction_id": "us-federal",
+      "name": "DOJ Civil Rights Division",
+      "abbreviation": "DOJ CRT",
+      "authority_type": "federal",
+      "authority_level": "federal_hook",
+      "jurisdiction_scope": "federal",
+      "website": "justice.gov/crt",
+      "complaint_url": "civilrights.justice.gov",
+      "phone_primary": "202-514-3847",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "950 Pennsylvania Ave NW, Washington DC 20530",
+      "authority_description": "Pattern or practice of police misconduct/civil rights violations. ADA Title II against state/local government. Voting rights. Education discrimination. Federal jurisdiction \u2014 no SOL for DOJ investigations.",
+      "investigation_powers": [
+        "Pattern/practice investigations",
+        "Civil rights enforcement",
+        "ADA Title II enforcement",
+        "Consent decree authority"
+      ],
+      "enforcement_actions": [
+        "Consent decrees",
+        "Federal injunctions",
+        "Civil rights suits"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "portal",
+          "label": "Civil Rights complaint",
+          "value": "civilrights.justice.gov",
+          "hours_text": "24/7 online",
+          "is_primary": true,
+          "is_24_7": true,
+          "languages_supported": [],
+          "notes": ""
+        },
+        {
+          "contact_type": "phone",
+          "label": "DOJ CRT",
+          "value": "202-514-3847",
+          "hours_text": "Business hours",
+          "is_primary": false,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "DOJ Civil Rights Division",
+          "address_1": "950 Pennsylvania Ave NW",
+          "address_2": "",
+          "city": "Washington",
+          "state_code": "DC",
+          "postal_code": "20530",
+          "county": "",
+          "phone": "202-514-3847",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "justice.gov/crt",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-029",
+      "jurisdiction_id": "wa-wd-wash",
+      "name": "FBI Seattle (Federal Civil Rights)",
+      "abbreviation": "FBI Seattle",
+      "authority_type": "federal",
+      "authority_level": "federal_hook",
+      "jurisdiction_scope": "federal",
+      "website": "fbi.gov/seattle",
+      "complaint_url": "tips.fbi.gov",
+      "phone_primary": "206-622-0460",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Criminal referral for civil rights violations under color of law by law enforcement.",
+      "investigation_powers": [
+        "Federal criminal civil rights investigations"
+      ],
+      "enforcement_actions": [
+        "Federal criminal prosecution"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "portal",
+          "label": "FBI Tips",
+          "value": "tips.fbi.gov",
+          "hours_text": "24/7",
+          "is_primary": true,
+          "is_24_7": true,
+          "languages_supported": [],
+          "notes": ""
+        },
+        {
+          "contact_type": "phone",
+          "label": "FBI Seattle",
+          "value": "206-622-0460",
+          "hours_text": "Business hours",
+          "is_primary": false,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "fbi.gov/seattle",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-030",
+      "jurisdiction_id": "wa-state",
+      "name": "WA Commission on Judicial Conduct (CJC)",
+      "abbreviation": "CJC",
+      "authority_type": "regulatory",
+      "authority_level": "primary",
+      "jurisdiction_scope": "state",
+      "website": "cjc.courts.wa.gov",
+      "complaint_url": "cjc.courts.wa.gov/complaint",
+      "phone_primary": "360-753-4585",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Investigates judges statewide for misconduct, bias, ethical violations. Complaints public after investigation.",
+      "investigation_powers": [
+        "Judicial misconduct investigation"
+      ],
+      "enforcement_actions": [
+        "Censure",
+        "Suspension",
+        "Removal from bench"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "CJC",
+          "value": "360-753-4585",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "cjc.courts.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-031",
+      "jurisdiction_id": "wa-state",
+      "name": "WA State Bar Association (WSBA) - Attorney Misconduct",
+      "abbreviation": "WSBA",
+      "authority_type": "regulatory",
+      "authority_level": "primary",
+      "jurisdiction_scope": "state",
+      "website": "wsba.org",
+      "complaint_url": "wsba.org/for-the-public/file-a-complaint",
+      "phone_primary": "206-443-9722",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Investigates attorney ethical violations including GAL attorney misconduct.",
+      "investigation_powers": [
+        "Attorney discipline investigations"
+      ],
+      "enforcement_actions": [
+        "Suspension",
+        "Disbarment",
+        "Reprimand"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "WSBA",
+          "value": "206-443-9722",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "wsba.org",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-032",
+      "jurisdiction_id": "wa-state",
+      "name": "WA DCYF - Complaints about CPS Workers",
+      "abbreviation": "DCYF Complaints",
+      "authority_type": "administrative",
+      "authority_level": "primary",
+      "jurisdiction_scope": "state",
+      "website": "dcyf.wa.gov",
+      "complaint_url": "dcyf.wa.gov/contact",
+      "phone_primary": "866-363-4276",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "CPS worker misconduct or procedure violations. DCYF internal complaint process.",
+      "investigation_powers": [
+        "CPS worker conduct investigations"
+      ],
+      "enforcement_actions": [
+        "Disciplinary action",
+        "Process correction"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "DCYF",
+          "value": "866-363-4276",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "dcyf.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-033",
+      "jurisdiction_id": "wa-state",
+      "name": "WA Court of Appeals - Appellate Review",
+      "abbreviation": "WA Court of Appeals",
+      "authority_type": "appellate",
+      "authority_level": "appeal",
+      "jurisdiction_scope": "state",
+      "website": "courts.wa.gov",
+      "complaint_url": "courts.wa.gov/appellate_trial_courts",
+      "phone_primary": "360-956-5200",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "",
+      "authority_description": "Appeal of family court orders. Must file within deadlines \u2014 seek legal help first.",
+      "investigation_powers": [
+        "Appellate review of family court orders"
+      ],
+      "enforcement_actions": [
+        "Reversal",
+        "Remand",
+        "Modification"
+      ],
+      "requires_attorney": true,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "Court of Appeals",
+          "value": "360-956-5200",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": "Seek legal help before filing"
+        }
+      ],
+      "offices": [],
+      "source_page": null,
+      "source_url": "courts.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-034",
+      "jurisdiction_id": "wa-state",
+      "name": "Washington State Attorney General - Civil Rights Division",
+      "abbreviation": "WA AG Civil Rights",
+      "authority_type": "regulatory",
+      "authority_level": "primary",
+      "jurisdiction_scope": "state",
+      "website": "atg.wa.gov/civil-rights",
+      "complaint_url": "atg.wa.gov/civil-rights",
+      "phone_primary": "833-660-4877",
+      "phone_secondary": "",
+      "email_primary": "fairchancejobs@atg.wa.gov",
+      "email_secondary": "pregnancy@atg.wa.gov",
+      "mailing_address": "1125 Washington St SE, Olympia WA 98501",
+      "authority_description": "WLAD enforcement, Fair Chance Act, Healthy Starts Act, Consumer Protection Act, Servicemembers Civil Relief Act. Authority: RCW 49.60, 49.94, 19.86.",
+      "investigation_powers": [
+        "Civil rights investigations",
+        "Pattern/practice enforcement",
+        "Consumer protection enforcement"
+      ],
+      "enforcement_actions": [
+        "Civil suits",
+        "Consent decrees",
+        "Restitution orders"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "AG Civil Rights",
+          "value": "833-660-4877",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        },
+        {
+          "contact_type": "email",
+          "label": "Fair Chance Jobs",
+          "value": "fairchancejobs@atg.wa.gov",
+          "hours_text": "",
+          "is_primary": false,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        },
+        {
+          "contact_type": "email",
+          "label": "Pregnancy complaints",
+          "value": "pregnancy@atg.wa.gov",
+          "hours_text": "",
+          "is_primary": false,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "AG Headquarters",
+          "address_1": "1125 Washington St SE",
+          "address_2": "",
+          "city": "Olympia",
+          "state_code": "WA",
+          "postal_code": "98501",
+          "county": "Thurston",
+          "phone": "360-753-6200",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "atg.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-035",
+      "jurisdiction_id": "wa-state",
+      "name": "WA Department of Health (DOH) - Complaint Investigation",
+      "abbreviation": "DOH",
+      "authority_type": "regulatory",
+      "authority_level": "primary",
+      "jurisdiction_scope": "state",
+      "website": "doh.wa.gov",
+      "complaint_url": "doh.wa.gov/complaints",
+      "phone_primary": "800-633-6828",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "101 Israel Rd SE, Tumwater WA 98501",
+      "authority_description": "Healthcare facility licensing, patient complaints against providers, behavioral health agency licensing. Authority: RCW 43.70, RCW 71.24.",
+      "investigation_powers": [
+        "Provider license investigations",
+        "Facility compliance investigations"
+      ],
+      "enforcement_actions": [
+        "License revocation",
+        "Fines",
+        "Corrective action"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "DOH Complaint Line",
+          "value": "800-633-6828",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "DOH Headquarters",
+          "address_1": "101 Israel Rd SE",
+          "address_2": "",
+          "city": "Tumwater",
+          "state_code": "WA",
+          "postal_code": "98501",
+          "county": "Thurston",
+          "phone": "360-236-4501",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "doh.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-036",
+      "jurisdiction_id": "wa-state",
+      "name": "WA Office of the Ombuds for Behavioral Health Consumers",
+      "abbreviation": "Behavioral Health Ombuds",
+      "authority_type": "ombudsman",
+      "authority_level": "ombudsman",
+      "jurisdiction_scope": "state",
+      "website": "mhoac.wa.gov",
+      "complaint_url": "mhoac.wa.gov",
+      "phone_primary": "360-725-2028",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "PO Box 45506, Olympia WA 98504",
+      "authority_description": "Rights advocacy for individuals receiving mental health and substance use disorder services. Investigates complaints against behavioral health agencies. Phone intake; advocacy and referral role. County-level ombuds programs also exist.",
+      "investigation_powers": [
+        "Mental health rights investigations",
+        "BHA complaint investigation"
+      ],
+      "enforcement_actions": [
+        "Advocacy",
+        "Referrals",
+        "Recommendations"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "Behavioral Health Ombuds",
+          "value": "360-725-2028",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": "County-level ombuds programs also exist"
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "BH Ombuds",
+          "address_1": "PO Box 45506",
+          "address_2": "",
+          "city": "Olympia",
+          "state_code": "WA",
+          "postal_code": "98504",
+          "county": "Thurston",
+          "phone": "360-725-2028",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "mhoac.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-037",
+      "jurisdiction_id": "wa-state",
+      "name": "WA Governor's Office of Indian Affairs (GOIA)",
+      "abbreviation": "GOIA",
+      "authority_type": "administrative",
+      "authority_level": "advocacy",
+      "jurisdiction_scope": "state",
+      "website": "goia.wa.gov",
+      "complaint_url": "goia.wa.gov",
+      "phone_primary": "360-902-8826",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "PO Box 40909, Olympia WA 98504",
+      "authority_description": "Government-to-government coordination between WA State and 29 federally recognized tribes. Tribal consultation, Indian child welfare, tribal sovereignty. Liaison and advocacy role \u2014 no formal complaint intake.",
+      "investigation_powers": [],
+      "enforcement_actions": [],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "GOIA",
+          "value": "360-902-8826",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": "Liaison role; no formal complaint process"
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "GOIA",
+          "address_1": "PO Box 40909",
+          "address_2": "",
+          "city": "Olympia",
+          "state_code": "WA",
+          "postal_code": "98504",
+          "county": "Thurston",
+          "phone": "360-902-8826",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "goia.wa.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-038",
+      "jurisdiction_id": "wa-king-county",
+      "name": "King County Office of Civil Rights (OCR)",
+      "abbreviation": "King County OCR",
+      "authority_type": "regulatory",
+      "authority_level": "primary",
+      "jurisdiction_scope": "county",
+      "website": "kingcounty.gov/civilrights",
+      "complaint_url": "kingcounty.gov/civilrights",
+      "phone_primary": "206-477-3452",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "401 5th Ave Suite 200, Seattle WA 98104",
+      "authority_description": "Housing, employment, public accommodation discrimination in unincorporated King County. Fair housing enforcement. Authority: King County Code Title 12; WLAD.",
+      "investigation_powers": [
+        "Discrimination investigations",
+        "Fair housing enforcement"
+      ],
+      "enforcement_actions": [
+        "Compliance orders",
+        "Remediation"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "King County OCR",
+          "value": "206-477-3452",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "King County OCR",
+          "address_1": "401 5th Ave Suite 200",
+          "address_2": "",
+          "city": "Seattle",
+          "state_code": "WA",
+          "postal_code": "98104",
+          "county": "King",
+          "phone": "206-477-3452",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "kingcounty.gov/civilrights",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-039",
+      "jurisdiction_id": "us-federal",
+      "name": "U.S. Department of Labor OSHA Region 10 (Seattle)",
+      "abbreviation": "OSHA Region 10",
+      "authority_type": "federal",
+      "authority_level": "federal_hook",
+      "jurisdiction_scope": "federal",
+      "website": "osha.gov",
+      "complaint_url": "osha.gov",
+      "phone_primary": "800-321-6742",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "300 Fifth Ave Suite 1280, Seattle WA 98104",
+      "authority_description": "Workplace safety and health hazards; whistleblower retaliation; federal employer safety. Note: L&I WISHA handles most private employers in WA. 30-day SOL for most whistleblower claims.",
+      "investigation_powers": [
+        "Workplace inspections",
+        "Whistleblower investigations",
+        "Citation authority"
+      ],
+      "enforcement_actions": [
+        "Citations",
+        "Penalties",
+        "Abatement orders"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "OSHA",
+          "value": "800-321-6742",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": "L&I WISHA handles most WA private employers"
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "OSHA Region 10 Seattle",
+          "address_1": "300 Fifth Ave Suite 1280",
+          "address_2": "",
+          "city": "Seattle",
+          "state_code": "WA",
+          "postal_code": "98104",
+          "county": "King",
+          "phone": "800-321-6742",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "osha.gov",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-040",
+      "jurisdiction_id": "us-federal",
+      "name": "U.S. Attorney's Office - Western District of Washington",
+      "abbreviation": "USAO WDWA",
+      "authority_type": "federal",
+      "authority_level": "federal_hook",
+      "jurisdiction_scope": "federal",
+      "website": "justice.gov/usao-wdwa",
+      "complaint_url": "justice.gov/usao-wdwa/civil-rights",
+      "phone_primary": "206-553-7970",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "700 Stewart St Suite 5220, Seattle WA 98101",
+      "authority_description": "Federal civil rights enforcement in Western Washington. Criminal and civil prosecution of civil rights violations. Accepts public reports of non-criminal civil rights violations.",
+      "investigation_powers": [
+        "Federal criminal civil rights prosecution",
+        "Pattern/practice investigations"
+      ],
+      "enforcement_actions": [
+        "Federal prosecution",
+        "Civil rights suits"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "USAO WDWA",
+          "value": "206-553-7970",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": ""
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "USAO WDWA",
+          "address_1": "700 Stewart St Suite 5220",
+          "address_2": "",
+          "city": "Seattle",
+          "state_code": "WA",
+          "postal_code": "98101",
+          "county": "King",
+          "phone": "206-553-7970",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "justice.gov/usao-wdwa",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-041",
+      "jurisdiction_id": "us-federal",
+      "name": "Indian Health Service (IHS) - Portland Area Office",
+      "abbreviation": "IHS Portland",
+      "authority_type": "federal",
+      "authority_level": "federal_hook",
+      "jurisdiction_scope": "federal",
+      "website": "ihs.gov/portland",
+      "complaint_url": "ihs.gov/portland",
+      "phone_primary": "503-414-7700",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "1220 SW 3rd Ave Suite 1000, Portland OR 97204",
+      "authority_description": "Healthcare for Native American and Alaska Native tribal citizens. Access to IHS services. Civil rights within federally funded tribal health programs. Covers WA, OR, ID.",
+      "investigation_powers": [
+        "IHS service complaint investigation",
+        "EEO complaints"
+      ],
+      "enforcement_actions": [],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "IHS Portland",
+          "value": "503-414-7700",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": "Covers Washington, Oregon, Idaho"
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "IHS Portland Area Office",
+          "address_1": "1220 SW 3rd Ave Suite 1000",
+          "address_2": "",
+          "city": "Portland",
+          "state_code": "OR",
+          "postal_code": "97204",
+          "county": "",
+          "phone": "503-414-7700",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "ihs.gov/portland",
+      "last_verified": "2026-03-01"
+    },
+    {
+      "oversight_body_id": "wa-ob-042",
+      "jurisdiction_id": "us-federal",
+      "name": "Bureau of Indian Affairs (BIA) - Northwest Regional Office",
+      "abbreviation": "BIA Northwest",
+      "authority_type": "federal",
+      "authority_level": "federal_hook",
+      "jurisdiction_scope": "federal",
+      "website": "bia.gov/regional-offices/northwest",
+      "complaint_url": "bia.gov/regional-offices/northwest",
+      "phone_primary": "503-231-6702",
+      "phone_secondary": "",
+      "email_primary": "",
+      "email_secondary": "",
+      "mailing_address": "911 NE 11th Ave, Portland OR 97232",
+      "authority_description": "Federal trust responsibility. Tribal land issues. ICWA compliance. Tribal enrollment disputes. Tribal governance. Appeals to Interior Board of Indian Appeals (IBIA). Covers WA, OR, ID.",
+      "investigation_powers": [
+        "ICWA compliance review",
+        "Tribal land issue investigation",
+        "Appeals to IBIA"
+      ],
+      "enforcement_actions": [
+        "ICWA referrals",
+        "IBIA appeals process"
+      ],
+      "requires_attorney": false,
+      "contacts": [
+        {
+          "contact_type": "phone",
+          "label": "BIA Northwest",
+          "value": "503-231-6702",
+          "hours_text": "Business hours",
+          "is_primary": true,
+          "is_24_7": false,
+          "languages_supported": [],
+          "notes": "Covers Washington, Oregon, Idaho"
+        }
+      ],
+      "offices": [
+        {
+          "office_name": "BIA Northwest Regional Office",
+          "address_1": "911 NE 11th Ave",
+          "address_2": "",
+          "city": "Portland",
+          "state_code": "OR",
+          "postal_code": "97232",
+          "county": "",
+          "phone": "503-231-6702",
+          "email": "",
+          "latitude": null,
+          "longitude": null
+        }
+      ],
+      "source_page": null,
+      "source_url": "bia.gov/regional-offices/northwest",
+      "last_verified": "2026-03-01"
+    }
+  ]
+}

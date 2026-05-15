@@ -1,0 +1,90 @@
+{
+  "state": "IN",
+  "state_name": "Indiana",
+  "version": "1.0.0",
+  "schema": "luminari-registry-v1",
+  "date_created": "2026-03-08",
+  "layers": {
+    "layer0": "in_layer0_flags.json",
+    "layer1_programs": "in_programs.json",
+    "layer1_cards": "in_layer1_cards.json",
+    "layer2_workflows": "in_workflow_overrides.json",
+    "layer3_oversight": "in_oversight.json",
+    "help": "in_help.json",
+    "foia": "in_foia.json",
+    "tribal": "in_tribal_overrides.json",
+    "county": "in_county_overrides.json",
+    "pipeline_mappings": "in_pipeline_mappings.json",
+    "lens_mappings": "in_lens_mappings.json",
+    "workflow_mappings": "in_workflow_mappings.json"
+  },
+  "status": "active",
+  "validation_status": "complete",
+  "datasets": [
+    "programs",
+    "workflows",
+    "oversight",
+    "layer0_flags",
+    "layer1_cards",
+    "county_overrides",
+    "tribal_overrides",
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings",
+    "foia",
+    "help",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "civil_rights_violation",
+    "consumer_fraud",
+    "family_law",
+    "health_insurance_denial",
+    "medicaid_denial",
+    "snap_denial",
+    "tenant_rights",
+    "wage_theft",
+    "workplace_discrimination",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "benefits_agency",
+    "family_court",
+    "insurer"
+  ],
+  "policy_flags": [
+    "in_hip_2_0_power_account",
+    "in_snap_abawd_work_requirements",
+    "in_minimum_wage_7_25",
+    "in_tanf_24_month_limit",
+    "in_eviction_process_10_day_notice",
+    "in_civil_rights_180_day_sol",
+    "in_ui_390_max_benefit",
+    "in_lake_county_cross_state_complexity"
+  ],
+  "statistics": {
+    "programs": {
+      "total_programs": 20,
+      "categories": {
+        "community_navigation": 6,
+        "healthcare": 6,
+        "housing": 3,
+        "legal_aid": 4,
+        "children_families": 1
+      }
+    },
+    "workflows": {
+      "total_workflows": 4
+    },
+    "oversight": {
+      "total_oversight_bodies": 13,
+      "total_oversight_chains": 3
+    }
+  }
+}

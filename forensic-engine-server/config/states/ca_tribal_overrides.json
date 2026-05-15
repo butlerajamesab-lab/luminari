@@ -1,0 +1,332 @@
+{
+  "meta": {
+    "state": "CA",
+    "layer": "tribal_overrides",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "status": "placeholder",
+    "description": "Tribal overrides \u2014 pending ingestion (109 federally recognized tribes)"
+  },
+  "tribal_entities": [
+    {
+      "tribal_entity_id": "ca_cils",
+      "tribal_entity_name": "California Indian Legal Services (CILS)",
+      "tribal_role": "legal_aid",
+      "tribe": "All CA tribes",
+      "address": "609 S. Escondido Blvd, Escondido, CA 92025",
+      "phone": "800-743-8941",
+      "portal": "https://calindian.org",
+      "services": [
+        "tribal_legal_aid",
+        "ICWA_representation",
+        "housing",
+        "benefits",
+        "federal_trust_land"
+      ],
+      "coverage": "statewide",
+      "city": "Sacramento",
+      "state": "CA"
+    },
+    {
+      "tribal_entity_id": "ca_uihs",
+      "tribal_entity_name": "United Indian Health Services (UIHS)",
+      "tribal_role": "healthcare",
+      "tribe": "Northern CA tribes",
+      "address": "1600 Weeot Way, Arcata, CA 95521",
+      "phone": "707-825-5000",
+      "portal": "https://unitedindianhealthservices.org",
+      "services": [
+        "tribal_health",
+        "dental",
+        "behavioral_health",
+        "pharmacy",
+        "WIC"
+      ],
+      "coverage": "northern_ca",
+      "city": "Sacramento",
+      "state": "CA"
+    },
+    {
+      "tribal_entity_id": "ca_sctca",
+      "tribal_entity_name": "Southern CA Tribal Chairmen's Association (SCTCA)",
+      "tribal_role": "coordination",
+      "tribe": "19 Southern CA tribes",
+      "address": "36146 Pala Temecula Rd, Pala, CA 92059",
+      "phone": "760-742-8600",
+      "portal": "https://sctca.net",
+      "services": [
+        "tribal_tanf",
+        "program_coordination",
+        "employment_training",
+        "FDPIR"
+      ],
+      "coverage": "southern_ca",
+      "city": "Sacramento",
+      "state": "CA"
+    },
+    {
+      "tribal_entity_id": "ca_yurok",
+      "tribal_entity_name": "Yurok Tribe",
+      "tribal_role": "tribal_government",
+      "tribe": "Yurok Tribe",
+      "address": "190 Klamath Blvd, Klamath, CA 95548",
+      "phone": "707-482-1350",
+      "portal": "https://yuroktribe.org",
+      "services": [
+        "tribal_court",
+        "social_services",
+        "ICWA",
+        "housing",
+        "education"
+      ],
+      "coverage": "del_norte_humboldt",
+      "city": "Sacramento",
+      "state": "CA"
+    },
+    {
+      "tribal_entity_id": "ca_hoopa",
+      "tribal_entity_name": "Hoopa Valley Tribe",
+      "tribal_role": "tribal_government",
+      "tribe": "Hoopa Valley Tribe",
+      "address": "PO Box 1348, Hoopa, CA 95546",
+      "phone": "530-625-4211",
+      "portal": "https://hoopa-nsn.gov",
+      "services": [
+        "tribal_court",
+        "social_services",
+        "ICWA",
+        "housing",
+        "TANF"
+      ],
+      "coverage": "humboldt",
+      "city": "Sacramento",
+      "state": "CA"
+    },
+    {
+      "tribal_entity_id": "ca_tule_river",
+      "tribal_entity_name": "Tule River Tribe",
+      "tribal_role": "tribal_government",
+      "tribe": "Tule River Tribe",
+      "address": "PO Box 589, Porterville, CA 93258",
+      "phone": "559-781-4271",
+      "portal": "https://tulerivertribe-nsn.gov",
+      "services": [
+        "tribal_court",
+        "social_services",
+        "ICWA",
+        "housing"
+      ],
+      "coverage": "tulare",
+      "city": "Sacramento",
+      "state": "CA"
+    },
+    {
+      "tribal_entity_id": "ca_round_valley",
+      "tribal_entity_name": "Round Valley Indian Tribes",
+      "tribal_role": "tribal_government",
+      "tribe": "Round Valley Indian Tribes",
+      "address": "77826 Covelo Road, Covelo, CA 95428",
+      "phone": "707-983-6126",
+      "portal": "https://rvit.org",
+      "services": [
+        "tribal_court",
+        "social_services",
+        "ICWA",
+        "housing",
+        "TANF"
+      ],
+      "coverage": "mendocino",
+      "city": "Sacramento",
+      "state": "CA"
+    },
+    {
+      "tribal_entity_id": "ca_uiho_la",
+      "tribal_entity_name": "United American Indian Involvement (UAII) \u2014 Los Angeles",
+      "tribal_role": "urban_indian_health",
+      "tribe": "Urban AI/AN population",
+      "address": "1453 W. Temple Street, Los Angeles, CA 90026",
+      "phone": "213-202-3970",
+      "portal": "https://uaii.org",
+      "services": [
+        "urban_indian_health",
+        "behavioral_health",
+        "substance_abuse",
+        "housing_referral",
+        "cultural_programs"
+      ],
+      "coverage": "los_angeles",
+      "city": "Sacramento",
+      "state": "CA"
+    },
+    {
+      "tribal_entity_id": "ca_nihc_sf",
+      "tribal_entity_name": "Native American Health Center (NAHC) \u2014 San Francisco/Oakland",
+      "tribal_role": "urban_indian_health",
+      "tribe": "Urban AI/AN population",
+      "address": "160 Capp Street, San Francisco, CA 94110",
+      "phone": "415-621-8051",
+      "portal": "https://nativehealth.org",
+      "services": [
+        "urban_indian_health",
+        "dental",
+        "behavioral_health",
+        "WIC",
+        "family_services"
+      ],
+      "coverage": "bay_area",
+      "city": "Sacramento",
+      "state": "CA"
+    },
+    {
+      "tribal_entity_id": "ca_sihc_sd",
+      "tribal_entity_name": "Southern Indian Health Council (SIHC)",
+      "tribal_role": "tribal_health",
+      "tribe": "Southern CA tribes",
+      "address": "4058 Willows Road, Alpine, CA 91901",
+      "phone": "619-445-1188",
+      "portal": "https://sihc.org",
+      "services": [
+        "tribal_health",
+        "dental",
+        "behavioral_health",
+        "pharmacy",
+        "WIC"
+      ],
+      "coverage": "san_diego",
+      "city": "Sacramento",
+      "state": "CA"
+    }
+  ],
+  "icwa_activation_rules": [
+    {
+      "rule_id": "ca_icwa_child_welfare",
+      "trigger_pipeline": "child_welfare",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Apply federal ICWA (25 USC \u00a71901) and CA state ICWA (AB 3176 / WIC \u00a7224) standards",
+        "CA ICWA requires 'active efforts' (higher than 'reasonable efforts') to prevent removal",
+        "Contact CILS (800-743-8941) for ICWA legal representation",
+        "Notify specific tribal ICWA office if tribe identified",
+        "If tribe unknown, contact SCTCA or CILS for tribal identification assistance",
+        "Qualified expert witness required for foster care placement or TPR"
+      ],
+      "routing_entities": [
+        "ca_cils",
+        "ca_sctca",
+        "ca_yurok",
+        "ca_hoopa"
+      ]
+    },
+    {
+      "rule_id": "ca_icwa_custody",
+      "trigger_pipeline": "custody_dispute",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Determine if ICWA applies to custody proceeding",
+        "Contact CILS for tribal family law representation",
+        "Verify tribal membership or eligibility for membership",
+        "Ensure tribal court jurisdiction is considered"
+      ],
+      "routing_entities": [
+        "ca_cils"
+      ]
+    },
+    {
+      "rule_id": "ca_tribal_tanf_benefits",
+      "trigger_pipeline": "benefits_denial",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Check eligibility for CA Tribal TANF (operated by SCTCA and other tribal organizations)",
+        "Tribal TANF may have different eligibility rules than CalWORKs",
+        "Contact SCTCA (760-742-8600) for Southern CA tribal TANF",
+        "Contact specific tribal social services for reservation-based TANF"
+      ],
+      "routing_entities": [
+        "ca_sctca",
+        "ca_cils"
+      ]
+    }
+  ],
+  "urban_indian_programs": [
+    {
+      "program_id": "ca_uaii_la",
+      "name": "United American Indian Involvement (UAII)",
+      "city": "Los Angeles",
+      "phone": "213-202-3970",
+      "services": [
+        "health",
+        "behavioral_health",
+        "substance_abuse",
+        "housing_referral",
+        "cultural_programs"
+      ]
+    },
+    {
+      "program_id": "ca_nahc_sf",
+      "name": "Native American Health Center (NAHC)",
+      "city": "San Francisco",
+      "phone": "415-621-8051",
+      "services": [
+        "health",
+        "dental",
+        "behavioral_health",
+        "WIC",
+        "family_services"
+      ]
+    },
+    {
+      "program_id": "ca_sihc_sd",
+      "name": "Southern Indian Health Council (SIHC)",
+      "city": "Alpine",
+      "phone": "619-445-1188",
+      "services": [
+        "health",
+        "dental",
+        "behavioral_health",
+        "pharmacy",
+        "WIC"
+      ]
+    },
+    {
+      "program_id": "ca_sacramento_native_american_health",
+      "name": "Sacramento Native American Health Center",
+      "city": "Sacramento",
+      "phone": "916-341-0575",
+      "services": [
+        "health",
+        "dental",
+        "behavioral_health",
+        "community_wellness"
+      ]
+    }
+  ],
+  "tribal_context": {
+    "total_federally_recognized_tribes": 109,
+    "state_recognized_tribes": "California has the most federally recognized tribes of any state (109). Many are small rancherias.",
+    "icwa_state_law": "California ICWA (AB 3176, WIC \u00a7224) extends federal ICWA protections with additional state requirements including active efforts standard.",
+    "tribal_tanf_programs": "Multiple tribal TANF programs operated by tribal organizations (SCTCA, individual tribes) with distinct eligibility rules."
+  },
+  "tribal_courts": [
+    {
+      "court_id": "ca_yurok_tribal_court",
+      "name": "Yurok Tribal Court",
+      "tribe": "Yurok Tribe",
+      "phone": "707-482-1350",
+      "jurisdiction": "Civil, family, juvenile, ICWA matters on Yurok reservation"
+    },
+    {
+      "court_id": "ca_hoopa_tribal_court",
+      "name": "Hoopa Valley Tribal Court",
+      "tribe": "Hoopa Valley Tribe",
+      "phone": "530-625-4211",
+      "jurisdiction": "Civil, family, juvenile, ICWA matters on Hoopa reservation"
+    },
+    {
+      "court_id": "ca_tule_river_tribal_court",
+      "name": "Tule River Tribal Court",
+      "tribe": "Tule River Tribe",
+      "phone": "559-781-4271",
+      "jurisdiction": "Civil, family, juvenile matters on Tule River reservation"
+    }
+  ]
+}

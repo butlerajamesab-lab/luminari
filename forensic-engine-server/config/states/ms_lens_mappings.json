@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "state": "MS",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "ms_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "ms_mississippi_tanf_mdhs",
+        "ms_mississippi_ui_mdes",
+        "ms_mississippi_liheap_mdhs",
+        "ms_mississippi_veterans_affairs_board"
+      ],
+      "oversight_chains": [
+        "general",
+        "employer",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "ms_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "ms_coast_legal_services_gulf_coast"
+      ],
+      "oversight_chains": [
+        "general",
+        "employer",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "ms_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "ms_delta_health_center_mound_bayou_oldest_r",
+        "ms_mississippi_medicaid_dom_categorical_onl",
+        "ms_ummc_university_of_mississippi_medical_c",
+        "ms_mississippi_primary_health_care_associat",
+        "ms_choctaw_health_center_mississippi_band_o"
+      ],
+      "oversight_chains": [
+        "general",
+        "employer",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "ms_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "ms_mississippi_snap_dhs_food_assistance_mdh",
+        "ms_mississippi_food_network_mid_south_food_",
+        "ms_wic_mississippi"
+      ],
+      "oversight_chains": [
+        "general",
+        "employer",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "ms_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "ms_mississippi_center_for_justice_mcj",
+        "ms_ms_band_of_choctaw_indians_social_servic",
+        "ms_ms_dv_program_hotline"
+      ],
+      "oversight_chains": [
+        "general",
+        "employer",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ]
+    }
+  ]
+}

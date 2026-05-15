@@ -1,0 +1,330 @@
+{
+  "meta": {
+    "state": "DE",
+    "version": "3.0",
+    "date": "2026-03-09"
+  },
+  "oversight_chains": [
+    {
+      "chain": "discrimination",
+      "bodies": [
+        {
+          "body_id": "de_ddol_discrimination",
+          "oversight_body": "de_ddol_discrimination",
+          "name": "de_ddol_discrimination",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "body_id": "eeoc_philadelphia",
+          "oversight_body": "eeoc_philadelphia",
+          "name": "eeoc_philadelphia",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DE"
+    },
+    {
+      "chain": "labor",
+      "bodies": [
+        {
+          "body_id": "de_dol_labor",
+          "oversight_body": "de_dol_labor",
+          "name": "de_dol_labor",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DE"
+    },
+    {
+      "chain": "benefits",
+      "bodies": [
+        {
+          "body_id": "de_oah",
+          "oversight_body": "de_oah",
+          "name": "de_oah",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DE"
+    },
+    {
+      "chain": "utilities",
+      "bodies": [
+        {
+          "body_id": "de_psc",
+          "oversight_body": "de_psc",
+          "name": "de_psc",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DE"
+    },
+    {
+      "chain": "insurance",
+      "bodies": [
+        {
+          "body_id": "de_insurance",
+          "oversight_body": "de_insurance",
+          "name": "de_insurance",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DE"
+    },
+    {
+      "chain": "consumer",
+      "bodies": [
+        {
+          "body_id": "de_ag_consumer",
+          "oversight_body": "de_ag_consumer",
+          "name": "de_ag_consumer",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DE"
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "de_med_board",
+          "name": "Delaware Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Delaware Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DE"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "de_patient_adv",
+          "name": "Delaware Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Delaware Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DE"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "de_health_dept",
+          "name": "Delaware Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Delaware Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DE"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DE"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "de_pharm_board",
+          "name": "Delaware Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Delaware Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DE"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "de_pa",
+          "name": "Delaware Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Delaware Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DE"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "de_mha",
+          "name": "Delaware Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Delaware Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DE"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DE"
+    }
+  ],
+  "bodies": [
+    {
+      "body_id": "de_ddol_discrimination",
+      "name": "Delaware DDOL - Discrimination",
+      "jurisdiction": "Primary \u2014 civil rights",
+      "phone": "302-761-8200",
+      "website": "dol.delaware.gov/discrimination",
+      "reports": "Employment discrimination",
+      "sol": "120 DAYS \u2014 SHORTEST IN REGISTRY \u2014 FATAL"
+    },
+    {
+      "body_id": "eeoc_philadelphia",
+      "name": "EEOC - Philadelphia District",
+      "jurisdiction": "Federal hook",
+      "phone": "267-589-9700",
+      "website": "eeoc.gov",
+      "reports": "Federal discrimination",
+      "sol": "300 days \u2014 FATAL"
+    },
+    {
+      "body_id": "de_dol_labor",
+      "name": "DE DOL - Labor Law Enforcement",
+      "jurisdiction": "Primary \u2014 wages",
+      "phone": "302-761-8200",
+      "website": "dol.delaware.gov",
+      "reports": "Wage claims",
+      "sol": "3 years"
+    },
+    {
+      "body_id": "de_oah",
+      "name": "DE OAH",
+      "jurisdiction": "State \u2014 benefits",
+      "phone": "302-744-4500",
+      "website": "oah.delaware.gov",
+      "reports": "SNAP/Medicaid/TANF hearings",
+      "sol": "30 days"
+    },
+    {
+      "body_id": "de_psc",
+      "name": "DE Public Service Commission",
+      "jurisdiction": "Utilities",
+      "phone": "800-282-8574",
+      "website": "depsc.delaware.gov",
+      "reports": "Utility disputes",
+      "sol": "Varies"
+    },
+    {
+      "body_id": "de_insurance",
+      "name": "DE Dept of Insurance",
+      "jurisdiction": "Insurance",
+      "phone": "800-282-8611",
+      "website": "insurance.delaware.gov",
+      "reports": "Insurance complaints",
+      "sol": "Varies"
+    },
+    {
+      "body_id": "de_ag_consumer",
+      "name": "DE AG Consumer Protection",
+      "jurisdiction": "State escalation",
+      "phone": "800-220-5424",
+      "website": "ago.delaware.gov/consumer",
+      "reports": "Consumer fraud",
+      "sol": "3 years"
+    }
+  ]
+}

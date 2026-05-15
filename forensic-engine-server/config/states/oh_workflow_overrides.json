@@ -1,0 +1,258 @@
+{
+  "meta": {
+    "state": "OH",
+    "state_name": "Ohio",
+    "layer": "workflow_overrides",
+    "version": "1.0.0",
+    "date_created": "2026-03-07",
+    "source": "Luminari OH Three-Layer Registry"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "housing_violation",
+      "state": "OH",
+      "steps": [
+        {
+          "step": 1,
+          "label": "Document All Violations",
+          "details": "Photograph all violations with timestamps. Save all landlord communications. Note dates and health impacts. Ohio does not require written leases \u2014 month-to-month oral leases are valid.",
+          "deadline": "Document immediately \u2014 Ohio eviction timeline is extremely fast",
+          "contacts": [
+            "Personal records"
+          ],
+          "statutes": [
+            "ORC \u00a75321 (Landlord-Tenant Act)"
+          ]
+        },
+        {
+          "step": 2,
+          "label": "Send Written Repair Notice",
+          "details": "Ohio Landlord-Tenant Act (ORC \u00a75321.07): send written notice to landlord. Landlord has reasonable time \u2014 30 days standard, less for emergency. After notice expires: tenant may terminate lease, make repairs and deduct up to one month's rent, or sue for damages. Send certified mail.",
+          "deadline": "PREREQUISITE before withholding rent or repair-and-deduct",
+          "contacts": [
+            "Landlord (certified mail)",
+            "File 311 housing complaint simultaneously"
+          ],
+          "statutes": [
+            "ORC \u00a75321.07"
+          ]
+        },
+        {
+          "step": 3,
+          "label": "File Code Enforcement Complaint",
+          "details": "Contact local code enforcement: Columbus 311 (614-645-3111), Cleveland Housing Court/Building Dept (216-664-2493), Cincinnati Neighborhood Services (513-591-6000). Request written inspection report \u2014 critical evidence.",
+          "deadline": null,
+          "contacts": [
+            "Columbus: 614-645-3111",
+            "Cleveland: 216-664-2493",
+            "Cincinnati: 513-591-6000"
+          ],
+          "statutes": [
+            "Local building codes"
+          ]
+        },
+        {
+          "step": 4,
+          "label": "Contact Legal Aid Immediately \u2014 Same Day for Eviction",
+          "details": "Ohio's eviction timeline is too fast to wait. Contact legal aid the day you receive any notice.",
+          "deadline": "Contact same day as any eviction notice \u2014 do not wait for hearing",
+          "contacts": [
+            "Legal Aid Columbus: 614-224-8374",
+            "Legal Aid Cleveland: 216-687-1900",
+            "Legal Aid Cincinnati: 513-241-9400",
+            "ABLE Toledo: 419-255-0814",
+            "Community Legal Aid Akron: 330-535-4191",
+            "Ohio Legal Help: ohiolegalhelp.org"
+          ],
+          "statutes": [
+            "ORC \u00a71923 (Forcible Entry and Detainer)"
+          ]
+        },
+        {
+          "step": 5,
+          "label": "Assert Retaliation Protection",
+          "details": "ORC \u00a75321.02: landlord cannot increase rent, decrease services, or file eviction in retaliation for good-faith habitability complaint or code enforcement contact. 90-day presumption period.",
+          "deadline": "90-day retaliation presumption",
+          "contacts": [
+            "Legal aid + code enforcement record"
+          ],
+          "statutes": [
+            "ORC \u00a75321.02"
+          ]
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft",
+      "state": "OH",
+      "steps": [
+        {
+          "step": 1,
+          "label": "Document Wages Owed",
+          "details": "Gather pay stubs, time records, offer letter. Ohio minimum wage: $10.45/hr (2025). Overtime: 1.5x after 40 hrs (FLSA). Final paycheck: Ohio Prompt Pay Act (ORC \u00a74113.15) \u2014 due by next regularly scheduled payday after separation. Employer owes 6% penalty per month on late final pay.",
+          "deadline": "Ohio SOL: 2 years from date wages were due",
+          "contacts": [
+            "Personal records"
+          ],
+          "statutes": [
+            "ORC \u00a74113.15 (Prompt Pay Act)",
+            "ORC \u00a74111 (Minimum Fair Wage)"
+          ]
+        },
+        {
+          "step": 2,
+          "label": "Send Written Wage Demand",
+          "details": "Formal written demand specifying hours, rate, total owed. Final paycheck demand triggers 6% monthly penalty under Ohio Prompt Pay Act.",
+          "deadline": "Final pay due by next scheduled payday after separation",
+          "contacts": [
+            "Employer \u2014 certified mail + email"
+          ],
+          "statutes": [
+            "ORC \u00a74113.15"
+          ]
+        },
+        {
+          "step": 3,
+          "label": "File Ohio DOL Complaint",
+          "details": "Ohio Department of Commerce, Division of Labor and Worker Safety: 614-644-2239. Handles minimum wage and Prompt Pay Act violations. 2-year SOL.",
+          "deadline": "2-year SOL \u2014 file promptly",
+          "contacts": [
+            "Ohio DOL: 614-644-2239"
+          ],
+          "statutes": [
+            "ORC \u00a74111",
+            "ORC \u00a74113.15"
+          ]
+        },
+        {
+          "step": 4,
+          "label": "File Federal WHD Simultaneously",
+          "details": "Federal WHD Columbus: 614-224-6670. FLSA allows liquidated (double) damages. File same day as Ohio DOL.",
+          "deadline": "FLSA: 2 years (3 if willful)",
+          "contacts": [
+            "WHD Columbus: 614-224-6670",
+            "Cleveland: 216-522-3892",
+            "Cincinnati: 513-684-2942"
+          ],
+          "statutes": [
+            "FLSA 29 USC \u00a7201"
+          ]
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial",
+      "state": "OH",
+      "steps": [
+        {
+          "step": 1,
+          "label": "Review Notice of Action",
+          "details": "Read the Agency Action Notice carefully. Note: reason, effective date, appeal deadline (usually 30 days for Ohio state benefits). For UI: 21-day deadline from mailing date.",
+          "deadline": "Appeal deadline on notice \u2014 typically 30 days for benefits, 21 days for UI",
+          "contacts": [
+            "Personal records"
+          ],
+          "statutes": [
+            "ORC \u00a75101 (Public Assistance)",
+            "Ohio Admin Code \u00a75101:6"
+          ]
+        },
+        {
+          "step": 2,
+          "label": "Request State Hearing + Aid-Continuing",
+          "details": "File written hearing request within 30 days of notice. CRITICAL: simultaneously request continuation of benefits during appeal. Ohio: benefits continue during appeal if timely requested.",
+          "deadline": "30 days from notice \u2014 FATAL for most programs",
+          "contacts": [
+            "Ohio JFS State Hearings: 614-466-1654",
+            "County JFS office"
+          ],
+          "statutes": [
+            "Ohio Admin Code \u00a75101:6"
+          ]
+        },
+        {
+          "step": 3,
+          "label": "Prepare and Attend Hearing",
+          "details": "Contact legal aid for representation before hearing. Request case record 2 weeks before hearing date. Gather all supporting documents, medical records, employment records.",
+          "deadline": "Request case file 2 weeks before hearing",
+          "contacts": [
+            "Legal Aid (see contacts)",
+            "Ohio JFS: 614-466-1654"
+          ],
+          "statutes": [
+            "ORC \u00a75101"
+          ]
+        },
+        {
+          "step": 4,
+          "label": "Ohio UI Appeals (ODJFS)",
+          "details": "21-day appeal deadline \u2014 shorter than neighboring states. ODJFS unemployment appeal: 877-644-6562. Review Commission for further appeal. Circuit Court appeal within 30 days of Review Commission decision.",
+          "deadline": "21 days from determination mailing \u2014 FATAL",
+          "contacts": [
+            "ODJFS: 877-644-6562"
+          ],
+          "statutes": [
+            "ORC \u00a74141"
+          ]
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_denial",
+      "state": "OH",
+      "steps": [
+        {
+          "step": 1,
+          "label": "Document Denial",
+          "details": "Gather denial letter/EOB, policy, medical records, physician letter of medical necessity.",
+          "deadline": null,
+          "contacts": [
+            "Personal records + physician"
+          ],
+          "statutes": [
+            "ORC \u00a73901 (Insurance Code)"
+          ]
+        },
+        {
+          "step": 2,
+          "label": "File Internal Appeal",
+          "details": "File with insurer within 180 days of denial. For Ohio Medicaid managed care: file grievance within 90 days. Request all documentation insurer relied upon.",
+          "deadline": "180 days from denial (private) \u00b7 90 days (Medicaid managed care)",
+          "contacts": [
+            "Insurer/managed care plan \u2014 certified mail"
+          ],
+          "statutes": [
+            "ORC \u00a73901",
+            "ORC \u00a71751 (HMO Act)"
+          ]
+        },
+        {
+          "step": 3,
+          "label": "Ohio Department of Insurance (ODI) Complaint / External Review",
+          "details": "If internal appeal denied: file ODI complaint and request external review. Ohio has independent external review \u2014 30 business days for non-urgent, 72 hours for urgent. ODI Consumer Hotline: 800-686-1526.",
+          "deadline": "30 business days (non-urgent) / 72 hours (urgent)",
+          "contacts": [
+            "Ohio DOI: 800-686-1526"
+          ],
+          "statutes": [
+            "ORC \u00a73901",
+            "ORC \u00a73922 (External Review)"
+          ]
+        },
+        {
+          "step": 4,
+          "label": "Ohio Medicaid Managed Care \u2014 State Fair Hearing",
+          "details": "Medicaid managed care denial: file state fair hearing request through Ohio JFS within 120 days. Benefits continue during appeal.",
+          "deadline": "120 days from managed care denial for state hearing",
+          "contacts": [
+            "Ohio JFS Hearings: 614-466-1654",
+            "ODM: 800-324-8680"
+          ],
+          "statutes": [
+            "Ohio Admin Code \u00a75160"
+          ]
+        }
+      ]
+    }
+  ]
+}

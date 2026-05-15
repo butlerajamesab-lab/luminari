@@ -1,0 +1,130 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "description": "Required and recommended documents per pipeline. Used for evidence gap detection — the engine compares uploaded documents against the required list and flags missing items.",
+    "date_created": "2026-03-06",
+    "pipelines_covered": 9,
+    "disclaimer": "Document requirements vary by jurisdiction and case facts. This list covers the most commonly needed evidence. Consult legal aid for case-specific requirements."
+  },
+  "pipelines": [
+    {
+      "pipeline_id": "domestic_violence",
+      "documents": [
+        { "doc_id": "dv_incident_log", "label": "Incident log / timeline of abuse", "category": "narrative", "priority": "required", "notes": "Dated entries describing each incident. Include who, what, when, where. Photos of injuries with timestamps." },
+        { "doc_id": "dv_photos_injuries", "label": "Photos of injuries or property damage", "category": "photographic", "priority": "required", "notes": "Timestamped photos. Include ruler or object for scale. Multiple angles." },
+        { "doc_id": "dv_police_reports", "label": "Police reports", "category": "official", "priority": "required", "notes": "All police reports from DV incidents. Request copies from the department if not provided." },
+        { "doc_id": "dv_medical_records", "label": "Medical records documenting injuries", "category": "medical", "priority": "required", "notes": "ER visits, doctor notes, mental health records. Request directly from provider." },
+        { "doc_id": "dv_protective_order", "label": "Protective/restraining order (if filed)", "category": "legal", "priority": "recommended", "notes": "Copy of TRO, permanent order, or any modifications." },
+        { "doc_id": "dv_communications", "label": "Threatening texts, emails, voicemails", "category": "communications", "priority": "required", "notes": "Screenshots with metadata visible (date, sender). Do not edit or crop." },
+        { "doc_id": "dv_witness_statements", "label": "Witness statements or declarations", "category": "testimony", "priority": "recommended", "notes": "Signed statements from witnesses, neighbors, family, or DV advocates." },
+        { "doc_id": "dv_safety_plan", "label": "Safety plan documentation", "category": "planning", "priority": "recommended", "notes": "From DV shelter or advocate. Documents the safety planning process." },
+        { "doc_id": "dv_financial_records", "label": "Financial records showing economic abuse", "category": "financial", "priority": "recommended", "notes": "Bank statements, credit cards, evidence of financial control or coercion." }
+      ]
+    },
+    {
+      "pipeline_id": "tenant_rights",
+      "documents": [
+        { "doc_id": "tr_lease_agreement", "label": "Lease or rental agreement", "category": "legal", "priority": "required", "notes": "Full lease including all addenda, amendments, and house rules." },
+        { "doc_id": "tr_notice_to_landlord", "label": "Written notice to landlord (repair requests)", "category": "communications", "priority": "required", "notes": "Dated written requests for repairs. Keep copies of all correspondence." },
+        { "doc_id": "tr_photos_conditions", "label": "Photos/videos of housing conditions", "category": "photographic", "priority": "required", "notes": "Timestamped photos of habitability issues: mold, pests, broken fixtures, water damage." },
+        { "doc_id": "tr_eviction_notice", "label": "Eviction notice / pay-or-vacate notice", "category": "legal", "priority": "required", "notes": "The original notice served. Note date received and method of service." },
+        { "doc_id": "tr_rent_receipts", "label": "Rent payment receipts / bank records", "category": "financial", "priority": "required", "notes": "Proof of all rent payments. Bank statements, canceled checks, money order receipts." },
+        { "doc_id": "tr_code_violations", "label": "Code enforcement inspection reports", "category": "official", "priority": "recommended", "notes": "Reports from city/county code enforcement or health department inspections." },
+        { "doc_id": "tr_communications", "label": "All landlord communications", "category": "communications", "priority": "required", "notes": "Texts, emails, letters from landlord. Include dates and context." },
+        { "doc_id": "tr_security_deposit", "label": "Security deposit receipt and move-out documentation", "category": "financial", "priority": "recommended", "notes": "Original deposit receipt, move-in/move-out inspection forms, deduction itemization." },
+        { "doc_id": "tr_witness_statements", "label": "Neighbor or witness statements", "category": "testimony", "priority": "recommended", "notes": "Statements from neighbors about conditions, harassment, or retaliation." }
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "documents": [
+        { "doc_id": "ins_denial_letter", "label": "Insurance denial letter / EOB", "category": "official", "priority": "required", "notes": "The original denial letter with reason codes. Explanation of Benefits (EOB) if applicable." },
+        { "doc_id": "ins_policy", "label": "Insurance policy / plan documents", "category": "legal", "priority": "required", "notes": "Full policy, Summary of Benefits and Coverage (SBC), Evidence of Coverage (EOC)." },
+        { "doc_id": "ins_claim_submission", "label": "Original claim submission", "category": "official", "priority": "required", "notes": "Copy of the claim as submitted. Include all supporting documentation sent." },
+        { "doc_id": "ins_medical_records", "label": "Medical records supporting claim", "category": "medical", "priority": "required", "notes": "Doctor's notes, test results, treatment plans justifying medical necessity." },
+        { "doc_id": "ins_doctor_letter", "label": "Letter of medical necessity from treating physician", "category": "medical", "priority": "required", "notes": "Physician's letter explaining why the treatment/service is medically necessary." },
+        { "doc_id": "ins_appeal_letters", "label": "Internal appeal letters and responses", "category": "legal", "priority": "required", "notes": "All appeal correspondence. Track dates carefully for external review deadlines." },
+        { "doc_id": "ins_prior_auth", "label": "Prior authorization documentation", "category": "official", "priority": "recommended", "notes": "Prior auth requests, approvals, or denials. Evidence that PA was obtained if required." },
+        { "doc_id": "ins_communications", "label": "All insurer communications", "category": "communications", "priority": "required", "notes": "Call logs with dates/times/rep names, emails, letters. Document every contact." },
+        { "doc_id": "ins_billing_records", "label": "Medical billing records", "category": "financial", "priority": "recommended", "notes": "Itemized bills, CPT/ICD codes, provider billing statements." }
+      ]
+    },
+    {
+      "pipeline_id": "wage_theft",
+      "documents": [
+        { "doc_id": "wt_pay_stubs", "label": "Pay stubs / wage statements", "category": "financial", "priority": "required", "notes": "All available pay stubs. Note discrepancies in hours, rate, overtime, deductions." },
+        { "doc_id": "wt_time_records", "label": "Time records / clock-in logs", "category": "financial", "priority": "required", "notes": "Personal time log, employer timesheets, clock-in/out records, GPS data." },
+        { "doc_id": "wt_employment_contract", "label": "Employment contract / offer letter", "category": "legal", "priority": "required", "notes": "Written agreement, offer letter, or any document stating pay rate and terms." },
+        { "doc_id": "wt_schedule", "label": "Work schedules", "category": "official", "priority": "required", "notes": "Posted schedules, shift assignments, evidence of hours actually worked vs. scheduled." },
+        { "doc_id": "wt_communications", "label": "Employer communications about pay/hours", "category": "communications", "priority": "required", "notes": "Texts, emails, memos about pay changes, overtime policy, or scheduling." },
+        { "doc_id": "wt_bank_statements", "label": "Bank statements showing deposits", "category": "financial", "priority": "recommended", "notes": "Direct deposit records corroborating pay amounts and dates." },
+        { "doc_id": "wt_coworker_statements", "label": "Coworker statements / declarations", "category": "testimony", "priority": "recommended", "notes": "Statements from coworkers about shared conditions, off-the-clock work, or missing breaks." },
+        { "doc_id": "wt_handbook", "label": "Employee handbook / company policies", "category": "official", "priority": "recommended", "notes": "Company policies on overtime, breaks, pay periods, deductions." }
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "documents": [
+        { "doc_id": "cw_removal_order", "label": "Court order for removal / shelter care order", "category": "legal", "priority": "required", "notes": "The original removal order. Note whether emergency or planned removal." },
+        { "doc_id": "cw_case_plan", "label": "Case plan / service plan", "category": "official", "priority": "required", "notes": "The agency's case plan with required services, visitation schedule, and benchmarks." },
+        { "doc_id": "cw_visitation_records", "label": "Visitation logs and records", "category": "official", "priority": "required", "notes": "All visitation records. Note any denied or cancelled visits with reasons." },
+        { "doc_id": "cw_service_completion", "label": "Service completion certificates", "category": "official", "priority": "required", "notes": "Proof of completed services: parenting classes, counseling, substance abuse treatment, etc." },
+        { "doc_id": "cw_caseworker_reports", "label": "Caseworker reports / court reports", "category": "official", "priority": "required", "notes": "All reports filed with the court. Review for accuracy and challenge errors." },
+        { "doc_id": "cw_icwa_documentation", "label": "ICWA eligibility documentation", "category": "tribal", "priority": "required", "notes": "Tribal enrollment, ancestry documentation, ICWA notice compliance. Critical for AI/AN families." },
+        { "doc_id": "cw_medical_records", "label": "Child's medical and educational records", "category": "medical", "priority": "recommended", "notes": "Health records, school records, IEPs, therapy notes." },
+        { "doc_id": "cw_communications", "label": "All agency communications", "category": "communications", "priority": "required", "notes": "Emails, letters, texts from caseworkers. Document all contacts with dates." },
+        { "doc_id": "cw_character_references", "label": "Character references / support letters", "category": "testimony", "priority": "recommended", "notes": "Letters from family, community members, employers, clergy supporting reunification." }
+      ]
+    },
+    {
+      "pipeline_id": "debt_collection_abuse",
+      "documents": [
+        { "doc_id": "dc_validation_notice", "label": "Debt validation notice", "category": "official", "priority": "required", "notes": "The initial notice from the collector. Must include amount, creditor name, and dispute rights." },
+        { "doc_id": "dc_original_contract", "label": "Original credit agreement / contract", "category": "legal", "priority": "required", "notes": "The original agreement creating the debt. Request from collector if not available." },
+        { "doc_id": "dc_call_logs", "label": "Call logs documenting collector contacts", "category": "communications", "priority": "required", "notes": "Date, time, caller ID, what was said. Note harassment, threats, or calls to third parties." },
+        { "doc_id": "dc_letters", "label": "All collection letters received", "category": "communications", "priority": "required", "notes": "Keep all letters. Note any false statements, threats, or missing disclosures." },
+        { "doc_id": "dc_dispute_letter", "label": "Written dispute letter (copy)", "category": "legal", "priority": "required", "notes": "Copy of your dispute letter sent within 30 days. Keep proof of mailing (certified mail receipt)." },
+        { "doc_id": "dc_payment_records", "label": "Payment history / account statements", "category": "financial", "priority": "recommended", "notes": "All payments made. Bank statements showing payments. Evidence of last payment date for SOL." },
+        { "doc_id": "dc_credit_reports", "label": "Credit reports showing the debt", "category": "financial", "priority": "recommended", "notes": "Pull from all 3 bureaus. Note any inaccurate reporting for FCRA claims." }
+      ]
+    },
+    {
+      "pipeline_id": "guardianship_abuse",
+      "documents": [
+        { "doc_id": "ga_guardianship_order", "label": "Guardianship order / letters of guardianship", "category": "legal", "priority": "required", "notes": "The court order establishing guardianship. Note scope of authority granted." },
+        { "doc_id": "ga_annual_reports", "label": "Guardian's annual reports / accountings", "category": "official", "priority": "required", "notes": "All annual reports filed with the court. Review for accuracy and completeness." },
+        { "doc_id": "ga_financial_records", "label": "Ward's financial records", "category": "financial", "priority": "required", "notes": "Bank statements, investment accounts, property records. Compare against guardian's accountings." },
+        { "doc_id": "ga_medical_records", "label": "Ward's medical records", "category": "medical", "priority": "required", "notes": "Medical records, care plans, medication logs. Evidence of neglect or inappropriate treatment." },
+        { "doc_id": "ga_visitor_logs", "label": "Visitor logs / access records", "category": "official", "priority": "recommended", "notes": "Records of who visited the ward. Note any isolation or denied access to family." },
+        { "doc_id": "ga_communications", "label": "Communications with guardian", "category": "communications", "priority": "required", "notes": "All correspondence. Note any refusal to communicate or provide information." },
+        { "doc_id": "ga_expert_evaluation", "label": "Independent capacity evaluation", "category": "medical", "priority": "recommended", "notes": "Independent evaluation of ward's capacity. May support restoration of rights." }
+      ]
+    },
+    {
+      "pipeline_id": "elder_abuse",
+      "documents": [
+        { "doc_id": "ea_incident_documentation", "label": "Incident documentation / abuse log", "category": "narrative", "priority": "required", "notes": "Dated entries describing each incident of abuse, neglect, or exploitation." },
+        { "doc_id": "ea_photos", "label": "Photos of injuries, conditions, or environment", "category": "photographic", "priority": "required", "notes": "Timestamped photos of injuries, living conditions, or facility conditions." },
+        { "doc_id": "ea_medical_records", "label": "Medical records documenting injuries/neglect", "category": "medical", "priority": "required", "notes": "ER visits, doctor notes, weight records, medication logs, bedsore documentation." },
+        { "doc_id": "ea_financial_records", "label": "Financial records (for financial exploitation)", "category": "financial", "priority": "required", "notes": "Bank statements, POA documents, property transfers, unusual withdrawals." },
+        { "doc_id": "ea_facility_records", "label": "Facility records / care plans", "category": "official", "priority": "required", "notes": "Care plans, staffing records, incident reports, inspection results." },
+        { "doc_id": "ea_aps_reports", "label": "APS investigation reports", "category": "official", "priority": "recommended", "notes": "Reports from Adult Protective Services investigations." },
+        { "doc_id": "ea_witness_statements", "label": "Witness statements from staff, family, visitors", "category": "testimony", "priority": "recommended", "notes": "Statements from anyone who observed abuse, neglect, or exploitation." },
+        { "doc_id": "ea_poa_documents", "label": "Power of attorney / advance directives", "category": "legal", "priority": "recommended", "notes": "POA documents, healthcare directives, POLST. Verify who has legal authority." }
+      ]
+    },
+    {
+      "pipeline_id": "family_separation_case",
+      "documents": [
+        { "doc_id": "fs_custody_order", "label": "Current custody/visitation order", "category": "legal", "priority": "required", "notes": "The most recent court order governing custody and visitation." },
+        { "doc_id": "fs_parenting_plan", "label": "Parenting plan", "category": "legal", "priority": "required", "notes": "The court-approved parenting plan with schedules, decision-making authority." },
+        { "doc_id": "fs_violation_log", "label": "Log of custody order violations", "category": "narrative", "priority": "required", "notes": "Dated entries documenting each violation: denied visitation, late returns, no-shows." },
+        { "doc_id": "fs_communications", "label": "Co-parent communications", "category": "communications", "priority": "required", "notes": "Texts, emails, app messages (OurFamilyWizard, TalkingParents). Do not edit." },
+        { "doc_id": "fs_child_records", "label": "Child's school and medical records", "category": "official", "priority": "recommended", "notes": "School records, attendance, grades, medical records, therapy notes." },
+        { "doc_id": "fs_witness_declarations", "label": "Witness declarations", "category": "testimony", "priority": "recommended", "notes": "Statements from teachers, therapists, family members, or others with relevant observations." },
+        { "doc_id": "fs_financial_records", "label": "Financial records (for support issues)", "category": "financial", "priority": "recommended", "notes": "Income records, tax returns, child support payment records." },
+        { "doc_id": "fs_gal_report", "label": "Guardian ad litem / custody evaluator report", "category": "official", "priority": "recommended", "notes": "GAL or custody evaluator reports. Review for accuracy and challenge errors." }
+      ]
+    }
+  ]
+}

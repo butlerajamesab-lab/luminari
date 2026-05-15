@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "state": "AS",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "as_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "as_american_samoa_snap_nutrition_assistance",
+        "as_fa_asamoa_communal_safety_net_invisible_",
+        "as_wic_american_samoa"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "general",
+        "insurer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "as_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "as_american_samoa_tanf_dhss",
+        "as_liheap_american_samoa",
+        "as_american_samoa_head_start"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "general",
+        "insurer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "as_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "as_american_samoa_medicaid_asdhss",
+        "as_no_unemployment_insurance_critical",
+        "as_lbj_tropical_medical_center_only_hospita",
+        "as_as_dhss_central_social_services_agency"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "general",
+        "insurer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "as_lens_employment",
+      "lens_type": "employment",
+      "programs": [
+        "as_american_samoa_community_college_ascc",
+        "as_as_economic_development_planning_office_",
+        "as_as_department_of_education"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "general",
+        "insurer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "as_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "as_as_bar_association_legal_aid_referral"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "general",
+        "insurer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "as_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "as_veterans_services_as_national_guard_va_h",
+        "as_as_visitors_bureau_emergency_management_"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "general",
+        "insurer",
+        "utility"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,186 @@
+{
+  "meta": {
+    "state": "AR",
+    "version": "3.0",
+    "date": "2026-03-09",
+    "program_count": 16
+  },
+  "programs": [
+    {
+      "program_id": "ar_snap",
+      "program_name": "SNAP / Food Assistance",
+      "category": "food",
+      "phone": "501-682-8375",
+      "website": "access.arkansas.gov",
+      "address": "700 Main St, Little Rock, AR 72201",
+      "eligibility": "Income <130% FPL. ABAWD active.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ar_wic",
+      "program_name": "WIC",
+      "category": "food",
+      "phone": "501-661-2169",
+      "website": "healthy.arkansas.gov/wic",
+      "eligibility": "Pregnant/postpartum, infants, children under 5. Income <185% FPL.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ar_arhome",
+      "program_name": "ARHOME / Arkansas Medicaid",
+      "category": "healthcare",
+      "phone": "888-987-1200",
+      "website": "access.arkansas.gov",
+      "eligibility": "Adults 19-64 to 138% FPL (expanded via Private Option/ARHOME).",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ar_arkids",
+      "program_name": "ARKids First (CHIP)",
+      "category": "healthcare",
+      "phone": "888-987-1200",
+      "eligibility": "Children under 19, family income up to 200% FPL.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ar_tanf_tea",
+      "program_name": "TANF (TEA)",
+      "category": "cash_assistance",
+      "phone": "501-682-8375",
+      "website": "access.arkansas.gov",
+      "eligibility": "$204/month for family of 3. 24-month state limit.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ar_ui",
+      "program_name": "Arkansas UI (ADWS)",
+      "category": "employment",
+      "phone": "501-682-2121",
+      "website": "dws.arkansas.gov",
+      "eligibility": "Up to $451/week, 16 weeks maximum \u2014 shortest in registry.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ar_liheap",
+      "program_name": "LIHEAP",
+      "category": "energy",
+      "phone": "501-682-8375",
+      "website": "ace.arkansas.gov",
+      "eligibility": "Income <60% state median. Apply through county DHS or CAA.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ar_food_bank",
+      "program_name": "Arkansas Food Bank",
+      "category": "food",
+      "phone": "501-565-8121",
+      "website": "arkansasfoodbank.org",
+      "address": "4301 W 65th St, Little Rock, AR 72209",
+      "notes": "33-county service area.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ar_nwa_food_bank",
+      "program_name": "Northwest Arkansas Food Bank",
+      "category": "food",
+      "phone": "479-872-8409",
+      "address": "1391 S Bellview St, Springdale, AR 72764",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ar_uams",
+      "program_name": "UAMS Medical Center",
+      "category": "healthcare",
+      "phone": "501-686-7000",
+      "website": "uamshealth.com",
+      "address": "4301 W Markham St, Little Rock, AR 72205",
+      "notes": "Level 1 trauma + charity care.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ar_fqhc",
+      "program_name": "Arkansas Primary Care Association (FQHCs)",
+      "category": "healthcare",
+      "phone": "501-664-0836",
+      "website": "arpca.com",
+      "address": "1123 S University Ave Ste 235, Little Rock, AR 72204",
+      "notes": "12+ FQHCs statewide.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ar_lee_county_clinic",
+      "program_name": "Lee County Cooperative Clinic",
+      "category": "healthcare",
+      "phone": "870-295-6595",
+      "address": "5 Lee St, Marianna, AR 72360",
+      "notes": "Delta region safety net.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ar_housing_finance",
+      "program_name": "Arkansas Development Finance Authority",
+      "category": "housing",
+      "phone": "501-682-5900",
+      "website": "arkansasfinance.com",
+      "address": "900 W Capitol Ave Ste 310, Little Rock, AR 72201",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ar_lr_housing",
+      "program_name": "Little Rock Housing Authority",
+      "category": "housing",
+      "phone": "501-375-7201",
+      "address": "100 S Arch St, Little Rock, AR 72201",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ar_dv_coalition",
+      "program_name": "Arkansas Coalition Against Domestic Violence",
+      "category": "safety",
+      "phone": "800-332-4443",
+      "website": "domesticpeace.com",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ar_compie",
+      "program_name": "Center for Marshallese and Pacific Islander Excellence (COMPIE)",
+      "category": "special_population",
+      "phone": "479-316-0050",
+      "address": "Springdale, AR",
+      "notes": "Serves Marshallese COFA community \u2014 largest outside Pacific Islands.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    }
+  ]
+}

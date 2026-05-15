@@ -1,0 +1,190 @@
+{
+  "meta": {
+    "state": "WV",
+    "version": "3.0",
+    "date": "2026-03-09",
+    "flag_count": 5
+  },
+  "flags": [
+    {
+      "flag_id": "wv_wvhrc_365_day_sol",
+      "severity": "info",
+      "title": "WVHRC 365-Day SOL \u2014 Longest State Civil Rights Window in Registry",
+      "summary": "West Virginia Human Rights Commission has a 365-day statute of limitations \u2014 the longest state civil rights filing window in the entire registry. WVHRC: 304-558-2616 / hrc.wv.gov."
+    },
+    {
+      "flag_id": "wv_opioid_epidemic",
+      "severity": "alert",
+      "title": "Opioid Epidemic \u2014 Highest Per-Capita Overdose Death Rate",
+      "summary": "West Virginia has the highest per-capita overdose death rate in the US. Substance use disorder affects employment, housing, and family stability. Screen for SUD at intake. WV DHHR: 304-558-0684 / dhhr.wv.gov. Crisis: 988. HELP4WV: 844-435-7498."
+    },
+    {
+      "flag_id": "wv_southern_coalfields_poverty",
+      "severity": "warning",
+      "title": "Southern Coalfields \u2014 20-35% Poverty, Digital Divide",
+      "summary": "Southern WV coalfield counties (McDowell, Mingo, Wyoming, Logan, Boone) have 20-35% poverty rates with severe digital divide. Many clients lack broadband access. Phone-first intake is essential. Mountain State Justice: 304-344-3144 / mountainstatejustice.org. Cabin Creek Health Center: 304-595-1070."
+    },
+    {
+      "flag_id": "wv_3yr_wage_sol",
+      "severity": "info",
+      "title": "3-Year Wage SOL \u2014 WV Wage Payment and Collection Act",
+      "summary": "WV Wage Payment and Collection Act provides a 3-year statute of limitations for wage claims \u2014 longer than federal FLSA. Dual-file state and federal. WV DOL: 304-558-7890 / labor.wv.gov."
+    },
+    {
+      "flag_id": "wv_no_tribes_coalfield_justice",
+      "severity": "info",
+      "title": "No Federally Recognized Tribes \u2014 Mountain State Justice Covers Coalfields",
+      "summary": "West Virginia has no federally recognized tribes. For rural and coalfield communities, Mountain State Justice (304-344-3144 / mountainstatejustice.org) is the primary legal aid provider covering the most underserved areas."
+    },
+    {
+      "flag_id": "wv_involuntary_hold_law",
+      "title": "Involuntary Hold: West Virginia Emergency Involuntary Hospitalization",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "WV involuntary psychiatric hold law: West Virginia Emergency Involuntary Hospitalization. Statutory authority: W. Va. Code \u00a7 27-5-2. Maximum initial hold duration: 48 hours. Legal standard: danger to self/others. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 48 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "W. Va. Code \u00a7 27-5-2"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "wv_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in WV retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "wv_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in WV: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "wv_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "West Virginia Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "wv_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "West Virginia Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "wv_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "West Virginia Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

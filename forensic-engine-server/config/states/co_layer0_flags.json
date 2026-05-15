@@ -1,0 +1,236 @@
+{
+  "meta": {
+    "state": "CO",
+    "version": "3.0",
+    "flag_count": 8
+  },
+  "flags": [
+    {
+      "flag_id": "co_denver_boulder_housing_cost_crisis",
+      "severity": "alert",
+      "title": "Denver / Boulder Housing Cost Crisis \u2014 $14.81 Minimum Wage Still Inadequate",
+      "summary": "Despite a state minimum wage of $14.81/hr and a Denver minimum wage of $18.81/hr, the median rent in Denver exceeds $1,800/month, making housing stability a primary concern. For clients in the Denver/Boulder area, housing stability should be assessed first.",
+      "affected_programs": [
+        "denver_office_of_housing_stability"
+      ],
+      "effective_date": "2025"
+    },
+    {
+      "flag_id": "colorado_snap_abawd",
+      "severity": "warning",
+      "title": "Colorado SNAP ABAWD \u2014 Active with Limited Waivers",
+      "summary": "Work requirements for Able-Bodied Adults Without Dependents (ABAWDs) in the Colorado SNAP program are active in most of the state, with limited waivers for some rural counties. The Denver metro area has no waiver.",
+      "affected_programs": [
+        "colorado_snap_food_assistance"
+      ],
+      "effective_date": null
+    },
+    {
+      "flag_id": "colorado_tanf_colorado_works",
+      "severity": "info",
+      "title": "Colorado TANF (Colorado Works) \u2014 $508/mo, 60-Month Federal Limit",
+      "summary": "Colorado's TANF program, known as Colorado Works, provides up to $508/month for a family of three and has a 60-month lifetime limit. The program emphasizes self-sufficiency and support services.",
+      "affected_programs": [
+        "colorado_works_tanf"
+      ],
+      "effective_date": null
+    },
+    {
+      "flag_id": "colorado_3_year_wage_sol",
+      "severity": "info",
+      "title": "Colorado 3-Year Wage SOL (CWCA) \u2014 Strategic Advantage",
+      "summary": "The Colorado Wage Claim Act (CWCA) provides a 3-year statute of limitations for wage claims, which is longer than the federal 2-year limit. This allows workers more time to file claims for back wages.",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "colorado_ccrd_6_month_sol",
+      "severity": "warning",
+      "title": "Colorado CCRD \u2014 6-Month SOL for State Civil Rights",
+      "summary": "The Colorado Civil Rights Division (CCRD) has a very short 6-month statute of limitations for employment and housing discrimination complaints. It is critical to file with the EEOC simultaneously to preserve the 300-day federal deadline.",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "colorado_unhoused_population_denver_hub",
+      "severity": "warning",
+      "title": "Colorado Unhoused Population \u2014 Denver Hub",
+      "summary": "Colorado has a large unhoused population, concentrated in Denver. The city's shelter system is often at capacity, and the cold weather creates life-safety risks. Immediate routing to shelter and housing services is critical for unhoused clients.",
+      "affected_programs": [
+        "denver_department_of_housing_stability",
+        "denver_shelter_hotline",
+        "colorado_coalition_for_the_homeless"
+      ],
+      "effective_date": null
+    },
+    {
+      "flag_id": "co_western_slope_rural_colorado_geographic_isolation",
+      "severity": "info",
+      "title": "Western Slope / Rural Colorado \u2014 Geographic Isolation",
+      "summary": "Rural and mountain communities in Colorado face geographic isolation, with limited access to services and resources. Legal aid and other support services are sparse, and clients may need to travel long distances.",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "co_denver_latino_immigrant_community",
+      "severity": "info",
+      "title": "Denver Latino/Immigrant Community \u2014 Large Population, Specific Routing",
+      "summary": "The Denver metro area has a large Latino and immigrant population. State law limits data sharing with ICE, and Health First Colorado is available to eligible immigrants. Undocumented adults can receive care at Denver Health FQHCs.",
+      "affected_programs": [
+        "health_first_colorado",
+        "denver_health"
+      ],
+      "effective_date": null
+    },
+    {
+      "flag_id": "co_involuntary_hold_law",
+      "title": "Involuntary Hold: Colorado 72-Hour Hold",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "CO involuntary psychiatric hold law: Colorado 72-Hour Hold. Statutory authority: C.R.S. \u00a7 27-65-105. Maximum initial hold duration: 72 hours. Legal standard: imminent danger to self/others. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 72 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "C.R.S. \u00a7 27-65-105"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "co_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in CO retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "co_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in CO: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "co_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Colorado Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "co_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Colorado Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "co_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Colorado Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

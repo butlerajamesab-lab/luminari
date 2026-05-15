@@ -1,0 +1,31 @@
+{
+  "meta": {
+    "state": "CT",
+    "version": "3.0",
+    "date": "2026-03-09"
+  },
+  "tribal_nations": [
+    {
+      "name": "Mashantucket Pequot Tribal Nation",
+      "phone": "860-396-6500",
+      "website": "mptn-nsn.gov",
+      "address": "110 Pequot Trail, Mashantucket, CT 06338",
+      "casino": "Foxwoods Resort Casino",
+      "services": "Health, housing, education, elder care, social services (Foxwoods-funded)"
+    },
+    {
+      "name": "Mohegan Tribe",
+      "phone": "860-862-6100",
+      "website": "mohegan.com",
+      "address": "13 Crow Hill Rd, Uncasville, CT 06382",
+      "casino": "Mohegan Sun",
+      "services": "Tribal TANF, housing, health, elder services (Mohegan Sun-funded)"
+    },
+    {
+      "name": "IHS Boston Area",
+      "phone": "617-966-3930",
+      "website": "ihs.gov/boston",
+      "notes": "Health coordination for CT tribes"
+    }
+  ]
+}

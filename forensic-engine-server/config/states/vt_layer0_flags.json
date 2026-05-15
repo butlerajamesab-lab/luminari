@@ -1,0 +1,190 @@
+{
+  "meta": {
+    "state": "VT",
+    "version": "3.0",
+    "date": "2026-03-09",
+    "flag_count": 5
+  },
+  "flags": [
+    {
+      "flag_id": "vt_dr_dynasaur",
+      "severity": "info",
+      "title": "Dr. Dynasaur \u2014 Children Covered Regardless of Immigration Status",
+      "summary": "Vermont's Dr. Dynasaur program covers ALL children under 18 and pregnant women regardless of immigration status \u2014 one of the most inclusive children's health programs in the registry. Dr. Dynasaur: 800-250-8427 / greenmountaincare.org."
+    },
+    {
+      "flag_id": "vt_6yr_contract_wage_sol",
+      "severity": "info",
+      "title": "6-Year Contract Wage SOL \u2014 Longest in Registry",
+      "summary": "Vermont has a 6-year statute of limitations for contract-based wage claims \u2014 the longest in the entire registry. This gives workers significantly more time to pursue wage theft claims. VT DOL: 802-828-0267 / labor.vermont.gov."
+    },
+    {
+      "flag_id": "vt_vhrc_1yr_sol",
+      "severity": "info",
+      "title": "VHRC 1-Year SOL \u2014 65 Days Longer Than EEOC",
+      "summary": "Vermont Human Rights Commission has a 1-year (365-day) statute of limitations for discrimination complaints \u2014 65 days longer than the EEOC's 300-day window. VHRC: 802-828-2480 / hrc.vermont.gov."
+    },
+    {
+      "flag_id": "vt_extreme_rural_isolation",
+      "severity": "warning",
+      "title": "Extreme Rural Isolation \u2014 Most Rural State by Proportion",
+      "summary": "Vermont is the most rural state by proportion in the US. Many clients face significant barriers to accessing services: limited broadband, long travel distances, and few providers. Phone-first intake is essential. Vermont Legal Aid: 800-889-2047 / vtlegalaid.org."
+    },
+    {
+      "flag_id": "vt_cold_weather_rule",
+      "severity": "info",
+      "title": "Cold Weather Rule \u2014 Nov 1 to Apr 15 Shutoff Protection",
+      "summary": "Vermont's Cold Weather Rule prohibits utility shutoffs from November 1 through April 15 for residential customers who cannot pay. Customers must contact their utility and apply for assistance. LIHEAP: 800-479-6151 / dcf.vermont.gov."
+    },
+    {
+      "flag_id": "vt_involuntary_hold_law",
+      "title": "Involuntary Hold: Vermont Emergency Examination",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "VT involuntary psychiatric hold law: Vermont Emergency Examination. Statutory authority: 18 V.S.A. \u00a7 7504. Maximum initial hold duration: 72 hours. Legal standard: danger to self/others. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 72 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "18 V.S.A. \u00a7 7504"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "vt_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in VT retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "vt_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in VT: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "vt_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Vermont Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "vt_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Vermont Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "vt_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Vermont Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,166 @@
+{
+  "meta": {
+    "state": "IN",
+    "version": "3.0"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "housing_violation",
+      "state": "IN",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document All Violations",
+          "deadline": "",
+          "documents": [
+            "Dated photos, texts/emails, written records, lease if written",
+            "Written repair notice, certified mail receipt",
+            "Written complaint with photos"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Send Written Repair Notice",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File Code Enforcement Complaint",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Contact Legal Aid — Within 5 Days of Any Eviction Notice",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 5,
+          "action": "Assert Retaliation Protection",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft",
+      "state": "IN",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document Wages Owed",
+          "deadline": "",
+          "documents": [
+            "Pay stubs, time records, offer letter, work schedule",
+            "Written demand with calculation"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Send Written Wage Demand",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File Indiana DOL Wage Claim",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "File Federal WHD Simultaneously",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial",
+      "state": "IN",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Review Notice of Decision",
+          "deadline": "",
+          "documents": [
+            "Notice of Decision, case number, supporting documentation",
+            "Written hearing request",
+            "Denial notice, employment records"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Request State Hearing + Aid-Continuing",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "Contact Legal Aid",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Indiana UI Appeals",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_hip_2_0_denial",
+      "state": "IN",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document Denial",
+          "deadline": "",
+          "documents": [
+            "Denial letter/EOB, policy, medical records, physician letter of medical necessity",
+            "Written appeal with medical necessity documentation",
+            "Internal appeal denial + medical records"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Internal Appeal",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "Indiana DOI External Review",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "HIP 2.0 State Fair Hearing",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    }
+  ]
+}

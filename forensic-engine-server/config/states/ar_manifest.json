@@ -1,0 +1,71 @@
+{
+  "state": "AR",
+  "state_name": "Arkansas",
+  "version": "3.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-09",
+  "source": "luminari-ar-registry.docx",
+  "datasets": [
+    "healthcare",
+    "legal",
+    "housing",
+    "food",
+    "general",
+    "cash_assistance",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "disability_claim",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "utility_dispute",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "general",
+    "insurer",
+    "landlord",
+    "consumer"
+  ],
+  "policy_flags": [
+    "ar_arhome_private_option",
+    "ar_ui_16_weeks_shortest",
+    "ar_tanf_204_24month",
+    "ar_nwa_poultry_latino",
+    "ar_marshallese_cofa",
+    "ar_delta_rural_poverty",
+    "ar_eviction_3_day_notice",
+    "ar_no_lgbtq_protection"
+  ],
+  "statistics": {
+    "total_flags": 8,
+    "total_programs": 16,
+    "total_oversight_bodies": 5,
+    "total_workflows": 4,
+    "total_help_contacts": 14
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "food",
+    "general"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ],
+  "portability_score": "53%",
+  "notes": "UI 16 weeks shortest in registry. ARHOME private option Medicaid. 3-day eviction notice fastest. Marshallese COFA community in Springdale. Delta rural poverty mirrors Mississippi. No state LGBTQ+ protection."
+}

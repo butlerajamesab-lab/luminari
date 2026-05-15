@@ -1,0 +1,259 @@
+{
+  "meta": {
+    "state": "IA",
+    "version": "2.0",
+    "date": "2026-03-08",
+    "total_chains": 3,
+    "total_bodies": 5,
+    "entity_types": [
+      "employer",
+      "utility",
+      "insurer"
+    ],
+    "source": "luminari-ia-registry.docx"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "employer",
+      "state": "IA",
+      "bodies": [
+        {
+          "oversight_body": "Iowa Civil Rights Commission (ICRC)",
+          "jurisdiction": "primary",
+          "phone": "800-457-4416",
+          "complaint_portal": "https://icrc.iowa.gov",
+          "what_to_report": "State employment, housing, credit, education discrimination enforcement. SOL: 300 days. Covers Iowa Civil Rights Act protected classes.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "300 days",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC Chicago District Office (covers Iowa)",
+          "jurisdiction": "primary",
+          "phone": "800-669-4000",
+          "complaint_portal": "https://eeoc.gov",
+          "what_to_report": "Federal employment discrimination enforcement for Iowa. Dual-file with ICRC for maximum coverage.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "300 days (with ICRC charge)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Iowa Division of Labor (IDOL)",
+          "jurisdiction": "primary",
+          "phone": "515-281-3447",
+          "complaint_portal": "https://iwd.iowa.gov/labor",
+          "what_to_report": "Wage enforcement, child labor, OSHA compliance. File wage theft or unpaid wage complaints.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "2 years (state wage claims)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "utility",
+      "state": "IA",
+      "bodies": [
+        {
+          "oversight_body": "Iowa Utilities Board",
+          "jurisdiction": "primary",
+          "phone": "877-565-4450",
+          "complaint_portal": "https://iub.iowa.gov",
+          "what_to_report": "Regulates electric, gas, water, and telecom utilities. File service or billing complaints.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "Varies",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "insurer",
+      "state": "IA",
+      "bodies": [
+        {
+          "oversight_body": "Iowa Insurance Division",
+          "jurisdiction": "primary",
+          "phone": "515-654-6600",
+          "complaint_portal": "https://iid.iowa.gov",
+          "what_to_report": "Health, property, auto insurance complaints and denials. Free mediation available.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "Varies",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "ia_med_board",
+          "name": "Iowa Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Iowa Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IA"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "ia_patient_adv",
+          "name": "Iowa Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Iowa Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IA"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "ia_health_dept",
+          "name": "Iowa Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Iowa Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IA"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IA"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "ia_pharm_board",
+          "name": "Iowa Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Iowa Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IA"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "ia_pa",
+          "name": "Iowa Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Iowa Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IA"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "ia_mha",
+          "name": "Iowa Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Iowa Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IA"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IA"
+    }
+  ]
+}

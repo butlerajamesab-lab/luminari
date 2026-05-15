@@ -1,0 +1,182 @@
+{
+  "meta": {
+    "state": "MT",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "clusters": [
+    {
+      "cluster_id": "mt_food",
+      "category": "food",
+      "programs": [
+        "mt_montana_snap_food_assistance_dphhs",
+        "mt_montana_food_bank_network_statewide",
+        "mt_wic_montana"
+      ]
+    },
+    {
+      "cluster_id": "mt_healthcare",
+      "category": "healthcare",
+      "programs": [
+        "mt_montana_medicaid_help_act_dphhs",
+        "mt_billings_clinic_eastern_mt_safety_net",
+        "mt_montana_primary_care_association_fqhcs",
+        "mt_ihs_billings_area_office_all_7_mt_tribes",
+        "mt_montana_urban_indian_health_billings"
+      ]
+    },
+    {
+      "cluster_id": "mt_general",
+      "category": "general",
+      "programs": [
+        "mt_providence_st_patrick_hospital_western_m",
+        "mt_veterans_services_montana_vso_network"
+      ]
+    },
+    {
+      "cluster_id": "mt_housing",
+      "category": "housing",
+      "programs": [
+        "mt_montana_housing_mboh_board_of_housing",
+        "mt_montana_legal_services_association_mlsa",
+        "mt_montana_dv_services_mcadsv"
+      ]
+    },
+    {
+      "cluster_id": "mt_cash_assistance",
+      "category": "cash_assistance",
+      "programs": [
+        "mt_montana_tanf_dphhs",
+        "mt_montana_ui_dli",
+        "mt_montana_liheap_dphhs_community_action"
+      ]
+    },
+    {
+      "cluster_id": "mt_mental_health",
+      "cluster_name": "Mental Health System",
+      "icon": "brain",
+      "cards": [
+        {
+          "card_id": "mt_mh_crisis_line",
+          "title": "988 Suicide & Crisis Lifeline",
+          "summary": "Call or text 988 for immediate mental health crisis support. Free, confidential, 24/7. Trained counselors can help with suicidal thoughts, emotional distress, substance use, and mental health crises. Also available via chat at 988lifeline.org.",
+          "who_qualifies": "Anyone experiencing a mental health crisis, suicidal thoughts, or emotional distress.",
+          "how_to_access": "Call or text 988. Chat at 988lifeline.org. For veterans, press 1 after dialing 988.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "mt_mh_nami",
+          "title": "NAMI Helpline & Support Groups",
+          "summary": "National Alliance on Mental Illness provides free peer support, education, and advocacy. NAMI HelpLine: 1-800-950-NAMI (6264). Family-to-Family program helps families understand mental health conditions and navigate the system.",
+          "who_qualifies": "Individuals with mental health conditions and their family members.",
+          "how_to_access": "Call 1-800-950-NAMI or text 'HELPLINE' to 62640. Find local NAMI affiliate at nami.org/find-support.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "mt_mh_protection_advocacy",
+          "title": "Protection & Advocacy Organization",
+          "summary": "Every state has a federally mandated Protection & Advocacy (P&A) organization with legal authority to investigate abuse and neglect in psychiatric facilities. P&A organizations can enter any facility, access records, and file lawsuits. This is often the most powerful tool available for people harmed in the mental health system.",
+          "who_qualifies": "Anyone with a disability who has experienced abuse, neglect, or rights violations in a facility.",
+          "how_to_access": "Find your state P&A at ndrn.org/about/ndrn-member-agencies/ or call the NDRN at 202-408-9514.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "mt_mh_know_your_rights",
+          "title": "Know Your Rights: Montana Emergency Detention",
+          "summary": "If you are placed on an involuntary hold in MT, you have rights: the initial hold cannot exceed 72 hours without a court hearing. You have the right to an attorney at the hearing. You have the right to present evidence and call witnesses. You have the right to an independent psychiatric evaluation. You can challenge the hold at any time.",
+          "who_qualifies": "Anyone placed on an involuntary psychiatric hold or facing commitment proceedings.",
+          "how_to_access": "Request to speak with the patient advocate. Ask for a copy of your patient rights. Contact your state's Protection & Advocacy organization.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "mt_mh_records_rights",
+          "title": "Your Right to Your Psychiatric Records",
+          "summary": "Under HIPAA (45 CFR \u00a7 164.524), you have the right to access your complete medical record, including psychiatric treatment records. The facility must respond within 30 days. If they deny access, you can file a complaint with HHS Office for Civil Rights. Under HIPAA \u00a7 164.526, you also have the right to request amendments to inaccurate records.",
+          "who_qualifies": "Any current or former psychiatric patient.",
+          "how_to_access": "Submit a written request to the facility's Health Information Management department. If denied, file complaint at hhs.gov/ocr.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "mt_mh_samhsa",
+          "title": "SAMHSA National Helpline",
+          "summary": "Free, confidential, 24/7 treatment referral and information service for mental health and substance use disorders. Available in English and Spanish. Provides referrals to local treatment facilities, support groups, and community-based organizations.",
+          "who_qualifies": "Anyone seeking mental health or substance use treatment information and referrals.",
+          "how_to_access": "Call 1-800-662-HELP (4357) or visit findtreatment.gov.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        }
+      ]
+    }
+  ]
+}

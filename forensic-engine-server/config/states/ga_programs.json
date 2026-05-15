@@ -1,0 +1,422 @@
+{
+  "meta": {
+    "state": "GA",
+    "version": "3.0",
+    "program_count": 20
+  },
+  "programs": [
+    {
+      "program_id": "ga_snap",
+      "program_name": "SNAP (Georgia Food Stamps)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "agency": "GA DFCS",
+      "phone": "877-423-4746",
+      "website": "https://dfcs.georgia.gov",
+      "eligibility": "Income < 130% FPL",
+      "region": "statewide",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Federal food assistance",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_medicaid_categorical",
+      "program_name": "Georgia Medicaid (Categorical — No Expansion)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "health_insurance_denial",
+        "medicaid_denial"
+      ],
+      "agency": "GA DCH",
+      "phone": "800-766-4456",
+      "website": "https://medicaid.georgia.gov",
+      "eligibility": "Categorical only — no expansion",
+      "region": "statewide",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Medicaid for children, pregnant women, elderly, disabled ONLY. Coverage gap: 250K-400K adults 0-138% FPL have NO coverage pathway.",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_peachcare_chip",
+      "program_name": "PeachCare for Kids (CHIP)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "health_insurance_denial",
+        "medicaid_denial"
+      ],
+      "agency": "GA DCH",
+      "phone": "877-427-3224",
+      "website": "https://dch.georgia.gov/peachcare-kids",
+      "eligibility": "Children < 19, family income < 247% FPL",
+      "region": "statewide",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Children's health insurance for families above Medicaid but below 247% FPL",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_tanf",
+      "program_name": "TANF (Georgia)",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "agency": "GA DFCS",
+      "phone": "877-423-4746",
+      "website": "https://dfcs.georgia.gov",
+      "eligibility": "Families with children, income eligible",
+      "region": "statewide",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Cash assistance — among lowest in nation at $280/month for family of 3",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_unemployment_insurance",
+      "program_name": "Georgia Unemployment Insurance",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "wage_theft",
+        "workplace_discrimination"
+      ],
+      "agency": "GA DOL",
+      "phone": "877-709-8185",
+      "website": "https://www.dol.state.ga.us",
+      "eligibility": "Unemployed workers meeting wage requirements",
+      "region": "statewide",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "UI benefits, 14-20 week duration — one of shortest in country",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_section_8",
+      "program_name": "Section 8 Housing Choice Voucher",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights",
+        "tenant_rights"
+      ],
+      "agency": "DCA",
+      "phone": "404-679-4940",
+      "website": "https://www.dca.ga.gov",
+      "eligibility": "Income < 50% AMI",
+      "region": "statewide",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Rental assistance vouchers",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_liheap",
+      "program_name": "LIHEAP (Georgia)",
+      "layer": "state",
+      "benefit_category": "utilities",
+      "pipeline_ids": [
+        "utility_shutoff_abuse"
+      ],
+      "agency": "GA DFCS",
+      "phone": "877-423-4746",
+      "website": "https://dfcs.georgia.gov",
+      "eligibility": "Income < 150% FPL",
+      "region": "statewide",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Energy assistance for low-income households",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_wic",
+      "program_name": "WIC (Georgia)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "agency": "GA DPH",
+      "phone": "800-228-9173",
+      "website": "https://dph.georgia.gov/WIC",
+      "eligibility": "Pregnant/postpartum, infants, children < 5, income < 185% FPL",
+      "region": "statewide",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Nutrition for pregnant women, infants, children",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_legal_aid",
+      "program_name": "Georgia Legal Services Program",
+      "layer": "state",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [
+        "civil_rights_violation"
+      ],
+      "agency": "GLSP",
+      "phone": "800-498-9469",
+      "website": "https://www.glsp.org",
+      "eligibility": "Income < 125% FPL",
+      "region": "statewide",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Free civil legal aid for low-income Georgians",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_atlanta_legal_aid",
+      "program_name": "Atlanta Legal Aid Society",
+      "layer": "state",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [
+        "civil_rights_violation"
+      ],
+      "agency": "ALAS",
+      "phone": "404-524-5811",
+      "website": "https://atlantalegalaid.org",
+      "eligibility": "Low-income metro Atlanta residents",
+      "region": "atlanta_metro",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Emergency eviction defense and civil legal aid",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_dv_hotline",
+      "program_name": "Georgia Domestic Violence Hotline",
+      "layer": "state",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "GCADV",
+      "phone": "800-334-2836",
+      "website": "https://gcadv.org",
+      "eligibility": "All DV survivors",
+      "region": "statewide",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "24/7 crisis support and shelter referrals",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_atlanta_housing_authority",
+      "program_name": "Atlanta Housing Authority",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights",
+        "tenant_rights"
+      ],
+      "agency": "AHA",
+      "phone": "404-892-4700",
+      "website": "https://atlantahousing.org",
+      "eligibility": "Low-income Atlanta residents",
+      "region": "atlanta_metro",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Section 8 and public housing for Atlanta",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_grady_health",
+      "program_name": "Grady Health System (Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "health_insurance_denial",
+        "medicaid_denial"
+      ],
+      "agency": "Grady Health",
+      "phone": "404-616-1000",
+      "website": "https://www.gradyhealth.org",
+      "eligibility": "Uninsured Fulton/DeKalb residents",
+      "region": "atlanta_metro",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Atlanta safety net hospital, Grady Gold Card for uninsured",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_irc_atlanta",
+      "program_name": "IRC Atlanta (Refugee Services)",
+      "layer": "state",
+      "benefit_category": "immigration",
+      "pipeline_ids": [
+        "immigration_case"
+      ],
+      "agency": "IRC",
+      "phone": "404-292-7800",
+      "website": "https://rescue.org/united-states/atlanta-ga",
+      "eligibility": "Refugees and asylees",
+      "region": "atlanta_metro",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Refugee resettlement and integration services",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_new_american_pathways",
+      "program_name": "New American Pathways",
+      "layer": "state",
+      "benefit_category": "immigration",
+      "pipeline_ids": [
+        "immigration_case"
+      ],
+      "agency": "NAP",
+      "phone": "404-299-0122",
+      "website": "https://newamericanpathways.org",
+      "eligibility": "Refugees, immigrants",
+      "region": "atlanta_metro",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Refugee and immigration services",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_latin_american_assoc",
+      "program_name": "Latin American Association (LAA)",
+      "layer": "state",
+      "benefit_category": "immigration",
+      "pipeline_ids": [
+        "immigration_case"
+      ],
+      "agency": "LAA",
+      "phone": "404-638-1800",
+      "website": "https://thelaa.org",
+      "eligibility": "Latino community members",
+      "region": "atlanta_metro",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Services for Latino community",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_wage_division",
+      "program_name": "GA DOL Wage & Hour",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "wage_theft",
+        "workplace_discrimination"
+      ],
+      "agency": "GA DOL",
+      "phone": "404-232-3260",
+      "website": "https://www.dol.state.ga.us",
+      "eligibility": "All workers",
+      "region": "statewide",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Wage complaints — Georgia has federal minimum wage $7.25/hr",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_fqhc_network",
+      "program_name": "Georgia FQHC Network",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "health_insurance_denial",
+        "medicaid_denial"
+      ],
+      "agency": "Various FQHCs",
+      "phone": "",
+      "website": "https://www.gaprimarycare.org",
+      "eligibility": "All patients, sliding scale",
+      "region": "statewide",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Federally Qualified Health Centers — first-line for uninsured due to coverage gap",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_united_way_211",
+      "program_name": "United Way 211 Georgia",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "agency": "United Way",
+      "phone": "211",
+      "website": "",
+      "eligibility": "All residents",
+      "region": "statewide",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "General social services referral",
+      "city": "Atlanta",
+      "state": "GA"
+    },
+    {
+      "program_id": "ga_fulton_dfcs",
+      "program_name": "Fulton County DFCS",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "agency": "GA DFCS",
+      "phone": "877-423-4746",
+      "website": "https://dfcs.georgia.gov",
+      "eligibility": "Fulton County residents",
+      "region": "atlanta_metro",
+      "source": "Georgia State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "SNAP, TANF, Medicaid for Fulton County",
+      "city": "Atlanta",
+      "state": "GA"
+    }
+  ]
+}

@@ -1,0 +1,296 @@
+{
+  "meta": {
+    "state": "NC",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "nc_north_carolina_snap_food_and_nutrition_s",
+        "nc_food_bank_of_central_and_eastern_nc_rale",
+        "nc_loaves_and_fishes_friendship_trays_charl",
+        "nc_wic_north_carolina",
+        "nc_charlotte_center_for_legal_advocacy",
+        "nc_nc_coalition_against_domestic_violence_n",
+        "nc_nc_ui_des_division_of_employment_securit",
+        "nc_eastern_band_of_cherokee_indians_tribal_",
+        "nc_nc_dhhs_nc_medicaid_managed_care"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "general",
+        "civil_rights"
+      ],
+      "flags": [
+        "nc_portability"
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "nc_nc_medicaid_nc_tracks_nc_dhhs",
+        "nc_nc_tanf_work_first_dss"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "general",
+        "civil_rights"
+      ],
+      "flags": [
+        "nc_portability"
+      ]
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "nc_unc_hospitals_rex_health_chapel_hill_ral",
+        "nc_nc_tanf_work_first_dss",
+        "nc_nc_lieap_energy_assistance_dhhs"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "general",
+        "civil_rights"
+      ],
+      "flags": [
+        "nc_portability"
+      ]
+    },
+    {
+      "pipeline_id": "employment_dispute",
+      "programs": [
+        "nc_nc_ui_des_division_of_employment_securit",
+        "nc_legal_aid_of_nc_farmworker_unit"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "general",
+        "civil_rights"
+      ],
+      "flags": [
+        "nc_portability"
+      ]
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "nc_nc_housing_finance_agency_nchfa",
+        "nc_legal_aid_of_north_carolina_statewide"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "general",
+        "civil_rights"
+      ],
+      "flags": [
+        "nc_portability"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "nc_nc_medicaid_nc_tracks_nc_dhhs",
+        "nc_unc_hospitals_rex_health_chapel_hill_ral",
+        "nc_atrium_health_charlotte_safety_net",
+        "nc_nc_community_health_center_association_f",
+        "nc_nc_tanf_work_first_dss",
+        "nc_legal_aid_of_nc_farmworker_unit",
+        "nc_nc_farmworker_health_program_fqhc",
+        "nc_cherokee_indian_hospital_ihs_compact_ebc",
+        "nc_nc_dhhs_nc_medicaid_managed_care"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "general",
+        "civil_rights"
+      ],
+      "flags": [
+        "nc_portability"
+      ]
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "nc_nc_tanf_work_first_dss",
+        "nc_nc_lieap_energy_assistance_dhhs"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "general",
+        "civil_rights"
+      ],
+      "flags": [
+        "nc_portability"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nc_involuntary_hold_law",
+        "nc_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nc_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nc_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nc_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nc_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nc_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "nc_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nc_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nc_restraint_seclusion_limits",
+        "nc_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nc_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "nc_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nc_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "state": "NJ",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "NJ DHS",
+      "role": "SNAP/TANF/Medicaid",
+      "phone": "800-687-9512",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "211 NJ",
+      "role": "Social services referral",
+      "phone": "211",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "Legal Services of NJ",
+      "role": "Statewide legal aid",
+      "phone": "888-576-5529",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "NJ DOL",
+      "role": "UI Appeals (7-day deadline)",
+      "phone": "201-601-4100",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "DOBI",
+      "role": "Insurance complaints",
+      "phone": "800-446-7467",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "NJ DCR",
+      "role": "Civil rights (NJLAD)",
+      "phone": "973-648-2700",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "NJ DV Hotline",
+      "role": "Domestic violence crisis",
+      "phone": "800-572-7233",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "NJ TDI/FLI",
+      "role": "Disability + family leave",
+      "phone": "609-292-7060",
+      "email": null,
+      "hours": null
+    }
+  ],
+  "regions": [],
+  "missing_sections": []
+}

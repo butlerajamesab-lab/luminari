@@ -1,0 +1,837 @@
+{
+  "meta": {
+    "state": "PA",
+    "state_name": "Pennsylvania",
+    "layer": "oversight",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "date_verified": "2026-03-06",
+    "source": "Luminari PA Registry v1.0 \u2014 Northwest Hope Foundation"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "insurer",
+      "state": "PA",
+      "bodies": [
+        {
+          "name": "PA Insurance Department (PID)",
+          "role": "State insurance regulator \u2014 external review and consumer complaints",
+          "phone": "877-881-6388",
+          "website": "https://insurance.pa.gov",
+          "filing_method": "Online at insurance.pa.gov or call consumer hotline",
+          "pattern_threshold": 3,
+          "body_id": "pa_insurance_department_pid",
+          "street_address": "1326 Strawberry Square",
+          "city": "Harrisburg",
+          "state_code": "PA",
+          "zip": "17120",
+          "oversight_body": "PA Insurance Department (PID)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA Health Law Project (PHLP)",
+          "role": "Free statewide advocacy for MA, CHIP, and insurance access issues \u2014 often resolves without formal hearing",
+          "phone": "800-274-3258",
+          "website": "https://phlp.org",
+          "filing_method": "Call PHLP directly for free advocacy and representation",
+          "pattern_threshold": 1,
+          "body_id": "pa_health_law_project_phlp",
+          "street_address": "118 Locust St",
+          "city": "Harrisburg",
+          "state_code": "PA",
+          "zip": "17101",
+          "oversight_body": "PA Health Law Project (PHLP)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA Attorney General \u2014 Insurance Fraud Section",
+          "role": "Investigates insurance fraud and unfair practices patterns",
+          "phone": "717-787-3391",
+          "website": "https://attorneygeneral.gov",
+          "filing_method": "File complaint at attorneygeneral.gov or call",
+          "pattern_threshold": 5,
+          "body_id": "pa_attorney_general_insurance_fraud_section",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "PA Attorney General \u2014 Insurance Fraud Section",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "Consumer Financial Protection Bureau (CFPB)",
+          "role": "Federal oversight of financial products including insurance billing",
+          "phone": "855-411-2372",
+          "website": "https://consumerfinance.gov/complaint",
+          "filing_method": "Online at consumerfinance.gov/complaint",
+          "pattern_threshold": 5,
+          "body_id": "consumer_financial_protection_bureau_cfpb",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "Consumer Financial Protection Bureau (CFPB)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "Centers for Medicare & Medicaid Services (CMS)",
+          "role": "Federal oversight of Medicare/Medicaid managed care plans",
+          "phone": "800-633-4227",
+          "website": "https://cms.gov",
+          "filing_method": "1-800-MEDICARE or cms.gov complaint portal",
+          "pattern_threshold": 10,
+          "body_id": "centers_for_medicare_medicaid_services_cms",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "Centers for Medicare & Medicaid Services (CMS)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "landlord",
+      "state": "PA",
+      "bodies": [
+        {
+          "name": "Philadelphia Licenses & Inspections (L&I)",
+          "role": "Philadelphia code enforcement \u2014 housing inspections and violations",
+          "phone": "215-686-2463",
+          "website": "https://phila.gov/li",
+          "filing_method": "Call 311 or file online at phila.gov/li",
+          "pattern_threshold": 2,
+          "body_id": "phila_licenses_inspections_l_i",
+          "street_address": "1401 John F Kennedy Blvd Rm 290",
+          "city": "Philadelphia",
+          "state_code": "PA",
+          "zip": "19102",
+          "oversight_body": "Philadelphia Licenses & Inspections (L&I)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "Pittsburgh Bureau of Building Inspection (BBI)",
+          "role": "Pittsburgh code enforcement \u2014 housing inspections",
+          "phone": "412-255-2175",
+          "website": "https://pittsburghpa.gov/pli",
+          "filing_method": "Call 311 or file at pittsburghpa.gov/pli",
+          "pattern_threshold": 2,
+          "body_id": "pittsburgh_bureau_of_building_inspection_bbi",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "Pittsburgh Bureau of Building Inspection (BBI)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA Human Relations Commission (PHRC)",
+          "role": "State fair housing enforcement \u2014 discrimination complaints",
+          "phone": "717-787-4410",
+          "website": "https://phrc.pa.gov",
+          "filing_method": "File complaint at phrc.pa.gov within 180 days",
+          "pattern_threshold": 3,
+          "body_id": "pa_human_relations_commission_phrc",
+          "street_address": "333 Market St 8th Fl",
+          "city": "Harrisburg",
+          "state_code": "PA",
+          "zip": "17101",
+          "oversight_body": "PA Human Relations Commission (PHRC)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "Philadelphia Fair Housing Commission",
+          "role": "Philadelphia fair housing \u2014 broader protections than federal/state (source of income, gender identity, etc.)",
+          "phone": "215-686-4670",
+          "website": "https://phila.gov/oeo",
+          "filing_method": "File complaint at phila.gov/oeo within 1 year",
+          "pattern_threshold": 2,
+          "body_id": "phila_fair_housing_commission",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "Philadelphia Fair Housing Commission",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "HUD Office of Fair Housing and Equal Opportunity",
+          "role": "Federal fair housing enforcement",
+          "phone": "800-669-9777",
+          "website": "https://hud.gov/fairhousing",
+          "filing_method": "Online at hud.gov/fairhousing or call within 1 year",
+          "pattern_threshold": 5,
+          "body_id": "hud_office_of_fair_housing_and_equal_opportunity",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "HUD Office of Fair Housing and Equal Opportunity",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA Attorney General \u2014 Civil Rights",
+          "role": "Pattern/practice housing discrimination enforcement",
+          "phone": "717-787-4410",
+          "website": "https://attorneygeneral.gov",
+          "filing_method": "File complaint at attorneygeneral.gov",
+          "pattern_threshold": 5,
+          "body_id": "pa_attorney_general_civil_rights",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "PA Attorney General \u2014 Civil Rights",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "employer",
+      "state": "PA",
+      "bodies": [
+        {
+          "name": "PA Bureau of Labor Law Compliance (BLLC)",
+          "role": "State wage enforcement \u2014 WPCL and Minimum Wage Act",
+          "phone": "800-482-2383",
+          "website": "https://dli.pa.gov/bllc",
+          "filing_method": "File wage complaint form at dli.pa.gov/bllc",
+          "pattern_threshold": 2,
+          "body_id": "pa_bureau_of_labor_law_compliance_bllc",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "PA Bureau of Labor Law Compliance (BLLC)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA Human Relations Commission (PHRC)",
+          "role": "State employment discrimination enforcement",
+          "phone": "717-787-4410",
+          "website": "https://phrc.pa.gov",
+          "filing_method": "File complaint at phrc.pa.gov within 180 days",
+          "pattern_threshold": 3,
+          "body_id": "pa_human_relations_commission_phrc",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "PA Human Relations Commission (PHRC)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA Bureau of Workers' Compensation (BWC)",
+          "role": "Workers' compensation claims and disputes",
+          "phone": "800-482-2383",
+          "website": "https://dli.pa.gov/bwc",
+          "filing_method": "File claim at dli.pa.gov/bwc",
+          "pattern_threshold": 3,
+          "body_id": "pa_bureau_of_workers_compensation_bwc",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "PA Bureau of Workers' Compensation (BWC)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "Equal Employment Opportunity Commission (EEOC)",
+          "role": "Federal employment discrimination enforcement",
+          "phone": "800-669-4000",
+          "website": "https://eeoc.gov",
+          "filing_method": "File charge at eeoc.gov within 300 days",
+          "pattern_threshold": 5,
+          "body_id": "equal_employment_opportunity_commission_eeoc",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "Equal Employment Opportunity Commission (EEOC)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "US DOL Wage and Hour Division (WHD)",
+          "role": "Federal wage enforcement \u2014 FLSA violations",
+          "phone": "866-487-9243",
+          "website": "https://dol.gov/whd",
+          "filing_method": "File complaint at dol.gov/whd or call",
+          "pattern_threshold": 5,
+          "body_id": "us_dol_wage_and_hour_division_whd",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "US DOL Wage and Hour Division (WHD)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "National Labor Relations Board (NLRB)",
+          "role": "Federal collective action and retaliation enforcement",
+          "phone": "844-762-6572",
+          "website": "https://nlrb.gov",
+          "filing_method": "File charge at nlrb.gov within 180 days",
+          "pattern_threshold": 3,
+          "body_id": "national_labor_relations_board_nlrb",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "National Labor Relations Board (NLRB)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA Attorney General \u2014 Labor",
+          "role": "Pattern/practice wage theft and labor violations",
+          "phone": "717-787-3391",
+          "website": "https://attorneygeneral.gov",
+          "filing_method": "File complaint at attorneygeneral.gov",
+          "pattern_threshold": 10,
+          "body_id": "pa_attorney_general_labor",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "PA Attorney General \u2014 Labor",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "government_agency",
+      "state": "PA",
+      "bodies": [
+        {
+          "name": "PA DHS Bureau of Hearings and Appeals",
+          "role": "Administrative hearings for SNAP, MA, TANF, and other DHS benefit denials",
+          "phone": "800-692-7462",
+          "website": "https://dhs.pa.gov",
+          "filing_method": "Request hearing through county CAO or call DHS",
+          "pattern_threshold": 1,
+          "body_id": "pa_dhs_bureau_of_hearings_and_appeals",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "PA DHS Bureau of Hearings and Appeals",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA UC Appeals / Board of Review",
+          "role": "Unemployment compensation appeal hearings",
+          "phone": "888-313-7284",
+          "website": "https://uc.pa.gov",
+          "filing_method": "File appeal at uc.pa.gov within 21 days (SHORT DEADLINE)",
+          "pattern_threshold": 1,
+          "body_id": "pa_uc_appeals_board_of_review",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "PA UC Appeals / Board of Review",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA BWC Appeals \u2014 Workers' Compensation Judge",
+          "role": "Workers' compensation dispute resolution",
+          "phone": "800-482-2383",
+          "website": "https://dli.pa.gov/bwc",
+          "filing_method": "File claim petition within 20 days",
+          "pattern_threshold": 1,
+          "body_id": "pa_bwc_appeals_workers_compensation_judge",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "PA BWC Appeals \u2014 Workers' Compensation Judge",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA Health Law Project (PHLP)",
+          "role": "Free advocacy for healthcare access \u2014 resolves many issues without formal hearing",
+          "phone": "800-274-3258",
+          "website": "https://phlp.org",
+          "filing_method": "Call PHLP directly",
+          "pattern_threshold": 1,
+          "body_id": "pa_health_law_project_phlp",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "PA Health Law Project (PHLP)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "Governor's Office \u2014 Constituent Services",
+          "role": "Systemic issues and agency non-responsiveness escalation",
+          "phone": "717-787-2500",
+          "website": "https://governor.pa.gov",
+          "filing_method": "Call or write Governor's office for constituent intervention",
+          "pattern_threshold": 5,
+          "body_id": "governor_s_office_constituent_services",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "Governor's Office \u2014 Constituent Services",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "HHS / CMS (Federal)",
+          "role": "Federal oversight of state Medicaid and CHIP administration",
+          "phone": "800-633-4227",
+          "website": "https://cms.gov",
+          "filing_method": "File complaint at cms.gov or call 1-800-MEDICARE",
+          "pattern_threshold": 10,
+          "body_id": "hhs_cms_federal",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "HHS / CMS (Federal)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "nursing_home",
+      "state": "PA",
+      "bodies": [
+        {
+          "name": "PA Department of Health \u2014 Division of Nursing Care Facilities",
+          "role": "State nursing home licensing, inspection, and complaint investigation",
+          "phone": "800-254-5164",
+          "website": "https://health.pa.gov",
+          "filing_method": "Call complaint hotline 800-254-5164 or file at health.pa.gov",
+          "pattern_threshold": 2,
+          "body_id": "pa_department_of_health_division_of_nursing_care_facilities",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "PA Department of Health \u2014 Division of Nursing Care Facilities",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA DHS \u2014 Bureau of Residential Licensing",
+          "role": "Personal care homes and assisted living oversight",
+          "phone": "800-254-5164",
+          "website": "https://dhs.pa.gov",
+          "filing_method": "Call DHS complaint line or file online",
+          "pattern_threshold": 2,
+          "body_id": "pa_dhs_bureau_of_residential_licensing",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "PA DHS \u2014 Bureau of Residential Licensing",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA Adult Protective Services (APS)",
+          "role": "Investigates abuse, neglect, and exploitation of adults 18-59 with disabilities and adults 60+",
+          "phone": "800-490-8505",
+          "website": "https://aging.pa.gov",
+          "filing_method": "Call 800-490-8505 (24/7 statewide hotline)",
+          "pattern_threshold": 1,
+          "body_id": "pa_adult_protective_services_aps",
+          "street_address": "625 Forster St",
+          "city": "Harrisburg",
+          "state_code": "PA",
+          "zip": "17120",
+          "oversight_body": "PA Adult Protective Services (APS)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA Long-Term Care Ombudsman",
+          "role": "Advocates for residents of nursing homes, personal care homes, and assisted living",
+          "phone": "800-254-5164",
+          "website": "https://aging.pa.gov/ombudsman",
+          "filing_method": "Call 800-254-5164 or contact local Area Agency on Aging",
+          "pattern_threshold": 2,
+          "body_id": "pa_long_term_care_ombudsman",
+          "street_address": "625 Forster St",
+          "city": "Harrisburg",
+          "state_code": "PA",
+          "zip": "17120",
+          "oversight_body": "PA Long-Term Care Ombudsman",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "Centers for Medicare & Medicaid Services (CMS)",
+          "role": "Federal nursing home certification and enforcement",
+          "phone": "800-633-4227",
+          "website": "https://cms.gov",
+          "filing_method": "File complaint at cms.gov or call 1-800-MEDICARE",
+          "pattern_threshold": 5,
+          "body_id": "centers_for_medicare_medicaid_services_cms",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "Centers for Medicare & Medicaid Services (CMS)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "DOJ Elder Justice Initiative",
+          "role": "Federal prosecution of elder abuse patterns",
+          "phone": "800-677-1116",
+          "website": "https://justice.gov/elderjustice",
+          "filing_method": "Report at justice.gov/elderjustice or call Eldercare Locator",
+          "pattern_threshold": 10,
+          "body_id": "doj_elder_justice_initiative",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "DOJ Elder Justice Initiative",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "law_enforcement",
+      "state": "PA",
+      "bodies": [
+        {
+          "name": "Philadelphia Police Advisory Commission (PAC)",
+          "role": "Civilian oversight of Philadelphia Police Department",
+          "phone": "215-685-0891",
+          "website": "https://phila.gov/pac",
+          "filing_method": "File complaint at phila.gov/pac or in person",
+          "pattern_threshold": 2,
+          "body_id": "phila_police_advisory_commission_pac",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "Philadelphia Police Advisory Commission (PAC)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "Pittsburgh Citizen Police Review Board (CPRB)",
+          "role": "Civilian oversight of Pittsburgh Bureau of Police",
+          "phone": "412-765-8023",
+          "website": "https://cprbpgh.org",
+          "filing_method": "File complaint at cprbpgh.org or in person",
+          "pattern_threshold": 2,
+          "body_id": "pittsburgh_citizen_police_review_board_cprb",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "Pittsburgh Citizen Police Review Board (CPRB)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA State Police \u2014 Bureau of Professional Responsibility (BPR)",
+          "role": "Internal affairs for PA State Police troopers",
+          "phone": "717-783-5558",
+          "website": "https://psp.pa.gov",
+          "filing_method": "File complaint at psp.pa.gov or nearest PSP station",
+          "pattern_threshold": 3,
+          "body_id": "pa_state_police_bureau_of_professional_responsibility_bpr",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "PA State Police \u2014 Bureau of Professional Responsibility (BPR)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA Attorney General \u2014 Civil Rights Division",
+          "role": "State-level pattern/practice law enforcement misconduct",
+          "phone": "717-787-4410",
+          "website": "https://attorneygeneral.gov",
+          "filing_method": "File complaint at attorneygeneral.gov",
+          "pattern_threshold": 5,
+          "body_id": "pa_attorney_general_civil_rights_division",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "PA Attorney General \u2014 Civil Rights Division",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "DOJ Civil Rights Division",
+          "role": "Federal pattern/practice police misconduct investigation",
+          "phone": "202-514-3847",
+          "website": "https://justice.gov/crt",
+          "filing_method": "File complaint at civilrights.justice.gov",
+          "pattern_threshold": 10,
+          "body_id": "doj_civil_rights_division",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "DOJ Civil Rights Division",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "FBI \u2014 Civil Rights Program",
+          "role": "Federal criminal investigation of civil rights violations by law enforcement",
+          "phone": "215-418-4000",
+          "website": "https://fbi.gov/tips",
+          "filing_method": "File tip at fbi.gov/tips or call Philadelphia field office",
+          "pattern_threshold": 5,
+          "body_id": "fbi_civil_rights_program",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "FBI \u2014 Civil Rights Program",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "family_court",
+      "state": "PA",
+      "bodies": [
+        {
+          "name": "Judicial Conduct Board of Pennsylvania (JCB)",
+          "role": "Investigates complaints of judicial misconduct against PA judges",
+          "phone": "717-234-7911",
+          "website": "https://judicialconductboardofpa.org",
+          "filing_method": "File complaint at judicialconductboardofpa.org",
+          "pattern_threshold": 3,
+          "body_id": "judicial_conduct_board_of_pa_jcb",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "Judicial Conduct Board of Pennsylvania (JCB)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "Disciplinary Board of the Supreme Court of PA",
+          "role": "Attorney discipline \u2014 complaints against lawyers in family court proceedings",
+          "phone": "717-231-3380",
+          "website": "https://padisciplinaryboard.org",
+          "filing_method": "File complaint at padisciplinaryboard.org",
+          "pattern_threshold": 3,
+          "body_id": "disciplinary_board_of_the_supreme_court_of_pa",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "Disciplinary Board of the Supreme Court of PA",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA DHS \u2014 Office of Children, Youth and Families (CYF)",
+          "role": "Oversight of county CYS agencies and child welfare proceedings",
+          "phone": "800-692-7462",
+          "website": "https://dhs.pa.gov",
+          "filing_method": "Contact DHS OCYF for county CYS complaints",
+          "pattern_threshold": 3,
+          "body_id": "pa_dhs_office_of_children_youth_and_families_cyf",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "PA DHS \u2014 Office of Children, Youth and Families (CYF)",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "PA Superior Court / Commonwealth Court",
+          "role": "Appellate review of family court decisions",
+          "phone": "N/A",
+          "website": "https://pacourts.us",
+          "filing_method": "File appeal within 30 days of final order",
+          "pattern_threshold": 1,
+          "body_id": "pa_superior_court_commonwealth_court",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "PA Superior Court / Commonwealth Court",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "DOJ Civil Rights Division",
+          "role": "Federal investigation of systemic due process violations in family courts",
+          "phone": "202-514-3847",
+          "website": "https://justice.gov/crt",
+          "filing_method": "File complaint at civilrights.justice.gov",
+          "pattern_threshold": 10,
+          "body_id": "doj_civil_rights_division",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "DOJ Civil Rights Division",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "name": "42 USC \u00a71983 \u2014 Federal Civil Rights Lawsuit",
+          "role": "Private right of action for constitutional violations by state actors in family court",
+          "phone": "N/A",
+          "website": "https://law.cornell.edu/uscode/text/42/1983",
+          "filing_method": "File in federal district court with attorney \u2014 2-year statute of limitations in PA",
+          "pattern_threshold": 3,
+          "body_id": "42_usc_1983_federal_civil_rights_lawsuit",
+          "city": "Harrisburg",
+          "state": "PA",
+          "oversight_body": "42 USC \u00a71983 \u2014 Federal Civil Rights Lawsuit",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "employment",
+      "state": "PA",
+      "bodies": [
+        {
+          "oversight_body": "PA Dept of Labor & Industry (L&I) \u2014 Wage & Hour",
+          "jurisdiction": "state",
+          "phone": "800-932-0665",
+          "complaint_portal": "https://dli.pa.gov",
+          "street_address": "651 Boas St Rm 1006",
+          "city": "Harrisburg",
+          "state_code": "PA",
+          "zip": "17120",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "pa_med_board",
+          "name": "Pennsylvania Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Pennsylvania Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "PA"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "pa_patient_adv",
+          "name": "Pennsylvania Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Pennsylvania Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "PA"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "pa_health_dept",
+          "name": "Pennsylvania Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Pennsylvania Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "PA"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "PA"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "pa_pharm_board",
+          "name": "Pennsylvania Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Pennsylvania Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "PA"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "pa_pa",
+          "name": "Pennsylvania Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Pennsylvania Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "PA"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "pa_mha",
+          "name": "Pennsylvania Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Pennsylvania Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "PA"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "PA"
+    }
+  ]
+}

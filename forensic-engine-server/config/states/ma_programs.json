@@ -1,0 +1,448 @@
+{
+  "meta": {
+    "state": "MA",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "ma_massachusetts_snap_dta_food_assistance",
+      "program_name": "Massachusetts SNAP / DTA Food Assistance",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Massachusetts SNAP / DTA Food Assistance",
+      "phone": "877-382-2363",
+      "website": "https://dtaconnect.eohhs.state",
+      "eligibility": "Income < 130% FPL. dtaconnect.eohhs.state.ma.us. Boston DTA: 617-348-8400. Springfield: 413-452-3100. Worcester: 508-799-2400. Lawrence: 978-689-1100.",
+      "apply_notes": "Monthly food assistance \u2014 DTA offices statewide",
+      "source": "luminari-massachusetts-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "MA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ma_greater_boston_food_bank_western_ma_food",
+      "program_name": "Greater Boston Food Bank / Western MA Food Bank",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Greater Boston Food Bank / Western MA Food Bank",
+      "phone": "617-427-5200",
+      "website": "https://gbfb.org",
+      "eligibility": "Anyone in need. gbfb.org. Also Food Bank of Western Massachusetts (Hatfield: 413-247-9738). Worcester County Food Bank (508-842-3663).",
+      "apply_notes": "Primary food bank network \u2014 Greater Boston and Western MA",
+      "source": "luminari-massachusetts-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "MA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ma_wic_massachusetts",
+      "program_name": "WIC Massachusetts",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WIC Massachusetts",
+      "phone": "800-942-1007",
+      "website": "https://mass.gov/wic",
+      "eligibility": "Pregnant, postpartum women, infants, children under 5. Income < 185% FPL. mass.gov/wic.",
+      "apply_notes": "Nutrition assistance for women, infants, children",
+      "source": "luminari-massachusetts-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "MA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ma_masshealth_chapter_58_medicaid",
+      "program_name": "MassHealth (Chapter 58 / Medicaid)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "MassHealth",
+      "phone": "800-841-2900",
+      "website": "https://mass.gov/masshealth",
+      "eligibility": "Adults 19\u201364 to 138% FPL; broader categories above. Children, families, elderly, disabled. mass.gov/masshealth. Massachusetts Health Connector for marketplace: mahealthconnector.org.",
+      "apply_notes": "Comprehensive health coverage \u2014 predates ACA, near-universal coverage goal",
+      "source": "luminari-massachusetts-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ma_boston_medical_center_boston_safety_net",
+      "program_name": "Boston Medical Center (Boston Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Boston Medical Center",
+      "phone": "617-638-8000",
+      "website": "https://bmc.org",
+      "eligibility": "Boston metro \u2014 BMC serves highest proportion of low-income patients in New England. Charity care income < 200% FPL.",
+      "apply_notes": "Boston's primary safety net hospital \u2014 charity care, trauma center, largest Medicaid/uninsured provider in New England",
+      "source": "luminari-massachusetts-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ma_cambridge_health_alliance_mass_general_a",
+      "program_name": "Cambridge Health Alliance / Mass General (Academic Safety Nets)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Cambridge Health Alliance / Mass General",
+      "phone": "617-665-1000",
+      "website": "https://challiance.org",
+      "eligibility": "CHA: Cambridge/Somerville/Everett low-income focus. challiance.org. UMass Memorial (Worcester: 508-334-1000). Baystate (Springfield: 413-794-0000).",
+      "apply_notes": "Cambridge Health Alliance for low-income residents; Mass General for broader referrals",
+      "source": "luminari-massachusetts-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ma_massachusetts_league_of_community_health",
+      "program_name": "Massachusetts League of Community Health Centers (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Massachusetts League of Community Health Centers",
+      "phone": "617-426-2225",
+      "website": "https://massleague.org",
+      "eligibility": "Anyone. 50+ FQHCs. massleague.org / findahealthcenter.hrsa.gov. Key: Fenway Health (Boston LGBTQ+ focus: 617-927-6000). Harbor Health Services (Boston: 617-282-3200 \u2014 Haitian community). Baystate Wing (Springfield: 413-737-4771).",
+      "apply_notes": "Federally qualified health centers \u2014 sliding scale statewide",
+      "source": "luminari-massachusetts-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ma_massachusetts_housing_finance_agency_mhf",
+      "program_name": "Massachusetts Housing Finance Agency (MHFA / MassHousing)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Massachusetts Housing Finance Agency",
+      "phone": "617-854-1000",
+      "website": "https://masshousing.com",
+      "eligibility": "Low-income MA renters. masshousing.com. Boston Housing Authority: 617-988-4000. Cambridge Housing Authority: 617-864-3020. Springfield Housing Authority: 413-781-8586.",
+      "apply_notes": "Section 8/HCV, rental assistance, foreclosure prevention",
+      "source": "luminari-massachusetts-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "MA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ma_greater_boston_legal_services_gbls",
+      "program_name": "Greater Boston Legal Services (GBLS)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Greater Boston Legal Services",
+      "phone": "617-603-1700",
+      "website": "https://gbls.org",
+      "eligibility": "Income < 200% FPL. gbls.org. Legal Aid of Western Massachusetts (Springfield: 413-781-7814). South Coastal Counties Legal Services (Brockton: 508-583-4280). Northeast Legal Aid (Lawrence: 978-458-1465).",
+      "apply_notes": "Free civil legal aid \u2014 Greater Boston metro",
+      "source": "luminari-massachusetts-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "",
+      "state": "MA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ma_ma_tafdc_tanf_dta",
+      "program_name": "MA TAFDC / TANF (DTA)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "MA TAFDC / TANF",
+      "phone": "877-382-2363",
+      "website": "https://mass.gov/dta",
+      "eligibility": "Families with children \u2014 up to $828/month family of 3 (one of higher TANF amounts). 24-month state limit. Pair with childcare (CCFA) and SNAP.",
+      "apply_notes": "Cash assistance for families \u2014 Transitional Aid to Families with Dependent Children",
+      "source": "luminari-massachusetts-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "MA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ma_massachusetts_ui_dua",
+      "program_name": "Massachusetts UI (DUA)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Massachusetts UI",
+      "phone": "617-626-6800",
+      "website": "https://mass.gov/dua",
+      "eligibility": "Workers who lost job through no fault. $1,033/week maximum \u2014 highest in registry. 30 weeks \u2014 longest duration. mass.gov/dua. Appeal: 10 days from mailing.",
+      "apply_notes": "Weekly income replacement \u2014 highest in registry at $1,033/week max, 30 weeks",
+      "source": "luminari-massachusetts-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "MA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ma_massachusetts_liheap_fuel_assistance_eoe",
+      "program_name": "Massachusetts LIHEAP / Fuel Assistance (EOEA)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Massachusetts LIHEAP / Fuel Assistance",
+      "phone": "800-632-8175",
+      "website": "https://mass.gov/fuelassistance",
+      "eligibility": "Income < 60% state median. mass.gov/fuelassistance. Apply through local Community Action Agency. Action for Boston Community Development (ABCD): 617-357-6000. Springfield Partners for Community Action: 413-263-6500.",
+      "apply_notes": "Heating assistance \u2014 critical in MA winters",
+      "source": "luminari-massachusetts-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "MA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ma_massachusetts_immigrant_and_refugee_advo",
+      "program_name": "Massachusetts Immigrant and Refugee Advocacy Coalition (MIRA)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Massachusetts Immigrant and Refugee Advocacy Coalition",
+      "phone": "617-350-5480",
+      "website": "https://miracoalition.org",
+      "eligibility": "Immigrants statewide. miracoalition.org. Also Political Asylum/Immigration Representation (PAIR: 617-742-9296). Chelsea Collaborative (617-889-6080).",
+      "apply_notes": "Immigrant rights, legal services coordination, policy advocacy statewide",
+      "source": "luminari-massachusetts-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "",
+      "state": "MA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ma_jane_doe_inc_ma_dv_coalition",
+      "program_name": "Jane Doe Inc. / MA DV Coalition",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Jane Doe Inc. / MA DV Coalition",
+      "phone": "877-785-2020",
+      "website": "https://janedoe.org",
+      "eligibility": "Anyone experiencing DV. janedoe.org. RESPOND (Boston: 617-623-5900). New Hope (Worcester: 508-755-9030). Womanshelter/Companeras (Holyoke: 413-536-1628 \u2014 bilingual SpanishEnglish).",
+      "apply_notes": "24/7 DV and sexual assault hotline and shelter network statewide",
+      "source": "luminari-massachusetts-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "MA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ma_massachusetts_veterans_services_dvs",
+      "program_name": "Massachusetts Veterans Services (DVS)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Massachusetts Veterans Services",
+      "phone": "617-210-5480",
+      "website": "https://mass.gov/veterans",
+      "eligibility": "MA veterans and families. VA Boston (617-232-9500). Central Western MA VA (Leeds: 413-584-4040). Bedford VA (781-275-7500).",
+      "apply_notes": "VA benefits navigation, state veterans services, Chapter 115 emergency aid",
+      "source": "luminari-massachusetts-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "MA",
+      "federal_interface": false
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "state": "DC",
+  "state_name": "Washington DC",
+  "version": "3.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-09",
+  "source": "luminari-dc-registry.docx",
+  "datasets": [
+    "childcare",
+    "healthcare",
+    "food",
+    "cash_assistance",
+    "housing",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "consumer_protection",
+    "disability_claim",
+    "employment_dispute",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "utility_dispute",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "civil_rights",
+    "employer",
+    "insurer",
+    "consumer"
+  ],
+  "policy_flags": [
+    "dc_alliance_undocumented",
+    "dc_highest_minimum_wage",
+    "dc_ohr_broadest_classes",
+    "dc_wards_7_8_poverty",
+    "dc_no_congressional_representation",
+    "dc_no_voting_representation"
+  ],
+  "statistics": {
+    "total_programs": 15,
+    "total_oversight_chains": 4,
+    "total_oversight_bodies": 6,
+    "total_flags": 6
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "childcare",
+    "food"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ],
+  "portability_score": "57%"
+}

@@ -1,0 +1,148 @@
+{
+  "meta": {
+    "state": "AL",
+    "version": "3.0"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "housing_violation",
+      "state": "AL",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document + Confirm ARLTA Coverage",
+          "deadline": "Confirm ARLTA coverage first",
+          "documents": [
+            "Dated photos",
+            "communications",
+            "lease"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Send Written Repair Notice",
+          "deadline": "PREREQUISITE before tenant remedies",
+          "documents": [
+            "Written notice",
+            "certified mail"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File Code Enforcement",
+          "deadline": "Within 5 days of eviction notice",
+          "documents": [
+            "Written complaint with photos"
+          ],
+          "escalation": "Birmingham: 205-254-2423"
+        },
+        {
+          "step_number": 4,
+          "action": "Contact Legal Services Alabama — Same Day",
+          "deadline": "Same day — 7-day notice, fast District Court",
+          "documents": [
+            "All documentation"
+          ],
+          "escalation": "LSA: 866-456-4995"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft",
+      "state": "AL",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document Wages Owed",
+          "deadline": "FLSA SOL: 2 years",
+          "documents": [
+            "Pay stubs",
+            "time records",
+            "offer letter"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "File Federal WHD — Primary",
+          "deadline": "2-year FLSA SOL — FATAL",
+          "documents": [
+            "Documentation"
+          ],
+          "escalation": "WHD Birmingham: 205-801-5000"
+        },
+        {
+          "step_number": 3,
+          "action": "File Alabama DOL (Secondary)",
+          "deadline": "2-year SOL",
+          "documents": [
+            "Same documentation"
+          ],
+          "escalation": "Alabama DOL: 334-242-8990"
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial",
+      "state": "AL",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Review Notice",
+          "deadline": "UI: 12 days — FATAL",
+          "documents": [
+            "Notice",
+            "case number"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Request Fair Hearing",
+          "deadline": "30 days benefits / 12 days UI — FATAL",
+          "documents": [
+            "Written appeal"
+          ],
+          "escalation": "DHR: 334-242-1773 / ADOL: 800-361-4524"
+        },
+        {
+          "step_number": 3,
+          "action": "Contact Legal Aid",
+          "deadline": "",
+          "documents": [
+            "All documentation"
+          ],
+          "escalation": "LSA: 866-456-4995"
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_denial",
+      "state": "AL",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document Denial",
+          "deadline": "",
+          "documents": [
+            "Denial letter/EOB",
+            "plan docs",
+            "medical records"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Internal Appeal + External Review",
+          "deadline": "180 days private / 90 days Medicaid",
+          "documents": [
+            "Written appeal"
+          ],
+          "escalation": "Alabama DOI: 800-433-3966"
+        }
+      ]
+    }
+  ]
+}

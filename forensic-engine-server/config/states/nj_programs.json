@@ -1,0 +1,484 @@
+{
+  "meta": {
+    "state": "NJ",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "nj_njhelps_nj_snap_dcf",
+      "program_name": "NJHelps / NJ SNAP (DCF)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "NJHelps / NJ SNAP",
+      "phone": "800-792-9773",
+      "website": "https://njhelps.gov",
+      "eligibility": "Income < 130% FPL. njhelps.gov. Essex County (Newark): 862-702-2100. Hudson County (Jersey City): 201-521-6000. Camden County: 856-858-8000. Bergen County: 201-368-4200.",
+      "apply_notes": "Monthly food assistance \u2014 county welfare boards",
+      "source": "luminari-new-jersey-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "NJ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nj_community_foodbank_of_nj_nj_food_bank_ne",
+      "program_name": "Community FoodBank of NJ / NJ Food Bank Network",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Community FoodBank of NJ / NJ Food Bank Network",
+      "phone": "908-355-3663",
+      "website": "https://cfbnj.org",
+      "eligibility": "Anyone in need. cfbnj.org. Also Fulfill NJ (Monmouth/Ocean: 732-918-2600). Food Bank of South Jersey (856-662-4884).",
+      "apply_notes": "Primary NJ food bank \u2014 statewide distribution",
+      "source": "luminari-new-jersey-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "NJ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nj_wic_new_jersey",
+      "program_name": "WIC New Jersey",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WIC New Jersey",
+      "phone": "609-633-1879",
+      "website": "https://nj.gov/health/fhs/wic",
+      "eligibility": "Pregnant, postpartum women, infants, children under 5. Income < 185% FPL. nj.gov/health/fhs/wic \u2014 local clinics.",
+      "apply_notes": "Nutrition assistance for women, infants, children",
+      "source": "luminari-new-jersey-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "NJ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nj_nj_familycare_medicaid_dmahs",
+      "program_name": "NJ FamilyCare / Medicaid (DMAHS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial",
+        "insurance_claim_denial"
+      ],
+      "agency": "NJ FamilyCare / Medicaid",
+      "phone": "800-701-0710",
+      "website": "https://njfamilycare.org",
+      "eligibility": "Adults 19\u201364 to 138% FPL. Children to higher thresholds. njfamilycare.org \u2014 apply online. All NJ residents regardless of immigration status for emergency Medicaid.",
+      "apply_notes": "Health coverage \u2014 expanded 2014, broad eligibility",
+      "source": "luminari-new-jersey-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NJ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nj_university_hospital_newark_nj_safety_net",
+      "program_name": "University Hospital Newark (NJ Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "University Hospital Newark",
+      "phone": "973-972-4300",
+      "website": "https://uhnj.org",
+      "eligibility": "Newark metro. Charity care income < 200% FPL. Also Hackensack Meridian Health (732-549-8600), Cooper University Hospital (Camden: 856-342-2000).",
+      "apply_notes": "Essex County academic medical center \u2014 charity care, trauma center",
+      "source": "luminari-new-jersey-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NJ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nj_nj_primary_care_association_fqhcs",
+      "program_name": "NJ Primary Care Association (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "NJ Primary Care Association",
+      "phone": "609-896-8900",
+      "website": "https://njpca.org",
+      "eligibility": "Anyone. njpca.org / findahealthcenter.hrsa.gov. Key: Henry J. Austin Health Center (Trenton: 609-278-5900), Federally Qualified Health Center of the Oranges (862-242-5700), Americare Community Health Center (Newark: 973-491-2700).",
+      "apply_notes": "Federally qualified health centers \u2014 sliding scale statewide",
+      "source": "luminari-new-jersey-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NJ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nj_nj_housing_and_mortgage_finance_agency_n",
+      "program_name": "NJ Housing and Mortgage Finance Agency (NJHMFA)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "NJ Housing and Mortgage Finance Agency",
+      "phone": "800-654-6873",
+      "website": "https://njhousing.gov",
+      "eligibility": "Low-income NJ renters. njhousing.gov. Newark Housing Authority: 973-273-6200. Jersey City Housing Authority: 201-706-4600. Camden Housing Authority: 856-966-6002.",
+      "apply_notes": "Section 8/HCV, rental assistance, foreclosure prevention",
+      "source": "luminari-new-jersey-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "NJ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nj_legal_services_of_nj_lsnj",
+      "program_name": "Legal Services of NJ (LSNJ)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute"
+      ],
+      "agency": "Legal Services of NJ",
+      "phone": "888-576-5529",
+      "website": "https://lsnj.org",
+      "eligibility": "Income < 200% FPL. lsnj.org. Mercer/Hunterdon: 609-695-6249. Essex/Hudson/Bergen: 973-624-4500. South Jersey: 856-964-2010.",
+      "apply_notes": "Free civil legal aid statewide \u2014 eviction, benefits, family, immigration",
+      "source": "luminari-new-jersey-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "",
+      "state": "NJ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nj_nj_tanf_workfirst_nj_dcf",
+      "program_name": "NJ TANF / WorkFirst NJ (DCF)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "NJ TANF / WorkFirst NJ",
+      "phone": "732-761-2020",
+      "website": "https://nj.gov/dhs/clients/workfirst",
+      "eligibility": "Families with children \u2014 up to $534/month family of 3. 60-month federal limit. Work requirements apply. Pair with child care (CCDI) and FamilyCare.",
+      "apply_notes": "Cash assistance for families with children",
+      "source": "luminari-new-jersey-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NJ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nj_new_jersey_ui_nj_dol",
+      "program_name": "New Jersey UI (NJ DOL)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "New Jersey UI",
+      "phone": "732-761-2020",
+      "website": "https://myunemployment.nj.gov",
+      "eligibility": "Workers who lost job through no fault \u2014 up to $875/week, 26 weeks. CRITICAL: 7-day appeal deadline \u2014 tied shortest in registry. Contact LSNJ within 3 days of denial.",
+      "apply_notes": "Weekly income replacement \u2014 highest in registry at $875/week",
+      "source": "luminari-new-jersey-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NJ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nj_nj_tdi_temporary_disability_insurance_do",
+      "program_name": "NJ TDI \u2014 Temporary Disability Insurance (DOL)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "NJ TDI \u2014 Temporary Disability Insurance",
+      "phone": "609-292-7060",
+      "website": "https://nj.gov/labor/myleavebenefits",
+      "eligibility": "NJ workers unable to work due to non-work illness or injury. Up to ~$1,025/week. File within 30 days of disability. SCREEN FOR THIS AT EVERY INTAKE.",
+      "apply_notes": "UNIQUE NJ BENEFIT: Income replacement for non-work illness/injury \u2014 up to 85% wages",
+      "source": "luminari-new-jersey-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NJ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nj_nj_fli_family_leave_insurance_dol",
+      "program_name": "NJ FLI \u2014 Family Leave Insurance (DOL)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "NJ FLI \u2014 Family Leave Insurance",
+      "phone": "609-292-7060",
+      "website": "https://nj.gov/labor/myleavebenefits",
+      "eligibility": "NJ workers \u2014 up to 12 weeks at 85% wages. Available regardless of employer size. nj.gov/labor/myleavebenefits.",
+      "apply_notes": "UNIQUE NJ BENEFIT: Paid leave for bonding with new child or caring for ill family member",
+      "source": "luminari-new-jersey-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NJ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nj_nj_liheap_lifeline_utility_assistance_dh",
+      "program_name": "NJ LIHEAP / Lifeline Utility Assistance (DHS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "NJ LIHEAP / Lifeline Utility Assistance",
+      "phone": "800-510-3102",
+      "website": "https://state.nj.us/dhs/liheap",
+      "eligibility": "Income < 60% state median. NJ Universal Service Fund (utility discount program) also available \u2014 JCP&L: 800-582-7527, PSE&G: 800-436-7734.",
+      "apply_notes": "Heating/cooling assistance, utility shutoff prevention, Lifeline credit",
+      "source": "luminari-new-jersey-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NJ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nj_make_the_road_nj_wind_immigration_servic",
+      "program_name": "Make the Road NJ / WIND Immigration Services",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Make the Road NJ / WIND Immigration Services",
+      "phone": "973-622-5061",
+      "website": "https://maketheroadnj.org",
+      "eligibility": "Immigrant communities. maketheroadnj.org. Also New Labor (732-545-7780) for day laborers.",
+      "apply_notes": "Immigrant rights, workers rights, civic engagement \u2014 Newark, Elizabeth, Passaic",
+      "source": "luminari-new-jersey-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "",
+      "state": "NJ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nj_nj_dv_hotline_njcasa",
+      "program_name": "NJ DV Hotline (NJCASA)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "NJ DV Hotline",
+      "phone": "1-800-572-7233",
+      "website": "https://njcasa.org",
+      "eligibility": "Anyone experiencing DV. njcasa.org. The Salvation Army (Essex County: 973-481-9700) also provides DV shelter.",
+      "apply_notes": "24/7 DV hotline \u2014 shelter, legal advocacy, court accompaniment",
+      "source": "luminari-new-jersey-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "NJ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nj_nj_veterans_service_network_dvs",
+      "program_name": "NJ Veterans Service Network (DVS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial",
+        "disability_claim"
+      ],
+      "agency": "NJ Veterans Service Network",
+      "phone": "888-865-8387",
+      "website": "https://nj.gov/military/veterans",
+      "eligibility": "NJ veterans and families. East Orange VA (973-676-1000). Lyons VA (908-647-0180). State DVS: nj.gov/military/veterans.",
+      "apply_notes": "VA benefits, state veterans services, emergency financial assistance",
+      "source": "luminari-new-jersey-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NJ",
+      "federal_interface": false
+    }
+  ]
+}

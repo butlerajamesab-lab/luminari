@@ -1,0 +1,175 @@
+{
+  "meta": {
+    "state": "ND",
+    "state_name": "North Dakota",
+    "layer": "workflow_overrides",
+    "version": "3.0",
+    "date_created": "2026-03-09",
+    "date_verified": "2026-03-09",
+    "source": "luminari-nd-registry"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "housing_violation_workflow",
+      "state": "ND",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document violations (photos, communications).",
+          "documents_needed": "Photos, written communications, lease copy",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately",
+          "statute": "ND Century Code §47-16-13",
+          "notes": "Creates paper trail.",
+          "source": "luminari-nd-registry"
+        },
+        {
+          "step_number": 2,
+          "action": "Send written notice to landlord.",
+          "documents_needed": "Written notice (certified mail)",
+          "state_agency": "Landlord",
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "5-day notice under NDCC §47-16-13",
+          "statute": "NDCC §47-16-13 (Landlord/Tenant Obligations)",
+          "notes": "Certified mail creates legal proof.",
+          "source": "luminari-nd-registry"
+        },
+        {
+          "step_number": 3,
+          "action": "Contact code enforcement / local building dept.",
+          "documents_needed": "Violation documentation",
+          "state_agency": "Local code enforcement",
+          "phone": "Fargo: 701-241-1310 / Bismarck: 701-355-1700",
+          "complaint_portal": null,
+          "deadline": "As needed",
+          "statute": null,
+          "notes": "City-specific contacts.",
+          "source": "luminari-nd-registry"
+        },
+        {
+          "step_number": 4,
+          "action": "Contact Legal Services of ND.",
+          "documents_needed": "All documentation",
+          "state_agency": "Legal Services of ND",
+          "phone": "800-634-5263",
+          "complaint_portal": "https://legalassist.org",
+          "deadline": "Before eviction deadline",
+          "statute": null,
+          "notes": "Only statewide legal aid provider.",
+          "source": "luminari-nd-registry"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft_workflow",
+      "state": "ND",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document wages owed.",
+          "documents_needed": "Pay stubs, time records, employment contract",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately",
+          "statute": "ND Wage Claim Act NDCC §34-14-01",
+          "notes": "3-year SOL under ND law.",
+          "source": "luminari-nd-registry"
+        },
+        {
+          "step_number": 2,
+          "action": "File ND DOL wage claim.",
+          "documents_needed": "Wage documentation",
+          "state_agency": "ND DOL",
+          "phone": "701-328-2660",
+          "complaint_portal": "https://nd.gov/labor",
+          "deadline": "3-year SOL (ND Wage Claim Act)",
+          "statute": "NDCC §34-14-01",
+          "notes": "State filing — longer SOL than federal.",
+          "source": "luminari-nd-registry"
+        },
+        {
+          "step_number": 3,
+          "action": "File federal WHD simultaneously.",
+          "documents_needed": "Same documentation",
+          "state_agency": "DOL WHD Bismarck",
+          "phone": "701-250-4515",
+          "complaint_portal": "https://dol.gov/whd",
+          "deadline": "FLSA: 2 years (3 if willful)",
+          "statute": "FLSA 29 USC §201",
+          "notes": "Dual-file state and federal.",
+          "source": "luminari-nd-registry"
+        },
+        {
+          "step_number": 4,
+          "action": "Consider private lawsuit.",
+          "documents_needed": "All documentation",
+          "state_agency": "Private attorney",
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "3-year SOL",
+          "statute": "NDCC §34-14-01",
+          "notes": "Private action available under ND law.",
+          "source": "luminari-nd-registry"
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial_workflow",
+      "state": "ND",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Review Notice of Action.",
+          "documents_needed": "Notice of Action letter",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately",
+          "statute": null,
+          "notes": "UI appeal deadline is 12 days — FATAL.",
+          "source": "luminari-nd-registry"
+        },
+        {
+          "step_number": 2,
+          "action": "Request fair hearing.",
+          "documents_needed": "Notice of Action, supporting documents",
+          "state_agency": "ND DHHS",
+          "phone": "701-328-2316",
+          "complaint_portal": "https://hhs.nd.gov",
+          "deadline": "30 days from notice",
+          "statute": null,
+          "notes": "SNAP/Medicaid/TANF fair hearings.",
+          "source": "luminari-nd-registry"
+        },
+        {
+          "step_number": 3,
+          "action": "UI appeal.",
+          "documents_needed": "UI denial notice",
+          "state_agency": "Job Service ND",
+          "phone": "701-328-4995",
+          "complaint_portal": "https://jobsnd.com/unemployment",
+          "deadline": "12 DAYS from mailing — FATAL",
+          "statute": null,
+          "notes": "Contact Legal Services ND within 5 days.",
+          "source": "luminari-nd-registry"
+        },
+        {
+          "step_number": 4,
+          "action": "Contact Legal Services ND.",
+          "documents_needed": "All documentation",
+          "state_agency": "Legal Services of ND",
+          "phone": "800-634-5263",
+          "complaint_portal": "https://legalassist.org",
+          "deadline": "Within 5 days of any denial",
+          "statute": null,
+          "notes": "Only statewide legal aid provider.",
+          "source": "luminari-nd-registry"
+        }
+      ]
+    }
+  ]
+}

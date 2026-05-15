@@ -1,0 +1,700 @@
+{
+  "meta": {
+    "state": "OR",
+    "layer": "layer1_cards",
+    "version": "1.0.0",
+    "last_updated": "2026-03-06"
+  },
+  "clusters": [
+    {
+      "cluster_id": "or_food",
+      "cluster_name": "Food Assistance",
+      "icon": "utensils",
+      "cards": [
+        {
+          "card_id": "or_food_snap",
+          "title": "Apply for SNAP (Oregon)",
+          "summary": "Oregon SNAP provides monthly food benefits via EBT. Apply through ONE.Oregon.gov \u2014 one application covers SNAP, OHP, TANF, ERDC, and LIHEAP.",
+          "who_qualifies": "Income below 185% FPL (gross). ABAWDs 18-54 must meet work requirements as of Jan 2026. Exemptions available.",
+          "how_to_apply": "Apply at ONE.Oregon.gov, call 800-723-3638, or visit local ODHS office.",
+          "phone": "800-723-3638",
+          "website": "https://one.oregon.gov",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "Proof of residence",
+            "SSN"
+          ],
+          "program_ids": [
+            "or_snap"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "food",
+            "snap",
+            "ebt",
+            "hungry",
+            "groceries"
+          ],
+          "region": "statewide",
+          "federal_interface": true
+        },
+        {
+          "card_id": "or_food_portland",
+          "title": "Portland Metro Food Resources",
+          "summary": "Oregon Food Bank (503-282-0555), Sunshine Division (503-823-6163), Human Solutions, Neighborhood House, NAYA (503-288-8177), Outside In, Central City Concern. 211info for nearest pantry.",
+          "who_qualifies": "Anyone in need in Portland metro area.",
+          "how_to_apply": "Call 211 or visit oregonfoodbank.org. Walk-in at most pantries.",
+          "phone": "503-282-0555",
+          "website": "https://oregonfoodbank.org",
+          "documents_needed": [],
+          "program_ids": [],
+          "urgency": "urgent",
+          "routing_tags": [
+            "food",
+            "pantry",
+            "portland",
+            "hungry",
+            "meals"
+          ],
+          "region": "portland_metro",
+          "federal_interface": false
+        },
+        {
+          "card_id": "or_food_tribal",
+          "title": "Tribal Food Programs",
+          "summary": "FDPIR through 9 tribes: Warm Springs, Umatilla, Grand Ronde, Klamath, Siletz, Burns Paiute, Coos/Lower Umpqua/Siuslaw, Coquille, Cow Creek. Also NAYA (Portland) and NARA NW.",
+          "who_qualifies": "Tribal members and eligible households on or near reservations.",
+          "how_to_apply": "Contact specific tribal social services or NAYA at 503-288-8177.",
+          "phone": "503-288-8177",
+          "website": "https://nayapdx.org",
+          "documents_needed": [
+            "Tribal enrollment or CDIB",
+            "Proof of income",
+            "Proof of residence"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "food",
+            "tribal",
+            "fdpir",
+            "native",
+            "reservation"
+          ],
+          "region": "tribal_nation",
+          "federal_interface": true
+        }
+      ]
+    },
+    {
+      "cluster_id": "or_healthcare",
+      "cluster_name": "Healthcare",
+      "icon": "heart-pulse",
+      "cards": [
+        {
+          "card_id": "or_health_ohp",
+          "title": "Oregon Health Plan (OHP / Medicaid)",
+          "summary": "OHP covers 1 in 4 Oregonians. Income-based at 138% FPL. Healthier Oregon Program covers undocumented adults 19-64 (unique). Apply at ONE.Oregon.gov.",
+          "who_qualifies": "Income at or below 138% FPL. Undocumented adults 19-64 eligible through Healthier Oregon. No asset test.",
+          "how_to_apply": "Apply at ONE.Oregon.gov, call 800-699-9075, or visit local ODHS office.",
+          "phone": "800-699-9075",
+          "website": "https://one.oregon.gov",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "SSN (not required for Healthier Oregon)",
+            "Proof of OR residence"
+          ],
+          "program_ids": [
+            "or_ohp"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "medicaid",
+            "ohp",
+            "health",
+            "insurance",
+            "doctor"
+          ],
+          "region": "statewide",
+          "federal_interface": true
+        },
+        {
+          "card_id": "or_health_portland",
+          "title": "Portland Metro Healthcare",
+          "summary": "OHSU (503-494-8311), Legacy Health, Providence, Central City Concern FQHC, Outside In (503-535-3800), Virginia Garcia (503-352-8725), Multnomah County Health Dept, Neighborhood Health Center, Lines for Life (988).",
+          "who_qualifies": "Low-income and uninsured Portland metro residents. Sliding scale fees at FQHCs.",
+          "how_to_apply": "Walk in or call. Virginia Garcia: 503-352-8725. Outside In: 503-535-3800.",
+          "phone": "503-494-8311",
+          "website": "https://ohsu.edu",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income (for sliding scale)"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "health",
+            "clinic",
+            "portland",
+            "hospital",
+            "uninsured"
+          ],
+          "region": "portland_metro",
+          "federal_interface": false
+        },
+        {
+          "card_id": "or_health_tribal",
+          "title": "Tribal Health Programs",
+          "summary": "IHS Portland Area, Warm Springs Health & Wellness, Umatilla Yellowhawk, Grand Ronde Health, Klamath Tribal Health, Siletz Community Health, NARA NW (Portland), NAYA Health. All AI/AN eligible.",
+          "who_qualifies": "AI/AN tribal members. IHS serves all federally recognized tribal members.",
+          "how_to_apply": "Contact nearest tribal health program or NARA NW at 503-230-9875.",
+          "phone": "503-230-9875",
+          "website": "https://naranorthwest.org",
+          "documents_needed": [
+            "Tribal enrollment card or CDIB",
+            "Photo ID"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "ihs",
+            "tribal",
+            "health",
+            "native",
+            "nara"
+          ],
+          "region": "tribal_nation",
+          "federal_interface": true
+        }
+      ]
+    },
+    {
+      "cluster_id": "or_housing",
+      "cluster_name": "Housing & Rent",
+      "icon": "home",
+      "cards": [
+        {
+          "card_id": "or_housing_tenant_rights",
+          "title": "Oregon Tenant Rights",
+          "summary": "ORS Ch 90 protections. SB 608 just-cause eviction. 7-day urgent repair timeline. Rent withhold (ORS 90.365) and repair-and-deduct available. SB 599 prohibits immigration status inquiries by landlords.",
+          "who_qualifies": "All Oregon renters.",
+          "how_to_apply": "Call LASO CLEAR at 855-412-8429 or Community Alliance of Tenants at 503-460-9702.",
+          "phone": "855-412-8429",
+          "website": "https://lasoregon.org",
+          "documents_needed": [
+            "Lease agreement",
+            "Written repair notices",
+            "Photos of conditions"
+          ],
+          "program_ids": [],
+          "urgency": "urgent",
+          "routing_tags": [
+            "tenant",
+            "landlord",
+            "repair",
+            "eviction",
+            "rent"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "or_housing_portland",
+          "title": "Portland Metro Housing Resources",
+          "summary": "Eviction Defense Project, Portland Housing Bureau (503-823-2375), PCC CLEAR, FHCO (800-424-3247), Home Forward (503-802-8300), JOIN, Transition Projects, Human Solutions, Community Alliance of Tenants, Hacienda CDC, Urban League.",
+          "who_qualifies": "Low-income Portland metro residents facing housing instability.",
+          "how_to_apply": "Call Portland Housing Bureau at 503-823-2375 or Home Forward at 503-802-8300.",
+          "phone": "503-823-2375",
+          "website": "https://portland.gov/phb",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "Lease agreement"
+          ],
+          "program_ids": [],
+          "urgency": "urgent",
+          "routing_tags": [
+            "housing",
+            "portland",
+            "eviction",
+            "section8",
+            "shelter"
+          ],
+          "region": "portland_metro",
+          "federal_interface": false
+        },
+        {
+          "card_id": "or_housing_tribal",
+          "title": "Tribal Housing Programs",
+          "summary": "Warm Springs Housing Authority, Umatilla Housing, Grand Ronde Housing, Klamath Tribes Housing, Siletz Tribal Housing, NAYA Housing Services (Portland). Section 184 Indian Home Loan available.",
+          "who_qualifies": "Tribal members. Section 184 available for AI/AN homebuyers.",
+          "how_to_apply": "Contact tribal housing authority or NAYA at 503-288-8177.",
+          "phone": "503-288-8177",
+          "website": "https://nayapdx.org",
+          "documents_needed": [
+            "Tribal enrollment",
+            "Proof of income",
+            "Proof of residence"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "tribal",
+            "housing",
+            "reservation",
+            "section184",
+            "native"
+          ],
+          "region": "tribal_nation",
+          "federal_interface": true
+        }
+      ]
+    },
+    {
+      "cluster_id": "or_dv_safety",
+      "cluster_name": "Domestic Violence & Safety",
+      "icon": "shield",
+      "cards": [
+        {
+          "card_id": "or_dv_hotline",
+          "title": "Oregon DV Resources",
+          "summary": "Oregon DV Hotline (800-799-7233), Lines for Life (988), Crime Victims Compensation, TA-DVS (Temporary Assistance for DV Survivors), Address Confidentiality Program. DOJ DV locator for nearest shelter.",
+          "who_qualifies": "Anyone experiencing domestic violence, dating violence, sexual assault, or stalking in Oregon.",
+          "how_to_apply": "Call National DV Hotline 800-799-7233 or Lines for Life 988. For TA-DVS: contact local ODHS office.",
+          "phone": "800-799-7233",
+          "website": "https://oregondvcoalition.org",
+          "documents_needed": [],
+          "program_ids": [],
+          "urgency": "urgent",
+          "routing_tags": [
+            "dv",
+            "domestic_violence",
+            "abuse",
+            "shelter",
+            "safety"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "or_dv_portland",
+          "title": "Portland DV Resources",
+          "summary": "Bradley Angle (503-281-2442), Raphael House (503-222-6222), SAFE (503-232-9751), VOA, Latino Network, El Programa, SAGE LGBTQ+, ReWA (refugee), CARES NW (child abuse), Witness Justice.",
+          "who_qualifies": "DV survivors in Portland metro area.",
+          "how_to_apply": "Call Bradley Angle at 503-281-2442 or Raphael House at 503-222-6222.",
+          "phone": "503-281-2442",
+          "website": "https://bradleyangle.org",
+          "documents_needed": [],
+          "program_ids": [],
+          "urgency": "urgent",
+          "routing_tags": [
+            "dv",
+            "portland",
+            "shelter",
+            "abuse",
+            "lgbtq"
+          ],
+          "region": "portland_metro",
+          "federal_interface": false
+        },
+        {
+          "card_id": "or_dv_tribal",
+          "title": "Tribal DV Resources",
+          "summary": "StrongHearts Native Helpline (844-762-8483, 24/7). Umatilla DV program, Warm Springs DV, Grand Ronde DV, Klamath DV, NAYA DV services (Portland). VAWA tribal jurisdiction.",
+          "who_qualifies": "Native American DV survivors. StrongHearts serves all AI/AN.",
+          "how_to_apply": "Call StrongHearts 844-762-8483 (24/7) or NAYA 503-288-8177.",
+          "phone": "844-762-8483",
+          "website": "https://strongheartshelpline.org",
+          "documents_needed": [],
+          "program_ids": [],
+          "urgency": "urgent",
+          "routing_tags": [
+            "dv",
+            "tribal",
+            "native",
+            "stronghearts",
+            "vawa"
+          ],
+          "region": "tribal_nation",
+          "federal_interface": false
+        }
+      ]
+    },
+    {
+      "cluster_id": "or_legal_aid",
+      "cluster_name": "Legal Aid",
+      "icon": "scale",
+      "cards": [
+        {
+          "card_id": "or_legal_laso",
+          "title": "Legal Aid Services of Oregon (LASO)",
+          "summary": "LASO CLEAR hotline (855-412-8429) \u2014 statewide intake for free civil legal services. Housing, benefits, DV, family law, consumer. 14 offices across Oregon.",
+          "who_qualifies": "Low-income Oregonians (generally below 200% FPL).",
+          "how_to_apply": "Call LASO CLEAR at 855-412-8429 (Mon-Fri 9am-1pm).",
+          "phone": "855-412-8429",
+          "website": "https://lasoregon.org",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "legal",
+            "attorney",
+            "free",
+            "laso",
+            "civil"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "or_legal_olc",
+          "title": "Oregon Law Center",
+          "summary": "Free civil legal services \u2014 farmworker rights (OLC Farmworker Program), housing, benefits, immigration. Statewide with focus on rural Oregon.",
+          "who_qualifies": "Low-income Oregonians, especially rural and farmworker communities.",
+          "how_to_apply": "Call 503-295-2760 or visit oregonlawcenter.org.",
+          "phone": "503-295-2760",
+          "website": "https://oregonlawcenter.org",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "legal",
+            "farmworker",
+            "rural",
+            "immigration",
+            "olc"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "or_legal_napols",
+          "title": "NAPOLS (Native American Program of Legal Aid)",
+          "summary": "Free legal services for AI/AN in Oregon \u2014 tribal court, ICWA, housing, benefits, DV. Part of LASO. 503-236-6813.",
+          "who_qualifies": "AI/AN individuals in Oregon.",
+          "how_to_apply": "Call 503-236-6813 or contact through LASO CLEAR.",
+          "phone": "503-236-6813",
+          "website": "https://lasoregon.org/napols",
+          "documents_needed": [
+            "Tribal enrollment or CDIB",
+            "Proof of income"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "legal",
+            "tribal",
+            "native",
+            "napols",
+            "icwa"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        }
+      ]
+    },
+    {
+      "cluster_id": "or_cash_assistance",
+      "cluster_name": "Cash Assistance & Income",
+      "icon": "banknote",
+      "cards": [
+        {
+          "card_id": "or_cash_tanf",
+          "title": "TANF Oregon",
+          "summary": "Oregon TANF provides temporary cash assistance for families with children. Also TA-DVS for DV survivors. Apply at ONE.Oregon.gov.",
+          "who_qualifies": "Families with children, income below TANF limits. TA-DVS for DV survivors regardless of income.",
+          "how_to_apply": "Apply at ONE.Oregon.gov or local ODHS office. Call 800-723-3638.",
+          "phone": "800-723-3638",
+          "website": "https://one.oregon.gov",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "SSN",
+            "Birth certificates for children"
+          ],
+          "program_ids": [
+            "or_tanf"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "tanf",
+            "cash",
+            "welfare",
+            "family",
+            "ta_dvs"
+          ],
+          "region": "statewide",
+          "federal_interface": true
+        },
+        {
+          "card_id": "or_cash_paid_leave",
+          "title": "Oregon Paid Family & Medical Leave",
+          "summary": "60-100% wage replacement for up to 12 weeks (14 for pregnancy). All workers who earned $1,000+ in base year qualify. Apply at paidleave.oregon.gov.",
+          "who_qualifies": "Workers who earned $1,000+ in base year. Self-employed can opt in.",
+          "how_to_apply": "Apply at paidleave.oregon.gov or call 833-854-0166.",
+          "phone": "833-854-0166",
+          "website": "https://paidleave.oregon.gov",
+          "documents_needed": [
+            "Employment records",
+            "Medical documentation (if applicable)"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "paid_leave",
+            "fmla",
+            "maternity",
+            "parental",
+            "disability"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        }
+      ]
+    },
+    {
+      "cluster_id": "or_utilities",
+      "cluster_name": "Utilities & Energy",
+      "icon": "zap",
+      "cards": [
+        {
+          "card_id": "or_utility_liheap",
+          "title": "LIHEAP & Energy Assistance",
+          "summary": "LIHEAP through local Community Action Agencies. PGE and Pacific Power assistance programs. OR-EPRR covers rent + utility for eligible households. Apply through ONE.Oregon.gov.",
+          "who_qualifies": "Income at or below 60% state median income. Priority for elderly, disabled, families with young children.",
+          "how_to_apply": "Apply at ONE.Oregon.gov or contact local CAA. Call 211 for nearest provider.",
+          "phone": "211",
+          "website": "https://one.oregon.gov",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "Utility bill",
+            "SSN"
+          ],
+          "program_ids": [],
+          "urgency": "urgent",
+          "routing_tags": [
+            "utility",
+            "electric",
+            "gas",
+            "liheap",
+            "energy"
+          ],
+          "region": "statewide",
+          "federal_interface": true
+        }
+      ]
+    },
+    {
+      "cluster_id": "or_tribal",
+      "cluster_name": "Tribal & Indigenous",
+      "icon": "feather",
+      "cards": [
+        {
+          "card_id": "or_tribal_overview",
+          "title": "Oregon Tribal Services Overview",
+          "summary": "9 federally recognized tribes: Warm Springs, Umatilla, Grand Ronde, Klamath, Siletz, Burns Paiute, Coos/Lower Umpqua/Siuslaw, Coquille, Cow Creek. Governor's Office of Tribal Relations coordinates state-tribal relations.",
+          "who_qualifies": "AI/AN tribal members in Oregon.",
+          "how_to_apply": "Contact specific tribal social services or Governor's Tribal Relations at 503-378-5348.",
+          "phone": "503-378-5348",
+          "website": "https://oregon.gov/gov/policy/tribal-relations",
+          "documents_needed": [
+            "Tribal enrollment or CDIB"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "tribal",
+            "native",
+            "coordination",
+            "governor",
+            "referral"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "or_tribal_naya",
+          "title": "NAYA (Native American Youth and Family Center)",
+          "summary": "Portland-based comprehensive services for urban AI/AN: housing, food, education, employment, DV, health, youth programs. 503-288-8177.",
+          "who_qualifies": "AI/AN individuals and families in Portland metro area.",
+          "how_to_apply": "Call 503-288-8177 or visit nayapdx.org.",
+          "phone": "503-288-8177",
+          "website": "https://nayapdx.org",
+          "documents_needed": [
+            "Tribal enrollment or self-identification as AI/AN"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "naya",
+            "tribal",
+            "portland",
+            "urban_indian",
+            "youth"
+          ],
+          "region": "portland_metro",
+          "federal_interface": false
+        },
+        {
+          "card_id": "or_tribal_nara",
+          "title": "NARA NW (Native American Rehabilitation Association)",
+          "summary": "Portland-based AI/AN health and social services: primary care, behavioral health, substance abuse treatment, housing, cultural programs. 503-230-9875.",
+          "who_qualifies": "AI/AN individuals in Portland metro area.",
+          "how_to_apply": "Call 503-230-9875 or visit naranorthwest.org.",
+          "phone": "503-230-9875",
+          "website": "https://naranorthwest.org",
+          "documents_needed": [
+            "Tribal enrollment or CDIB"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "nara",
+            "tribal",
+            "health",
+            "behavioral",
+            "portland"
+          ],
+          "region": "portland_metro",
+          "federal_interface": false
+        }
+      ]
+    },
+    {
+      "cluster_id": "or_mental_health",
+      "cluster_name": "Mental Health System",
+      "icon": "brain",
+      "cards": [
+        {
+          "card_id": "or_mh_crisis_line",
+          "title": "988 Suicide & Crisis Lifeline",
+          "summary": "Call or text 988 for immediate mental health crisis support. Free, confidential, 24/7. Trained counselors can help with suicidal thoughts, emotional distress, substance use, and mental health crises. Also available via chat at 988lifeline.org.",
+          "who_qualifies": "Anyone experiencing a mental health crisis, suicidal thoughts, or emotional distress.",
+          "how_to_access": "Call or text 988. Chat at 988lifeline.org. For veterans, press 1 after dialing 988.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "or_mh_nami",
+          "title": "NAMI Helpline & Support Groups",
+          "summary": "National Alliance on Mental Illness provides free peer support, education, and advocacy. NAMI HelpLine: 1-800-950-NAMI (6264). Family-to-Family program helps families understand mental health conditions and navigate the system.",
+          "who_qualifies": "Individuals with mental health conditions and their family members.",
+          "how_to_access": "Call 1-800-950-NAMI or text 'HELPLINE' to 62640. Find local NAMI affiliate at nami.org/find-support.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "or_mh_protection_advocacy",
+          "title": "Protection & Advocacy Organization",
+          "summary": "Every state has a federally mandated Protection & Advocacy (P&A) organization with legal authority to investigate abuse and neglect in psychiatric facilities. P&A organizations can enter any facility, access records, and file lawsuits. This is often the most powerful tool available for people harmed in the mental health system.",
+          "who_qualifies": "Anyone with a disability who has experienced abuse, neglect, or rights violations in a facility.",
+          "how_to_access": "Find your state P&A at ndrn.org/about/ndrn-member-agencies/ or call the NDRN at 202-408-9514.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "or_mh_know_your_rights",
+          "title": "Know Your Rights: Oregon Emergency Hold",
+          "summary": "If you are placed on an involuntary hold in OR, you have rights: the initial hold cannot exceed 48 hours without a court hearing. You have the right to an attorney at the hearing. You have the right to present evidence and call witnesses. You have the right to an independent psychiatric evaluation. You can challenge the hold at any time.",
+          "who_qualifies": "Anyone placed on an involuntary psychiatric hold or facing commitment proceedings.",
+          "how_to_access": "Request to speak with the patient advocate. Ask for a copy of your patient rights. Contact your state's Protection & Advocacy organization.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "or_mh_records_rights",
+          "title": "Your Right to Your Psychiatric Records",
+          "summary": "Under HIPAA (45 CFR \u00a7 164.524), you have the right to access your complete medical record, including psychiatric treatment records. The facility must respond within 30 days. If they deny access, you can file a complaint with HHS Office for Civil Rights. Under HIPAA \u00a7 164.526, you also have the right to request amendments to inaccurate records.",
+          "who_qualifies": "Any current or former psychiatric patient.",
+          "how_to_access": "Submit a written request to the facility's Health Information Management department. If denied, file complaint at hhs.gov/ocr.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "or_mh_samhsa",
+          "title": "SAMHSA National Helpline",
+          "summary": "Free, confidential, 24/7 treatment referral and information service for mental health and substance use disorders. Available in English and Spanish. Provides referrals to local treatment facilities, support groups, and community-based organizations.",
+          "who_qualifies": "Anyone seeking mental health or substance use treatment information and referrals.",
+          "how_to_access": "Call 1-800-662-HELP (4357) or visit findtreatment.gov.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,465 @@
+{
+  "meta": {
+    "state": "IL",
+    "version": "3.0",
+    "program_count": 22
+  },
+  "programs": [
+    {
+      "program_id": "il_snap_food_stamps",
+      "program_name": "SNAP / Food Stamps",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "agency": "Illinois DHS",
+      "phone": "800-843-6154",
+      "website": "abe.illinois.gov",
+      "eligibility": "Income < 130% FPL statewide.",
+      "region": "statewide",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides food benefits to low-income individuals and families.",
+      "city": "Springfield",
+      "state": "IL"
+    },
+    {
+      "program_id": "il_greater_chicago_food_depository",
+      "program_name": "Greater Chicago Food Depository",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "agency": null,
+      "phone": "773-247-3663",
+      "website": "chicagosfoodbank.org",
+      "eligibility": "Anyone in Cook County needing food assistance.",
+      "region": "Cook County",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides food assistance through a network of partner agencies, pantries, and hot meal programs.",
+      "state": "IL",
+      "city": "Chicago"
+    },
+    {
+      "program_id": "illinois_food_bank_association",
+      "program_name": "Illinois Food Bank Association — Statewide Network",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "agency": null,
+      "phone": "217-585-0808",
+      "website": "illinoisfoodbanks.org",
+      "eligibility": "Anyone in need, all 102 Illinois counties.",
+      "region": "statewide",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "A network of 9 regional food banks and over 2,000 partner agencies serving all 102 Illinois counties.",
+      "city": "Springfield",
+      "state": "IL"
+    },
+    {
+      "program_id": "illinois_wic_program",
+      "program_name": "WIC (Illinois WIC Program)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "health_insurance_denial",
+        "medicaid_denial"
+      ],
+      "agency": "Illinois WIC Program",
+      "phone": "800-323-4769",
+      "website": "dph.illinois.gov/topics-services/life-stages-populations/wic",
+      "eligibility": "Pregnant women, postpartum women, infants, children under 5 — income < 185% FPL.",
+      "region": "statewide",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides food benefits, nutrition counseling, breastfeeding support, and referrals for pregnant women, postpartum women, infants, and children under 5.",
+      "city": "Springfield",
+      "state": "IL"
+    },
+    {
+      "program_id": "illinois_medicaid",
+      "program_name": "Illinois Medicaid / Medicaid Expansion",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "health_insurance_denial",
+        "medicaid_denial"
+      ],
+      "agency": "HFS",
+      "phone": "800-226-0768",
+      "website": "hfs.illinois.gov / abe.illinois.gov",
+      "eligibility": "Adults 19–64 to 138% FPL (expanded). Families, children, pregnant women, seniors, disability.",
+      "region": "statewide",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides healthcare coverage to low-income adults, families, children, pregnant women, seniors, and individuals with disabilities.",
+      "city": "Springfield",
+      "state": "IL"
+    },
+    {
+      "program_id": "il_cook_county_health",
+      "program_name": "Cook County Health (CCH) — Stroger Hospital + CountyCare",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "health_insurance_denial",
+        "medicaid_denial"
+      ],
+      "agency": null,
+      "phone": "312-864-0200 (CCH) / 312-864-8200 (CountyCare)",
+      "website": "cookcountyhealth.org",
+      "eligibility": "Cook County residents.",
+      "region": "Cook County",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Public hospital system for Cook County residents, including a Level 1 trauma center and a Medicaid managed care plan.",
+      "state": "IL",
+      "city": "Chicago"
+    },
+    {
+      "program_id": "il_chicago_department_of_public_health",
+      "program_name": "Chicago Department of Public Health (CDPH) — City Clinics",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "health_insurance_denial",
+        "medicaid_denial"
+      ],
+      "agency": null,
+      "phone": "312-747-9884",
+      "website": "chicago.gov/health",
+      "eligibility": "Chicago residents.",
+      "region": "Chicago",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides sliding scale primary care, sexual health, mental health, substance use, and maternal health services to Chicago residents.",
+      "state": "IL",
+      "city": "Chicago"
+    },
+    {
+      "program_id": "illinois_immigrant_health_connect",
+      "program_name": "Illinois Immigrant Health Connect (State-Funded)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "health_insurance_denial",
+        "medicaid_denial"
+      ],
+      "agency": "IL HFS",
+      "phone": "800-226-0768",
+      "website": "hfs.illinois.gov",
+      "eligibility": "Undocumented immigrants age 42+ — income < 138% FPL.",
+      "region": "statewide",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "State-funded healthcare coverage for undocumented immigrants age 42+.",
+      "city": "Springfield",
+      "state": "IL"
+    },
+    {
+      "program_id": "il_federally_qualified_health_centers_illinois_network",
+      "program_name": "Federally Qualified Health Centers — Illinois Network",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "health_insurance_denial",
+        "medicaid_denial"
+      ],
+      "agency": null,
+      "phone": null,
+      "website": "findahealthcenter.hrsa.gov",
+      "eligibility": "Anyone regardless of insurance status or ability to pay.",
+      "region": "statewide",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides sliding scale primary, dental, and behavioral health services regardless of insurance status or ability to pay.",
+      "city": "Springfield",
+      "state": "IL"
+    },
+    {
+      "program_id": "illinois_housing_development_authority_emergency_rental_assistance",
+      "program_name": "Illinois Housing Development Authority (IHDA) — Emergency Rental Assistance",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights",
+        "tenant_rights"
+      ],
+      "agency": "IHDA",
+      "phone": "312-836-5200",
+      "website": "ihda.org",
+      "eligibility": "Low-income Illinois renters facing eviction or housing instability — income < 80% AMI.",
+      "region": "statewide",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Administers state-level rental assistance programs for low-income renters facing eviction or housing instability.",
+      "city": "Springfield",
+      "state": "IL"
+    },
+    {
+      "program_id": "il_chicago_rlto_tenant_hotline_metropolitan_tenants_organization",
+      "program_name": "Chicago RLTO Tenant Hotline — Metropolitan Tenants Organization (MTO)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights",
+        "tenant_rights"
+      ],
+      "agency": "MTO",
+      "phone": "773-292-4988",
+      "website": "tenants-rights.org",
+      "eligibility": "Chicago renters covered by RLTO.",
+      "region": "Chicago",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides free tenant rights counseling, habitability complaints, security deposit disputes, and eviction defense for Chicago renters covered by the RLTO.",
+      "state": "IL",
+      "city": "Chicago"
+    },
+    {
+      "program_id": "illinois_legal_aid_online",
+      "program_name": "Illinois Legal Aid Online (ILAO) — Statewide Self-Help",
+      "layer": "state",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [
+        "civil_rights_violation"
+      ],
+      "agency": null,
+      "phone": null,
+      "website": "illinoislegalaid.org",
+      "eligibility": "Anyone in Illinois.",
+      "region": "statewide",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides free legal information, court forms, and self-help guides for housing, family, benefits, and consumer issues.",
+      "city": "Springfield",
+      "state": "IL"
+    },
+    {
+      "program_id": "illinois_domestic_violence_hotline",
+      "program_name": "Illinois Domestic Violence Hotline",
+      "layer": "state",
+      "benefit_category": "children_families",
+      "pipeline_ids": [
+        "family_law"
+      ],
+      "agency": null,
+      "phone": "877-863-6338",
+      "website": "ilhousing.org",
+      "eligibility": "24/7 statewide.",
+      "region": "statewide",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides 24/7 crisis support, shelter referral, and safety planning for domestic violence survivors.",
+      "city": "Springfield",
+      "state": "IL"
+    },
+    {
+      "program_id": "il_chicago_domestic_violence_help_line",
+      "program_name": "Chicago Domestic Violence Help Line",
+      "layer": "state",
+      "benefit_category": "children_families",
+      "pipeline_ids": [
+        "family_law"
+      ],
+      "agency": null,
+      "phone": "877-863-6338",
+      "website": "chicago.gov/dps",
+      "eligibility": "Chicago DV survivors.",
+      "region": "Chicago",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides 24/7 crisis support, shelter, legal advocacy, and a City Hall Domestic Violence Help Desk for Chicago DV survivors.",
+      "state": "IL",
+      "city": "Chicago"
+    },
+    {
+      "program_id": "il_legal_aid_chicago",
+      "program_name": "Legal Aid Chicago (formerly LAF)",
+      "layer": "state",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [
+        "civil_rights_violation"
+      ],
+      "agency": null,
+      "phone": "312-341-1070",
+      "website": "legalaidchicago.org",
+      "eligibility": "Income < 200% FPL, Cook County and collar counties.",
+      "region": "Cook County and collar counties",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides legal assistance in housing, family, benefits, DV, immigration, and consumer matters.",
+      "state": "IL",
+      "city": "Chicago"
+    },
+    {
+      "program_id": "il_prairie_state_legal_services",
+      "program_name": "Prairie State Legal Services — Downstate + Suburban",
+      "layer": "state",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [
+        "civil_rights_violation"
+      ],
+      "agency": null,
+      "phone": "800-531-7057",
+      "website": "pslegal.org",
+      "eligibility": "Income-qualified residents, 36 counties in northern and central Illinois outside Cook.",
+      "region": "36 counties in northern and central Illinois outside Cook",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides legal assistance in housing, family, benefits, DV, elder, and immigration matters.",
+      "state": "IL",
+      "city": "Chicago"
+    },
+    {
+      "program_id": "il_land_of_lincoln_legal_aid",
+      "program_name": "Land of Lincoln Legal Aid — Southern Illinois",
+      "layer": "state",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [
+        "civil_rights_violation"
+      ],
+      "agency": null,
+      "phone": "217-525-3900",
+      "website": "lollaf.org",
+      "eligibility": "Income-qualified residents, 65 counties in central and southern Illinois.",
+      "region": "65 counties in central and southern Illinois",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides legal assistance in housing, family, benefits, DV, elder, and consumer matters.",
+      "state": "IL",
+      "city": "Springfield"
+    },
+    {
+      "program_id": "il_equip_for_equality",
+      "program_name": "Equip for Equality — Disability Rights Illinois",
+      "layer": "state",
+      "benefit_category": "disability",
+      "pipeline_ids": [
+        "disability_rights",
+        "benefits_denial"
+      ],
+      "agency": null,
+      "phone": "800-537-2632",
+      "website": "equipforequality.org",
+      "eligibility": "People with disabilities throughout Illinois.",
+      "region": "statewide",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides legal representation and advocacy for people with disabilities on issues such as ADA, Section 504, abuse/neglect, special education, and healthcare rights.",
+      "city": "Springfield",
+      "state": "IL"
+    },
+    {
+      "program_id": "il_tanf_cash_assistance",
+      "program_name": "TANF Cash Assistance (Illinois DHS — TCA)",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "agency": "Illinois DHS",
+      "phone": "800-843-6154",
+      "website": "abe.illinois.gov",
+      "eligibility": "Families with children, income < 50% FPL.",
+      "region": "statewide",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides cash assistance to families with children.",
+      "city": "Springfield",
+      "state": "IL"
+    },
+    {
+      "program_id": "illinois_unemployment_insurance",
+      "program_name": "Illinois Unemployment Insurance (IDES)",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "wage_theft",
+        "workplace_discrimination"
+      ],
+      "agency": "IDES",
+      "phone": "800-244-5631",
+      "website": "ides.illinois.gov",
+      "eligibility": "Workers who lost job through no fault of their own.",
+      "region": "statewide",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides temporary income to workers who have lost their job through no fault of their own.",
+      "city": "Springfield",
+      "state": "IL"
+    },
+    {
+      "program_id": "il_liheap_ihwap",
+      "program_name": "LIHEAP / IHWAP (Illinois Home Weatherization & Energy Assistance)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights",
+        "tenant_rights"
+      ],
+      "agency": null,
+      "phone": "800-252-8643",
+      "website": "illinoisenergyassistance.com",
+      "eligibility": "Income < 200% FPL.",
+      "region": "statewide",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides heating, cooling, crisis utility shutoff prevention, and weatherization assistance.",
+      "city": "Springfield",
+      "state": "IL"
+    },
+    {
+      "program_id": "il_comed_low_income_programs",
+      "program_name": "ComEd Low Income Programs",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights",
+        "tenant_rights"
+      ],
+      "agency": "ComEd",
+      "phone": "800-334-7661",
+      "website": "comed.com/assistance",
+      "eligibility": "ComEd electric customers with income < 200% FPL.",
+      "region": "ComEd service area",
+      "source": "Illinois State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Provides rate reduction and deferred payment plans for low-income electric customers.",
+      "state": "IL",
+      "city": "Chicago"
+    }
+  ]
+}

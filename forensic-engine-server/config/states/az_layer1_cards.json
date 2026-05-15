@@ -1,0 +1,786 @@
+{
+  "meta": {
+    "state": "AZ",
+    "layer": "layer1_cards",
+    "version": "1.0.0",
+    "last_updated": "2026-03-06"
+  },
+  "clusters": [
+    {
+      "cluster_id": "az_food",
+      "cluster_name": "Food Assistance",
+      "icon": "utensils",
+      "cards": [
+        {
+          "card_id": "az_food_snap",
+          "title": "Apply for SNAP (Nutrition Assistance)",
+          "summary": "Arizona SNAP provides monthly food benefits via EBT. Apply through Health-e-Arizona Plus \u2014 one application covers SNAP, AHCCCS, TANF, and LIHEAP.",
+          "who_qualifies": "Income below 130% FPL (gross). ABAWDs 18-49 must meet 80-hour/month work requirement. Exemptions for students, caregivers, people with disabilities.",
+          "how_to_apply": "Apply online at healthearizonaplus.gov, call 855-432-7587, or visit local DES office.",
+          "phone": "855-432-7587",
+          "website": "https://healthearizonaplus.gov",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "Proof of residence",
+            "SSN for household members"
+          ],
+          "program_ids": [
+            "az_snap"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "food",
+            "snap",
+            "ebt",
+            "hungry",
+            "groceries"
+          ],
+          "region": "statewide",
+          "federal_interface": true
+        },
+        {
+          "card_id": "az_food_wic",
+          "title": "WIC Arizona",
+          "summary": "Supplemental nutrition for pregnant/postpartum women, infants, and children under 5. Provides food packages, nutrition education, and breastfeeding support.",
+          "who_qualifies": "Pregnant, postpartum, breastfeeding women; infants and children under 5. Income at or below 185% FPL.",
+          "how_to_apply": "Call Arizona WIC at 800-252-5942 or find local WIC clinic at azdhs.gov/wic.",
+          "phone": "800-252-5942",
+          "website": "https://azdhs.gov/prevention/nutrition-physical-activity/wic",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "Proof of residence",
+            "Proof of pregnancy or child's age"
+          ],
+          "program_ids": [
+            "az_wic"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "wic",
+            "baby",
+            "infant",
+            "pregnant",
+            "nutrition"
+          ],
+          "region": "statewide",
+          "federal_interface": true
+        },
+        {
+          "card_id": "az_food_phoenix",
+          "title": "Phoenix Metro Food Resources",
+          "summary": "St. Mary's Food Bank (602-242-3663), United Food Bank (480-926-4897), Waste Not (480-941-0405), Paz de Cristo (480-464-2370). Multiple food pantries and hot meal programs across Phoenix metro.",
+          "who_qualifies": "Anyone in need in Phoenix metro area.",
+          "how_to_apply": "Walk in or call. St. Mary's: 2831 N. 31st Ave, Phoenix. United Food Bank: 245 S. Nina Dr, Mesa.",
+          "phone": "602-242-3663",
+          "website": "https://firstfoodbank.org",
+          "documents_needed": [],
+          "program_ids": [],
+          "urgency": "urgent",
+          "routing_tags": [
+            "food",
+            "pantry",
+            "phoenix",
+            "hungry",
+            "meals"
+          ],
+          "region": "phoenix_metro",
+          "federal_interface": false
+        },
+        {
+          "card_id": "az_food_tucson",
+          "title": "Tucson Metro Food Resources",
+          "summary": "Community Food Bank of Southern AZ (520-622-0525), Casa Maria (520-624-0312), Iskashitaa Refugee Network, El Rio Health food programs. Tucson area food assistance.",
+          "who_qualifies": "Anyone in need in Tucson metro area.",
+          "how_to_apply": "Walk in or call. Community Food Bank: 3003 S. Country Club Rd, Tucson.",
+          "phone": "520-622-0525",
+          "website": "https://communityfoodbank.org",
+          "documents_needed": [],
+          "program_ids": [],
+          "urgency": "urgent",
+          "routing_tags": [
+            "food",
+            "pantry",
+            "tucson",
+            "hungry",
+            "meals"
+          ],
+          "region": "tucson_metro",
+          "federal_interface": false
+        },
+        {
+          "card_id": "az_food_tribal",
+          "title": "Tribal Food Programs",
+          "summary": "FDPIR through ITCA (602-248-0071), Navajo Nation FDPIR (928-871-6908), GRIC Food Distribution, Salt River Pima-Maricopa, Tohono O'odham, Hopi, Pascua Yaqui food programs.",
+          "who_qualifies": "Tribal members and eligible households on or near reservations.",
+          "how_to_apply": "Contact ITCA at 602-248-0071 or specific tribal social services office.",
+          "phone": "602-248-0071",
+          "website": "https://itcaonline.com",
+          "documents_needed": [
+            "Tribal enrollment or proof of AI/AN status",
+            "Proof of income",
+            "Proof of residence"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "food",
+            "tribal",
+            "fdpir",
+            "native",
+            "reservation"
+          ],
+          "region": "tribal_nation",
+          "federal_interface": true
+        }
+      ]
+    },
+    {
+      "cluster_id": "az_healthcare",
+      "cluster_name": "Healthcare",
+      "icon": "heart-pulse",
+      "cards": [
+        {
+          "card_id": "az_health_ahcccs",
+          "title": "AHCCCS (Arizona Medicaid)",
+          "summary": "Arizona's Medicaid program covers 1 in 4 Arizonans. No asset test \u2014 income-based only at 138% FPL. Covers medical, dental, behavioral health, and long-term care.",
+          "who_qualifies": "Income at or below 138% FPL. No asset limit. Adults, children, pregnant women, people with disabilities.",
+          "how_to_apply": "Apply at healthearizonaplus.gov, call 855-432-7587, or visit local DES office.",
+          "phone": "855-432-7587",
+          "website": "https://healthearizonaplus.gov",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "SSN",
+            "Proof of AZ residence"
+          ],
+          "program_ids": [
+            "az_ahcccs"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "medicaid",
+            "ahcccs",
+            "health",
+            "insurance",
+            "doctor"
+          ],
+          "region": "statewide",
+          "federal_interface": true
+        },
+        {
+          "card_id": "az_health_kidscare",
+          "title": "KidsCare (CHIP)",
+          "summary": "Children's health insurance for families above AHCCCS income limits but below 200% FPL. Covers medical, dental, vision, behavioral health.",
+          "who_qualifies": "Children under 19 in families with income 138-200% FPL. Must be uninsured.",
+          "how_to_apply": "Apply at healthearizonaplus.gov or call 855-432-7587.",
+          "phone": "855-432-7587",
+          "website": "https://healthearizonaplus.gov",
+          "documents_needed": [
+            "Child's birth certificate",
+            "Proof of income",
+            "SSN",
+            "Proof of AZ residence"
+          ],
+          "program_ids": [
+            "az_kidscare"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "kidscare",
+            "chip",
+            "children",
+            "health",
+            "pediatric"
+          ],
+          "region": "statewide",
+          "federal_interface": true
+        },
+        {
+          "card_id": "az_health_phoenix",
+          "title": "Phoenix Metro Healthcare",
+          "summary": "Valleywise Health (602-344-5011) \u2014 safety-net hospital. Circle the City (602-776-3500) \u2014 homeless healthcare. Native Health (602-279-5262) \u2014 AI/AN primary care. Central Arizona Shelter Services health programs.",
+          "who_qualifies": "Low-income and uninsured Phoenix metro residents. Sliding scale fees.",
+          "how_to_apply": "Walk in or call. Valleywise: 2601 E. Roosevelt St, Phoenix.",
+          "phone": "602-344-5011",
+          "website": "https://valleywisehealth.org",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income (for sliding scale)"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "health",
+            "clinic",
+            "phoenix",
+            "hospital",
+            "uninsured"
+          ],
+          "region": "phoenix_metro",
+          "federal_interface": false
+        },
+        {
+          "card_id": "az_health_ihs",
+          "title": "Indian Health Service (IHS) Arizona",
+          "summary": "IHS Phoenix Area (602-364-5039), IHS Tucson Area, IHS Navajo Area (928-871-5811), GRIC Health (520-562-3321), Sells IHS (520-383-7200), Whiteriver IHS, Hopi Health Center, Pascua Yaqui Health.",
+          "who_qualifies": "AI/AN tribal members. IHS serves all federally recognized tribal members in Arizona.",
+          "how_to_apply": "Contact nearest IHS facility or tribal health program. Bring tribal enrollment documentation.",
+          "phone": "602-364-5039",
+          "website": "https://ihs.gov/phoenix",
+          "documents_needed": [
+            "Tribal enrollment card or CDIB",
+            "Photo ID"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "ihs",
+            "tribal",
+            "health",
+            "native",
+            "indian_health"
+          ],
+          "region": "tribal_nation",
+          "federal_interface": true
+        }
+      ]
+    },
+    {
+      "cluster_id": "az_housing",
+      "cluster_name": "Housing & Rent",
+      "icon": "home",
+      "cards": [
+        {
+          "card_id": "az_housing_tenant_rights",
+          "title": "Arizona Tenant Rights",
+          "summary": "AZ Residential Landlord and Tenant Act (ARS \u00a733-1301). Landlords must maintain habitable conditions. 10-business-day repair notice required. Emergency repairs (no heat/water/AC) require immediate response.",
+          "who_qualifies": "All Arizona renters.",
+          "how_to_apply": "Send written repair notice citing ARS \u00a733-1324. Contact CLS AZ (602-258-3434) or SALA (520-623-9461) for legal help.",
+          "phone": "602-258-3434",
+          "website": "https://clsaz.org",
+          "documents_needed": [
+            "Lease agreement",
+            "Written repair notices",
+            "Photos of conditions",
+            "Communication records"
+          ],
+          "program_ids": [],
+          "urgency": "urgent",
+          "routing_tags": [
+            "tenant",
+            "landlord",
+            "repair",
+            "eviction",
+            "rent"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "az_housing_section8",
+          "title": "Section 8 / Housing Choice Voucher",
+          "summary": "HAMC (Maricopa County), City of Phoenix Housing, TUCHA (Tucson). Waitlists typically closed \u2014 check portals for openings. Tribal VASH and Section 184 available for AI/AN.",
+          "who_qualifies": "Income below 50% AMI. Priority for elderly, disabled, families with children.",
+          "how_to_apply": "Contact local PHA. HAMC: 602-744-4500. City of Phoenix: 602-534-1394. TUCHA: 520-791-4619.",
+          "phone": "602-744-4500",
+          "website": "https://maricopahousing.org",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "SSN",
+            "Birth certificates for children"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "section8",
+            "voucher",
+            "housing",
+            "affordable",
+            "waitlist"
+          ],
+          "region": "statewide",
+          "federal_interface": true
+        },
+        {
+          "card_id": "az_housing_tribal",
+          "title": "Tribal Housing Programs",
+          "summary": "NNHA (Navajo Nation Housing Authority), GRIC Housing, SRPMIC Housing, TON Housing, HUD ONAP Phoenix, ITCA housing coordination. Section 184 Indian Home Loan Guarantee.",
+          "who_qualifies": "Tribal members. Section 184 available for AI/AN homebuyers nationwide.",
+          "how_to_apply": "Contact tribal housing authority or ITCA at 602-248-0071.",
+          "phone": "602-248-0071",
+          "website": "https://itcaonline.com",
+          "documents_needed": [
+            "Tribal enrollment",
+            "Proof of income",
+            "Proof of residence"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "tribal",
+            "housing",
+            "reservation",
+            "section184",
+            "native"
+          ],
+          "region": "tribal_nation",
+          "federal_interface": true
+        }
+      ]
+    },
+    {
+      "cluster_id": "az_dv_safety",
+      "cluster_name": "Domestic Violence & Safety",
+      "icon": "shield",
+      "cards": [
+        {
+          "card_id": "az_dv_hotline",
+          "title": "Arizona DV Resources",
+          "summary": "AZ Coalition Against DV (602-279-2900) connects to 47+ local programs. Sojourner Center Phoenix (602-244-0503) \u2014 largest DV shelter in US. Emerge! Tucson (520-795-4266). DVLAP (602-258-3434) \u2014 free DV legal services statewide.",
+          "who_qualifies": "Anyone experiencing domestic violence, dating violence, sexual assault, or stalking in Arizona.",
+          "how_to_apply": "Call ACESDV at 602-279-2900 or National DV Hotline 800-799-7233. For legal help: DVLAP 602-258-3434.",
+          "phone": "602-279-2900",
+          "website": "https://azcadv.org",
+          "documents_needed": [],
+          "program_ids": [],
+          "urgency": "urgent",
+          "routing_tags": [
+            "dv",
+            "domestic_violence",
+            "abuse",
+            "shelter",
+            "safety"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "az_dv_tribal",
+          "title": "Tribal DV Resources",
+          "summary": "StrongHearts Native Helpline (844-762-8483, 24/7). ITCA VAWA programs. SALA tribal DV legal services (520-623-9461). DNA People's Legal Services for Navajo Nation DV cases.",
+          "who_qualifies": "Native American DV survivors. StrongHearts serves all AI/AN regardless of tribal enrollment.",
+          "how_to_apply": "Call StrongHearts 844-762-8483 (24/7) or SALA 520-623-9461.",
+          "phone": "844-762-8483",
+          "website": "https://strongheartshelpline.org",
+          "documents_needed": [],
+          "program_ids": [],
+          "urgency": "urgent",
+          "routing_tags": [
+            "dv",
+            "tribal",
+            "native",
+            "stronghearts",
+            "vawa"
+          ],
+          "region": "tribal_nation",
+          "federal_interface": false
+        }
+      ]
+    },
+    {
+      "cluster_id": "az_legal_aid",
+      "cluster_name": "Legal Aid",
+      "icon": "scale",
+      "cards": [
+        {
+          "card_id": "az_legal_cls",
+          "title": "Community Legal Services AZ (CLS)",
+          "summary": "Free civil legal services for Phoenix metro and Maricopa/Yavapai counties \u2014 housing, benefits, DV, immigration, workers' rights, tribal members. 602-258-3434.",
+          "who_qualifies": "Low-income residents of Maricopa and Yavapai counties.",
+          "how_to_apply": "Call 602-258-3434 or visit clsaz.org.",
+          "phone": "602-258-3434",
+          "website": "https://clsaz.org",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "legal",
+            "attorney",
+            "free",
+            "phoenix",
+            "civil"
+          ],
+          "region": "phoenix_metro",
+          "federal_interface": false
+        },
+        {
+          "card_id": "az_legal_sala",
+          "title": "Southern Arizona Legal Aid (SALA)",
+          "summary": "Free civil legal services for 9 counties and 11 tribal reservations in Southern/SE Arizona. Housing, benefits, DV, immigration. 520-623-9461 / 800-248-6789.",
+          "who_qualifies": "Low-income residents of Southern Arizona and tribal members on 11 reservations.",
+          "how_to_apply": "Call 520-623-9461 or 800-248-6789. Visit sazlegalaid.org.",
+          "phone": "520-623-9461",
+          "website": "https://sazlegalaid.org",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "legal",
+            "attorney",
+            "free",
+            "tucson",
+            "tribal"
+          ],
+          "region": "tucson_metro",
+          "federal_interface": false
+        },
+        {
+          "card_id": "az_legal_dna",
+          "title": "DNA People's Legal Services",
+          "summary": "Primary legal aid for Navajo Nation, Hopi, and surrounding areas. Offices in Window Rock, Chinle, Tuba City, Flagstaff, and Gallup NM. 928-871-4151 / 800-789-7287.",
+          "who_qualifies": "Low-income tribal members in Navajo Nation, Hopi, and surrounding areas.",
+          "how_to_apply": "Call 928-871-4151 or 800-789-7287. Visit dnapeople.org.",
+          "phone": "928-871-4151",
+          "website": "https://dnapeople.org",
+          "documents_needed": [
+            "Tribal enrollment or CDIB",
+            "Proof of income"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "legal",
+            "tribal",
+            "navajo",
+            "hopi",
+            "dna"
+          ],
+          "region": "tribal_nation",
+          "federal_interface": false
+        }
+      ]
+    },
+    {
+      "cluster_id": "az_cash_assistance",
+      "cluster_name": "Cash Assistance & Income",
+      "icon": "banknote",
+      "cards": [
+        {
+          "card_id": "az_cash_tanf",
+          "title": "TANF / EMPOWER Program",
+          "summary": "Arizona TANF (EMPOWER) provides temporary cash assistance. 24-month lifetime limit \u2014 shortest in US. Maximum $278/month for family of 3. Apply through Health-e-Arizona Plus.",
+          "who_qualifies": "Families with children, income below TANF limits. 24-month lifetime limit applies.",
+          "how_to_apply": "Apply at healthearizonaplus.gov or local DES office.",
+          "phone": "855-432-7587",
+          "website": "https://healthearizonaplus.gov",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "SSN",
+            "Birth certificates for children"
+          ],
+          "program_ids": [
+            "az_tanf"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "tanf",
+            "cash",
+            "welfare",
+            "empower",
+            "family"
+          ],
+          "region": "statewide",
+          "federal_interface": true
+        },
+        {
+          "card_id": "az_cash_ui",
+          "title": "Unemployment Insurance",
+          "summary": "Arizona UI benefits. Maximum $240/week for 26 weeks. 15-day appeal deadline for denials \u2014 among shortest in US. File at des.az.gov.",
+          "who_qualifies": "Recently unemployed Arizona workers who earned sufficient wages in base period.",
+          "how_to_apply": "File online at des.az.gov or call 877-600-2722.",
+          "phone": "877-600-2722",
+          "website": "https://des.az.gov/services/employment/unemployment-individual",
+          "documents_needed": [
+            "SSN",
+            "Employment history (last 18 months)",
+            "Reason for separation"
+          ],
+          "program_ids": [
+            "az_ui"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "unemployment",
+            "ui",
+            "jobless",
+            "laid_off",
+            "fired"
+          ],
+          "region": "statewide",
+          "federal_interface": true
+        }
+      ]
+    },
+    {
+      "cluster_id": "az_utilities",
+      "cluster_name": "Utilities & Energy",
+      "icon": "zap",
+      "cards": [
+        {
+          "card_id": "az_utility_liheap",
+          "title": "LIHEAP & Energy Assistance",
+          "summary": "LIHEAP through DES (855-432-7587). APS PLUS program, APS Medical Baseline, SRP SHARE, TEP Energy Support, SW Gas assistance. Apply through Health-e-Arizona Plus.",
+          "who_qualifies": "Income at or below 150% FPL. Priority for elderly, disabled, families with young children.",
+          "how_to_apply": "Apply at healthearizonaplus.gov or local DES office. Also contact utility provider directly for company programs.",
+          "phone": "855-432-7587",
+          "website": "https://healthearizonaplus.gov",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "Utility bill",
+            "SSN"
+          ],
+          "program_ids": [
+            "az_liheap"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "utility",
+            "electric",
+            "gas",
+            "liheap",
+            "energy"
+          ],
+          "region": "statewide",
+          "federal_interface": true
+        },
+        {
+          "card_id": "az_utility_heat_relief",
+          "title": "AZ Heat Relief Network",
+          "summary": "Life-critical April\u2013September. Coordinates 100+ cooling centers and water distribution sites across Arizona. Call 211 for nearest location. AZ Heat Relief: azheatrelief.org.",
+          "who_qualifies": "Anyone in Arizona during extreme heat. No documentation required for cooling centers.",
+          "how_to_apply": "Call 211 or visit azheatrelief.org for nearest cooling center.",
+          "phone": "211",
+          "website": "https://azheatrelief.org",
+          "documents_needed": [],
+          "program_ids": [],
+          "urgency": "urgent",
+          "routing_tags": [
+            "heat",
+            "cooling",
+            "water",
+            "emergency",
+            "summer"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        }
+      ]
+    },
+    {
+      "cluster_id": "az_tribal",
+      "cluster_name": "Tribal & Indigenous",
+      "icon": "feather",
+      "cards": [
+        {
+          "card_id": "az_tribal_itca",
+          "title": "Inter Tribal Council of Arizona (ITCA)",
+          "summary": "Represents 21 of AZ's 22 federally recognized tribes. Primary coordination body for tribal program referral when specific tribe is unknown. 602-248-0071.",
+          "who_qualifies": "AI/AN tribal members in Arizona. ITCA coordinates referrals across 21 tribes.",
+          "how_to_apply": "Call 602-248-0071 or visit itcaonline.com.",
+          "phone": "602-248-0071",
+          "website": "https://itcaonline.com",
+          "documents_needed": [
+            "Tribal enrollment or CDIB"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "tribal",
+            "itca",
+            "native",
+            "coordination",
+            "referral"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        },
+        {
+          "card_id": "az_tribal_navajo",
+          "title": "Navajo Nation Services",
+          "summary": "Navajo Nation Social Services (928-871-6800), FDPIR (928-871-6908), Housing Authority (928-871-6462), Health (IHS Navajo Area 928-871-5811). Largest reservation in US spanning AZ/NM/UT.",
+          "who_qualifies": "Navajo Nation enrolled members and eligible residents.",
+          "how_to_apply": "Contact Navajo Nation Division of Social Services at 928-871-6800.",
+          "phone": "928-871-6800",
+          "website": "https://nndss.navajo-nsn.gov",
+          "documents_needed": [
+            "Navajo Nation enrollment card",
+            "CDIB"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "navajo",
+            "tribal",
+            "reservation",
+            "dine",
+            "window_rock"
+          ],
+          "region": "tribal_nation",
+          "federal_interface": true
+        },
+        {
+          "card_id": "az_tribal_disability_law",
+          "title": "AZ Center for Disability Law",
+          "summary": "Free legal services for Arizonans with disabilities \u2014 AHCCCS access, SSI/SSDI, abuse, discrimination. Phoenix and Tucson offices. 602-274-6287.",
+          "who_qualifies": "Arizonans with disabilities, including tribal members.",
+          "how_to_apply": "Call 602-274-6287 or visit azdisabilitylaw.org.",
+          "phone": "602-274-6287",
+          "website": "https://azdisabilitylaw.org",
+          "documents_needed": [
+            "Proof of disability",
+            "Photo ID"
+          ],
+          "program_ids": [],
+          "urgency": "standard",
+          "routing_tags": [
+            "disability",
+            "ada",
+            "ssi",
+            "ssdi",
+            "accommodation"
+          ],
+          "region": "statewide",
+          "federal_interface": false
+        }
+      ]
+    },
+    {
+      "cluster_id": "az_mental_health",
+      "cluster_name": "Mental Health System",
+      "icon": "brain",
+      "cards": [
+        {
+          "card_id": "az_mh_crisis_line",
+          "title": "988 Suicide & Crisis Lifeline",
+          "summary": "Call or text 988 for immediate mental health crisis support. Free, confidential, 24/7. Trained counselors can help with suicidal thoughts, emotional distress, substance use, and mental health crises. Also available via chat at 988lifeline.org.",
+          "who_qualifies": "Anyone experiencing a mental health crisis, suicidal thoughts, or emotional distress.",
+          "how_to_access": "Call or text 988. Chat at 988lifeline.org. For veterans, press 1 after dialing 988.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "az_mh_nami",
+          "title": "NAMI Helpline & Support Groups",
+          "summary": "National Alliance on Mental Illness provides free peer support, education, and advocacy. NAMI HelpLine: 1-800-950-NAMI (6264). Family-to-Family program helps families understand mental health conditions and navigate the system.",
+          "who_qualifies": "Individuals with mental health conditions and their family members.",
+          "how_to_access": "Call 1-800-950-NAMI or text 'HELPLINE' to 62640. Find local NAMI affiliate at nami.org/find-support.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "az_mh_protection_advocacy",
+          "title": "Protection & Advocacy Organization",
+          "summary": "Every state has a federally mandated Protection & Advocacy (P&A) organization with legal authority to investigate abuse and neglect in psychiatric facilities. P&A organizations can enter any facility, access records, and file lawsuits. This is often the most powerful tool available for people harmed in the mental health system.",
+          "who_qualifies": "Anyone with a disability who has experienced abuse, neglect, or rights violations in a facility.",
+          "how_to_access": "Find your state P&A at ndrn.org/about/ndrn-member-agencies/ or call the NDRN at 202-408-9514.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "az_mh_know_your_rights",
+          "title": "Know Your Rights: Arizona Emergency Admission",
+          "summary": "If you are placed on an involuntary hold in AZ, you have rights: the initial hold cannot exceed 72 hours without a court hearing. You have the right to an attorney at the hearing. You have the right to present evidence and call witnesses. You have the right to an independent psychiatric evaluation. You can challenge the hold at any time.",
+          "who_qualifies": "Anyone placed on an involuntary psychiatric hold or facing commitment proceedings.",
+          "how_to_access": "Request to speak with the patient advocate. Ask for a copy of your patient rights. Contact your state's Protection & Advocacy organization.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "az_mh_records_rights",
+          "title": "Your Right to Your Psychiatric Records",
+          "summary": "Under HIPAA (45 CFR \u00a7 164.524), you have the right to access your complete medical record, including psychiatric treatment records. The facility must respond within 30 days. If they deny access, you can file a complaint with HHS Office for Civil Rights. Under HIPAA \u00a7 164.526, you also have the right to request amendments to inaccurate records.",
+          "who_qualifies": "Any current or former psychiatric patient.",
+          "how_to_access": "Submit a written request to the facility's Health Information Management department. If denied, file complaint at hhs.gov/ocr.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "az_mh_samhsa",
+          "title": "SAMHSA National Helpline",
+          "summary": "Free, confidential, 24/7 treatment referral and information service for mental health and substance use disorders. Available in English and Spanish. Provides referrals to local treatment facilities, support groups, and community-based organizations.",
+          "who_qualifies": "Anyone seeking mental health or substance use treatment information and referrals.",
+          "how_to_access": "Call 1-800-662-HELP (4357) or visit findtreatment.gov.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        }
+      ]
+    }
+  ]
+}

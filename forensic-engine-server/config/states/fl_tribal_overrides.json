@@ -1,0 +1,64 @@
+{
+  "tribal_entities": [
+    {
+      "tribal_entity_id": "fl_tribal_0",
+      "tribal_entity_name": "Seminole Tribe of Florida — Social Services",
+      "coverage": "hollywood",
+      "phone": "954-966-6300",
+      "portal": "https://semtribe.com",
+      "street_address": "6300 Stirling Rd",
+      "city": "Hollywood",
+      "state_code": "FL",
+      "zip": "33024",
+      "services": []
+    },
+    {
+      "tribal_entity_id": "fl_tribal_1",
+      "tribal_entity_name": "Miccosukee Tribe Social Services",
+      "coverage": "miami",
+      "phone": "305-223-8380",
+      "portal": "https://miccosukeetribe.com",
+      "street_address": "Tamiami Station PO Box 440021",
+      "city": "Miami",
+      "state_code": "FL",
+      "zip": "33144",
+      "services": []
+    }
+  ],
+  "urban_indian_programs": [],
+  "meta": {
+    "state": "FL",
+    "version": "3.0"
+  },
+  "tribal_context": {
+    "state": "FL",
+    "icwa_activation_rules": [],
+    "tribal_entities": [
+      {
+        "tribal_entity_id": "fl_tribal_0",
+        "tribal_entity_name": "Seminole Tribe of Florida — Social Services",
+        "coverage": "hollywood",
+        "phone": "954-966-6300",
+        "portal": "https://semtribe.com",
+        "street_address": "6300 Stirling Rd",
+        "city": "Hollywood",
+        "state_code": "FL",
+        "zip": "33024",
+        "services": []
+      },
+      {
+        "tribal_entity_id": "fl_tribal_1",
+        "tribal_entity_name": "Miccosukee Tribe Social Services",
+        "coverage": "miami",
+        "phone": "305-223-8380",
+        "portal": "https://miccosukeetribe.com",
+        "street_address": "Tamiami Station PO Box 440021",
+        "city": "Miami",
+        "state_code": "FL",
+        "zip": "33144",
+        "services": []
+      }
+    ],
+    "urban_indian_programs": []
+  }
+}

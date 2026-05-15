@@ -1,0 +1,237 @@
+{
+  "meta": {
+    "state": "AZ",
+    "layer": "county_overrides",
+    "version": "1.0.0",
+    "last_updated": "2026-03-06"
+  },
+  "regions": {
+    "phoenix_metro": {
+      "description": "phoenix_metro"
+    },
+    "tucson_metro": {
+      "description": "tucson_metro"
+    },
+    "northern_az": {
+      "description": "northern_az"
+    },
+    "tribal_nation": {
+      "description": "tribal_nation"
+    },
+    "statewide": {
+      "description": "statewide"
+    }
+  },
+  "county_overrides": [
+    {
+      "county_id": "az_maricopa",
+      "county_name": "Maricopa County",
+      "fips_code": "04013",
+      "region": "phoenix_metro",
+      "population_estimate": 4496000,
+      "courts": {
+        "superior_court": {
+          "name": "Maricopa County Superior Court",
+          "address": "201 W. Jefferson St, Phoenix, AZ 85003",
+          "phone": "602-506-3204",
+          "portal": "https://superiorcourt.maricopa.gov",
+          "divisions": [
+            "civil",
+            "criminal",
+            "family",
+            "probate",
+            "juvenile",
+            "tax"
+          ]
+        },
+        "justice_court": {
+          "name": "Maricopa County Justice Courts",
+          "phone": "602-506-1561",
+          "portal": "https://justicecourts.maricopa.gov"
+        }
+      },
+      "prosecutor": {
+        "office": "Maricopa County Attorney's Office",
+        "address": "301 W. Jefferson St, Phoenix, AZ 85003",
+        "phone": "602-506-3411",
+        "portal": "https://maricopacountyattorney.org",
+        "victim_services_phone": "602-506-8522"
+      },
+      "housing_authority": {
+        "name": "Housing Authority of Maricopa County (HAMC)",
+        "address": "8910 N. 78th Ave, Peoria, AZ 85345",
+        "phone": "602-744-4500",
+        "portal": "https://maricopahousing.org",
+        "programs": [
+          "Section 8 HCV",
+          "Public Housing",
+          "Family Self-Sufficiency",
+          "VASH"
+        ],
+        "waitlist_status": "Typically closed; check portal for openings"
+      },
+      "legal_aid": {
+        "primary": {
+          "name": "Community Legal Services AZ (CLS)",
+          "phone": "602-258-3434",
+          "portal": "https://clsaz.org",
+          "coverage": "Maricopa and Yavapai counties \u2014 housing, benefits, DV, immigration, workers' rights"
+        },
+        "secondary": {
+          "name": "AZ Center for Disability Law",
+          "phone": "602-274-6287",
+          "portal": "https://azdisabilitylaw.org"
+        }
+      },
+      "child_welfare": {
+        "office": "DCS Maricopa County",
+        "phone": "888-767-2445",
+        "portal": "https://dcs.az.gov",
+        "hotline": "888-SOS-CHILD (888-767-2445)"
+      },
+      "law_enforcement": {
+        "primary": {
+          "name": "Phoenix Police Department",
+          "phone": "602-262-6151",
+          "oversight": "Phoenix Office of Accountability (OA)",
+          "oversight_phone": "602-534-1917",
+          "portal": "https://phoenix.gov/police/accountability"
+        }
+      },
+      "utilities": {
+        "electric": [
+          {
+            "name": "APS (Arizona Public Service)",
+            "phone": "602-371-7171",
+            "assistance": "APS PLUS, Medical Baseline"
+          },
+          {
+            "name": "SRP (Salt River Project)",
+            "phone": "602-236-8888",
+            "assistance": "SRP SHARE"
+          }
+        ],
+        "gas": [
+          {
+            "name": "Southwest Gas",
+            "phone": "877-860-6020",
+            "assistance": "SHARE program"
+          }
+        ],
+        "disconnect_protection": "ACC R14-2-211 \u2014 extreme heat disconnect protections April-October"
+      }
+    },
+    {
+      "county_id": "az_pima",
+      "county_name": "Pima County",
+      "fips_code": "04019",
+      "region": "tucson_metro",
+      "population_estimate": 1044000,
+      "courts": {
+        "superior_court": {
+          "name": "Pima County Superior Court",
+          "address": "110 W. Congress St, Tucson, AZ 85701",
+          "phone": "520-724-3171",
+          "portal": "https://sc.pima.gov",
+          "divisions": [
+            "civil",
+            "criminal",
+            "family",
+            "probate",
+            "juvenile"
+          ]
+        },
+        "justice_court": {
+          "name": "Pima County Consolidated Justice Court",
+          "phone": "520-724-3171",
+          "portal": "https://sc.pima.gov/justice-courts"
+        }
+      },
+      "prosecutor": {
+        "office": "Pima County Attorney's Office",
+        "address": "32 N. Stone Ave, Tucson, AZ 85701",
+        "phone": "520-724-5600",
+        "portal": "https://pcao.pima.gov",
+        "victim_services_phone": "520-724-5600"
+      },
+      "housing_authority": {
+        "name": "Tucson Housing Authority (TUCHA) / Pima County Community Housing",
+        "address": "310 N. Commerce Park Loop, Tucson, AZ 85745",
+        "phone": "520-791-4619",
+        "portal": "https://tucsonhousing.org",
+        "programs": [
+          "Section 8 HCV",
+          "Public Housing",
+          "Family Self-Sufficiency"
+        ],
+        "waitlist_status": "Check portal for current status"
+      },
+      "legal_aid": {
+        "primary": {
+          "name": "Southern Arizona Legal Aid (SALA)",
+          "phone": "520-623-9461",
+          "portal": "https://sazlegalaid.org",
+          "coverage": "9 counties and 11 tribal reservations in Southern/SE Arizona"
+        },
+        "secondary": {
+          "name": "AZ Center for Disability Law \u2014 Tucson",
+          "phone": "520-327-9547",
+          "portal": "https://azdisabilitylaw.org"
+        }
+      },
+      "child_welfare": {
+        "office": "DCS Pima County",
+        "phone": "888-767-2445",
+        "portal": "https://dcs.az.gov",
+        "hotline": "888-SOS-CHILD (888-767-2445)"
+      },
+      "law_enforcement": {
+        "primary": {
+          "name": "Tucson Police Department",
+          "phone": "520-791-4444",
+          "oversight": "Tucson Office of Equal Opportunity Programs (OEOP)",
+          "oversight_phone": "520-791-4593",
+          "portal": "https://tucsonaz.gov/oeop"
+        }
+      },
+      "utilities": {
+        "electric": [
+          {
+            "name": "Tucson Electric Power (TEP)",
+            "phone": "520-623-7711",
+            "assistance": "TEP Energy Support"
+          }
+        ],
+        "gas": [
+          {
+            "name": "Southwest Gas",
+            "phone": "877-860-6020",
+            "assistance": "SHARE program"
+          }
+        ],
+        "disconnect_protection": "ACC R14-2-211 \u2014 extreme heat disconnect protections April-October"
+      }
+    }
+  ],
+  "resolution_chain": {
+    "description": "County override resolution chain",
+    "order": [
+      {
+        "layer": "pipeline_defaults",
+        "priority": 1
+      },
+      {
+        "layer": "state_registry",
+        "priority": 2
+      },
+      {
+        "layer": "county_override",
+        "priority": 3
+      },
+      {
+        "layer": "tribal_override",
+        "priority": 4
+      }
+    ]
+  }
+}

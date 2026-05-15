@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "state": "IA",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "standard_appeal",
+      "state": "IA",
+      "override_type": "timeline",
+      "description": "Iowa standard appeal timeline",
+      "source": "registry"
+    },
+    {
+      "workflow_id": "expedited_review",
+      "state": "IA",
+      "override_type": "eligibility",
+      "description": "Iowa expedited review criteria",
+      "source": "registry"
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "state": "MD",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "md_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "md_maryland_tca_tanf_dhr",
+        "md_maryland_ui_dllr",
+        "md_maryland_eusp_meap_liheap_energy_assista"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "md_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "md_maryland_veterans_services_mdva"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "md_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "md_casa_immigrant_services_pg_montgomery"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "md_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "md_maryland_healthchoice_medicaid_dhmh",
+        "md_university_of_maryland_medical_system_ba",
+        "md_maryland_community_health_centers_fqhcs",
+        "md_baltimore_city_health_department_social_"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "md_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "md_maryland_snap_food_supplement_program_ld",
+        "md_maryland_food_bank_capital_area_food_ban",
+        "md_wic_maryland"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "md_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "md_maryland_dhcd_housing_and_community_deve",
+        "md_maryland_legal_aid_statewide",
+        "md_maryland_dv_program_mnadv"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ]
+    }
+  ]
+}

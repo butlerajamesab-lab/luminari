@@ -1,0 +1,98 @@
+{
+  "state": "MI",
+  "state_name": "Michigan",
+  "version": "1.0.0",
+  "schema": "luminari-registry-v1",
+  "date_created": "2026-03-08",
+  "layers": {
+    "layer0": "mi_layer0_flags.json",
+    "layer1_programs": "mi_programs.json",
+    "layer1_cards": "mi_layer1_cards.json",
+    "layer2_workflows": "mi_workflow_overrides.json",
+    "layer3_oversight": "mi_oversight.json",
+    "help": "mi_help.json",
+    "foia": "mi_foia.json",
+    "tribal": "mi_tribal_overrides.json",
+    "county": "mi_county_overrides.json",
+    "pipeline_mappings": "mi_pipeline_mappings.json",
+    "lens_mappings": "mi_lens_mappings.json",
+    "workflow_mappings": "mi_workflow_mappings.json"
+  },
+  "status": "active",
+  "validation_status": "complete",
+  "datasets": [
+    "programs",
+    "workflows",
+    "oversight",
+    "layer0_flags",
+    "layer1_cards",
+    "county_overrides",
+    "tribal_overrides",
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings",
+    "foia",
+    "help",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "civil_rights_violation",
+    "domestic_violence",
+    "family_law",
+    "health_insurance_denial",
+    "immigration_case",
+    "medicaid_denial",
+    "snap_denial",
+    "tenant_rights",
+    "utility_shutoff_abuse",
+    "wage_theft",
+    "workplace_discrimination",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "benefits_agency",
+    "employer",
+    "family_court",
+    "insurer",
+    "law_enforcement"
+  ],
+  "policy_flags": [
+    "mi_midas_fraud_system",
+    "mi_20_week_ui_cap",
+    "mi_medicaid_expansion_healthy_michigan",
+    "mi_detroit_water_shutoffs",
+    "mi_eviction_crisis",
+    "mi_minimum_wage_increase",
+    "mi_icwa_12_tribes",
+    "mi_upper_peninsula_access"
+  ],
+  "statistics": {
+    "programs": {
+      "total_programs": 24,
+      "categories": {
+        "food": 2,
+        "healthcare": 2,
+        "community_navigation": 7,
+        "children_families": 1,
+        "utilities": 2,
+        "housing": 5,
+        "legal_aid": 3,
+        "dv_safety": 1,
+        "immigration": 1
+      }
+    },
+    "workflows": {
+      "total_workflows": 4
+    },
+    "oversight": {
+      "total_oversight_bodies": 16,
+      "total_oversight_chains": 5
+    }
+  }
+}

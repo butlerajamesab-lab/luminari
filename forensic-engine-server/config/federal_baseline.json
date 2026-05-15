@@ -1,0 +1,227 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "description": "Federal baseline rules applied before any state-specific resolution. These rules represent minimum federal standards, statutory deadlines, and escalation hooks that apply regardless of state.",
+    "last_updated": "2026-03-06",
+    "loading": "dynamic"
+  },
+  "federal_statutes": [
+    {
+      "statute_id": "vawa",
+      "label": "Violence Against Women Act",
+      "citation": "34 USC §12291 et seq.",
+      "pipelines": ["domestic_violence"],
+      "baseline_rules": [
+        "Victim has right to petition under VAWA self-petition within 2 years of divorce",
+        "VAWA protections apply regardless of immigration status",
+        "Federal funding requires state compliance with full faith and credit for protection orders"
+      ]
+    },
+    {
+      "statute_id": "fair_housing_act",
+      "label": "Fair Housing Act",
+      "citation": "42 USC §3601-3619",
+      "pipelines": ["tenant_rights", "housing_discrimination"],
+      "baseline_rules": [
+        "HUD complaint must be filed within 1 year of discriminatory act",
+        "Prohibits discrimination based on race, color, religion, sex, national origin, familial status, disability"
+      ]
+    },
+    {
+      "statute_id": "erisa",
+      "label": "Employee Retirement Income Security Act",
+      "citation": "29 USC §1001 et seq.",
+      "pipelines": ["insurance_claim_denial"],
+      "baseline_rules": [
+        "180 days for internal appeal of claim denial",
+        "External review available under ACA within 4 months of internal denial"
+      ]
+    },
+    {
+      "statute_id": "flsa",
+      "label": "Fair Labor Standards Act",
+      "citation": "29 USC §201 et seq.",
+      "pipelines": ["wage_theft"],
+      "baseline_rules": [
+        "2-year statute of limitations for non-willful violations",
+        "3-year statute of limitations for willful violations",
+        "Federal minimum wage applies as floor"
+      ]
+    },
+    {
+      "statute_id": "icwa",
+      "label": "Indian Child Welfare Act",
+      "citation": "25 USC §1901 et seq.",
+      "pipelines": ["child_welfare"],
+      "baseline_rules": [
+        "Notice to tribe required by registered mail for any child custody proceeding involving Indian child",
+        "Active efforts required before removal (higher standard than reasonable efforts)",
+        "Tribal court has exclusive jurisdiction for children domiciled on reservation",
+        "Placement preferences: extended family, tribal foster home, Indian foster home, institution approved by tribe"
+      ]
+    },
+    {
+      "statute_id": "fdcpa",
+      "label": "Fair Debt Collection Practices Act",
+      "citation": "15 USC §1692 et seq.",
+      "pipelines": ["debt_collection_abuse"],
+      "baseline_rules": [
+        "30 days to dispute debt in writing after initial notice",
+        "1-year statute of limitations for FDCPA lawsuit",
+        "Collector must cease collection on disputed debt until verified"
+      ]
+    },
+    {
+      "statute_id": "elder_justice_act",
+      "label": "Elder Justice Act",
+      "citation": "42 USC §3058i",
+      "pipelines": ["elder_abuse", "guardianship_abuse"],
+      "baseline_rules": [
+        "Encourages mandatory reporting of elder abuse",
+        "CMS requires investigation within 2-10 days depending on severity for nursing home complaints"
+      ]
+    },
+    {
+      "statute_id": "asfa",
+      "label": "Adoption and Safe Families Act",
+      "citation": "42 USC §675",
+      "pipelines": ["child_welfare"],
+      "baseline_rules": [
+        "Permanency hearing required within 12 months of removal",
+        "TPR petition required if child in care 15 of most recent 22 months"
+      ]
+    },
+    {
+      "statute_id": "aca",
+      "label": "Affordable Care Act",
+      "citation": "42 USC §18001 et seq.",
+      "pipelines": ["insurance_claim_denial", "medicaid_denial", "benefits_denial"],
+      "baseline_rules": [
+        "External review right for all non-grandfathered health plans",
+        "No annual or lifetime dollar limits on essential health benefits",
+        "Preventive services must be covered without cost-sharing"
+      ]
+    }
+  ],
+  "federal_deadlines": [
+    {
+      "pipeline_id": "domestic_violence",
+      "deadline_id": "dv_vawa_petition",
+      "action": "File VAWA self-petition",
+      "days": 730,
+      "statute": "INA §204(a)(1)(A)(iii)-(iv)"
+    },
+    {
+      "pipeline_id": "tenant_rights",
+      "deadline_id": "tr_fair_housing_complaint",
+      "action": "File HUD fair housing complaint",
+      "days": 365,
+      "statute": "42 USC §3610(a)(1)(A)"
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "deadline_id": "ins_internal_appeal",
+      "action": "File internal appeal of claim denial",
+      "days": 180,
+      "statute": "29 CFR §2560.503-1(h)"
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "deadline_id": "ins_external_review",
+      "action": "File external review after internal denial",
+      "days": 120,
+      "statute": "42 USC §300gg-19(b)"
+    },
+    {
+      "pipeline_id": "wage_theft",
+      "deadline_id": "wt_wage_claim",
+      "action": "File FLSA wage claim",
+      "days": 730,
+      "statute": "29 USC §255(a)"
+    },
+    {
+      "pipeline_id": "wage_theft",
+      "deadline_id": "wt_discrimination_complaint",
+      "action": "File EEOC discrimination complaint",
+      "days": 300,
+      "statute": "42 USC §2000e-5(e)"
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "deadline_id": "cw_permanency_hearing",
+      "action": "Permanency hearing required",
+      "days": 365,
+      "statute": "42 USC §675(5)(C)"
+    },
+    {
+      "pipeline_id": "debt_collection_abuse",
+      "deadline_id": "dc_dispute_debt",
+      "action": "Dispute debt in writing",
+      "days": 30,
+      "statute": "15 USC §1692g(b)"
+    },
+    {
+      "pipeline_id": "debt_collection_abuse",
+      "deadline_id": "dc_fdcpa_lawsuit",
+      "action": "File FDCPA lawsuit",
+      "days": 365,
+      "statute": "15 USC §1692k(d)"
+    }
+  ],
+  "federal_escalation_hooks": [
+    {
+      "hook_id": "civil_rights_or_vawa",
+      "pipelines": ["domestic_violence"],
+      "federal_agency": "DOJ Civil Rights Division / Office on Violence Against Women",
+      "trigger": "State fails to enforce protection orders or VAWA provisions"
+    },
+    {
+      "hook_id": "hud_fair_housing_complaint",
+      "pipelines": ["tenant_rights", "housing_discrimination"],
+      "federal_agency": "HUD Office of Fair Housing and Equal Opportunity",
+      "trigger": "Housing discrimination based on protected class"
+    },
+    {
+      "hook_id": "erisa_or_aca_violation",
+      "pipelines": ["insurance_claim_denial"],
+      "federal_agency": "DOL Employee Benefits Security Administration / HHS",
+      "trigger": "ERISA plan denial without proper process or ACA violation"
+    },
+    {
+      "hook_id": "flsa_violation",
+      "pipelines": ["wage_theft"],
+      "federal_agency": "DOL Wage and Hour Division",
+      "trigger": "Federal minimum wage or overtime violation"
+    },
+    {
+      "hook_id": "title_iv_e_compliance",
+      "pipelines": ["child_welfare"],
+      "federal_agency": "HHS Administration for Children and Families",
+      "trigger": "State fails to meet Title IV-E requirements or ICWA compliance"
+    },
+    {
+      "hook_id": "fdcpa_or_fcra_violation",
+      "pipelines": ["debt_collection_abuse"],
+      "federal_agency": "CFPB / FTC",
+      "trigger": "Systematic FDCPA or FCRA violations"
+    },
+    {
+      "hook_id": "elder_justice_act",
+      "pipelines": ["elder_abuse"],
+      "federal_agency": "HHS Administration for Community Living",
+      "trigger": "Systematic failure to investigate or prevent elder abuse"
+    },
+    {
+      "hook_id": "elder_justice_act_or_cms_enforcement",
+      "pipelines": ["guardianship_abuse"],
+      "federal_agency": "CMS / HHS Office of Inspector General",
+      "trigger": "Nursing home or guardianship abuse with federal funding nexus"
+    },
+    {
+      "hook_id": "flores_settlement_or_constitutional_due_process",
+      "pipelines": ["family_separation_case"],
+      "federal_agency": "DOJ / DHS",
+      "trigger": "Violation of Flores Settlement or constitutional due process in family separation"
+    }
+  ]
+}

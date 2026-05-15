@@ -1,0 +1,425 @@
+{
+  "meta": {
+    "state": "IA",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "ia_iowa_medicaid",
+      "program_name": "Iowa Medicaid",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Iowa Medicaid",
+      "phone": "800-338-8366",
+      "website": "https://dhs.iowa.gov/ime",
+      "eligibility": "Adults \u2264138% FPL; children \u2264302% FPL; elderly/disabled on SSI",
+      "apply_notes": "Medicaid expansion covers adults up to 138% FPL. Iowa Health and Wellness Plan is the primary expansion vehicle. Administered through managed care.",
+      "source": "luminari-iowa-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "IA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ia_hawkeye_chip_hawk_i",
+      "program_name": "Hawkeye CHIP (hawk-i)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "Hawkeye CHIP",
+      "phone": "800-257-8563",
+      "website": "https://hawk-i.org",
+      "eligibility": "Children under 19; family income 133\u2013302% FPL",
+      "apply_notes": "Iowa's CHIP program. Free or low-cost health coverage for children in families who earn too much for Medicaid.",
+      "source": "luminari-iowa-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "IA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ia_iowa_snap_family_investment_program",
+      "program_name": "Iowa SNAP (Family Investment Program)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Iowa SNAP",
+      "phone": "877-347-5678",
+      "website": "https://dhs.iowa.gov",
+      "eligibility": "Income \u2264130% FPL gross; 200% FPL net for elderly/disabled",
+      "apply_notes": "SNAP benefits administered through DHS. Apply online at dhs.iowa.gov or at county DHS offices.",
+      "source": "luminari-iowa-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "IA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ia_fip_family_investment_program_tanf",
+      "program_name": "FIP \u2013 Family Investment Program (TANF)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "FIP \u2013 Family Investment Program",
+      "phone": "877-347-5678",
+      "website": "https://dhs.iowa.gov",
+      "eligibility": "Families with minor children; income and asset limits; Iowa residency",
+      "apply_notes": "Iowa's TANF cash assistance. $426/month family of 3. 60-month lifetime limit. Work participation requirements.",
+      "source": "luminari-iowa-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "IA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ia_iowa_unemployment_insurance",
+      "program_name": "Iowa Unemployment Insurance",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "employment_dispute"
+      ],
+      "agency": "Iowa Unemployment Insurance",
+      "phone": "866-239-0843",
+      "website": "https://workforce.iowa.gov",
+      "eligibility": "Involuntary separation; base period earnings required",
+      "apply_notes": "UI: max $658/week. Duration 26 weeks. Administered by Iowa Workforce Development.",
+      "source": "luminari-iowa-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "IA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ia_iowa_finance_authority_ifa_housing",
+      "program_name": "Iowa Finance Authority (IFA) Housing",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Iowa Finance Authority",
+      "phone": "800-432-7230",
+      "website": "https://iowafinanceauthority.gov",
+      "eligibility": "Income-based; varies by program",
+      "apply_notes": "Affordable rental housing, Section 8 vouchers, homebuyer assistance. Coordinates with local Public Housing Authorities.",
+      "source": "luminari-iowa-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "IA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ia_wic_iowa",
+      "program_name": "WIC Iowa",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "WIC Iowa",
+      "phone": "800-532-1579",
+      "website": "https://idph.iowa.gov/wic",
+      "eligibility": "Pregnant/postpartum women, infants, children under 5; income \u2264185% FPL",
+      "apply_notes": "Nutrition support for women, infants, and children through Iowa Dept. of Public Health.",
+      "source": "luminari-iowa-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "IA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ia_child_care_assistance_cca",
+      "program_name": "Child Care Assistance (CCA)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "Child Care Assistance",
+      "phone": "877-347-5678",
+      "website": "https://dhs.iowa.gov",
+      "eligibility": "Working families; income \u2264145% FPL; children under 13",
+      "apply_notes": "Subsidized childcare for working families through DHS.",
+      "source": "luminari-iowa-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "IA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ia_iowa_vocational_rehabilitation_services",
+      "program_name": "Iowa Vocational Rehabilitation Services",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "Iowa Vocational Rehabilitation Services",
+      "phone": "800-532-1486",
+      "website": "https://ivrs.iowa.gov",
+      "eligibility": "Documented disability; must have employment goal",
+      "apply_notes": "Employment services, training, job placement, assistive technology for people with disabilities.",
+      "source": "luminari-iowa-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "IA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ia_liheap_iowa_liheap_ecip",
+      "program_name": "LIHEAP Iowa (LiHEAP / ECIP)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "LIHEAP Iowa",
+      "phone": "855-944-2692",
+      "website": "https://dhs.iowa.gov/liheap",
+      "eligibility": "Income \u2264150% FPL; elderly, disabled, and households with young children prioritized",
+      "apply_notes": "Energy Cost Reduction Program. Heating and cooling bill assistance through community action agencies.",
+      "source": "luminari-iowa-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "IA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ia_iowa_food_bank_network_211",
+      "program_name": "Iowa Food Bank Network / 211",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "housing_dispute"
+      ],
+      "agency": "Iowa Food Bank Network / 211",
+      "phone": "",
+      "website": "https://211iowa.org",
+      "eligibility": "Open to all",
+      "apply_notes": "2-1-1 Iowa connects to food banks, emergency shelter, utilities, transportation, and health services across all 99 counties.",
+      "source": "luminari-iowa-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "IA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ia_iowa_legal_aid",
+      "program_name": "Iowa Legal Aid",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute",
+        "consumer_protection"
+      ],
+      "agency": "Iowa Legal Aid",
+      "phone": "800-532-1275",
+      "website": "https://iowalegalaid.org",
+      "eligibility": "Income \u2264125% FPL; expanded thresholds for some issues",
+      "apply_notes": "Statewide civil legal aid. Housing, benefits, family law, consumer, domestic violence.",
+      "source": "luminari-iowa-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "IA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ia_behavioral_health_iowa_bhi",
+      "program_name": "Behavioral Health Iowa (BHI)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Behavioral Health Iowa",
+      "phone": "800-972-2017",
+      "website": "https://mhds.iowa.gov",
+      "eligibility": "All residents; Medicaid, private insurance, sliding scale",
+      "apply_notes": "Mental health and substance use services. Community Mental Health Centers in each region. Crisis line: 988.",
+      "source": "luminari-iowa-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "IA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ia_iowa_head_start_early_access",
+      "program_name": "Iowa Head Start (Early ACCESS)",
+      "layer": "state",
+      "benefit_category": "childcare",
+      "pipeline_ids": [
+        "child_welfare"
+      ],
+      "agency": "Iowa Head Start",
+      "phone": "515-281-7145",
+      "website": "https://idph.iowa.gov",
+      "eligibility": "Income \u2264100% FPL; developmental delay regardless of income",
+      "apply_notes": "Federal early childhood and early intervention programs. Head Start for ages 3\u20135; Early ACCESS for 0\u20133.",
+      "source": "luminari-iowa-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "childcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "childcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "childcare",
+      "city": "",
+      "state": "IA",
+      "federal_interface": false
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "state": "MI",
+    "version": "3.0"
+  },
+  "statute": {
+    "name": "Michigan Freedom of Information Act (FOIA)",
+    "citation": "MCL § 15.231 et seq."
+  },
+  "structured_rules": [
+    {
+      "rule_id": "mi_open_records",
+      "domain": "public_records"
+    }
+  ],
+  "agencies": [
+    {
+      "agency": "MI DHHS",
+      "contact_name": "",
+      "email": "",
+      "phone": "517-241-7476",
+      "address": "",
+      "turnaround_days": "5 business days (FOIA)",
+      "fee_info": "First $20 free, then per-page fees",
+      "agency_id": "mi_agency_0"
+    },
+    {
+      "agency": "DIFS",
+      "contact_name": "",
+      "email": "",
+      "phone": "877-999-6442",
+      "address": "",
+      "turnaround_days": "5 business days",
+      "fee_info": "Standard FOIA fees",
+      "agency_id": "mi_agency_1"
+    },
+    {
+      "agency": "MI LEO/UIA",
+      "contact_name": "",
+      "email": "",
+      "phone": "517-335-5858",
+      "address": "",
+      "turnaround_days": "5 business days",
+      "fee_info": "Standard FOIA fees",
+      "agency_id": "mi_agency_2"
+    }
+  ],
+  "appeals_workflow": []
+}

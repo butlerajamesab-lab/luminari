@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "state": "LA",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "la_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "la_louisiana_medicaid_ldh",
+        "la_tulane_ochsner_university_medical_center",
+        "la_louisiana_primary_care_association_fqhcs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "la_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "la_southeast_louisiana_legal_services_slls",
+        "la_immigrant_services_network_of_new_orlean"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "la_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "la_louisiana_housing_corporation_lhc",
+        "la_louisiana_dv_hotline_btnla"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "la_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "la_louisiana_snap_dsnap_disaster_snap_dcfs",
+        "la_second_harvest_food_bank_nola_food_bank",
+        "la_wic_louisiana"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "la_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "la_louisiana_veterans_services_lvs",
+        "la_greater_new_orleans_foundation_united_wa"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "la_lens_employment",
+      "lens_type": "employment",
+      "programs": [
+        "la_vietnamese_american_young_leaders_associ"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "la_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "la_louisiana_tanf_fitap_dcfs",
+        "la_louisiana_ui_lwc",
+        "la_louisiana_liheap_dcfs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    }
+  ]
+}

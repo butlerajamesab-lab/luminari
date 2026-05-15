@@ -1,0 +1,188 @@
+{
+  "meta": {
+    "state": "IL",
+    "version": "3.0"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "housing_violation",
+      "state": "IL",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document All Violations",
+          "deadline": "",
+          "documents": [
+            "Dated photos, texts/emails, written records, lease copy",
+            "Written notice — certified mail; copy + return receipt",
+            "Written complaint with photos",
+            "All documentation from steps 1–3",
+            "Timeline, dated complaint records, evidence of retaliatory action",
+            "Full documentation package"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Send Written Repair Notice",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File Code Enforcement Complaint",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Contact Legal Aid",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 5,
+          "action": "Assert Retaliation Protection",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 6,
+          "action": "Escalate",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft",
+      "state": "IL",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document Wages Owed",
+          "deadline": "",
+          "documents": [
+            "Pay stubs, time records, offer letter, work schedule",
+            "Written demand with specific amounts and calculation",
+            "Demand letter + documentation",
+            "Same documentation",
+            "Same documentation"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Send Written Wage Demand",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File IL DOL Complaint",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "File Federal WHD Simultaneously",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 5,
+          "action": "Chicago Workers — Also File City OLS",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial",
+      "state": "IL",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Review Notice of Decision",
+          "deadline": "",
+          "documents": [
+            "Notice of Decision, case number, any supporting documentation",
+            "Written hearing request with case number and specific reason for appeal",
+            "Case record request, all supporting documents, hearing notice",
+            "Denial notice, employment records, reason for separation"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Request Fair Hearing + Aid-Continuing",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "Prepare for Hearing",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Illinois UI Appeals (IDES)",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_medicaid_denial",
+      "state": "IL",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document Denial",
+          "deadline": "",
+          "documents": [
+            "Denial letter/EOB, policy documents, medical records, physician letter",
+            "Written appeal with medical necessity documentation",
+            "Internal appeal denial + medical records",
+            "Full documentation package"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "File Internal Appeal",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "Illinois Independent Medical Review (IMR)",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "IL DOI Complaint / Escalation",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    }
+  ]
+}

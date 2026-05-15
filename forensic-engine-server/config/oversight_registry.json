@@ -1,0 +1,3364 @@
+{
+  "version": "1.0.0",
+  "description": "Modular oversight entity definitions referenced by oversight_entities in the unified pipeline registry. Each entity represents an accountability body that can receive complaints, conduct investigations, or impose sanctions.",
+  "entities": [
+    {
+      "entity_id": "oe_state_bar_association",
+      "label": "State Bar Association",
+      "type": "professional_licensing",
+      "jurisdiction": "state",
+      "description": "Regulates attorney conduct. Receives complaints about attorney misconduct, conflicts of interest, or ethical violations.",
+      "complaint_pathway": "File a grievance with the state bar's disciplinary board. Include attorney name, bar number, and specific conduct at issue.",
+      "website_pattern": "https://www.americanbar.org/groups/bar_services/resources/state-court-discipline/",
+      "applicable_pipelines": [
+        "domestic_violence",
+        "guardianship_abuse",
+        "child_welfare",
+        "prosecutorial_misconduct",
+        "judicial_misconduct",
+        "criminal_case_review",
+        "general_legal_question",
+        "legal_research",
+        "pro_se_assistance",
+        "document_review",
+        "custody",
+        "custody_dispute",
+        "family_law",
+        "guardianship",
+        "parental_rights_termination",
+        "personal_case"
+      ]
+    },
+    {
+      "entity_id": "oe_judicial_conduct_commission",
+      "label": "Judicial Conduct Commission",
+      "type": "judicial_oversight",
+      "jurisdiction": "state",
+      "description": "Investigates complaints about judicial misconduct, bias, or procedural violations by judges.",
+      "complaint_pathway": "File a written complaint with the state judicial conduct commission. Include case number, judge name, and specific conduct.",
+      "website_pattern": "Varies by state \u2014 search '[state] judicial conduct commission'",
+      "applicable_pipelines": [
+        "domestic_violence",
+        "child_welfare",
+        "guardianship_abuse",
+        "prosecutorial_misconduct",
+        "judicial_misconduct",
+        "criminal_case_review"
+      ]
+    },
+    {
+      "entity_id": "oe_state_dv_coalition",
+      "label": "State Domestic Violence Coalition",
+      "type": "advocacy_organization",
+      "jurisdiction": "state",
+      "description": "Statewide coalition coordinating DV services, policy advocacy, and system accountability.",
+      "complaint_pathway": "Contact the state coalition for advocacy support, system navigation, and policy complaints.",
+      "website_pattern": "https://nnedv.org/content/state-u-s-territory-coalitions/",
+      "applicable_pipelines": [
+        "domestic_violence",
+        "domestic_violence_emergency"
+      ]
+    },
+    {
+      "entity_id": "oe_victim_advocate_office",
+      "label": "Victim Advocate Office",
+      "type": "government_office",
+      "jurisdiction": "local",
+      "description": "Provides victim advocacy services within the criminal justice system. Assists with safety planning, court accompaniment, and rights enforcement.",
+      "complaint_pathway": "Contact the local victim advocate office through the district attorney's office or local court.",
+      "website_pattern": "Varies by jurisdiction",
+      "applicable_pipelines": [
+        "domestic_violence",
+        "domestic_violence_emergency"
+      ]
+    },
+    {
+      "entity_id": "oe_state_attorney_general",
+      "label": "State Attorney General",
+      "type": "law_enforcement",
+      "jurisdiction": "state",
+      "description": "Chief legal officer of the state. Handles consumer protection, civil rights enforcement, and public interest litigation.",
+      "complaint_pathway": "File a consumer complaint or civil rights complaint through the AG's website. Include documentation of the violation.",
+      "website_pattern": "https://www.naag.org/find-my-ag/",
+      "applicable_pipelines": [
+        "tenant_rights",
+        "debt_collection_abuse",
+        "insurance_claim_denial",
+        "elder_abuse",
+        "wage_theft",
+        "hospital_billing_abuse",
+        "surprise_billing",
+        "police_misconduct",
+        "prosecutorial_misconduct",
+        "wrongful_conviction",
+        "public_corruption",
+        "use_of_force_review",
+        "civil_asset_forfeiture",
+        "wrongful_arrest",
+        "conversion_therapy_harm",
+        "market_concentration",
+        "antitrust_violation",
+        "supply_chain_exploitation",
+        "nonprofit_compliance",
+        "public_contract_abuse",
+        "public_utility_monopoly_abuse",
+        "algorithmic_discrimination",
+        "child_abuse",
+        "elder_financial_exploitation",
+        "eviction_defense",
+        "hoa_disputes",
+        "landlord_harassment",
+        "foreclosure_dispute",
+        "mobile_home_park_dispute",
+        "short_term_rental_dispute",
+        "utility_shutoff_abuse",
+        "code_enforcement_retaliation",
+        "predatory_lending",
+        "consumer_fraud",
+        "online_marketplace_fraud",
+        "subscription_trap_billing",
+        "non_compete_dispute",
+        "wildfire_liability"
+      ]
+    },
+    {
+      "entity_id": "oe_local_housing_authority",
+      "label": "Local Housing Authority",
+      "type": "government_agency",
+      "jurisdiction": "local",
+      "description": "Administers public housing and Section 8 vouchers. Enforces housing quality standards.",
+      "complaint_pathway": "File a complaint about housing conditions or landlord violations with the local housing authority.",
+      "website_pattern": "Varies by jurisdiction",
+      "applicable_pipelines": [
+        "tenant_rights",
+        "landlord_harassment"
+      ]
+    },
+    {
+      "entity_id": "oe_hud_regional_office",
+      "label": "HUD Regional Office",
+      "type": "federal_agency",
+      "jurisdiction": "federal",
+      "description": "Enforces Fair Housing Act. Investigates housing discrimination and landlord violations of federal housing standards.",
+      "complaint_pathway": "File a Fair Housing complaint at hud.gov or call 1-800-669-9777.",
+      "website_pattern": "https://www.hud.gov/program_offices/fair_housing_equal_opp/online-complaint",
+      "applicable_pipelines": [
+        "tenant_rights"
+      ]
+    },
+    {
+      "entity_id": "oe_tenant_rights_organization",
+      "label": "Tenant Rights Organization",
+      "type": "advocacy_organization",
+      "jurisdiction": "local",
+      "description": "Local tenant advocacy groups providing legal assistance, organizing support, and policy advocacy.",
+      "complaint_pathway": "Contact local tenant rights organization for assistance with landlord disputes.",
+      "website_pattern": "Varies by jurisdiction",
+      "applicable_pipelines": [
+        "tenant_rights"
+      ]
+    },
+    {
+      "entity_id": "oe_state_insurance_commissioner",
+      "label": "State Insurance Commissioner",
+      "type": "regulatory_agency",
+      "jurisdiction": "state",
+      "description": "Regulates insurance companies operating in the state. Investigates unfair claim practices and policy violations.",
+      "complaint_pathway": "File a complaint through the state department of insurance website. Include policy number, denial letter, and timeline.",
+      "website_pattern": "https://content.naic.org/state-insurance-departments",
+      "applicable_pipelines": [
+        "insurance_claim_denial"
+      ]
+    },
+    {
+      "entity_id": "oe_cms",
+      "label": "Centers for Medicare & Medicaid Services",
+      "type": "federal_agency",
+      "jurisdiction": "federal",
+      "description": "Administers Medicare, Medicaid, and ACA marketplace. Enforces federal healthcare coverage standards.",
+      "complaint_pathway": "File a complaint at medicare.gov or call 1-800-MEDICARE for Medicare issues. For Medicaid, contact the state Medicaid office.",
+      "website_pattern": "https://www.medicare.gov/claims-appeals/file-a-complaint",
+      "applicable_pipelines": [
+        "insurance_claim_denial",
+        "elder_abuse",
+        "hospital_billing_abuse",
+        "prior_authorization_abuse",
+        "surprise_billing",
+        "nursing_home_abuse",
+        "long_term_care_neglect",
+        "home_health_agency_misconduct",
+        "medicare_elder_fraud",
+        "medicaid_ltc_eligibility"
+      ]
+    },
+    {
+      "entity_id": "oe_naic",
+      "label": "National Association of Insurance Commissioners",
+      "type": "regulatory_coordination",
+      "jurisdiction": "national",
+      "description": "Coordinates insurance regulation across states. Maintains consumer complaint database and model regulations.",
+      "complaint_pathway": "Use NAIC's Consumer Information Source to research insurer complaint history.",
+      "website_pattern": "https://content.naic.org/consumer",
+      "applicable_pipelines": [
+        "insurance_claim_denial"
+      ]
+    },
+    {
+      "entity_id": "oe_department_of_labor",
+      "label": "US Department of Labor",
+      "type": "federal_agency",
+      "jurisdiction": "federal",
+      "description": "Enforces FLSA, OSHA, and other federal labor laws. Investigates wage theft, overtime violations, and workplace safety.",
+      "complaint_pathway": "File a complaint with the Wage and Hour Division at dol.gov or call 1-866-4-USWAGE.",
+      "website_pattern": "https://www.dol.gov/agencies/whd/contact/complaints",
+      "applicable_pipelines": [
+        "wage_theft"
+      ]
+    },
+    {
+      "entity_id": "oe_state_labor_agency",
+      "label": "State Labor Agency",
+      "type": "state_agency",
+      "jurisdiction": "state",
+      "description": "Enforces state wage and hour laws, which often provide stronger protections than federal law.",
+      "complaint_pathway": "File a wage claim with the state labor department. Include pay stubs, timesheets, and employment records.",
+      "website_pattern": "Varies by state",
+      "applicable_pipelines": [
+        "wage_theft"
+      ]
+    },
+    {
+      "entity_id": "oe_eeoc",
+      "label": "Equal Employment Opportunity Commission",
+      "type": "federal_agency",
+      "jurisdiction": "federal",
+      "description": "Enforces federal employment discrimination laws. Investigates workplace discrimination and harassment.",
+      "complaint_pathway": "File a charge of discrimination at eeoc.gov or visit a local EEOC office.",
+      "website_pattern": "https://www.eeoc.gov/filing-charge-discrimination",
+      "applicable_pipelines": [
+        "wage_theft",
+        "lgbtq_discrimination",
+        "lgbtq_workplace_harassment",
+        "algorithmic_discrimination",
+        "disability_rights",
+        "ada_accommodation_dispute",
+        "workplace_discrimination",
+        "wrongful_termination",
+        "workplace_harassment"
+      ]
+    },
+    {
+      "entity_id": "oe_state_child_welfare_oversight",
+      "label": "State Child Welfare Oversight Body",
+      "type": "state_agency",
+      "jurisdiction": "state",
+      "description": "Oversees state child welfare agencies. Investigates systemic failures in child protection.",
+      "complaint_pathway": "File a complaint with the state child welfare oversight body or ombudsman.",
+      "website_pattern": "Varies by state",
+      "applicable_pipelines": [
+        "child_welfare"
+      ]
+    },
+    {
+      "entity_id": "oe_acf_children_bureau",
+      "label": "Administration for Children and Families \u2014 Children's Bureau",
+      "type": "federal_agency",
+      "jurisdiction": "federal",
+      "description": "Federal oversight of state child welfare systems. Monitors Title IV-E compliance and child welfare outcomes.",
+      "complaint_pathway": "Report systemic child welfare concerns to the Children's Bureau regional office.",
+      "website_pattern": "https://www.acf.hhs.gov/cb",
+      "applicable_pipelines": [
+        "child_welfare"
+      ]
+    },
+    {
+      "entity_id": "oe_court_appointed_special_advocates",
+      "label": "Court Appointed Special Advocates (CASA)",
+      "type": "advocacy_organization",
+      "jurisdiction": "local",
+      "description": "Trained volunteers appointed by judges to advocate for children in foster care and dependency proceedings.",
+      "complaint_pathway": "Contact local CASA program for child advocacy support in dependency cases.",
+      "website_pattern": "https://www.casaforchildren.org/",
+      "applicable_pipelines": [
+        "child_welfare"
+      ]
+    },
+    {
+      "entity_id": "oe_child_welfare_ombudsman",
+      "label": "Child Welfare Ombudsman",
+      "type": "ombudsman",
+      "jurisdiction": "state",
+      "description": "Independent office investigating complaints about child welfare agency actions and decisions.",
+      "complaint_pathway": "File a complaint with the state child welfare ombudsman.",
+      "website_pattern": "Varies by state",
+      "applicable_pipelines": [
+        "child_welfare"
+      ]
+    },
+    {
+      "entity_id": "oe_cfpb",
+      "label": "Consumer Financial Protection Bureau",
+      "type": "federal_agency",
+      "jurisdiction": "federal",
+      "description": "Enforces federal consumer financial laws including FDCPA, FCRA, and TILA. Maintains public complaint database.",
+      "complaint_pathway": "File a complaint at consumerfinance.gov/complaint. Include collector name, account details, and specific violations.",
+      "website_pattern": "https://www.consumerfinance.gov/complaint/",
+      "applicable_pipelines": [
+        "debt_collection_abuse",
+        "algorithmic_discrimination",
+        "elder_financial_exploitation",
+        "foreclosure_dispute",
+        "predatory_lending",
+        "identity_theft",
+        "subscription_trap_billing",
+        "bank_account_closure"
+      ]
+    },
+    {
+      "entity_id": "oe_ftc",
+      "label": "Federal Trade Commission",
+      "type": "federal_agency",
+      "jurisdiction": "federal",
+      "description": "Enforces consumer protection laws. Investigates deceptive business practices and unfair debt collection.",
+      "complaint_pathway": "Report fraud or unfair practices at reportfraud.ftc.gov.",
+      "website_pattern": "https://reportfraud.ftc.gov/",
+      "applicable_pipelines": [
+        "debt_collection_abuse",
+        "pharmacy_benefit_manager_dispute",
+        "market_concentration",
+        "antitrust_violation",
+        "algorithmic_discrimination",
+        "consumer_fraud",
+        "identity_theft",
+        "online_marketplace_fraud",
+        "subscription_trap_billing",
+        "non_compete_dispute",
+        "workplace_surveillance"
+      ]
+    },
+    {
+      "entity_id": "oe_state_banking_regulator",
+      "label": "State Banking Regulator",
+      "type": "regulatory_agency",
+      "jurisdiction": "state",
+      "description": "Regulates state-chartered banks and financial institutions. Investigates consumer complaints about financial services.",
+      "complaint_pathway": "File a complaint with the state banking department or division of financial institutions.",
+      "website_pattern": "Varies by state",
+      "applicable_pipelines": [
+        "debt_collection_abuse",
+        "predatory_lending"
+      ]
+    },
+    {
+      "entity_id": "oe_probate_court",
+      "label": "Probate Court",
+      "type": "judicial",
+      "jurisdiction": "local",
+      "description": "Court with jurisdiction over guardianship and conservatorship cases. Reviews guardian accountings and complaints.",
+      "complaint_pathway": "File a motion or petition with the probate court requesting review of guardian conduct.",
+      "website_pattern": "Varies by jurisdiction",
+      "applicable_pipelines": [
+        "guardianship_abuse",
+        "guardianship"
+      ]
+    },
+    {
+      "entity_id": "oe_state_guardianship_oversight",
+      "label": "State Guardianship Oversight Program",
+      "type": "state_agency",
+      "jurisdiction": "state",
+      "description": "State program monitoring professional guardians and investigating complaints about guardian conduct.",
+      "complaint_pathway": "File a complaint with the state guardianship oversight program or office of public guardian.",
+      "website_pattern": "Varies by state",
+      "applicable_pipelines": [
+        "guardianship_abuse"
+      ]
+    },
+    {
+      "entity_id": "oe_adult_protective_services",
+      "label": "Adult Protective Services",
+      "type": "state_agency",
+      "jurisdiction": "state",
+      "description": "Investigates reports of abuse, neglect, and exploitation of vulnerable adults and elders.",
+      "complaint_pathway": "Call the state APS hotline to report suspected abuse or neglect. Reports can be anonymous.",
+      "website_pattern": "https://www.napsa-now.org/help-in-your-area/",
+      "applicable_pipelines": [
+        "guardianship_abuse",
+        "elder_abuse"
+      ]
+    },
+    {
+      "entity_id": "oe_ltc_ombudsman",
+      "label": "Long-Term Care Ombudsman",
+      "type": "ombudsman",
+      "jurisdiction": "state",
+      "description": "Advocates for residents of nursing homes, assisted living, and other long-term care facilities.",
+      "complaint_pathway": "Contact the state or local LTC ombudsman program to report facility concerns.",
+      "website_pattern": "https://theconsumervoice.org/get_help",
+      "applicable_pipelines": [
+        "elder_abuse",
+        "nursing_home_abuse",
+        "long_term_care_neglect"
+      ]
+    },
+    {
+      "entity_id": "oe_state_health_department",
+      "label": "State Health Department",
+      "type": "state_agency",
+      "jurisdiction": "state",
+      "description": "Licenses and inspects healthcare facilities. Investigates complaints about facility conditions and care quality.",
+      "complaint_pathway": "File a complaint about a healthcare facility with the state health department's licensing division.",
+      "website_pattern": "Varies by state",
+      "applicable_pipelines": [
+        "discharge_failure",
+        "elder_abuse",
+        "involuntary_hold",
+        "polypharmacy_harm",
+        "record_correction",
+        "restraint_seclusion",
+        "hospital_billing_abuse",
+        "medical_record_access",
+        "medical_device_injury",
+        "conversion_therapy_harm",
+        "public_health_emergency",
+        "nursing_home_abuse",
+        "long_term_care_neglect",
+        "home_health_agency_misconduct",
+        "water_contamination",
+        "public_health_risk"
+      ]
+    },
+    {
+      "entity_id": "oe_dhs_office_of_inspector_general",
+      "label": "DHS Office of Inspector General",
+      "type": "federal_inspector_general",
+      "jurisdiction": "federal",
+      "description": "Independent oversight of DHS agencies including ICE, CBP, and USCIS. Investigates misconduct and civil rights violations.",
+      "complaint_pathway": "File a complaint at oig.dhs.gov or call the OIG hotline at 1-800-323-8603.",
+      "website_pattern": "https://www.oig.dhs.gov/hotline",
+      "applicable_pipelines": [
+        "family_separation_case"
+      ]
+    },
+    {
+      "entity_id": "oe_dhs_crcl",
+      "label": "DHS Office for Civil Rights and Civil Liberties",
+      "type": "civil_rights_office",
+      "jurisdiction": "federal",
+      "description": "Reviews and assesses DHS policies and activities for civil rights and civil liberties impacts.",
+      "complaint_pathway": "File a civil rights complaint at dhs.gov/crcl or email crcl@hq.dhs.gov.",
+      "website_pattern": "https://www.dhs.gov/file-civil-rights-complaint",
+      "applicable_pipelines": [
+        "family_separation_case"
+      ]
+    },
+    {
+      "entity_id": "oe_aclu_immigrants_rights",
+      "label": "ACLU Immigrants' Rights Project",
+      "type": "legal_advocacy",
+      "jurisdiction": "national",
+      "description": "Litigates cases involving immigrant rights, detention conditions, and family separation policies.",
+      "complaint_pathway": "Contact ACLU for potential impact litigation or legal assistance in immigration rights cases.",
+      "website_pattern": "https://www.aclu.org/issues/immigrants-rights",
+      "applicable_pipelines": [
+        "family_separation_case"
+      ]
+    },
+    {
+      "entity_id": "oe_congressional_oversight",
+      "label": "Congressional Oversight (Immigration)",
+      "type": "legislative_oversight",
+      "jurisdiction": "federal",
+      "description": "Congressional committees with jurisdiction over immigration policy and DHS oversight.",
+      "complaint_pathway": "Contact your congressional representative to request a congressional inquiry into an immigration case.",
+      "website_pattern": "https://www.house.gov/representatives/find-your-representative",
+      "applicable_pipelines": [
+        "family_separation_case"
+      ]
+    },
+    {
+      "entity_id": "oe_state_mental_health_authority",
+      "label": "State Mental Health Authority",
+      "type": "government_agency",
+      "jurisdiction": "state",
+      "description": "Oversees state-funded mental health services, licensing of psychiatric facilities, and enforcement of mental health codes. Receives complaints about facility conditions, treatment quality, and patient rights violations.",
+      "complaint_pathway": "File complaint with your state's Department of Mental Health or equivalent agency. Include facility name, dates, and specific concerns. Many states have online complaint portals.",
+      "website_pattern": "https://www.samhsa.gov/find-help/national-helpline",
+      "applicable_pipelines": [
+        "discharge_failure",
+        "family_exclusion",
+        "involuntary_hold",
+        "polypharmacy_harm",
+        "record_correction",
+        "restraint_seclusion"
+      ]
+    },
+    {
+      "entity_id": "oe_disability_rights_protection_advocacy",
+      "label": "Disability Rights / Protection & Advocacy Organization",
+      "type": "federally_mandated_advocacy",
+      "jurisdiction": "state",
+      "description": "Federally mandated organization in every state with legal authority to investigate abuse and neglect in psychiatric facilities. Has unrestricted access to facilities and records. Can file lawsuits on behalf of individuals.",
+      "complaint_pathway": "Contact your state's Protection & Advocacy organization (P&A). They have legal authority to enter any facility, access records, and investigate complaints. This is often the most powerful oversight tool available.",
+      "website_pattern": "https://www.ndrn.org/about/ndrn-member-agencies/",
+      "applicable_pipelines": [
+        "discharge_failure",
+        "family_exclusion",
+        "involuntary_hold",
+        "polypharmacy_harm",
+        "record_correction",
+        "restraint_seclusion"
+      ]
+    },
+    {
+      "entity_id": "oe_joint_commission",
+      "label": "The Joint Commission",
+      "type": "accreditation_body",
+      "jurisdiction": "national",
+      "description": "Accredits hospitals and behavioral health facilities. Complaints about patient safety, quality of care, or rights violations can trigger unannounced surveys. Loss of accreditation threatens facility funding.",
+      "complaint_pathway": "File a quality of care complaint at jointcommission.org. Include facility name, dates, and description of the concern. The Joint Commission investigates complaints and can conduct unannounced surveys.",
+      "website_pattern": "https://www.jointcommission.org/resources/patient-safety-topics/report-a-patient-safety-concern-or-complaint/",
+      "applicable_pipelines": [
+        "discharge_failure",
+        "family_exclusion",
+        "involuntary_hold",
+        "polypharmacy_harm",
+        "restraint_seclusion"
+      ]
+    },
+    {
+      "entity_id": "oe_patient_advocate_office",
+      "label": "Patient Advocate / Ombudsman",
+      "type": "patient_rights",
+      "jurisdiction": "local",
+      "description": "Internal or state-appointed advocate for patients in psychiatric facilities. Investigates complaints, mediates disputes, and ensures patient rights are respected. Some states mandate patient advocates in all psychiatric facilities.",
+      "complaint_pathway": "Request to speak with the patient advocate or ombudsman at the facility. If the facility does not have one, contact the state mental health authority to request advocacy services.",
+      "website_pattern": "varies by state",
+      "applicable_pipelines": [
+        "discharge_failure",
+        "family_exclusion",
+        "involuntary_hold",
+        "polypharmacy_harm",
+        "record_correction",
+        "restraint_seclusion"
+      ]
+    },
+    {
+      "entity_id": "oe_hhs_office_civil_rights",
+      "label": "HHS Office for Civil Rights (OCR)",
+      "type": "federal_agency",
+      "jurisdiction": "federal",
+      "description": "Enforces HIPAA privacy and access rights, ADA protections, and civil rights in healthcare settings. Investigates complaints about records access denial, privacy violations, and discrimination.",
+      "complaint_pathway": "File a complaint at hhs.gov/ocr. Complaints must be filed within 180 days of the violation. OCR can investigate, impose corrective action, and levy civil monetary penalties.",
+      "website_pattern": "https://www.hhs.gov/ocr/complaints/index.html",
+      "applicable_pipelines": [
+        "record_correction",
+        "family_exclusion",
+        "involuntary_hold"
+      ]
+    },
+    {
+      "entity_id": "oe_state_pharmacy_board",
+      "label": "State Board of Pharmacy",
+      "jurisdiction": "state",
+      "description": "Licenses and regulates pharmacies and pharmacists; investigates medication dispensing complaints.",
+      "type": "regulatory_board",
+      "complaint_pathway": "File complaint with state board of pharmacy via online form or written complaint",
+      "website_pattern": "https://www.{state}.gov/pharmacy-board",
+      "applicable_pipelines": [
+        "polypharmacy_harm",
+        "pharmacy_benefit_manager_dispute"
+      ]
+    },
+    {
+      "entity_id": "oe_state_medical_board",
+      "label": "State Medical Board / Board of Medical Examiners",
+      "jurisdiction": "state",
+      "description": "Licenses and disciplines physicians; investigates complaints about prescribing practices and standard of care.",
+      "type": "regulatory_board",
+      "complaint_pathway": "File complaint with state medical board via online form or written complaint",
+      "website_pattern": "https://www.{state}.gov/medical-board",
+      "applicable_pipelines": [
+        "polypharmacy_harm",
+        "record_correction",
+        "prior_authorization_abuse",
+        "lgbtq_healthcare_denial"
+      ]
+    },
+    {
+      "entity_id": "oe_fda_medwatch",
+      "label": "FDA MedWatch \u2014 Adverse Event Reporting",
+      "jurisdiction": "federal",
+      "description": "FDA's safety reporting program for adverse events related to medications, devices, and other products.",
+      "type": "federal_agency",
+      "complaint_pathway": "Submit MedWatch Online Voluntary Reporting Form (FDA Form 3500)",
+      "website_pattern": "https://www.fda.gov/safety/medwatch",
+      "applicable_pipelines": [
+        "polypharmacy_harm"
+      ]
+    },
+    {
+      "entity_id": "oe_cms_state_survey_agency",
+      "label": "CMS State Survey Agency",
+      "jurisdiction": "state",
+      "description": "Conducts surveys and inspections of healthcare facilities on behalf of CMS; investigates complaints about conditions of participation.",
+      "type": "state_agency",
+      "complaint_pathway": "File complaint with state health department survey and certification division",
+      "website_pattern": "https://www.{state}.gov/health-department",
+      "applicable_pipelines": [
+        "discharge_failure",
+        "restraint_seclusion"
+      ]
+    },
+    {
+      "entity_id": "CMS",
+      "label": "Cms",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: CMS",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "health_insurance_denial",
+        "medicaid_denial",
+        "medicare_denial",
+        "medical_malpractice"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "HHS Office of Inspector General",
+      "label": "Hhs Office Of Inspector General",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: HHS Office of Inspector General",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "medicaid_denial",
+        "medicare_denial"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "Joint Commission",
+      "label": "Joint Commission",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: Joint Commission",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "medical_malpractice"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "Medicare Ombudsman",
+      "label": "Medicare Ombudsman",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: Medicare Ombudsman",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "medicare_denial"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "State Attorney General",
+      "label": "State Attorney General",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: State Attorney General",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "health_insurance_denial"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "State Health Department",
+      "label": "State Health Department",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: State Health Department",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "medical_malpractice"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "State Insurance Commissioner",
+      "label": "State Insurance Commissioner",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: State Insurance Commissioner",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "health_insurance_denial"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "State Medicaid Agency",
+      "label": "State Medicaid Agency",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: State Medicaid Agency",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "medicaid_denial"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "State Medical Board",
+      "label": "State Medical Board",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: State Medical Board",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "medical_malpractice"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_acf",
+      "label": "Oe Acf",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe acf",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "public_assistance_dispute"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_acf_cb",
+      "label": "Oe Acf Cb",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe acf cb",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "child_endangerment",
+        "child_abuse",
+        "foster_care",
+        "family_services_failure"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_aps",
+      "label": "Oe Aps",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe aps",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "elder_financial_exploitation",
+        "vulnerable_adult_protection"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_area_agency_on_aging",
+      "label": "Oe Area Agency On Aging",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe area agency on aging",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "eldercare"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_atsdr",
+      "label": "Oe Atsdr",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe atsdr",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "public_health_risk",
+        "toxic_exposure"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_bankruptcy_court",
+      "label": "Oe Bankruptcy Court",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe bankruptcy court",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "bankruptcy_dispute"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_bia",
+      "label": "Oe Bia",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe bia",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "tribal_law",
+        "tribal_enrollment",
+        "tribal_land_rights",
+        "treaty_rights",
+        "indigenous_sovereignty",
+        "tribal_governance",
+        "tribal_state_jurisdiction_conflict",
+        "icwa_compliance"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_bia_law_enforcement",
+      "label": "Oe Bia Law Enforcement",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe bia law enforcement",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "mmiw_cases"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_board_of_veterans_appeals",
+      "label": "Oe Board Of Veterans Appeals",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe board of veterans appeals",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "veterans_benefits"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_casa",
+      "label": "Oe Casa",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe casa",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "foster_care"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_cbp",
+      "label": "Oe Cbp",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe cbp",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "supply_chain_exploitation"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_cdc",
+      "label": "Oe Cdc",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe cdc",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "public_health_emergency"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_cftc",
+      "label": "Oe Cftc",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe cftc",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "crypto_fraud"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_civilian_complaint_board",
+      "label": "Oe Civilian Complaint Board",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe civilian complaint board",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "police_misconduct",
+        "use_of_force_review",
+        "wrongful_arrest"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_congressional_indian_affairs",
+      "label": "Oe Congressional Indian Affairs",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe congressional indian affairs",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "indigenous_sovereignty"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_continuum_of_care",
+      "label": "Oe Continuum Of Care",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe continuum of care",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "emergency_shelter_access"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_conviction_integrity_unit",
+      "label": "Oe Conviction Integrity Unit",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe conviction integrity unit",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "wrongful_conviction"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_court_self_help_center",
+      "label": "Oe Court Self Help Center",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe court self help center",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "pro_se_assistance"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_crcl",
+      "label": "Oe Crcl",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe crcl",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "detention_abuse"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_dhs_hsi",
+      "label": "Oe Dhs Hsi",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe dhs hsi",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "human_trafficking"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_dhs_oig",
+      "label": "Oe Dhs Oig",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe dhs oig",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "disaster_relief_denial",
+        "immigration_case",
+        "detention_abuse"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_dhs_ombudsman",
+      "label": "Oe Dhs Ombudsman",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe dhs ombudsman",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "immigration_benefits",
+        "consular_processing_failure"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_doi",
+      "label": "Oe Doi",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe doi",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "tribal_land_rights",
+        "treaty_rights",
+        "indigenous_sovereignty"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_doj",
+      "label": "Oe Doj",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe doj",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "civil_asset_forfeiture",
+        "treaty_rights",
+        "securities_fraud"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_doj_ada",
+      "label": "Oe Doj Ada",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe doj ada",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "disability_rights",
+        "ada_accommodation_dispute"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_doj_antitrust",
+      "label": "Oe Doj Antitrust",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe doj antitrust",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "market_concentration",
+        "antitrust_violation"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_doj_civil_rights",
+      "label": "Oe Doj Civil Rights",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe doj civil rights",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "police_misconduct",
+        "civil_rights_violation",
+        "prison_conditions",
+        "use_of_force_review",
+        "wrongful_arrest",
+        "housing_discrimination"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_doj_ojjdp",
+      "label": "Oe Doj Ojjdp",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe doj ojjdp",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "juvenile_case"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_doj_osc",
+      "label": "Oe Doj Osc",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe doj osc",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "work_authorization_dispute"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_doj_otj",
+      "label": "Oe Doj Otj",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe doj otj",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "tribal_law",
+        "mmiw_cases",
+        "tribal_state_jurisdiction_conflict"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_dol",
+      "label": "Oe Dol",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe dol",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "wrongful_termination",
+        "labor_violation"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_dol_ebsa",
+      "label": "Oe Dol Ebsa",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe dol ebsa",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "disability_claim_denial"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_dol_eta",
+      "label": "Oe Dol Eta",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe dol eta",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "unemployment_benefits"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_dol_ilab",
+      "label": "Oe Dol Ilab",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe dol ilab",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "supply_chain_exploitation"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_dol_whd",
+      "label": "Oe Dol Whd",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe dol whd",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "agriculture_exploitation",
+        "gig_worker_misclassification",
+        "wage_garnishment_error"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_eoir",
+      "label": "Oe Eoir",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe eoir",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "immigration_case",
+        "asylum_claim"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_epa",
+      "label": "Oe Epa",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe epa",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "agriculture_exploitation",
+        "environmental_hazard",
+        "environmental_violation",
+        "water_contamination",
+        "public_health_risk",
+        "air_quality_violation",
+        "toxic_exposure"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_epa_ej",
+      "label": "Oe Epa Ej",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe epa ej",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "community_harm"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_family_court",
+      "label": "Oe Family Court",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe family court",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "lgbtq_family_recognition",
+        "custody",
+        "custody_dispute",
+        "family_law",
+        "parental_rights_termination",
+        "child_support_modification",
+        "adoption_disruption",
+        "kinship_placement_dispute",
+        "supervised_visitation_dispute"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_fbi",
+      "label": "Oe Fbi",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe fbi",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "public_corruption",
+        "immediate_threat",
+        "missing_person",
+        "human_trafficking",
+        "mmiw_cases",
+        "crypto_fraud"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_fda",
+      "label": "Oe Fda",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe fda",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "medical_device_injury"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_fdic",
+      "label": "Oe Fdic",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe fdic",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "bank_account_closure"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_fema",
+      "label": "Oe Fema",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe fema",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "disaster_relief_denial"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_finra",
+      "label": "Oe Finra",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe finra",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "financial_exploitation",
+        "securities_fraud"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_gao",
+      "label": "Oe Gao",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe gao",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "whistleblower_retaliation",
+        "government_accountability",
+        "corporate_capture",
+        "public_contract_abuse",
+        "regulatory_capture",
+        "disaster_relief_denial"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_hhs_ocr",
+      "label": "Oe Hhs Ocr",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe hhs ocr",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "medical_record_access",
+        "lgbtq_healthcare_denial"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_housing_court",
+      "label": "Oe Housing Court",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe housing court",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "eviction_defense"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_hud",
+      "label": "Oe Hud",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe hud",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "emergency_shelter_access",
+        "section8_disputes",
+        "foreclosure_dispute",
+        "voucher_termination"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_hud_fheo",
+      "label": "Oe Hud Fheo",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe hud fheo",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "lgbtq_discrimination",
+        "lgbtq_housing_discrimination",
+        "ada_accommodation_dispute",
+        "housing_discrimination"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_hud_onap",
+      "label": "Oe Hud Onap",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe hud onap",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "tribal_housing"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_ice_ero",
+      "label": "Oe Ice Ero",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe ice ero",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "detention_abuse"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_innocence_project",
+      "label": "Oe Innocence Project",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe innocence project",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "wrongful_conviction"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_irs",
+      "label": "Oe Irs",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe irs",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "corporate_tax_avoidance",
+        "gig_worker_misclassification"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_irs_eo",
+      "label": "Oe Irs Eo",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe irs eo",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "nonprofit_compliance"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_juvenile_court",
+      "label": "Oe Juvenile Court",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe juvenile court",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "juvenile_case"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_local_code_enforcement",
+      "label": "Oe Local Code Enforcement",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe local code enforcement",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "industrial_noise_nuisance"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_local_emergency_management",
+      "label": "Oe Local Emergency Management",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe local emergency management",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "environmental_hazard"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_local_emergency_services",
+      "label": "Oe Local Emergency Services",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe local emergency services",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "emergency_safety"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_local_government",
+      "label": "Oe Local Government",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe local government",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "emergency_shelter_access",
+        "property_rights",
+        "short_term_rental_dispute",
+        "code_enforcement_retaliation"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_local_pha",
+      "label": "Oe Local Pha",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe local pha",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "section8_disputes",
+        "voucher_termination"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_local_planning_commission",
+      "label": "Oe Local Planning Commission",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe local planning commission",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "land_use_dispute"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_local_police",
+      "label": "Oe Local Police",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe local police",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "immediate_threat",
+        "domestic_violence_emergency",
+        "missing_person",
+        "child_endangerment",
+        "missing_vulnerable_adult"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_ncmec",
+      "label": "Oe Ncmec",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe ncmec",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "missing_person"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_nlrb",
+      "label": "Oe Nlrb",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe nlrb",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "labor_violation",
+        "workplace_surveillance"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_occ",
+      "label": "Oe Occ",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe occ",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "bank_account_closure"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_ocr_education",
+      "label": "Oe Ocr Education",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe ocr education",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "lgbtq_youth_protection"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_ogis",
+      "label": "Oe Ogis",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe ogis",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "government_accountability",
+        "records_request"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_oig",
+      "label": "Oe Oig",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe oig",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "corporate_capture",
+        "regulatory_capture"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_oig_hhs",
+      "label": "Oe Oig Hhs",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe oig hhs",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "home_health_agency_misconduct",
+        "medicare_elder_fraud"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_osc",
+      "label": "Oe Osc",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe osc",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "whistleblower_retaliation"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_osha",
+      "label": "Oe Osha",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe osha",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "whistleblower_retaliation",
+        "workers_compensation",
+        "toxic_exposure"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_otip",
+      "label": "Oe Otip",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe otip",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "human_trafficking"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_relevant_agency",
+      "label": "Oe Relevant Agency",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe relevant agency",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "complaint_filing",
+        "general_investigation",
+        "community_case",
+        "other"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_relevant_benefits_agency",
+      "label": "Oe Relevant Benefits Agency",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe relevant benefits agency",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "benefits_denial",
+        "benefits_overpayment_recoupment"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_relevant_courts",
+      "label": "Oe Relevant Courts",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe relevant courts",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "cross_border_jurisdiction_dispute",
+        "multi_party_community_action"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_reporters_committee",
+      "label": "Oe Reporters Committee",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe reporters committee",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "investigative_journalism"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_sec",
+      "label": "Oe Sec",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe sec",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "corporate_tax_avoidance",
+        "financial_exploitation",
+        "securities_fraud",
+        "crypto_fraud"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_sec_whistleblower",
+      "label": "Oe Sec Whistleblower",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe sec whistleblower",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "whistleblower_retaliation"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_smp",
+      "label": "Oe Smp",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe smp",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "medicare_elder_fraud"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_spj",
+      "label": "Oe Spj",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe spj",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "investigative_journalism"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_ssa",
+      "label": "Oe Ssa",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe ssa",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "social_security_disability"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_ssa_oig",
+      "label": "Oe Ssa Oig",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe ssa oig",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "social_security_disability"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_adoption_agency",
+      "label": "Oe State Adoption Agency",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state adoption agency",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "lgbtq_family_recognition",
+        "adoption_disruption"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_aging_department",
+      "label": "Oe State Aging Department",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state aging department",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "eldercare",
+        "vulnerable_adult_protection"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_agriculture_department",
+      "label": "Oe State Agriculture Department",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state agriculture department",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "agriculture_exploitation"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_aps",
+      "label": "Oe State Aps",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state aps",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "missing_vulnerable_adult"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_charity_regulator",
+      "label": "Oe State Charity Regulator",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state charity regulator",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "nonprofit_compliance"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_child_support_agency",
+      "label": "Oe State Child Support Agency",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state child support agency",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "child_support_modification"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_civil_rights_agency",
+      "label": "Oe State Civil Rights Agency",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state civil rights agency",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "civil_rights_violation",
+        "lgbtq_discrimination",
+        "lgbtq_housing_discrimination",
+        "lgbtq_workplace_harassment",
+        "disability_rights",
+        "housing_discrimination",
+        "workplace_discrimination",
+        "workplace_harassment",
+        "community_harm"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_consumer_advocate",
+      "label": "Oe State Consumer Advocate",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state consumer advocate",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "public_utility_monopoly_abuse"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_corrections",
+      "label": "Oe State Corrections",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state corrections",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "prison_conditions",
+        "parole_probation_violation"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_court",
+      "label": "Oe State Court",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state court",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "property_rights",
+        "wage_garnishment_error"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_cps",
+      "label": "Oe State Cps",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state cps",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "child_endangerment",
+        "child_abuse"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_dcfs",
+      "label": "Oe State Dcfs",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state dcfs",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "lgbtq_youth_protection",
+        "icwa_compliance",
+        "foster_care",
+        "juvenile_case",
+        "parental_rights_termination",
+        "family_services_failure",
+        "kinship_placement_dispute"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_dep",
+      "label": "Oe State Dep",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state dep",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "environmental_hazard",
+        "environmental_violation",
+        "water_contamination",
+        "community_harm",
+        "land_use_dispute",
+        "air_quality_violation",
+        "industrial_noise_nuisance"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_department",
+      "label": "Oe State Department",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state department",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "consular_processing_failure"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_dmv",
+      "label": "Oe State Dmv",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state dmv",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "gender_marker_change"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_education_department",
+      "label": "Oe State Education Department",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state education department",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "lgbtq_youth_protection"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_ethics_commission",
+      "label": "Oe State Ethics Commission",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state ethics commission",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "public_corruption",
+        "corporate_capture"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_fire_marshal",
+      "label": "Oe State Fire Marshal",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state fire marshal",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "wildfire_liability"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_foia_office",
+      "label": "Oe State Foia Office",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state foia office",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "records_request"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_housing_agency",
+      "label": "Oe State Housing Agency",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state housing agency",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "mobile_home_park_dispute"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_inspector_general",
+      "label": "Oe State Inspector General",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state inspector general",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "government_accountability",
+        "public_corruption",
+        "prison_conditions",
+        "public_contract_abuse",
+        "regulatory_capture"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_insurance_department",
+      "label": "Oe State Insurance Department",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state insurance department",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "disability_claim_denial",
+        "prior_authorization_abuse",
+        "surprise_billing",
+        "pharmacy_benefit_manager_dispute",
+        "lgbtq_healthcare_denial"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_labor_department",
+      "label": "Oe State Labor Department",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state labor department",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "wrongful_termination",
+        "gig_worker_misclassification",
+        "workplace_surveillance"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_legislature",
+      "label": "Oe State Legislature",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state legislature",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "civil_asset_forfeiture"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_licensing_board",
+      "label": "Oe State Licensing Board",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state licensing board",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "conversion_therapy_harm"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_medicaid_agency",
+      "label": "Oe State Medicaid Agency",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state medicaid agency",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "medicaid_ltc_eligibility"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_ombudsman",
+      "label": "Oe State Ombudsman",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state ombudsman",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "family_services_failure"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_parole_board",
+      "label": "Oe State Parole Board",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state parole board",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "parole_probation_violation"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_public_defender",
+      "label": "Oe State Public Defender",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state public defender",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "criminal_case_review",
+        "parole_probation_violation"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_puc",
+      "label": "Oe State Puc",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state puc",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "public_utility_monopoly_abuse",
+        "utility_shutoff_abuse",
+        "wildfire_liability"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_real_estate_commission",
+      "label": "Oe State Real Estate Commission",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state real estate commission",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "hoa_disputes"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_securities_regulator",
+      "label": "Oe State Securities Regulator",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state securities regulator",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "financial_exploitation"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_snap_agency",
+      "label": "Oe State Snap Agency",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state snap agency",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "snap_denial"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_supreme_court",
+      "label": "Oe State Supreme Court",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state supreme court",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "judicial_misconduct"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_tanf_agency",
+      "label": "Oe State Tanf Agency",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state tanf agency",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "public_assistance_dispute"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_tax_authority",
+      "label": "Oe State Tax Authority",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state tax authority",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "corporate_tax_avoidance"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_unemployment_agency",
+      "label": "Oe State Unemployment Agency",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state unemployment agency",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "unemployment_benefits"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_vital_records",
+      "label": "Oe State Vital Records",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state vital records",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "gender_marker_change",
+        "lgbtq_family_recognition"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_state_workers_comp_board",
+      "label": "Oe State Workers Comp Board",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe state workers comp board",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "workers_compensation"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_supervised_visitation_network",
+      "label": "Oe Supervised Visitation Network",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe supervised visitation network",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "supervised_visitation_dispute"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_tas",
+      "label": "Oe Tas",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe tas",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "tax_dispute"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_tigta",
+      "label": "Oe Tigta",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe tigta",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "tax_dispute"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_tribal_council",
+      "label": "Oe Tribal Council",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe tribal council",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "tribal_enrollment",
+        "tribal_land_rights",
+        "tribal_housing"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_tribal_court",
+      "label": "Oe Tribal Court",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe tribal court",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "tribal_law",
+        "tribal_governance",
+        "tribal_state_jurisdiction_conflict"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_tribal_housing_authority",
+      "label": "Oe Tribal Housing Authority",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe tribal housing authority",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "tribal_housing"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_tribal_icwa_program",
+      "label": "Oe Tribal Icwa Program",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe tribal icwa program",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "icwa_compliance"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_tribal_members",
+      "label": "Oe Tribal Members",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe tribal members",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "tribal_governance"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_unhcr",
+      "label": "Oe Unhcr",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe unhcr",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "asylum_claim"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_us_trustee",
+      "label": "Oe Us Trustee",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe us trustee",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "bankruptcy_dispute"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_usccr",
+      "label": "Oe Usccr",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe usccr",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "civil_rights_violation"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_uscis",
+      "label": "Oe Uscis",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe uscis",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "immigration_case",
+        "asylum_claim",
+        "immigration_benefits",
+        "work_authorization_dispute"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_usda_fns",
+      "label": "Oe Usda Fns",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe usda fns",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "snap_denial"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_va",
+      "label": "Oe Va",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe va",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "veterans_benefits"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    },
+    {
+      "entity_id": "oe_va_oig",
+      "label": "Oe Va Oig",
+      "type": "regulatory",
+      "jurisdiction": "federal",
+      "description": "Oversight entity: oe va oig",
+      "complaint_pathway": "File complaint through official channels",
+      "applicable_pipelines": [
+        "veterans_benefits"
+      ],
+      "contact_info": {
+        "phone": "",
+        "email": "",
+        "website": ""
+      },
+      "filing_instructions": "Contact the entity directly",
+      "response_timeline": "Varies"
+    }
+  ]
+}

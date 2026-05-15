@@ -1,0 +1,183 @@
+{
+  "meta": {
+    "state": "PA",
+    "layer": "workflow_mappings",
+    "version": "1.0.0",
+    "date_created": "2026-03-06"
+  },
+  "workflow_mappings": [
+    {
+      "workflow_id": "tenant_rights_workflow",
+      "trigger_pipelines": [
+        "tenant_rights"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "notice",
+          "target_entity_type": "landlord",
+          "deadline_days": 10,
+          "description": "Send written notice to landlord per 68 Pa.C.S. \u00a7250.501"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "oversight_complaint",
+          "target_entity_type": "landlord",
+          "deadline_days": 30,
+          "description": "File complaint with PA AG Bureau of Consumer Protection if no response"
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "court_action",
+          "target_entity_type": "landlord",
+          "deadline_days": 60,
+          "description": "File action in Court of Common Pleas; Philadelphia tenants may access right to counsel"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft_workflow",
+      "trigger_pipelines": [
+        "wage_theft"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "agency_filing",
+          "target_entity_type": "employer",
+          "deadline_days": 14,
+          "description": "File wage complaint with PA Department of Labor & Industry within 3 years (43 Pa.C.S. \u00a7260.9a)"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "federal_dual_file",
+          "target_entity_type": "employer",
+          "deadline_days": 30,
+          "description": "Recommend parallel federal DOL filing for FLSA violations"
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "court_action",
+          "target_entity_type": "employer",
+          "deadline_days": 90,
+          "description": "File civil action for treble damages under Wage Payment and Collection Law"
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial_workflow",
+      "trigger_pipelines": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "appeal",
+          "target_entity_type": "government_agency",
+          "deadline_days": 30,
+          "description": "Request fair hearing within 30 days of denial notice (55 Pa. Code \u00a7275.1)"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "oversight_complaint",
+          "target_entity_type": "government_agency",
+          "deadline_days": 60,
+          "description": "File complaint with PA DHS Bureau of Hearings and Appeals"
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "court_action",
+          "target_entity_type": "government_agency",
+          "deadline_days": 90,
+          "description": "File appeal to Commonwealth Court within 30 days of hearing decision"
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_claim_denial_workflow",
+      "trigger_pipelines": [
+        "insurance_claim_denial"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "internal_appeal",
+          "target_entity_type": "insurer",
+          "deadline_days": 180,
+          "description": "File internal appeal within 180 days of denial"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "external_review",
+          "target_entity_type": "insurer",
+          "deadline_days": 120,
+          "description": "Request external review through PA Insurance Department within 120 days of internal appeal denial"
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "bad_faith_action",
+          "target_entity_type": "insurer",
+          "deadline_days": 365,
+          "description": "File bad faith insurance claim under 42 Pa.C.S. \u00a78371 within 2 years"
+        }
+      ]
+    },
+    {
+      "workflow_id": "icwa_child_welfare",
+      "trigger_pipelines": [
+        "domestic_violence"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": false,
+        "region_filter": null,
+        "demographic_filter": {
+          "tribal_affiliation": true
+        }
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "tribal_notification",
+          "target_entity_type": "tribal_entity",
+          "deadline_days": 1,
+          "description": "Immediate ICWA notification to tribe \u2014 25 USC \u00a71912(a)"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "tribal_intervention",
+          "target_entity_type": "tribal_entity",
+          "deadline_days": 10,
+          "description": "Tribe has right to intervene within 10 days of notification"
+        }
+      ]
+    }
+  ],
+  "resolution_order": [
+    "federal_baseline",
+    "state_registry",
+    "county_override",
+    "tribal_override",
+    "pipeline_rule_injection"
+  ]
+}

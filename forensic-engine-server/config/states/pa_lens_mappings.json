@@ -1,0 +1,138 @@
+{
+  "meta": {
+    "state": "PA",
+    "layer": "lens_mappings",
+    "version": "1.0.0",
+    "date_created": "2026-03-06"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "housing",
+      "activation_pipelines": [
+        "tenant_rights"
+      ],
+      "state_parameters": {
+        "rent_control": false,
+        "eviction_notice_days": 10,
+        "right_to_counsel": true,
+        "right_to_counsel_cities": [
+          "Philadelphia"
+        ],
+        "statute_reference": "68 Pa.C.S. \u00a7250.501",
+        "winter_shutoff_ban": true,
+        "winter_shutoff_months": [
+          "december",
+          "january",
+          "february",
+          "march"
+        ]
+      },
+      "county_lens_overrides": true,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "consumer",
+      "activation_pipelines": [
+        "insurance_claim_denial",
+        "benefits_denial"
+      ],
+      "state_parameters": {
+        "unfair_trade_practices_act": true,
+        "statute_reference": "73 Pa.C.S. \u00a7201-1",
+        "private_right_of_action": true,
+        "treble_damages": true
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "workplace",
+      "activation_pipelines": [
+        "wage_theft"
+      ],
+      "state_parameters": {
+        "minimum_wage": 7.25,
+        "state_minimum_above_federal": false,
+        "wage_payment_collection_law": true,
+        "statute_reference": "43 Pa.C.S. \u00a7260.1",
+        "statute_of_limitations_years": 3,
+        "treble_damages": true
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "domestic_violence",
+      "activation_pipelines": [
+        "domestic_violence"
+      ],
+      "state_parameters": {
+        "pfa_available": true,
+        "pfa_statute": "23 Pa.C.S. \u00a76101",
+        "pfa_duration_months": 36,
+        "firearms_surrender": true,
+        "address_confidentiality": true
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "insurance",
+      "activation_pipelines": [
+        "insurance_claim_denial"
+      ],
+      "state_parameters": {
+        "bad_faith_statute": true,
+        "statute_reference": "42 Pa.C.S. \u00a78371",
+        "external_review": true,
+        "internal_appeal_days": 180,
+        "external_review_days": 120,
+        "medicaid_expansion": true
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "vulnerable_population",
+      "activation_pipelines": [
+        "domestic_violence",
+        "immigration_case"
+      ],
+      "state_parameters": {
+        "older_adults_protective_services": true,
+        "statute_reference": "35 Pa.C.S. \u00a710225.101",
+        "mandatory_reporting": true
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "custody",
+      "activation_pipelines": [
+        "domestic_violence"
+      ],
+      "state_parameters": {
+        "best_interest_standard": true,
+        "dv_factor_in_custody": true,
+        "statute_reference": "23 Pa.C.S. \u00a75328",
+        "relocation_notice_days": 60
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "medical",
+      "activation_pipelines": [
+        "insurance_claim_denial"
+      ],
+      "state_parameters": {
+        "medicaid_expansion": true,
+        "chip_program": true,
+        "chip_income_limit_fpl": 300,
+        "adult_medicaid_fpl": 138
+      },
+      "county_lens_overrides": false,
+      "priority_boost": 0
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "state": "MA",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "ma_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "ma_masshealth_chapter_58_medicaid",
+        "ma_boston_medical_center_boston_safety_net",
+        "ma_cambridge_health_alliance_mass_general_a",
+        "ma_massachusetts_league_of_community_health"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ma_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "ma_greater_boston_legal_services_gbls",
+        "ma_massachusetts_immigrant_and_refugee_advo"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ma_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "ma_massachusetts_housing_finance_agency_mhf",
+        "ma_jane_doe_inc_ma_dv_coalition"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ma_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "ma_massachusetts_snap_dta_food_assistance",
+        "ma_greater_boston_food_bank_western_ma_food",
+        "ma_wic_massachusetts"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ma_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "ma_massachusetts_veterans_services_dvs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ma_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "ma_ma_tafdc_tanf_dta",
+        "ma_massachusetts_ui_dua",
+        "ma_massachusetts_liheap_fuel_assistance_eoe"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ]
+    }
+  ]
+}

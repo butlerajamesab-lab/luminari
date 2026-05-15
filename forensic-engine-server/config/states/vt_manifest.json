@@ -1,0 +1,62 @@
+{
+  "state": "VT",
+  "state_name": "Vermont",
+  "version": "3.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-09",
+  "source": "luminari-vt-registry.docx",
+  "datasets": [
+    "food",
+    "cash_assistance",
+    "housing",
+    "healthcare",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "disability_claim",
+    "employment_dispute",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "utility",
+    "insurer"
+  ],
+  "policy_flags": [
+    "vt_dr_dynasaur",
+    "vt_6yr_contract_wage_sol",
+    "vt_vhrc_1yr_sol",
+    "vt_extreme_rural_isolation",
+    "vt_cold_weather_rule"
+  ],
+  "statistics": {
+    "total_programs": 13,
+    "total_oversight_chains": 3,
+    "total_oversight_bodies": 5,
+    "total_flags": 5
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "food",
+    "healthcare"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ],
+  "portability_score": "57%"
+}

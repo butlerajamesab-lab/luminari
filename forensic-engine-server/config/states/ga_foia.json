@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "state": "GA",
+    "version": "3.0"
+  },
+  "statute": {
+    "name": "Georgia Open Records Act",
+    "citation": "O.C.G.A. § 50-18-70 et seq."
+  },
+  "structured_rules": [
+    {
+      "rule_id": "ga_open_records",
+      "domain": "public_records"
+    }
+  ],
+  "agencies": [
+    {
+      "agency": "GA DFCS",
+      "contact_name": "",
+      "email": "",
+      "phone": "877-423-4746",
+      "address": "",
+      "turnaround_days": "3 business days (Open Records Act)",
+      "fee_info": "Reasonable search and copy fees",
+      "agency_id": "ga_agency_0"
+    },
+    {
+      "agency": "GA OCI",
+      "contact_name": "",
+      "email": "",
+      "phone": "800-656-2298",
+      "address": "",
+      "turnaround_days": "3 business days",
+      "fee_info": "Standard fees",
+      "agency_id": "ga_agency_1"
+    },
+    {
+      "agency": "GA DOL",
+      "contact_name": "",
+      "email": "",
+      "phone": "877-709-8185",
+      "address": "",
+      "turnaround_days": "3 business days",
+      "fee_info": "Standard fees",
+      "agency_id": "ga_agency_2"
+    }
+  ],
+  "appeals_workflow": []
+}

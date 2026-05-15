@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "state": "AZ",
+    "status": "placeholder",
+    "schema": "luminari-foia-v1"
+  },
+  "statute": {
+    "name": "Arizona Public Records Law",
+    "citation": "Arizona state law",
+    "response_deadline_days": 10,
+    "fee_waiver_available": true
+  },
+  "agencies": [],
+  "structured_rules": [],
+  "appeals_workflow": {
+    "steps": []
+  },
+  "request_templates": []
+}

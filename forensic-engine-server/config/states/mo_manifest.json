@@ -1,0 +1,175 @@
+{
+  "state": "MO",
+  "state_name": "Missouri",
+  "version": "1.0.0",
+  "schema": "luminari-registry-v1",
+  "date_created": "2026-03-06",
+  "date_verified": "2026-03-06",
+  "source": "Luminari MO Three-Layer Registry v1.0 \u2014 Northwest Hope Foundation",
+  "datasets": [
+    "programs",
+    "workflows",
+    "oversight",
+    "layer0_flags",
+    "layer1_cards",
+    "help",
+    "foia",
+    "county_overrides",
+    "tribal_overrides",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "asylum_claim",
+    "benefits_denial",
+    "disability_claim_denial",
+    "domestic_violence",
+    "immigration_benefits",
+    "immigration_case",
+    "insurance_claim_denial",
+    "public_assistance_dispute",
+    "snap_denial",
+    "tenant_rights",
+    "wage_theft",
+    "work_authorization_dispute",
+    "workers_compensation",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "family_court",
+    "general_assistance",
+    "government_agency",
+    "insurer",
+    "landlord",
+    "nursing_home"
+  ],
+  "policy_flags": [
+    "medicaid_expansion_2021",
+    "snap_work_requirements_active",
+    "cold_weather_rule_limited",
+    "right_to_work_state",
+    "mchr_180_day_filing_deadline",
+    "no_statewide_rent_control",
+    "mo_healthnet_managed_care"
+  ],
+  "statistics": {
+    "programs": {
+      "total_programs": 152,
+      "categories": {
+        "food": 23,
+        "healthcare": 27,
+        "housing": 22,
+        "dv_safety": 21,
+        "legal_aid": 16,
+        "cash_assistance": 16,
+        "utilities": 10,
+        "tribal_indigenous": 9,
+        "immigration": 6,
+        "community_navigation": 1,
+        "disability": 1
+      },
+      "layers": [
+        "city",
+        "county",
+        "nonprofit",
+        "state",
+        "tribal"
+      ],
+      "regions": {
+        "statewide": 125,
+        "kc_metro": 16,
+        "stl_metro": 8
+      },
+      "federal_interface_count": 6
+    },
+    "workflows": {
+      "total_workflows": 4,
+      "total_steps": 24
+    },
+    "oversight": {
+      "total_entity_types": 6,
+      "total_oversight_bodies": 38,
+      "pattern_threshold_coverage": "37/37",
+      "total_oversight_chains": 7
+    },
+    "layer0": {
+      "total_flags": 6,
+      "by_severity": {
+        "info": 0,
+        "warning": 3,
+        "alert": 3
+      }
+    },
+    "layer1": {
+      "total_clusters": 8,
+      "total_cards": 39,
+      "by_urgency": {
+        "immediate": 8,
+        "urgent": 11,
+        "standard": 20
+      }
+    },
+    "foia": {
+      "total_rules": 5,
+      "total_agencies": 6,
+      "total_templates": 3,
+      "appeals_workflow_steps": 4
+    },
+    "county_overrides": {
+      "total_counties": 5,
+      "regions": 4,
+      "counties_by_region": {
+        "kc_metro": 1,
+        "stl_metro": 2,
+        "springfield_region": 1,
+        "rural_missouri": 1
+      }
+    },
+    "tribal_overrides": {
+      "total_tribal_entities": 5,
+      "icwa_activation_rules": 2,
+      "urban_indian_programs": 2,
+      "federal_interface_entities": 3
+    }
+  },
+  "status": "active",
+  "missing_sections": [
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings"
+  ],
+  "completed_domains": [
+    "food",
+    "healthcare",
+    "housing",
+    "dv_safety",
+    "legal_aid",
+    "utilities",
+    "cash_assistance",
+    "children_families",
+    "immigration",
+    "veterans_services",
+    "accountability_layer",
+    "foia",
+    "county_overrides",
+    "tribal_overrides"
+  ],
+  "pending_domains": [
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings"
+  ],
+  "regions": [
+    "kc_metro",
+    "stl_metro",
+    "springfield_region",
+    "statewide"
+  ],
+  "validation_status": "complete",
+  "date_activated": "2026-03-06"
+}

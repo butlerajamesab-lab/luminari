@@ -1,0 +1,157 @@
+{
+  "meta": {
+    "state": "GA",
+    "version": "3.0"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "ga_housing_violation",
+      "state": "GA",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document condition",
+          "deadline": "",
+          "documents": [
+            "Lease",
+            "Photos",
+            "Written notice"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Written notice to landlord",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File dispossessory action defense",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Request hearing",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "ga_wage_theft",
+      "state": "GA",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document wages owed",
+          "deadline": "",
+          "documents": [
+            "Pay stubs",
+            "Time records"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "File FLSA complaint with DOL (primary)",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File GA DOL complaint",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Civil suit",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "ga_benefits_denial",
+      "state": "GA",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Receive denial notice",
+          "deadline": "",
+          "documents": [
+            "Denial notice",
+            "Income verification"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Request fair hearing within 90 days",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "Attend hearing",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Appeal to superior court",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "ga_insurance_denial",
+      "state": "GA",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Receive denial",
+          "deadline": "",
+          "documents": [
+            "Denial letter",
+            "Policy documents"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Internal appeal",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "External review via OCI",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "File OCI complaint",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    }
+  ]
+}

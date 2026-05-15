@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "state": "AK",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "tribal_context": "Alaska tribal context",
+  "icwa_activation_rules": [],
+  "tribal_entities": [],
+  "urban_indian_programs": [
+    {
+      "program_id": "ak_alaska_native_women_s_resource_center_an",
+      "program_name": "Alaska Native Women's Resource Center (ANWRC \u2014 DV)",
+      "layer": "state",
+      "benefit_category": "tribal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Alaska Native Women's Resource Center",
+      "phone": "907-745-4728",
+      "website": "https://anwrc.org",
+      "eligibility": "Alaska Native women experiencing DV. anwrc.org. Also STAR (Standing Together Against Rape, Anchorage: 907-276-7279). Emergency airfare for rural DV escape available through some programs.",
+      "apply_notes": "DV services for Alaska Native women \u2014 emergency transportation funding for rural/Bush escape",
+      "source": "luminari-alaska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "tribal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "tribal",
+      "city": "",
+      "state": "AK"
+    }
+  ],
+  "tribal_courts": []
+}

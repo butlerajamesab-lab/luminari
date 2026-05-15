@@ -1,0 +1,449 @@
+{
+  "meta": {
+    "state": "DC",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "dc_dc_medicaid",
+      "program_name": "DC Medicaid",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "DC Medicaid",
+      "phone": "855-532-5465",
+      "website": "https://dhs.dc.gov/medicaid",
+      "eligibility": "Adults \u2264215% FPL; children \u2264319% FPL; elderly/disabled",
+      "apply_notes": "Covers adults up to 215% FPL\u2014more expansive than most states. Managed care through AmeriHealth, Trusted Health Plan, others.",
+      "source": "luminari-washington-dc-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "DC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "dc_dc_alliance",
+      "program_name": "DC Alliance",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "DC Alliance",
+      "phone": "202-442-5988",
+      "website": "https://dhs.dc.gov/alliance",
+      "eligibility": "Adults who don't qualify for Medicaid due to immigration status; DC residency; income \u2264200% FPL",
+      "apply_notes": "UNIQUE IN REGISTRY: Medicaid-equivalent for undocumented adults regardless of immigration status. No documentation requirement.",
+      "source": "luminari-washington-dc-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "DC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "dc_dc_snap_food_stamp_program",
+      "program_name": "DC SNAP (Food Stamp Program)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "DC SNAP",
+      "phone": "202-671-4200",
+      "website": "https://dhs.dc.gov/snap",
+      "eligibility": "Income \u2264130% FPL; DC residents",
+      "apply_notes": "SNAP benefits through DC DHS. Online application at dhs.dc.gov.",
+      "source": "luminari-washington-dc-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "DC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "dc_dc_tanf_temporary_assistance_for_needy_f",
+      "program_name": "DC TANF (Temporary Assistance for Needy Families)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "DC TANF",
+      "phone": "202-671-4200",
+      "website": "https://dhs.dc.gov/tanf",
+      "eligibility": "Families with minor children; income \u2264200% FPL",
+      "apply_notes": "Cash assistance: $770/month (family of 3)\u2014among the highest in the registry. 60-month lifetime limit.",
+      "source": "luminari-washington-dc-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "DC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "dc_dc_unemployment_insurance_does",
+      "program_name": "DC Unemployment Insurance (DOES)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "employment_dispute"
+      ],
+      "agency": "DC Unemployment Insurance",
+      "phone": "202-724-7000",
+      "website": "https://does.dc.gov",
+      "eligibility": "Involuntary separation; base period earnings required",
+      "apply_notes": "UI: $444/week max, 26 weeks. One of higher UI rates in the mid-Atlantic.",
+      "source": "luminari-washington-dc-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "DC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "dc_dc_housing_authority_dcha",
+      "program_name": "DC Housing Authority (DCHA)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "DC Housing Authority",
+      "phone": "202-535-1000",
+      "website": "https://dchousing.org",
+      "eligibility": "Income \u226430\u201350% AMI; waitlist may be closed periodically",
+      "apply_notes": "Public housing and Section 8 vouchers. 70,000+ on waitlist. Major scarcity in one of most expensive housing markets in the US.",
+      "source": "luminari-washington-dc-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "DC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "dc_dc_wic",
+      "program_name": "DC WIC",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "DC WIC",
+      "phone": "202-442-9397",
+      "website": "https://dchealth.dc.gov/wic",
+      "eligibility": "Pregnant/postpartum women, infants, children under 5; income \u2264185% FPL",
+      "apply_notes": "Women, Infants and Children nutrition program through DC Dept. of Health.",
+      "source": "luminari-washington-dc-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "DC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "dc_child_care_subsidy_ccdf_dc",
+      "program_name": "Child Care Subsidy (CCDF DC)",
+      "layer": "state",
+      "benefit_category": "childcare",
+      "pipeline_ids": [
+        "child_welfare"
+      ],
+      "agency": "Child Care Subsidy",
+      "phone": "202-741-8900",
+      "website": "https://osse.dc.gov",
+      "eligibility": "Working families; income \u226485% SMI; children under 13",
+      "apply_notes": "Subsidized child care for working DC families through OSSE.",
+      "source": "luminari-washington-dc-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "childcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "childcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "childcare",
+      "city": "",
+      "state": "DC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "dc_dc_paid_family_leave_dcfmla",
+      "program_name": "DC Paid Family Leave (DCFMLA)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "DC Paid Family Leave",
+      "phone": "202-899-3700",
+      "website": "https://does.dc.gov/paidleave",
+      "eligibility": "All DC-covered employees; employer paid; self-employed may opt in",
+      "apply_notes": "Up to 12 weeks paid parental leave, 12 weeks family leave, 12 weeks medical leave. One of most generous paid leave laws in the US.",
+      "source": "luminari-washington-dc-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "DC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "dc_dc_office_on_aging_dcoa",
+      "program_name": "DC Office on Aging (DCOA)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "DC Office on Aging",
+      "phone": "202-724-5622",
+      "website": "https://dcoa.dc.gov",
+      "eligibility": "Adults 60+; Ward 7 and 8 sites have limited capacity\u2014call ahead",
+      "apply_notes": "Comprehensive elder services: Meals on Wheels, senior wellness centers, caregiver support, elder abuse prevention.",
+      "source": "luminari-washington-dc-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "DC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "dc_dc_permanent_supportive_housing_psh",
+      "program_name": "DC Permanent Supportive Housing (PSH)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "DC Permanent Supportive Housing",
+      "phone": "202-481-1860",
+      "website": "https://dhs.dc.gov/page/permanent-supportive-housing",
+      "eligibility": "Chronically homeless; disability required for priority access",
+      "apply_notes": "Long-term housing with services for chronically homeless individuals. Pathway through Homeward DC coordinated entry.",
+      "source": "luminari-washington-dc-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "DC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "dc_dc_legal_aid_society_of_dc",
+      "program_name": "DC Legal Aid Society of DC",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute",
+        "consumer_protection"
+      ],
+      "agency": "DC Legal Aid Society of DC",
+      "phone": "202-628-1161",
+      "website": "https://legalaiddc.org",
+      "eligibility": "Income \u2264200% FPL",
+      "apply_notes": "Free civil legal services. Housing, benefits, family, consumer, domestic violence, immigrant rights.",
+      "source": "luminari-washington-dc-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "DC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "dc_dc_department_of_behavioral_health_dbh",
+      "program_name": "DC Department of Behavioral Health (DBH)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "DC Department of Behavioral Health",
+      "phone": "202-673-2200",
+      "website": "https://dbh.dc.gov",
+      "eligibility": "All DC residents; Medicaid, uninsured, sliding scale",
+      "apply_notes": "Mental health and substance use services. Core Services Agency network throughout DC. Crisis line: 888-793-4357.",
+      "source": "luminari-washington-dc-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "DC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "dc_dc_child_and_family_services_agency_cfsa",
+      "program_name": "DC Child and Family Services Agency (CFSA)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare"
+      ],
+      "agency": "DC Child and Family Services Agency",
+      "phone": "202-671-4200",
+      "website": "https://cfsa.dc.gov",
+      "eligibility": "DC children and families",
+      "apply_notes": "Child welfare services, foster care, adoption, family preservation services.",
+      "source": "luminari-washington-dc-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "DC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "dc_dc_liheap_energy_assistance",
+      "program_name": "DC LIHEAP (Energy Assistance)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "DC LIHEAP",
+      "phone": "202-673-6750",
+      "website": "https://dhs.dc.gov/energy",
+      "eligibility": "Income \u2264150% FPL for LIHEAP; \u226460% AMI for Utility Discount Program",
+      "apply_notes": "Home energy bill assistance. Also: DC Utility Discount Program reduces bills by ~$5\u201312/month for qualifying households.",
+      "source": "luminari-washington-dc-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "DC",
+      "federal_interface": false
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "state": "SC",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "standard_appeal",
+      "state": "SC",
+      "override_type": "timeline",
+      "description": "South Carolina standard appeal timeline",
+      "source": "registry"
+    },
+    {
+      "workflow_id": "expedited_review",
+      "state": "SC",
+      "override_type": "eligibility",
+      "description": "South Carolina expedited review criteria",
+      "source": "registry"
+    }
+  ]
+}

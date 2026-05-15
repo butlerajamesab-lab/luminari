@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "state": "TN",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "tn_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "tn_tennessee_coalition_to_end_domestic_and_",
+        "tn_tenncare_office_of_appeals",
+        "tn_tennessee_dhs_appeals"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "tn_lens_employment",
+      "lens_type": "employment",
+      "programs": [
+        "tn_tennessee_dol_and_workforce_development"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "tn_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "tn_legal_aid_society_of_middle_tennessee_an",
+        "tn_memphis_area_legal_services_mals",
+        "tn_legal_aid_of_east_tennessee_laet",
+        "tn_tn_lwd_ui_appeals_board"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "tn_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "tn_tennessee_snap_food_stamps_dhs",
+        "tn_second_harvest_food_bank_of_middle_tenne",
+        "tn_second_harvest_food_bank_of_east_tenness",
+        "tn_wic_tennessee",
+        "tn_tennessee_tanf_families_first_dhs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "tn_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "tn_tenncare_tennessee_medicaid_ohip",
+        "tn_regional_one_health_memphis_regional_med",
+        "tn_vanderbilt_university_medical_center_nas",
+        "tn_tennessee_primary_care_association_fqhcs",
+        "tn_church_health_memphis_major_safety_net_f",
+        "tn_tennessee_dept_of_commerce_and_insurance"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "tn_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "tn_tennessee_housing_development_agency_thd",
+        "tn_tennessee_human_rights_commission_thrc"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "tn_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "tn_tennessee_liheap_low_income_home_energy_"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "civil_rights"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,181 @@
+{
+  "meta": {
+    "state": "MI",
+    "version": "3.0"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "mi_housing_violation",
+      "state": "MI",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document condition",
+          "deadline": "",
+          "documents": [
+            "Lease",
+            "Photos",
+            "Written notice"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Written notice to landlord",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File with district court",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Request hearing",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 5,
+          "action": "Escrow rent if needed",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "mi_wage_theft",
+      "state": "MI",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document wages owed",
+          "deadline": "",
+          "documents": [
+            "Pay stubs",
+            "Time records",
+            "Employment agreement"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "File complaint with MI Wage & Hour",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File FLSA complaint with DOL",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "File civil suit within 3-year SOL",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "mi_benefits_denial",
+      "state": "MI",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Receive denial notice",
+          "deadline": "",
+          "documents": [
+            "Denial notice",
+            "Income verification",
+            "Identity documents"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Request fair hearing within 90 days",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "Gather documentation",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Attend hearing",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 5,
+          "action": "Appeal to circuit court if needed",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "mi_insurance_denial",
+      "state": "MI",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Receive denial",
+          "deadline": "",
+          "documents": [
+            "Denial letter",
+            "Policy documents",
+            "Medical records"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Internal appeal",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "External review via DIFS",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "File complaint with DIFS",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 5,
+          "action": "Civil action if needed",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    }
+  ]
+}

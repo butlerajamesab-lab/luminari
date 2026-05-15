@@ -1,0 +1,170 @@
+{
+  "meta": {
+    "state": "KY",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "kynect",
+      "role": "SNAP/Medicaid/KTAP",
+      "phone": "855-459-6328",
+      "email": null,
+      "hours": null,
+      "specialty": "Public benefits enrollment"
+    },
+    {
+      "contact_name": "211 Kentucky",
+      "role": "General information and referral",
+      "phone": "211",
+      "email": null,
+      "hours": "24/7",
+      "specialty": "General information and referral"
+    },
+    {
+      "contact_name": "Kentucky Legal Aid (Louisville)",
+      "role": "Legal assistance",
+      "phone": "502-584-1254",
+      "email": null,
+      "hours": null,
+      "specialty": "Housing, family, benefits, DV, consumer law"
+    },
+    {
+      "contact_name": "Legal Aid of the Bluegrass (Lexington)",
+      "role": "Legal assistance",
+      "phone": "859-233-3840",
+      "email": null,
+      "hours": null,
+      "specialty": "Housing, family, benefits, DV, consumer law"
+    },
+    {
+      "contact_name": "AppalReD (Eastern KY Appalachian)",
+      "role": "Legal assistance",
+      "phone": "800-888-7233",
+      "email": null,
+      "hours": null,
+      "specialty": "Housing, benefits, disability, DV law"
+    },
+    {
+      "contact_name": "Legal Aid Bluegrass - Northern KY",
+      "role": "Legal assistance",
+      "phone": "859-431-8200",
+      "email": null,
+      "hours": null,
+      "specialty": "Legal assistance"
+    },
+    {
+      "contact_name": "Kentucky DCBS Hearings",
+      "role": "State benefit appeals",
+      "phone": "502-564-3703",
+      "email": null,
+      "hours": null,
+      "specialty": "Fair hearings for SNAP, Medicaid, KTAP"
+    },
+    {
+      "contact_name": "Kentucky UI Appeals (KEWES)",
+      "role": "Unemployment insurance appeals",
+      "phone": "502-564-2900",
+      "email": null,
+      "hours": null,
+      "specialty": "UI appeals"
+    },
+    {
+      "contact_name": "Kentucky Labor Cabinet (Wages)",
+      "role": "Wage and hour complaints",
+      "phone": "502-564-3070",
+      "email": null,
+      "hours": null,
+      "specialty": "Wage and hour law"
+    },
+    {
+      "contact_name": "KCHR (Civil Rights)",
+      "role": "Civil rights complaints",
+      "phone": "502-595-0029",
+      "email": null,
+      "hours": null,
+      "specialty": "Employment and housing discrimination"
+    },
+    {
+      "contact_name": "Kentucky DOI (Insurance)",
+      "role": "Insurance complaints",
+      "phone": "800-595-6053",
+      "email": null,
+      "hours": null,
+      "specialty": "Insurance disputes"
+    },
+    {
+      "contact_name": "LIHEAP / Energy Assistance",
+      "role": "Energy assistance",
+      "phone": "800-456-3452",
+      "email": null,
+      "hours": null,
+      "specialty": "Low-income energy assistance"
+    },
+    {
+      "contact_name": "Kentucky DV Hotline (KCADV)",
+      "role": "Domestic violence hotline",
+      "phone": "800-544-2022",
+      "email": null,
+      "hours": "24/7",
+      "specialty": "Domestic violence crisis and referral"
+    },
+    {
+      "contact_name": "Center for Women & Families (Louisville DV)",
+      "role": "Domestic violence services",
+      "phone": "502-581-7200",
+      "email": null,
+      "hours": null,
+      "specialty": "DV shelter, advocacy, and housing"
+    },
+    {
+      "contact_name": "God's Pantry Food Bank (Central/Eastern KY)",
+      "role": "Food bank",
+      "phone": "859-255-6592",
+      "email": null,
+      "hours": null,
+      "specialty": "Food assistance"
+    },
+    {
+      "contact_name": "Kentucky HELP LINE (SUD/opioid recovery)",
+      "role": "Substance use disorder and opioid recovery helpline",
+      "phone": "800-564-2985",
+      "email": null,
+      "hours": null,
+      "specialty": "Opioid recovery and SUD treatment referral"
+    },
+    {
+      "contact_name": "Appalachian Citizens Law Center (Black lung/mining)",
+      "role": "Legal assistance for miners",
+      "phone": "606-633-9090",
+      "email": null,
+      "hours": null,
+      "specialty": "Black lung and mining law"
+    },
+    {
+      "contact_name": "Eastern Band of Cherokee (EBCI) Social Services",
+      "role": "Tribal social services",
+      "phone": "828-359-6050",
+      "email": null,
+      "hours": null,
+      "specialty": "Social services for EBCI members"
+    },
+    {
+      "contact_name": "Kentucky AG Consumer Protection",
+      "role": "Consumer protection",
+      "phone": "888-432-9257",
+      "email": null,
+      "hours": null,
+      "specialty": "Consumer complaints"
+    },
+    {
+      "contact_name": "EEOC Louisville",
+      "role": "Federal employment discrimination complaints",
+      "phone": "800-669-4000",
+      "email": null,
+      "hours": null,
+      "specialty": "Employment discrimination"
+    }
+  ],
+  "regions": [],
+  "missing_sections": []
+}

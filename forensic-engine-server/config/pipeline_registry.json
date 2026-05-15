@@ -1,0 +1,2889 @@
+{
+  "version": "2.0.0",
+  "description": "Master Pipeline Registry \u2014 canonical pipeline universe for Luminari. Each entry defines a distinct case domain with category assignment, default lenses, and alias mappings. This registry is the authoritative classification layer referenced by the pipeline resolver, lens engine, intake system, pattern detection, and narrative context.",
+  "locked": true,
+  "locked_at": "2026-03-05",
+  "total_pipelines": 164,
+  "total_categories": 15,
+  "categories": {
+    "justice": {
+      "label": "Justice & Accountability",
+      "description": "Cases involving law enforcement misconduct, prosecutorial or judicial failures, wrongful convictions, civil rights violations, and government accountability."
+    },
+    "family": {
+      "label": "Family Law",
+      "description": "Cases involving domestic violence, custody, child welfare, guardianship, foster care, juvenile proceedings, and family court matters."
+    },
+    "elder": {
+      "label": "Elder & Disability",
+      "description": "Cases involving elder abuse, nursing home neglect, disability rights, guardianship abuse, and vulnerable adult protection."
+    },
+    "tribal": {
+      "label": "Tribal & Indigenous",
+      "description": "Cases involving tribal law, sovereignty, treaty rights, ICWA compliance, MMIW, and tribal governance disputes."
+    },
+    "insurance": {
+      "label": "Insurance & Medical",
+      "description": "Cases involving insurance claim denials, medical malpractice, health coverage disputes, billing abuse, and medical device injuries."
+    },
+    "housing": {
+      "label": "Housing & Property",
+      "description": "Cases involving tenant rights, eviction, habitability, housing discrimination, foreclosure, and property disputes."
+    },
+    "financial": {
+      "label": "Financial & Consumer",
+      "description": "Cases involving debt collection abuse, predatory lending, consumer fraud, identity theft, securities fraud, and financial exploitation."
+    },
+    "employment": {
+      "label": "Employment & Labor",
+      "description": "Cases involving workplace discrimination, wrongful termination, wage theft, labor violations, and worker misclassification."
+    },
+    "benefits": {
+      "label": "Benefits & Public Assistance",
+      "description": "Cases involving denial of SNAP, veterans benefits, Social Security disability, Medicaid, unemployment, and public assistance disputes."
+    },
+    "market": {
+      "label": "Market & Corporate",
+      "description": "Cases involving antitrust violations, corporate capture, supply chain exploitation, regulatory capture, and algorithmic discrimination."
+    },
+    "environment": {
+      "label": "Environmental & Public Health",
+      "description": "Cases involving environmental violations, water contamination, toxic exposure, air quality, and community health risks."
+    },
+    "immigration": {
+      "label": "Immigration",
+      "description": "Cases involving immigration proceedings, asylum claims, detention conditions, family separation, and work authorization disputes."
+    },
+    "public_safety": {
+      "label": "Public Safety & Emergency",
+      "description": "Cases involving immediate threats, emergency safety situations, human trafficking, missing persons, and disaster relief."
+    },
+    "general": {
+      "label": "General Investigation",
+      "description": "Cases that do not fit a specific domain category, cross-border jurisdictional disputes, multi-party actions, and personal investigations."
+    },
+    "mental_health": {
+      "label": "Mental Health System",
+      "description": "Cases involving involuntary psychiatric holds, polypharmacy harm, discharge failures, family exclusion from care decisions, restraint and seclusion incidents, and medical record correction. For people who entered the mental health system seeking help and need their experience documented, their voice restored, and accountability established."
+    }
+  },
+  "pipelines": [
+    {
+      "pipeline_id": "police_misconduct",
+      "category": "justice",
+      "description": "Cases involving excessive force, false arrest, civil rights violations, evidence tampering, or patterns of law enforcement misconduct.",
+      "domain_rule_set": "police_misconduct_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "systems_failure",
+        "agency_mapping",
+        "public_records_escalation",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "police-misconduct",
+        "police misconduct",
+        "excessive force",
+        "police brutality"
+      ]
+    },
+    {
+      "pipeline_id": "prosecutorial_misconduct",
+      "category": "justice",
+      "description": "Cases involving prosecutorial overreach, Brady violations, witness tampering, or failure to disclose exculpatory evidence.",
+      "domain_rule_set": "prosecutorial_misconduct_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "systems_failure",
+        "evidence_gap_detection",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "prosecutorial-misconduct",
+        "prosecutorial misconduct",
+        "brady violation"
+      ]
+    },
+    {
+      "pipeline_id": "judicial_misconduct",
+      "category": "justice",
+      "description": "Cases involving judicial bias, ex parte communications, failure to recuse, or abuse of judicial authority.",
+      "domain_rule_set": "judicial_misconduct_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "systems_failure",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "judicial-misconduct",
+        "judicial misconduct",
+        "judicial bias"
+      ]
+    },
+    {
+      "pipeline_id": "wrongful_conviction",
+      "category": "justice",
+      "description": "Cases involving wrongful conviction, innocence claims, DNA exoneration, or post-conviction relief proceedings.",
+      "domain_rule_set": "wrongful_conviction_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "systems_failure",
+        "evidence_gap_detection",
+        "timeline_integrity",
+        "narrative_reconstruction"
+      ],
+      "aliases": [
+        "wrongful-conviction",
+        "wrongful conviction",
+        "innocence claim",
+        "exoneration"
+      ]
+    },
+    {
+      "pipeline_id": "whistleblower_retaliation",
+      "category": "justice",
+      "description": "Cases involving retaliation against employees who report fraud, safety violations, or other wrongdoing to authorities.",
+      "domain_rule_set": "whistleblower_retaliation_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "systems_failure",
+        "regulatory_compliance",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "whistleblower-retaliation",
+        "whistleblower retaliation",
+        "whistleblower",
+        "qui tam"
+      ]
+    },
+    {
+      "pipeline_id": "government_accountability",
+      "category": "justice",
+      "description": "Cases involving government agency failures, FOIA non-compliance, public records obstruction, or administrative misconduct.",
+      "domain_rule_set": "government_accountability_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "agency_mapping",
+        "public_records_escalation",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "government-accountability",
+        "government accountability",
+        "foia violation"
+      ]
+    },
+    {
+      "pipeline_id": "civil_rights_violation",
+      "category": "justice",
+      "description": "Cases involving violations of constitutional or statutory civil rights, including discrimination, due process failures, and equal protection claims.",
+      "domain_rule_set": "civil_rights_violation_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "systems_failure",
+        "regulatory_compliance",
+        "narrative_reconstruction"
+      ],
+      "aliases": [
+        "civil-rights-violation",
+        "civil rights violation",
+        "civil rights",
+        "section 1983"
+      ]
+    },
+    {
+      "pipeline_id": "public_corruption",
+      "category": "justice",
+      "description": "Cases involving bribery, embezzlement, conflicts of interest, or abuse of public office by government officials.",
+      "domain_rule_set": "public_corruption_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "fraud_pattern_detection",
+        "asset_flow_mapping",
+        "agency_mapping"
+      ],
+      "aliases": [
+        "public-corruption",
+        "public corruption",
+        "government corruption",
+        "bribery"
+      ]
+    },
+    {
+      "pipeline_id": "criminal_case_review",
+      "category": "justice",
+      "description": "Cases involving review of criminal proceedings, sentencing errors, ineffective assistance of counsel, or appellate issues.",
+      "domain_rule_set": "criminal_case_review_rules",
+      "default_lenses": [
+        "evidence_gap_detection",
+        "timeline_integrity",
+        "narrative_reconstruction",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "criminal-case-review",
+        "criminal case review",
+        "case review",
+        "appellate review"
+      ]
+    },
+    {
+      "pipeline_id": "investigative_journalism",
+      "category": "justice",
+      "description": "Cases supporting investigative journalism with public records analysis, source document verification, and pattern detection across institutional records.",
+      "domain_rule_set": "investigative_journalism_rules",
+      "default_lenses": [
+        "pattern_network",
+        "agency_mapping",
+        "public_records_escalation",
+        "timeline_integrity",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "investigative-journalism",
+        "investigative journalism",
+        "media investigation"
+      ]
+    },
+    {
+      "pipeline_id": "prison_conditions",
+      "category": "justice",
+      "description": "Cases involving inhumane prison conditions, medical neglect in custody, solitary confinement abuse, or correctional facility failures.",
+      "domain_rule_set": "prison_conditions_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "systems_failure",
+        "regulatory_compliance",
+        "vulnerable_population"
+      ],
+      "aliases": [
+        "prison-conditions",
+        "prison conditions",
+        "jail conditions",
+        "incarceration abuse"
+      ]
+    },
+    {
+      "pipeline_id": "parole_probation_violation",
+      "category": "justice",
+      "description": "Cases involving disputed parole or probation violations, revocation hearings, or supervision condition disputes.",
+      "domain_rule_set": "parole_probation_violation_rules",
+      "default_lenses": [
+        "procedural_timeliness",
+        "evidence_gap_detection",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "parole-probation-violation",
+        "parole violation",
+        "probation violation",
+        "parole revocation"
+      ]
+    },
+    {
+      "pipeline_id": "use_of_force_review",
+      "category": "justice",
+      "description": "Cases involving review of law enforcement use-of-force incidents, body camera analysis, and departmental policy compliance.",
+      "domain_rule_set": "use_of_force_review_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "timeline_integrity",
+        "evidence_gap_detection",
+        "narrative_reconstruction"
+      ],
+      "aliases": [
+        "use-of-force-review",
+        "use of force review",
+        "use of force",
+        "force review"
+      ]
+    },
+    {
+      "pipeline_id": "civil_asset_forfeiture",
+      "category": "justice",
+      "description": "Cases involving seizure of property by law enforcement without criminal conviction, forfeiture proceedings, and due process challenges.",
+      "domain_rule_set": "civil_asset_forfeiture_rules",
+      "default_lenses": [
+        "asset_flow_mapping",
+        "procedural_timeliness",
+        "regulatory_compliance",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "civil-asset-forfeiture",
+        "civil asset forfeiture",
+        "asset forfeiture",
+        "property seizure"
+      ]
+    },
+    {
+      "pipeline_id": "wrongful_arrest",
+      "category": "justice",
+      "description": "Cases involving arrest without probable cause, false imprisonment, mistaken identity arrests, or unlawful detention.",
+      "domain_rule_set": "wrongful_arrest_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "timeline_integrity",
+        "evidence_gap_detection",
+        "narrative_reconstruction"
+      ],
+      "aliases": [
+        "wrongful-arrest",
+        "wrongful arrest",
+        "false arrest",
+        "unlawful detention"
+      ]
+    },
+    {
+      "pipeline_id": "domestic_violence",
+      "category": "family",
+      "description": "Cases involving intimate partner violence, physical abuse, emotional abuse, or threats within a domestic relationship.",
+      "domain_rule_set": "domestic_violence_rules",
+      "default_lenses": [
+        "safety_risk",
+        "coercive_control_lens",
+        "trauma_informed",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "dv",
+        "domestic",
+        "domestic violence",
+        "domestic-violence",
+        "ipv",
+        "intimate partner violence"
+      ]
+    },
+    {
+      "pipeline_id": "custody",
+      "category": "family",
+      "description": "Cases involving child custody, visitation rights, parenting plans, and family court proceedings.",
+      "domain_rule_set": "custody_rules",
+      "default_lenses": [
+        "safety_risk",
+        "trauma_informed",
+        "vulnerable_population",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "custody dispute",
+        "custody-dispute",
+        "family court"
+      ]
+    },
+    {
+      "pipeline_id": "custody_dispute",
+      "category": "family",
+      "description": "Cases involving contested custody arrangements, modification petitions, relocation disputes, or parental alienation claims.",
+      "domain_rule_set": "custody_dispute_rules",
+      "default_lenses": [
+        "safety_risk",
+        "trauma_informed",
+        "vulnerable_population",
+        "timeline_integrity",
+        "narrative_reconstruction"
+      ],
+      "aliases": [
+        "contested custody",
+        "custody modification"
+      ]
+    },
+    {
+      "pipeline_id": "family_law",
+      "category": "family",
+      "description": "General family law matters including divorce, property division, spousal support, and prenuptial agreement disputes.",
+      "domain_rule_set": "family_law_rules",
+      "default_lenses": [
+        "contract_analysis",
+        "asset_flow_mapping",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "family-law",
+        "family law",
+        "divorce",
+        "marital dispute"
+      ]
+    },
+    {
+      "pipeline_id": "child_abuse",
+      "category": "family",
+      "description": "Cases involving physical, emotional, or sexual abuse of minors, including institutional failures to protect.",
+      "domain_rule_set": "child_abuse_rules",
+      "default_lenses": [
+        "safety_risk",
+        "trauma_informed",
+        "vulnerable_population",
+        "systems_failure",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "child-abuse",
+        "child abuse"
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "category": "family",
+      "description": "Cases involving CPS investigations, wrongful removal, failure to investigate, or systemic child welfare system breakdowns.",
+      "domain_rule_set": "child_welfare_rules",
+      "default_lenses": [
+        "systems_failure",
+        "institutional_accountability",
+        "vulnerable_population",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "child-welfare",
+        "child welfare",
+        "cps failure",
+        "child welfare failure",
+        "child_welfare_failure"
+      ]
+    },
+    {
+      "pipeline_id": "foster_care",
+      "category": "family",
+      "description": "Cases involving foster care placement failures, abuse in foster homes, record falsification, or oversight breakdowns.",
+      "domain_rule_set": "foster_care_rules",
+      "default_lenses": [
+        "systems_failure",
+        "institutional_accountability",
+        "vulnerable_population",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "foster-care",
+        "foster care",
+        "foster care misconduct",
+        "foster_care_misconduct"
+      ]
+    },
+    {
+      "pipeline_id": "juvenile_case",
+      "category": "family",
+      "description": "Cases involving juvenile court proceedings, juvenile detention, school-to-prison pipeline issues, or youth justice matters.",
+      "domain_rule_set": "juvenile_case_rules",
+      "default_lenses": [
+        "vulnerable_population",
+        "systems_failure",
+        "institutional_accountability",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "juvenile-case",
+        "juvenile case",
+        "juvenile",
+        "youth justice"
+      ]
+    },
+    {
+      "pipeline_id": "guardianship",
+      "category": "family",
+      "description": "Cases involving guardianship or conservatorship proceedings, including challenges, oversight failures, and capacity disputes.",
+      "domain_rule_set": "guardianship_rules",
+      "default_lenses": [
+        "vulnerable_population",
+        "asset_flow_mapping",
+        "systems_failure",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "conservatorship",
+        "guardianship dispute"
+      ]
+    },
+    {
+      "pipeline_id": "parental_rights_termination",
+      "category": "family",
+      "description": "Cases involving involuntary termination of parental rights, TPR proceedings, and due process challenges.",
+      "domain_rule_set": "parental_rights_termination_rules",
+      "default_lenses": [
+        "vulnerable_population",
+        "systems_failure",
+        "procedural_timeliness",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "parental-rights-termination",
+        "parental rights termination",
+        "tpr"
+      ]
+    },
+    {
+      "pipeline_id": "family_services_failure",
+      "category": "family",
+      "description": "Cases involving failures by family services agencies, including inadequate investigations, delayed responses, or systemic breakdowns.",
+      "domain_rule_set": "family_services_failure_rules",
+      "default_lenses": [
+        "systems_failure",
+        "institutional_accountability",
+        "procedural_timeliness",
+        "agency_mapping"
+      ],
+      "aliases": [
+        "family-services-failure",
+        "family services failure",
+        "dcfs failure"
+      ]
+    },
+    {
+      "pipeline_id": "child_support_modification",
+      "category": "family",
+      "description": "Cases involving child support calculation disputes, modification petitions, enforcement actions, or arrears disputes.",
+      "domain_rule_set": "child_support_modification_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "procedural_timeliness",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "child-support-modification",
+        "child support modification",
+        "child support",
+        "child_support"
+      ]
+    },
+    {
+      "pipeline_id": "adoption_disruption",
+      "category": "family",
+      "description": "Cases involving failed adoptions, adoption fraud, disrupted placements, or post-adoption support failures.",
+      "domain_rule_set": "adoption_disruption_rules",
+      "default_lenses": [
+        "systems_failure",
+        "vulnerable_population",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "adoption-disruption",
+        "adoption disruption",
+        "adoption fraud"
+      ]
+    },
+    {
+      "pipeline_id": "kinship_placement_dispute",
+      "category": "family",
+      "description": "Cases involving disputes over kinship care placements, relative caregiver rights, or kinship navigator program failures.",
+      "domain_rule_set": "kinship_placement_dispute_rules",
+      "default_lenses": [
+        "vulnerable_population",
+        "systems_failure",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "kinship-placement-dispute",
+        "kinship placement dispute",
+        "kinship care"
+      ]
+    },
+    {
+      "pipeline_id": "supervised_visitation_dispute",
+      "category": "family",
+      "description": "Cases involving disputes over supervised visitation arrangements, monitor conduct, or visitation center failures.",
+      "domain_rule_set": "supervised_visitation_dispute_rules",
+      "default_lenses": [
+        "safety_risk",
+        "timeline_integrity",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "supervised-visitation-dispute",
+        "supervised visitation dispute",
+        "supervised visitation"
+      ]
+    },
+    {
+      "pipeline_id": "elder_abuse",
+      "category": "elder",
+      "description": "Cases involving physical, financial, or emotional abuse or neglect of elderly individuals.",
+      "domain_rule_set": "elder_abuse_rules",
+      "default_lenses": [
+        "safety_risk",
+        "vulnerable_population",
+        "asset_flow_mapping",
+        "financial_forensic"
+      ],
+      "aliases": [
+        "elder-abuse",
+        "elder abuse"
+      ]
+    },
+    {
+      "pipeline_id": "eldercare",
+      "category": "elder",
+      "description": "General eldercare cases involving quality of care disputes, caregiver negligence, or inadequate services.",
+      "domain_rule_set": "eldercare_rules",
+      "default_lenses": [
+        "vulnerable_population",
+        "systems_failure",
+        "regulatory_compliance"
+      ],
+      "aliases": [
+        "elder care",
+        "elder-care"
+      ]
+    },
+    {
+      "pipeline_id": "nursing_home_abuse",
+      "category": "elder",
+      "description": "Cases involving abuse, neglect, or exploitation in nursing homes and assisted living facilities.",
+      "domain_rule_set": "nursing_home_abuse_rules",
+      "default_lenses": [
+        "vulnerable_population",
+        "institutional_accountability",
+        "regulatory_compliance",
+        "systems_failure"
+      ],
+      "aliases": [
+        "nursing-home-abuse",
+        "nursing home abuse",
+        "nursing home neglect"
+      ]
+    },
+    {
+      "pipeline_id": "disability_rights",
+      "category": "elder",
+      "description": "Cases involving disability discrimination, ADA violations, reasonable accommodation denials, or accessibility failures.",
+      "domain_rule_set": "disability_rights_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "institutional_accountability",
+        "systems_failure"
+      ],
+      "aliases": [
+        "disability-rights",
+        "disability rights",
+        "ada violation"
+      ]
+    },
+    {
+      "pipeline_id": "guardianship_abuse",
+      "category": "elder",
+      "description": "Cases involving abuse of guardianship or conservatorship powers, financial exploitation by guardians, or oversight failures.",
+      "domain_rule_set": "guardianship_abuse_rules",
+      "default_lenses": [
+        "vulnerable_population",
+        "asset_flow_mapping",
+        "financial_forensic",
+        "institutional_accountability"
+      ],
+      "aliases": [
+        "guardianship-abuse",
+        "guardianship abuse",
+        "conservatorship abuse"
+      ]
+    },
+    {
+      "pipeline_id": "long_term_care_neglect",
+      "category": "elder",
+      "description": "Cases involving neglect in long-term care facilities, including medication errors, falls, malnutrition, and inadequate staffing.",
+      "domain_rule_set": "long_term_care_neglect_rules",
+      "default_lenses": [
+        "vulnerable_population",
+        "systems_failure",
+        "regulatory_compliance",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "long-term-care-neglect",
+        "long term care neglect",
+        "ltc neglect"
+      ]
+    },
+    {
+      "pipeline_id": "elder_financial_exploitation",
+      "category": "elder",
+      "description": "Cases involving financial exploitation of elderly individuals, including scams, undue influence, and unauthorized transactions.",
+      "domain_rule_set": "elder_financial_exploitation_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "asset_flow_mapping",
+        "fraud_pattern_detection",
+        "vulnerable_population"
+      ],
+      "aliases": [
+        "elder-financial-exploitation",
+        "elder financial exploitation",
+        "elder scam"
+      ]
+    },
+    {
+      "pipeline_id": "vulnerable_adult_protection",
+      "category": "elder",
+      "description": "Cases involving protection of vulnerable adults from abuse, neglect, or exploitation, including adult protective services investigations.",
+      "domain_rule_set": "vulnerable_adult_protection_rules",
+      "default_lenses": [
+        "vulnerable_population",
+        "safety_risk",
+        "systems_failure",
+        "agency_mapping"
+      ],
+      "aliases": [
+        "vulnerable-adult-protection",
+        "vulnerable adult protection",
+        "aps investigation"
+      ]
+    },
+    {
+      "pipeline_id": "ada_accommodation_dispute",
+      "category": "elder",
+      "description": "Cases involving disputes over reasonable accommodations under the ADA, including workplace, housing, and public access accommodations.",
+      "domain_rule_set": "ada_accommodation_dispute_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "institutional_accountability",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "ada-accommodation-dispute",
+        "ada accommodation dispute",
+        "ada accommodation"
+      ]
+    },
+    {
+      "pipeline_id": "home_health_agency_misconduct",
+      "category": "elder",
+      "description": "Cases involving misconduct by home health agencies, including billing fraud, inadequate care, or caregiver abuse.",
+      "domain_rule_set": "home_health_agency_misconduct_rules",
+      "default_lenses": [
+        "billing_integrity",
+        "regulatory_compliance",
+        "vulnerable_population",
+        "systems_failure"
+      ],
+      "aliases": [
+        "home-health-agency-misconduct",
+        "home health agency misconduct",
+        "home health fraud"
+      ]
+    },
+    {
+      "pipeline_id": "medicare_elder_fraud",
+      "category": "elder",
+      "description": "Cases involving Medicare fraud targeting elderly beneficiaries, including phantom billing, upcoding, and kickback schemes.",
+      "domain_rule_set": "medicare_elder_fraud_rules",
+      "default_lenses": [
+        "fraud_pattern_detection",
+        "billing_integrity",
+        "financial_forensic",
+        "regulatory_compliance"
+      ],
+      "aliases": [
+        "medicare-elder-fraud",
+        "medicare elder fraud",
+        "medicare fraud"
+      ]
+    },
+    {
+      "pipeline_id": "tribal_law",
+      "category": "tribal",
+      "description": "General tribal law matters involving tribal courts, tribal codes, and the intersection of tribal and federal/state jurisdiction.",
+      "domain_rule_set": "tribal_law_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "regulatory_compliance",
+        "agency_mapping"
+      ],
+      "aliases": [
+        "tribal-law",
+        "tribal law"
+      ]
+    },
+    {
+      "pipeline_id": "tribal_enrollment",
+      "category": "tribal",
+      "description": "Cases involving tribal enrollment disputes, blood quantum challenges, or membership eligibility determinations.",
+      "domain_rule_set": "tribal_enrollment_rules",
+      "default_lenses": [
+        "procedural_timeliness",
+        "evidence_gap_detection",
+        "agency_mapping"
+      ],
+      "aliases": [
+        "tribal-enrollment",
+        "tribal enrollment"
+      ]
+    },
+    {
+      "pipeline_id": "tribal_land_rights",
+      "category": "tribal",
+      "description": "Cases involving tribal land claims, allotment disputes, trust land management, or land-into-trust applications.",
+      "domain_rule_set": "tribal_land_rights_rules",
+      "default_lenses": [
+        "public_records_escalation",
+        "agency_mapping",
+        "regulatory_compliance",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "tribal-land-rights",
+        "tribal land rights",
+        "tribal land"
+      ]
+    },
+    {
+      "pipeline_id": "tribal_housing",
+      "category": "tribal",
+      "description": "Cases involving housing on tribal lands, NAHASDA compliance, HUD-ONAP disputes, or tribal housing authority failures.",
+      "domain_rule_set": "tribal_housing_rules",
+      "default_lenses": [
+        "systems_failure",
+        "regulatory_compliance",
+        "institutional_accountability"
+      ],
+      "aliases": [
+        "tribal-housing",
+        "tribal housing"
+      ]
+    },
+    {
+      "pipeline_id": "treaty_rights",
+      "category": "tribal",
+      "description": "Cases involving treaty right violations, fishing/hunting rights, water rights, or federal trust responsibility breaches.",
+      "domain_rule_set": "treaty_rights_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "public_records_escalation",
+        "regulatory_compliance",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "treaty-rights",
+        "treaty rights"
+      ]
+    },
+    {
+      "pipeline_id": "indigenous_sovereignty",
+      "category": "tribal",
+      "description": "Cases involving tribal sovereignty challenges, jurisdictional disputes, or federal recognition proceedings.",
+      "domain_rule_set": "indigenous_sovereignty_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "agency_mapping",
+        "public_records_escalation"
+      ],
+      "aliases": [
+        "indigenous-sovereignty",
+        "indigenous sovereignty",
+        "tribal sovereignty"
+      ]
+    },
+    {
+      "pipeline_id": "mmiw_cases",
+      "category": "tribal",
+      "description": "Cases involving missing and murdered Indigenous women and people, including investigation failures and jurisdictional gaps.",
+      "domain_rule_set": "mmiw_cases_rules",
+      "default_lenses": [
+        "safety_risk",
+        "institutional_accountability",
+        "evidence_gap_detection",
+        "agency_mapping",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "mmiw-cases",
+        "mmiw cases",
+        "mmiw",
+        "mmip"
+      ]
+    },
+    {
+      "pipeline_id": "tribal_governance",
+      "category": "tribal",
+      "description": "Cases involving tribal government disputes, council elections, constitutional challenges, or governance structure conflicts.",
+      "domain_rule_set": "tribal_governance_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "procedural_timeliness",
+        "agency_mapping"
+      ],
+      "aliases": [
+        "tribal-governance",
+        "tribal governance"
+      ]
+    },
+    {
+      "pipeline_id": "tribal_state_jurisdiction_conflict",
+      "category": "tribal",
+      "description": "Cases involving jurisdictional conflicts between tribal, state, and federal authorities, including PL-280 disputes.",
+      "domain_rule_set": "tribal_state_jurisdiction_conflict_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "agency_mapping",
+        "regulatory_compliance"
+      ],
+      "aliases": [
+        "tribal-state-jurisdiction-conflict",
+        "tribal state jurisdiction conflict",
+        "pl-280 dispute"
+      ]
+    },
+    {
+      "pipeline_id": "icwa_compliance",
+      "category": "tribal",
+      "description": "Cases involving Indian Child Welfare Act compliance, including placement preferences, active efforts requirements, and qualified expert witness standards.",
+      "domain_rule_set": "icwa_compliance_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "vulnerable_population",
+        "systems_failure",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "icwa-compliance",
+        "icwa compliance",
+        "icwa"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "category": "insurance",
+      "description": "Cases involving denied insurance claims, bad faith practices, and coverage disputes across health, auto, home, and disability insurance.",
+      "domain_rule_set": "insurance_claim_denial_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "billing_integrity",
+        "regulatory_compliance",
+        "evidence_gap_detection",
+        "contract_analysis"
+      ],
+      "aliases": [
+        "insurance-claim-denial",
+        "insurance claim denial",
+        "insurance denial",
+        "insurance",
+        "claim denial",
+        "insurance_denial"
+      ]
+    },
+    {
+      "pipeline_id": "health_insurance_denial",
+      "category": "insurance",
+      "description": "Cases involving health insurance claim denials, prior authorization disputes, network adequacy failures, or mental health parity violations.",
+      "domain_rule_set": "health_insurance_denial_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "billing_integrity",
+        "regulatory_compliance",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "health-insurance-denial",
+        "health insurance denial",
+        "health insurance dispute"
+      ]
+    },
+    {
+      "pipeline_id": "medical_malpractice",
+      "category": "insurance",
+      "description": "Cases involving medical negligence, surgical errors, misdiagnosis, failure to treat, or informed consent violations.",
+      "domain_rule_set": "medical_malpractice_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "systems_failure",
+        "timeline_integrity",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "medical-malpractice",
+        "medical malpractice",
+        "malpractice",
+        "medical negligence"
+      ]
+    },
+    {
+      "pipeline_id": "medicaid_denial",
+      "category": "insurance",
+      "description": "Cases involving Medicaid eligibility denials, coverage disputes, or administrative hearing challenges.",
+      "domain_rule_set": "medicaid_denial_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "medicaid-denial",
+        "medicaid denial",
+        "medicaid dispute"
+      ]
+    },
+    {
+      "pipeline_id": "medicare_denial",
+      "category": "insurance",
+      "description": "Cases involving Medicare coverage denials, appeals, or administrative law judge proceedings.",
+      "domain_rule_set": "medicare_denial_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "billing_integrity",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "medicare-denial",
+        "medicare denial",
+        "medicare dispute"
+      ]
+    },
+    {
+      "pipeline_id": "hospital_billing_abuse",
+      "category": "insurance",
+      "description": "Cases involving hospital billing fraud, surprise billing, balance billing, or chargemaster abuse.",
+      "domain_rule_set": "hospital_billing_abuse_rules",
+      "default_lenses": [
+        "billing_integrity",
+        "financial_forensic",
+        "regulatory_compliance",
+        "fraud_pattern_detection"
+      ],
+      "aliases": [
+        "hospital-billing-abuse",
+        "hospital billing abuse",
+        "hospital billing fraud"
+      ]
+    },
+    {
+      "pipeline_id": "medical_record_access",
+      "category": "insurance",
+      "description": "Cases involving denial of access to medical records, HIPAA violations, or medical record falsification.",
+      "domain_rule_set": "medical_record_access_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "evidence_gap_detection",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "medical-record-access",
+        "medical record access",
+        "hipaa violation"
+      ]
+    },
+    {
+      "pipeline_id": "disability_claim_denial",
+      "category": "insurance",
+      "description": "Cases involving disability insurance claim denials, ERISA disputes, or long-term disability benefit terminations.",
+      "domain_rule_set": "disability_claim_denial_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "regulatory_compliance",
+        "evidence_gap_detection",
+        "contract_analysis"
+      ],
+      "aliases": [
+        "disability-claim-denial",
+        "disability claim denial",
+        "disability insurance denial"
+      ]
+    },
+    {
+      "pipeline_id": "prior_authorization_abuse",
+      "category": "insurance",
+      "description": "Cases involving prior authorization delays, denials, or systematic obstruction of medically necessary care.",
+      "domain_rule_set": "prior_authorization_abuse_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "billing_integrity",
+        "systems_failure"
+      ],
+      "aliases": [
+        "prior-authorization-abuse",
+        "prior authorization abuse",
+        "prior auth denial"
+      ]
+    },
+    {
+      "pipeline_id": "surprise_billing",
+      "category": "insurance",
+      "description": "Cases involving surprise medical bills, out-of-network charges, No Surprises Act violations, or emergency room billing disputes.",
+      "domain_rule_set": "surprise_billing_rules",
+      "default_lenses": [
+        "billing_integrity",
+        "regulatory_compliance",
+        "financial_forensic"
+      ],
+      "aliases": [
+        "surprise-billing",
+        "surprise billing",
+        "balance billing"
+      ]
+    },
+    {
+      "pipeline_id": "pharmacy_benefit_manager_dispute",
+      "category": "insurance",
+      "description": "Cases involving PBM practices, formulary manipulation, clawback provisions, or pharmacy reimbursement disputes.",
+      "domain_rule_set": "pharmacy_benefit_manager_dispute_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "financial_forensic",
+        "billing_integrity"
+      ],
+      "aliases": [
+        "pharmacy-benefit-manager-dispute",
+        "pharmacy benefit manager dispute",
+        "pbm dispute"
+      ]
+    },
+    {
+      "pipeline_id": "medical_device_injury",
+      "category": "insurance",
+      "description": "Cases involving injuries from defective medical devices, FDA reporting failures, or product liability claims.",
+      "domain_rule_set": "medical_device_injury_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "institutional_accountability",
+        "evidence_gap_detection",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "medical-device-injury",
+        "medical device injury",
+        "device recall"
+      ]
+    },
+    {
+      "pipeline_id": "tenant_rights",
+      "category": "housing",
+      "description": "General tenant rights cases including lease violations, security deposit disputes, and landlord-tenant conflicts.",
+      "domain_rule_set": "tenant_rights_rules",
+      "default_lenses": [
+        "contract_analysis",
+        "regulatory_compliance",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "tenant-rights",
+        "tenant rights",
+        "housing",
+        "housing dispute",
+        "housing_dispute",
+        "landlord",
+        "tenant"
+      ]
+    },
+    {
+      "pipeline_id": "housing_discrimination",
+      "category": "housing",
+      "description": "Cases involving discrimination in housing based on race, disability, familial status, or other protected characteristics.",
+      "domain_rule_set": "housing_discrimination_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "regulatory_compliance",
+        "systems_failure",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "housing-discrimination",
+        "housing discrimination",
+        "fair housing"
+      ]
+    },
+    {
+      "pipeline_id": "eviction_defense",
+      "category": "housing",
+      "description": "Cases involving eviction proceedings, unlawful detainer, self-help eviction, or retaliatory eviction defense.",
+      "domain_rule_set": "eviction_defense_rules",
+      "default_lenses": [
+        "procedural_timeliness",
+        "regulatory_compliance",
+        "contract_analysis",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "eviction-defense",
+        "eviction defense",
+        "eviction",
+        "unlawful detainer"
+      ]
+    },
+    {
+      "pipeline_id": "section8_disputes",
+      "category": "housing",
+      "description": "Cases involving Section 8 voucher terminations, housing authority disputes, or HUD compliance failures.",
+      "domain_rule_set": "section8_disputes_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "systems_failure",
+        "procedural_timeliness",
+        "agency_mapping"
+      ],
+      "aliases": [
+        "section8-disputes",
+        "section 8 disputes",
+        "section 8",
+        "voucher dispute"
+      ]
+    },
+    {
+      "pipeline_id": "hoa_disputes",
+      "category": "housing",
+      "description": "Cases involving homeowner association disputes, selective enforcement, assessment disputes, or governance failures.",
+      "domain_rule_set": "hoa_disputes_rules",
+      "default_lenses": [
+        "contract_analysis",
+        "regulatory_compliance",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "hoa-disputes",
+        "hoa disputes",
+        "hoa"
+      ]
+    },
+    {
+      "pipeline_id": "landlord_harassment",
+      "category": "housing",
+      "description": "Cases involving landlord intimidation, illegal lockouts, utility shutoffs, or harassment to force tenant departure.",
+      "domain_rule_set": "landlord_harassment_rules",
+      "default_lenses": [
+        "safety_risk",
+        "regulatory_compliance",
+        "timeline_integrity",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "landlord-harassment",
+        "landlord harassment"
+      ]
+    },
+    {
+      "pipeline_id": "foreclosure_dispute",
+      "category": "housing",
+      "description": "Cases involving wrongful foreclosure, dual tracking, loan modification disputes, or servicer misconduct.",
+      "domain_rule_set": "foreclosure_dispute_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "contract_analysis",
+        "regulatory_compliance",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "foreclosure-dispute",
+        "foreclosure dispute",
+        "foreclosure"
+      ]
+    },
+    {
+      "pipeline_id": "property_rights",
+      "category": "housing",
+      "description": "Cases involving property ownership disputes, adverse possession, easement conflicts, or title issues.",
+      "domain_rule_set": "property_rights_rules",
+      "default_lenses": [
+        "contract_analysis",
+        "evidence_gap_detection",
+        "public_records_escalation"
+      ],
+      "aliases": [
+        "property-rights",
+        "property rights",
+        "property dispute"
+      ]
+    },
+    {
+      "pipeline_id": "mobile_home_park_dispute",
+      "category": "housing",
+      "description": "Cases involving mobile home park disputes, lot rent increases, park closure, or manufactured housing rights.",
+      "domain_rule_set": "mobile_home_park_dispute_rules",
+      "default_lenses": [
+        "contract_analysis",
+        "regulatory_compliance",
+        "systems_failure"
+      ],
+      "aliases": [
+        "mobile-home-park-dispute",
+        "mobile home park dispute",
+        "mobile home dispute"
+      ]
+    },
+    {
+      "pipeline_id": "short_term_rental_dispute",
+      "category": "housing",
+      "description": "Cases involving short-term rental disputes, Airbnb/VRBO issues, local ordinance violations, or neighbor complaints.",
+      "domain_rule_set": "short_term_rental_dispute_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "contract_analysis"
+      ],
+      "aliases": [
+        "short-term-rental-dispute",
+        "short term rental dispute",
+        "airbnb dispute"
+      ]
+    },
+    {
+      "pipeline_id": "utility_shutoff_abuse",
+      "category": "housing",
+      "description": "Cases involving illegal utility shutoffs, service disconnection disputes, or utility company misconduct.",
+      "domain_rule_set": "utility_shutoff_abuse_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "safety_risk",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "utility-shutoff-abuse",
+        "utility shutoff abuse",
+        "utility shutoff"
+      ]
+    },
+    {
+      "pipeline_id": "code_enforcement_retaliation",
+      "category": "housing",
+      "description": "Cases involving retaliatory code enforcement actions, selective enforcement, or code enforcement as harassment tool.",
+      "domain_rule_set": "code_enforcement_retaliation_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "timeline_integrity",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "code-enforcement-retaliation",
+        "code enforcement retaliation",
+        "code enforcement abuse"
+      ]
+    },
+    {
+      "pipeline_id": "debt_collection_abuse",
+      "category": "financial",
+      "description": "Cases involving FDCPA violations, harassment by debt collectors, false representations, or unfair collection practices.",
+      "domain_rule_set": "debt_collection_abuse_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "financial_forensic",
+        "billing_integrity",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "debt-collection-abuse",
+        "debt collection abuse",
+        "debt collection",
+        "debt-collection"
+      ]
+    },
+    {
+      "pipeline_id": "predatory_lending",
+      "category": "financial",
+      "description": "Cases involving predatory lending practices, usurious interest rates, deceptive loan terms, or targeting of vulnerable borrowers.",
+      "domain_rule_set": "predatory_lending_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "fraud_pattern_detection",
+        "regulatory_compliance",
+        "contract_analysis"
+      ],
+      "aliases": [
+        "predatory-lending",
+        "predatory lending"
+      ]
+    },
+    {
+      "pipeline_id": "bankruptcy_dispute",
+      "category": "financial",
+      "description": "Cases involving bankruptcy proceedings, creditor disputes, discharge challenges, or trustee misconduct.",
+      "domain_rule_set": "bankruptcy_dispute_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "asset_flow_mapping",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "bankruptcy-dispute",
+        "bankruptcy dispute",
+        "bankruptcy"
+      ]
+    },
+    {
+      "pipeline_id": "tax_dispute",
+      "category": "financial",
+      "description": "Cases involving tax assessment disputes, IRS collection actions, tax lien challenges, or property tax appeals.",
+      "domain_rule_set": "tax_dispute_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "regulatory_compliance",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "tax-dispute",
+        "tax dispute",
+        "irs dispute"
+      ]
+    },
+    {
+      "pipeline_id": "consumer_fraud",
+      "category": "financial",
+      "description": "Cases involving deceptive business practices, unfair contracts, or fraudulent schemes targeting consumers.",
+      "domain_rule_set": "consumer_fraud_rules",
+      "default_lenses": [
+        "fraud_pattern_detection",
+        "financial_forensic",
+        "contract_analysis",
+        "regulatory_compliance"
+      ],
+      "aliases": [
+        "consumer-fraud",
+        "consumer fraud",
+        "consumer"
+      ]
+    },
+    {
+      "pipeline_id": "identity_theft",
+      "category": "financial",
+      "description": "Cases involving identity theft, unauthorized account access, credit report disputes, or synthetic identity fraud.",
+      "domain_rule_set": "identity_theft_rules",
+      "default_lenses": [
+        "fraud_pattern_detection",
+        "financial_forensic",
+        "timeline_integrity",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "identity-theft",
+        "identity theft",
+        "id theft"
+      ]
+    },
+    {
+      "pipeline_id": "financial_exploitation",
+      "category": "financial",
+      "description": "Cases involving financial exploitation of vulnerable individuals, undue influence, or unauthorized financial transactions.",
+      "domain_rule_set": "financial_exploitation_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "asset_flow_mapping",
+        "fraud_pattern_detection",
+        "vulnerable_population"
+      ],
+      "aliases": [
+        "financial-exploitation",
+        "financial exploitation"
+      ]
+    },
+    {
+      "pipeline_id": "securities_fraud",
+      "category": "financial",
+      "description": "Cases involving securities fraud, insider trading, Ponzi schemes, or investment advisor misconduct.",
+      "domain_rule_set": "securities_fraud_rules",
+      "default_lenses": [
+        "fraud_pattern_detection",
+        "financial_forensic",
+        "asset_flow_mapping",
+        "regulatory_compliance"
+      ],
+      "aliases": [
+        "securities-fraud",
+        "securities fraud",
+        "investment fraud"
+      ]
+    },
+    {
+      "pipeline_id": "crypto_fraud",
+      "category": "financial",
+      "description": "Cases involving cryptocurrency fraud, rug pulls, exchange failures, or DeFi exploitation.",
+      "domain_rule_set": "crypto_fraud_rules",
+      "default_lenses": [
+        "fraud_pattern_detection",
+        "financial_forensic",
+        "asset_flow_mapping",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "crypto-fraud",
+        "crypto fraud",
+        "crypto scam",
+        "crypto_scam"
+      ]
+    },
+    {
+      "pipeline_id": "online_marketplace_fraud",
+      "category": "financial",
+      "description": "Cases involving online marketplace scams, platform liability, counterfeit goods, or seller fraud.",
+      "domain_rule_set": "online_marketplace_fraud_rules",
+      "default_lenses": [
+        "fraud_pattern_detection",
+        "financial_forensic",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "online-marketplace-fraud",
+        "online marketplace fraud",
+        "marketplace scam"
+      ]
+    },
+    {
+      "pipeline_id": "subscription_trap_billing",
+      "category": "financial",
+      "description": "Cases involving deceptive subscription billing, dark patterns, unauthorized recurring charges, or cancellation obstruction.",
+      "domain_rule_set": "subscription_trap_billing_rules",
+      "default_lenses": [
+        "billing_integrity",
+        "fraud_pattern_detection",
+        "regulatory_compliance"
+      ],
+      "aliases": [
+        "subscription-trap-billing",
+        "subscription trap billing",
+        "subscription scam"
+      ]
+    },
+    {
+      "pipeline_id": "bank_account_closure",
+      "category": "financial",
+      "description": "Cases involving wrongful bank account closures, frozen funds, de-banking, or suspicious activity report disputes.",
+      "domain_rule_set": "bank_account_closure_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "regulatory_compliance",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "bank-account-closure",
+        "bank account closure",
+        "account closure",
+        "de-banking"
+      ]
+    },
+    {
+      "pipeline_id": "workplace_discrimination",
+      "category": "employment",
+      "description": "Cases involving employment discrimination based on race, gender, age, disability, religion, or other protected characteristics.",
+      "domain_rule_set": "workplace_discrimination_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "regulatory_compliance",
+        "timeline_integrity",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "workplace-discrimination",
+        "workplace discrimination",
+        "employment discrimination"
+      ]
+    },
+    {
+      "pipeline_id": "wrongful_termination",
+      "category": "employment",
+      "description": "Cases involving wrongful termination, constructive discharge, or termination in violation of public policy.",
+      "domain_rule_set": "wrongful_termination_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "timeline_integrity",
+        "evidence_gap_detection",
+        "narrative_reconstruction"
+      ],
+      "aliases": [
+        "wrongful-termination",
+        "wrongful termination",
+        "fired illegally"
+      ]
+    },
+    {
+      "pipeline_id": "workers_compensation",
+      "category": "employment",
+      "description": "Cases involving workers compensation claim disputes, benefit denials, or employer retaliation for filing claims.",
+      "domain_rule_set": "workers_compensation_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "workers-compensation",
+        "workers compensation",
+        "workers comp",
+        "workerscomp"
+      ]
+    },
+    {
+      "pipeline_id": "wage_theft",
+      "category": "employment",
+      "description": "Cases involving unpaid wages, overtime violations, misclassification, tip theft, or minimum wage violations.",
+      "domain_rule_set": "wage_theft_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "billing_integrity",
+        "regulatory_compliance",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "wage-theft",
+        "wage theft",
+        "unpaid wages"
+      ]
+    },
+    {
+      "pipeline_id": "labor_violation",
+      "category": "employment",
+      "description": "Cases involving NLRA violations, union busting, collective bargaining failures, or unfair labor practices.",
+      "domain_rule_set": "labor_violation_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "institutional_accountability",
+        "systems_failure"
+      ],
+      "aliases": [
+        "labor-violation",
+        "labor violation",
+        "labor dispute",
+        "nlra violation"
+      ]
+    },
+    {
+      "pipeline_id": "workplace_harassment",
+      "category": "employment",
+      "description": "Cases involving workplace harassment, hostile work environment, sexual harassment, or bullying.",
+      "domain_rule_set": "workplace_harassment_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "timeline_integrity",
+        "evidence_gap_detection",
+        "safety_risk"
+      ],
+      "aliases": [
+        "workplace-harassment",
+        "workplace harassment",
+        "sexual harassment",
+        "hostile work environment"
+      ]
+    },
+    {
+      "pipeline_id": "unemployment_benefits",
+      "category": "employment",
+      "description": "Cases involving unemployment benefit denials, appeals, or employer-contested claims.",
+      "domain_rule_set": "unemployment_benefits_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "unemployment-benefits",
+        "unemployment benefits",
+        "unemployment denial"
+      ]
+    },
+    {
+      "pipeline_id": "gig_worker_misclassification",
+      "category": "employment",
+      "description": "Cases involving misclassification of employees as independent contractors, gig economy disputes, or ABC test violations.",
+      "domain_rule_set": "gig_worker_misclassification_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "financial_forensic",
+        "institutional_accountability"
+      ],
+      "aliases": [
+        "gig-worker-misclassification",
+        "gig worker misclassification",
+        "misclassification"
+      ]
+    },
+    {
+      "pipeline_id": "non_compete_dispute",
+      "category": "employment",
+      "description": "Cases involving non-compete agreement enforcement, trade secret disputes, or restrictive covenant challenges.",
+      "domain_rule_set": "non_compete_dispute_rules",
+      "default_lenses": [
+        "contract_analysis",
+        "regulatory_compliance",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "non-compete-dispute",
+        "non compete dispute",
+        "non-compete",
+        "non compete"
+      ]
+    },
+    {
+      "pipeline_id": "wage_garnishment_error",
+      "category": "employment",
+      "description": "Cases involving excessive wage garnishment, calculation errors, or garnishment of exempt income.",
+      "domain_rule_set": "wage_garnishment_error_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "regulatory_compliance",
+        "billing_integrity"
+      ],
+      "aliases": [
+        "wage-garnishment-error",
+        "wage garnishment error",
+        "garnishment dispute"
+      ]
+    },
+    {
+      "pipeline_id": "workplace_surveillance",
+      "category": "employment",
+      "description": "Cases involving excessive workplace surveillance, privacy violations, or monitoring of protected activities.",
+      "domain_rule_set": "workplace_surveillance_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "institutional_accountability",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "workplace-surveillance",
+        "workplace surveillance",
+        "employee monitoring"
+      ]
+    },
+    {
+      "pipeline_id": "benefits_denial",
+      "category": "benefits",
+      "description": "General benefits denial cases involving administrative hearings, fair hearing requests, or benefit termination disputes.",
+      "domain_rule_set": "benefits_denial_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "benefits-denial",
+        "benefits denial",
+        "benefit denial"
+      ]
+    },
+    {
+      "pipeline_id": "snap_denial",
+      "category": "benefits",
+      "description": "Cases involving SNAP (food stamps) benefit denials, reductions, or administrative hearing challenges.",
+      "domain_rule_set": "snap_denial_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "snap-denial",
+        "snap denial",
+        "food stamp denial",
+        "snap"
+      ]
+    },
+    {
+      "pipeline_id": "veterans_benefits",
+      "category": "benefits",
+      "description": "Cases involving VA benefits denials, disability rating disputes, or Board of Veterans Appeals proceedings.",
+      "domain_rule_set": "veterans_benefits_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "evidence_gap_detection",
+        "agency_mapping"
+      ],
+      "aliases": [
+        "veterans-benefits",
+        "veterans benefits",
+        "va benefits",
+        "va denial"
+      ]
+    },
+    {
+      "pipeline_id": "social_security_disability",
+      "category": "benefits",
+      "description": "Cases involving SSDI or SSI denials, ALJ hearings, or Appeals Council reviews.",
+      "domain_rule_set": "social_security_disability_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "evidence_gap_detection",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "social-security-disability",
+        "social security disability",
+        "ssdi",
+        "ssi denial"
+      ]
+    },
+    {
+      "pipeline_id": "public_assistance_dispute",
+      "category": "benefits",
+      "description": "Cases involving public assistance program disputes, TANF denials, general assistance terminations, or fair hearing requests.",
+      "domain_rule_set": "public_assistance_dispute_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "systems_failure"
+      ],
+      "aliases": [
+        "public-assistance-dispute",
+        "public assistance dispute",
+        "tanf denial",
+        "welfare dispute"
+      ]
+    },
+    {
+      "pipeline_id": "voucher_termination",
+      "category": "benefits",
+      "description": "Cases involving housing voucher terminations, Section 8 hearing disputes, or housing authority administrative actions.",
+      "domain_rule_set": "voucher_termination_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "systems_failure",
+        "agency_mapping"
+      ],
+      "aliases": [
+        "voucher-termination",
+        "voucher termination",
+        "section 8 termination"
+      ]
+    },
+    {
+      "pipeline_id": "medicaid_ltc_eligibility",
+      "category": "benefits",
+      "description": "Cases involving Medicaid long-term care eligibility disputes, spend-down calculations, or asset transfer penalties.",
+      "domain_rule_set": "medicaid_ltc_eligibility_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "regulatory_compliance",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "medicaid-ltc-eligibility",
+        "medicaid ltc eligibility",
+        "medicaid long term care"
+      ]
+    },
+    {
+      "pipeline_id": "benefits_overpayment_recoupment",
+      "category": "benefits",
+      "description": "Cases involving benefit overpayment recoupment demands, waiver requests, or administrative offset disputes.",
+      "domain_rule_set": "benefits_overpayment_recoupment_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "benefits-overpayment-recoupment",
+        "benefits overpayment recoupment",
+        "overpayment dispute"
+      ]
+    },
+    {
+      "pipeline_id": "market_concentration",
+      "category": "market",
+      "description": "Cases involving market concentration analysis, merger challenges, or monopolistic behavior documentation.",
+      "domain_rule_set": "market_concentration_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "pattern_network",
+        "regulatory_compliance"
+      ],
+      "aliases": [
+        "market-concentration",
+        "market concentration",
+        "monopoly"
+      ]
+    },
+    {
+      "pipeline_id": "antitrust_violation",
+      "category": "market",
+      "description": "Cases involving antitrust violations, price fixing, bid rigging, or market allocation schemes.",
+      "domain_rule_set": "antitrust_violation_rules",
+      "default_lenses": [
+        "fraud_pattern_detection",
+        "financial_forensic",
+        "regulatory_compliance",
+        "pattern_network"
+      ],
+      "aliases": [
+        "antitrust-violation",
+        "antitrust violation",
+        "antitrust",
+        "price fixing"
+      ]
+    },
+    {
+      "pipeline_id": "corporate_capture",
+      "category": "market",
+      "description": "Cases involving corporate capture of regulatory agencies, revolving door practices, or industry influence on policy.",
+      "domain_rule_set": "corporate_capture_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "agency_mapping",
+        "pattern_network",
+        "public_records_escalation"
+      ],
+      "aliases": [
+        "corporate-capture",
+        "corporate capture",
+        "regulatory capture"
+      ]
+    },
+    {
+      "pipeline_id": "supply_chain_exploitation",
+      "category": "market",
+      "description": "Cases involving supply chain labor exploitation, forced labor, or supply chain transparency violations.",
+      "domain_rule_set": "supply_chain_exploitation_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "regulatory_compliance",
+        "pattern_network"
+      ],
+      "aliases": [
+        "supply-chain-exploitation",
+        "supply chain exploitation",
+        "forced labor"
+      ]
+    },
+    {
+      "pipeline_id": "agriculture_exploitation",
+      "category": "market",
+      "description": "Cases involving agricultural worker exploitation, pesticide exposure, or agricultural industry regulatory failures.",
+      "domain_rule_set": "agriculture_exploitation_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "vulnerable_population",
+        "systems_failure"
+      ],
+      "aliases": [
+        "agriculture-exploitation",
+        "agriculture exploitation",
+        "farmworker exploitation"
+      ]
+    },
+    {
+      "pipeline_id": "nonprofit_compliance",
+      "category": "market",
+      "description": "Cases involving nonprofit governance failures, misuse of charitable funds, or IRS compliance violations.",
+      "domain_rule_set": "nonprofit_compliance_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "regulatory_compliance",
+        "institutional_accountability"
+      ],
+      "aliases": [
+        "nonprofit-compliance",
+        "nonprofit compliance",
+        "charity fraud"
+      ]
+    },
+    {
+      "pipeline_id": "public_contract_abuse",
+      "category": "market",
+      "description": "Cases involving public contract fraud, bid manipulation, kickbacks, or government procurement misconduct.",
+      "domain_rule_set": "public_contract_abuse_rules",
+      "default_lenses": [
+        "fraud_pattern_detection",
+        "financial_forensic",
+        "institutional_accountability",
+        "public_records_escalation"
+      ],
+      "aliases": [
+        "public-contract-abuse",
+        "public contract abuse",
+        "government contract fraud"
+      ]
+    },
+    {
+      "pipeline_id": "regulatory_capture",
+      "category": "market",
+      "description": "Cases involving regulatory agency capture by the industries they regulate, weakened enforcement, or conflicts of interest.",
+      "domain_rule_set": "regulatory_capture_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "agency_mapping",
+        "public_records_escalation",
+        "pattern_network"
+      ],
+      "aliases": [
+        "regulatory-capture",
+        "regulatory capture"
+      ]
+    },
+    {
+      "pipeline_id": "corporate_tax_avoidance",
+      "category": "market",
+      "description": "Cases involving corporate tax avoidance schemes, transfer pricing abuse, or offshore tax shelters.",
+      "domain_rule_set": "corporate_tax_avoidance_rules",
+      "default_lenses": [
+        "financial_forensic",
+        "asset_flow_mapping",
+        "regulatory_compliance"
+      ],
+      "aliases": [
+        "corporate-tax-avoidance",
+        "corporate tax avoidance",
+        "tax avoidance"
+      ]
+    },
+    {
+      "pipeline_id": "public_utility_monopoly_abuse",
+      "category": "market",
+      "description": "Cases involving public utility monopoly abuse, rate manipulation, or utility commission capture.",
+      "domain_rule_set": "public_utility_monopoly_abuse_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "financial_forensic",
+        "institutional_accountability"
+      ],
+      "aliases": [
+        "public-utility-monopoly-abuse",
+        "public utility monopoly abuse",
+        "utility monopoly"
+      ]
+    },
+    {
+      "pipeline_id": "algorithmic_discrimination",
+      "category": "market",
+      "description": "Cases involving algorithmic bias, AI discrimination, automated decision-making failures, or digital redlining.",
+      "domain_rule_set": "algorithmic_discrimination_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "regulatory_compliance",
+        "evidence_gap_detection",
+        "pattern_network"
+      ],
+      "aliases": [
+        "algorithmic-discrimination",
+        "algorithmic discrimination",
+        "ai bias",
+        "algorithmic bias"
+      ]
+    },
+    {
+      "pipeline_id": "environmental_violation",
+      "category": "environment",
+      "description": "Cases involving violations of environmental regulations, EPA enforcement actions, or permit violations.",
+      "domain_rule_set": "environmental_violation_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "institutional_accountability",
+        "agency_mapping",
+        "public_records_escalation"
+      ],
+      "aliases": [
+        "environmental-violation",
+        "environmental violation",
+        "epa violation"
+      ]
+    },
+    {
+      "pipeline_id": "water_contamination",
+      "category": "environment",
+      "description": "Cases involving water contamination, PFAS exposure, lead in water, or Safe Drinking Water Act violations.",
+      "domain_rule_set": "water_contamination_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "institutional_accountability",
+        "timeline_integrity",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "water-contamination",
+        "water contamination",
+        "water pollution",
+        "pfas"
+      ]
+    },
+    {
+      "pipeline_id": "public_health_risk",
+      "category": "environment",
+      "description": "Cases involving public health risks from environmental exposure, disease clusters, or community health threats.",
+      "domain_rule_set": "public_health_risk_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "systems_failure",
+        "evidence_gap_detection",
+        "pattern_network"
+      ],
+      "aliases": [
+        "public-health-risk",
+        "public health risk",
+        "health hazard"
+      ]
+    },
+    {
+      "pipeline_id": "community_harm",
+      "category": "environment",
+      "description": "Cases involving environmental justice, disproportionate pollution burden, or community-level environmental harm.",
+      "domain_rule_set": "community_harm_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "agency_mapping",
+        "pattern_network",
+        "public_records_escalation"
+      ],
+      "aliases": [
+        "community-harm",
+        "community harm",
+        "environmental justice"
+      ]
+    },
+    {
+      "pipeline_id": "land_use_dispute",
+      "category": "environment",
+      "description": "Cases involving zoning disputes, eminent domain, land use permit challenges, or environmental impact assessment failures.",
+      "domain_rule_set": "land_use_dispute_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "public_records_escalation"
+      ],
+      "aliases": [
+        "land-use-dispute",
+        "land use dispute",
+        "zoning dispute",
+        "eminent domain"
+      ]
+    },
+    {
+      "pipeline_id": "air_quality_violation",
+      "category": "environment",
+      "description": "Cases involving Clean Air Act violations, emissions exceedances, or air quality monitoring failures.",
+      "domain_rule_set": "air_quality_violation_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "institutional_accountability",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "air-quality-violation",
+        "air quality violation",
+        "air pollution"
+      ]
+    },
+    {
+      "pipeline_id": "industrial_noise_nuisance",
+      "category": "environment",
+      "description": "Cases involving industrial noise violations, nuisance claims, or failure to comply with noise ordinances.",
+      "domain_rule_set": "industrial_noise_nuisance_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "evidence_gap_detection",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "industrial-noise-nuisance",
+        "industrial noise nuisance",
+        "noise complaint"
+      ]
+    },
+    {
+      "pipeline_id": "toxic_exposure",
+      "category": "environment",
+      "description": "Cases involving toxic substance exposure, chemical spills, hazardous waste, or occupational exposure claims.",
+      "domain_rule_set": "toxic_exposure_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "institutional_accountability",
+        "timeline_integrity",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "toxic-exposure",
+        "toxic exposure",
+        "chemical exposure",
+        "hazardous waste"
+      ]
+    },
+    {
+      "pipeline_id": "wildfire_liability",
+      "category": "environment",
+      "description": "Cases involving wildfire liability, utility company negligence, evacuation failures, or fire prevention regulation violations.",
+      "domain_rule_set": "wildfire_liability_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "timeline_integrity",
+        "regulatory_compliance",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "wildfire-liability",
+        "wildfire liability",
+        "wildfire negligence"
+      ]
+    },
+    {
+      "pipeline_id": "immigration_case",
+      "category": "immigration",
+      "description": "General immigration cases including removal proceedings, visa disputes, or naturalization challenges.",
+      "domain_rule_set": "immigration_case_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "agency_mapping"
+      ],
+      "aliases": [
+        "immigration-case",
+        "immigration case",
+        "immigration",
+        "deportation"
+      ]
+    },
+    {
+      "pipeline_id": "asylum_claim",
+      "category": "immigration",
+      "description": "Cases involving asylum applications, credible fear interviews, withholding of removal, or Convention Against Torture claims.",
+      "domain_rule_set": "asylum_claim_rules",
+      "default_lenses": [
+        "safety_risk",
+        "trauma_informed",
+        "regulatory_compliance",
+        "evidence_gap_detection",
+        "narrative_reconstruction"
+      ],
+      "aliases": [
+        "asylum-claim",
+        "asylum claim",
+        "asylum",
+        "refugee claim"
+      ]
+    },
+    {
+      "pipeline_id": "detention_abuse",
+      "category": "immigration",
+      "description": "Cases involving abuse in immigration detention facilities, medical neglect, solitary confinement, or conditions of confinement.",
+      "domain_rule_set": "detention_abuse_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "vulnerable_population",
+        "systems_failure",
+        "regulatory_compliance"
+      ],
+      "aliases": [
+        "detention-abuse",
+        "detention abuse",
+        "ice detention",
+        "immigration detention"
+      ]
+    },
+    {
+      "pipeline_id": "immigration_benefits",
+      "category": "immigration",
+      "description": "Cases involving immigration benefit applications, adjustment of status, green card processing, or USCIS delays.",
+      "domain_rule_set": "immigration_benefits_rules",
+      "default_lenses": [
+        "procedural_timeliness",
+        "regulatory_compliance",
+        "agency_mapping"
+      ],
+      "aliases": [
+        "immigration-benefits",
+        "immigration benefits",
+        "green card",
+        "adjustment of status"
+      ]
+    },
+    {
+      "pipeline_id": "family_separation_case",
+      "category": "immigration",
+      "description": "Cases involving family separation at the border, reunification efforts, or zero-tolerance policy impacts.",
+      "domain_rule_set": "family_separation_case_rules",
+      "default_lenses": [
+        "safety_risk",
+        "vulnerable_population",
+        "institutional_accountability",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "family-separation-case",
+        "family separation case",
+        "family separation"
+      ]
+    },
+    {
+      "pipeline_id": "work_authorization_dispute",
+      "category": "immigration",
+      "description": "Cases involving work authorization disputes, EAD processing delays, or employer I-9 violations.",
+      "domain_rule_set": "work_authorization_dispute_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "work-authorization-dispute",
+        "work authorization dispute",
+        "ead dispute"
+      ]
+    },
+    {
+      "pipeline_id": "consular_processing_failure",
+      "category": "immigration",
+      "description": "Cases involving consular processing delays, visa refusals, or consular officer misconduct.",
+      "domain_rule_set": "consular_processing_failure_rules",
+      "default_lenses": [
+        "procedural_timeliness",
+        "agency_mapping",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "consular-processing-failure",
+        "consular processing failure",
+        "visa refusal"
+      ]
+    },
+    {
+      "pipeline_id": "emergency_safety",
+      "category": "public_safety",
+      "description": "General emergency safety situations requiring immediate assessment and resource coordination.",
+      "domain_rule_set": "emergency_safety_rules",
+      "default_lenses": [
+        "safety_risk",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "emergency-safety",
+        "emergency safety",
+        "emergency"
+      ]
+    },
+    {
+      "pipeline_id": "immediate_threat",
+      "category": "public_safety",
+      "description": "Cases involving immediate threats to personal safety requiring urgent intervention and documentation.",
+      "domain_rule_set": "immediate_threat_rules",
+      "default_lenses": [
+        "safety_risk",
+        "timeline_integrity",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "immediate-threat",
+        "immediate threat",
+        "urgent threat"
+      ]
+    },
+    {
+      "pipeline_id": "domestic_violence_emergency",
+      "category": "public_safety",
+      "description": "Emergency domestic violence situations requiring immediate safety planning and protective order documentation.",
+      "domain_rule_set": "domestic_violence_emergency_rules",
+      "default_lenses": [
+        "safety_risk",
+        "coercive_control_lens",
+        "trauma_informed",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "domestic-violence-emergency",
+        "domestic violence emergency",
+        "dv emergency"
+      ]
+    },
+    {
+      "pipeline_id": "missing_person",
+      "category": "public_safety",
+      "description": "Cases involving missing person investigations, including documentation of last known contacts and institutional response timelines.",
+      "domain_rule_set": "missing_person_rules",
+      "default_lenses": [
+        "safety_risk",
+        "timeline_integrity",
+        "agency_mapping",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "missing-person",
+        "missing person"
+      ]
+    },
+    {
+      "pipeline_id": "human_trafficking",
+      "category": "public_safety",
+      "description": "Cases involving human trafficking, labor trafficking, or sex trafficking, including victim identification and institutional response.",
+      "domain_rule_set": "human_trafficking_rules",
+      "default_lenses": [
+        "safety_risk",
+        "vulnerable_population",
+        "institutional_accountability",
+        "pattern_network",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "human-trafficking",
+        "human trafficking",
+        "trafficking"
+      ]
+    },
+    {
+      "pipeline_id": "child_endangerment",
+      "category": "public_safety",
+      "description": "Cases involving immediate child endangerment situations requiring urgent protective intervention.",
+      "domain_rule_set": "child_endangerment_rules",
+      "default_lenses": [
+        "safety_risk",
+        "vulnerable_population",
+        "systems_failure",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "child-endangerment",
+        "child endangerment"
+      ]
+    },
+    {
+      "pipeline_id": "public_health_emergency",
+      "category": "public_safety",
+      "description": "Cases involving public health emergencies, pandemic response failures, or quarantine disputes.",
+      "domain_rule_set": "public_health_emergency_rules",
+      "default_lenses": [
+        "institutional_accountability",
+        "regulatory_compliance",
+        "systems_failure",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "public-health-emergency",
+        "public health emergency"
+      ]
+    },
+    {
+      "pipeline_id": "environmental_hazard",
+      "category": "public_safety",
+      "description": "Cases involving immediate environmental hazards requiring emergency response, evacuation, or remediation.",
+      "domain_rule_set": "environmental_hazard_rules",
+      "default_lenses": [
+        "safety_risk",
+        "institutional_accountability",
+        "regulatory_compliance",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "environmental-hazard",
+        "environmental hazard"
+      ]
+    },
+    {
+      "pipeline_id": "disaster_relief_denial",
+      "category": "public_safety",
+      "description": "Cases involving denial of disaster relief benefits, FEMA disputes, or emergency assistance failures.",
+      "domain_rule_set": "disaster_relief_denial_rules",
+      "default_lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "agency_mapping",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "disaster-relief-denial",
+        "disaster relief denial",
+        "fema denial"
+      ]
+    },
+    {
+      "pipeline_id": "emergency_shelter_access",
+      "category": "public_safety",
+      "description": "Cases involving denial of emergency shelter access, shelter condition complaints, or emergency housing failures.",
+      "domain_rule_set": "emergency_shelter_access_rules",
+      "default_lenses": [
+        "safety_risk",
+        "regulatory_compliance",
+        "systems_failure"
+      ],
+      "aliases": [
+        "emergency-shelter-access",
+        "emergency shelter access",
+        "shelter denial"
+      ]
+    },
+    {
+      "pipeline_id": "missing_vulnerable_adult",
+      "category": "public_safety",
+      "description": "Cases involving missing vulnerable adults, including elderly individuals with dementia or adults with disabilities.",
+      "domain_rule_set": "missing_vulnerable_adult_rules",
+      "default_lenses": [
+        "safety_risk",
+        "vulnerable_population",
+        "timeline_integrity",
+        "agency_mapping"
+      ],
+      "aliases": [
+        "missing-vulnerable-adult",
+        "missing vulnerable adult",
+        "silver alert"
+      ]
+    },
+    {
+      "pipeline_id": "general_investigation",
+      "category": "general",
+      "description": "General investigation cases that do not fit a specific domain category.",
+      "domain_rule_set": "general_investigation_rules",
+      "default_lenses": [
+        "narrative_reconstruction",
+        "timeline_integrity",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "general-investigation",
+        "general investigation",
+        "investigation"
+      ]
+    },
+    {
+      "pipeline_id": "personal_case",
+      "category": "general",
+      "description": "Personal investigation cases involving individual matters that span multiple domains.",
+      "domain_rule_set": "personal_case_rules",
+      "default_lenses": [
+        "narrative_reconstruction",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "personal-case",
+        "personal case",
+        "personal"
+      ]
+    },
+    {
+      "pipeline_id": "community_case",
+      "category": "general",
+      "description": "Community-level investigation cases involving collective action or community-wide issues.",
+      "domain_rule_set": "community_case_rules",
+      "default_lenses": [
+        "pattern_network",
+        "agency_mapping",
+        "narrative_reconstruction"
+      ],
+      "aliases": [
+        "community-case",
+        "community case",
+        "community"
+      ]
+    },
+    {
+      "pipeline_id": "cross_border_jurisdiction_dispute",
+      "category": "general",
+      "description": "Cases involving jurisdictional disputes across state or national borders, choice of law issues, or multi-jurisdiction proceedings.",
+      "domain_rule_set": "cross_border_jurisdiction_dispute_rules",
+      "default_lenses": [
+        "agency_mapping",
+        "regulatory_compliance",
+        "procedural_timeliness"
+      ],
+      "aliases": [
+        "cross-border-jurisdiction-dispute",
+        "cross border jurisdiction dispute",
+        "jurisdiction dispute"
+      ]
+    },
+    {
+      "pipeline_id": "multi_party_community_action",
+      "category": "general",
+      "description": "Cases involving multi-party community actions, class action support, or collective advocacy documentation.",
+      "domain_rule_set": "multi_party_community_action_rules",
+      "default_lenses": [
+        "pattern_network",
+        "agency_mapping",
+        "narrative_reconstruction",
+        "public_records_escalation"
+      ],
+      "aliases": [
+        "multi-party-community-action",
+        "multi party community action",
+        "class action"
+      ]
+    },
+    {
+      "pipeline_id": "other",
+      "category": "general",
+      "description": "Cases that do not fit any defined pipeline category. Used as a catch-all for unclassified matters.",
+      "domain_rule_set": "other_rules",
+      "default_lenses": [
+        "narrative_reconstruction",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "unclassified",
+        "miscellaneous"
+      ]
+    },
+    {
+      "pipeline_id": "lgbtq_discrimination",
+      "category": "lgbtq_rights",
+      "description": "Employment, housing, public accommodation, and service discrimination based on sexual orientation or gender identity",
+      "domain_rule_set": "civil_rights",
+      "default_lenses": [
+        "institutional_accountability",
+        "pattern_network"
+      ],
+      "aliases": [
+        "lgbt_discrimination",
+        "sogi_discrimination"
+      ]
+    },
+    {
+      "pipeline_id": "conversion_therapy_harm",
+      "category": "lgbtq_rights",
+      "description": "Documenting harm from conversion therapy practices including licensed and unlicensed providers",
+      "domain_rule_set": "medical_harm",
+      "default_lenses": [
+        "vulnerable_population",
+        "institutional_accountability"
+      ],
+      "aliases": [
+        "conversion_therapy",
+        "reparative_therapy"
+      ]
+    },
+    {
+      "pipeline_id": "gender_marker_change",
+      "category": "lgbtq_rights",
+      "description": "Legal name and gender marker changes across identity documents, court orders, and government records",
+      "domain_rule_set": "administrative",
+      "default_lenses": [
+        "procedural_timeliness",
+        "regulatory_compliance"
+      ],
+      "aliases": [
+        "name_change_gender",
+        "gender_identity_documents"
+      ]
+    },
+    {
+      "pipeline_id": "lgbtq_healthcare_denial",
+      "category": "lgbtq_rights",
+      "description": "Denial of gender-affirming care, hormone therapy, surgical procedures, or mental health services",
+      "domain_rule_set": "insurance_denial",
+      "default_lenses": [
+        "billing_integrity",
+        "institutional_accountability"
+      ],
+      "aliases": [
+        "trans_healthcare_denial",
+        "gender_affirming_care_denial"
+      ]
+    },
+    {
+      "pipeline_id": "lgbtq_family_recognition",
+      "category": "lgbtq_rights",
+      "description": "Same-sex marriage recognition, adoption rights, parental rights, and family formation legal challenges",
+      "domain_rule_set": "family_law",
+      "default_lenses": [
+        "institutional_accountability",
+        "regulatory_compliance"
+      ],
+      "aliases": [
+        "same_sex_family",
+        "lgbtq_adoption",
+        "lgbtq_parental_rights"
+      ]
+    },
+    {
+      "pipeline_id": "lgbtq_housing_discrimination",
+      "category": "lgbtq_rights",
+      "description": "Housing discrimination based on sexual orientation or gender identity including rental, purchase, and shelter access",
+      "domain_rule_set": "housing",
+      "default_lenses": [
+        "pattern_network",
+        "institutional_accountability"
+      ],
+      "aliases": [
+        "lgbtq_housing",
+        "sogi_housing_discrimination"
+      ]
+    },
+    {
+      "pipeline_id": "lgbtq_workplace_harassment",
+      "category": "lgbtq_rights",
+      "description": "Workplace harassment, hostile environment, and retaliation based on sexual orientation or gender identity",
+      "domain_rule_set": "employment",
+      "default_lenses": [
+        "pattern_network",
+        "coercive_control"
+      ],
+      "aliases": [
+        "lgbtq_workplace",
+        "sogi_workplace_harassment"
+      ]
+    },
+    {
+      "pipeline_id": "lgbtq_youth_protection",
+      "category": "lgbtq_rights",
+      "description": "Protection of LGBTQ+ youth in schools, foster care, juvenile justice, and family rejection situations",
+      "domain_rule_set": "child_welfare",
+      "default_lenses": [
+        "vulnerable_population",
+        "systems_failure"
+      ],
+      "aliases": [
+        "lgbtq_youth",
+        "lgbtq_minor_protection"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "category": "mental_health",
+      "description": "Cases involving involuntary psychiatric holds (5150, Baker Act, emergency petitions), commitment hearings, and legal basis challenges. For people who were placed on a hold and never understood why or whether it was legal.",
+      "domain_rule_set": "mental_health_civil_commitment",
+      "default_lenses": [
+        "mental_health",
+        "trauma_informed",
+        "institutional_accountability",
+        "timeline_integrity",
+        "evidence_gap_detection"
+      ],
+      "aliases": [
+        "involuntary hold",
+        "5150",
+        "baker act",
+        "psychiatric hold",
+        "involuntary commitment",
+        "emergency petition",
+        "72 hour hold",
+        "civil commitment",
+        "forced hospitalization"
+      ]
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "category": "mental_health",
+      "description": "Cases involving harmful medication combinations, excessive prescribing, drug interactions, medication mismanagement, and pharmaceutical accountability. For people prescribed so many medications simultaneously that no human being could track the interactions \u2014 and who were harmed by it.",
+      "domain_rule_set": "mental_health_medication",
+      "default_lenses": [
+        "mental_health",
+        "medical",
+        "billing_integrity",
+        "institutional_accountability",
+        "timeline_integrity"
+      ],
+      "aliases": [
+        "polypharmacy",
+        "overmedication",
+        "medication harm",
+        "drug interactions",
+        "psychiatric medication",
+        "too many medications",
+        "medication mismanagement",
+        "prescriber negligence"
+      ]
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "category": "mental_health",
+      "description": "Cases involving inadequate discharge planning, no follow-up care, no transition support, and abandonment after release from psychiatric facilities. For people who were discharged with no plan, no follow-up, and no explanation.",
+      "domain_rule_set": "mental_health_continuity",
+      "default_lenses": [
+        "mental_health",
+        "systems_failure",
+        "evidence_gap_detection",
+        "timeline_integrity",
+        "narrative_reconstruction"
+      ],
+      "aliases": [
+        "discharge failure",
+        "no discharge plan",
+        "abandoned after release",
+        "no follow up",
+        "psychiatric discharge",
+        "dumped from hospital",
+        "released without plan"
+      ]
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "category": "mental_health",
+      "description": "Cases involving family members excluded from care decisions, denied information, denied visitation, or left without tools or rights while watching a loved one disappear into the system. For families who had no roadmap.",
+      "domain_rule_set": "mental_health_family_rights",
+      "default_lenses": [
+        "mental_health",
+        "vulnerable_population",
+        "systems_failure",
+        "narrative_reconstruction",
+        "agency_mapping"
+      ],
+      "aliases": [
+        "family excluded",
+        "family rights mental health",
+        "hipaa barrier",
+        "cant get information",
+        "family shut out",
+        "no one will tell me anything",
+        "loved one in psych ward",
+        "watching them disappear"
+      ]
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "category": "mental_health",
+      "description": "Cases involving physical restraint, chemical restraint, seclusion rooms, forced injection, and use of force in psychiatric settings. For people who experienced restraint, seclusion, or forced injection and have nowhere to put that story.",
+      "domain_rule_set": "mental_health_use_of_force",
+      "default_lenses": [
+        "mental_health",
+        "safety_risk",
+        "trauma_informed",
+        "institutional_accountability",
+        "timeline_integrity",
+        "pattern_network"
+      ],
+      "aliases": [
+        "restraint",
+        "seclusion",
+        "forced injection",
+        "chemical restraint",
+        "physical restraint",
+        "tied down",
+        "locked in room",
+        "forced medication",
+        "use of force psychiatric"
+      ]
+    },
+    {
+      "pipeline_id": "record_correction",
+      "category": "mental_health",
+      "description": "Cases involving medical record amendment, psychiatric record correction, misdiagnosis documentation, and restoring a person's narrative after institutional distortion. For people who are now out \u2014 and need their record corrected, their voice restored, and their experience documented before it disappears.",
+      "domain_rule_set": "mental_health_records",
+      "default_lenses": [
+        "mental_health",
+        "provenance",
+        "narrative_reconstruction",
+        "evidence_gap_detection",
+        "institutional_accountability"
+      ],
+      "aliases": [
+        "record correction",
+        "medical record amendment",
+        "fix my records",
+        "wrong diagnosis",
+        "misdiagnosis",
+        "psychiatric records",
+        "amend medical records",
+        "correct my chart"
+      ]
+    },
+    {
+      "pipeline_id": "complaint_filing",
+      "label": "Complaint Filing",
+      "category": "general",
+      "description": "Assistance with filing complaints against government agencies, businesses, or professionals.",
+      "icon": "FileText"
+    },
+    {
+      "pipeline_id": "document_review",
+      "label": "Document Review",
+      "category": "general",
+      "description": "Review and analysis of legal documents including contracts, agreements, and court filings.",
+      "icon": "FileText"
+    },
+    {
+      "pipeline_id": "general_legal_question",
+      "label": "General Legal Question",
+      "category": "general",
+      "description": "General legal questions that don't fit a specific pipeline category.",
+      "icon": "FileText"
+    },
+    {
+      "pipeline_id": "legal_research",
+      "label": "Legal Research",
+      "category": "general",
+      "description": "Legal research assistance including case law, statutes, regulations, and legal analysis.",
+      "icon": "FileText"
+    },
+    {
+      "pipeline_id": "pro_se_assistance",
+      "label": "Pro Se Assistance",
+      "category": "general",
+      "description": "Assistance for self-represented litigants including court forms, procedures, and navigation.",
+      "icon": "FileText"
+    },
+    {
+      "pipeline_id": "records_request",
+      "label": "Records Request",
+      "category": "general",
+      "description": "Public records requests, FOIA filings, or government transparency inquiries.",
+      "icon": "FileText"
+    }
+  ]
+}

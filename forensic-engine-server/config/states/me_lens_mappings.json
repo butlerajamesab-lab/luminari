@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "state": "ME",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "me_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "me_maine_state_housing_authority_mainehousi",
+        "me_pine_tree_legal_assistance_statewide",
+        "me_maine_dv_hotline_maine_cdvsa"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "me_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "me_maine_aspire_tanf_dhhs",
+        "me_maine_ui_mdol",
+        "me_maine_liheap_heap_heating_dhhs",
+        "me_maine_veterans_services_bvs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "me_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "me_new_mainers_resource_center_irc_portland"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "me_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "me_mainecare_maine_medicaid_dhhs",
+        "me_maine_medical_center_mercy_hospital_port",
+        "me_maine_primary_care_association_fqhcs",
+        "me_wabanaki_nations_ihs_and_tribal_health_p"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "me_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "me_maine_snap_food_supplement_program_dhhs",
+        "me_good_shepherd_food_bank_preble_street_ma",
+        "me_wic_maine"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "me_lens_aging",
+      "lens_type": "aging",
+      "programs": [
+        "me_maine_office_of_elder_services_oes"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    }
+  ]
+}

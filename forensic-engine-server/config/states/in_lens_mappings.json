@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "state": "IN",
+    "version": "3.0"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "housing",
+      "activation_pipelines": [
+        "tenant_rights",
+        "tenant_rights"
+      ],
+      "state_parameters": {
+        "state": "IN"
+      },
+      "county_lens_overrides": [],
+      "priority_boost": 1.0
+    },
+    {
+      "lens_id": "workplace",
+      "activation_pipelines": [
+        "wage_theft",
+        "workplace_discrimination"
+      ],
+      "state_parameters": {
+        "state": "IN"
+      },
+      "county_lens_overrides": [],
+      "priority_boost": 1.0
+    },
+    {
+      "lens_id": "consumer",
+      "activation_pipelines": [
+        "benefits_denial",
+        "snap_denial",
+        "medicaid_denial"
+      ],
+      "state_parameters": {
+        "state": "IN"
+      },
+      "county_lens_overrides": [],
+      "priority_boost": 1.0
+    },
+    {
+      "lens_id": "insurance",
+      "activation_pipelines": [
+        "health_insurance_denial",
+        "insurance_claim_denial"
+      ],
+      "state_parameters": {
+        "state": "IN"
+      },
+      "county_lens_overrides": [],
+      "priority_boost": 1.0
+    }
+  ]
+}

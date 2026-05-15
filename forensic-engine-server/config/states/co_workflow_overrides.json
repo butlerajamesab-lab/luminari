@@ -1,0 +1,166 @@
+{
+  "meta": {
+    "state": "CO",
+    "version": "3.0"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "housing_violation",
+      "state": "CO",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document all violations with photographs and save all communications.",
+          "deadline": "",
+          "documents": [
+            "Dated photos of violations",
+            "All communications with the landlord",
+            "Lease agreement",
+            "Written repair notice and certified mail receipt",
+            "Written complaint to code enforcement"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Send a written repair notice to the landlord via certified mail.",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File a complaint with the local code enforcement agency.",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Contact legal aid for eviction triage.",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft",
+      "state": "CO",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document all wages owed, including pay stubs and time records.",
+          "deadline": "",
+          "documents": [
+            "Pay stubs",
+            "Time records",
+            "Offer letter",
+            "Written wage demand"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Send a formal written wage demand to the employer.",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File a wage complaint with the Colorado Division of Labor Standards and Statistics (DLSS).",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "File a complaint with the federal Wage and Hour Division (WHD) simultaneously.",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial",
+      "state": "CO",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Review the Notice of Action carefully.",
+          "deadline": "",
+          "documents": [
+            "Notice of Action",
+            "Case number",
+            "Written hearing request",
+            "Denial notice and employment records for UI appeals"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Request a fair hearing and aid-continuing within the specified deadline.",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "Contact legal aid for assistance.",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "For UI appeals, file with the CDLE Office of Appeals within 20 days.",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_denial",
+      "state": "CO",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document the denial with the denial letter, plan documents, and medical records.",
+          "deadline": "",
+          "documents": [
+            "Denial letter/EOB",
+            "Plan documents",
+            "Medical records",
+            "Physician letter of medical necessity",
+            "Written appeal"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "File an internal appeal with the insurer within 180 days (90 days for Medicaid managed care).",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "Request an external review from the Colorado Division of Insurance.",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "For Health First Colorado denials, request a fair hearing with the CDHS Office of Appeals.",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    }
+  ]
+}

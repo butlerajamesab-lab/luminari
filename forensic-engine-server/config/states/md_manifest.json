@@ -1,0 +1,59 @@
+{
+  "state": "MD",
+  "state_name": "Maryland",
+  "version": "2.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-08",
+  "source": "luminari-md-registry.docx",
+  "datasets": [
+    "cash_assistance",
+    "general",
+    "legal",
+    "healthcare",
+    "food",
+    "housing",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "disability_claim",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "utility_dispute",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "insurer",
+    "general",
+    "landlord",
+    "consumer"
+  ],
+  "policy_flags": [],
+  "statistics": {
+    "total_programs": 15,
+    "total_oversight_chains": 5,
+    "total_oversight_bodies": 11,
+    "total_flags": 0
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "food",
+    "general"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ]
+}

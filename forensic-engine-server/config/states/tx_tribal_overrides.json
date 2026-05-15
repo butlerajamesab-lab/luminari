@@ -1,0 +1,64 @@
+{
+  "tribal_entities": [
+    {
+      "tribal_entity_id": "tx_tribal_0",
+      "tribal_entity_name": "Alabama-Coushatta Tribe Social Services",
+      "coverage": "livingston",
+      "phone": "936-563-1100",
+      "portal": "https://alabama-coushatta.com",
+      "street_address": "571 State Park Rd 56",
+      "city": "Livingston",
+      "state_code": "TX",
+      "zip": "77351",
+      "services": []
+    },
+    {
+      "tribal_entity_id": "tx_tribal_1",
+      "tribal_entity_name": "Kickapoo Traditional Tribe Social Services",
+      "coverage": "eagle_pass",
+      "phone": "830-773-2105",
+      "portal": "https://kickapootraditionaltribe.com",
+      "street_address": "HC 1 Box 9700",
+      "city": "Eagle Pass",
+      "state_code": "TX",
+      "zip": "78852",
+      "services": []
+    }
+  ],
+  "urban_indian_programs": [],
+  "meta": {
+    "state": "TX",
+    "version": "3.0"
+  },
+  "tribal_context": {
+    "state": "TX",
+    "icwa_activation_rules": [],
+    "tribal_entities": [
+      {
+        "tribal_entity_id": "tx_tribal_0",
+        "tribal_entity_name": "Alabama-Coushatta Tribe Social Services",
+        "coverage": "livingston",
+        "phone": "936-563-1100",
+        "portal": "https://alabama-coushatta.com",
+        "street_address": "571 State Park Rd 56",
+        "city": "Livingston",
+        "state_code": "TX",
+        "zip": "77351",
+        "services": []
+      },
+      {
+        "tribal_entity_id": "tx_tribal_1",
+        "tribal_entity_name": "Kickapoo Traditional Tribe Social Services",
+        "coverage": "eagle_pass",
+        "phone": "830-773-2105",
+        "portal": "https://kickapootraditionaltribe.com",
+        "street_address": "HC 1 Box 9700",
+        "city": "Eagle Pass",
+        "state_code": "TX",
+        "zip": "78852",
+        "services": []
+      }
+    ],
+    "urban_indian_programs": []
+  }
+}

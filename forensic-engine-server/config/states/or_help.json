@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "state": "OR",
+    "state_name": "Oregon",
+    "layer": "navigation_contacts",
+    "version": "2.0.0",
+    "last_updated": "2026-03-09",
+    "source": "Legal Aid Services of Oregon (LASO) \u2014 lasoregon.org"
+  },
+  "routing_index": [
+    {
+      "contact_name": "LASO Public Benefits Hotline",
+      "role": "Benefits legal help (SSI, SNAP, TANF)",
+      "phone": "800-520-5292",
+      "website": "https://lasoregon.org",
+      "notes": "Statewide hotline for government assistance programs"
+    },
+    {
+      "contact_name": "LASO Eviction Defense Project",
+      "role": "Eviction defense legal help",
+      "phone": "888-585-9638",
+      "website": "https://lasoregon.org",
+      "notes": "Have court case number and hearing date ready before calling"
+    },
+    {
+      "contact_name": "LASO Farmworker Program",
+      "role": "Agricultural worker legal services",
+      "phone": "800-662-6096",
+      "website": "https://lasoregon.org",
+      "notes": "Employment, housing, civil rights for agricultural workers statewide"
+    },
+    {
+      "contact_name": "NAPOLS \u2014 Native American Program (LASO)",
+      "role": "Indian rights / tribal legal services",
+      "phone": "503-223-9483",
+      "website": "https://lasoregon.org",
+      "notes": "Nationally recognized since 1979 \u2014 legal services for tribes, groups, and individuals"
+    },
+    {
+      "contact_name": "LASO Statewide Tax Clinic",
+      "role": "IRS disputes / tax debt resolution",
+      "phone": "503-295-9499",
+      "website": "https://lasoregon.org",
+      "notes": "Offer in Compromise, installment agreements, Tax Court representation, innocent spouse relief"
+    },
+    {
+      "contact_name": "LASO Main Office (Portland)",
+      "role": "Central legal aid office",
+      "phone": "503-224-4086",
+      "website": "https://lasoregon.org",
+      "notes": "Family law (DV), housing, benefits, senior law, consumer, employment, civil rights"
+    },
+    {
+      "contact_name": "Pro Bono Oregon",
+      "role": "Volunteer attorney matching",
+      "phone": "",
+      "website": "https://probonooregon.org",
+      "notes": "Connects low-income Oregonians with volunteer attorneys through LASO regional offices"
+    },
+    {
+      "contact_name": "Oregon State Bar Lawyer Referral",
+      "role": "Attorney referral service",
+      "phone": "503-684-3763",
+      "website": "https://www.osbar.org/public/ris/",
+      "notes": "Oregon State Bar referral service"
+    },
+    {
+      "contact_name": "Oregon Law Foundation",
+      "role": "Legal aid funding / IOLTA",
+      "phone": "",
+      "website": "https://oregonlawfoundation.org",
+      "notes": "Funds legal aid through IOLTA interest \u2014 partner of LASO"
+    },
+    {
+      "contact_name": "Oregon Law Help",
+      "role": "Self-help legal information",
+      "phone": "",
+      "website": "https://oregonlawhelp.org",
+      "notes": "Free legal information for low-income Oregonians \u2014 child support, housing, benefits"
+    },
+    {
+      "contact_name": "Oregon Judicial Department",
+      "role": "Court system information",
+      "phone": "503-986-5500",
+      "website": "https://www.courts.oregon.gov",
+      "notes": "Court forms, case lookup, child support information"
+    },
+    {
+      "contact_name": "211 Oregon",
+      "role": "General resource referral",
+      "phone": "211",
+      "website": "https://211info.org",
+      "notes": "Statewide referral for food, housing, healthcare, and other social services"
+    }
+  ]
+}

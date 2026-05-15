@@ -1,0 +1,428 @@
+{
+  "meta": {
+    "state": "ID",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "id_idaho_medicaid",
+      "program_name": "Idaho Medicaid",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Idaho Medicaid",
+      "phone": "877-456-1233",
+      "website": "https://healthandwelfare.idaho.gov",
+      "eligibility": "Adults 19\u201364 \u2264138% FPL; children \u2264185% FPL; elderly/disabled on SSI",
+      "apply_notes": "Idaho expanded Medicaid July 2020 via Proposition 2 (2018 ballot). Covers adults 19\u201364 up to 138% FPL. Managed through IDHW.",
+      "source": "luminari-idaho-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ID",
+      "federal_interface": false
+    },
+    {
+      "program_id": "id_idaho_chip_chipping_in",
+      "program_name": "Idaho CHIP (CHIPping In)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "Idaho CHIP",
+      "phone": "877-456-1233",
+      "website": "https://healthandwelfare.idaho.gov",
+      "eligibility": "Children under 19; income 138\u2013185% FPL",
+      "apply_notes": "Children's health coverage for families above Medicaid threshold. Low or no premiums.",
+      "source": "luminari-idaho-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ID",
+      "federal_interface": false
+    },
+    {
+      "program_id": "id_idaho_snap_food_stamps",
+      "program_name": "Idaho SNAP (Food Stamps)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial",
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "Idaho SNAP",
+      "phone": "877-456-1233",
+      "website": "https://healthandwelfare.idaho.gov",
+      "eligibility": "Income \u2264130% FPL; work requirements for able-bodied adults 18\u201349",
+      "apply_notes": "SNAP benefits through Idaho Department of Health and Welfare. Apply at local IDHW office or online.",
+      "source": "luminari-idaho-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ID",
+      "federal_interface": false
+    },
+    {
+      "program_id": "id_idaho_tanf_temporary_assistance_for_fami",
+      "program_name": "Idaho TANF (Temporary Assistance for Families)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Idaho TANF",
+      "phone": "877-456-1233",
+      "website": "https://healthandwelfare.idaho.gov",
+      "eligibility": "Families with minor children; Idaho residency; income and asset limits",
+      "apply_notes": "Cash assistance up to $309/month (family of 3). 24-month state limit (more restrictive than federal 60-month). Work requirements apply.",
+      "source": "luminari-idaho-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "ID",
+      "federal_interface": false
+    },
+    {
+      "program_id": "id_idaho_unemployment_insurance",
+      "program_name": "Idaho Unemployment Insurance",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "employment_dispute"
+      ],
+      "agency": "Idaho Unemployment Insurance",
+      "phone": "208-332-3570",
+      "website": "https://labor.idaho.gov",
+      "eligibility": "Involuntary separation; base period earnings required",
+      "apply_notes": "UI: max $448/week. Duration up to 26 weeks. Administered by Idaho Department of Labor.",
+      "source": "luminari-idaho-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ID",
+      "federal_interface": false
+    },
+    {
+      "program_id": "id_idaho_housing_and_finance_association_ih",
+      "program_name": "Idaho Housing and Finance Association (IHFA)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Idaho Housing and Finance Association",
+      "phone": "877-427-3432",
+      "website": "https://idahohousing.com",
+      "eligibility": "Income-based; varies by program",
+      "apply_notes": "Affordable housing, Section 8 vouchers, homebuyer assistance, rental assistance. Fast-growing Boise creates demand spike.",
+      "source": "luminari-idaho-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "ID",
+      "federal_interface": false
+    },
+    {
+      "program_id": "id_wic_idaho",
+      "program_name": "WIC Idaho",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "WIC Idaho",
+      "phone": "208-334-5945",
+      "website": "https://healthandwelfare.idaho.gov/wic",
+      "eligibility": "Pregnant/postpartum women, infants, children under 5; income \u2264185% FPL",
+      "apply_notes": "Women, Infants and Children nutrition program through Idaho Dept. of Health and Welfare.",
+      "source": "luminari-idaho-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ID",
+      "federal_interface": false
+    },
+    {
+      "program_id": "id_idaho_child_care_assistance",
+      "program_name": "Idaho Child Care Assistance",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "Idaho Child Care Assistance",
+      "phone": "877-456-1233",
+      "website": "https://healthandwelfare.idaho.gov",
+      "eligibility": "Working families; income \u2264130% FPL; children under 13",
+      "apply_notes": "Subsidized childcare for working low-income families through IDHW.",
+      "source": "luminari-idaho-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "ID",
+      "federal_interface": false
+    },
+    {
+      "program_id": "id_idaho_tribal_nations_programs",
+      "program_name": "Idaho Tribal Nations Programs",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "housing_dispute"
+      ],
+      "agency": "Idaho Tribal Nations Programs",
+      "phone": "",
+      "website": "https://bia.gov/regional-offices/northwest",
+      "eligibility": "Tribal enrollment; IHS service area residency",
+      "apply_notes": "Five federally recognized tribes (Coeur d'Alene, Nez Perce, Shoshone-Bannock, Shoshone-Paiute, Kootenai) provide independent social, health, and housing services. IHS facilities: Benewah Medical Center, Nez Perce Service Unit, Fort Hall Service Unit.",
+      "source": "luminari-idaho-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ID",
+      "federal_interface": false
+    },
+    {
+      "program_id": "id_idaho_commission_for_aging_icoa",
+      "program_name": "Idaho Commission for Aging (ICOA)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Idaho Commission for Aging",
+      "phone": "208-334-3833",
+      "website": "https://aging.idaho.gov",
+      "eligibility": "Adults 60+; low-income priority",
+      "apply_notes": "Services for adults 60+: Meals on Wheels, home care, transportation, caregiver support. Area Agencies on Aging in each region.",
+      "source": "luminari-idaho-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "ID",
+      "federal_interface": false
+    },
+    {
+      "program_id": "id_idaho_vocational_rehabilitation_idvr",
+      "program_name": "Idaho Vocational Rehabilitation (IDVR)",
+      "layer": "state",
+      "benefit_category": "employment",
+      "pipeline_ids": [
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "Idaho Vocational Rehabilitation",
+      "phone": "800-856-2720",
+      "website": "https://vr.idaho.gov",
+      "eligibility": "Documented disability; employment goal",
+      "apply_notes": "Employment services, job training, and placement for people with disabilities.",
+      "source": "luminari-idaho-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "employment"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "employment"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "employment",
+      "city": "",
+      "state": "ID",
+      "federal_interface": false
+    },
+    {
+      "program_id": "id_idaho_legal_aid_services",
+      "program_name": "Idaho Legal Aid Services",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute",
+        "consumer_protection"
+      ],
+      "agency": "Idaho Legal Aid Services",
+      "phone": "208-746-7541",
+      "website": "https://idaholegalaid.org",
+      "eligibility": "Income \u2264125% FPL",
+      "apply_notes": "Free civil legal aid. Housing, family, consumer, benefits, domestic violence, immigration.",
+      "source": "luminari-idaho-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "ID",
+      "federal_interface": false
+    },
+    {
+      "program_id": "id_idaho_department_of_health_and_welfare_b",
+      "program_name": "Idaho Department of Health and Welfare \u2013 Behavioral Health",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "Idaho Department of Health and Welfare \u2013 Behavioral Health",
+      "phone": "208-334-5700",
+      "website": "https://healthandwelfare.idaho.gov",
+      "eligibility": "All residents; Medicaid accepted; sliding scale",
+      "apply_notes": "Mental health and substance use services through regional behavioral health agencies. Crisis line: 988.",
+      "source": "luminari-idaho-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ID",
+      "federal_interface": false
+    },
+    {
+      "program_id": "id_liheap_idaho",
+      "program_name": "LIHEAP Idaho",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "LIHEAP Idaho",
+      "phone": "208-334-3318",
+      "website": "https://healthandwelfare.idaho.gov",
+      "eligibility": "Income \u2264150% FPL",
+      "apply_notes": "Home energy bill assistance through community action agencies.",
+      "source": "luminari-idaho-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "ID",
+      "federal_interface": false
+    }
+  ]
+}

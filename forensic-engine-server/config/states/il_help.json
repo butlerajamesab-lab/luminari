@@ -1,0 +1,178 @@
+{
+  "meta": {
+    "state": "IL",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "One-Stop Benefits (SNAP, Medicaid, TANF)",
+      "role": "Benefits application",
+      "phone": "800-843-6154",
+      "email": null,
+      "hours": null,
+      "specialty": "SNAP, Medicaid, TANF"
+    },
+    {
+      "contact_name": "211 Illinois",
+      "role": "General information and referral",
+      "phone": "211",
+      "email": null,
+      "hours": "24/7",
+      "specialty": "General information and referral"
+    },
+    {
+      "contact_name": "Legal Aid Chicago (Cook County)",
+      "role": "Legal assistance",
+      "phone": "312-341-1070",
+      "email": null,
+      "hours": null,
+      "specialty": "Civil legal aid"
+    },
+    {
+      "contact_name": "Prairie State Legal Services (North/Central IL)",
+      "role": "Legal assistance",
+      "phone": "800-531-7057",
+      "email": null,
+      "hours": null,
+      "specialty": "Civil legal aid"
+    },
+    {
+      "contact_name": "Land of Lincoln Legal Aid (Southern IL)",
+      "role": "Legal assistance",
+      "phone": "217-525-3900",
+      "email": null,
+      "hours": null,
+      "specialty": "Civil legal aid"
+    },
+    {
+      "contact_name": "ILAO Self-Help Portal",
+      "role": "Legal self-help",
+      "phone": null,
+      "email": null,
+      "hours": null,
+      "specialty": "Legal information and forms"
+    },
+    {
+      "contact_name": "IL DHS Fair Hearings",
+      "role": "Benefits appeals",
+      "phone": "800-435-0774",
+      "email": null,
+      "hours": null,
+      "specialty": "Public benefits fair hearings"
+    },
+    {
+      "contact_name": "IDES (UI Appeals)",
+      "role": "Unemployment appeals",
+      "phone": "800-244-5631",
+      "email": null,
+      "hours": null,
+      "specialty": "Unemployment insurance appeals"
+    },
+    {
+      "contact_name": "IL DOL (Wage Complaints)",
+      "role": "Wage and hour enforcement",
+      "phone": "312-793-2800",
+      "email": null,
+      "hours": null,
+      "specialty": "Wage and hour complaints"
+    },
+    {
+      "contact_name": "Chicago OLS (City Wage)",
+      "role": "Wage and hour enforcement",
+      "phone": "312-744-9083",
+      "email": null,
+      "hours": null,
+      "specialty": "Chicago wage and labor standards"
+    },
+    {
+      "contact_name": "IDHR (Discrimination)",
+      "role": "Discrimination complaints",
+      "phone": "312-814-6200",
+      "email": null,
+      "hours": null,
+      "specialty": "Discrimination (housing, employment, etc.)"
+    },
+    {
+      "contact_name": "CCHR (Chicago Discrimination)",
+      "role": "Discrimination complaints",
+      "phone": "312-744-4111",
+      "email": null,
+      "hours": null,
+      "specialty": "Discrimination (Chicago)"
+    },
+    {
+      "contact_name": "IL DOI (Insurance Complaints / IMR)",
+      "role": "Insurance regulation",
+      "phone": "877-527-9431",
+      "email": null,
+      "hours": null,
+      "specialty": "Insurance complaints and independent medical review"
+    },
+    {
+      "contact_name": "Greater Chicago Food Depository",
+      "role": "Food assistance",
+      "phone": "773-247-3663",
+      "email": null,
+      "hours": null,
+      "specialty": "Food bank and SNAP outreach"
+    },
+    {
+      "contact_name": "CEDA LIHEAP (Cook County Energy)",
+      "role": "Energy assistance",
+      "phone": "773-292-4980",
+      "email": null,
+      "hours": null,
+      "specialty": "LIHEAP and energy assistance"
+    },
+    {
+      "contact_name": "IL DV Hotline",
+      "role": "Domestic violence support",
+      "phone": "877-863-6338",
+      "email": null,
+      "hours": "24/7",
+      "specialty": "Domestic violence crisis support"
+    },
+    {
+      "contact_name": "Cook County Health / Stroger",
+      "role": "Healthcare services",
+      "phone": "312-864-0200",
+      "email": null,
+      "hours": null,
+      "specialty": "Public hospital and healthcare system"
+    },
+    {
+      "contact_name": "American Indian Center Chicago",
+      "role": "Tribal community services",
+      "phone": "773-275-5871",
+      "email": null,
+      "hours": null,
+      "specialty": "Social services for urban AI/AN residents"
+    },
+    {
+      "contact_name": "IHS Chicago Urban Program",
+      "role": "Tribal health services",
+      "phone": "312-372-4440",
+      "email": null,
+      "hours": null,
+      "specialty": "Healthcare for urban AI/AN residents"
+    },
+    {
+      "contact_name": "IL AG Consumer Protection",
+      "role": "Consumer protection",
+      "phone": "800-386-5438",
+      "email": null,
+      "hours": null,
+      "specialty": "Consumer fraud and complaints"
+    },
+    {
+      "contact_name": "COPA (CPD Misconduct)",
+      "role": "Police oversight",
+      "phone": "312-746-3609",
+      "email": null,
+      "hours": null,
+      "specialty": "Chicago Police Department misconduct complaints"
+    }
+  ],
+  "regions": [],
+  "missing_sections": []
+}

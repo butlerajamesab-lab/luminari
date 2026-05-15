@@ -1,0 +1,329 @@
+{
+  "meta": {
+    "state": "CO",
+    "version": "3.0",
+    "chain_count": 2
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "insurer",
+      "state": "CO",
+      "bodies": [
+        {
+          "oversight_body": "Colorado Division of Insurance (DOI)",
+          "jurisdiction": "primary",
+          "phone": "303-894-7490",
+          "complaint_portal": "doi.colorado.gov",
+          "what_to_report": "Private health, life, and property insurance companies.",
+          "legal_threshold": "Investigates consumer complaints, conducts market conduct examinations, and can levy fines and penalties against insurance companies. Administers the state's external review program for health insurance denials.",
+          "city": "Denver",
+          "state": "CO",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Colorado HCPF \u2014 Health First Colorado Managed Care",
+          "jurisdiction": "primary",
+          "phone": "800-221-3943",
+          "complaint_portal": "colorado.gov/hcpf",
+          "what_to_report": "Health First Colorado (Medicaid) managed care plans.",
+          "legal_threshold": "Oversees the state's Medicaid managed care program, including handling grievances and appeals from beneficiaries.",
+          "city": "Denver",
+          "state": "CO",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Colorado Civil Rights Division (CCRD) \u2014 Housing",
+          "jurisdiction": "primary",
+          "phone": "303-894-2997",
+          "complaint_portal": "ccrd.colorado.gov",
+          "what_to_report": "Housing discrimination under the Colorado Anti-Discrimination Act (CADA).",
+          "legal_threshold": "Investigates complaints of housing discrimination based on race, sex, disability, familial status, national origin, sexual orientation, gender identity, and marital status.",
+          "city": "Denver",
+          "state": "CO",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Colorado DLSS \u2014 Division of Labor Standards and Statistics",
+          "jurisdiction": "primary",
+          "phone": "303-318-8441",
+          "complaint_portal": "cdle.colorado.gov/dlss",
+          "what_to_report": "Wage and hour laws, including the Colorado Wage Claim Act (CWCA).",
+          "legal_threshold": "Investigates wage complaints, enforces minimum wage and overtime laws, and can recover unpaid wages and penalties for workers.",
+          "city": "Denver",
+          "state": "CO",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Colorado Civil Rights Division (CCRD) \u2014 Employment",
+          "jurisdiction": "primary",
+          "phone": "303-894-2997",
+          "complaint_portal": "ccrd.colorado.gov",
+          "what_to_report": "Employment discrimination under the Colorado Anti-Discrimination Act (CADA).",
+          "legal_threshold": "Investigates complaints of employment discrimination based on race, sex, disability, national origin, sexual orientation, gender identity, marital status, and creed.",
+          "city": "Denver",
+          "state": "CO",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Colorado CDHS \u2014 Office of Appeals",
+          "jurisdiction": "primary",
+          "phone": "303-866-5150",
+          "complaint_portal": "cdhs.colorado.gov",
+          "what_to_report": "Appeals of public assistance benefit denials, terminations, or reductions.",
+          "legal_threshold": "Conducts fair hearings for SNAP, Health First Colorado, and Colorado Works cases.",
+          "city": "Denver",
+          "state": "CO",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "CDLE \u2014 Office of Appeals (UI)",
+          "jurisdiction": "primary",
+          "phone": "303-318-9299",
+          "complaint_portal": "colorado.gov/cdle",
+          "what_to_report": "Appeals of unemployment insurance benefit decisions.",
+          "legal_threshold": "Conducts hearings on UI eligibility and appeals.",
+          "city": "Denver",
+          "state": "CO",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Colorado Peace Officer Standards & Training (POST)",
+          "jurisdiction": "primary",
+          "phone": "303-894-2430",
+          "complaint_portal": "dps.colorado.gov/post",
+          "what_to_report": "Law enforcement officers in Colorado.",
+          "legal_threshold": "Certifies and decertifies peace officers in Colorado, and investigates misconduct that could lead to decertification.",
+          "city": "Denver",
+          "state": "CO",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "benefits_agency",
+      "state": "CO",
+      "bodies": [
+        {
+          "oversight_body": "HUD Fair Housing \u2014 Denver Regional Office",
+          "jurisdiction": "primary",
+          "phone": "800-669-9777",
+          "complaint_portal": "hud.gov/fairhousing",
+          "what_to_report": "Federal Fair Housing Act violations.",
+          "legal_threshold": "Investigates complaints of housing discrimination under federal law.",
+          "city": "Denver",
+          "state": "CO",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC \u2014 Denver Field Office",
+          "jurisdiction": "primary",
+          "phone": "800-669-4000",
+          "complaint_portal": "eeoc.gov",
+          "what_to_report": "Federal employment discrimination laws.",
+          "legal_threshold": "Investigates complaints of employment discrimination under federal law.",
+          "city": "Denver",
+          "state": "CO",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOL Wage and Hour Division \u2014 Denver",
+          "jurisdiction": "primary",
+          "phone": "720-264-3250",
+          "complaint_portal": "dol.gov/whd",
+          "what_to_report": "Federal wage and hour laws, including the Fair Labor Standards Act (FLSA).",
+          "legal_threshold": "Enforces federal minimum wage, overtime, and child labor laws.",
+          "city": "Denver",
+          "state": "CO",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Denver Office of the Independent Monitor (OIM)",
+          "jurisdiction": "primary",
+          "phone": "720-913-3306",
+          "complaint_portal": "denvergov.org/oim",
+          "what_to_report": "Denver Police and Sheriff Departments.",
+          "legal_threshold": "Provides independent oversight of the Denver Police and Sheriff Departments, including investigating misconduct and making recommendations for systemic change.",
+          "city": "Denver",
+          "state": "CO",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "co_med_board",
+          "name": "Colorado Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Colorado Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CO"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "co_patient_adv",
+          "name": "Colorado Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Colorado Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CO"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "co_health_dept",
+          "name": "Colorado Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Colorado Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CO"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CO"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "co_pharm_board",
+          "name": "Colorado Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Colorado Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CO"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "co_pa",
+          "name": "Colorado Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Colorado Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CO"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "co_mha",
+          "name": "Colorado Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Colorado Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CO"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CO"
+    }
+  ]
+}

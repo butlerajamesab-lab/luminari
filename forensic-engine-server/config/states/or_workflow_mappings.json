@@ -1,0 +1,210 @@
+{
+  "meta": {
+    "state": "OR",
+    "layer": "workflow_mappings",
+    "version": "1.0.0",
+    "last_updated": "2026-03-06"
+  },
+  "workflow_mappings": [
+    {
+      "workflow_id": "tenant_rights_workflow",
+      "trigger_pipelines": [
+        "tenant_rights"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "notice",
+          "target_entity_type": "landlord",
+          "deadline_days": 7,
+          "description": "Send written repair notice citing ORS 90.320 (7-day urgent repair / 30-day non-urgent)"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "complaint",
+          "target_entity_type": "government_agency",
+          "deadline_days": 14,
+          "description": "File code enforcement complaint (Portland BDS 503-823-2633 or local code enforcement)"
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "legal_action",
+          "target_entity_type": "landlord",
+          "deadline_days": 30,
+          "description": "Contact LASO CLEAR (855-412-8429) for rent withhold (ORS 90.365) or repair-and-deduct"
+        },
+        {
+          "step_index": 4,
+          "escalation_type": "agency_complaint",
+          "target_entity_type": "government_agency",
+          "deadline_days": 60,
+          "description": "File FHCO complaint (800-424-3247) if discrimination. File AG complaint for pattern violations."
+        },
+        {
+          "step_index": 5,
+          "escalation_type": "federal_escalation",
+          "target_entity_type": "government_agency",
+          "deadline_days": 365,
+          "description": "File HUD Fair Housing complaint (800-669-9777) if discrimination involved"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft_workflow",
+      "trigger_pipelines": [
+        "wage_theft"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "documentation",
+          "target_entity_type": "employer",
+          "deadline_days": 7,
+          "description": "Document wages owed with pay stubs, time records, employment agreements"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "demand",
+          "target_entity_type": "employer",
+          "deadline_days": 14,
+          "description": "Send written demand to employer for specific unpaid amount"
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "agency_complaint",
+          "target_entity_type": "government_agency",
+          "deadline_days": 2190,
+          "description": "File wage claim with BOLI (971-673-0761) \u2014 6-year SOL under ORS 652.150"
+        },
+        {
+          "step_index": 4,
+          "escalation_type": "federal_dual_file",
+          "target_entity_type": "government_agency",
+          "deadline_days": 730,
+          "description": "Dual-file with federal DOL WHD (866-487-9243) \u2014 2-year FLSA SOL (3 if willful)"
+        },
+        {
+          "step_index": 5,
+          "escalation_type": "retaliation_complaint",
+          "target_entity_type": "government_agency",
+          "deadline_days": 90,
+          "description": "If employer retaliates, file ORS 659A.199 complaint with BOLI within 90 days"
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial_workflow",
+      "trigger_pipelines": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "documentation",
+          "target_entity_type": "government_agency",
+          "deadline_days": 5,
+          "description": "Get written denial notice with reason code and appeal deadline from ODHS"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "appeal",
+          "target_entity_type": "government_agency",
+          "deadline_days": 45,
+          "description": "File hearing request with OAH \u2014 SNAP 90 days, OHP 60 days, TANF 45 days (ORS 411.095)"
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "legal_help",
+          "target_entity_type": "government_agency",
+          "deadline_days": 60,
+          "description": "Contact LASO CLEAR (855-412-8429) for hearing representation"
+        },
+        {
+          "step_index": 4,
+          "escalation_type": "escalation",
+          "target_entity_type": "government_agency",
+          "deadline_days": 90,
+          "description": "File complaint with Governor's Advocacy Office for systemic failures"
+        },
+        {
+          "step_index": 5,
+          "escalation_type": "federal_escalation",
+          "target_entity_type": "government_agency",
+          "deadline_days": 180,
+          "description": "File with HHS/CMS (877-267-2323) for federal Medicaid/SNAP program violations"
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_claim_denial_workflow",
+      "trigger_pipelines": [
+        "insurance_claim_denial"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "documentation",
+          "target_entity_type": "insurer",
+          "deadline_days": 7,
+          "description": "Collect denial letter, EOB, original claim, all correspondence"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "internal_appeal",
+          "target_entity_type": "insurer",
+          "deadline_days": 180,
+          "description": "File internal appeal within 180 days of denial. Request full claims file."
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "external_review",
+          "target_entity_type": "government_agency",
+          "deadline_days": 120,
+          "description": "Request independent external review through DFR/OID under ORS 743B.015 (4-month deadline)"
+        },
+        {
+          "step_index": 4,
+          "escalation_type": "agency_complaint",
+          "target_entity_type": "government_agency",
+          "deadline_days": 180,
+          "description": "File DFR complaint regardless of appeal outcome to document pattern"
+        },
+        {
+          "step_index": 5,
+          "escalation_type": "legal_action",
+          "target_entity_type": "insurer",
+          "deadline_days": 365,
+          "description": "Contact LASO CLEAR or private attorney for bad faith claim"
+        }
+      ]
+    }
+  ],
+  "resolution_order": [
+    "federal_baseline",
+    "state_registry",
+    "county_override",
+    "tribal_override",
+    "pipeline_rule_injection"
+  ]
+}

@@ -1,0 +1,345 @@
+{
+  "meta": {
+    "state": "UT",
+    "version": "2.0",
+    "date": "2026-03-08",
+    "total_chains": 5,
+    "total_bodies": 11,
+    "entity_types": [
+      "employer",
+      "general",
+      "insurer",
+      "landlord",
+      "consumer"
+    ],
+    "source": "luminari-ut-registry.docx"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "employer",
+      "state": "UT",
+      "bodies": [
+        {
+          "oversight_body": "Utah Anti-Discrimination Division (UADD)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Employment and housing discrimination. Utah Antidiscrimination Act covers sexual orientation and gender identity since 2015. 180-day SOL.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "180 days \u2014 FATAL. File EEOC simultaneously.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC \u2014 Salt Lake City Field Office",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Federal employment discrimination \u2014 300-day deadline.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "300 days \u2014 FATAL. File UADD simultaneously.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOL WHD \u2014 Salt Lake City (Primary Wage)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "FLSA wage enforcement. Utah Payment of Wages Act (UC \u00a734-28): 2-year SOL, private right of action.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "2 years \u2014 FATAL. File Utah Labor Commission simultaneously.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Utah Labor Commission \u2014 Wage Adjudication",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Utah Payment of Wages Act UC \u00a734-28 \u2014 administrative wage claim.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "2 years \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "NLRB \u2014 Region 28 Phoenix (covers UT)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Unfair labor practices, union organizing, retaliation.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "6 months \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "general",
+      "state": "UT",
+      "bodies": [
+        {
+          "oversight_body": "DWS \u2014 Benefits Fair Hearings (Utah)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "SNAP, Medicaid/Access Plus, TANF fair hearings \u2014 30-day appeal window.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "30 days from notice \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DWS \u2014 UI Appeals",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "UI denial appeals \u2014 10-day deadline from mailing.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "10 days \u2014 FATAL. Contact Utah Legal Services (801-328-8891) immediately.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "BIA \u2014 Navajo Regional Office (San Juan County Tribal)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Bureau of Indian Affairs \u2014 Navajo Nation trust land, enrollment, tribal court coordination for San Juan County.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "Varies \u2014 consult DNA Legal Services (928-871-4151)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "insurer",
+      "state": "UT",
+      "bodies": [
+        {
+          "oversight_body": "Utah Insurance Department",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Private insurance complaints, external review.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "180 days from denial",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "landlord",
+      "state": "UT",
+      "bodies": [
+        {
+          "oversight_body": "HUD \u2014 Denver Regional Office (covers UT, Fair Housing)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Fair Housing Act enforcement in Utah.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "1 year \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "consumer",
+      "state": "UT",
+      "bodies": [
+        {
+          "oversight_body": "Utah AG \u2014 Consumer Protection Division",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Consumer fraud, Utah Consumer Sales Practices Act, predatory lending.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "2 years (UCSPA)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "ut_med_board",
+          "name": "Utah Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Utah Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "UT"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "ut_patient_adv",
+          "name": "Utah Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Utah Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "UT"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "ut_health_dept",
+          "name": "Utah Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Utah Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "UT"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "UT"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "ut_pharm_board",
+          "name": "Utah Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Utah Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "UT"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "ut_pa",
+          "name": "Utah Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Utah Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "UT"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "ut_mha",
+          "name": "Utah Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Utah Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "UT"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "UT"
+    }
+  ]
+}

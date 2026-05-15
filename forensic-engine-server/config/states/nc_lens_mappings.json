@@ -1,0 +1,133 @@
+{
+  "meta": {
+    "state": "NC",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "nc_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "nc_north_carolina_snap_food_and_nutrition_s",
+        "nc_food_bank_of_central_and_eastern_nc_rale",
+        "nc_loaves_and_fishes_friendship_trays_charl",
+        "nc_wic_north_carolina"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "general",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "nc_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "nc_nc_lieap_energy_assistance_dhhs"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "general",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "nc_lens_tribal",
+      "lens_type": "tribal",
+      "programs": [
+        "nc_eastern_band_of_cherokee_indians_tribal_"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "general",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "nc_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "nc_charlotte_center_for_legal_advocacy"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "general",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "nc_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "nc_nc_medicaid_nc_tracks_nc_dhhs",
+        "nc_unc_hospitals_rex_health_chapel_hill_ral",
+        "nc_atrium_health_charlotte_safety_net",
+        "nc_nc_community_health_center_association_f",
+        "nc_nc_tanf_work_first_dss",
+        "nc_nc_ui_des_division_of_employment_securit",
+        "nc_nc_farmworker_health_program_fqhc",
+        "nc_cherokee_indian_hospital_ihs_compact_ebc",
+        "nc_nc_dhhs_nc_medicaid_managed_care"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "general",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "nc_lens_employment",
+      "lens_type": "employment",
+      "programs": [
+        "nc_legal_aid_of_nc_farmworker_unit"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "general",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "nc_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "nc_nc_housing_finance_agency_nchfa",
+        "nc_legal_aid_of_north_carolina_statewide"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "general",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "nc_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "nc_nc_coalition_against_domestic_violence_n"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "general",
+        "civil_rights"
+      ]
+    }
+  ]
+}

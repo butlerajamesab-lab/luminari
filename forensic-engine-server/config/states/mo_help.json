@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "state": "MO",
+    "state_name": "Missouri",
+    "schema_version": "1.0.0",
+    "last_updated": "2026-03-06",
+    "status": "in_progress",
+    "description": "Missouri help routing index — maps pipeline + benefit_category to Layer 1 card clusters and Layer 0 policy flags. Consolidates all help entry points."
+  },
+  "routing_index": {
+    "food": {
+      "layer0_flags": ["mo_snap_application_barrier"],
+      "layer1_cluster": "mo_food",
+      "primary_pipeline": "benefits_denial",
+      "secondary_pipelines": ["snap_denial"]
+    },
+    "healthcare": {
+      "layer0_flags": ["mo_healthnet_renewal_churn", "mo_noncitizen_medicaid_restriction"],
+      "layer1_cluster": "mo_healthcare",
+      "primary_pipeline": "insurance_claim_denial",
+      "secondary_pipelines": ["benefits_denial", "medicaid_denial"]
+    },
+    "housing": {
+      "layer0_flags": [],
+      "layer1_cluster": "mo_housing_utilities",
+      "primary_pipeline": "tenant_rights",
+      "secondary_pipelines": ["eviction_defense", "housing_discrimination"]
+    },
+    "dv_safety": {
+      "layer0_flags": [],
+      "layer1_cluster": "mo_dv_safety",
+      "primary_pipeline": "domestic_violence",
+      "secondary_pipelines": ["domestic_violence_emergency", "emergency_safety"]
+    },
+    "legal_aid": {
+      "layer0_flags": ["mo_no_state_paid_leave"],
+      "layer1_cluster": "mo_legal",
+      "primary_pipeline": "wage_theft",
+      "secondary_pipelines": ["workplace_discrimination", "wrongful_termination"]
+    },
+    "utilities": {
+      "layer0_flags": ["mo_cold_weather_rule"],
+      "layer1_cluster": "mo_housing_utilities",
+      "primary_pipeline": "utility_shutoff_abuse",
+      "secondary_pipelines": []
+    },
+    "cash_assistance": {
+      "layer0_flags": ["mo_tanf_structural_insufficiency"],
+      "layer1_cluster": "mo_cash_assistance",
+      "primary_pipeline": "benefits_denial",
+      "secondary_pipelines": ["public_assistance_dispute"]
+    },
+    "children_families": {
+      "layer0_flags": ["mo_tanf_structural_insufficiency"],
+      "layer1_cluster": "mo_children_families",
+      "primary_pipeline": "child_welfare",
+      "secondary_pipelines": ["foster_care", "custody_dispute"]
+    },
+    "immigration": {
+      "layer0_flags": ["mo_noncitizen_medicaid_restriction"],
+      "layer1_cluster": "mo_immigration",
+      "primary_pipeline": "immigration_case",
+      "secondary_pipelines": ["asylum_claim", "work_authorization_dispute"]
+    }
+  },
+  "regions": {
+    "kc_metro": {
+      "label": "Kansas City Metro",
+      "counties": ["Jackson", "Clay", "Platte", "Cass", "Ray"],
+      "primary_legal_aid": "mo_lawmo"
+    },
+    "stl_metro": {
+      "label": "St. Louis Metro",
+      "counties": ["St. Louis City", "St. Louis County", "St. Charles", "Jefferson", "Franklin"],
+      "primary_legal_aid": "mo_lsem"
+    },
+    "springfield_region": {
+      "label": "Springfield / Ozarks",
+      "counties": ["Greene", "Christian", "Webster", "Taney", "Stone"],
+      "primary_legal_aid": "mo_lawmo"
+    },
+    "statewide": {
+      "label": "Statewide",
+      "counties": [],
+      "primary_legal_aid": null
+    }
+  },
+  "missing_sections": [
+    "veterans_services",
+    "accountability_layer",
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings"
+  ]
+}

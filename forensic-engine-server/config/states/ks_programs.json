@@ -1,0 +1,426 @@
+{
+  "meta": {
+    "state": "KS",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "ks_kansas_medicaid_kancare",
+      "program_name": "Kansas Medicaid (KanCare)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "Kansas Medicaid",
+      "phone": "800-792-4884",
+      "website": "https://kancare.ks.gov",
+      "eligibility": "Children \u2264238% FPL; pregnant women \u2264171% FPL; adults with disability; elderly on SSI \u2014 NOT non-disabled adults",
+      "apply_notes": "NON-EXPANSION STATE. KanCare covers pregnant women, children, elderly, disabled\u2014NOT low-income adults without children or disabilities. Coverage gap: adults 0\u2013138% FPL without qualifying condition are uninsured.",
+      "source": "luminari-kansas-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "KS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ks_kansas_chip_healthwave",
+      "program_name": "Kansas CHIP (HealthWave)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "Kansas CHIP",
+      "phone": "800-792-4884",
+      "website": "https://kancare.ks.gov/healthwave",
+      "eligibility": "Children under 19; income 133\u2013238% FPL",
+      "apply_notes": "Children's health coverage through KanCare for families above Medicaid threshold.",
+      "source": "luminari-kansas-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "KS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ks_kansas_snap_food_assistance",
+      "program_name": "Kansas SNAP (Food Assistance)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial",
+        "disability_claim"
+      ],
+      "agency": "Kansas SNAP",
+      "phone": "888-369-4777",
+      "website": "https://dcf.ks.gov/snap",
+      "eligibility": "Income \u2264130% FPL; ABAWD work requirements strictly enforced",
+      "apply_notes": "SNAP benefits through KDHE and DCF. Apply online at accesskansas.org.",
+      "source": "luminari-kansas-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "KS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ks_kansas_tanf_kansas_works",
+      "program_name": "Kansas TANF (Kansas Works)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Kansas TANF",
+      "phone": "888-369-4777",
+      "website": "https://dcf.ks.gov/services/ees",
+      "eligibility": "Families with minor children; 24-month state limit; income and asset limits",
+      "apply_notes": "Cash assistance: $429/month (family of 3). 24-month state lifetime limit\u2014more restrictive than federal 60-month. STRICT work requirements.",
+      "source": "luminari-kansas-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "KS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ks_kansas_unemployment_insurance",
+      "program_name": "Kansas Unemployment Insurance",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "employment_dispute"
+      ],
+      "agency": "Kansas Unemployment Insurance",
+      "phone": "785-575-1460",
+      "website": "https://dol.ks.gov",
+      "eligibility": "Involuntary separation; base period earnings required; 16-week maximum duration",
+      "apply_notes": "UI: max $488/week. Duration MAXIMUM 16 WEEKS\u2014one of shortest in the country. Administered by KDOL.",
+      "source": "luminari-kansas-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "KS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ks_kansas_housing_resources_corporation_khr",
+      "program_name": "Kansas Housing Resources Corporation (KHRC)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Kansas Housing Resources Corporation",
+      "phone": "785-217-2001",
+      "website": "https://kshousingcorp.org",
+      "eligibility": "Income-based; varies by program",
+      "apply_notes": "Affordable rental housing, rental assistance, homebuyer programs. Rural housing challenges in agricultural counties.",
+      "source": "luminari-kansas-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "KS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ks_kansas_wic",
+      "program_name": "Kansas WIC",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare"
+      ],
+      "agency": "Kansas WIC",
+      "phone": "785-296-1320",
+      "website": "https://kdheks.gov/wic",
+      "eligibility": "Pregnant/postpartum women, infants, children under 5; income \u2264185% FPL",
+      "apply_notes": "Women, Infants and Children nutrition through KDHE.",
+      "source": "luminari-kansas-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "KS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ks_kansas_child_care_assistance_ccap",
+      "program_name": "Kansas Child Care Assistance (CCAP)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "Kansas Child Care Assistance",
+      "phone": "888-369-4777",
+      "website": "https://dcf.ks.gov/childcare",
+      "eligibility": "Working families; income \u226485% SMI; children under 13",
+      "apply_notes": "Subsidized child care for working families through DCF.",
+      "source": "luminari-kansas-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "KS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ks_kansas_tribal_nations_programs",
+      "program_name": "Kansas Tribal Nations Programs",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "housing_dispute"
+      ],
+      "agency": "Kansas Tribal Nations Programs",
+      "phone": "",
+      "website": "https://bia.gov/regional-offices/great-plains",
+      "eligibility": "Tribal enrollment; IHS service area",
+      "apply_notes": "Four federally recognized tribes: Prairie Band Potawatomi, Kickapoo Nation, Sac and Fox Nation, Iowa Tribe of Kansas and Nebraska. Each has tribal social services, health facilities (IHS), and housing.",
+      "source": "luminari-kansas-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "KS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ks_kansas_aging_and_disability_services_ads",
+      "program_name": "Kansas Aging and Disability Services (ADS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Kansas Aging and Disability Services",
+      "phone": "785-296-4986",
+      "website": "https://kdads.ks.gov",
+      "eligibility": "Adults 60+; adults with disabilities; income-based for some services",
+      "apply_notes": "Services for adults 60+ and people with disabilities. Area Agencies on Aging, Meals on Wheels, caregiver support.",
+      "source": "luminari-kansas-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "KS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ks_kansas_vocational_rehabilitation_vr",
+      "program_name": "Kansas Vocational Rehabilitation (VR)",
+      "layer": "state",
+      "benefit_category": "employment",
+      "pipeline_ids": [
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "Kansas Vocational Rehabilitation",
+      "phone": "785-368-7471",
+      "website": "https://dcf.ks.gov/vr",
+      "eligibility": "Documented disability; employment goal",
+      "apply_notes": "Employment services for people with disabilities.",
+      "source": "luminari-kansas-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "employment"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "employment"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "employment",
+      "city": "",
+      "state": "KS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ks_kansas_legal_services_kls",
+      "program_name": "Kansas Legal Services (KLS)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute",
+        "consumer_protection"
+      ],
+      "agency": "Kansas Legal Services",
+      "phone": "800-723-6953",
+      "website": "https://kansaslegalservices.org",
+      "eligibility": "Income \u2264125% FPL",
+      "apply_notes": "Free civil legal aid statewide. Housing, benefits, family, consumer. Limited capacity\u2014apply early.",
+      "source": "luminari-kansas-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "KS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ks_211_kansas",
+      "program_name": "211 Kansas",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "housing_dispute"
+      ],
+      "agency": "211 Kansas",
+      "phone": "",
+      "website": "https://211kansas.org",
+      "eligibility": "Open to all",
+      "apply_notes": "Statewide social services referral line. Food, shelter, utilities, health, transportation.",
+      "source": "luminari-kansas-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "KS",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ks_kdads_behavioral_health_services",
+      "program_name": "KDADS Behavioral Health Services",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "KDADS Behavioral Health Services",
+      "phone": "785-296-3477",
+      "website": "https://kdads.ks.gov/behavioral-health",
+      "eligibility": "All residents; Medicaid accepted; sliding scale",
+      "apply_notes": "Mental health and substance use services through Regional Crisis Centers and Community Mental Health Centers (CMHCs) statewide.",
+      "source": "luminari-kansas-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "KS",
+      "federal_interface": false
+    }
+  ]
+}

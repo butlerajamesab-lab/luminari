@@ -1,0 +1,165 @@
+{
+  "version": "2.0.0",
+  "description": "Maps pipeline categories to default interpretive lenses. When a case resolves to a pipeline within a category, these lenses activate automatically unless overridden.",
+  "category_defaults": {
+    "justice": {
+      "label": "Justice & Accountability",
+      "default_lenses": [
+        "systems_failure",
+        "institutional_accountability",
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "agency_mapping",
+        "public_records_escalation",
+        "narrative_reconstruction"
+      ]
+    },
+    "family": {
+      "label": "Family & Domestic",
+      "default_lenses": [
+        "safety_risk",
+        "coercive_control_lens",
+        "trauma_informed",
+        "vulnerable_population",
+        "narrative_reconstruction",
+        "systems_failure",
+        "timeline_integrity"
+      ]
+    },
+    "elder": {
+      "label": "Elder & Disability",
+      "default_lenses": [
+        "safety_risk",
+        "vulnerable_population",
+        "trauma_informed",
+        "systems_failure",
+        "institutional_accountability",
+        "financial_forensic",
+        "asset_flow_mapping",
+        "narrative_reconstruction"
+      ]
+    },
+    "tribal": {
+      "label": "Tribal & Indigenous",
+      "default_lenses": [
+        "systems_failure",
+        "institutional_accountability",
+        "regulatory_compliance",
+        "agency_mapping",
+        "public_records_escalation",
+        "narrative_reconstruction"
+      ]
+    },
+    "insurance": {
+      "label": "Insurance & Medical",
+      "default_lenses": [
+        "financial_forensic",
+        "billing_integrity",
+        "contract_analysis",
+        "fraud_pattern_detection",
+        "regulatory_compliance",
+        "evidence_gap_detection",
+        "narrative_reconstruction"
+      ]
+    },
+    "housing": {
+      "label": "Housing",
+      "default_lenses": [
+        "systems_failure",
+        "regulatory_compliance",
+        "institutional_accountability",
+        "procedural_timeliness",
+        "contract_analysis",
+        "narrative_reconstruction"
+      ]
+    },
+    "financial": {
+      "label": "Financial & Consumer",
+      "default_lenses": [
+        "financial_forensic",
+        "billing_integrity",
+        "contract_analysis",
+        "fraud_pattern_detection",
+        "asset_flow_mapping",
+        "regulatory_compliance",
+        "narrative_reconstruction"
+      ]
+    },
+    "employment": {
+      "label": "Employment & Workplace",
+      "default_lenses": [
+        "systems_failure",
+        "regulatory_compliance",
+        "financial_forensic",
+        "procedural_timeliness",
+        "timeline_integrity",
+        "narrative_reconstruction"
+      ]
+    },
+    "benefits": {
+      "label": "Benefits & Public Assistance",
+      "default_lenses": [
+        "systems_failure",
+        "regulatory_compliance",
+        "procedural_timeliness",
+        "institutional_accountability",
+        "evidence_gap_detection",
+        "narrative_reconstruction"
+      ]
+    },
+    "market": {
+      "label": "Market & Corporate",
+      "default_lenses": [
+        "financial_forensic",
+        "fraud_pattern_detection",
+        "asset_flow_mapping",
+        "pattern_network",
+        "acquisition_strategy",
+        "regulatory_compliance",
+        "narrative_reconstruction"
+      ]
+    },
+    "environment": {
+      "label": "Environment & Public Health",
+      "default_lenses": [
+        "systems_failure",
+        "institutional_accountability",
+        "regulatory_compliance",
+        "agency_mapping",
+        "public_records_escalation",
+        "evidence_gap_detection",
+        "narrative_reconstruction"
+      ]
+    },
+    "immigration": {
+      "label": "Immigration",
+      "default_lenses": [
+        "systems_failure",
+        "institutional_accountability",
+        "procedural_timeliness",
+        "regulatory_compliance",
+        "timeline_integrity",
+        "narrative_reconstruction"
+      ]
+    },
+    "public_safety": {
+      "label": "Public Safety & Emergency",
+      "default_lenses": [
+        "safety_risk",
+        "trauma_informed",
+        "vulnerable_population",
+        "timeline_integrity",
+        "evidence_gap_detection",
+        "narrative_reconstruction"
+      ]
+    },
+    "general": {
+      "label": "General Investigation",
+      "default_lenses": [
+        "narrative_reconstruction",
+        "timeline_integrity",
+        "evidence_gap_detection"
+      ]
+    }
+  }
+}

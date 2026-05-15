@@ -1,0 +1,278 @@
+{
+  "meta": {
+    "state": "SC",
+    "version": "2.0",
+    "date": "2026-03-08",
+    "total_chains": 4,
+    "total_bodies": 6,
+    "entity_types": [
+      "insurer",
+      "landlord",
+      "employer",
+      "civil_rights"
+    ],
+    "source": "luminari-sc-registry.docx"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "insurer",
+      "state": "SC",
+      "bodies": [
+        {
+          "oversight_body": "SC Department of Insurance (SC DOI)",
+          "jurisdiction": "primary",
+          "phone": "800-768-3467",
+          "complaint_portal": "https://doi.sc.gov",
+          "what_to_report": "Escalation: SC AG Consumer Protection",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "landlord",
+      "state": "SC",
+      "bodies": [
+        {
+          "oversight_body": "HUD Fair Housing \u2014 Southeast Region (Federal Hook)",
+          "jurisdiction": "primary",
+          "phone": "800-669-9777",
+          "complaint_portal": "https://hud.gov/fairhousing",
+          "what_to_report": "Escalation: DOJ Housing; SC Human Affairs Commission (803-737-7800)",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "employer",
+      "state": "SC",
+      "bodies": [
+        {
+          "oversight_body": "EEOC \u2014 Charlotte District Office (covers SC \u2014 Federal Hook)",
+          "jurisdiction": "primary",
+          "phone": "800-669-4000",
+          "complaint_portal": "https://eeoc.gov",
+          "what_to_report": "Escalation: File SCHAC simultaneously",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "SC Dept of Labor, Licensing and Regulation (LLR) \u2014 Labor Division",
+          "jurisdiction": "primary",
+          "phone": "803-896-4300",
+          "complaint_portal": "https://llr.sc.gov",
+          "what_to_report": "Escalation: Private SCPWA lawsuit in SC Court of Common Pleas",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOL Wage and Hour Division \u2014 Columbia (Federal Hook)",
+          "jurisdiction": "primary",
+          "phone": "803-765-5981",
+          "complaint_portal": "https://dol.gov/whd",
+          "what_to_report": "Escalation: File same day as SC LLR",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "civil_rights",
+      "state": "SC",
+      "bodies": [
+        {
+          "oversight_body": "SC Law Enforcement Division (SLED) \u2014 Internal Affairs",
+          "jurisdiction": "primary",
+          "phone": "803-896-7000",
+          "complaint_portal": "https://sled.sc.gov",
+          "what_to_report": "Escalation: DOJ Civil Rights; FBI Columbia (803-551-4200) for federal civil rights",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "sc_med_board",
+          "name": "South Carolina Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "South Carolina Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "SC"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "sc_patient_adv",
+          "name": "South Carolina Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "South Carolina Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "SC"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "sc_health_dept",
+          "name": "South Carolina Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "South Carolina Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "SC"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "SC"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "sc_pharm_board",
+          "name": "South Carolina Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "South Carolina Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "SC"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "sc_pa",
+          "name": "South Carolina Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "South Carolina Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "SC"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "sc_mha",
+          "name": "South Carolina Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "South Carolina Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "SC"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "SC"
+    }
+  ]
+}

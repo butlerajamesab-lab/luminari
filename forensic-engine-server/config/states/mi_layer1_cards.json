@@ -1,0 +1,364 @@
+{
+  "meta": {
+    "state": "MI",
+    "version": "3.0",
+    "cluster_count": 10
+  },
+  "clusters": [
+    {
+      "cluster_id": "mi_food",
+      "cluster_label": "Food",
+      "cards": [
+        {
+          "card_id": "mi_snap_fap",
+          "title": "SNAP / Food Assistance Program (FAP)",
+          "phone": "844-799-9876",
+          "website": "https://newmibridges.michigan.gov",
+          "notes": "Federal food assistance for low-income households"
+        },
+        {
+          "card_id": "mi_wic",
+          "title": "WIC (Women, Infants, Children)",
+          "phone": "844-799-9876",
+          "website": "https://www.michigan.gov/mdhhs",
+          "notes": "Nutrition assistance for pregnant women, infants, children"
+        }
+      ]
+    },
+    {
+      "cluster_id": "mi_health",
+      "cluster_label": "Health",
+      "cards": [
+        {
+          "card_id": "mi_healthy_michigan_plan",
+          "title": "Healthy Michigan Plan (Medicaid Expansion)",
+          "phone": "844-799-9876",
+          "website": "https://www.michigan.gov/healthymichiganplan",
+          "notes": "Medicaid expansion for adults 19-64 at 0-138% FPL"
+        },
+        {
+          "card_id": "mi_traditional_medicaid",
+          "title": "Traditional Medicaid",
+          "phone": "844-799-9876",
+          "website": "https://www.michigan.gov/mdhhs",
+          "notes": "Medicaid for children, pregnant women, elderly, disabled"
+        }
+      ]
+    },
+    {
+      "cluster_id": "mi_benefits",
+      "cluster_label": "Benefits",
+      "cards": [
+        {
+          "card_id": "mi_sda_emergency_relief",
+          "title": "State Disability Assistance (SDA) / Emergency Relief",
+          "phone": "844-799-9876",
+          "website": "https://newmibridges.michigan.gov",
+          "notes": "Cash assistance for disabled adults not eligible for SSI"
+        },
+        {
+          "card_id": "mi_fip_tanf",
+          "title": "Family Independence Program (FIP/TANF)",
+          "phone": "844-799-9876",
+          "website": "https://newmibridges.michigan.gov",
+          "notes": "Cash assistance for families with children"
+        },
+        {
+          "card_id": "mi_detroit_human_services",
+          "title": "Detroit Human Services Dept",
+          "phone": "313-224-3000",
+          "website": "https://detroitmi.gov/government/departments/human-services",
+          "notes": "City-specific social services for Detroit residents"
+        },
+        {
+          "card_id": "mi_wayne_metro_caa",
+          "title": "Wayne Metro Community Action Agency",
+          "phone": "313-388-9799",
+          "website": "https://waynemetro.org",
+          "notes": "Primary Community Action for Wayne County"
+        },
+        {
+          "card_id": "mi_upper_peninsula_caa",
+          "title": "Upper Peninsula Community Action Agencies",
+          "phone": "906-228-5420",
+          "website": "",
+          "notes": "Community action services for remote UP communities"
+        }
+      ]
+    },
+    {
+      "cluster_id": "mi_family",
+      "cluster_label": "Family",
+      "cards": [
+        {
+          "card_id": "mi_cdc_child_care",
+          "title": "Child Development and Care (CDC)",
+          "phone": "844-799-9876",
+          "website": "https://newmibridges.michigan.gov",
+          "notes": "Subsidized child care for working families"
+        }
+      ]
+    },
+    {
+      "cluster_id": "mi_utilities",
+      "cluster_label": "Utilities",
+      "cards": [
+        {
+          "card_id": "mi_liheap_home_heating",
+          "title": "Michigan Home Heating Credit / LIHEAP",
+          "phone": "844-799-9876",
+          "website": "https://newmibridges.michigan.gov",
+          "notes": "Heating assistance and utility shutoff prevention"
+        },
+        {
+          "card_id": "mi_dwsd_water",
+          "title": "Detroit Water & Sewerage Dept",
+          "phone": "313-224-4710",
+          "website": "https://detroitmi.gov/dwsd",
+          "notes": "Water shutoff assistance and payment plans"
+        }
+      ]
+    },
+    {
+      "cluster_id": "mi_housing",
+      "cluster_label": "Housing",
+      "cards": [
+        {
+          "card_id": "mi_section_8_housing",
+          "title": "Section 8 Housing Choice Voucher",
+          "phone": "517-373-8370",
+          "website": "https://www.michigan.gov/mshda",
+          "notes": "Rental assistance vouchers"
+        },
+        {
+          "card_id": "mi_emergency_shelter",
+          "title": "Emergency Solutions Grant (ESG)",
+          "phone": "517-373-8370",
+          "website": "https://www.michigan.gov/mshda",
+          "notes": "Emergency shelter and rapid rehousing"
+        },
+        {
+          "card_id": "mi_detroit_housing_commission",
+          "title": "Detroit Housing Commission",
+          "phone": "313-877-8000",
+          "website": "https://detroithousingcomm.com",
+          "notes": "Section 8 and public housing for Detroit"
+        },
+        {
+          "card_id": "mi_covenant_house",
+          "title": "Covenant House Michigan",
+          "phone": "313-463-2000",
+          "website": "https://covenanthousingmi.org",
+          "notes": "Shelter and services for youth 18-24"
+        },
+        {
+          "card_id": "mi_mshda_eviction_diversion",
+          "title": "MSHDA Eviction Diversion Program",
+          "phone": "517-373-8370",
+          "website": "https://www.michigan.gov/mshda",
+          "notes": "Eviction prevention and diversion program"
+        }
+      ]
+    },
+    {
+      "cluster_id": "mi_legal",
+      "cluster_label": "Legal",
+      "cards": [
+        {
+          "card_id": "mi_legal_services",
+          "title": "Michigan Legal Services",
+          "phone": "313-964-4130",
+          "website": "https://michiganlegalservices.org",
+          "notes": "Free civil legal aid for low-income residents"
+        },
+        {
+          "card_id": "mi_lakeshore_legal_aid",
+          "title": "Lakeshore Legal Aid",
+          "phone": "800-968-1442",
+          "website": "https://lakeshorelegalaid.org",
+          "notes": "Eviction defense, benefits, MiDAS fraud cases"
+        },
+        {
+          "card_id": "mi_neighborhood_legal",
+          "title": "Neighborhood Legal Services Michigan",
+          "phone": "313-964-0111",
+          "website": "https://nlsmi.org",
+          "notes": "Civil legal help for Detroit area"
+        }
+      ]
+    },
+    {
+      "cluster_id": "mi_employment",
+      "cluster_label": "Employment",
+      "cards": [
+        {
+          "card_id": "mi_unemployment_insurance",
+          "title": "Michigan Unemployment Insurance",
+          "phone": "866-500-0017",
+          "website": "https://www.michigan.gov/leo/bureaus-agencies/uia",
+          "notes": "UI benefits, 20-week duration cap \u2014 shortest in region"
+        },
+        {
+          "card_id": "mi_wage_hour_division",
+          "title": "MI Wage & Hour Division",
+          "phone": "855-464-9243",
+          "website": "https://www.michigan.gov/leo",
+          "notes": "Wage theft complaints, minimum wage enforcement ($10.56/hr)"
+        }
+      ]
+    },
+    {
+      "cluster_id": "mi_safety",
+      "cluster_label": "Safety",
+      "cards": [
+        {
+          "card_id": "mi_dv_hotline",
+          "title": "Michigan Domestic Violence Hotline",
+          "phone": "800-799-7233",
+          "website": "https://mcedsv.org",
+          "notes": "24/7 crisis support and shelter referrals"
+        }
+      ]
+    },
+    {
+      "cluster_id": "mi_immigration",
+      "cluster_label": "Immigration",
+      "cards": [
+        {
+          "card_id": "mi_access_dearborn",
+          "title": "ACCESS (Arab Community Center)",
+          "phone": "313-842-7010",
+          "website": "https://accesscommunity.org",
+          "notes": "Social services for Arab American and immigrant communities in Dearborn"
+        }
+      ]
+    },
+    {
+      "cluster_id": "mi_mental_health",
+      "cluster_name": "Mental Health System",
+      "icon": "brain",
+      "cards": [
+        {
+          "card_id": "mi_mh_crisis_line",
+          "title": "988 Suicide & Crisis Lifeline",
+          "summary": "Call or text 988 for immediate mental health crisis support. Free, confidential, 24/7. Trained counselors can help with suicidal thoughts, emotional distress, substance use, and mental health crises. Also available via chat at 988lifeline.org.",
+          "who_qualifies": "Anyone experiencing a mental health crisis, suicidal thoughts, or emotional distress.",
+          "how_to_access": "Call or text 988. Chat at 988lifeline.org. For veterans, press 1 after dialing 988.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "mi_mh_nami",
+          "title": "NAMI Helpline & Support Groups",
+          "summary": "National Alliance on Mental Illness provides free peer support, education, and advocacy. NAMI HelpLine: 1-800-950-NAMI (6264). Family-to-Family program helps families understand mental health conditions and navigate the system.",
+          "who_qualifies": "Individuals with mental health conditions and their family members.",
+          "how_to_access": "Call 1-800-950-NAMI or text 'HELPLINE' to 62640. Find local NAMI affiliate at nami.org/find-support.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "mi_mh_protection_advocacy",
+          "title": "Protection & Advocacy Organization",
+          "summary": "Every state has a federally mandated Protection & Advocacy (P&A) organization with legal authority to investigate abuse and neglect in psychiatric facilities. P&A organizations can enter any facility, access records, and file lawsuits. This is often the most powerful tool available for people harmed in the mental health system.",
+          "who_qualifies": "Anyone with a disability who has experienced abuse, neglect, or rights violations in a facility.",
+          "how_to_access": "Find your state P&A at ndrn.org/about/ndrn-member-agencies/ or call the NDRN at 202-408-9514.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "mi_mh_know_your_rights",
+          "title": "Know Your Rights: Michigan Emergency Admission",
+          "summary": "If you are placed on an involuntary hold in MI, you have rights: the initial hold cannot exceed 24 hours without a court hearing. You have the right to an attorney at the hearing. You have the right to present evidence and call witnesses. You have the right to an independent psychiatric evaluation. You can challenge the hold at any time.",
+          "who_qualifies": "Anyone placed on an involuntary psychiatric hold or facing commitment proceedings.",
+          "how_to_access": "Request to speak with the patient advocate. Ask for a copy of your patient rights. Contact your state's Protection & Advocacy organization.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "mi_mh_records_rights",
+          "title": "Your Right to Your Psychiatric Records",
+          "summary": "Under HIPAA (45 CFR \u00a7 164.524), you have the right to access your complete medical record, including psychiatric treatment records. The facility must respond within 30 days. If they deny access, you can file a complaint with HHS Office for Civil Rights. Under HIPAA \u00a7 164.526, you also have the right to request amendments to inaccurate records.",
+          "who_qualifies": "Any current or former psychiatric patient.",
+          "how_to_access": "Submit a written request to the facility's Health Information Management department. If denied, file complaint at hhs.gov/ocr.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "mi_mh_samhsa",
+          "title": "SAMHSA National Helpline",
+          "summary": "Free, confidential, 24/7 treatment referral and information service for mental health and substance use disorders. Available in English and Spanish. Provides referrals to local treatment facilities, support groups, and community-based organizations.",
+          "who_qualifies": "Anyone seeking mental health or substance use treatment information and referrals.",
+          "how_to_access": "Call 1-800-662-HELP (4357) or visit findtreatment.gov.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        }
+      ]
+    }
+  ]
+}

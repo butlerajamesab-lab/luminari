@@ -1,0 +1,74 @@
+{
+  "state": "NY",
+  "state_name": "New York",
+  "version": "0.1.0",
+  "schema": "luminari-registry-v1",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-08",
+  "source": "Luminari Address Audit \u2014 Northwest Hope Foundation",
+  "datasets": [
+    "programs",
+    "workflows",
+    "oversight",
+    "layer0_flags",
+    "layer1_cards",
+    "county_overrides",
+    "tribal_overrides",
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings",
+    "foia",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "elder_abuse",
+    "tenant_rights",
+    "insurance_claim_denial",
+    "wage_theft",
+    "workplace_discrimination",
+    "consumer_fraud",
+    "disability_rights",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "consumer",
+    "disability",
+    "employment",
+    "general_assistance",
+    "healthcare",
+    "insurer"
+  ],
+  "policy_flags": [
+    "medicaid_expansion_state",
+    "right_to_counsel_nyc",
+    "rent_stabilization_active",
+    "paid_family_leave_active",
+    "sanctuary_city_policies"
+  ],
+  "statistics": {
+    "programs": {
+      "total_programs": 10,
+      "categories": {
+        "community_navigation": 4,
+        "legal_aid": 4,
+        "housing": 1,
+        "dv_safety": 1
+      }
+    },
+    "workflows": {
+      "total_workflows": 3
+    },
+    "oversight": {
+      "total_oversight_bodies": 9,
+      "total_oversight_chains": 9
+    }
+  },
+  "status": "active",
+  "validation_status": "complete"
+}

@@ -1,0 +1,69 @@
+{
+  "state": "AK",
+  "state_name": "Alaska",
+  "version": "3.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-09",
+  "source": "luminari-ak-registry.docx",
+  "datasets": [
+    "healthcare",
+    "dv_services",
+    "cash_assistance",
+    "legal",
+    "food",
+    "general",
+    "tribal",
+    "housing",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "disability_claim",
+    "employment_dispute",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "utility_dispute",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "general",
+    "insurer",
+    "landlord",
+    "consumer",
+    "utility"
+  ],
+  "policy_flags": [
+    "ak_229_tribes_ancsa",
+    "ak_bush_75pct_offroad",
+    "ak_pfd_income_spike",
+    "ak_ui_370_lowest_expansion",
+    "ak_rural_dv_crisis"
+  ],
+  "statistics": {
+    "total_programs": 17,
+    "total_oversight_chains": 6,
+    "total_oversight_bodies": 13,
+    "total_flags": 5
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "food",
+    "general"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ]
+}

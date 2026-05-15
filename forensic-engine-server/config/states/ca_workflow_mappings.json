@@ -1,0 +1,123 @@
+{
+  "meta": {
+    "state": "CA",
+    "layer": "workflow_mappings",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "status": "placeholder",
+    "description": "Workflow mappings \u2014 pending ingestion"
+  },
+  "resolution_order": [
+    "federal_baseline",
+    "state_registry",
+    "county_override",
+    "tribal_override",
+    "pipeline_rule_injection"
+  ],
+  "workflow_mappings": [
+    {
+      "workflow_id": "tenant_rights_workflow",
+      "pipeline_ids": [
+        "tenant_rights",
+        "eviction_defense",
+        "housing_discrimination",
+        "domestic_violence"
+      ],
+      "resolution_layers": [
+        "federal_baseline",
+        "state_registry",
+        "county_override",
+        "tribal_override",
+        "pipeline_rule_injection"
+      ],
+      "state_specific_steps": [
+        "Check AB 1482 rent cap applicability",
+        "Verify just cause eviction requirements",
+        "Check local rent control (SF, LA, Oakland, Berkeley, etc.)",
+        "Review county-specific housing authority resources"
+      ]
+    },
+    {
+      "workflow_id": "wage_theft_workflow",
+      "pipeline_ids": [
+        "wage_theft",
+        "employment_discrimination"
+      ],
+      "resolution_layers": [
+        "federal_baseline",
+        "state_registry",
+        "county_override",
+        "tribal_override",
+        "pipeline_rule_injection"
+      ],
+      "state_specific_steps": [
+        "File wage claim with DLSE/Labor Commissioner",
+        "Check CA minimum wage ($16/hr statewide, $20/hr fast food)",
+        "Verify PFL eligibility through EDD",
+        "Check FEHA protections (broader than federal)"
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial_workflow",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial",
+        "child_welfare",
+        "elder_abuse"
+      ],
+      "resolution_layers": [
+        "federal_baseline",
+        "state_registry",
+        "county_override",
+        "tribal_override",
+        "pipeline_rule_injection"
+      ],
+      "state_specific_steps": [
+        "Check CalFresh BBCE eligibility (200% FPL)",
+        "Verify Medi-Cal eligibility (all immigration statuses)",
+        "Request State Hearing through CDSS (800-952-5253)",
+        "Check Tribal TANF eligibility if applicable"
+      ]
+    },
+    {
+      "workflow_id": "insurance_claim_denial_workflow",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "medicaid_denial"
+      ],
+      "resolution_layers": [
+        "federal_baseline",
+        "state_registry",
+        "county_override",
+        "tribal_override",
+        "pipeline_rule_injection"
+      ],
+      "state_specific_steps": [
+        "Determine plan type: HMO (DMHC) vs PPO (CDI) vs Medi-Cal (DHCS)",
+        "File IMR with DMHC for HMO medical necessity denials",
+        "File complaint with CDI for PPO/indemnity denials",
+        "For Medi-Cal: plan grievance \u2192 DHCS \u2192 State Hearing"
+      ]
+    },
+    {
+      "workflow_id": "public_records_workflow",
+      "pipeline_ids": [
+        "foia_request",
+        "public_records"
+      ],
+      "resolution_layers": [
+        "federal_baseline",
+        "state_registry",
+        "county_override",
+        "tribal_override",
+        "pipeline_rule_injection"
+      ],
+      "state_specific_steps": [
+        "Submit CA Public Records Act request (Gov. Code \u00a77920)",
+        "Agency must respond within 10 days (extendable to 24)",
+        "No fees for electronic records",
+        "Escalate to AG if agency non-compliant"
+      ]
+    }
+  ]
+}

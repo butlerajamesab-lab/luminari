@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "state": "AL",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "Alabama DHR",
+      "role": "SNAP/TANF/Medicaid",
+      "phone": "334-242-1773",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "211 Alabama",
+      "role": "Social services referral",
+      "phone": "211",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "Legal Services Alabama",
+      "role": "Statewide legal aid",
+      "phone": "866-456-4995",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "Alabama ADOL",
+      "role": "UI Appeals",
+      "phone": "800-361-4524",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "Alabama DOI",
+      "role": "Insurance complaints",
+      "phone": "334-269-3550",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "ACADV DV Hotline",
+      "role": "Domestic violence crisis",
+      "phone": "800-650-6522",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "UAB Medicine",
+      "role": "Birmingham safety net",
+      "phone": "205-934-4011",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "Poarch Creek",
+      "role": "Tribal services",
+      "phone": "251-368-9136",
+      "email": null,
+      "hours": null
+    }
+  ],
+  "regions": [],
+  "missing_sections": []
+}

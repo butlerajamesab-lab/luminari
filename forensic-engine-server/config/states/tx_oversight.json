@@ -1,0 +1,283 @@
+{
+  "meta": {
+    "state": "TX",
+    "source": "address_audit"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "healthcare",
+      "state": "TX",
+      "bodies": [
+        {
+          "oversight_body": "Texas Health & Human Services Commission (HHSC)",
+          "jurisdiction": "state",
+          "phone": "211",
+          "complaint_portal": "https://hhs.texas.gov",
+          "what_to_report": "Contact for healthcare complaints",
+          "street_address": "4900 N Lamar Blvd",
+          "city": "Austin",
+          "state_code": "TX",
+          "zip": "78751",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "insurance",
+      "state": "TX",
+      "bodies": [
+        {
+          "oversight_body": "Texas Dept of Insurance (TDI)",
+          "jurisdiction": "state",
+          "phone": "800-252-3439",
+          "complaint_portal": "https://tdi.texas.gov",
+          "what_to_report": "Contact for insurance complaints",
+          "street_address": "1601 Congress Ave",
+          "city": "Austin",
+          "state_code": "TX",
+          "zip": "78701",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "employment",
+      "state": "TX",
+      "bodies": [
+        {
+          "oversight_body": "Texas Workforce Commission (UI)",
+          "jurisdiction": "state",
+          "phone": "800-939-6631",
+          "complaint_portal": "https://twc.texas.gov",
+          "what_to_report": "Contact for employment complaints",
+          "street_address": "101 E 15th St",
+          "city": "Austin",
+          "state_code": "TX",
+          "zip": "78778",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "housing",
+      "state": "TX",
+      "bodies": [
+        {
+          "oversight_body": "Texas Dept of Housing & Community Affairs",
+          "jurisdiction": "state",
+          "phone": "512-475-3800",
+          "complaint_portal": "https://tdhca.state.tx.us",
+          "what_to_report": "Contact for housing complaints",
+          "street_address": "221 E 11th St",
+          "city": "Austin",
+          "state_code": "TX",
+          "zip": "78701",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "general_assistance",
+      "state": "TX",
+      "bodies": [
+        {
+          "oversight_body": "Texas Commission on Human Rights / TWC-Civil Rights",
+          "jurisdiction": "state",
+          "phone": "888-452-4778",
+          "complaint_portal": "https://twc.texas.gov/civilrights",
+          "what_to_report": "Contact for general_assistance complaints",
+          "street_address": "101 E 15th St",
+          "city": "Austin",
+          "state_code": "TX",
+          "zip": "78778",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "chain_id": "tx_insurance_oversight",
+      "entity_type": "insurer",
+      "bodies": [
+        {
+          "body_id": "tx_doi",
+          "oversight_body": "TX Department of Insurance",
+          "jurisdiction": "state",
+          "pattern_threshold": 3,
+          "entity_type": "insurer",
+          "city": "Austin",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ],
+      "state": "TX"
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "tx_med_board",
+          "name": "Texas Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Texas Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "TX"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "tx_patient_adv",
+          "name": "Texas Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Texas Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "TX"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "tx_health_dept",
+          "name": "Texas Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Texas Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "TX"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "TX"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "tx_pharm_board",
+          "name": "Texas Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Texas Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "TX"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "tx_pa",
+          "name": "Texas Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Texas Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "TX"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "tx_mha",
+          "name": "Texas Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Texas Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "TX"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "TX"
+    }
+  ]
+}

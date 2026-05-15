@@ -1,0 +1,72 @@
+{
+  "state": "CT",
+  "state_name": "Connecticut",
+  "version": "3.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-09",
+  "source": "luminari-ct-registry.docx",
+  "datasets": [
+    "healthcare",
+    "legal",
+    "housing",
+    "food",
+    "general",
+    "cash_assistance",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "disability_claim",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "utility_dispute",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "general",
+    "insurer",
+    "landlord",
+    "consumer",
+    "utility"
+  ],
+  "policy_flags": [
+    "ct_min_wage_highest",
+    "ct_hartford_poverty",
+    "ct_chro_300_day",
+    "ct_tribal_casino_infrastructure",
+    "ct_danbury_immigrant_ice",
+    "ct_husky_health_comprehensive",
+    "ct_tfa_21_month_limit",
+    "ct_winter_shutoff_moratorium"
+  ],
+  "statistics": {
+    "total_flags": 8,
+    "total_programs": 27,
+    "total_oversight_bodies": 10,
+    "total_workflows": 3,
+    "total_help_contacts": 16
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "food",
+    "general"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ],
+  "portability_score": "57%",
+  "notes": "Highest minimum wage ($16.35, indexed). Hartford 30%+ poverty (highest state capital). CHRO 300-day broad classes. Right to counsel in eviction (2022). Winter shutoff moratorium Nov 1-May 1. TFA 21-month limit. Two casino-funded tribes. Danbury 40% immigrant with ICE presence."
+}

@@ -1,0 +1,4069 @@
+{
+  "resources": [
+    {
+      "resource_id": "wa-food-001",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "food_nutrition_state",
+      "resource_name": "Basic Food (WA SNAP)",
+      "alternate_names": [
+        "SNAP",
+        "Supplemental Nutrition Assistance Program"
+      ],
+      "resource_type": "benefits_office",
+      "service_category": "food_nutrition",
+      "provider_name": "Washington State DSHS",
+      "provider_entity_type": "state",
+      "layer_label": "State/Federal",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "all households",
+        "income-based"
+      ],
+      "eligibility_summary": "Income-based, all households",
+      "eligibility_rules": [],
+      "phone_primary": "877-501-2233",
+      "website": "washingtonconnection.org",
+      "application_url": "https://washingtonconnection.org",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "snap",
+        "food_assistance"
+      ],
+      "notes_full": "Apply at WashingtonConnection.org or call 877-501-2233. Fast-track processing.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-002",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "food_nutrition_state",
+      "resource_name": "Food Assistance Program (FAP)",
+      "alternate_names": [
+        "FAP"
+      ],
+      "resource_type": "benefits_office",
+      "service_category": "food_nutrition",
+      "provider_name": "Washington State DSHS",
+      "provider_entity_type": "state",
+      "layer_label": "State",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "legal immigrants"
+      ],
+      "eligibility_summary": "Legal immigrants ineligible for federal SNAP",
+      "eligibility_rules": [],
+      "phone_primary": "877-501-2233",
+      "website": "washingtonconnection.org",
+      "application_url": "https://washingtonconnection.org",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "food_assistance",
+        "immigrants"
+      ],
+      "notes_full": "State-funded food assistance for legal immigrants not eligible for federal SNAP.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-003",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "food_nutrition_state",
+      "resource_name": "WIC - Washington State",
+      "alternate_names": [
+        "WIC",
+        "Women Infants and Children"
+      ],
+      "resource_type": "benefits_office",
+      "service_category": "food_nutrition",
+      "provider_name": "Washington State Department of Health",
+      "provider_entity_type": "state",
+      "layer_label": "State/Federal",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "pregnant",
+        "postpartum",
+        "children under 5"
+      ],
+      "eligibility_summary": "Pregnant/postpartum women, children under 5",
+      "eligibility_rules": [],
+      "phone_primary": "800-841-1410",
+      "website": "doh.wa.gov/wic",
+      "application_url": "https://doh.wa.gov/wic",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "wic",
+        "maternal_health"
+      ],
+      "notes_full": "Call 800-841-1410 or visit doh.wa.gov/wic.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-004",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "food_nutrition_state",
+      "resource_name": "Working Families Tax Credit",
+      "alternate_names": [
+        "WFTC"
+      ],
+      "resource_type": "benefits_office",
+      "service_category": "food_nutrition",
+      "provider_name": "Washington State Department of Revenue",
+      "provider_entity_type": "state",
+      "layer_label": "State",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "workers",
+        "income-qualified"
+      ],
+      "eligibility_summary": "Workers who filed federal return, income-qualified",
+      "eligibility_rules": [],
+      "phone_primary": "",
+      "website": "workingfamiliescredit.wa.gov",
+      "application_url": "https://workingfamiliescredit.wa.gov",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "tax_credit",
+        "working_families"
+      ],
+      "notes_full": "Up to $1,330. Apply separately from EITC.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-005",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "food_nutrition_state",
+      "resource_name": "Senior Farmers Market Nutrition Program",
+      "alternate_names": [
+        "SFMNP"
+      ],
+      "resource_type": "benefits_office",
+      "service_category": "food_nutrition",
+      "provider_name": "Washington State DSHS",
+      "provider_entity_type": "state",
+      "layer_label": "State/Federal",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "seniors 60+"
+      ],
+      "eligibility_summary": "Low-income seniors 60+",
+      "eligibility_rules": [],
+      "phone_primary": "360-902-1976",
+      "website": "",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "seniors",
+        "nutrition",
+        "farmers_market"
+      ],
+      "notes_full": "Contact local DSHS office or Area Agency on Aging.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-006",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "food_nutrition_state",
+      "resource_name": "TEFAP / Emergency Food (DSHS)",
+      "alternate_names": [
+        "TEFAP",
+        "Emergency Food"
+      ],
+      "resource_type": "food_bank",
+      "service_category": "food_nutrition",
+      "provider_name": "Washington State DSHS",
+      "provider_entity_type": "state",
+      "layer_label": "State/Federal",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "low-income households"
+      ],
+      "eligibility_summary": "Low-income households",
+      "eligibility_rules": [],
+      "phone_primary": "",
+      "website": "",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "emergency_food",
+        "community_action"
+      ],
+      "notes_full": "Contact local Community Action Agency for distribution sites.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-007",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "food_nutrition_local",
+      "resource_name": "Food Lifeline - Seattle Food Bank Network",
+      "alternate_names": [
+        "Food Lifeline"
+      ],
+      "resource_type": "food_bank",
+      "service_category": "food_nutrition",
+      "provider_name": "Food Lifeline",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit/KC",
+      "jurisdiction_level": "county",
+      "coverage_type": "county",
+      "coverage_values": [
+        "King County"
+      ],
+      "audience_tags": [
+        "anyone in need"
+      ],
+      "eligibility_summary": "Anyone in need",
+      "eligibility_rules": [],
+      "phone_primary": "206-545-6600",
+      "website": "foodlifeline.org",
+      "application_url": "https://foodlifeline.org",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "food_bank",
+        "king_county"
+      ],
+      "notes_full": "Network of food banks across King County.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-008",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "food_nutrition_local",
+      "resource_name": "Rainier Valley Food Bank",
+      "alternate_names": [],
+      "resource_type": "food_bank",
+      "service_category": "food_nutrition",
+      "provider_name": "Rainier Valley Food Bank",
+      "provider_entity_type": "community",
+      "layer_label": "Community",
+      "jurisdiction_level": "community",
+      "coverage_type": "neighborhood",
+      "coverage_values": [
+        "South Seattle"
+      ],
+      "audience_tags": [
+        "south Seattle residents"
+      ],
+      "eligibility_summary": "South Seattle residents",
+      "eligibility_rules": [],
+      "phone_primary": "206-722-8366",
+      "website": "rainiervalleyfoodbank.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "food_bank",
+        "south_seattle"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-009",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "food_nutrition_local",
+      "resource_name": "White Center Food Bank",
+      "alternate_names": [],
+      "resource_type": "food_bank",
+      "service_category": "food_nutrition",
+      "provider_name": "White Center Food Bank",
+      "provider_entity_type": "community",
+      "layer_label": "Community",
+      "jurisdiction_level": "community",
+      "coverage_type": "neighborhood",
+      "coverage_values": [
+        "SW Seattle",
+        "White Center"
+      ],
+      "audience_tags": [
+        "SW Seattle / White Center"
+      ],
+      "eligibility_summary": "SW Seattle / White Center area",
+      "eligibility_rules": [],
+      "phone_primary": "206-762-4518",
+      "website": "whitecenterfoodbank.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "food_bank",
+        "white_center"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-010",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "food_nutrition_local",
+      "resource_name": "University District Food Bank",
+      "alternate_names": [
+        "U-District Food Bank"
+      ],
+      "resource_type": "food_bank",
+      "service_category": "food_nutrition",
+      "provider_name": "University District Food Bank",
+      "provider_entity_type": "community",
+      "layer_label": "Community",
+      "jurisdiction_level": "community",
+      "coverage_type": "neighborhood",
+      "coverage_values": [
+        "U-District",
+        "NE Seattle"
+      ],
+      "audience_tags": [
+        "U-District / NE Seattle"
+      ],
+      "eligibility_summary": "U-District / NE Seattle area",
+      "eligibility_rules": [],
+      "phone_primary": "206-523-7060",
+      "website": "udistrictfoodbank.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "food_bank",
+        "u_district"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-011",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "food_nutrition_local",
+      "resource_name": "Fresh Bucks (Seattle)",
+      "alternate_names": [
+        "Seattle Fresh Bucks"
+      ],
+      "resource_type": "benefits_office",
+      "service_category": "food_nutrition",
+      "provider_name": "City of Seattle",
+      "provider_entity_type": "city",
+      "layer_label": "City",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "SNAP recipients",
+        "WIC recipients",
+        "HUD housing"
+      ],
+      "eligibility_summary": "SNAP/WIC/HUD housing recipients in Seattle",
+      "eligibility_rules": [],
+      "phone_primary": "206-684-0660",
+      "website": "seattle.gov/freshbucks",
+      "application_url": "https://seattle.gov/freshbucks",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "produce_incentive",
+        "snap"
+      ],
+      "notes_full": "$10/week extra for produce purchases at farmers markets.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-012",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "food_nutrition_local",
+      "resource_name": "Double Up Food Bucks (WA)",
+      "alternate_names": [],
+      "resource_type": "benefits_office",
+      "service_category": "food_nutrition",
+      "provider_name": "Double Up Food Bucks Washington",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "SNAP recipients",
+        "farmers markets"
+      ],
+      "eligibility_summary": "SNAP recipients at farmers markets",
+      "eligibility_rules": [],
+      "phone_primary": "",
+      "website": "doubleupwa.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "produce_incentive",
+        "snap",
+        "farmers_market"
+      ],
+      "notes_full": "2:1 match on produce purchases at participating farmers markets.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-013",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-king-county",
+      "category_key": "food_nutrition_local",
+      "resource_name": "Hopelink (Eastside)",
+      "alternate_names": [],
+      "resource_type": "food_bank",
+      "service_category": "food_nutrition",
+      "provider_name": "Hopelink",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "county",
+      "coverage_type": "regional",
+      "coverage_values": [
+        "East King County"
+      ],
+      "audience_tags": [
+        "East King County residents"
+      ],
+      "eligibility_summary": "East King County residents",
+      "eligibility_rules": [],
+      "phone_primary": "425-869-6000",
+      "website": "hope-link.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "food_bank",
+        "east_king_county"
+      ],
+      "notes_full": "Multiple services including food, housing, emergency assistance.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-014",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "food_nutrition_local",
+      "resource_name": "FareStart - Community Meals",
+      "alternate_names": [
+        "FareStart"
+      ],
+      "resource_type": "food_bank",
+      "service_category": "food_nutrition",
+      "provider_name": "FareStart",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "anyone",
+        "drop-in"
+      ],
+      "eligibility_summary": "Anyone - free community meals, drop-in",
+      "eligibility_rules": [],
+      "phone_primary": "206-267-7601",
+      "website": "farestart.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "community_meals",
+        "drop_in"
+      ],
+      "notes_full": "Drop-in community meals program.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-015",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "food_nutrition_tribal",
+      "resource_name": "Chief Seattle Club - Meals",
+      "alternate_names": [
+        "Chief Seattle Club"
+      ],
+      "resource_type": "tribal_service",
+      "service_category": "food_nutrition",
+      "provider_name": "Chief Seattle Club",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Tribal/Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "urban Native Americans",
+        "no ID required"
+      ],
+      "eligibility_summary": "Urban Native Americans; no ID required",
+      "eligibility_rules": [],
+      "phone_primary": "206-957-4700",
+      "website": "chiefseattleclub.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "urban_native",
+        "meals",
+        "tribal"
+      ],
+      "notes_full": "Daily meals for urban Native Americans; no ID required.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-016",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-tribe-muckleshoot",
+      "category_key": "food_nutrition_tribal",
+      "resource_name": "Muckleshoot Food Bank",
+      "alternate_names": [],
+      "resource_type": "food_bank",
+      "service_category": "food_nutrition",
+      "provider_name": "Muckleshoot Indian Tribe",
+      "provider_entity_type": "tribal",
+      "layer_label": "Tribal",
+      "jurisdiction_level": "tribal",
+      "coverage_type": "tribal",
+      "coverage_values": [
+        "Muckleshoot Reservation",
+        "surrounding community"
+      ],
+      "audience_tags": [
+        "tribal members",
+        "community"
+      ],
+      "eligibility_summary": "Tribal members and surrounding community",
+      "eligibility_rules": [],
+      "phone_primary": "253-876-3274",
+      "website": "muckleshoot.nsn.us",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "food_bank",
+        "tribal",
+        "muckleshoot"
+      ],
+      "notes_full": "Serves tribal members and surrounding community.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-017",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-tribe-tulalip",
+      "category_key": "food_nutrition_tribal",
+      "resource_name": "Tulalip Tribes Food Bank",
+      "alternate_names": [],
+      "resource_type": "food_bank",
+      "service_category": "food_nutrition",
+      "provider_name": "Tulalip Tribes",
+      "provider_entity_type": "tribal",
+      "layer_label": "Tribal",
+      "jurisdiction_level": "tribal",
+      "coverage_type": "tribal",
+      "coverage_values": [
+        "Tulalip Reservation",
+        "Marysville"
+      ],
+      "audience_tags": [
+        "tribal members",
+        "Marysville area"
+      ],
+      "eligibility_summary": "Tribal members and Marysville area",
+      "eligibility_rules": [],
+      "phone_primary": "360-716-4000",
+      "website": "tulaliptribes-nsn.gov",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "food_bank",
+        "tribal",
+        "tulalip"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-food-018",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "food_nutrition_tribal",
+      "resource_name": "Seattle Indian Health Board - Food Resources",
+      "alternate_names": [
+        "SIHB Food Resources"
+      ],
+      "resource_type": "tribal_service",
+      "service_category": "food_nutrition",
+      "provider_name": "Seattle Indian Health Board",
+      "provider_entity_type": "tribal",
+      "layer_label": "Tribal/Urban",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "urban AI/AN"
+      ],
+      "eligibility_summary": "Urban American Indian/Alaska Native individuals",
+      "eligibility_rules": [],
+      "phone_primary": "206-324-9360",
+      "website": "sihb.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "food_assistance",
+        "urban_native",
+        "tribal"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-001",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "healthcare_state",
+      "resource_name": "Apple Health (Medicaid)",
+      "alternate_names": [
+        "Washington Apple Health",
+        "WA Medicaid"
+      ],
+      "resource_type": "benefits_office",
+      "service_category": "healthcare",
+      "provider_name": "Washington State Health Care Authority",
+      "provider_entity_type": "state",
+      "layer_label": "State/Federal",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "income < 138% FPL"
+      ],
+      "eligibility_summary": "Income less than 138% FPL",
+      "eligibility_rules": [],
+      "phone_primary": "800-562-3022",
+      "website": "wahbexchange.org",
+      "application_url": "https://wahbexchange.org",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "medicaid",
+        "health_coverage"
+      ],
+      "notes_full": "WA Medicaid. Appeals to HCA within 90 days.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-002",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "healthcare_state",
+      "resource_name": "Apple Health for Kids (CHIP)",
+      "alternate_names": [
+        "CHIP",
+        "Children's Health Insurance Program WA"
+      ],
+      "resource_type": "benefits_office",
+      "service_category": "healthcare",
+      "provider_name": "Washington State Health Care Authority",
+      "provider_entity_type": "state",
+      "layer_label": "State/Federal",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "children above Medicaid income"
+      ],
+      "eligibility_summary": "Children above Medicaid income threshold",
+      "eligibility_rules": [],
+      "phone_primary": "800-562-3022",
+      "website": "wahbexchange.org",
+      "application_url": "https://wahbexchange.org",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "chip",
+        "children",
+        "health_coverage"
+      ],
+      "notes_full": "CHIP coverage for children.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-003",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "healthcare_state",
+      "resource_name": "Cascade Care Savings / Premium Assistance",
+      "alternate_names": [
+        "Cascade Care"
+      ],
+      "resource_type": "benefits_office",
+      "service_category": "healthcare",
+      "provider_name": "Washington Health Benefit Exchange",
+      "provider_entity_type": "state",
+      "layer_label": "State",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "income 100-250% FPL"
+      ],
+      "eligibility_summary": "Income 100-250% FPL, on marketplace plan",
+      "eligibility_rules": [],
+      "phone_primary": "855-923-4633",
+      "website": "wahbexchange.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "premium_assistance",
+        "marketplace",
+        "aca"
+      ],
+      "notes_full": "State subsidy on top of federal ACA credits.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-004",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "healthcare_state",
+      "resource_name": "WA Prescription Drug Program",
+      "alternate_names": [],
+      "resource_type": "benefits_office",
+      "service_category": "healthcare",
+      "provider_name": "Washington State Department of Health",
+      "provider_entity_type": "state",
+      "layer_label": "State",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "low-income uninsured"
+      ],
+      "eligibility_summary": "Low-income, uninsured WA residents",
+      "eligibility_rules": [],
+      "phone_primary": "855-583-2663",
+      "website": "rx.wa.gov",
+      "application_url": "https://rx.wa.gov",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "prescription_drugs",
+        "uninsured"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-005",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "healthcare_state",
+      "resource_name": "ADAP (AIDS Drug Assistance Program)",
+      "alternate_names": [
+        "ADAP"
+      ],
+      "resource_type": "benefits_office",
+      "service_category": "healthcare",
+      "provider_name": "Washington State Department of Health",
+      "provider_entity_type": "state",
+      "layer_label": "State",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "low-income people with HIV"
+      ],
+      "eligibility_summary": "Low-income people with HIV",
+      "eligibility_rules": [],
+      "phone_primary": "360-236-3473",
+      "website": "doh.wa.gov/adap",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "hiv_aids",
+        "prescription_drugs"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-006",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "healthcare_state",
+      "resource_name": "Address Confidentiality Program (ACP)",
+      "alternate_names": [
+        "ACP",
+        "Safe at Home"
+      ],
+      "resource_type": "program",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "Washington State Secretary of State",
+      "provider_entity_type": "state",
+      "layer_label": "State",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "DV survivors",
+        "SA survivors",
+        "trafficking",
+        "stalking"
+      ],
+      "eligibility_summary": "DV, SA, trafficking, stalking survivors",
+      "eligibility_rules": [],
+      "phone_primary": "360-753-2972",
+      "website": "sos.wa.gov/acp",
+      "application_url": "https://sos.wa.gov/acp",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "address_confidentiality",
+        "dv_safety"
+      ],
+      "notes_full": "Substitute mailing address to protect location of survivors.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-007",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-king-county",
+      "category_key": "healthcare_local",
+      "resource_name": "Harborview Medical Center - Charity Care",
+      "alternate_names": [
+        "Harborview",
+        "HMC Charity Care"
+      ],
+      "resource_type": "hospital",
+      "service_category": "healthcare",
+      "provider_name": "Harborview Medical Center / UW Medicine",
+      "provider_entity_type": "county",
+      "layer_label": "County/UW",
+      "jurisdiction_level": "county",
+      "coverage_type": "county",
+      "coverage_values": [
+        "King County"
+      ],
+      "audience_tags": [
+        "anyone",
+        "uninsured",
+        "underinsured"
+      ],
+      "eligibility_summary": "Anyone regardless of insurance or ability to pay",
+      "eligibility_rules": [],
+      "phone_primary": "206-744-3000",
+      "website": "",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": true,
+      "is_tribal_specific": false,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "charity_care",
+        "hospital",
+        "trauma_center"
+      ],
+      "notes_full": "No one turned away. Apply at billing office.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-008",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "healthcare_local",
+      "resource_name": "UW Medicine Financial Assistance",
+      "alternate_names": [],
+      "resource_type": "hospital",
+      "service_category": "healthcare",
+      "provider_name": "UW Medicine",
+      "provider_entity_type": "hospital",
+      "layer_label": "Nonprofit Hospital",
+      "jurisdiction_level": "county",
+      "coverage_type": "multi_county",
+      "coverage_values": [
+        "King County",
+        "Pierce County",
+        "Snohomish County"
+      ],
+      "audience_tags": [
+        "income < 400% FPL"
+      ],
+      "eligibility_summary": "Income less than 400% FPL, sliding scale",
+      "eligibility_rules": [],
+      "phone_primary": "855-520-5151",
+      "website": "uwmedicine.org/billing/financial-assistance",
+      "application_url": "",
+      "cost_structure": "sliding_scale",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "charity_care",
+        "hospital",
+        "sliding_scale"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-009",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "healthcare_local",
+      "resource_name": "Swedish Medical Center Financial Assistance",
+      "alternate_names": [],
+      "resource_type": "hospital",
+      "service_category": "healthcare",
+      "provider_name": "Swedish Medical Center",
+      "provider_entity_type": "hospital",
+      "layer_label": "Nonprofit Hospital",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "low-income patients"
+      ],
+      "eligibility_summary": "Low-income patients, sliding scale",
+      "eligibility_rules": [],
+      "phone_primary": "206-386-6000",
+      "website": "swedish.org/billing",
+      "application_url": "",
+      "cost_structure": "sliding_scale",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "charity_care",
+        "sliding_scale"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-010",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "healthcare_local",
+      "resource_name": "NeighborCare Health (FQHC)",
+      "alternate_names": [
+        "NeighborCare"
+      ],
+      "resource_type": "clinic",
+      "service_category": "healthcare",
+      "provider_name": "NeighborCare Health",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "FQHC/Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "anyone",
+        "sliding scale"
+      ],
+      "eligibility_summary": "Anyone; sliding scale; multiple Seattle locations",
+      "eligibility_rules": [],
+      "phone_primary": "206-461-6906",
+      "website": "neighborcare.org",
+      "application_url": "",
+      "cost_structure": "sliding_scale",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "fqhc",
+        "primary_care",
+        "sliding_scale"
+      ],
+      "notes_full": "Multiple Seattle locations.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-011",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "healthcare_local",
+      "resource_name": "International Community Health Services (ICHS)",
+      "alternate_names": [
+        "ICHS"
+      ],
+      "resource_type": "clinic",
+      "service_category": "healthcare",
+      "provider_name": "International Community Health Services",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "FQHC/Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "underserved communities",
+        "10+ languages"
+      ],
+      "eligibility_summary": "Underserved communities; 10+ languages",
+      "eligibility_rules": [],
+      "phone_primary": "206-788-3700",
+      "website": "ichs.com",
+      "application_url": "",
+      "cost_structure": "sliding_scale",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "fqhc",
+        "multilingual",
+        "underserved"
+      ],
+      "notes_full": "10+ languages supported.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-012",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "healthcare_local",
+      "resource_name": "Sea Mar Community Health Centers",
+      "alternate_names": [
+        "Sea Mar"
+      ],
+      "resource_type": "clinic",
+      "service_category": "healthcare",
+      "provider_name": "Sea Mar Community Health Centers",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "FQHC/Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "multi_county",
+      "coverage_values": [
+        "Seattle",
+        "King County"
+      ],
+      "audience_tags": [
+        "Latino community",
+        "anyone"
+      ],
+      "eligibility_summary": "Latino community and anyone; sliding scale",
+      "eligibility_rules": [],
+      "phone_primary": "206-764-4700",
+      "website": "seamar.org",
+      "application_url": "",
+      "cost_structure": "sliding_scale",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "fqhc",
+        "latino",
+        "sliding_scale"
+      ],
+      "notes_full": "Multiple locations.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-013",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "healthcare_local",
+      "resource_name": "Country Doctor Community Clinic",
+      "alternate_names": [],
+      "resource_type": "clinic",
+      "service_category": "healthcare",
+      "provider_name": "Country Doctor Community Clinic",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "FQHC/Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "neighborhood",
+      "coverage_values": [
+        "Capitol Hill",
+        "Seattle"
+      ],
+      "audience_tags": [
+        "anyone",
+        "Capitol Hill area"
+      ],
+      "eligibility_summary": "Anyone in Capitol Hill area; sliding scale",
+      "eligibility_rules": [],
+      "phone_primary": "206-299-1600",
+      "website": "countrydoctor.org",
+      "application_url": "",
+      "cost_structure": "sliding_scale",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "fqhc",
+        "capitol_hill",
+        "sliding_scale"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-014",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-king-county",
+      "category_key": "healthcare_local",
+      "resource_name": "King County Mental Health Crisis Line",
+      "alternate_names": [
+        "KC Crisis Line"
+      ],
+      "resource_type": "hotline",
+      "service_category": "mental_health",
+      "provider_name": "King County",
+      "provider_entity_type": "county",
+      "layer_label": "County",
+      "jurisdiction_level": "county",
+      "coverage_type": "county",
+      "coverage_values": [
+        "King County"
+      ],
+      "audience_tags": [
+        "anyone in mental health crisis"
+      ],
+      "eligibility_summary": "Anyone in mental health crisis in King County",
+      "eligibility_rules": [],
+      "phone_primary": "866-427-4747",
+      "website": "kingcounty.gov/crisis",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": true,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "crisis",
+        "mental_health",
+        "24_7"
+      ],
+      "notes_full": "24/7 mental health crisis line.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-015",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "healthcare_local",
+      "resource_name": "DESC (Downtown Emergency Service Center)",
+      "alternate_names": [
+        "DESC"
+      ],
+      "resource_type": "clinic",
+      "service_category": "mental_health",
+      "provider_name": "DESC",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "chronically homeless adults with mental illness"
+      ],
+      "eligibility_summary": "Chronically homeless adults with mental illness",
+      "eligibility_rules": [],
+      "phone_primary": "206-464-1570",
+      "website": "desc.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "behavioral_health",
+        "homeless",
+        "mental_health"
+      ],
+      "notes_full": "Primary care, behavioral health, permanent supportive housing.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-016",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "healthcare_tribal",
+      "resource_name": "Seattle Indian Health Board",
+      "alternate_names": [
+        "SIHB"
+      ],
+      "resource_type": "clinic",
+      "service_category": "healthcare",
+      "provider_name": "Seattle Indian Health Board",
+      "provider_entity_type": "tribal",
+      "layer_label": "Tribal/FQHC",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "urban AI/AN",
+        "community"
+      ],
+      "eligibility_summary": "Urban AI/AN individuals; primary care and dental",
+      "eligibility_rules": [],
+      "phone_primary": "206-324-9360",
+      "website": "sihb.org",
+      "application_url": "",
+      "cost_structure": "sliding_scale",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "fqhc",
+        "urban_native",
+        "primary_care",
+        "dental"
+      ],
+      "notes_full": "Primary care and dental for urban AI/AN.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-017",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "healthcare_local",
+      "resource_name": "Pioneer Square Clinic (Union Gospel Mission)",
+      "alternate_names": [
+        "UGM Health Care"
+      ],
+      "resource_type": "clinic",
+      "service_category": "healthcare",
+      "provider_name": "Union Gospel Mission",
+      "provider_entity_type": "faith",
+      "layer_label": "Nonprofit/Faith",
+      "jurisdiction_level": "city",
+      "coverage_type": "neighborhood",
+      "coverage_values": [
+        "Pioneer Square",
+        "Downtown Seattle"
+      ],
+      "audience_tags": [
+        "low-income and homeless"
+      ],
+      "eligibility_summary": "Low-income and homeless individuals",
+      "eligibility_rules": [],
+      "phone_primary": "206-723-0767",
+      "website": "ugm.org/health-care",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "primary_care",
+        "homeless",
+        "faith_based"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-018",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-tribe-muckleshoot",
+      "category_key": "healthcare_tribal",
+      "resource_name": "Muckleshoot White River Health Clinic",
+      "alternate_names": [],
+      "resource_type": "clinic",
+      "service_category": "healthcare",
+      "provider_name": "Muckleshoot Indian Tribe / IHS",
+      "provider_entity_type": "tribal",
+      "layer_label": "Tribal/IHS",
+      "jurisdiction_level": "tribal",
+      "coverage_type": "tribal",
+      "coverage_values": [
+        "Muckleshoot Reservation"
+      ],
+      "audience_tags": [
+        "tribal members"
+      ],
+      "eligibility_summary": "Muckleshoot tribal members",
+      "eligibility_rules": [],
+      "phone_primary": "253-876-3070",
+      "website": "muckleshoot.nsn.us/health",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "tribal_health",
+        "ihs",
+        "muckleshoot"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-019",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-tribe-tulalip",
+      "category_key": "healthcare_tribal",
+      "resource_name": "Tulalip Tribal Health Clinic",
+      "alternate_names": [],
+      "resource_type": "clinic",
+      "service_category": "healthcare",
+      "provider_name": "Tulalip Tribes / IHS",
+      "provider_entity_type": "tribal",
+      "layer_label": "Tribal/IHS",
+      "jurisdiction_level": "tribal",
+      "coverage_type": "tribal",
+      "coverage_values": [
+        "Tulalip Reservation"
+      ],
+      "audience_tags": [
+        "tribal members"
+      ],
+      "eligibility_summary": "Tribal members",
+      "eligibility_rules": [],
+      "phone_primary": "360-716-4511",
+      "website": "tulaliptribes-nsn.gov/health",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "tribal_health",
+        "ihs",
+        "tulalip"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-020",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-tribe-puyallup",
+      "category_key": "healthcare_tribal",
+      "resource_name": "Puyallup Tribal Health Authority",
+      "alternate_names": [
+        "PTHA"
+      ],
+      "resource_type": "clinic",
+      "service_category": "healthcare",
+      "provider_name": "Puyallup Tribal Health Authority",
+      "provider_entity_type": "tribal",
+      "layer_label": "Tribal/IHS",
+      "jurisdiction_level": "tribal",
+      "coverage_type": "tribal",
+      "coverage_values": [
+        "Puyallup Reservation"
+      ],
+      "audience_tags": [
+        "tribal members"
+      ],
+      "eligibility_summary": "Tribal members",
+      "eligibility_rules": [],
+      "phone_primary": "253-593-0232",
+      "website": "ptha.net",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "tribal_health",
+        "ihs",
+        "puyallup"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-021",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-tribe-lummi",
+      "category_key": "healthcare_tribal",
+      "resource_name": "Lummi Tribal Health Center",
+      "alternate_names": [],
+      "resource_type": "clinic",
+      "service_category": "healthcare",
+      "provider_name": "Lummi Nation / IHS",
+      "provider_entity_type": "tribal",
+      "layer_label": "Tribal/IHS",
+      "jurisdiction_level": "tribal",
+      "coverage_type": "tribal",
+      "coverage_values": [
+        "Lummi Reservation"
+      ],
+      "audience_tags": [
+        "tribal members"
+      ],
+      "eligibility_summary": "Tribal members",
+      "eligibility_rules": [],
+      "phone_primary": "360-384-1520",
+      "website": "lummi-nsn.gov",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "tribal_health",
+        "ihs",
+        "lummi"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-health-022",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "healthcare_tribal",
+      "resource_name": "Urban Indian Health Institute (UIHI)",
+      "alternate_names": [
+        "UIHI"
+      ],
+      "resource_type": "tribal_service",
+      "service_category": "healthcare",
+      "provider_name": "Urban Indian Health Institute",
+      "provider_entity_type": "tribal",
+      "layer_label": "Tribal/Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "urban AI/AN"
+      ],
+      "eligibility_summary": "Urban AI/AN; research and referrals",
+      "eligibility_rules": [],
+      "phone_primary": "206-812-3030",
+      "website": "uihi.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "urban_native",
+        "research",
+        "referrals"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-001",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "housing_state",
+      "resource_name": "AREN (Additional Requirements for Emergent Needs)",
+      "alternate_names": [
+        "AREN"
+      ],
+      "resource_type": "benefits_office",
+      "service_category": "housing_rent",
+      "provider_name": "Washington State DSHS",
+      "provider_entity_type": "state",
+      "layer_label": "State",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "emergency housing/utility needs"
+      ],
+      "eligibility_summary": "Emergency one-time payment for housing/utilities",
+      "eligibility_rules": [],
+      "phone_primary": "877-501-2233",
+      "website": "washingtonconnection.org",
+      "application_url": "https://washingtonconnection.org",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "emergency_rent",
+        "utilities",
+        "dshs"
+      ],
+      "notes_full": "Fast-track processing.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-002",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "housing_state",
+      "resource_name": "HEN (Housing and Essential Needs)",
+      "alternate_names": [
+        "HEN"
+      ],
+      "resource_type": "benefits_office",
+      "service_category": "housing_rent",
+      "provider_name": "Washington State DSHS",
+      "provider_entity_type": "state",
+      "layer_label": "State",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "adults unable to work",
+        "GA recipients"
+      ],
+      "eligibility_summary": "Adults unable to work, GA recipients; rent + essential items",
+      "eligibility_rules": [],
+      "phone_primary": "877-501-2233",
+      "website": "",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "rental_assistance",
+        "essential_needs"
+      ],
+      "notes_full": "Provides rent assistance and essential items.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-003",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "housing_state",
+      "resource_name": "WSHFC Moderate Income Housing (MIH)",
+      "alternate_names": [
+        "WSHFC MIH"
+      ],
+      "resource_type": "housing_provider",
+      "service_category": "housing_rent",
+      "provider_name": "Washington State Housing Finance Commission",
+      "provider_entity_type": "state",
+      "layer_label": "State",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "income 60-80% AMI"
+      ],
+      "eligibility_summary": "Income 60-80% AMI",
+      "eligibility_rules": [],
+      "phone_primary": "206-464-7139",
+      "website": "wshfc.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "affordable_housing",
+        "moderate_income"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-004",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "housing_state",
+      "resource_name": "WA Homeownership Resource Center",
+      "alternate_names": [],
+      "resource_type": "housing_provider",
+      "service_category": "housing_rent",
+      "provider_name": "WA Homeownership Resource Center",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "State/Nonprofit",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "first-time buyers",
+        "foreclosure prevention"
+      ],
+      "eligibility_summary": "First-time buyers, foreclosure prevention",
+      "eligibility_rules": [],
+      "phone_primary": "877-894-4663",
+      "website": "homeownership-wa.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "homeownership",
+        "foreclosure_prevention"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-005",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "housing_local",
+      "resource_name": "Seattle Housing Authority (SHA)",
+      "alternate_names": [
+        "SHA"
+      ],
+      "resource_type": "housing_provider",
+      "service_category": "housing_rent",
+      "provider_name": "Seattle Housing Authority",
+      "provider_entity_type": "city",
+      "layer_label": "City",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "income-qualified Seattle residents"
+      ],
+      "eligibility_summary": "Income-qualified Seattle residents",
+      "eligibility_rules": [],
+      "phone_primary": "206-615-3300",
+      "website": "seattlehousing.org",
+      "application_url": "https://seattlehousing.org",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "public_housing",
+        "section_8",
+        "sha"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-006",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-king-county",
+      "category_key": "housing_local",
+      "resource_name": "King County Housing Authority (KCHA)",
+      "alternate_names": [
+        "KCHA"
+      ],
+      "resource_type": "housing_provider",
+      "service_category": "housing_rent",
+      "provider_name": "King County Housing Authority",
+      "provider_entity_type": "county",
+      "layer_label": "County",
+      "jurisdiction_level": "county",
+      "coverage_type": "county",
+      "coverage_values": [
+        "King County"
+      ],
+      "audience_tags": [
+        "income < 50% AMI"
+      ],
+      "eligibility_summary": "Income less than 50% AMI, King County",
+      "eligibility_rules": [],
+      "phone_primary": "206-574-1100",
+      "website": "kcha.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "public_housing",
+        "section_8",
+        "kcha"
+      ],
+      "notes_full": "Also administers Section 184 Indian Home Loan.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-007",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-king-county",
+      "category_key": "housing_local",
+      "resource_name": "Housing Justice Project (Eviction Defense)",
+      "alternate_names": [
+        "HJP"
+      ],
+      "resource_type": "legal_aid",
+      "service_category": "legal_aid",
+      "provider_name": "Housing Justice Project",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit/Legal",
+      "jurisdiction_level": "county",
+      "coverage_type": "county",
+      "coverage_values": [
+        "King County"
+      ],
+      "audience_tags": [
+        "King County renters facing eviction"
+      ],
+      "eligibility_summary": "King County renters facing eviction",
+      "eligibility_rules": [],
+      "phone_primary": "206-267-7090",
+      "website": "tenantlawcenter.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "eviction_defense",
+        "legal_aid"
+      ],
+      "notes_full": "Free courthouse legal help for King County renters.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-008",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "housing_local",
+      "resource_name": "LIHI (Low Income Housing Institute)",
+      "alternate_names": [
+        "LIHI"
+      ],
+      "resource_type": "housing_provider",
+      "service_category": "housing_rent",
+      "provider_name": "Low Income Housing Institute",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "multi_county",
+      "coverage_values": [
+        "Seattle",
+        "King County"
+      ],
+      "audience_tags": [
+        "low-income and homeless"
+      ],
+      "eligibility_summary": "Low-income and homeless; multiple sites",
+      "eligibility_rules": [],
+      "phone_primary": "206-443-9935",
+      "website": "lihi.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "affordable_housing",
+        "homeless"
+      ],
+      "notes_full": "Multiple sites throughout region.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-009",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "housing_local",
+      "resource_name": "DESC Permanent Supportive Housing",
+      "alternate_names": [],
+      "resource_type": "housing_provider",
+      "service_category": "housing_rent",
+      "provider_name": "DESC",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "chronically homeless adults"
+      ],
+      "eligibility_summary": "Chronically homeless adults",
+      "eligibility_rules": [],
+      "phone_primary": "206-464-1570",
+      "website": "desc.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "supportive_housing",
+        "homeless"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-010",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "housing_local",
+      "resource_name": "Plymouth Housing",
+      "alternate_names": [],
+      "resource_type": "housing_provider",
+      "service_category": "housing_rent",
+      "provider_name": "Plymouth Housing",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "chronically homeless adults"
+      ],
+      "eligibility_summary": "Chronically homeless adults",
+      "eligibility_rules": [],
+      "phone_primary": "206-374-9409",
+      "website": "plymouthhousing.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "supportive_housing",
+        "homeless"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-011",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "housing_local",
+      "resource_name": "Compass Housing Alliance",
+      "alternate_names": [],
+      "resource_type": "shelter",
+      "service_category": "housing_rent",
+      "provider_name": "Compass Housing Alliance",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "homeless and at-risk families"
+      ],
+      "eligibility_summary": "Homeless and at-risk families",
+      "eligibility_rules": [],
+      "phone_primary": "206-474-1100",
+      "website": "compasshousingalliance.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "emergency_shelter",
+        "families"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-012",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "housing_local",
+      "resource_name": "Solid Ground - Broadview Emergency Shelter",
+      "alternate_names": [
+        "Solid Ground"
+      ],
+      "resource_type": "shelter",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "Solid Ground",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "DV survivors",
+        "families"
+      ],
+      "eligibility_summary": "DV survivors and families; emergency housing",
+      "eligibility_rules": [],
+      "phone_primary": "206-694-6700",
+      "website": "solid-ground.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "emergency_shelter",
+        "dv_survivors"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-013",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "housing_tribal",
+      "resource_name": "Chief Seattle Club - Native Housing",
+      "alternate_names": [
+        "Sweetgrass Flats"
+      ],
+      "resource_type": "tribal_service",
+      "service_category": "housing_rent",
+      "provider_name": "Chief Seattle Club",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Tribal/Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "Urban Native Americans"
+      ],
+      "eligibility_summary": "Urban Native Americans",
+      "eligibility_rules": [],
+      "phone_primary": "206-957-4700",
+      "website": "chiefseattleclub.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "urban_native",
+        "housing",
+        "tribal"
+      ],
+      "notes_full": "Sweetgrass Flats permanent supportive housing.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-014",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "housing_local",
+      "resource_name": "Catholic Housing Services",
+      "alternate_names": [],
+      "resource_type": "housing_provider",
+      "service_category": "housing_rent",
+      "provider_name": "Catholic Housing Services",
+      "provider_entity_type": "faith",
+      "layer_label": "Nonprofit/Faith",
+      "jurisdiction_level": "multi",
+      "coverage_type": "multi_county",
+      "coverage_values": [
+        "Seattle",
+        "Western WA"
+      ],
+      "audience_tags": [
+        "low-income and homeless"
+      ],
+      "eligibility_summary": "Low-income and homeless",
+      "eligibility_rules": [],
+      "phone_primary": "206-323-6336",
+      "website": "catholichousing.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "affordable_housing",
+        "faith_based"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-015",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "housing_local",
+      "resource_name": "YWCA Transitional Housing",
+      "alternate_names": [
+        "YWCA Seattle"
+      ],
+      "resource_type": "shelter",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "YWCA Seattle King Snohomish",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "multi",
+      "coverage_type": "multi_county",
+      "coverage_values": [
+        "Seattle",
+        "King County",
+        "Snohomish County"
+      ],
+      "audience_tags": [
+        "DV survivors",
+        "low-income women and families"
+      ],
+      "eligibility_summary": "DV survivors, low-income women and families",
+      "eligibility_rules": [],
+      "phone_primary": "206-461-4882",
+      "website": "ywcaworks.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "transitional_housing",
+        "dv_survivors",
+        "women"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-016",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "housing_local",
+      "resource_name": "Tenants Union of WA State",
+      "alternate_names": [
+        "Tenants Union"
+      ],
+      "resource_type": "nonprofit",
+      "service_category": "housing_rent",
+      "provider_name": "Tenants Union of Washington State",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "renters needing rights info and counseling"
+      ],
+      "eligibility_summary": "Renters needing rights information and counseling",
+      "eligibility_rules": [],
+      "phone_primary": "206-723-0500",
+      "website": "tenantsunion.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "tenant_rights",
+        "counseling",
+        "not_lawyers"
+      ],
+      "notes_full": "Not lawyers \u2014 tenant counselors only.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-017",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-tribe-muckleshoot",
+      "category_key": "housing_tribal",
+      "resource_name": "Muckleshoot Tribal Housing Authority",
+      "alternate_names": [],
+      "resource_type": "housing_provider",
+      "service_category": "housing_rent",
+      "provider_name": "Muckleshoot Tribal Housing Authority",
+      "provider_entity_type": "tribal",
+      "layer_label": "Tribal/TDHE",
+      "jurisdiction_level": "tribal",
+      "coverage_type": "tribal",
+      "coverage_values": [
+        "Muckleshoot Reservation"
+      ],
+      "audience_tags": [
+        "Muckleshoot tribal members"
+      ],
+      "eligibility_summary": "Muckleshoot tribal members",
+      "eligibility_rules": [],
+      "phone_primary": "253-939-3311",
+      "website": "muckleshoot.nsn.us/housing",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "tribal_housing",
+        "tdhe",
+        "muckleshoot"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-018",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-tribe-tulalip",
+      "category_key": "housing_tribal",
+      "resource_name": "Tulalip Housing Authority",
+      "alternate_names": [],
+      "resource_type": "housing_provider",
+      "service_category": "housing_rent",
+      "provider_name": "Tulalip Tribes Housing Authority",
+      "provider_entity_type": "tribal",
+      "layer_label": "Tribal/TDHE",
+      "jurisdiction_level": "tribal",
+      "coverage_type": "tribal",
+      "coverage_values": [
+        "Tulalip Reservation"
+      ],
+      "audience_tags": [
+        "Tulalip tribal members"
+      ],
+      "eligibility_summary": "Tulalip tribal members",
+      "eligibility_rules": [],
+      "phone_primary": "360-716-4591",
+      "website": "tulaliptribes-nsn.gov/housing",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "tribal_housing",
+        "tdhe",
+        "tulalip"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-019",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-tribe-puyallup",
+      "category_key": "housing_tribal",
+      "resource_name": "Puyallup Tribe Housing Authority",
+      "alternate_names": [],
+      "resource_type": "housing_provider",
+      "service_category": "housing_rent",
+      "provider_name": "Puyallup Tribe Housing Authority",
+      "provider_entity_type": "tribal",
+      "layer_label": "Tribal/TDHE",
+      "jurisdiction_level": "tribal",
+      "coverage_type": "tribal",
+      "coverage_values": [
+        "Puyallup Reservation"
+      ],
+      "audience_tags": [
+        "Puyallup tribal members"
+      ],
+      "eligibility_summary": "Puyallup tribal members",
+      "eligibility_rules": [],
+      "phone_primary": "253-680-5700",
+      "website": "puyalluptribenation.gov",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "tribal_housing",
+        "tdhe",
+        "puyallup"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-020",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-tribe-lummi",
+      "category_key": "housing_tribal",
+      "resource_name": "Lummi Nation Housing Authority",
+      "alternate_names": [],
+      "resource_type": "housing_provider",
+      "service_category": "housing_rent",
+      "provider_name": "Lummi Nation Housing Authority",
+      "provider_entity_type": "tribal",
+      "layer_label": "Tribal/TDHE",
+      "jurisdiction_level": "tribal",
+      "coverage_type": "tribal",
+      "coverage_values": [
+        "Lummi Reservation"
+      ],
+      "audience_tags": [
+        "Lummi tribal members"
+      ],
+      "eligibility_summary": "Lummi tribal members",
+      "eligibility_rules": [],
+      "phone_primary": "360-384-1489",
+      "website": "lummi-nsn.gov/housing",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "tribal_housing",
+        "tdhe",
+        "lummi"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-housing-021",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "housing_tribal",
+      "resource_name": "Section 184 Indian Home Loan (WA)",
+      "alternate_names": [
+        "Section 184"
+      ],
+      "resource_type": "benefits_office",
+      "service_category": "housing_rent",
+      "provider_name": "HUD / KCHA",
+      "provider_entity_type": "federal",
+      "layer_label": "Federal/HUD",
+      "jurisdiction_level": "federal",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "AI/AN individuals purchasing homes"
+      ],
+      "eligibility_summary": "American Indian/Alaska Native individuals purchasing homes",
+      "eligibility_rules": [],
+      "phone_primary": "206-574-1100",
+      "website": "kcha.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "homeownership",
+        "tribal",
+        "hud_184"
+      ],
+      "notes_full": "HUD Section 184 loan guarantee for AI/AN homebuyers.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-001",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "dv_state",
+      "resource_name": "WA State DV Hotline",
+      "alternate_names": [
+        "Washington DV Hotline"
+      ],
+      "resource_type": "hotline",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "WA Coalition Against Domestic Violence",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "State/Nonprofit",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "anyone experiencing DV"
+      ],
+      "eligibility_summary": "Anyone experiencing domestic violence statewide",
+      "eligibility_rules": [],
+      "phone_primary": "800-562-6025",
+      "website": "wscadv.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": true,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "dv_hotline",
+        "crisis",
+        "24_7"
+      ],
+      "notes_full": "24/7 statewide DV hotline; connects to local program.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-002",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "dv_state",
+      "resource_name": "Crime Victim Compensation (WA)",
+      "alternate_names": [
+        "CVC"
+      ],
+      "resource_type": "benefits_office",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "Washington State Department of Labor & Industries",
+      "provider_entity_type": "state",
+      "layer_label": "State",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "victims of violent crime"
+      ],
+      "eligibility_summary": "Victims of violent crime; medical, lost wages, counseling",
+      "eligibility_rules": [],
+      "phone_primary": "800-762-3716",
+      "website": "lni.wa.gov/cvc",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "crime_victim_compensation",
+        "financial_assistance"
+      ],
+      "notes_full": "Covers medical bills, lost wages, counseling.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-003",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "dv_state",
+      "resource_name": "WA Coalition Against DV (WSCADV)",
+      "alternate_names": [
+        "WSCADV"
+      ],
+      "resource_type": "nonprofit",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "Washington State Coalition Against Domestic Violence",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit/State",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "referrals statewide"
+      ],
+      "eligibility_summary": "Referrals to local programs statewide",
+      "eligibility_rules": [],
+      "phone_primary": "206-389-2515",
+      "website": "wscadv.org/find-help",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "dv_referral",
+        "advocacy"
+      ],
+      "notes_full": "State coalition; referrals to local DV programs.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-004",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "dv_local",
+      "resource_name": "New Beginnings (Seattle)",
+      "alternate_names": [],
+      "resource_type": "shelter",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "New Beginnings",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "DV survivors",
+        "Seattle area"
+      ],
+      "eligibility_summary": "DV survivors Seattle area; shelter, legal, counseling",
+      "eligibility_rules": [],
+      "phone_primary": "206-522-9472",
+      "website": "newbegin.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": true,
+      "is_tribal_specific": false,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "dv_shelter",
+        "24_7",
+        "legal_advocacy"
+      ],
+      "notes_full": "Shelter, legal advocacy, counseling.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-005",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-king-county",
+      "category_key": "dv_local",
+      "resource_name": "DAWN - Domestic Abuse Women's Network",
+      "alternate_names": [
+        "DAWN"
+      ],
+      "resource_type": "shelter",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "DAWN",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "county",
+      "coverage_type": "county",
+      "coverage_values": [
+        "South King County"
+      ],
+      "audience_tags": [
+        "South King County DV survivors"
+      ],
+      "eligibility_summary": "South King County DV survivors",
+      "eligibility_rules": [],
+      "phone_primary": "425-656-7867",
+      "website": "dawnonline.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": true,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "dv_shelter",
+        "24_7",
+        "south_king_county"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-006",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "dv_local",
+      "resource_name": "API Chaya (Asian/Pacific Islander DV)",
+      "alternate_names": [
+        "API Chaya"
+      ],
+      "resource_type": "shelter",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "API Chaya",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "multi_county",
+      "coverage_values": [
+        "Seattle",
+        "King County"
+      ],
+      "audience_tags": [
+        "API community",
+        "all survivors",
+        "multilingual"
+      ],
+      "eligibility_summary": "API community and all survivors; multilingual",
+      "eligibility_rules": [],
+      "phone_primary": "206-325-0325",
+      "website": "apichaya.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "dv_services",
+        "api",
+        "multilingual"
+      ],
+      "notes_full": "Multilingual DV services.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-007",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-king-county",
+      "category_key": "dv_local",
+      "resource_name": "LifeWire (East King County)",
+      "alternate_names": [],
+      "resource_type": "shelter",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "LifeWire",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "county",
+      "coverage_type": "regional",
+      "coverage_values": [
+        "Redmond",
+        "Bellevue",
+        "Kirkland",
+        "East King County"
+      ],
+      "audience_tags": [
+        "East KC DV survivors"
+      ],
+      "eligibility_summary": "DV survivors in East King County",
+      "eligibility_rules": [],
+      "phone_primary": "425-746-1940",
+      "website": "lifewire.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": true,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "dv_shelter",
+        "24_7",
+        "east_king_county"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-008",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-king-county",
+      "category_key": "dv_local",
+      "resource_name": "Refugee Women's Alliance (ReWA)",
+      "alternate_names": [
+        "ReWA"
+      ],
+      "resource_type": "shelter",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "Refugee Women's Alliance",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "county",
+      "coverage_type": "county",
+      "coverage_values": [
+        "King County"
+      ],
+      "audience_tags": [
+        "refugee and immigrant survivors"
+      ],
+      "eligibility_summary": "Refugee and immigrant DV survivors",
+      "eligibility_rules": [],
+      "phone_primary": "888-847-7205",
+      "website": "rewa.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": true,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "dv_services",
+        "refugees",
+        "immigrants"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-009",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-king-county",
+      "category_key": "dv_local",
+      "resource_name": "KCSARC - Sexual Assault Resource Center",
+      "alternate_names": [
+        "KCSARC"
+      ],
+      "resource_type": "clinic",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "King County Sexual Assault Resource Center",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "county",
+      "coverage_type": "county",
+      "coverage_values": [
+        "King County"
+      ],
+      "audience_tags": [
+        "sexual assault survivors"
+      ],
+      "eligibility_summary": "Sexual assault survivors in King County",
+      "eligibility_rules": [],
+      "phone_primary": "888-998-6423",
+      "website": "kcsarc.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": true,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "sexual_assault",
+        "advocacy",
+        "24_7"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-010",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "dv_local",
+      "resource_name": "Northwest Network (LGBTQ+ DV)",
+      "alternate_names": [],
+      "resource_type": "nonprofit",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "Northwest Network",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "multi_county",
+      "coverage_values": [
+        "Seattle",
+        "King County"
+      ],
+      "audience_tags": [
+        "bi, trans, lesbian, gay survivors"
+      ],
+      "eligibility_summary": "Bisexual, transgender, lesbian, gay DV survivors",
+      "eligibility_rules": [],
+      "phone_primary": "206-568-7777",
+      "website": "nwnetwork.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "dv_services",
+        "lgbtq"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-011",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "dv_tribal",
+      "resource_name": "Mother Nation (Native American DV)",
+      "alternate_names": [],
+      "resource_type": "tribal_service",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "Mother Nation",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Tribal/Nonprofit",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "Native American DV survivors"
+      ],
+      "eligibility_summary": "Native American women and families, DV survivors, Seattle",
+      "eligibility_rules": [],
+      "phone_primary": "206-722-2321",
+      "website": "mothernation.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "dv_services",
+        "tribal",
+        "native_women"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-012",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "dv_local",
+      "resource_name": "Abused Deaf Women's Advocacy Services (ADWAS)",
+      "alternate_names": [
+        "ADWAS"
+      ],
+      "resource_type": "nonprofit",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "Abused Deaf Women's Advocacy Services",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "Deaf and hard of hearing DV survivors"
+      ],
+      "eligibility_summary": "Deaf and hard of hearing domestic violence survivors",
+      "eligibility_rules": [],
+      "phone_primary": "855-812-1001",
+      "website": "adwas.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": true,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "dv_services",
+        "deaf",
+        "accessibility"
+      ],
+      "notes_full": "Specialized DV services for Deaf and hard of hearing.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-013",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "dv_local",
+      "resource_name": "Consejo Counseling (Latina Survivors)",
+      "alternate_names": [
+        "Consejo"
+      ],
+      "resource_type": "nonprofit",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "Consejo Counseling and Referral Service",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "multi",
+      "coverage_type": "multi_county",
+      "coverage_values": [
+        "Seattle",
+        "King County"
+      ],
+      "audience_tags": [
+        "Spanish-speaking and Latina DV survivors"
+      ],
+      "eligibility_summary": "Spanish-speaking and Latina DV survivors",
+      "eligibility_rules": [],
+      "phone_primary": "206-461-4880",
+      "website": "consejocounseling.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "dv_services",
+        "latina",
+        "spanish"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-014",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-king-county",
+      "category_key": "dv_local",
+      "resource_name": "Harborview Sexual Assault Center",
+      "alternate_names": [
+        "HCSATS"
+      ],
+      "resource_type": "clinic",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "Harborview Medical Center / UW",
+      "provider_entity_type": "county",
+      "layer_label": "County/UW",
+      "jurisdiction_level": "county",
+      "coverage_type": "county",
+      "coverage_values": [
+        "King County"
+      ],
+      "audience_tags": [
+        "SA survivors"
+      ],
+      "eligibility_summary": "Sexual assault survivors; forensic exams, advocacy, counseling at no cost",
+      "eligibility_rules": [],
+      "phone_primary": "206-744-1600",
+      "website": "depts.washington.edu/hcsats",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": true,
+      "is_tribal_specific": false,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "sexual_assault",
+        "forensic_exam",
+        "no_cost"
+      ],
+      "notes_full": "No cost exams.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-015",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "dv_local",
+      "resource_name": "Project DVORA - Jewish Family Service",
+      "alternate_names": [
+        "Project DVORA"
+      ],
+      "resource_type": "nonprofit",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "Jewish Family Service of Seattle",
+      "provider_entity_type": "faith",
+      "layer_label": "Nonprofit/Faith",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "all DV survivors",
+        "Jewish community"
+      ],
+      "eligibility_summary": "All DV survivors; Jewish community focus",
+      "eligibility_rules": [],
+      "phone_primary": "206-861-3159",
+      "website": "jfsseattle.org/dvora",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "dv_services",
+        "faith_community"
+      ],
+      "notes_full": "Open to all survivors.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-016",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "dv_tribal",
+      "resource_name": "Seattle Indian Health Board - DV/SA",
+      "alternate_names": [
+        "SIHB DV/SA"
+      ],
+      "resource_type": "tribal_service",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "Seattle Indian Health Board",
+      "provider_entity_type": "tribal",
+      "layer_label": "Tribal/FQHC",
+      "jurisdiction_level": "city",
+      "coverage_type": "city",
+      "coverage_values": [
+        "Seattle"
+      ],
+      "audience_tags": [
+        "urban AI/AN DV and SA survivors"
+      ],
+      "eligibility_summary": "Urban AI/AN DV and SA survivors",
+      "eligibility_rules": [],
+      "phone_primary": "206-324-9360",
+      "website": "sihb.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "dv_services",
+        "sexual_assault",
+        "urban_native"
+      ],
+      "notes_full": "Ext. 1500 for DV/SA.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-dv-017",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "dv_tribal",
+      "resource_name": "MMIW Resources - WA State",
+      "alternate_names": [
+        "MMIW WA"
+      ],
+      "resource_type": "tribal_service",
+      "service_category": "domestic_violence_safety",
+      "provider_name": "WSCADV / Governor's MMIW Task Force",
+      "provider_entity_type": "state",
+      "layer_label": "State/Tribal",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "families of MMIW cases"
+      ],
+      "eligibility_summary": "Families of Missing and Murdered Indigenous Women cases",
+      "eligibility_rules": [],
+      "phone_primary": "800-562-6025",
+      "website": "wscadv.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "mmiw",
+        "tribal",
+        "families"
+      ],
+      "notes_full": "WA Governor's MMIW Task Force.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-legal-001",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "legal_aid_state",
+      "resource_name": "NJP - CLEAR Hotline (Statewide)",
+      "alternate_names": [
+        "CLEAR",
+        "Northwest Justice Project CLEAR",
+        "NJP"
+      ],
+      "resource_type": "legal_aid",
+      "service_category": "legal_aid",
+      "provider_name": "Northwest Justice Project",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "State/Nonprofit",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "income < 200% FPL",
+        "civil legal needs"
+      ],
+      "eligibility_summary": "Income less than 200% FPL; civil legal needs",
+      "eligibility_rules": [],
+      "phone_primary": "888-201-1014",
+      "website": "nwjustice.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "legal_aid",
+        "hotline",
+        "housing",
+        "benefits",
+        "immigration",
+        "njp"
+      ],
+      "notes_full": "Housing, benefits, family, immigration legal help.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-legal-002",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "legal_aid_state",
+      "resource_name": "CLEAR*Online / Washington Law Help",
+      "alternate_names": [
+        "Washington Law Help",
+        "WashingtonLawHelp.org"
+      ],
+      "resource_type": "legal_aid",
+      "service_category": "legal_aid",
+      "provider_name": "Northwest Justice Project",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "State/Nonprofit",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "anyone with civil legal questions"
+      ],
+      "eligibility_summary": "Anyone with civil legal questions",
+      "eligibility_rules": [],
+      "phone_primary": "",
+      "website": "washingtonlawhelp.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": true,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "self_help",
+        "legal_info",
+        "forms",
+        "online"
+      ],
+      "notes_full": "Free legal information, self-help forms, referrals.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-legal-003",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "legal_aid_state",
+      "resource_name": "Columbia Legal Services",
+      "alternate_names": [],
+      "resource_type": "legal_aid",
+      "service_category": "legal_aid",
+      "provider_name": "Columbia Legal Services",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "migrant workers",
+        "rural residents",
+        "low-income"
+      ],
+      "eligibility_summary": "Migrant workers, rural residents, low-income",
+      "eligibility_rules": [],
+      "phone_primary": "206-464-5933",
+      "website": "columbialegal.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "legal_aid",
+        "migrant_workers",
+        "rural"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-legal-004",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "legal_aid_state",
+      "resource_name": "Unemployment Law Project",
+      "alternate_names": [
+        "ULP"
+      ],
+      "resource_type": "legal_aid",
+      "service_category": "legal_aid",
+      "provider_name": "Unemployment Law Project",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "WA workers with denied UI claims"
+      ],
+      "eligibility_summary": "WA workers with denied unemployment insurance claims",
+      "eligibility_rules": [],
+      "phone_primary": "206-441-9178",
+      "website": "unemploymentlawproject.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "unemployment_appeals",
+        "legal_aid"
+      ],
+      "notes_full": "Free appeals help.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-legal-005",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-king-county",
+      "category_key": "legal_aid_state",
+      "resource_name": "Benefits Law Center",
+      "alternate_names": [],
+      "resource_type": "legal_aid",
+      "service_category": "legal_aid",
+      "provider_name": "Benefits Law Center",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "county",
+      "coverage_type": "county",
+      "coverage_values": [
+        "King County"
+      ],
+      "audience_tags": [
+        "low-income KC with disability benefits issues"
+      ],
+      "eligibility_summary": "Low-income King County residents with disability benefits (SSI/SSDI appeals)",
+      "eligibility_rules": [],
+      "phone_primary": "206-408-4274",
+      "website": "benefitslawcenter.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "disability_benefits",
+        "ssdi",
+        "ssi",
+        "legal_aid"
+      ],
+      "notes_full": "SSI/SSDI appeals.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-legal-006",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-king-county",
+      "category_key": "legal_aid_state",
+      "resource_name": "Eastside Legal Assistance Program (ELAP)",
+      "alternate_names": [
+        "ELAP"
+      ],
+      "resource_type": "legal_aid",
+      "service_category": "legal_aid",
+      "provider_name": "Eastside Legal Assistance Program",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "county",
+      "coverage_type": "regional",
+      "coverage_values": [
+        "East King County"
+      ],
+      "audience_tags": [
+        "East King County low-income"
+      ],
+      "eligibility_summary": "East King County low-income; housing, family, immigration",
+      "eligibility_rules": [],
+      "phone_primary": "425-747-7274",
+      "website": "elap.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "legal_aid",
+        "east_king_county",
+        "elder_law"
+      ],
+      "notes_full": "Also has Elder Law Program.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-legal-007",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "legal_aid_state",
+      "resource_name": "Northwest Immigrant Rights Project (NWIRP)",
+      "alternate_names": [
+        "NWIRP"
+      ],
+      "resource_type": "legal_aid",
+      "service_category": "legal_aid",
+      "provider_name": "Northwest Immigrant Rights Project",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "low-income immigrants",
+        "civil immigration"
+      ],
+      "eligibility_summary": "Low-income immigrants; civil immigration legal needs",
+      "eligibility_rules": [],
+      "phone_primary": "206-587-4009",
+      "website": "nwirp.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "immigration",
+        "legal_aid",
+        "nwirp"
+      ],
+      "notes_full": "Offices statewide. Also serves AI/AN immigrants.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-legal-008",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "legal_aid_state",
+      "resource_name": "Self-Help Washington (Courts)",
+      "alternate_names": [
+        "Self Help Washington"
+      ],
+      "resource_type": "legal_aid",
+      "service_category": "legal_aid",
+      "provider_name": "Washington State Courts",
+      "provider_entity_type": "state",
+      "layer_label": "State",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "pro se litigants"
+      ],
+      "eligibility_summary": "Pro se litigants; court forms, guides, instructions",
+      "eligibility_rules": [],
+      "phone_primary": "",
+      "website": "selfhelp.courts.wa.gov",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": true,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "self_help",
+        "court_forms",
+        "pro_se"
+      ],
+      "notes_full": "Free court forms, guides, instructions.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-legal-009",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "legal_aid_state",
+      "resource_name": "WSBA Modest Means Program",
+      "alternate_names": [],
+      "resource_type": "legal_aid",
+      "service_category": "legal_aid",
+      "provider_name": "Washington State Bar Association",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "income above legal aid threshold"
+      ],
+      "eligibility_summary": "Income slightly above legal aid threshold; reduced-fee attorneys",
+      "eligibility_rules": [],
+      "phone_primary": "206-443-9722",
+      "website": "wsba.org",
+      "application_url": "",
+      "cost_structure": "sliding_scale",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "reduced_fee",
+        "attorneys"
+      ],
+      "notes_full": "Reduced-fee attorneys.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-legal-010",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "legal_aid_state",
+      "resource_name": "ACLU-WA Information & Referral",
+      "alternate_names": [
+        "ACLU Washington"
+      ],
+      "resource_type": "nonprofit",
+      "service_category": "civil_rights",
+      "provider_name": "ACLU of Washington",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "civil rights violations"
+      ],
+      "eligibility_summary": "Civil rights violations",
+      "eligibility_rules": [],
+      "phone_primary": "206-624-2184",
+      "website": "aclu-wa.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "civil_rights",
+        "referral"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-legal-011",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-seattle",
+      "category_key": "legal_aid_state",
+      "resource_name": "Housing Justice Project (legal aid)",
+      "alternate_names": [
+        "HJP"
+      ],
+      "resource_type": "legal_aid",
+      "service_category": "legal_aid",
+      "provider_name": "Housing Justice Project",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "county",
+      "coverage_type": "county",
+      "coverage_values": [
+        "King County"
+      ],
+      "audience_tags": [
+        "King County renters facing eviction"
+      ],
+      "eligibility_summary": "King County renters facing eviction \u2014 free eviction defense",
+      "eligibility_rules": [],
+      "phone_primary": "206-267-7090",
+      "website": "tenantlawcenter.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": true,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "eviction_defense",
+        "legal_aid"
+      ],
+      "notes_full": "Free courthouse legal help.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-legal-012",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "legal_aid_state",
+      "resource_name": "Tenants Union - Counseling (not lawyers)",
+      "alternate_names": [
+        "Tenants Union"
+      ],
+      "resource_type": "nonprofit",
+      "service_category": "legal_aid",
+      "provider_name": "Tenants Union of Washington State",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "renters needing rights info"
+      ],
+      "eligibility_summary": "Renters needing rights information",
+      "eligibility_rules": [],
+      "phone_primary": "206-723-0500",
+      "website": "tenantsunion.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "tenant_rights",
+        "counseling",
+        "not_lawyers"
+      ],
+      "notes_full": "Not lawyers \u2014 tenant counselors only.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-legal-013",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "legal_aid_tribal",
+      "resource_name": "Native American Rights Fund (NARF)",
+      "alternate_names": [
+        "NARF"
+      ],
+      "resource_type": "legal_aid",
+      "service_category": "legal_aid",
+      "provider_name": "Native American Rights Fund",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "federal",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA",
+        "national"
+      ],
+      "audience_tags": [
+        "tribal members with tribal/federal law issues"
+      ],
+      "eligibility_summary": "Tribal members with tribal/federal law issues",
+      "eligibility_rules": [],
+      "phone_primary": "303-447-8760",
+      "website": "narf.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": false,
+      "is_hyperlocal": false,
+      "is_statewide": false,
+      "tags": [
+        "tribal_legal",
+        "narf",
+        "federal"
+      ],
+      "notes_full": "National organization; tribal/federal law cases.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-legal-014",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-state",
+      "category_key": "legal_aid_tribal",
+      "resource_name": "NWIRP - Immigration for AI/AN",
+      "alternate_names": [
+        "NWIRP Tribal"
+      ],
+      "resource_type": "legal_aid",
+      "service_category": "legal_aid",
+      "provider_name": "Northwest Immigrant Rights Project",
+      "provider_entity_type": "nonprofit",
+      "layer_label": "Nonprofit",
+      "jurisdiction_level": "state",
+      "coverage_type": "statewide",
+      "coverage_values": [
+        "WA"
+      ],
+      "audience_tags": [
+        "AI/AN immigrants"
+      ],
+      "eligibility_summary": "American Indian/Alaska Native immigrants",
+      "eligibility_rules": [],
+      "phone_primary": "206-587-4009",
+      "website": "nwirp.org",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": false,
+      "is_statewide": true,
+      "tags": [
+        "immigration",
+        "tribal",
+        "legal_aid"
+      ],
+      "notes_full": "NWIRP handles AI/AN immigrant cases.",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    },
+    {
+      "resource_id": "wa-legal-015",
+      "registry_id": "wa-001",
+      "jurisdiction_id": "wa-tribe-muckleshoot",
+      "category_key": "legal_aid_tribal",
+      "resource_name": "Muckleshoot Tribal Legal Aid",
+      "alternate_names": [],
+      "resource_type": "legal_aid",
+      "service_category": "legal_aid",
+      "provider_name": "Muckleshoot Indian Tribe",
+      "provider_entity_type": "tribal",
+      "layer_label": "Tribal",
+      "jurisdiction_level": "tribal",
+      "coverage_type": "tribal",
+      "coverage_values": [
+        "Muckleshoot Reservation"
+      ],
+      "audience_tags": [
+        "Muckleshoot tribal members"
+      ],
+      "eligibility_summary": "Muckleshoot tribal members",
+      "eligibility_rules": [],
+      "phone_primary": "253-939-3311",
+      "website": "muckleshoot.nsn.us",
+      "application_url": "",
+      "cost_structure": "free",
+      "is_emergency": false,
+      "is_24_7": false,
+      "is_tribal_specific": true,
+      "is_hyperlocal": true,
+      "is_statewide": false,
+      "tags": [
+        "tribal_legal",
+        "muckleshoot"
+      ],
+      "notes_full": "",
+      "last_verified": "2026-03-01",
+      "referral_required": false,
+      "locations": [],
+      "contacts": []
+    }
+  ]
+}

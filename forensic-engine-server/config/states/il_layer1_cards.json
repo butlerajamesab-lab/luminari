@@ -1,0 +1,332 @@
+{
+  "meta": {
+    "state": "IL",
+    "version": "3.0",
+    "cluster_count": 7
+  },
+  "clusters": [
+    {
+      "cluster_id": "il_benefits",
+      "cluster_label": "Benefits",
+      "cards": [
+        {
+          "card_id": "il_snap_food_stamps",
+          "title": "SNAP / Food Stamps",
+          "phone": "800-843-6154",
+          "website": "abe.illinois.gov",
+          "notes": "Provides food benefits to low-income individuals and families."
+        },
+        {
+          "card_id": "il_greater_chicago_food_depository",
+          "title": "Greater Chicago Food Depository",
+          "phone": "773-247-3663",
+          "website": "chicagosfoodbank.org",
+          "notes": "Provides food assistance through a network of partner agencies, pantries, and hot meal programs."
+        },
+        {
+          "card_id": "illinois_food_bank_association",
+          "title": "Illinois Food Bank Association \u2014 Statewide Network",
+          "phone": "217-585-0808",
+          "website": "illinoisfoodbanks.org",
+          "notes": "A network of 9 regional food banks and over 2,000 partner agencies serving all 102 Illinois counties."
+        },
+        {
+          "card_id": "il_tanf_cash_assistance",
+          "title": "TANF Cash Assistance (Illinois DHS \u2014 TCA)",
+          "phone": "800-843-6154",
+          "website": "abe.illinois.gov",
+          "notes": "Provides cash assistance to families with children."
+        }
+      ]
+    },
+    {
+      "cluster_id": "il_health",
+      "cluster_label": "Health",
+      "cards": [
+        {
+          "card_id": "illinois_wic_program",
+          "title": "WIC (Illinois WIC Program)",
+          "phone": "800-323-4769",
+          "website": "dph.illinois.gov/topics-services/life-stages-populations/wic",
+          "notes": "Provides food benefits, nutrition counseling, breastfeeding support, and referrals for pregnant women, postpartum women, infants, and children under 5."
+        },
+        {
+          "card_id": "illinois_medicaid",
+          "title": "Illinois Medicaid / Medicaid Expansion",
+          "phone": "800-226-0768",
+          "website": "hfs.illinois.gov / abe.illinois.gov",
+          "notes": "Provides healthcare coverage to low-income adults, families, children, pregnant women, seniors, and individuals with disabilities."
+        },
+        {
+          "card_id": "il_cook_county_health",
+          "title": "Cook County Health (CCH) \u2014 Stroger Hospital + CountyCare",
+          "phone": "312-864-0200 (CCH) / 312-864-8200 (CountyCare)",
+          "website": "cookcountyhealth.org",
+          "notes": "Public hospital system for Cook County residents, including a Level 1 trauma center and a Medicaid managed care plan."
+        },
+        {
+          "card_id": "il_chicago_department_of_public_health",
+          "title": "Chicago Department of Public Health (CDPH) \u2014 City Clinics",
+          "phone": "312-747-9884",
+          "website": "chicago.gov/health",
+          "notes": "Provides sliding scale primary care, sexual health, mental health, substance use, and maternal health services to Chicago residents."
+        },
+        {
+          "card_id": "illinois_immigrant_health_connect",
+          "title": "Illinois Immigrant Health Connect (State-Funded)",
+          "phone": "800-226-0768",
+          "website": "hfs.illinois.gov",
+          "notes": "State-funded healthcare coverage for undocumented immigrants age 42+."
+        },
+        {
+          "card_id": "il_federally_qualified_health_centers_illinois_network",
+          "title": "Federally Qualified Health Centers \u2014 Illinois Network",
+          "phone": null,
+          "website": "findahealthcenter.hrsa.gov",
+          "notes": "Provides sliding scale primary, dental, and behavioral health services regardless of insurance status or ability to pay."
+        }
+      ]
+    },
+    {
+      "cluster_id": "il_housing",
+      "cluster_label": "Housing",
+      "cards": [
+        {
+          "card_id": "illinois_housing_development_authority_emergency_rental_assistance",
+          "title": "Illinois Housing Development Authority (IHDA) \u2014 Emergency Rental Assistance",
+          "phone": "312-836-5200",
+          "website": "ihda.org",
+          "notes": "Administers state-level rental assistance programs for low-income renters facing eviction or housing instability."
+        },
+        {
+          "card_id": "il_chicago_rlto_tenant_hotline_metropolitan_tenants_organization",
+          "title": "Chicago RLTO Tenant Hotline \u2014 Metropolitan Tenants Organization (MTO)",
+          "phone": "773-292-4988",
+          "website": "tenants-rights.org",
+          "notes": "Provides free tenant rights counseling, habitability complaints, security deposit disputes, and eviction defense for Chicago renters covered by the RLTO."
+        },
+        {
+          "card_id": "il_liheap_ihwap",
+          "title": "LIHEAP / IHWAP (Illinois Home Weatherization & Energy Assistance)",
+          "phone": "800-252-8643",
+          "website": "illinoisenergyassistance.com",
+          "notes": "Provides heating, cooling, crisis utility shutoff prevention, and weatherization assistance."
+        },
+        {
+          "card_id": "il_comed_low_income_programs",
+          "title": "ComEd Low Income Programs",
+          "phone": "800-334-7661",
+          "website": "comed.com/assistance",
+          "notes": "Provides rate reduction and deferred payment plans for low-income electric customers."
+        }
+      ]
+    },
+    {
+      "cluster_id": "il_civil_rights",
+      "cluster_label": "Civil Rights",
+      "cards": [
+        {
+          "card_id": "illinois_legal_aid_online",
+          "title": "Illinois Legal Aid Online (ILAO) \u2014 Statewide Self-Help",
+          "phone": null,
+          "website": "illinoislegalaid.org",
+          "notes": "Provides free legal information, court forms, and self-help guides for housing, family, benefits, and consumer issues."
+        },
+        {
+          "card_id": "il_legal_aid_chicago",
+          "title": "Legal Aid Chicago (formerly LAF)",
+          "phone": "312-341-1070",
+          "website": "legalaidchicago.org",
+          "notes": "Provides legal assistance in housing, family, benefits, DV, immigration, and consumer matters."
+        },
+        {
+          "card_id": "il_prairie_state_legal_services",
+          "title": "Prairie State Legal Services \u2014 Downstate + Suburban",
+          "phone": "800-531-7057",
+          "website": "pslegal.org",
+          "notes": "Provides legal assistance in housing, family, benefits, DV, elder, and immigration matters."
+        },
+        {
+          "card_id": "il_land_of_lincoln_legal_aid",
+          "title": "Land of Lincoln Legal Aid \u2014 Southern Illinois",
+          "phone": "217-525-3900",
+          "website": "lollaf.org",
+          "notes": "Provides legal assistance in housing, family, benefits, DV, elder, and consumer matters."
+        }
+      ]
+    },
+    {
+      "cluster_id": "il_family",
+      "cluster_label": "Family",
+      "cards": [
+        {
+          "card_id": "illinois_domestic_violence_hotline",
+          "title": "Illinois Domestic Violence Hotline",
+          "phone": "877-863-6338",
+          "website": "ilhousing.org",
+          "notes": "Provides 24/7 crisis support, shelter referral, and safety planning for domestic violence survivors."
+        },
+        {
+          "card_id": "il_chicago_domestic_violence_help_line",
+          "title": "Chicago Domestic Violence Help Line",
+          "phone": "877-863-6338",
+          "website": "chicago.gov/dps",
+          "notes": "Provides 24/7 crisis support, shelter, legal advocacy, and a City Hall Domestic Violence Help Desk for Chicago DV survivors."
+        }
+      ]
+    },
+    {
+      "cluster_id": "il_disability",
+      "cluster_label": "Disability",
+      "cards": [
+        {
+          "card_id": "il_equip_for_equality",
+          "title": "Equip for Equality \u2014 Disability Rights Illinois",
+          "phone": "800-537-2632",
+          "website": "equipforequality.org",
+          "notes": "Provides legal representation and advocacy for people with disabilities on issues such as ADA, Section 504, abuse/neglect, special education, and healthcare rights."
+        }
+      ]
+    },
+    {
+      "cluster_id": "il_employment",
+      "cluster_label": "Employment",
+      "cards": [
+        {
+          "card_id": "illinois_unemployment_insurance",
+          "title": "Illinois Unemployment Insurance (IDES)",
+          "phone": "800-244-5631",
+          "website": "ides.illinois.gov",
+          "notes": "Provides temporary income to workers who have lost their job through no fault of their own."
+        }
+      ]
+    },
+    {
+      "cluster_id": "il_mental_health",
+      "cluster_name": "Mental Health System",
+      "icon": "brain",
+      "cards": [
+        {
+          "card_id": "il_mh_crisis_line",
+          "title": "988 Suicide & Crisis Lifeline",
+          "summary": "Call or text 988 for immediate mental health crisis support. Free, confidential, 24/7. Trained counselors can help with suicidal thoughts, emotional distress, substance use, and mental health crises. Also available via chat at 988lifeline.org.",
+          "who_qualifies": "Anyone experiencing a mental health crisis, suicidal thoughts, or emotional distress.",
+          "how_to_access": "Call or text 988. Chat at 988lifeline.org. For veterans, press 1 after dialing 988.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "il_mh_nami",
+          "title": "NAMI Helpline & Support Groups",
+          "summary": "National Alliance on Mental Illness provides free peer support, education, and advocacy. NAMI HelpLine: 1-800-950-NAMI (6264). Family-to-Family program helps families understand mental health conditions and navigate the system.",
+          "who_qualifies": "Individuals with mental health conditions and their family members.",
+          "how_to_access": "Call 1-800-950-NAMI or text 'HELPLINE' to 62640. Find local NAMI affiliate at nami.org/find-support.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "il_mh_protection_advocacy",
+          "title": "Protection & Advocacy Organization",
+          "summary": "Every state has a federally mandated Protection & Advocacy (P&A) organization with legal authority to investigate abuse and neglect in psychiatric facilities. P&A organizations can enter any facility, access records, and file lawsuits. This is often the most powerful tool available for people harmed in the mental health system.",
+          "who_qualifies": "Anyone with a disability who has experienced abuse, neglect, or rights violations in a facility.",
+          "how_to_access": "Find your state P&A at ndrn.org/about/ndrn-member-agencies/ or call the NDRN at 202-408-9514.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "il_mh_know_your_rights",
+          "title": "Know Your Rights: Illinois Emergency Admission",
+          "summary": "If you are placed on an involuntary hold in IL, you have rights: the initial hold cannot exceed 24 hours without a court hearing. You have the right to an attorney at the hearing. You have the right to present evidence and call witnesses. You have the right to an independent psychiatric evaluation. You can challenge the hold at any time.",
+          "who_qualifies": "Anyone placed on an involuntary psychiatric hold or facing commitment proceedings.",
+          "how_to_access": "Request to speak with the patient advocate. Ask for a copy of your patient rights. Contact your state's Protection & Advocacy organization.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "il_mh_records_rights",
+          "title": "Your Right to Your Psychiatric Records",
+          "summary": "Under HIPAA (45 CFR \u00a7 164.524), you have the right to access your complete medical record, including psychiatric treatment records. The facility must respond within 30 days. If they deny access, you can file a complaint with HHS Office for Civil Rights. Under HIPAA \u00a7 164.526, you also have the right to request amendments to inaccurate records.",
+          "who_qualifies": "Any current or former psychiatric patient.",
+          "how_to_access": "Submit a written request to the facility's Health Information Management department. If denied, file complaint at hhs.gov/ocr.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "il_mh_samhsa",
+          "title": "SAMHSA National Helpline",
+          "summary": "Free, confidential, 24/7 treatment referral and information service for mental health and substance use disorders. Available in English and Spanish. Provides referrals to local treatment facilities, support groups, and community-based organizations.",
+          "who_qualifies": "Anyone seeking mental health or substance use treatment information and referrals.",
+          "how_to_access": "Call 1-800-662-HELP (4357) or visit findtreatment.gov.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        }
+      ]
+    }
+  ]
+}

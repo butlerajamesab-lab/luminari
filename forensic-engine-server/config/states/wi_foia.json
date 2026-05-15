@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "state": "WI",
+    "version": "3.0"
+  },
+  "statute": {
+    "name": "Wisconsin Open Records Law",
+    "citation": "Wis. Stat. § 19.31 et seq."
+  },
+  "structured_rules": [
+    {
+      "rule_id": "wi_open_records",
+      "domain": "public_records"
+    }
+  ],
+  "agencies": [
+    {
+      "agency": "Wisconsin Department of Health Services",
+      "contact_name": null,
+      "email": null,
+      "phone": "800-362-3002",
+      "address": "1 W Wilson St, Madison, WI 53703",
+      "turnaround_days": null,
+      "fee_info": null,
+      "agency_id": "wi_agency_0"
+    },
+    {
+      "agency": "Wisconsin Department of Workforce Development",
+      "contact_name": null,
+      "email": null,
+      "phone": "608-266-3131",
+      "address": "201 E Washington Ave, Madison, WI 53708",
+      "turnaround_days": null,
+      "fee_info": null,
+      "agency_id": "wi_agency_1"
+    }
+  ],
+  "appeals_workflow": []
+}

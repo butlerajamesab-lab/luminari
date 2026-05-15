@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "state": "WY",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "WY DFS",
+      "role": "SNAP/TANF/Medicaid",
+      "phone": "307-777-5846",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "211 Wyoming",
+      "role": "Social services referral",
+      "phone": "211",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "WY Legal Services",
+      "role": "Only statewide legal aid",
+      "phone": "877-432-9955",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "WY DWS",
+      "role": "UI Appeals",
+      "phone": "307-473-3789",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "WDI",
+      "role": "Insurance complaints",
+      "phone": "307-777-7401",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "WY DV Hotline",
+      "role": "Domestic violence crisis",
+      "phone": "800-990-3877",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "Eastern Shoshone",
+      "role": "Wind River tribal services",
+      "phone": "307-332-3532",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "Northern Arapaho",
+      "role": "Wind River tribal services",
+      "phone": "307-856-6117",
+      "email": null,
+      "hours": null
+    }
+  ],
+  "regions": [],
+  "missing_sections": []
+}

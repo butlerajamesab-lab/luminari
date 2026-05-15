@@ -1,0 +1,278 @@
+{
+  "meta": {
+    "state": "DC",
+    "version": "2.0",
+    "date": "2026-03-08",
+    "total_chains": 4,
+    "total_bodies": 6,
+    "entity_types": [
+      "civil_rights",
+      "employer",
+      "insurer",
+      "consumer"
+    ],
+    "source": "luminari-dc-registry.docx"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "civil_rights",
+      "state": "DC",
+      "bodies": [
+        {
+          "oversight_body": "DC Office of Human Rights (DC OHR)",
+          "jurisdiction": "primary",
+          "phone": "202-727-4559",
+          "complaint_portal": "https://ohr.dc.gov",
+          "what_to_report": "BROADEST protected classes in registry. Covers: race, color, religion, national origin, sex, age, marital status, personal appearance, sexual orientation, gender identity, familial status, family responsibilities, disability, matriculation, political affiliation, source of income, place of residence or business, and status as homeless person. SOL: 1 YEAR\u2014longer than most jurisdictions.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "1 year",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "employer",
+      "state": "DC",
+      "bodies": [
+        {
+          "oversight_body": "EEOC Washington Field Office",
+          "jurisdiction": "primary",
+          "phone": "800-669-4000",
+          "complaint_portal": "https://eeoc.gov",
+          "what_to_report": "Federal employment discrimination enforcement. Dual-file with DC OHR for extended 300-day deadline.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "300 days (with DC OHR charge)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DC Department of Employment Services (DOES)",
+          "jurisdiction": "primary",
+          "phone": "202-671-1900",
+          "complaint_portal": "https://does.dc.gov",
+          "what_to_report": "Labor standards, wage enforcement, and UI. Handles wage theft, unpaid overtime, and retaliation complaints.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "3 years (DC Wage Payment Act)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "insurer",
+      "state": "DC",
+      "bodies": [
+        {
+          "oversight_body": "DC Office of Women's Health (DC OWH)",
+          "jurisdiction": "primary",
+          "phone": "202-671-1880",
+          "complaint_portal": "https://dchealth.dc.gov",
+          "what_to_report": "Gender-based health resources, domestic violence services coordination, maternal health programs.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "N/A (resource/referral)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Whitman-Walker Health",
+          "jurisdiction": "primary",
+          "phone": "202-745-7000",
+          "complaint_portal": "https://whitman-walker.org",
+          "what_to_report": "Primary care and legal services for LGBTQ+ residents and people living with HIV. Civil rights advocacy.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "N/A (clinic/advocacy)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "consumer",
+      "state": "DC",
+      "bodies": [
+        {
+          "oversight_body": "DC Attorney General Consumer Protection",
+          "jurisdiction": "primary",
+          "phone": "202-442-9828",
+          "complaint_portal": "https://oag.dc.gov/consumer-protection",
+          "what_to_report": "Consumer fraud, deceptive trade, predatory lending, debt collection abuse.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "3 years",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "dc_med_board",
+          "name": "District of Columbia Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "District of Columbia Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DC"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "dc_patient_adv",
+          "name": "District of Columbia Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "District of Columbia Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DC"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "dc_health_dept",
+          "name": "District of Columbia Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "District of Columbia Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DC"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DC"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "dc_pharm_board",
+          "name": "District of Columbia Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "District of Columbia Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DC"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "dc_pa",
+          "name": "District of Columbia Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "District of Columbia Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DC"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "dc_mha",
+          "name": "District of Columbia Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "District of Columbia Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DC"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "DC"
+    }
+  ]
+}

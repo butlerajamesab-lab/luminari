@@ -1,0 +1,45 @@
+{
+  "state": "GU",
+  "state_name": "Guam",
+  "version": "3.0",
+  "date_verified": "2026-03-09",
+  "portability_score": "42%",
+  "statistics": {
+    "total_flags": 4,
+    "total_programs": 6,
+    "total_oversight_bodies": 4,
+    "total_workflows": 2,
+    "total_help_contacts": 8
+  },
+  "policy_flags": [
+    "gu_chamorro_no_ihs",
+    "gu_cofa_migrants_medicaid",
+    "gu_military_land_27_percent",
+    "gu_medicaid_block_grant"
+  ],
+  "notes": "Chamorro indigenous people \u2014 no IHS, no federal tribal recognition. COFA migrants Medicaid eligible post-2020. Military controls 27% of land. Block-granted Medicaid. $9.25/hr minimum wage. Portability: 42%.",
+  "schema": "3.0",
+  "datasets": [
+    "healthcare",
+    "food",
+    "cash_assistance",
+    "housing",
+    "employment",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "housing_dispute",
+    "employment_dispute",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "state_agency",
+    "federal_agency"
+  ]
+}

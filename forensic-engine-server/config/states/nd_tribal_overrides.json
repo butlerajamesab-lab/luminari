@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "state": "ND",
+    "version": "3.0",
+    "date": "2026-03-08"
+  },
+  "tribal_context": "North Dakota has 5 federally recognized tribes with complex multi-tribe routing. MHA Nation at Fort Berthold sits in Bakken oil field — oil revenue funds services but man-camp culture creates unique challenges.",
+  "icwa_activation_rules": [],
+  "tribal_entities": [
+    {
+      "tribe_name": "MHA Nation (Three Affiliated Tribes)",
+      "phone": "701-627-4781",
+      "website": "https://mhanation.com",
+      "address": "404 Frontage Rd, New Town, ND 58763",
+      "services": "Social services, health, housing, education",
+      "health": "701-627-4100",
+      "note": "Fort Berthold Reservation — Bakken oil field"
+    },
+    {
+      "tribe_name": "Spirit Lake Nation",
+      "phone": "701-766-4221",
+      "website": "https://spiritlakenation.com",
+      "address": "7471 Spirit Lake Ln, Fort Totten, ND 58335"
+    },
+    {
+      "tribe_name": "Turtle Mountain Band of Chippewa",
+      "phone": "701-477-6451",
+      "website": "https://tmbci.net",
+      "address": "140 Roussin Rd, Belcourt, ND 58316"
+    },
+    {
+      "tribe_name": "Standing Rock Sioux Tribe",
+      "phone": "701-854-7201",
+      "website": "https://standingrock.org",
+      "address": "1 Standing Rock Ave, Fort Yates, ND 58538"
+    },
+    {
+      "tribe_name": "Sisseton Wahpeton Oyate",
+      "phone": "605-698-3911",
+      "website": "https://swo-nsn.gov",
+      "address": "12554 BIA Hwy 711, Agency Village, SD 57262"
+    }
+  ],
+  "urban_indian_programs": [],
+  "tribal_courts": []
+}

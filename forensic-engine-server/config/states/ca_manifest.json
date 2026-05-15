@@ -1,0 +1,110 @@
+{
+  "state": "CA",
+  "state_name": "California",
+  "version": "1.0.0",
+  "schema": "luminari-registry-v1",
+  "date_created": "2026-03-06",
+  "date_verified": "2026-03-06",
+  "source": "Luminari CA Three-Layer Registry v1.0 \u2014 Northwest Hope Foundation",
+  "datasets": [
+    "programs",
+    "workflows",
+    "oversight",
+    "layer0_flags",
+    "layer1_cards",
+    "foia",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "domestic_violence",
+    "elder_abuse",
+    "housing_discrimination",
+    "insurance_claim_denial",
+    "medicaid_denial",
+    "snap_denial",
+    "tenant_rights",
+    "wage_theft",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "employment",
+    "family_court",
+    "government_agency",
+    "insurer",
+    "landlord",
+    "law_enforcement",
+    "nursing_home"
+  ],
+  "policy_flags": [
+    "medicaid_expansion_state",
+    "ab1482_rent_cap_statewide",
+    "just_cause_eviction_statewide",
+    "paid_family_leave_active",
+    "calworks_grant_increase_2025",
+    "medi_cal_continuous_coverage_children",
+    "sb525_healthcare_minimum_wage_2024",
+    "proposition_1_mental_health_2024"
+  ],
+  "statistics": {
+    "programs": {
+      "total_programs": 180,
+      "categories": {
+        "food": 27,
+        "healthcare": 38,
+        "housing": 37,
+        "dv_safety": 31,
+        "legal_aid": 21,
+        "cash_assistance": 10,
+        "tribal_indigenous": 16
+      },
+      "layers": [
+        "city",
+        "county",
+        "nonprofit",
+        "state",
+        "tribal"
+      ]
+    },
+    "workflows": {
+      "total_workflows": 4,
+      "total_steps": 24
+    },
+    "oversight": {
+      "total_entity_types": 7,
+      "total_oversight_bodies": 40,
+      "pattern_threshold_coverage": "39/39",
+      "total_oversight_chains": 8
+    },
+    "layer0_flags": 6,
+    "layer1_cards": 15
+  },
+  "status": "active",
+  "validation_status": "complete",
+  "regions": [
+    "statewide"
+  ],
+  "completed_domains": [
+    "programs",
+    "workflows",
+    "oversight",
+    "layer0_flags",
+    "layer1_cards",
+    "foia",
+    "county_overrides",
+    "tribal_overrides",
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings"
+  ],
+  "pending_domains": [],
+  "missing_sections": [],
+  "date_activated": "2026-03-07T09:15:11Z"
+}

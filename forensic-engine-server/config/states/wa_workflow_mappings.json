@@ -1,0 +1,252 @@
+{
+  "meta": {
+    "state": "WA",
+    "layer": "workflow_mappings",
+    "version": "1.0.0",
+    "date_created": "2026-03-06"
+  },
+  "workflow_mappings": [
+    {
+      "workflow_id": "tenant_rights_workflow",
+      "trigger_pipelines": [
+        "tenant_rights"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "notice",
+          "target_entity_type": "landlord",
+          "deadline_days": 14,
+          "description": "Send written notice to landlord per RCW 59.18.070"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "oversight_complaint",
+          "target_entity_type": "landlord",
+          "deadline_days": 30,
+          "description": "File complaint with WA AG Consumer Protection Division"
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "court_action",
+          "target_entity_type": "landlord",
+          "deadline_days": 60,
+          "description": "File action in Superior Court; King County tenants may access Housing Justice Project"
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_denial_workflow",
+      "trigger_pipelines": [
+        "insurance_claim_denial"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "internal_appeal",
+          "target_entity_type": "insurer",
+          "deadline_days": 180,
+          "description": "File internal appeal within 180 days of denial"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "external_review",
+          "target_entity_type": "insurer",
+          "deadline_days": 120,
+          "description": "Request external review through WA OIC within 120 days"
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "oversight_complaint",
+          "target_entity_type": "insurer",
+          "deadline_days": 365,
+          "description": "File complaint with WA Office of Insurance Commissioner"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft_workflow",
+      "trigger_pipelines": [
+        "wage_theft"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "agency_filing",
+          "target_entity_type": "employer",
+          "deadline_days": 14,
+          "description": "File wage complaint with WA L&I within 3 years (RCW 49.48.083)"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "federal_dual_file",
+          "target_entity_type": "employer",
+          "deadline_days": 30,
+          "description": "Recommend parallel federal DOL filing for FLSA violations"
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "court_action",
+          "target_entity_type": "employer",
+          "deadline_days": 90,
+          "description": "File civil action for double damages under RCW 49.48.030"
+        }
+      ]
+    },
+    {
+      "workflow_id": "elder_abuse_workflow",
+      "trigger_pipelines": [
+        "elder_abuse"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "mandatory_report",
+          "target_entity_type": "government_agency",
+          "deadline_days": 1,
+          "description": "File mandatory APS report within 48 hours (RCW 74.34.035)"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "law_enforcement",
+          "target_entity_type": "law_enforcement",
+          "deadline_days": 1,
+          "description": "Contact law enforcement if immediate danger"
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "oversight_complaint",
+          "target_entity_type": "nursing_home",
+          "deadline_days": 30,
+          "description": "File complaint with WA DSHS Residential Care Services if facility involved"
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial_workflow",
+      "trigger_pipelines": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "appeal",
+          "target_entity_type": "government_agency",
+          "deadline_days": 90,
+          "description": "Request fair hearing within 90 days of denial (WAC 388-02-0025)"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "oversight_complaint",
+          "target_entity_type": "government_agency",
+          "deadline_days": 120,
+          "description": "File complaint with WA DSHS Office of Constituent Relations"
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "court_action",
+          "target_entity_type": "government_agency",
+          "deadline_days": 180,
+          "description": "File petition for judicial review in Superior Court"
+        }
+      ]
+    },
+    {
+      "workflow_id": "workplace_discrimination_workflow",
+      "trigger_pipelines": [
+        "workplace_discrimination"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "agency_filing",
+          "target_entity_type": "employer",
+          "deadline_days": 180,
+          "description": "File complaint with WA Human Rights Commission within 6 months (RCW 49.60.230)"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "federal_dual_file",
+          "target_entity_type": "employer",
+          "deadline_days": 300,
+          "description": "File EEOC charge within 300 days (cross-filing agreement with WSHRC)"
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "court_action",
+          "target_entity_type": "employer",
+          "deadline_days": 365,
+          "description": "File civil action under WA Law Against Discrimination (RCW 49.60)"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wicwa_child_welfare",
+      "trigger_pipelines": [
+        "child_welfare",
+        "domestic_violence"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": false,
+        "region_filter": null,
+        "demographic_filter": {
+          "tribal_affiliation": true
+        }
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "tribal_notification",
+          "target_entity_type": "tribal_entity",
+          "deadline_days": 1,
+          "description": "Immediate WICWA notification to tribe \u2014 RCW 13.38.070"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "tribal_intervention",
+          "target_entity_type": "tribal_entity",
+          "deadline_days": 10,
+          "description": "Tribe has right to intervene; active efforts required per RCW 13.38.040"
+        }
+      ]
+    }
+  ],
+  "resolution_order": [
+    "federal_baseline",
+    "state_registry",
+    "county_override",
+    "tribal_override",
+    "pipeline_rule_injection"
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "state": "IA",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "ia_lens_childcare",
+      "lens_type": "childcare",
+      "programs": [
+        "ia_iowa_head_start_early_access"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "ia_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "ia_iowa_medicaid",
+        "ia_hawkeye_chip_hawk_i",
+        "ia_iowa_unemployment_insurance",
+        "ia_wic_iowa",
+        "ia_iowa_food_bank_network_211",
+        "ia_behavioral_health_iowa_bhi"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "ia_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "ia_iowa_snap_family_investment_program"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "ia_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "ia_fip_family_investment_program_tanf",
+        "ia_child_care_assistance_cca",
+        "ia_iowa_vocational_rehabilitation_services",
+        "ia_liheap_iowa_liheap_ecip"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "ia_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "ia_iowa_finance_authority_ifa_housing",
+        "ia_iowa_legal_aid"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    }
+  ]
+}

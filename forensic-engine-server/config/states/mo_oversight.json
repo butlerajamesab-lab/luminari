@@ -1,0 +1,885 @@
+{
+  "meta": {
+    "state": "MO",
+    "state_name": "Missouri",
+    "layer": "oversight",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "date_verified": "2026-03-06",
+    "source": "Luminari MO Three-Layer Registry v1.0 \u2014 Northwest Hope Foundation"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "insurer",
+      "state": "MO",
+      "bodies": [
+        {
+          "oversight_body": "Missouri Department of Insurance (MDI)",
+          "jurisdiction": "primary",
+          "phone": "800-726-7390",
+          "complaint_portal": "https://insurance.mo.gov/consumers/complaints",
+          "what_to_report": "Claim denial, bad faith, coverage dispute, unfair settlement practices",
+          "legal_threshold": "Insurer violates RSMo \u00a7375.930\u2013375.948 (Unfair Claims Settlement Practices Act)",
+          "response_timeline": "Response within 15 business days typically",
+          "escalation_next": "MO Attorney General \u2014 Consumer Protection",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://insurance.mo.gov",
+          "street_address": "421 E Dunklin St",
+          "city": "Jefferson City",
+          "state_code": "MO",
+          "zip": "65101",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "MO Attorney General \u2014 Consumer Protection",
+          "jurisdiction": "state_escalation",
+          "phone": "800-392-8222",
+          "complaint_portal": "https://ago.mo.gov/consumer/file-complaint",
+          "what_to_report": "Pattern of unfair insurance practices, consumer fraud",
+          "legal_threshold": "Pattern of violations under RSMo \u00a7407 (Merchandising Practices Act)",
+          "response_timeline": "Escalate if MDI does not act within 60 days",
+          "escalation_next": "CFPB (federal)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://ago.mo.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "MO HealthNet Division (Managed Care Complaints)",
+          "jurisdiction": "state_medicaid",
+          "phone": "800-348-6627",
+          "complaint_portal": "https://mydss.mo.gov",
+          "what_to_report": "MO HealthNet managed care plan denials, access issues",
+          "legal_threshold": "Managed care plan violates MO HealthNet contract or federal Medicaid requirements",
+          "response_timeline": "Varies \u2014 expedited for urgent medical issues",
+          "escalation_next": "CMS (federal Medicaid oversight)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://mydss.mo.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Consumer Financial Protection Bureau (CFPB)",
+          "jurisdiction": "federal",
+          "phone": "855-411-2372",
+          "complaint_portal": "https://consumerfinance.gov/complaint",
+          "what_to_report": "Billing disputes, ERISA plan issues, financial product complaints",
+          "legal_threshold": "Federal jurisdiction for ERISA employer plans and financial products",
+          "response_timeline": "15 business days for company response",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "CFPB",
+          "pattern_threshold": 5,
+          "source": "https://consumerfinance.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CMS \u2014 Medicare/Medicaid Oversight",
+          "jurisdiction": "federal",
+          "phone": "877-267-2323",
+          "complaint_portal": "https://cms.gov/about-cms/contact-cms",
+          "what_to_report": "Systemic MO HealthNet or federal program violations",
+          "legal_threshold": "Federal jurisdiction over federal Medicaid dollars",
+          "response_timeline": "Varies \u2014 federal investigation timeline",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "CMS",
+          "pattern_threshold": 10,
+          "source": "https://cms.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "landlord",
+      "state": "MO",
+      "bodies": [
+        {
+          "oversight_body": "Kansas City 311 / Neighborhood Services",
+          "jurisdiction": "city_kc",
+          "phone": "816-513-1313",
+          "complaint_portal": "https://kcmo.gov/311",
+          "what_to_report": "Housing code violations, habitability issues in Kansas City",
+          "legal_threshold": "Violation of KC housing codes",
+          "response_timeline": "Inspection within 5\u201310 business days",
+          "escalation_next": "MCHR / HUD Kansas City",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://kcmo.gov/311",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "St. Louis Building Division",
+          "jurisdiction": "city_stl",
+          "phone": "314-622-3535",
+          "complaint_portal": "https://stlouis-mo.gov/government/departments/public-safety/building",
+          "what_to_report": "Housing code violations, habitability issues in St. Louis City",
+          "legal_threshold": "Violation of STL building and housing codes",
+          "response_timeline": "Inspection within 5\u201310 business days",
+          "escalation_next": "MCHR / HUD Kansas City",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://stlouis-mo.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Missouri Commission on Human Rights (MCHR)",
+          "jurisdiction": "state",
+          "phone": "877-781-4236",
+          "complaint_portal": "https://labor.mo.gov/mohumanrights/file-complaint",
+          "what_to_report": "Housing discrimination (race, sex, disability, national origin, religion, familial status)",
+          "legal_threshold": "Violation of Missouri Human Rights Act (RSMo Chapter 213)",
+          "response_timeline": "180-day filing deadline \u2014 SHORTER than federal 365 days",
+          "escalation_next": "HUD Kansas City",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://labor.mo.gov/mohumanrights",
+          "street_address": "3315 W Truman Blvd Rm 212",
+          "city": "Jefferson City",
+          "state_code": "MO",
+          "zip": "65109",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "HUD Kansas City Regional Office",
+          "jurisdiction": "federal",
+          "phone": "913-551-5462",
+          "complaint_portal": "https://hud.gov/program_offices/fair_housing_equal_opp/online-complaint",
+          "what_to_report": "Federal fair housing violations, FHA complaints",
+          "legal_threshold": "Violation of Fair Housing Act (42 USC \u00a73601 et seq.)",
+          "response_timeline": "365-day filing deadline",
+          "escalation_next": "DOJ Civil Rights",
+          "federal_hook": true,
+          "federal_agency": "HUD",
+          "pattern_threshold": 5,
+          "source": "https://hud.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "MO Attorney General \u2014 Consumer Protection",
+          "jurisdiction": "state_escalation",
+          "phone": "800-392-8222",
+          "complaint_portal": "https://ago.mo.gov/consumer/file-complaint",
+          "what_to_report": "Pattern of landlord violations affecting multiple tenants",
+          "legal_threshold": "Pattern threshold: 3+ tenants with similar violations by same landlord",
+          "response_timeline": "Escalate after local enforcement fails",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://ago.mo.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "KC Human Relations Department",
+          "jurisdiction": "city_kc",
+          "phone": "816-513-1836",
+          "complaint_portal": "https://kcmo.gov/humanrelations",
+          "what_to_report": "Housing discrimination within Kansas City",
+          "legal_threshold": "Violation of KC civil rights ordinance",
+          "response_timeline": "180-day filing deadline",
+          "escalation_next": "MCHR / HUD",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://kcmo.gov/humanrelations",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "STL Civil Rights Enforcement Agency",
+          "jurisdiction": "city_stl",
+          "phone": "314-622-3585",
+          "complaint_portal": "https://stlouis-mo.gov/government/departments/civil-rights",
+          "what_to_report": "Housing discrimination within St. Louis City",
+          "legal_threshold": "Violation of STL civil rights ordinance",
+          "response_timeline": "180-day filing deadline",
+          "escalation_next": "MCHR / HUD",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://stlouis-mo.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "employer",
+      "state": "MO",
+      "bodies": [
+        {
+          "oversight_body": "MO Division of Labor Standards (DLS) \u2014 Wage & Hour",
+          "jurisdiction": "primary",
+          "phone": "573-751-3403",
+          "complaint_portal": "https://labor.mo.gov/DLS/wagesandhours",
+          "what_to_report": "Wage theft, minimum wage violations, final paycheck delays",
+          "legal_threshold": "Violation of RSMo \u00a7290.080\u2013290.170",
+          "response_timeline": "NOTE: MO enforcement weaker than most states \u2014 also file federal WHD",
+          "escalation_next": "DOL WHD Kansas City",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://labor.mo.gov/DLS",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Missouri Commission on Human Rights (MCHR)",
+          "jurisdiction": "state",
+          "phone": "877-781-4236",
+          "complaint_portal": "https://labor.mo.gov/mohumanrights/file-complaint",
+          "what_to_report": "Employment discrimination (race, sex, disability, national origin, religion)",
+          "legal_threshold": "Violation of Missouri Human Rights Act \u2014 file within 180 days",
+          "response_timeline": "180 days from discriminatory act \u2014 SHORTER than federal 300 days",
+          "escalation_next": "EEOC St. Louis District",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://labor.mo.gov/mohumanrights",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "MO Division of Workers' Compensation (DWC)",
+          "jurisdiction": "primary",
+          "phone": "800-775-2667",
+          "complaint_portal": "https://labor.mo.gov/DWC",
+          "what_to_report": "Work-related injury, illness, retaliation for workers' comp claim",
+          "legal_threshold": "Report injury to employer first; file with DWC if disputed",
+          "response_timeline": "File claim within 2 years of injury (RSMo \u00a7287.430)",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://labor.mo.gov/DWC",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "EEOC \u2014 St. Louis District Office",
+          "jurisdiction": "federal",
+          "phone": "800-669-4000",
+          "complaint_portal": "https://eeoc.gov/filing-charge-discrimination",
+          "what_to_report": "Federal employment discrimination (Title VII, ADA, ADEA, EPA)",
+          "legal_threshold": "Violation of federal anti-discrimination statutes",
+          "response_timeline": "300-day deadline \u2014 file with MCHR too (FEPA dual-file)",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "EEOC",
+          "pattern_threshold": 5,
+          "source": "https://eeoc.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "DOL Wage and Hour Division (WHD) \u2014 Kansas City",
+          "jurisdiction": "federal",
+          "phone": "816-285-5284",
+          "complaint_portal": "https://dol.gov/agencies/whd/contact",
+          "what_to_report": "FLSA federal overtime and minimum wage violations",
+          "legal_threshold": "2-year SOL (3 if willful) \u2014 often more effective than MO state process",
+          "response_timeline": "Federal investigation \u2014 typically more effective than MO DLS",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "DOL WHD",
+          "pattern_threshold": 5,
+          "source": "https://dol.gov/whd",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "NLRB \u2014 Kansas City Area",
+          "jurisdiction": "federal",
+          "phone": "816-502-0090",
+          "complaint_portal": "https://nlrb.gov/case-activity/file-charge",
+          "what_to_report": "Union rights, labor relations violations, retaliation for organizing",
+          "legal_threshold": "6-month SOL \u2014 file promptly after violation",
+          "response_timeline": "6-month filing deadline",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "NLRB",
+          "pattern_threshold": 3,
+          "source": "https://nlrb.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "MO AG \u2014 Consumer Protection (Pattern Wage Theft)",
+          "jurisdiction": "state_escalation",
+          "phone": "800-392-8222",
+          "complaint_portal": "https://ago.mo.gov/consumer/file-complaint",
+          "what_to_report": "Pattern of wage theft or labor law violations across many workers",
+          "legal_threshold": "Pattern threshold: 3+ workers with same employer and similar violations",
+          "response_timeline": "Escalate after DLS and WHD filings",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://ago.mo.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "government_agency",
+      "state": "MO",
+      "bodies": [
+        {
+          "oversight_body": "MO DSS \u2014 Administrative Fair Hearing",
+          "jurisdiction": "primary",
+          "phone": "573-751-2730",
+          "complaint_portal": null,
+          "what_to_report": "Any DSS benefit denial \u2014 SNAP, MO HealthNet, TANF, General Relief",
+          "legal_threshold": "Request within 90 days of NOA \u2014 benefits continue if requested within 10 days",
+          "response_timeline": "90-day deadline from NOA",
+          "escalation_next": "MO Governor's Constituent Services",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://mydss.mo.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "MO Division of Employment Security (DES) \u2014 UI Appeals",
+          "jurisdiction": "primary",
+          "phone": "573-751-3215",
+          "complaint_portal": "https://uinteract.labor.mo.gov",
+          "what_to_report": "Unemployment insurance denial or overpayment dispute",
+          "legal_threshold": "Appeal within 30 days of determination \u2014 strict deadline, shorter than many states",
+          "response_timeline": "30-day deadline \u2014 strict",
+          "escalation_next": "MO Governor's Constituent Services",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://des.mo.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "MO Division of Workers' Compensation \u2014 Appeals",
+          "jurisdiction": "primary",
+          "phone": "573-751-4231",
+          "complaint_portal": "https://labor.mo.gov/DWC",
+          "what_to_report": "Workers' compensation denial or dispute",
+          "legal_threshold": "File claim within 2 years of injury (RSMo \u00a7287.430) \u2014 mediation first, then ALJ hearing",
+          "response_timeline": "2-year deadline from injury",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://labor.mo.gov/DWC",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "MO Governor's Constituent Services",
+          "jurisdiction": "state_escalation",
+          "phone": "573-751-3222",
+          "complaint_portal": "https://governor.mo.gov/contact",
+          "what_to_report": "Systemic agency failures, non-responsive agencies",
+          "legal_threshold": "Escalate if DSS or DES unresponsive for 60+ days",
+          "response_timeline": "Escalate after 60+ days of non-response",
+          "escalation_next": "Missouri General Assembly",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://governor.mo.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Missouri General Assembly \u2014 Constituent Services",
+          "jurisdiction": "state_escalation",
+          "phone": null,
+          "complaint_portal": "https://senate.mo.gov",
+          "what_to_report": "Pattern of agency misapplication affecting many Missourians",
+          "legal_threshold": "Legislative oversight \u2014 especially during session (Jan\u2013May)",
+          "response_timeline": "Contact state senator and representative",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 10,
+          "source": "https://senate.mo.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "HHS / CMS (Federal Medicaid Oversight)",
+          "jurisdiction": "federal",
+          "phone": "877-267-2323",
+          "complaint_portal": "https://cms.gov/about-cms/contact-cms",
+          "what_to_report": "Systemic MO HealthNet or federal program violations",
+          "legal_threshold": "Federal jurisdiction over federal Medicaid dollars",
+          "response_timeline": "Federal investigation timeline",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "CMS",
+          "pattern_threshold": 10,
+          "source": "https://cms.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "nursing_home",
+      "state": "MO",
+      "bodies": [
+        {
+          "oversight_body": "MO DHSS \u2014 Section for Long-Term Care Regulation (SLTCR)",
+          "jurisdiction": "primary",
+          "phone": "800-735-2966",
+          "complaint_portal": "https://health.mo.gov/seniors/nursinghomes/complaintprocess.php",
+          "what_to_report": "Nursing home abuse, neglect, licensing violations, care quality",
+          "legal_threshold": "DHSS licenses and inspects all Missouri nursing homes and residential care",
+          "response_timeline": "Investigation initiated based on severity \u2014 urgent reports prioritized",
+          "escalation_next": "MO LTC Ombudsman / CMS",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://health.mo.gov/seniors/nursinghomes",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "MO Adult Protective Services (APS)",
+          "jurisdiction": "primary",
+          "phone": "800-392-0210",
+          "complaint_portal": "https://dss.mo.gov/cd/voca/aps.htm",
+          "what_to_report": "Abuse, neglect, exploitation of adults 60+ or disabled adults 18+ in any setting",
+          "legal_threshold": "24/7 intake \u2014 investigation begins within 24 hours for urgent reports",
+          "response_timeline": "24-hour response for urgent reports",
+          "escalation_next": "MO AG \u2014 Medicaid Fraud Control Unit",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 1,
+          "source": "https://dss.mo.gov/cd/voca/aps.htm",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "MO LTC Ombudsman Program",
+          "jurisdiction": "state_advocacy",
+          "phone": "573-526-0727",
+          "complaint_portal": "https://dhss.mo.gov/LTC/ombudsman",
+          "what_to_report": "Nursing home and residential care resident rights, care quality, discharge disputes",
+          "legal_threshold": "Free, confidential advocacy \u2014 Ombudsman can initiate formal complaints and advocate at hearings",
+          "response_timeline": "Ongoing advocacy \u2014 can attend hearings",
+          "escalation_next": "DHSS SLTCR / CMS",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://dhss.mo.gov/LTC/ombudsman",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CMS \u2014 Medicare/Medicaid Certification",
+          "jurisdiction": "federal",
+          "phone": "800-633-4227",
+          "complaint_portal": "https://cms.gov/medicare/provider-enrollment-and-certification",
+          "what_to_report": "Medicare/Medicaid certified facility complaints \u2014 serious violations",
+          "legal_threshold": "Federal oversight for certified facilities",
+          "response_timeline": "Federal investigation timeline",
+          "escalation_next": "DOJ Elder Justice Initiative",
+          "federal_hook": true,
+          "federal_agency": "CMS",
+          "pattern_threshold": 5,
+          "source": "https://cms.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "MO AG \u2014 Medicaid Fraud Control Unit (MFCU)",
+          "jurisdiction": "state_criminal",
+          "phone": "573-751-3321",
+          "complaint_portal": "https://ago.mo.gov/mfcu",
+          "what_to_report": "Medicaid fraud by providers, facilities billing for services not rendered",
+          "legal_threshold": "Criminal fraud referrals \u2014 for serious financial exploitation",
+          "response_timeline": "Criminal investigation timeline",
+          "escalation_next": "DOJ Elder Justice Initiative",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://ago.mo.gov/mfcu",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "DOJ Elder Justice Initiative",
+          "jurisdiction": "federal_criminal",
+          "phone": "833-372-8311",
+          "complaint_portal": "https://justice.gov/elderjustice/elder-fraud-hotline",
+          "what_to_report": "Criminal elder abuse, systematic fraud, federal violations at care facilities",
+          "legal_threshold": "For criminal conduct or widespread institutional abuse",
+          "response_timeline": "Federal criminal investigation",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "DOJ",
+          "pattern_threshold": 5,
+          "source": "https://justice.gov/elderjustice",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "family_court",
+      "state": "MO",
+      "bodies": [
+        {
+          "oversight_body": "Missouri Commission on Retirement, Removal & Discipline of Judges (CRRJ)",
+          "jurisdiction": "primary",
+          "phone": "573-751-4208",
+          "complaint_portal": "https://courts.mo.gov/page.jsp?id=1017",
+          "what_to_report": "Judicial misconduct, bias, ethical violations by Missouri judges",
+          "legal_threshold": "Complaints investigated confidentially \u2014 outcomes sometimes public after final action",
+          "response_timeline": "Confidential investigation",
+          "escalation_next": "Missouri Court of Appeals",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://courts.mo.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Missouri Bar \u2014 Disciplinary Counsel",
+          "jurisdiction": "primary",
+          "phone": "573-635-4128",
+          "complaint_portal": "https://mobar.org/For-the-Public/Filing-a-Complaint",
+          "what_to_report": "Attorney misconduct including GAL attorneys and court-appointed counsel",
+          "legal_threshold": "Investigate attorney ethical violations \u2014 file within 6 years of conduct",
+          "response_timeline": "6-year filing deadline",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://mobar.org",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "MO DCFS / Children's Division \u2014 Complaints",
+          "jurisdiction": "state_oversight",
+          "phone": "800-392-3738",
+          "complaint_portal": "https://dss.mo.gov/cd",
+          "what_to_report": "CPS worker misconduct, procedural violations, removal disputes",
+          "legal_threshold": "Internal process \u2014 document all complaints in writing. Also consider MCHR if discrimination involved.",
+          "response_timeline": "Internal investigation timeline",
+          "escalation_next": "MCHR / DOJ Civil Rights",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://dss.mo.gov/cd",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Missouri Court of Appeals \u2014 Appellate Review",
+          "jurisdiction": "state_appellate",
+          "phone": null,
+          "complaint_portal": "https://courts.mo.gov/page.jsp?id=1022",
+          "what_to_report": "Appeal of family court orders \u2014 custody, termination, dependency",
+          "legal_threshold": "Three districts: Eastern (STL), Western (KC), Southern (Springfield). Deadlines vary by order type.",
+          "response_timeline": "Deadlines vary \u2014 seek legal aid immediately after adverse ruling",
+          "escalation_next": "DOJ Civil Rights (federal)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://courts.mo.gov",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "DOJ Civil Rights Division (Federal)",
+          "jurisdiction": "federal",
+          "phone": "202-514-3847",
+          "complaint_portal": "https://justice.gov/crt/contact-crt",
+          "what_to_report": "Constitutional due process violations in family court by state actors",
+          "legal_threshold": "Federal jurisdiction for systemic constitutional violations",
+          "response_timeline": "Federal investigation timeline",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "DOJ Civil Rights",
+          "pattern_threshold": 10,
+          "source": "https://justice.gov/crt",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Federal Civil Rights (42 USC \u00a71983 \u2014 Western/Eastern MO Districts)",
+          "jurisdiction": "federal_litigation",
+          "phone": null,
+          "complaint_portal": null,
+          "what_to_report": "Constitutional rights violations by state court actors \u2014 requires attorney",
+          "legal_threshold": "US District Court (Western or Eastern MO) \u2014 LAWMO: 816-474-6750 or LSEM: 314-534-4200 for referral",
+          "response_timeline": "Federal litigation timeline \u2014 requires attorney",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "Federal Courts",
+          "pattern_threshold": 10,
+          "source": "https://justice.gov/crt",
+          "city": "Jefferson City",
+          "state": "MO",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "general_assistance",
+      "state": "MO",
+      "bodies": [
+        {
+          "oversight_body": "Missouri Dept of Economic Development (DED)",
+          "jurisdiction": "state",
+          "phone": "573-751-4962",
+          "complaint_portal": "https://ded.mo.gov",
+          "street_address": "301 W High St",
+          "city": "Jefferson City",
+          "state_code": "MO",
+          "zip": "65101",
+          "pattern_threshold": 1,
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "mo_dmh",
+          "name": "Missouri Department of Mental Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "Online complaint form or call 800-364-9687",
+          "website": "https://dmh.mo.gov",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Missouri Department of Mental Health",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MO"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "mo_mopas",
+          "name": "Missouri Protection & Advocacy Services",
+          "jurisdiction": "state",
+          "complaint_pathway": "Call 800-392-8667 or submit online",
+          "website": "https://moadvocacy.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Missouri Protection & Advocacy Services",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MO"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint form at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MO"
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "mo_medical_board",
+          "name": "Missouri Board of Registration for the Healing Arts",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint at pr.mo.gov/healingarts",
+          "website": "https://pr.mo.gov/healingarts.asp",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Missouri Board of Registration for the Healing Arts",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MO"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "mo_pharmacy_board",
+          "name": "Missouri Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint at pr.mo.gov/pharmacy",
+          "website": "https://pr.mo.gov/pharmacy.asp",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Missouri Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MO"
+    },
+    {
+      "entity_type": "hospital_licensing",
+      "bodies": [
+        {
+          "body_id": "mo_dhss_licensing",
+          "name": "Missouri DHSS Health Facility Licensing",
+          "jurisdiction": "state",
+          "complaint_pathway": "Call 573-751-6303 or submit online complaint",
+          "website": "https://health.mo.gov/safety/healthservregs/",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "discharge_failure",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "Missouri DHSS Health Facility Licensing",
+          "what_to_report": "Facility licensing violations, discharge planning failures, patient safety concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MO"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "mo_patient_advocate",
+          "name": "Missouri Patient Advocacy Program",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations or DMH",
+          "website": "https://dmh.mo.gov",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Missouri Patient Advocacy Program",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MO"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MO"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "mo_dhss",
+          "name": "Missouri Department of Health and Senior Services",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint at health.mo.gov or call 573-751-6400",
+          "website": "https://health.mo.gov",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Missouri Department of Health and Senior Services",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MO"
+    }
+  ]
+}

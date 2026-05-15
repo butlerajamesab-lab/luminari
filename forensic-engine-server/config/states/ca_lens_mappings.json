@@ -1,0 +1,183 @@
+{
+  "meta": {
+    "state": "CA",
+    "layer": "lens_mappings",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "status": "placeholder",
+    "description": "Lens mappings \u2014 pending ingestion"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "housing",
+      "activation_pipelines": [
+        "tenant_rights",
+        "eviction_defense",
+        "housing_discrimination"
+      ],
+      "state_specific_rules": [
+        "AB 1482 Tenant Protection Act \u2014 rent cap 5% + CPI (max 10%)",
+        "Just cause eviction required for covered units",
+        "Local rent control may provide additional protections (SF, LA, Oakland)",
+        "CA Civil Code \u00a71942.5 \u2014 retaliation protections"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "insurance",
+      "activation_pipelines": [
+        "insurance_claim_denial",
+        "medicaid_denial"
+      ],
+      "state_specific_rules": [
+        "DMHC Independent Medical Review (IMR) \u2014 free, binding for HMO denials",
+        "CDI handles PPO/indemnity plan complaints",
+        "Medi-Cal managed care: plan grievance \u2192 DHCS \u2192 State Hearing",
+        "Knox-Keene Act (Health & Safety Code \u00a71340)"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "workplace",
+      "activation_pipelines": [
+        "wage_theft",
+        "workplace_discrimination"
+      ],
+      "state_specific_rules": [
+        "DLSE/Labor Commissioner handles wage claims",
+        "CA minimum wage $16.00/hr (2024), fast food $20.00/hr",
+        "CA Paid Family Leave \u2014 8 weeks at 60-70% wages",
+        "FEHA (Gov. Code \u00a712900) \u2014 broader than federal Title VII"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "domestic_violence",
+      "activation_pipelines": [
+        "domestic_violence"
+      ],
+      "state_specific_rules": [
+        "DVRO \u2014 Domestic Violence Restraining Order (Family Code \u00a76300)",
+        "Firearms relinquishment within 24 hours (Family Code \u00a76389)",
+        "GVRO available for additional protection (Penal Code \u00a718100)",
+        "CalWORKs DV waiver available"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "custody",
+      "activation_pipelines": [
+        "custody_dispute",
+        "child_welfare"
+      ],
+      "state_specific_rules": [
+        "Best interest of child standard (Family Code \u00a73011)",
+        "CA ICWA (WIC \u00a7224) \u2014 enhanced protections for Native children",
+        "Presumption of joint custody (Family Code \u00a73080)",
+        "DV creates rebuttable presumption against custody (Family Code \u00a73044)"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "elder_abuse",
+      "activation_pipelines": [
+        "elder_abuse",
+        "nursing_home_abuse"
+      ],
+      "state_specific_rules": [
+        "Elder Abuse and Dependent Adult Civil Protection Act (WIC \u00a715600)",
+        "APS mandatory reporting (WIC \u00a715630)",
+        "Enhanced penalties for financial elder abuse",
+        "Long-Term Care Ombudsman (800-231-4024)"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "consumer",
+      "activation_pipelines": [
+        "consumer_fraud",
+        "debt_collection_abuse"
+      ],
+      "state_specific_rules": [
+        "CA Consumer Legal Remedies Act (Civil Code \u00a71750)",
+        "Unfair Competition Law (B&P Code \u00a717200)",
+        "Rosenthal Fair Debt Collection Practices Act",
+        "AG Consumer Protection Division"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "medical",
+      "activation_pipelines": [
+        "insurance_claim_denial",
+        "medicaid_denial",
+        "medical_malpractice"
+      ],
+      "state_specific_rules": [
+        "DMHC IMR for medical necessity denials",
+        "Medi-Cal expansion \u2014 all ages, all immigration status",
+        "Covered California marketplace plans",
+        "MICRA (Civil Code \u00a73333.2) \u2014 medical malpractice damages cap"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "trauma_informed",
+      "activation_pipelines": [
+        "domestic_violence",
+        "child_welfare",
+        "elder_abuse"
+      ],
+      "state_specific_rules": [
+        "CA ACEs Aware Initiative \u2014 trauma screening in Medi-Cal",
+        "Trauma-informed court programs available in major counties",
+        "CalWORKs Cal-Learn and DV waiver programs"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "safety_risk",
+      "activation_pipelines": [
+        "domestic_violence",
+        "elder_abuse",
+        "child_welfare"
+      ],
+      "state_specific_rules": [
+        "DVRO emergency orders available ex parte",
+        "Firearms relinquishment (24-hour compliance)",
+        "GVRO for gun violence prevention",
+        "APS emergency intervention authority"
+      ],
+      "priority_boost": 1
+    },
+    {
+      "lens_id": "public_records_escalation",
+      "activation_pipelines": [
+        "government_accountability"
+      ],
+      "state_specific_rules": [
+        "CA Public Records Act (Gov. Code \u00a77920)",
+        "10-day response deadline (extendable to 24 days)",
+        "No fees for electronic records",
+        "AG enforcement authority"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "vulnerable_population",
+      "activation_pipelines": [
+        "benefits_denial",
+        "child_welfare",
+        "elder_abuse",
+        "immigration_case"
+      ],
+      "state_specific_rules": [
+        "Medi-Cal expansion covers all immigration statuses",
+        "CalFresh BBCE at 200% FPL",
+        "CA Tribal TANF programs for AI/AN populations",
+        "Language access requirements (Dymally-Alatorre Act)"
+      ],
+      "priority_boost": 0
+    }
+  ]
+}

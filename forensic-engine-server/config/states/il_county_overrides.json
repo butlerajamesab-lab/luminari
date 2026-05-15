@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "state": "IL",
+    "version": "3.0"
+  },
+  "regions": [],
+  "county_overrides": [
+    {
+      "county_id": "cook_county",
+      "county_name": "Cook County",
+      "fips_code": "",
+      "region": "statewide",
+      "population_estimate": "",
+      "courts": [],
+      "prosecutor": "",
+      "housing_authority": "",
+      "legal_aid": "",
+      "child_welfare": "",
+      "law_enforcement": "",
+      "utilities": "",
+      "override_details": "Cook County and Chicago layer additional protections on top of state law across housing, wages, and discrimination.",
+      "affected_programs": []
+    }
+  ],
+  "resolution_chain": []
+}

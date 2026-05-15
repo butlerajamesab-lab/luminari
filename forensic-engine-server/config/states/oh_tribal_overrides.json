@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "state": "OH",
+    "state_name": "Ohio",
+    "layer": "tribal_overrides",
+    "version": "1.0.0",
+    "date_created": "2026-03-07",
+    "source": "Luminari OH Three-Layer Registry"
+  },
+  "tribal_context": "Ohio has no federally recognized tribes with reservations currently within state borders — tribal territories were ceded through 19th century treaties. Eight tribes have historical Ohio connections (Shawnee, Delaware, Ottawa, Wyandot, Miami, Potawatomi, Seneca-Cayuga, Seneca Nation). Enrolled members reside in Ohio as urban AI/AN residents. Route through urban Indian programs and tribal social services in Oklahoma and other home states.",
+  "tribal_entities": [
+    {
+      "name": "Native American Indian Center of Central Ohio (NAICCO)",
+      "type": "urban_indian_center",
+      "phone": "614-443-3566",
+      "website": "https://naicco.net",
+      "coverage": "Columbus area",
+      "services": "Social services, cultural programs, referral, ICWA navigation, elder support",
+      "city": "Columbus",
+      "state": "OH",
+      "entity_id": "native_american_indian_center_of_central_ohio_naicco"
+    },
+    {
+      "name": "American Indian Education Center (Cleveland)",
+      "type": "urban_indian_center",
+      "phone": "216-961-0765",
+      "website": "https://aiecleveland.org",
+      "coverage": "Cleveland area",
+      "services": "Education, social services, cultural programs",
+      "city": "Columbus",
+      "state": "OH",
+      "entity_id": "american_indian_education_center_cleveland"
+    },
+    {
+      "name": "IHS Great Lakes Area Office",
+      "type": "federal_ihs",
+      "phone": "906-632-9131",
+      "website": "https://ihs.gov/greatlakes",
+      "coverage": "Ohio AI/AN residents",
+      "services": "IHS Urban Indian Health Program referrals, tribal health program connections",
+      "city": "Columbus",
+      "state": "OH",
+      "entity_id": "ihs_great_lakes_area_office"
+    }
+  ],
+  "icwa_activation_rules": [
+    {
+      "rule_id": "oh_icwa_child_welfare",
+      "trigger_pipeline": "child_welfare",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "ICWA applies for child welfare regardless of residence",
+        "Route to NAICCO (Columbus) or AIEC (Cleveland) for ICWA navigation",
+        "Contact tribal enrollment office in home state for verification"
+      ]
+    }
+  ],
+  "urban_indian_programs": [
+    {
+      "name": "NAICCO",
+      "city": "Columbus",
+      "phone": "614-443-3566",
+      "services": "Social services, cultural programs, ICWA, elder support"
+    },
+    {
+      "name": "American Indian Education Center",
+      "city": "Cleveland",
+      "phone": "216-961-0765",
+      "services": "Education, social services, cultural programs"
+    }
+  ],
+  "tribal_courts": []
+}

@@ -1,0 +1,130 @@
+{
+  "meta": {
+    "state": "VA",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "va_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "va_virginia_dss_office_of_hearing_and_appea"
+      ],
+      "oversight_chains": [
+        "landlord",
+        "employer",
+        "general"
+      ]
+    },
+    {
+      "lens_id": "va_lens_employment",
+      "lens_type": "employment",
+      "programs": [
+        "va_virginia_council_on_human_rights_vchr_em"
+      ],
+      "oversight_chains": [
+        "landlord",
+        "employer",
+        "general"
+      ]
+    },
+    {
+      "lens_id": "va_lens_tribal",
+      "lens_type": "tribal",
+      "programs": [
+        "va_virginia_council_on_indians"
+      ],
+      "oversight_chains": [
+        "landlord",
+        "employer",
+        "general"
+      ]
+    },
+    {
+      "lens_id": "va_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "va_central_virginia_legal_aid_society_cvlas",
+        "va_legal_aid_justice_center_lajc",
+        "va_southwest_virginia_legal_aid_society_svl",
+        "va_safeplace_richmond_area_dv",
+        "va_virginia_legal_aid_society_vlas_hampton_",
+        "va_blue_ridge_legal_services_brls_shenandoa",
+        "va_legal_services_of_northern_virginia_lsnv",
+        "va_central_virginia_legal_aid_society_cvlas",
+        "va_richmond_office_of_community_wealth_buil"
+      ],
+      "oversight_chains": [
+        "landlord",
+        "employer",
+        "general"
+      ]
+    },
+    {
+      "lens_id": "va_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "va_virginia_snap_food_assistance_dss",
+        "va_feeding_america_southwest_virginia_roano",
+        "va_capital_area_food_bank_richmond_central_",
+        "va_wic_virginia"
+      ],
+      "oversight_chains": [
+        "landlord",
+        "employer",
+        "general"
+      ]
+    },
+    {
+      "lens_id": "va_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "va_virginia_medicaid_famis_ccc_plus_dmas",
+        "va_vcu_health_medical_college_of_virginia_r",
+        "va_inova_health_system_northern_virginia_sa",
+        "va_virginia_community_healthcare_associatio",
+        "va_virginia_tanf_view_virginia_initiative_f",
+        "va_pamunkey_indian_tribe_tribal_government",
+        "va_ihs_nashville_area_office_covers_pamunke",
+        "va_virginia_bureau_of_insurance_boi_scc",
+        "va_virginia_dmas_medicaid_managed_care_appe",
+        "va_virginia_doli_labor_and_employment_law_d"
+      ],
+      "oversight_chains": [
+        "landlord",
+        "employer",
+        "general"
+      ]
+    },
+    {
+      "lens_id": "va_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "va_virginia_housing_vhda_virginia_housing_d",
+        "va_virginia_sexual_and_domestic_violence_ac",
+        "va_virginia_council_on_human_rights_vchr_ho"
+      ],
+      "oversight_chains": [
+        "landlord",
+        "employer",
+        "general"
+      ]
+    },
+    {
+      "lens_id": "va_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "va_virginia_ui_vec_virginia_employment_comm",
+        "va_virginia_liheap_fuel_assistance_dss",
+        "va_state_corporation_commission_scc_utility",
+        "va_virginia_employment_commission_vec_appea"
+      ],
+      "oversight_chains": [
+        "landlord",
+        "employer",
+        "general"
+      ]
+    }
+  ]
+}

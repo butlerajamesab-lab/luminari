@@ -1,0 +1,480 @@
+{
+  "meta": {
+    "state": "ME",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "me_maine_snap_food_supplement_program_dhhs",
+      "program_name": "Maine SNAP / Food Supplement Program (DHHS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Maine SNAP / Food Supplement Program",
+      "phone": "855-797-4357",
+      "website": "https://maine.gov/dhhs/ofi",
+      "eligibility": "Income < 130% FPL. maine.gov/dhhs. Cumberland County (Portland): 207-822-2000. Penobscot County (Bangor): 207-941-3000. Androscoggin County (Lewiston): 207-753-9000. Aroostook County (Presque Isle): 207-764-0431.",
+      "apply_notes": "Monthly food assistance \u2014 county DHHS offices statewide",
+      "source": "luminari-maine-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "ME",
+      "federal_interface": false
+    },
+    {
+      "program_id": "me_good_shepherd_food_bank_preble_street_ma",
+      "program_name": "Good Shepherd Food Bank / Preble Street (Maine Food Network)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Good Shepherd Food Bank / Preble Street",
+      "phone": "207-782-3554",
+      "website": "https://gsfb.org",
+      "eligibility": "Anyone in need. gsfb.org. Preble Street (Portland: 207-775-0026 \u2014 also resource center). Bangor Area Homeless Shelter Food Bank (207-947-0092).",
+      "apply_notes": "Primary Maine food bank \u2014 statewide distribution",
+      "source": "luminari-maine-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "ME",
+      "federal_interface": false
+    },
+    {
+      "program_id": "me_wic_maine",
+      "program_name": "WIC Maine",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WIC Maine",
+      "phone": "207-287-3991",
+      "website": "https://maine.gov/dhhs/mecdc/population-health/wic",
+      "eligibility": "Pregnant, postpartum women, infants, children under 5. Income < 185% FPL. maine.gov/dhhs/mecdc/population-health/wic.",
+      "apply_notes": "Nutrition assistance for women, infants, children",
+      "source": "luminari-maine-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "ME",
+      "federal_interface": false
+    },
+    {
+      "program_id": "me_mainecare_maine_medicaid_dhhs",
+      "program_name": "MaineCare / Maine Medicaid (DHHS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "MaineCare / Maine Medicaid",
+      "phone": "855-797-4357",
+      "website": "https://maine.gov/dhhs/ofi/programs-services/mainecare",
+      "eligibility": "Adults 19\u201364 to 138% FPL. Children to 208% FPL. Elderly, disabled. maine.gov/mymaineconnection. Wabanaki tribal members may access IHS independently of MaineCare.",
+      "apply_notes": "Medicaid \u2014 expanded January 2019; covers adults to 138% FPL",
+      "source": "luminari-maine-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ME",
+      "federal_interface": false
+    },
+    {
+      "program_id": "me_maine_medical_center_mercy_hospital_port",
+      "program_name": "Maine Medical Center / Mercy Hospital (Portland Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Maine Medical Center / Mercy Hospital",
+      "phone": "207-662-0111",
+      "website": "https://mainehealth.org",
+      "eligibility": "Southern Maine. Charity care income < 200% FPL. Also Eastern Maine Medical Center (Bangor: 207-973-7000). Central Maine Medical Center (Lewiston: 207-795-0111).",
+      "apply_notes": "MaineHealth system \u2014 charity care, Level 1 trauma (Portland)",
+      "source": "luminari-maine-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ME",
+      "federal_interface": false
+    },
+    {
+      "program_id": "me_maine_primary_care_association_fqhcs",
+      "program_name": "Maine Primary Care Association (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Maine Primary Care Association",
+      "phone": "207-621-0677",
+      "website": "https://mainepca.org",
+      "eligibility": "Anyone. mainepca.org / findahealthcenter.hrsa.gov. Key: Greater Portland Health (207-874-2141 \u2014 immigrant/refugee focus). Penobscot Community Health Care (Bangor: 207-947-0700). Aroostook Medical Center FQHC (207-768-4000).",
+      "apply_notes": "Federally qualified health centers \u2014 sliding scale statewide",
+      "source": "luminari-maine-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ME",
+      "federal_interface": false
+    },
+    {
+      "program_id": "me_wabanaki_nations_ihs_and_tribal_health_p",
+      "program_name": "Wabanaki Nations \u2014 IHS and Tribal Health Programs",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Wabanaki Nations \u2014 IHS and Tribal Health Programs",
+      "phone": "207-532-6873",
+      "website": "https://maliseets.com",
+      "eligibility": "Enrolled Wabanaki members. Aroostook Band of Micmacs Health Center (207-532-6873). Penobscot Indian Nation Health Center (Indian Island: 207-817-7400). Passamaquoddy Health (Perry: 207-853-2600). IHS Boston Area: 617-565-1000.",
+      "apply_notes": "Wabanaki tribal health \u2014 four tribes with complex MICSA legal status",
+      "source": "luminari-maine-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "ME",
+      "federal_interface": false
+    },
+    {
+      "program_id": "me_maine_state_housing_authority_mainehousi",
+      "program_name": "Maine State Housing Authority (MaineHousing)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Maine State Housing Authority",
+      "phone": "800-452-4668",
+      "website": "https://mainehousing.org",
+      "eligibility": "Low-income ME renters. mainehousing.org. Portland Housing Authority: 207-874-6000. Bangor Housing: 207-942-6365.",
+      "apply_notes": "Section 8/HCV, HOME program, rental assistance, rural homebuyer programs",
+      "source": "luminari-maine-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "ME",
+      "federal_interface": false
+    },
+    {
+      "program_id": "me_pine_tree_legal_assistance_statewide",
+      "program_name": "Pine Tree Legal Assistance (Statewide)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute",
+        "disability_claim",
+        "consumer_protection"
+      ],
+      "agency": "Pine Tree Legal Assistance",
+      "phone": "207-774-8211",
+      "website": "https://ptla.org",
+      "eligibility": "Income < 125% FPL (expanded for seniors and disability). ptla.org. Portland: 207-774-8211. Bangor: 207-942-8241. Presque Isle: 207-764-4349. Farmington: 207-778-5586.",
+      "apply_notes": "Primary statewide civil legal aid \u2014 housing, benefits, family, immigration, consumer",
+      "source": "luminari-maine-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "ME",
+      "federal_interface": false
+    },
+    {
+      "program_id": "me_maine_aspire_tanf_dhhs",
+      "program_name": "Maine ASPIRE-TANF (DHHS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Maine ASPIRE-TANF",
+      "phone": "855-797-4357",
+      "website": "https://maine.gov/dhhs/ofi/programs-services/tanf",
+      "eligibility": "Families with children. 60-month federal limit. ASPIRE employment and education focus. maine.gov/mymaineconnection.",
+      "apply_notes": "Cash assistance \u2014 $485/month family of 3; strong education and training orientation",
+      "source": "luminari-maine-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "ME",
+      "federal_interface": false
+    },
+    {
+      "program_id": "me_maine_ui_mdol",
+      "program_name": "Maine UI (MDOL)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Maine UI",
+      "phone": "207-621-5120",
+      "website": "https://maine.gov/labor/unemployment",
+      "eligibility": "Workers who lost job through no fault. maine.gov/labor/unemployment. Appeal: 15 days from mailing.",
+      "apply_notes": "Weekly income replacement \u2014 up to $445/week, 26 weeks",
+      "source": "luminari-maine-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "ME",
+      "federal_interface": false
+    },
+    {
+      "program_id": "me_maine_liheap_heap_heating_dhhs",
+      "program_name": "Maine LIHEAP / HEAP \u2014 Heating (DHHS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Maine LIHEAP / HEAP \u2014 Heating",
+      "phone": "207-624-7965",
+      "website": "https://maine.gov/dhhs/ofi/programs-services/heap",
+      "eligibility": "Income < 150% FPL. Priority for elderly, disabled, children under 6. Apply October\u2013April. Community Action agencies: PROP Portland (207-874-1140). Kennebec Valley Community Action (207-623-3571).",
+      "apply_notes": "Home heating assistance \u2014 critical for Maine winters",
+      "source": "luminari-maine-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "ME",
+      "federal_interface": false
+    },
+    {
+      "program_id": "me_new_mainers_resource_center_irc_portland",
+      "program_name": "New Mainers Resource Center / IRC Portland (Immigrant/Refugee)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "New Mainers Resource Center / IRC Portland",
+      "phone": "207-221-0808",
+      "website": "https://ircmaine.org",
+      "eligibility": "Refugees and immigrants. ircmaine.org. Lewiston has largest Somali refugee community per capita in US. Also Catholic Charities Maine (207-871-7437).",
+      "apply_notes": "Refugee resettlement, immigrant services \u2014 Lewiston/Auburn Somali community focus",
+      "source": "luminari-maine-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "ME",
+      "federal_interface": false
+    },
+    {
+      "program_id": "me_maine_dv_hotline_maine_cdvsa",
+      "program_name": "Maine DV Hotline / Maine CDVSA",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Maine DV Hotline / Maine CDVSA",
+      "phone": "866-834-4357",
+      "website": "https://mcedv.org",
+      "eligibility": "Anyone experiencing DV. mcedv.org. New Hope (Bangor: 207-945-5102). Family Crisis Services (Portland: 207-874-1973).",
+      "apply_notes": "24/7 DV crisis line and shelter network statewide",
+      "source": "luminari-maine-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "ME",
+      "federal_interface": false
+    },
+    {
+      "program_id": "me_maine_veterans_services_bvs",
+      "program_name": "Maine Veterans Services (BVS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial",
+        "disability_claim"
+      ],
+      "agency": "Maine Veterans Services",
+      "phone": "207-430-6035",
+      "website": "https://maine.gov/dvem/bvs",
+      "eligibility": "Maine veterans and families. Togus VA Medical Center (Augusta: 207-623-8411) \u2014 only VA medical center in Maine.",
+      "apply_notes": "VA benefits navigation, state veterans services, emergency assistance",
+      "source": "luminari-maine-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "ME",
+      "federal_interface": false
+    },
+    {
+      "program_id": "me_maine_office_of_elder_services_oes",
+      "program_name": "Maine Office of Elder Services (OES)",
+      "layer": "state",
+      "benefit_category": "aging",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Maine Office of Elder Services",
+      "phone": "800-262-2232",
+      "website": "https://maine.gov/dhhs/oads",
+      "eligibility": "Adults 60+. Five Area Agencies on Aging. Meals on Wheels, transportation, long-term care ombudsman. maine.gov/dhhs/oads.",
+      "apply_notes": "Services for adults 60+ \u2014 critical given Maine's oldest-in-nation median age",
+      "source": "luminari-maine-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "aging"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "aging"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "aging",
+      "city": "",
+      "state": "ME",
+      "federal_interface": false
+    }
+  ]
+}

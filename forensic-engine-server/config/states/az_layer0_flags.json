@@ -1,0 +1,322 @@
+{
+  "meta": {
+    "state": "AZ",
+    "layer": "layer0_flags",
+    "version": "1.0.0",
+    "last_updated": "2026-03-06"
+  },
+  "flags": [
+    {
+      "flag_id": "az_tanf_24_month_limit",
+      "title": "TANF 24-Month Lifetime Limit",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "benefits_denial",
+          "snap_denial"
+        ],
+        "benefit_categories": [
+          "cash_assistance"
+        ],
+        "conditions": []
+      },
+      "message": "Arizona imposes a 24-month lifetime TANF limit \u2014 the shortest in the nation (federal max is 60 months). Families who have exhausted TANF may still qualify for SNAP, AHCCCS, and utility assistance. Check EMPOWER program eligibility.",
+      "statute": "ARS \u00a746-292",
+      "bundle_pairings": [
+        "az_snap_work_requirement"
+      ]
+    },
+    {
+      "flag_id": "az_snap_work_requirement",
+      "title": "SNAP 80-Hour/Month Work Requirement",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "benefits_denial",
+          "snap_denial"
+        ],
+        "benefit_categories": [
+          "food"
+        ],
+        "conditions": []
+      },
+      "message": "Arizona enforces 80-hour/month SNAP work requirements for ABAWDs aged 18-49. Tribal members face additional barriers due to limited employment opportunities on reservations. Check exemptions: students, caregivers, people with disabilities.",
+      "statute": "H.R. 1 / 7 USC \u00a72015(o)",
+      "bundle_pairings": [
+        "az_tanf_24_month_limit"
+      ]
+    },
+    {
+      "flag_id": "az_wage_claim_1yr_sol",
+      "title": "Wage Claim 1-Year Statute of Limitations",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "wage_theft"
+        ],
+        "benefit_categories": [],
+        "conditions": []
+      },
+      "message": "Arizona wage claims have a 1-year statute of limitations under ARS \u00a723-364(G) \u2014 most states allow 2-3 years. File with ICA immediately. Dual-file with federal DOL WHD (2-year FLSA SOL) to preserve federal claims.",
+      "statute": "ARS \u00a723-364(G)",
+      "bundle_pairings": []
+    },
+    {
+      "flag_id": "az_ui_15_day_appeal",
+      "title": "UI Appeal 15-Day Deadline",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "benefits_denial",
+          "unemployment_benefits"
+        ],
+        "benefit_categories": [
+          "cash_assistance"
+        ],
+        "conditions": []
+      },
+      "message": "Arizona unemployment insurance appeals must be filed within 15 calendar days of the determination \u2014 among the shortest deadlines in the US. Contact DES Appeals Board immediately: 602-364-2722.",
+      "statute": "ARS \u00a723-674",
+      "bundle_pairings": []
+    },
+    {
+      "flag_id": "az_ahcccs_no_asset_limit",
+      "title": "AHCCCS No Asset Limit (Advantage)",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "insurance_claim_denial",
+          "medicaid_denial",
+          "benefits_denial"
+        ],
+        "benefit_categories": [
+          "healthcare"
+        ],
+        "conditions": []
+      },
+      "message": "Arizona AHCCCS (Medicaid) has no asset test \u2014 eligibility is income-based only (138% FPL). This is a significant advantage over states with asset limits. Apply at Health-e-Arizona Plus: healthearizonaplus.gov or 855-432-7587.",
+      "statute": "ARS \u00a736-2901 et seq.",
+      "bundle_pairings": []
+    },
+    {
+      "flag_id": "az_extreme_heat_utility",
+      "title": "Extreme Heat \u2014 Utility Programs Life-Critical",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "tenant_rights",
+          "utility_shutoff_abuse",
+          "benefits_denial"
+        ],
+        "benefit_categories": [
+          "utilities"
+        ],
+        "conditions": [
+          {
+            "type": "seasonal",
+            "months": [
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ]
+          }
+        ]
+      },
+      "message": "Arizona extreme heat (April\u2013September) makes utility access life-critical. AZ Heat Relief Network coordinates 100+ cooling centers statewide. APS PLUS and SRP SHARE provide energy assistance. Call 211 for nearest cooling center. Medical baseline programs available for vulnerable populations.",
+      "statute": "ACC R14-2-211 (utility disconnect rules)",
+      "bundle_pairings": []
+    },
+    {
+      "flag_id": "az_no_paid_leave",
+      "title": "No State Paid Family/Medical Leave",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "wage_theft",
+          "workplace_discrimination",
+          "benefits_denial"
+        ],
+        "benefit_categories": [
+          "cash_assistance"
+        ],
+        "conditions": []
+      },
+      "message": "Arizona has no state paid family or medical leave program. Workers must rely on federal FMLA (unpaid, 50+ employees) or employer policies. Check AZ Earned Sick Time (ARS \u00a723-371) for limited paid sick leave.",
+      "statute": "ARS \u00a723-371 (sick time only)",
+      "bundle_pairings": []
+    },
+    {
+      "flag_id": "az_aca_subsidy_cliff_2026",
+      "title": "ACA 400% FPL Subsidy Cliff Returns 2026",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "insurance_claim_denial",
+          "benefits_denial"
+        ],
+        "benefit_categories": [
+          "healthcare"
+        ],
+        "conditions": []
+      },
+      "message": "Enhanced ACA subsidies expire in 2026, restoring the 400% FPL cliff. Arizonans above 138% FPL but near the cliff should check AHCCCS eligibility and marketplace navigator assistance at healthearizonaplus.gov.",
+      "statute": "ARP \u00a79661 (expiring)",
+      "bundle_pairings": [
+        "az_ahcccs_no_asset_limit"
+      ]
+    },
+    {
+      "flag_id": "az_involuntary_hold_law",
+      "title": "Involuntary Hold: Arizona Emergency Admission",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "AZ involuntary psychiatric hold law: Arizona Emergency Admission. Statutory authority: A.R.S. \u00a7 36-524. Maximum initial hold duration: 72 hours. Legal standard: danger to self/others. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 72 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "A.R.S. \u00a7 36-524"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "az_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in AZ retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "az_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in AZ: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "az_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Arizona Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "az_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Arizona Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "az_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Arizona Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

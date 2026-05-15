@@ -1,0 +1,229 @@
+{
+  "meta": {
+    "state": "NC",
+    "state_name": "North Carolina",
+    "layer": "workflow_overrides",
+    "version": "3.0",
+    "date_created": "2026-03-09",
+    "date_verified": "2026-03-09",
+    "source": "luminari-nc-registry"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "housing_violation_workflow",
+      "state": "NC",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document violations (photos, communications, dates).",
+          "documents_needed": "Photos, written communications, lease copy",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately",
+          "statute": "NCGS §42-42 (Habitability)",
+          "notes": "Creates paper trail for all subsequent steps.",
+          "source": "luminari-nc-registry"
+        },
+        {
+          "step_number": 2,
+          "action": "Send written repair notice to landlord (certified mail).",
+          "documents_needed": "Written notice to landlord",
+          "state_agency": "Landlord + code enforcement",
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "PREREQUISITE before termination",
+          "statute": "NCGS §42-44 (Tenant Remedies)",
+          "notes": "Certified mail creates legal proof of notice.",
+          "source": "luminari-nc-registry"
+        },
+        {
+          "step_number": 3,
+          "action": "File code enforcement complaint.",
+          "documents_needed": "Violation documentation",
+          "state_agency": "Local code enforcement",
+          "phone": "Charlotte: 704-336-3821 / Raleigh: 919-996-6420 / Durham: 919-560-4144 / Greensboro: 336-373-2149",
+          "complaint_portal": null,
+          "deadline": "Within 5 days of eviction notice",
+          "statute": "NCGS §42-26 (Ejectment)",
+          "notes": "Multiple city contacts.",
+          "source": "luminari-nc-registry"
+        },
+        {
+          "step_number": 4,
+          "action": "Contact legal aid immediately.",
+          "documents_needed": "All documentation",
+          "state_agency": "Legal Aid NC / Charlotte Advocacy",
+          "phone": "Legal Aid NC: 919-856-2564 / Charlotte: 704-376-1600",
+          "complaint_portal": null,
+          "deadline": "10 DAYS from eviction complaint service — FATAL",
+          "statute": "NCGS §42-33 (Security Deposit)",
+          "notes": "10-day deadline is FATAL — contact within 5 days.",
+          "source": "luminari-nc-registry"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft_workflow",
+      "state": "NC",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document wages owed (pay stubs, time records).",
+          "documents_needed": "Pay stubs, time records, employment contract",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "2-year SOL (NCWHA)",
+          "statute": "NC Wage and Hour Act NCGS §95-25",
+          "notes": "Creates evidence for both state and federal claims.",
+          "source": "luminari-nc-registry"
+        },
+        {
+          "step_number": 2,
+          "action": "File federal WHD — PRIMARY PATHWAY.",
+          "documents_needed": "Wage documentation",
+          "state_agency": "DOL Wage and Hour Division",
+          "phone": "WHD Raleigh: 919-790-2741 / WHD Charlotte: 704-749-3360",
+          "complaint_portal": "https://dol.gov/whd",
+          "deadline": "FLSA: 2 years (3 if willful) — FATAL",
+          "statute": "FLSA 29 USC §201",
+          "notes": "Federal WHD is primary pathway — more resourced than state.",
+          "source": "luminari-nc-registry"
+        },
+        {
+          "step_number": 3,
+          "action": "File NC DOL wage claim — secondary.",
+          "documents_needed": "Same documentation",
+          "state_agency": "NC DOL",
+          "phone": "919-707-7970",
+          "complaint_portal": "https://labor.nc.gov",
+          "deadline": "2-year SOL",
+          "statute": "NCGS §95-25",
+          "notes": "Secondary to federal filing.",
+          "source": "luminari-nc-registry"
+        },
+        {
+          "step_number": 4,
+          "action": "Farmworker cases: route to Farmworker Unit.",
+          "documents_needed": "N/A",
+          "state_agency": "Legal Aid NC Farmworker Unit",
+          "phone": "919-856-2180",
+          "complaint_portal": "https://legalaidnc.org/farmworker",
+          "deadline": "N/A — specialized routing",
+          "statute": null,
+          "notes": "DO NOT use standard wage process for farmworker claims.",
+          "source": "luminari-nc-registry"
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial_workflow",
+      "state": "NC",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Review Notice of Action.",
+          "documents_needed": "Notice of Action letter",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "UI: 10 DAYS — FATAL (shortest)",
+          "statute": "NCGS §108A (Public Assistance)",
+          "notes": "UI appeal deadline is 10 days — second shortest in registry.",
+          "source": "luminari-nc-registry"
+        },
+        {
+          "step_number": 2,
+          "action": "Request fair hearing.",
+          "documents_needed": "Notice of Action, supporting documents",
+          "state_agency": "NC OAH",
+          "phone": "919-431-3000",
+          "complaint_portal": "https://oah.nc.gov",
+          "deadline": "30 days (benefits) / 10 days (UI) — FATAL",
+          "statute": "10A NCAC 01B (Fair Hearings)",
+          "notes": "OAH handles all benefit and UI hearings.",
+          "source": "luminari-nc-registry"
+        },
+        {
+          "step_number": 3,
+          "action": "Contact legal aid.",
+          "documents_needed": "All documentation",
+          "state_agency": "Legal Aid NC / Charlotte Advocacy",
+          "phone": "Legal Aid NC: 919-856-2564 / Charlotte: 704-376-1600",
+          "complaint_portal": null,
+          "deadline": "As soon as possible",
+          "statute": null,
+          "notes": "Contact within 5 days of any denial.",
+          "source": "luminari-nc-registry"
+        },
+        {
+          "step_number": 4,
+          "action": "UI appeals (DES).",
+          "documents_needed": "UI denial notice",
+          "state_agency": "NC DES Appeals",
+          "phone": "919-629-3000",
+          "complaint_portal": "https://des.nc.gov",
+          "deadline": "10 DAYS — FATAL",
+          "statute": "NCGS §96 (UI)",
+          "notes": "Contact legal aid within 5 days of any denial.",
+          "source": "luminari-nc-registry"
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_denial_workflow",
+      "state": "NC",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document denial (letter/EOB, plan docs, medical records).",
+          "documents_needed": "Denial letter, EOB, plan documents, medical records",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately",
+          "statute": "NCGS §58-3-245 (External Review)",
+          "notes": "Gather all documentation before filing.",
+          "source": "luminari-nc-registry"
+        },
+        {
+          "step_number": 2,
+          "action": "File internal appeal.",
+          "documents_needed": "Denial documentation",
+          "state_agency": "Insurer / managed care plan",
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "180 days private / 90 days Medicaid managed care",
+          "statute": null,
+          "notes": "Internal appeal is prerequisite for external review.",
+          "source": "luminari-nc-registry"
+        },
+        {
+          "step_number": 3,
+          "action": "NC DOI external review.",
+          "documents_needed": "Internal appeal denial",
+          "state_agency": "NC DOI",
+          "phone": "855-408-1212",
+          "complaint_portal": "https://ncdoi.gov",
+          "deadline": "After internal denial",
+          "statute": "NCGS §58-3-245",
+          "notes": "External review available after internal appeal exhausted.",
+          "source": "luminari-nc-registry"
+        },
+        {
+          "step_number": 4,
+          "action": "NC Medicaid fair hearing.",
+          "documents_needed": "Managed care denial",
+          "state_agency": "NC OAH",
+          "phone": "919-431-3000",
+          "complaint_portal": "https://oah.nc.gov",
+          "deadline": "90 days from managed care denial",
+          "statute": null,
+          "notes": "For Medicaid managed care denials only.",
+          "source": "luminari-nc-registry"
+        }
+      ]
+    }
+  ]
+}

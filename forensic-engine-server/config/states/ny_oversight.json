@@ -1,0 +1,340 @@
+{
+  "meta": {
+    "state": "NY",
+    "source": "address_audit"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "disability",
+      "state": "NY",
+      "bodies": [
+        {
+          "oversight_body": "NY Office of Temporary & Disability Assistance (OTDA)",
+          "jurisdiction": "state",
+          "phone": "800-342-3009",
+          "complaint_portal": "https://otda.ny.gov",
+          "what_to_report": "Contact for disability complaints",
+          "street_address": "40 N Pearl St",
+          "city": "Albany",
+          "state_code": "NY",
+          "zip": "12243",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "healthcare",
+      "state": "NY",
+      "bodies": [
+        {
+          "oversight_body": "NY State Dept of Health (DOH)",
+          "jurisdiction": "state",
+          "phone": "518-474-2121",
+          "complaint_portal": "https://health.ny.gov",
+          "what_to_report": "Contact for healthcare complaints",
+          "street_address": "Corning Tower Empire State Plaza",
+          "city": "Albany",
+          "state_code": "NY",
+          "zip": "12237",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "employment",
+      "state": "NY",
+      "bodies": [
+        {
+          "oversight_body": "NY State Dept of Labor (NYSDOL)",
+          "jurisdiction": "state",
+          "phone": "888-469-7365",
+          "complaint_portal": "https://labor.ny.gov",
+          "what_to_report": "Contact for employment complaints",
+          "street_address": "Building 12, State Campus",
+          "city": "Albany",
+          "state_code": "NY",
+          "zip": "12240",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "general_assistance",
+      "state": "NY",
+      "bodies": [
+        {
+          "oversight_body": "NY State Division of Human Rights (NYSDHR)",
+          "jurisdiction": "state",
+          "phone": "888-392-3644",
+          "complaint_portal": "https://dhr.ny.gov",
+          "what_to_report": "Contact for general_assistance complaints",
+          "street_address": "One Fordham Plaza 4th Fl",
+          "city": "Bronx",
+          "state_code": "NY",
+          "zip": "10458",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "general_assistance",
+      "state": "NY",
+      "bodies": [
+        {
+          "oversight_body": "NYC Commission on Human Rights (CCHR)",
+          "jurisdiction": "state",
+          "phone": "212-306-7450",
+          "complaint_portal": "https://nyc.gov/humanrights",
+          "what_to_report": "Contact for general_assistance complaints",
+          "street_address": "22 Reade St",
+          "city": "New York",
+          "state_code": "NY",
+          "zip": "10007",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "consumer",
+      "state": "NY",
+      "bodies": [
+        {
+          "oversight_body": "NYC Dept of Consumer & Worker Protection (DCWP)",
+          "jurisdiction": "state",
+          "phone": "212-436-0380",
+          "complaint_portal": "https://nyc.gov/dcwp",
+          "what_to_report": "Contact for consumer_protection complaints",
+          "street_address": "42 Broadway 8th Fl",
+          "city": "New York",
+          "state_code": "NY",
+          "zip": "10004",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "general_assistance",
+      "state": "NY",
+      "bodies": [
+        {
+          "oversight_body": "NY Dept of Financial Services (DFS)",
+          "jurisdiction": "state",
+          "phone": "800-342-3736",
+          "complaint_portal": "https://dfs.ny.gov",
+          "what_to_report": "Contact for general_assistance complaints",
+          "street_address": "One Commerce Plaza",
+          "city": "Albany",
+          "state_code": "NY",
+          "zip": "12257",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "consumer",
+      "state": "NY",
+      "bodies": [
+        {
+          "oversight_body": "NY AG Consumer Frauds & Protection",
+          "jurisdiction": "state",
+          "phone": "800-771-7755",
+          "complaint_portal": "https://ag.ny.gov",
+          "what_to_report": "Contact for consumer_protection complaints",
+          "street_address": "28 Liberty St",
+          "city": "New York",
+          "state_code": "NY",
+          "zip": "10005",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "chain_id": "ny_insurance_oversight",
+      "entity_type": "insurer",
+      "bodies": [
+        {
+          "body_id": "ny_doi",
+          "oversight_body": "NY Department of Insurance",
+          "jurisdiction": "state",
+          "pattern_threshold": 3,
+          "entity_type": "insurer",
+          "city": "Albany",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ],
+      "state": "NY"
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "ny_med_board",
+          "name": "New York Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "New York Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "NY"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "ny_patient_adv",
+          "name": "New York Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "New York Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "NY"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "ny_health_dept",
+          "name": "New York Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "New York Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "NY"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "NY"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "ny_pharm_board",
+          "name": "New York Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "New York Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "NY"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "ny_pa",
+          "name": "New York Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "New York Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "NY"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "ny_mha",
+          "name": "New York Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "New York Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "NY"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "NY"
+    }
+  ]
+}

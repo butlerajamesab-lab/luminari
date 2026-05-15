@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "state": "UT",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "UT DWS",
+      "role": "SNAP/FEP/UI/Medicaid",
+      "phone": "866-435-7414",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "211 Utah",
+      "role": "Social services referral",
+      "phone": "211",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "Utah Legal Services",
+      "role": "Statewide legal aid",
+      "phone": "800-662-4245",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "UID",
+      "role": "Insurance complaints",
+      "phone": "801-538-3800",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "UALD",
+      "role": "Employment discrimination",
+      "phone": "801-530-6801",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "Utah DV Hotline",
+      "role": "Domestic violence crisis",
+      "phone": "800-897-5465",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "Navajo Nation",
+      "role": "Tribal services (UT)",
+      "phone": "928-871-6466",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "Ute Indian Tribe",
+      "role": "Tribal services",
+      "phone": "435-722-5141",
+      "email": null,
+      "hours": null
+    }
+  ],
+  "regions": [],
+  "missing_sections": []
+}

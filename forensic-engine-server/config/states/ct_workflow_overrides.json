@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "state": "CT",
+    "version": "3.0",
+    "date": "2026-03-09"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "ct_housing_violation",
+      "title": "Housing Violation",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Document violations",
+          "contact": "Personal records",
+          "deadline": "Immediately"
+        },
+        {
+          "step": 2,
+          "action": "Send written repair notice (certified mail)",
+          "contact": "Landlord",
+          "deadline": "3-day notice under CGS §47a-23"
+        },
+        {
+          "step": 3,
+          "action": "Contact legal aid — SAME DAY",
+          "contact": "CLS: 860-344-0380 · NHLAA: 203-946-4811",
+          "deadline": "Same day as any eviction notice"
+        },
+        {
+          "step": 4,
+          "action": "File code enforcement",
+          "contact": "Hartford: 860-757-9700 · New Haven: 203-946-8000 · Bridgeport: 203-576-7201",
+          "deadline": "Within days"
+        },
+        {
+          "step": 5,
+          "action": "Rent consignment (paying rent to court)",
+          "contact": "Superior Court Housing Session",
+          "deadline": "Available as defense"
+        }
+      ],
+      "statutes": "CT Summary Process Eviction CGS §47a-23; 3-day notice for nonpayment; 8-day return date after service"
+    },
+    {
+      "workflow_id": "ct_wage_theft",
+      "title": "Wage Theft",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Document wages owed",
+          "contact": "Personal records",
+          "deadline": "2-year SOL (CT WSA)"
+        },
+        {
+          "step": 2,
+          "action": "Send written demand",
+          "contact": "Employer",
+          "deadline": "Before filing"
+        },
+        {
+          "step": 3,
+          "action": "File CT DOL wage complaint",
+          "contact": "CT DOL: 860-263-6790 · ctdol.state.ct.us",
+          "deadline": "2-year SOL — FATAL"
+        },
+        {
+          "step": 4,
+          "action": "File federal WHD simultaneously",
+          "contact": "WHD Hartford: 860-240-4160 · dol.gov/whd",
+          "deadline": "2-year SOL (3 if willful)"
+        }
+      ],
+      "statutes": "CT Wage and Salary Act CGS §31-72: 2-year SOL, double damages for willful violations, private right of action. CT Wage Theft Act (2022): criminal penalties, license revocation."
+    },
+    {
+      "workflow_id": "ct_benefits_denial",
+      "title": "Benefits Denial",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Review Notice of Action",
+          "contact": "Personal records",
+          "deadline": "30 days (HUSKY/SNAP/TFA)"
+        },
+        {
+          "step": 2,
+          "action": "Request fair hearing",
+          "contact": "CT OAH: 860-418-6050 · ct.gov/oah",
+          "deadline": "30 days from notice — FATAL"
+        },
+        {
+          "step": 3,
+          "action": "UI appeal",
+          "contact": "CT DOL: 860-263-6000",
+          "deadline": "21 days from mailing — FATAL"
+        },
+        {
+          "step": 4,
+          "action": "Contact legal aid",
+          "contact": "CLS: 860-344-0380 · ctlegal.org",
+          "deadline": "As soon as possible"
+        }
+      ],
+      "statutes": "30-day appeal window; UI 21-day deadline"
+    }
+  ]
+}

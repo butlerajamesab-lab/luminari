@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "state": "GA",
+    "version": "3.0"
+  },
+  "tribal_context": "Georgia tribal nations and urban Indian programs",
+  "tribal_entities": [],
+  "icwa_activation_rules": [],
+  "urban_indian_programs": [
+    {
+      "program_id": "atlanta_urban_indian_health_program",
+      "program_name": "Atlanta Urban Indian Health Program",
+      "services": "Health and social services for urban AI/AN population",
+      "region": "Atlanta",
+      "status": "active",
+      "notes": "",
+      "city": "Atlanta",
+      "state": "GA"
+    }
+  ],
+  "tribal_courts": []
+}

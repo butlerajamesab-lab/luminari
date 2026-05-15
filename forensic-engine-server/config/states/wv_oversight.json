@@ -1,0 +1,278 @@
+{
+  "meta": {
+    "state": "WV",
+    "version": "2.0",
+    "date": "2026-03-08",
+    "total_chains": 4,
+    "total_bodies": 6,
+    "entity_types": [
+      "employer",
+      "utility",
+      "insurer",
+      "consumer"
+    ],
+    "source": "luminari-wv-registry.docx"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "employer",
+      "state": "WV",
+      "bodies": [
+        {
+          "oversight_body": "WV Human Rights Commission (WVHRC)",
+          "jurisdiction": "primary",
+          "phone": "304-558-2616",
+          "complaint_portal": "https://hrc.wv.gov",
+          "what_to_report": "State civil rights enforcement. SOL: 365 days. Employment, housing, public accommodations. Handles retaliation claims.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "365 days",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC Pittsburgh Area Office (covers WV)",
+          "jurisdiction": "primary",
+          "phone": "800-669-4000",
+          "complaint_portal": "https://eeoc.gov",
+          "what_to_report": "Federal employment discrimination enforcement. Dual-file with WVHRC.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "300 days (with WVHRC charge)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "WV Division of Labor (DOL)",
+          "jurisdiction": "primary",
+          "phone": "304-558-7890",
+          "complaint_portal": "https://labor.wv.gov",
+          "what_to_report": "Wage enforcement, labor standards, workplace safety. File wage theft and unpaid overtime complaints.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "2 years (state wage claims)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "utility",
+      "state": "WV",
+      "bodies": [
+        {
+          "oversight_body": "WV Public Service Commission (PSC)",
+          "jurisdiction": "primary",
+          "phone": "800-344-5113",
+          "complaint_portal": "https://psc.state.wv",
+          "what_to_report": "Utility regulation. Handles billing disputes, service termination appeals, rate complaints for electric, gas, water.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "Varies",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "insurer",
+      "state": "WV",
+      "bodies": [
+        {
+          "oversight_body": "WV Insurance Commission",
+          "jurisdiction": "primary",
+          "phone": "888-879-9842",
+          "complaint_portal": "https://insurance.wv.gov",
+          "what_to_report": "Health, property, auto insurance complaints and coverage disputes.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "Varies",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "consumer",
+      "state": "WV",
+      "bodies": [
+        {
+          "oversight_body": "WV Attorney General Consumer Protection",
+          "jurisdiction": "primary",
+          "phone": "800-368-8808",
+          "complaint_portal": "https://ago.wv.gov/consumerprotection",
+          "what_to_report": "Consumer fraud, predatory lending, debt collection, pharmaceutical pricing. File formal complaint online.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "Varies",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "wv_med_board",
+          "name": "West Virginia Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "West Virginia Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WV"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "wv_patient_adv",
+          "name": "West Virginia Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "West Virginia Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WV"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "wv_health_dept",
+          "name": "West Virginia Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "West Virginia Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WV"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WV"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "wv_pharm_board",
+          "name": "West Virginia Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "West Virginia Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WV"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "wv_pa",
+          "name": "West Virginia Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "West Virginia Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WV"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "wv_mha",
+          "name": "West Virginia Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "West Virginia Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WV"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WV"
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "state": "SC",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "sc_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "sc_south_carolina_coalition_against_domesti"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "sc_lens_employment",
+      "lens_type": "employment",
+      "programs": [
+        "sc_sc_ui_dew_dept_of_employment_and_workfor"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "sc_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "sc_south_carolina_legal_services_scls",
+        "sc_sc_appleseed_legal_justice_center_columb",
+        "sc_sc_dss_administrative_appeals",
+        "sc_sc_dew_appeal_tribunal"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "sc_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "sc_south_carolina_snap_food_assistance_dss",
+        "sc_harvest_hope_food_bank_midlands_statewid",
+        "sc_lowcountry_food_bank_charleston_coastal_",
+        "sc_wic_south_carolina"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "sc_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "sc_sc_medicaid_healthy_connections_scdhhs",
+        "sc_musc_health_charleston_safety_net",
+        "sc_prisma_health_columbia_upstate_safety_ne",
+        "sc_sc_primary_health_care_association_fqhcs",
+        "sc_sea_island_comprehensive_health_care_cor",
+        "sc_sc_tanf_family_independence_dss",
+        "sc_catawba_indian_nation_social_services",
+        "sc_catawba_indian_nation_health_center",
+        "sc_sc_dhhs_medicaid_managed_care_grievances"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "sc_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "sc_sc_state_housing_finance_and_development",
+        "sc_sc_human_affairs_commission_schac"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "civil_rights"
+      ]
+    },
+    {
+      "lens_id": "sc_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "sc_sc_lieap_energy_assistance_dss"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "civil_rights"
+      ]
+    }
+  ]
+}

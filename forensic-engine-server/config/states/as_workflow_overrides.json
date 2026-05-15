@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "state": "AS",
+    "version": "3.0",
+    "date": "2026-03-09"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "as_wage_theft",
+      "title": "Wage Theft / Labor Violations",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Document wages owed",
+          "contact": "Personal records",
+          "deadline": "Immediately"
+        },
+        {
+          "step": 2,
+          "action": "File with AS Department of Commerce - Labor Division",
+          "contact": "684-633-5497 · as.gov",
+          "deadline": "~2 years (verify current SOL)"
+        },
+        {
+          "step": 3,
+          "action": "File federal WHD (if applicable)",
+          "contact": "WHD Honolulu: 808-541-3118 for referral",
+          "deadline": "FLSA: 2 years (3 if willful)"
+        }
+      ],
+      "statutes": "FLSA 29 USC §201"
+    },
+    {
+      "workflow_id": "as_immigration_status",
+      "title": "Immigration Status Issues (Nationals)",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Gather all documents (birth certificate, etc.)",
+          "contact": "Personal records",
+          "deadline": "Immediately"
+        },
+        {
+          "step": 2,
+          "action": "Contact AS Bar Association for naturalization help",
+          "contact": "684-633-4163",
+          "deadline": "Before any status deadlines"
+        },
+        {
+          "step": 3,
+          "action": "USCIS Honolulu District Office",
+          "contact": "uscis.gov/contactcenter",
+          "deadline": "Varies by case"
+        }
+      ],
+      "statutes": "INA §341 (Naturalization of Nationals)"
+    },
+    {
+      "workflow_id": "as_benefits_denial",
+      "title": "Benefits Denial (No UI — Unique)",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Review notice from DHSS",
+          "contact": "Personal records",
+          "deadline": "Varies by program"
+        },
+        {
+          "step": 2,
+          "action": "Contact DHSS directly for appeal",
+          "contact": "DHSS: 684-633-1187",
+          "deadline": "30 days typical"
+        },
+        {
+          "step": 3,
+          "action": "Contact AS Bar Association for legal help",
+          "contact": "684-633-4163",
+          "deadline": "As soon as possible"
+        }
+      ],
+      "notes": "NO UI PROGRAM EXISTS — there is no administrative pathway to replace wage income through UI."
+    }
+  ]
+}

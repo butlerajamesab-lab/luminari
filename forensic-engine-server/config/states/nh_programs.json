@@ -1,0 +1,510 @@
+{
+  "meta": {
+    "state": "NH",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "nh_nh_snap_food_assistance_dhhs",
+      "program_name": "NH SNAP / Food Assistance (DHHS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "NH SNAP / Food Assistance",
+      "phone": "603-271-9700",
+      "website": "https://nh.gov/dhhs/snap",
+      "eligibility": "Income < 130% FPL. Apply at local DHHS district office. Manchester: 603-668-2330. Nashua: 603-882-6000. Concord: 603-271-9700.",
+      "apply_notes": "Monthly food assistance for low-income households",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nh_nh_food_bank_manchester_statewide",
+      "program_name": "NH Food Bank (Manchester \u2014 Statewide)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "NH Food Bank",
+      "phone": "603-669-9725",
+      "website": "https://nhfoodbank.org",
+      "eligibility": "Anyone in need. nhfoodbank.org \u2014 find nearest food pantry. Critical for North Country where SNAP access is limited.",
+      "apply_notes": "Food pantry network \u2014 400+ partner agencies statewide",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nh_wic_new_hampshire",
+      "program_name": "WIC New Hampshire",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WIC New Hampshire",
+      "phone": "603-271-4516",
+      "website": "https://nh.gov/dhhs/wic",
+      "eligibility": "Pregnant, postpartum women, infants and children under 5. Income < 185% FPL. nh.gov/dhhs/wic \u2014 find local WIC clinic.",
+      "apply_notes": "Nutrition assistance for women, infants, children",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nh_nh_granite_advantage_medicaid_dhhs",
+      "program_name": "NH Granite Advantage / Medicaid (DHHS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "NH Granite Advantage / Medicaid",
+      "phone": "800-852-3345",
+      "website": "https://nh.gov/dhhs/medicaid",
+      "eligibility": "Adults 19\u201364 to 138% FPL (Granite Advantage marketplace model). Children, families, elderly, disabled. Apply: nh.gov/dhhs/medicaid.",
+      "apply_notes": "Health coverage for low-income adults \u2014 expanded 2014",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nh_concord_hospital_dartmouth_health_safety",
+      "program_name": "Concord Hospital / Dartmouth Health (Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Concord Hospital / Dartmouth Health",
+      "phone": "603-225-2711",
+      "website": "https://crhc.org",
+      "eligibility": "Concord region \u2014 Dartmouth Health system. Charity care for income < 200% FPL. Manchester: Elliot Health System (603-669-5300). Nashua: Southern NH Medical Center (603-577-2000).",
+      "apply_notes": "Primary NH hospital system \u2014 charity care for uninsured",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nh_nh_community_health_centers_fqhcs",
+      "program_name": "NH Community Health Centers (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "NH Community Health Centers",
+      "phone": "603-225-6880",
+      "website": "https://nhchc.org",
+      "eligibility": "Anyone. 10+ FQHCs statewide. nhchc.org / findahealthcenter.hrsa.gov. Key: Manchester Community Health Center (603-622-5800), Lamprey Health Care (Newmarket: 603-659-3106), Families First (Portsmouth: 603-422-8208).",
+      "apply_notes": "Federally qualified health centers \u2014 sliding-scale regardless of insurance",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nh_nh_housing_finance_authority_nhhfa",
+      "program_name": "NH Housing Finance Authority (NHHFA)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "NH Housing Finance Authority",
+      "phone": "603-472-8623",
+      "website": "https://nhhfa.org",
+      "eligibility": "Low-income NH renters. nhhfa.org. Manchester Housing: 603-624-2100. Nashua Housing: 603-883-3576.",
+      "apply_notes": "Section 8/HCV, HOME program, rental assistance, homelessness prevention",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nh_legal_aid_nh_legal_assistance_nhla",
+      "program_name": "Legal Aid (NH Legal Assistance \u2014 NHLA)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Legal Aid",
+      "phone": "603-224-3333",
+      "website": "https://nhla.org",
+      "eligibility": "Income < 200% FPL statewide. nhla.org \u2014 Manchester, Concord, Littleton offices. Senior citizens: 800-551-1997.",
+      "apply_notes": "Free civil legal aid statewide \u2014 eviction defense, benefits, family, DV",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nh_nh_tanf_family_assistance_program_dhhs",
+      "program_name": "NH TANF / Family Assistance Program (DHHS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "NH TANF / Family Assistance Program",
+      "phone": "603-271-9700",
+      "website": "https://nh.gov/dhhs/tanf",
+      "eligibility": "Families with children \u2014 up to $675/month family of 3. 60-month federal limit. Work requirement applies. Pair with child care (CCAP) and SNAP immediately.",
+      "apply_notes": "Cash assistance for families with children",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nh_nh_unemployment_insurance_nhes",
+      "program_name": "NH Unemployment Insurance (NHES)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "employment_dispute"
+      ],
+      "agency": "NH Unemployment Insurance",
+      "phone": "603-271-7700",
+      "website": "https://nhes.nh.gov/elmi/ui",
+      "eligibility": "Workers who lost job through no fault \u2014 up to $427/week, 26 weeks. nhes.nh.gov \u2014 file online. Appeal deadline: 14 days from mailing.",
+      "apply_notes": "Weekly income replacement for workers who lost jobs",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nh_nh_liheap_home_energy_assistance_dhhs",
+      "program_name": "NH LIHEAP / Home Energy Assistance (DHHS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "NH LIHEAP / Home Energy Assistance",
+      "phone": "603-271-9700",
+      "website": "https://nh.gov/dhhs/liheap",
+      "eligibility": "Income < 60% state median. Apply through local Community Action Agency. Lakes Region CAP: 603-524-4088. Strafford County CAP: 603-994-3500.",
+      "apply_notes": "Heating, cooling, and crisis energy assistance",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nh_nh_rapid_response_emergency_services_211",
+      "program_name": "NH Rapid Response / Emergency Services (211 NH)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "NH Rapid Response / Emergency Services",
+      "phone": "",
+      "website": "https://211nh.org",
+      "eligibility": "Anyone. 211nh.org \u2014 24/7. Primary triage for North Country and rural isolation situations.",
+      "apply_notes": "211 statewide resource and referral \u2014 crisis navigation",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nh_riverbend_community_mental_health_concor",
+      "program_name": "Riverbend Community Mental Health (Concord \u2014 Behavioral)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Riverbend Community Mental Health",
+      "phone": "603-228-1600",
+      "website": "https://riverbendcmh.org",
+      "eligibility": "Concord/central NH. For NH opioid/SUD crisis \u2014 also NH Doorways (nhbhn.org: 603-271-6200) statewide.",
+      "apply_notes": "Community mental health \u2014 opioid recovery, crisis services",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nh_nh_dv_hotline_crisis_line",
+      "program_name": "NH DV Hotline / Crisis Line",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "NH DV Hotline / Crisis Line",
+      "phone": "1-800-852-3388",
+      "website": "https://nhcadsv.org",
+      "eligibility": "Anyone experiencing DV. nhcadsv.org \u2014 12 DV programs statewide.",
+      "apply_notes": "Domestic violence 24/7 crisis line and shelter referral statewide",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nh_nh_refugee_and_immigrant_support_service",
+      "program_name": "NH Refugee and Immigrant Support Services (IRSSA / RCNH)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "NH Refugee and Immigrant Support Services",
+      "phone": "603-647-1500",
+      "website": "https://rcnh.org",
+      "eligibility": "Refugees and immigrants \u2014 Manchester/Concord focus. rcnh.org. Also Global Refuge (formerly Lutheran Immigration: 603-669-7010).",
+      "apply_notes": "Refugee resettlement, immigration case management \u2014 Manchester primary hub",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nh_nh_veterans_services_nhvac",
+      "program_name": "NH Veterans Services (NHVAC)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial",
+        "disability_claim"
+      ],
+      "agency": "NH Veterans Services",
+      "phone": "603-624-9230",
+      "website": "https://vba.va.gov/pubs/forms",
+      "eligibility": "NH veterans and families. Manchester VAMC: 603-624-4366. Also NH State Veterans Council: 603-271-2394.",
+      "apply_notes": "VA benefits navigation, state veterans assistance, emergency aid",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nh_granite_united_way_statewide_benefits_na",
+      "program_name": "Granite United Way (Statewide \u2014 Benefits Navigator)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Granite United Way",
+      "phone": "603-229-0633",
+      "website": "https://graniteuw.org",
+      "eligibility": "Anyone in NH. graniteuw.org \u2014 partner of 211 NH system.",
+      "apply_notes": "Benefits navigation, financial coaching, 211 coordination",
+      "source": "luminari-new-hampshire-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "NH",
+      "federal_interface": false
+    }
+  ]
+}

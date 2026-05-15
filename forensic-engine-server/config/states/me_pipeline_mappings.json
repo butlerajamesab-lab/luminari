@@ -1,0 +1,283 @@
+{
+  "meta": {
+    "state": "ME",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "me_good_shepherd_food_bank_preble_street_ma",
+        "me_pine_tree_legal_assistance_statewide",
+        "me_maine_ui_mdol",
+        "me_new_mainers_resource_center_irc_portland",
+        "me_maine_veterans_services_bvs",
+        "me_maine_office_of_elder_services_oes"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "me_wic_maine"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "consumer_protection",
+      "programs": [
+        "me_pine_tree_legal_assistance_statewide"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "me_maine_snap_food_supplement_program_dhhs",
+        "me_wic_maine",
+        "me_maine_state_housing_authority_mainehousi",
+        "me_pine_tree_legal_assistance_statewide",
+        "me_maine_aspire_tanf_dhhs",
+        "me_maine_liheap_heap_heating_dhhs",
+        "me_maine_veterans_services_bvs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "me_maine_state_housing_authority_mainehousi",
+        "me_pine_tree_legal_assistance_statewide",
+        "me_maine_dv_hotline_maine_cdvsa"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "me_mainecare_maine_medicaid_dhhs",
+        "me_maine_medical_center_mercy_hospital_port",
+        "me_maine_primary_care_association_fqhcs",
+        "me_wabanaki_nations_ihs_and_tribal_health_p"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "me_maine_liheap_heap_heating_dhhs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "utility",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "me_involuntary_hold_law",
+        "me_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "me_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "me_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "me_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "me_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "me_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "me_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "me_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "me_restraint_seclusion_limits",
+        "me_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "me_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "me_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "me_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

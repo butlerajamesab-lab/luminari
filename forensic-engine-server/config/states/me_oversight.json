@@ -1,0 +1,352 @@
+{
+  "meta": {
+    "state": "ME",
+    "version": "2.0",
+    "date": "2026-03-08",
+    "total_chains": 6,
+    "total_bodies": 11,
+    "entity_types": [
+      "employer",
+      "general",
+      "insurer",
+      "utility",
+      "landlord",
+      "consumer"
+    ],
+    "source": "luminari-me-registry.docx"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "employer",
+      "state": "ME",
+      "bodies": [
+        {
+          "oversight_body": "Maine Human Rights Commission (MHRC)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Employment, housing, credit, public accommodation, education discrimination \u2014 Maine Human Rights Act. Covers LGBTQ+. 300-day SOL.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "300 days \u2014 FATAL. File EEOC simultaneously.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC \u2014 Boston Area Office (covers ME)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Federal employment discrimination \u2014 300-day deadline.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "300 days \u2014 FATAL. File MHRC simultaneously.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Maine DOL \u2014 Bureau of Labor Standards (Wage)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Wage enforcement \u2014 Maine has 6-year SOL for wage claims (among longest in registry). File with both BLS and WHD.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "6 years ME state / 2 years FLSA \u2014 ALWAYS USE STATE SOL. FATAL.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOL WHD \u2014 Boston (covers ME, Federal Wage)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "FLSA enforcement \u2014 always file Maine BLS simultaneously for 6-year state SOL.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "2 years FLSA \u2014 file ME BLS simultaneously for 6-year window",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "general",
+      "state": "ME",
+      "bodies": [
+        {
+          "oversight_body": "Maine DHHS \u2014 Fair Hearings (Benefits)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "SNAP, MaineCare, TANF/ASPIRE fair hearings \u2014 30-day appeal window.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "30 days from notice \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Maine DOL \u2014 UI Appeals Commission",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "UI denial appeals \u2014 15-day deadline from mailing.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "15 days \u2014 FATAL. Contact Pine Tree Legal (207-774-8211) within 7 days.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "BIA \u2014 Eastern Regional Office (Wabanaki MICSA)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "BIA oversight for Wabanaki tribes \u2014 complex MICSA jurisdiction. MICSA (1980) limits tribal sovereignty in ways contested in ongoing litigation.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "Varies \u2014 consult Pine Tree Legal or tribal attorney",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "insurer",
+      "state": "ME",
+      "bodies": [
+        {
+          "oversight_body": "Maine Bureau of Insurance",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Health/property insurance complaints, external review.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "180 days from denial",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "utility",
+      "state": "ME",
+      "bodies": [
+        {
+          "oversight_body": "Maine Public Utilities Commission (PUC)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Electric, gas, water, telecom utility regulation \u2014 billing and service complaints.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "Varies",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "landlord",
+      "state": "ME",
+      "bodies": [
+        {
+          "oversight_body": "HUD \u2014 Boston Area Office (covers ME, Fair Housing)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Fair Housing Act enforcement in Maine.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "1 year \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "consumer",
+      "state": "ME",
+      "bodies": [
+        {
+          "oversight_body": "Maine AG \u2014 Consumer Protection Division",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Consumer fraud, Maine UTPA, predatory lending.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "6 years (ME UTPA)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "me_med_board",
+          "name": "Maine Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Maine Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "ME"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "me_patient_adv",
+          "name": "Maine Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Maine Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "ME"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "me_health_dept",
+          "name": "Maine Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Maine Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "ME"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "ME"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "me_pharm_board",
+          "name": "Maine Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Maine Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "ME"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "me_pa",
+          "name": "Maine Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Maine Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "ME"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "me_mha",
+          "name": "Maine Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Maine Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "ME"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "ME"
+    }
+  ]
+}

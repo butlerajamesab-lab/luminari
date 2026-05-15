@@ -1,0 +1,256 @@
+{
+  "meta": {
+    "state": "PA",
+    "layer": "county_overrides",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "source": "Luminari PA Registry v1.0 \u2014 Northwest Hope Foundation"
+  },
+  "resolution_chain": [
+    "pipeline_defaults",
+    "state_registry",
+    "county_override",
+    "urban_native_override"
+  ],
+  "county_overrides": [
+    {
+      "county_id": "philadelphia",
+      "county_name": "Philadelphia County",
+      "region": "philadelphia_metro",
+      "population": 1603797,
+      "services": {
+        "circuit_court": {
+          "name": "Philadelphia Court of Common Pleas",
+          "phone": "215-686-7000",
+          "website": "https://www.courts.phila.gov"
+        },
+        "prosecutor": {
+          "name": "Philadelphia District Attorney",
+          "phone": "215-686-8000",
+          "website": "https://www.phila.gov/districtattorney"
+        },
+        "housing_authority": {
+          "name": "Philadelphia Housing Authority (PHA)",
+          "phone": "215-684-4000",
+          "website": "https://www.pha.phila.gov"
+        },
+        "legal_aid": {
+          "name": "Community Legal Services of Philadelphia",
+          "phone": "215-981-3700",
+          "website": "https://clsphila.org"
+        },
+        "child_welfare": {
+          "name": "Philadelphia DHS",
+          "phone": "215-683-6100",
+          "website": "https://www.phila.gov/departments/department-of-human-services"
+        },
+        "law_enforcement": {
+          "name": "Philadelphia Police Department",
+          "phone": "215-686-1776",
+          "website": "https://www.phillypolice.com"
+        },
+        "utilities": {
+          "name": "PECO Energy",
+          "phone": "800-494-4000",
+          "disconnect_protection": true,
+          "winter_moratorium": "December 1 \u2013 March 31",
+          "statute": "66 Pa.C.S. \u00a71406"
+        }
+      }
+    },
+    {
+      "county_id": "allegheny",
+      "county_name": "Allegheny County",
+      "region": "pittsburgh_metro",
+      "population": 1250578,
+      "services": {
+        "circuit_court": {
+          "name": "Allegheny County Court of Common Pleas",
+          "phone": "412-350-5300",
+          "website": "https://www.alleghenycourts.us"
+        },
+        "prosecutor": {
+          "name": "Allegheny County District Attorney",
+          "phone": "412-350-4400",
+          "website": "https://www.alleghenycounty.us/district-attorney"
+        },
+        "housing_authority": {
+          "name": "Housing Authority of the City of Pittsburgh (HACP)",
+          "phone": "412-456-5000",
+          "website": "https://www.hacp.org"
+        },
+        "legal_aid": {
+          "name": "Neighborhood Legal Services Association",
+          "phone": "412-255-6700",
+          "website": "https://www.nlsa.us"
+        },
+        "child_welfare": {
+          "name": "Allegheny County DHS Office of Children, Youth and Families",
+          "phone": "412-350-5701",
+          "website": "https://www.alleghenycounty.us/human-services"
+        },
+        "law_enforcement": {
+          "name": "Allegheny County Police",
+          "phone": "412-473-1200",
+          "website": "https://www.alleghenycounty.us/police"
+        },
+        "utilities": {
+          "name": "Duquesne Light",
+          "phone": "412-393-7100",
+          "disconnect_protection": true,
+          "winter_moratorium": "December 1 \u2013 March 31",
+          "statute": "66 Pa.C.S. \u00a71406"
+        }
+      }
+    },
+    {
+      "county_id": "montgomery",
+      "county_name": "Montgomery County",
+      "region": "philadelphia_metro",
+      "population": 856553,
+      "services": {
+        "circuit_court": {
+          "name": "Montgomery County Court of Common Pleas",
+          "phone": "610-278-3345",
+          "website": "https://www.montcopa.org/courts"
+        },
+        "prosecutor": {
+          "name": "Montgomery County District Attorney",
+          "phone": "610-278-3090",
+          "website": "https://www.montcopa.org/da"
+        },
+        "housing_authority": {
+          "name": "Montgomery County Housing Authority",
+          "phone": "610-275-5720",
+          "website": "https://www.montcoha.org"
+        },
+        "legal_aid": {
+          "name": "Legal Aid of Southeastern PA \u2014 Montgomery",
+          "phone": "610-275-5400",
+          "website": "https://www.lasp.org"
+        },
+        "child_welfare": {
+          "name": "Montgomery County Office of Children and Youth",
+          "phone": "610-278-5800",
+          "website": "https://www.montcopa.org/ocy"
+        },
+        "law_enforcement": {
+          "name": "Montgomery County Detectives",
+          "phone": "610-278-3368",
+          "website": "https://www.montcopa.org/da/detectives"
+        },
+        "utilities": {
+          "name": "PECO Energy",
+          "phone": "800-494-4000",
+          "disconnect_protection": true,
+          "winter_moratorium": "December 1 \u2013 March 31",
+          "statute": "66 Pa.C.S. \u00a71406"
+        }
+      }
+    },
+    {
+      "county_id": "lancaster",
+      "county_name": "Lancaster County",
+      "region": "central_pa",
+      "population": 552984,
+      "services": {
+        "circuit_court": {
+          "name": "Lancaster County Court of Common Pleas",
+          "phone": "717-299-8282",
+          "website": "https://www.co.lancaster.pa.us/courts"
+        },
+        "prosecutor": {
+          "name": "Lancaster County District Attorney",
+          "phone": "717-299-8100",
+          "website": "https://www.co.lancaster.pa.us/da"
+        },
+        "housing_authority": {
+          "name": "Lancaster Housing Authority",
+          "phone": "717-397-2835",
+          "website": "https://www.lancasterhousing.org"
+        },
+        "legal_aid": {
+          "name": "MidPenn Legal Services \u2014 Lancaster",
+          "phone": "717-299-0971",
+          "website": "https://www.midpenn.org"
+        },
+        "child_welfare": {
+          "name": "Lancaster County Children and Youth",
+          "phone": "717-299-7925",
+          "website": "https://www.co.lancaster.pa.us/cy"
+        },
+        "law_enforcement": {
+          "name": "Lancaster City Police",
+          "phone": "717-735-3300",
+          "website": "https://www.cityoflancasterpa.com/police"
+        },
+        "utilities": {
+          "name": "PPL Electric Utilities",
+          "phone": "800-342-5775",
+          "disconnect_protection": true,
+          "winter_moratorium": "December 1 \u2013 March 31",
+          "statute": "66 Pa.C.S. \u00a71406"
+        }
+      }
+    },
+    {
+      "county_id": "erie",
+      "county_name": "Erie County",
+      "region": "northwest_pa",
+      "population": 270876,
+      "services": {
+        "circuit_court": {
+          "name": "Erie County Court of Common Pleas",
+          "phone": "814-451-6000",
+          "website": "https://eriecountypa.gov/courts"
+        },
+        "prosecutor": {
+          "name": "Erie County District Attorney",
+          "phone": "814-451-6280",
+          "website": "https://eriecountypa.gov/da"
+        },
+        "housing_authority": {
+          "name": "Erie Housing Authority",
+          "phone": "814-452-2425",
+          "website": "https://www.eriehousing.org"
+        },
+        "legal_aid": {
+          "name": "Northwestern Legal Services",
+          "phone": "814-452-6949",
+          "website": "https://www.nwls.org"
+        },
+        "child_welfare": {
+          "name": "Erie County Office of Children and Youth",
+          "phone": "814-451-6600",
+          "website": "https://eriecountypa.gov/ocy"
+        },
+        "law_enforcement": {
+          "name": "Erie City Police",
+          "phone": "814-870-1120",
+          "website": "https://www.erie.pa.us/police"
+        },
+        "utilities": {
+          "name": "Penelec (FirstEnergy)",
+          "phone": "888-544-4877",
+          "disconnect_protection": true,
+          "winter_moratorium": "December 1 \u2013 March 31",
+          "statute": "66 Pa.C.S. \u00a71406"
+        }
+      }
+    }
+  ],
+  "regions": {
+    "central_pa": {
+      "description": "central_pa"
+    },
+    "northwest_pa": {
+      "description": "northwest_pa"
+    },
+    "philadelphia_metro": {
+      "description": "philadelphia_metro"
+    },
+    "pittsburgh_metro": {
+      "description": "pittsburgh_metro"
+    }
+  }
+}

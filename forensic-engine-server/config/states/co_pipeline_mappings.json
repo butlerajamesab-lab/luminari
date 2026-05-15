@@ -1,0 +1,347 @@
+{
+  "meta": {
+    "state": "CO",
+    "version": "3.0"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "workflow_id": "co_benefits_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "co_benefits"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [],
+      "program_filter": {
+        "benefit_category": "benefits"
+      }
+    },
+    {
+      "pipeline_id": "snap_denial",
+      "workflow_id": "co_benefits_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "co_benefits"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [],
+      "program_filter": {
+        "benefit_category": "benefits"
+      }
+    },
+    {
+      "pipeline_id": "health_insurance_denial",
+      "workflow_id": "co_general_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [
+        "co_denver_latino_immigrant_community"
+      ],
+      "layer1_cluster_ids": [
+        "co_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [],
+      "program_filter": {
+        "benefit_category": "health"
+      }
+    },
+    {
+      "pipeline_id": "medicaid_denial",
+      "workflow_id": "co_general_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [
+        "co_denver_latino_immigrant_community"
+      ],
+      "layer1_cluster_ids": [
+        "co_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [],
+      "program_filter": {
+        "benefit_category": "health"
+      }
+    },
+    {
+      "pipeline_id": "tenant_rights",
+      "workflow_id": "co_housing_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [
+        "co_denver_boulder_housing_cost_crisis",
+        "colorado_unhoused_population_denver_hub"
+      ],
+      "layer1_cluster_ids": [
+        "co_housing"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [],
+      "program_filter": {
+        "benefit_category": "housing"
+      }
+    },
+    {
+      "pipeline_id": "tenant_rights",
+      "workflow_id": "co_housing_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [
+        "co_denver_boulder_housing_cost_crisis",
+        "colorado_unhoused_population_denver_hub"
+      ],
+      "layer1_cluster_ids": [
+        "co_housing"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [],
+      "program_filter": {
+        "benefit_category": "housing"
+      }
+    },
+    {
+      "pipeline_id": "civil_rights_violation",
+      "workflow_id": "co_general_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "co_civil_rights"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [],
+      "program_filter": {
+        "benefit_category": "civil_rights"
+      }
+    },
+    {
+      "pipeline_id": "immigration_case",
+      "workflow_id": "co_general_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "co_immigration"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [],
+      "program_filter": {
+        "benefit_category": "immigration"
+      }
+    },
+    {
+      "pipeline_id": "wage_theft",
+      "workflow_id": "co_employment_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "co_employment"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [],
+      "program_filter": {
+        "benefit_category": "employment"
+      }
+    },
+    {
+      "pipeline_id": "workplace_discrimination",
+      "workflow_id": "co_employment_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "co_employment"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [],
+      "program_filter": {
+        "benefit_category": "employment"
+      }
+    },
+    {
+      "pipeline_id": "consumer_fraud",
+      "workflow_id": "co_general_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "co_consumer"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [],
+      "program_filter": {
+        "benefit_category": "consumer"
+      }
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "co_involuntary_hold_law",
+        "co_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "co_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "co_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "co_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "co_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "co_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "co_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "co_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "co_restraint_seclusion_limits",
+        "co_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "co_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "co_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "co_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "state": "VA",
+  "state_name": "Virginia",
+  "version": "2.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-08",
+  "source": "luminari-va-registry.docx",
+  "datasets": [
+    "general",
+    "employment",
+    "tribal",
+    "legal",
+    "food",
+    "healthcare",
+    "housing",
+    "cash_assistance",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "consumer_protection",
+    "disability_claim",
+    "employment_dispute",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "utility_dispute",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "landlord",
+    "employer",
+    "general"
+  ],
+  "policy_flags": [
+    "va_minimum_wage_above_federal",
+    "va_portability"
+  ],
+  "statistics": {
+    "total_programs": 33,
+    "total_oversight_chains": 3,
+    "total_oversight_bodies": 4,
+    "total_flags": 2
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "employment",
+    "food"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ]
+}

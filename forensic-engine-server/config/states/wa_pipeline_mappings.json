@@ -1,0 +1,401 @@
+{
+  "meta": {
+    "state": "WA",
+    "layer": "pipeline_mappings",
+    "version": "1.0.0",
+    "date_created": "2026-03-06"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "tenant_rights",
+      "workflow_id": "tenant_rights_workflow",
+      "oversight_entity_types": [
+        "landlord"
+      ],
+      "layer0_flag_ids": [
+        "wa_just_cause_eviction",
+        "wa_utility_shutoff_protection"
+      ],
+      "layer1_cluster_ids": [
+        "wa_housing"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "housing_authority",
+        "superior_court",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "tenant_rights"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "wage_theft",
+      "workflow_id": "wage_theft_workflow",
+      "oversight_entity_types": [
+        "employer"
+      ],
+      "layer0_flag_ids": [
+        "wa_paid_family_medical_leave"
+      ],
+      "layer1_cluster_ids": [
+        "wa_legal"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "superior_court",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "wage_theft"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "benefits_denial",
+      "workflow_id": "benefits_denial_workflow",
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "wa_basic_food_expanded"
+      ],
+      "layer1_cluster_ids": [
+        "wa_food"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "benefits_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "snap_denial",
+      "workflow_id": "benefits_denial_workflow",
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "wa_basic_food_expanded"
+      ],
+      "layer1_cluster_ids": [
+        "wa_food"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "snap_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "workflow_id": "insurance_denial_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [
+        "wa_apple_health_expansion"
+      ],
+      "layer1_cluster_ids": [
+        "wa_healthcare"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "insurance_claim_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "domestic_violence",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "law_enforcement",
+        "family_court"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "wa_dv_safety"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "law_enforcement",
+        "superior_court",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "domestic_violence"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "government_agency",
+        "family_court"
+      ],
+      "layer0_flag_ids": [
+        "wa_wicwa_enhanced_protections"
+      ],
+      "layer1_cluster_ids": [
+        "wa_tribal"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "child_welfare",
+        "superior_court",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "child_welfare"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "elder_abuse",
+      "workflow_id": "elder_abuse_workflow",
+      "oversight_entity_types": [
+        "nursing_home",
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "wa_elder_abuse_mandatory_reporting"
+      ],
+      "layer1_cluster_ids": [
+        "wa_elder"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "law_enforcement",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "elder_abuse"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "workplace_discrimination",
+      "workflow_id": "workplace_discrimination_workflow",
+      "oversight_entity_types": [
+        "employer"
+      ],
+      "layer0_flag_ids": [
+        "wa_paid_family_medical_leave"
+      ],
+      "layer1_cluster_ids": [
+        "wa_legal"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "workplace_discrimination"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "immigration_case",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "wa_legal"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "immigration_case"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "wa_involuntary_hold_law",
+        "wa_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "wa_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "wa_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "wa_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "wa_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "wa_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "wa_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "wa_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "wa_restraint_seclusion_limits",
+        "wa_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "wa_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "wa_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "wa_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

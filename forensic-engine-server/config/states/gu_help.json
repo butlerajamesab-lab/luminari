@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "state": "GU",
+    "version": "3.0",
+    "date": "2026-03-09"
+  },
+  "routing_index": [
+    {
+      "service": "Guam DPHSS (All Benefits)",
+      "phone": "671-735-7200",
+      "website": "dphss.guam.gov",
+      "address": "123 Chalan Kareta, Mangilao, GU 96913"
+    },
+    {
+      "service": "Guam DOL (UI + Wage)",
+      "phone": "671-475-7044",
+      "website": "dol.guam.gov"
+    },
+    {
+      "service": "Guam Legal Services",
+      "phone": "671-477-9811"
+    },
+    {
+      "service": "Guam Regional Medical City",
+      "phone": "671-645-5500"
+    },
+    {
+      "service": "Guam Dept of CHamoru Affairs",
+      "phone": "671-475-4274",
+      "website": "chamorro.guam.gov"
+    },
+    {
+      "service": "GHURA (Housing)",
+      "phone": "671-477-9851"
+    },
+    {
+      "service": "EEOC Honolulu (covers Guam)",
+      "phone": "808-541-3118",
+      "website": "eeoc.gov"
+    },
+    {
+      "service": "Guam Civil Rights Commission",
+      "phone": "671-475-4274"
+    }
+  ]
+}

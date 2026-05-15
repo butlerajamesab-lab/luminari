@@ -1,0 +1,229 @@
+{
+  "meta": {
+    "state": "IL",
+    "version": "3.0",
+    "flag_count": 8
+  },
+  "flags": [
+    {
+      "flag_id": "il_snap_abawd_work_requirements_march_2026",
+      "severity": "alert",
+      "title": "SNAP ABAWD Work Requirements \u2014 March 1, 2026",
+      "summary": "Starting March 1, 2026, ABAWD work requirements apply statewide in Illinois \u2014 prior waiver ended. ABAWDs ages 18\u201354 must document 80 hours/month of work, education, or qualifying activity.",
+      "affected_programs": [
+        "snap_food_stamps"
+      ],
+      "effective_date": "2026-03-01"
+    },
+    {
+      "flag_id": "illinois_medicaid_expanded",
+      "severity": "info",
+      "title": "Illinois Medicaid \u2014 Expanded, All Adults to 138% FPL",
+      "summary": "Illinois expanded Medicaid under the ACA. Adults 19\u201364 earning up to 138% FPL qualify for Medicaid. There is NO coverage gap for childless adults. Undocumented adults 42+ qualify for Immigrant Health Connect (state-funded).",
+      "affected_programs": [
+        "illinois_medicaid"
+      ],
+      "effective_date": null
+    },
+    {
+      "flag_id": "il_chicago_minimum_wage_higher_than_state",
+      "severity": "warning",
+      "title": "Chicago Minimum Wage $16.20/hr \u2014 HIGHER than State $15.00/hr",
+      "summary": "Chicago minimum wage is $16.20/hr as of July 2024 \u2014 higher than Illinois state minimum of $15.00/hr. Always check Chicago wage before calculating back wages for any Chicago worker.",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "il_chicago_just_cause_eviction_ordinance",
+      "severity": "warning",
+      "title": "Chicago Just Cause Eviction Ordinance \u2014 Stronger Than State Law",
+      "summary": "Chicago enacted the Residential Landlord and Tenant Ordinance (RLTO) with strong tenant protections, including 30-day written notice for lease non-renewal and a 14-day cure period for non-payment.",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "illinois_tanf_cash_assistance_warning",
+      "severity": "warning",
+      "title": "Illinois TANF (TANF Cash Assistance) \u2014 $432/mo Max, 60-Month Limit",
+      "summary": "Illinois TANF pays up to $432/month for a family of 3 with a 60-month lifetime limit. Work requirements apply at 30 hours/week.",
+      "affected_programs": [
+        "tanf_cash_assistance"
+      ],
+      "effective_date": null
+    },
+    {
+      "flag_id": "il_idhr_election_of_remedies",
+      "severity": "warning",
+      "title": "IDHR Election-of-Remedies \u2014 File Carefully",
+      "summary": "Filing with the Illinois Department of Human Rights (IDHR) may bar you from filing in state court on the same claim. Always consult legal aid before filing.",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "illinois_workers_compensation_mandatory",
+      "severity": "info",
+      "title": "Illinois Workers' Compensation \u2014 Mandatory for Most Employers",
+      "summary": "Illinois requires virtually all employers to carry workers' compensation insurance. Route all workplace injury cases to the Illinois Workers' Compensation Commission.",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "il_chicago_cooling_centers_utility_shutoff",
+      "severity": "warning",
+      "title": "Chicago Cooling Centers & Utility Shutoff \u2014 Summer Heat Critical",
+      "summary": "Utilities cannot shut off during heat emergencies (90\u00b0F+). Chicago activates cooling centers when heat index reaches 95\u00b0F. Enroll in ComEd/Nicor medical baseline rate program if chronic illness.",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "il_involuntary_hold_law",
+      "title": "Involuntary Hold: Illinois Emergency Admission",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "IL involuntary psychiatric hold law: Illinois Emergency Admission. Statutory authority: 405 ILCS 5/3-600. Maximum initial hold duration: 24 hours. Legal standard: danger to self/others. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 24 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "405 ILCS 5/3-600"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "il_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in IL retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "il_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in IL: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "il_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Illinois Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "il_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Illinois Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "il_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Illinois Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

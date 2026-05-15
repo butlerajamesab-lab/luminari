@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "state": "VT",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "vt_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "vt_vermont_snap_3squaresvt",
+        "vt_vermont_wic",
+        "vt_vermont_senior_programs_dail"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "vt_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "vt_reach_up_tanf_vermont"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "vt_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "vt_vermont_housing_finance_agency_vhfa",
+        "vt_vermont_legal_aid_vlsc"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "vt_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "vt_vermont_medicaid_green_mountain_care",
+        "vt_dr_dynasaur_chip",
+        "vt_vermont_unemployment_insurance",
+        "vt_child_development_division_cdd_child_car",
+        "vt_vermont_vocational_rehabilitation_vocreh",
+        "vt_vermont_paid_family_and_medical_leave_pf",
+        "vt_department_of_mental_health_vermont_dmh"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    }
+  ]
+}

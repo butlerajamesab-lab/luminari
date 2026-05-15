@@ -1,0 +1,296 @@
+{
+  "meta": {
+    "state": "CT",
+    "version": "3.0",
+    "date": "2026-03-09",
+    "program_count": 27
+  },
+  "programs": [
+    {
+      "program_id": "ct_snap",
+      "program_name": "SNAP",
+      "category": "food",
+      "phone": "855-626-6632",
+      "website": "connect.ct.gov",
+      "address": "55 Farmington Ave, Hartford, CT 06105",
+      "eligibility": "Income <130% FPL. 12 DSS offices statewide.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_wic",
+      "program_name": "WIC",
+      "category": "food",
+      "phone": "860-509-8084",
+      "website": "portal.ct.gov/dph/wic",
+      "eligibility": "Pregnant/postpartum, infants, children under 5. Income <185% FPL.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_husky",
+      "program_name": "HUSKY Health (Medicaid)",
+      "category": "healthcare",
+      "phone": "877-284-8759",
+      "website": "huskyhealthct.org",
+      "eligibility": "Adults 19-64 to 138% FPL (HUSKY D); children/families (A), elderly/disabled (B/C). Undocumented children: CT state-funded.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_tfa",
+      "program_name": "CT TFA (TANF)",
+      "category": "cash_assistance",
+      "phone": "855-626-6632",
+      "website": "connect.ct.gov",
+      "eligibility": "~$698/month family of 3. 21-month state limit (shorter than federal).",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_ui",
+      "program_name": "Connecticut UI",
+      "category": "employment",
+      "phone": "860-263-6000",
+      "website": "ctdol.state.ct.us",
+      "eligibility": "Up to $781/week, 26 weeks. 21-day appeal \u2014 FATAL.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_liheap",
+      "program_name": "LIHEAP / Energy Assistance",
+      "category": "energy",
+      "phone": "855-626-6632",
+      "website": "ct.gov/dss/energy",
+      "eligibility": "Income <60% state median. Winter shutoff moratorium Nov 1-May 1.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_food_bank",
+      "program_name": "Connecticut Food Bank",
+      "category": "food",
+      "phone": "203-469-5000",
+      "website": "ctfoodbank.org",
+      "address": "2 Research Pkwy, Wallingford, CT 06492",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_foodshare",
+      "program_name": "Foodshare (Hartford region)",
+      "category": "food",
+      "phone": "860-286-9999",
+      "address": "450 Woodland Ave, Bloomfield, CT 06002",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_windham_food",
+      "program_name": "Windham Region Food Bank",
+      "category": "food",
+      "phone": "860-456-6809",
+      "address": "1001 Main St, Willimantic, CT 06226",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_hartford_healthcare",
+      "program_name": "Hartford HealthCare / Hartford Hospital",
+      "category": "healthcare",
+      "phone": "860-545-5000",
+      "website": "hartfordhealthcare.org",
+      "address": "80 Seymour St, Hartford, CT 06102",
+      "notes": "Level 1 trauma + charity care.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_st_francis",
+      "program_name": "Saint Francis Hospital (Hartford)",
+      "category": "healthcare",
+      "phone": "860-714-4000",
+      "address": "114 Woodland St, Hartford, CT 06105",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_yale_new_haven",
+      "program_name": "Yale New Haven Hospital",
+      "category": "healthcare",
+      "phone": "203-688-4242",
+      "website": "ynhh.org",
+      "address": "20 York St, New Haven, CT 06510",
+      "notes": "Level 1 trauma + charity care.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_bridgeport_hospital",
+      "program_name": "Bridgeport Hospital",
+      "category": "healthcare",
+      "phone": "203-384-3000",
+      "address": "267 Grant St, Bridgeport, CT 06610",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_fqhc",
+      "program_name": "CT Community Health Centers (FQHCs)",
+      "category": "healthcare",
+      "phone": "860-246-0090",
+      "website": "ctchc.com",
+      "notes": "15+ FQHCs statewide.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_charter_oak",
+      "program_name": "Charter Oak Health Center",
+      "category": "healthcare",
+      "phone": "860-550-7500",
+      "address": "21 Grand St, Hartford, CT 06106",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_fair_haven",
+      "program_name": "Fair Haven Community Health Care",
+      "category": "healthcare",
+      "phone": "203-777-7411",
+      "address": "374 Grand Ave, New Haven, CT 06513",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_optimus",
+      "program_name": "Optimus Health Care",
+      "category": "healthcare",
+      "phone": "203-551-7400",
+      "address": "982 E Main St, Bridgeport, CT 06608",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_chfa",
+      "program_name": "CT Housing Finance Authority",
+      "category": "housing",
+      "phone": "860-721-9501",
+      "website": "chfa.org",
+      "address": "999 West St, Rocky Hill, CT 06067",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_hartford_housing",
+      "program_name": "Hartford Housing Authority",
+      "category": "housing",
+      "phone": "860-723-8400",
+      "address": "180 George St, Hartford, CT 06114",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_new_haven_housing",
+      "program_name": "New Haven Housing Authority",
+      "category": "housing",
+      "phone": "203-498-8800",
+      "address": "360 Orange St, New Haven, CT 06511",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_bridgeport_housing",
+      "program_name": "Bridgeport Housing Authority",
+      "category": "housing",
+      "phone": "203-337-8900",
+      "address": "150 Highland Ave, Bridgeport, CT 06604",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_cls",
+      "program_name": "Connecticut Legal Services (Statewide)",
+      "category": "legal",
+      "phone": "860-344-0380",
+      "website": "ctlegal.org",
+      "address": "878 Main St, Willimantic, CT 06226",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_nhlaa",
+      "program_name": "New Haven Legal Assistance Association",
+      "category": "legal",
+      "phone": "203-946-4811",
+      "website": "nhlaa.org",
+      "address": "205 Orange St, New Haven, CT 06510",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_right_to_counsel",
+      "program_name": "Statewide Right to Counsel (Eviction)",
+      "category": "legal",
+      "notes": "Enacted 2022 \u2014 Public Defender Office provides appointed counsel for qualifying tenants.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_dv_hotline",
+      "program_name": "CT DV Hotline (CTCADV)",
+      "category": "safety",
+      "phone": "888-774-2900",
+      "website": "ctcadv.org",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_make_the_road",
+      "program_name": "Make the Road CT (Danbury)",
+      "category": "immigrant_services",
+      "phone": "203-553-4340",
+      "website": "maketheroadct.org",
+      "notes": "CRITICAL for Danbury immigrant community.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ct_intercommunity",
+      "program_name": "InterCommunity Health Care (FQHC)",
+      "category": "healthcare",
+      "phone": "860-569-5900",
+      "address": "Hartford, CT",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    }
+  ]
+}

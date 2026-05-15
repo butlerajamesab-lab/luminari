@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "state": "ND",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "nd_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "nd_north_dakota_snap",
+        "nd_north_dakota_aging_services",
+        "nd_community_action_agencies_211_north_dako"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "nd_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "nd_tanf_north_dakota",
+        "nd_north_dakota_vocational_rehabilitation"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "nd_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "nd_north_dakota_housing_finance_agency_ndhf",
+        "nd_legal_services_of_north_dakota"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "nd_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "nd_north_dakota_medicaid",
+        "nd_north_dakota_chip_healthy_steps",
+        "nd_north_dakota_unemployment_insurance",
+        "nd_north_dakota_wic",
+        "nd_nd_tribal_nations_health_social_services",
+        "nd_nd_department_of_human_services_behavior"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    }
+  ]
+}

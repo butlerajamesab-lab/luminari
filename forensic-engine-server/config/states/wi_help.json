@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "state": "WI",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "DHS BadgerCare Helpline",
+      "role": "BadgerCare+ eligibility and enrollment",
+      "phone": "800-362-3002",
+      "email": null,
+      "hours": null,
+      "specialty": "Medicaid"
+    },
+    {
+      "contact_name": "Wisconsin Economic Services (WES)",
+      "role": "W-2 (Wisconsin Works) information",
+      "phone": "888-794-5556",
+      "email": null,
+      "hours": null,
+      "specialty": "TANF"
+    },
+    {
+      "contact_name": "Fox Valley Hmong Mutual Assistance Association",
+      "role": "Services for the Hmong community",
+      "phone": "920-560-1300",
+      "email": null,
+      "hours": null,
+      "specialty": "Hmong community"
+    },
+    {
+      "contact_name": "Wisconsin UI",
+      "role": "Unemployment insurance claims and appeals",
+      "phone": "844-910-3661",
+      "email": null,
+      "hours": null,
+      "specialty": "Unemployment"
+    },
+    {
+      "contact_name": "Milwaukee County Behavioral Health Division Crisis Line",
+      "role": "Mental health crisis support",
+      "phone": "414-257-7222",
+      "email": null,
+      "hours": "24/7",
+      "specialty": "Mental health crisis"
+    },
+    {
+      "contact_name": "Wisconsin Coalition Against DV (WCADV) Hotline",
+      "role": "Domestic violence crisis, shelter referral, safety planning",
+      "phone": "608-255-0539",
+      "email": null,
+      "hours": "24/7",
+      "specialty": "Domestic violence"
+    },
+    {
+      "contact_name": "Wisconsin Tenant Resource Center",
+      "role": "Tenant rights and housing issues",
+      "phone": "608-257-0006",
+      "email": null,
+      "hours": null,
+      "specialty": "Housing"
+    },
+    {
+      "contact_name": "Wisconsin Navigator",
+      "role": "Marketplace enrollment assistance",
+      "phone": "844-729-1234",
+      "email": null,
+      "hours": null,
+      "specialty": "Health insurance marketplace"
+    }
+  ],
+  "regions": [],
+  "missing_sections": []
+}

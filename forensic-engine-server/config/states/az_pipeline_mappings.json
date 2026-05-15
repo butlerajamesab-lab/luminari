@@ -1,0 +1,413 @@
+{
+  "meta": {
+    "state": "AZ",
+    "layer": "pipeline_mappings",
+    "version": "1.0.0",
+    "last_updated": "2026-03-06"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "tenant_rights",
+      "workflow_id": "tenant_rights_workflow",
+      "oversight_entity_types": [
+        "landlord"
+      ],
+      "layer0_flag_ids": [
+        "az_extreme_heat_utility"
+      ],
+      "layer1_cluster_ids": [
+        "az_housing",
+        "az_utilities"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "housing_authority",
+        "courts",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "tenant_rights"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "wage_theft",
+      "workflow_id": "wage_theft_workflow",
+      "oversight_entity_types": [
+        "employer"
+      ],
+      "layer0_flag_ids": [
+        "az_wage_claim_1yr_sol",
+        "az_no_paid_leave"
+      ],
+      "layer1_cluster_ids": [
+        "az_legal_aid",
+        "az_cash_assistance"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "courts",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "wage_theft"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "benefits_denial",
+      "workflow_id": "benefits_denial_workflow",
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "az_tanf_24_month_limit",
+        "az_snap_work_requirement",
+        "az_ui_15_day_appeal"
+      ],
+      "layer1_cluster_ids": [
+        "az_food",
+        "az_cash_assistance"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "benefits_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "snap_denial",
+      "workflow_id": "benefits_denial_workflow",
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "az_snap_work_requirement",
+        "az_tanf_24_month_limit"
+      ],
+      "layer1_cluster_ids": [
+        "az_food"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": "food",
+        "pipeline_ids_include": [
+          "snap_denial",
+          "benefits_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "workflow_id": "insurance_claim_denial_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [
+        "az_ahcccs_no_asset_limit",
+        "az_aca_subsidy_cliff_2026"
+      ],
+      "layer1_cluster_ids": [
+        "az_healthcare"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "insurance_claim_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "medicaid_denial",
+      "workflow_id": "insurance_claim_denial_workflow",
+      "oversight_entity_types": [
+        "insurer",
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "az_ahcccs_no_asset_limit"
+      ],
+      "layer1_cluster_ids": [
+        "az_healthcare"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": "healthcare",
+        "pipeline_ids_include": [
+          "medicaid_denial",
+          "insurance_claim_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "domestic_violence",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "law_enforcement",
+        "family_court"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "az_dv_safety",
+        "az_legal_aid"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "courts",
+        "law_enforcement",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "domestic_violence"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "family_court",
+        "government_agency"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "az_tribal",
+        "az_legal_aid"
+      ],
+      "foia_rule_ids": [
+        "az_foia_child_welfare"
+      ],
+      "county_override_sections": [
+        "child_welfare",
+        "courts",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "child_welfare"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "elder_abuse",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "nursing_home"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "az_healthcare",
+        "az_legal_aid"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "courts",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "elder_abuse"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "immigration_case",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "az_legal_aid",
+        "az_healthcare",
+        "az_tribal"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": "immigration",
+        "pipeline_ids_include": [
+          "immigration_case"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "az_involuntary_hold_law",
+        "az_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "az_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "az_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "az_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "az_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "az_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "az_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "az_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "az_restraint_seclusion_limits",
+        "az_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "az_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "az_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "az_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

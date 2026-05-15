@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "state": "MD",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "standard_appeal",
+      "state": "MD",
+      "override_type": "timeline",
+      "description": "Maryland standard appeal timeline",
+      "source": "registry"
+    },
+    {
+      "workflow_id": "expedited_review",
+      "state": "MD",
+      "override_type": "eligibility",
+      "description": "Maryland expedited review criteria",
+      "source": "registry"
+    }
+  ]
+}

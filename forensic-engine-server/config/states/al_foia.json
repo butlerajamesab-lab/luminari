@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "state": "AL",
+    "version": "3.0"
+  },
+  "statute": {
+    "name": "Alabama Open Records Act",
+    "citation": "Ala. Code \u00a7 36-12-40"
+  },
+  "structured_rules": [
+    {
+      "rule_id": "al_public_records",
+      "domain": "public_records"
+    }
+  ],
+  "agencies": [
+    {
+      "agency": "Alabama DHR",
+      "contact_name": null,
+      "email": null,
+      "phone": "334-242-1773",
+      "address": "50 N Ripley St, Montgomery, AL 36130",
+      "agency_id": "alabama_dhr"
+    },
+    {
+      "agency": "Alabama ADOL",
+      "contact_name": null,
+      "email": null,
+      "phone": "800-361-4524",
+      "address": "649 Monroe St, Montgomery, AL 36131",
+      "agency_id": "alabama_adol"
+    }
+  ],
+  "appeals_workflow": []
+}

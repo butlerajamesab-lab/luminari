@@ -1,0 +1,277 @@
+{
+  "meta": {
+    "state": "GU",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "gu_division_of_chamoru_affairs",
+        "gu_guam_legal_services_corporation"
+      ],
+      "oversight_chains": [
+        "employer",
+        "consumer"
+      ],
+      "flags": [
+        "gu_territory",
+        "gu_portability"
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "gu_medquam_chip",
+        "gu_guam_snap_food_stamps",
+        "gu_guam_tanf_cash_assistance",
+        "gu_guam_wic",
+        "gu_head_start_early_head_start",
+        "gu_guam_child_care_development_fund_ccdf"
+      ],
+      "oversight_chains": [
+        "employer",
+        "consumer"
+      ],
+      "flags": [
+        "gu_territory",
+        "gu_portability"
+      ]
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "gu_guam_tanf_cash_assistance",
+        "gu_guam_vocational_rehabilitation",
+        "gu_guam_child_care_development_fund_ccdf",
+        "gu_guam_low_income_home_energy_assistance_l",
+        "gu_guam_legal_services_corporation"
+      ],
+      "oversight_chains": [
+        "employer",
+        "consumer"
+      ],
+      "flags": [
+        "gu_territory",
+        "gu_portability"
+      ]
+    },
+    {
+      "pipeline_id": "employment_dispute",
+      "programs": [
+        "gu_guam_unemployment_insurance_gdol",
+        "gu_guam_vocational_rehabilitation"
+      ],
+      "oversight_chains": [
+        "employer",
+        "consumer"
+      ],
+      "flags": [
+        "gu_territory",
+        "gu_portability"
+      ]
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "gu_guam_housing_urban_renewal_authority_ghu",
+        "gu_guam_wic",
+        "gu_guam_legal_services_corporation"
+      ],
+      "oversight_chains": [
+        "employer",
+        "consumer"
+      ],
+      "flags": [
+        "gu_territory",
+        "gu_portability"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "gu_medicaid_medquam",
+        "gu_medquam_chip",
+        "gu_guam_unemployment_insurance_gdol",
+        "gu_guam_behavioral_health_wellness_center",
+        "gu_snap_ed_guam"
+      ],
+      "oversight_chains": [
+        "employer",
+        "consumer"
+      ],
+      "flags": [
+        "gu_territory",
+        "gu_portability"
+      ]
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "gu_guam_low_income_home_energy_assistance_l"
+      ],
+      "oversight_chains": [
+        "employer",
+        "consumer"
+      ],
+      "flags": [
+        "gu_territory",
+        "gu_portability"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "gu_involuntary_hold_law",
+        "gu_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "gu_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "gu_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "gu_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "gu_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "gu_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "gu_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "gu_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "gu_restraint_seclusion_limits",
+        "gu_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "gu_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "gu_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "gu_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

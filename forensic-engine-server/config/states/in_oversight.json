@@ -1,0 +1,347 @@
+{
+  "meta": {
+    "state": "IN",
+    "version": "3.0",
+    "chain_count": 3
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "insurer",
+      "state": "IN",
+      "bodies": [
+        {
+          "oversight_body": "Indiana Department of Insurance (IDOI)",
+          "jurisdiction": "primary",
+          "phone": "317-232-2385",
+          "complaint_portal": "in.gov/doi",
+          "what_to_report": "Private health, life, and property insurance companies.",
+          "legal_threshold": "Investigates consumer complaints against insurance companies, including claim denials and bad faith practices. It also administers an external review program for health insurance denials.",
+          "city": "Indianapolis",
+          "state": "IN",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "FSSA Office of Medicaid Policy \u2014 HIP 2.0",
+          "jurisdiction": "primary",
+          "phone": "800-457-8283",
+          "complaint_portal": "in.gov/medicaid",
+          "what_to_report": "Indiana's Medicaid program, including HIP 2.0.",
+          "legal_threshold": "Handles complaints and grievances related to HIP 2.0, including POWER Account lockouts, managed care plan issues, and access to care failures. It also oversees the state fair hearing process for Medicaid appeals.",
+          "city": "Indianapolis",
+          "state": "IN",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Indiana Department of Labor \u2014 Wage Claims",
+          "jurisdiction": "primary",
+          "phone": "317-232-2655",
+          "complaint_portal": "in.gov/dol",
+          "what_to_report": "Indiana's wage and hour laws.",
+          "legal_threshold": "Investigates wage claims related to the Indiana minimum wage, Wage Payment Act, child labor, and prevailing wage laws. However, its enforcement capacity is limited, and private lawsuits are often more effective.",
+          "city": "Indianapolis",
+          "state": "IN",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Indiana Department of Child Services (DCS)",
+          "jurisdiction": "primary",
+          "phone": "800-800-5556",
+          "complaint_portal": "in.gov/dcs",
+          "what_to_report": "Child abuse and neglect.",
+          "legal_threshold": "Investigates reports of child abuse and neglect and provides child welfare services. It operates a 24/7 hotline for reporting.",
+          "city": "Indianapolis",
+          "state": "IN",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "benefits_agency",
+      "state": "IN",
+      "bodies": [
+        {
+          "oversight_body": "Indiana Civil Rights Commission (ICRC) \u2014 Housing",
+          "jurisdiction": "primary",
+          "phone": "800-628-2909",
+          "complaint_portal": "in.gov/icrc",
+          "what_to_report": "Housing discrimination under the Indiana Civil Rights Law.",
+          "legal_threshold": "Investigates housing discrimination complaints based on race, color, religion, sex, disability, national origin, and familial status. The ICRC can order remedies for violations.",
+          "city": "Indianapolis",
+          "state": "IN",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "HUD Fair Housing \u2014 Chicago Regional Office",
+          "jurisdiction": "primary",
+          "phone": "800-669-9777",
+          "complaint_portal": "hud.gov/fairhousing",
+          "what_to_report": "Federal Fair Housing Act violations.",
+          "legal_threshold": "Investigates housing discrimination complaints under the federal Fair Housing Act. It works in conjunction with the ICRC and has a one-year statute of limitations for filing complaints.",
+          "city": "Chicago",
+          "state": "IL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Indiana Civil Rights Commission (ICRC) \u2014 Employment",
+          "jurisdiction": "primary",
+          "phone": "800-628-2909",
+          "complaint_portal": "in.gov/icrc",
+          "what_to_report": "Employment discrimination under the Indiana Civil Rights Law.",
+          "legal_threshold": "Investigates employment discrimination complaints based on race, color, religion, sex, disability, national origin, and age. It has a 180-day statute of limitations and work-shares with the EEOC. Notably, it does not cover sexual orientation or gender identity discrimination.",
+          "city": "Indianapolis",
+          "state": "IN",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC \u2014 Indianapolis Field Office",
+          "jurisdiction": "primary",
+          "phone": "800-669-4000",
+          "complaint_portal": "eeoc.gov",
+          "what_to_report": "Federal employment discrimination laws.",
+          "legal_threshold": "Investigates employment discrimination complaints under federal laws such as Title VII, the ADA, and the ADEA. It has a 300-day statute of limitations and is the sole recourse for LGBTQ+ discrimination claims in Indiana.",
+          "city": "Indianapolis",
+          "state": "IN",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOL Wage and Hour Division \u2014 Indianapolis",
+          "jurisdiction": "primary",
+          "phone": "317-226-6801",
+          "complaint_portal": "dol.gov/whd",
+          "what_to_report": "Federal wage and hour laws.",
+          "legal_threshold": "Investigates violations of the Fair Labor Standards Act (FLSA), including minimum wage, overtime, and FMLA provisions. It can recover back wages and liquidated damages for employees.",
+          "city": "Indianapolis",
+          "state": "IN",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Indiana Law Enforcement Training Board (ILTB)",
+          "jurisdiction": "primary",
+          "phone": "317-232-8268",
+          "complaint_portal": "in.gov/iltb",
+          "what_to_report": "Law enforcement officer conduct.",
+          "legal_threshold": "Handles the decertification of law enforcement officers for serious misconduct, excessive force, or criminal convictions. It is the primary state-level accountability mechanism for law enforcement.",
+          "city": "Indianapolis",
+          "state": "IN",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOJ Civil Rights Division",
+          "jurisdiction": "primary",
+          "phone": "800-514-0301",
+          "complaint_portal": "justice.gov/crt",
+          "what_to_report": "Constitutional violations by law enforcement agencies.",
+          "legal_threshold": "Investigates patterns or practices of unconstitutional conduct by law enforcement agencies. It can also prosecute individual officers for federal civil rights crimes.",
+          "city": "Washington",
+          "state": "DC",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "family_court",
+      "state": "IN",
+      "bodies": [
+        {
+          "oversight_body": "Indiana Office of Administrative Law Proceedings (OALP)",
+          "jurisdiction": "primary",
+          "phone": "317-233-2452",
+          "complaint_portal": "in.gov/oalp",
+          "what_to_report": "State benefit appeals.",
+          "legal_threshold": "Conducts fair hearings for appeals of SNAP, HIP 2.0, TANF, and CCDF decisions. It provides an impartial review of agency determinations.",
+          "city": "Indianapolis",
+          "state": "IN",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Indiana DWD \u2014 Unemployment Appeals",
+          "jurisdiction": "primary",
+          "phone": "317-233-6365",
+          "complaint_portal": "uplink.in.gov",
+          "what_to_report": "Unemployment insurance appeals.",
+          "legal_threshold": "Handles appeals of UI denials and overpayments. The process includes an appeal to an Administrative Law Judge (ALJ), the DWD Review Board, and then the Indiana Court of Appeals.",
+          "city": "Indianapolis",
+          "state": "IN",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "in_med_board",
+          "name": "Indiana Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Indiana Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IN"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "in_patient_adv",
+          "name": "Indiana Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Indiana Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IN"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "in_health_dept",
+          "name": "Indiana Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Indiana Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IN"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IN"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "in_pharm_board",
+          "name": "Indiana Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Indiana Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IN"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "in_pa",
+          "name": "Indiana Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Indiana Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IN"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "in_mha",
+          "name": "Indiana Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Indiana Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IN"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IN"
+    }
+  ]
+}

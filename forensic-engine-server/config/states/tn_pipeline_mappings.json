@@ -1,0 +1,281 @@
+{
+  "meta": {
+    "state": "TN",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "tn_tennessee_snap_food_stamps_dhs",
+        "tn_second_harvest_food_bank_of_middle_tenne",
+        "tn_second_harvest_food_bank_of_east_tenness",
+        "tn_wic_tennessee",
+        "tn_tenncare_tennessee_medicaid_ohip",
+        "tn_legal_aid_of_east_tennessee_laet",
+        "tn_tennessee_coalition_to_end_domestic_and_",
+        "tn_tenncare_office_of_appeals",
+        "tn_tennessee_dol_and_workforce_development",
+        "tn_tennessee_dhs_appeals",
+        "tn_tn_lwd_ui_appeals_board"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "civil_rights"
+      ],
+      "flags": [
+        "tn_portability"
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "tn_tenncare_tennessee_medicaid_ohip",
+        "tn_tennessee_tanf_families_first_dhs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "civil_rights"
+      ],
+      "flags": [
+        "tn_portability"
+      ]
+    },
+    {
+      "pipeline_id": "consumer_protection",
+      "programs": [
+        "tn_tennessee_dept_of_commerce_and_insurance"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "civil_rights"
+      ],
+      "flags": [
+        "tn_portability"
+      ]
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "tn_regional_one_health_memphis_regional_med",
+        "tn_tennessee_liheap_low_income_home_energy_",
+        "tn_tennessee_human_rights_commission_thrc"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "civil_rights"
+      ],
+      "flags": [
+        "tn_portability"
+      ]
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "tn_tennessee_housing_development_agency_thd",
+        "tn_legal_aid_society_of_middle_tennessee_an",
+        "tn_memphis_area_legal_services_mals"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "civil_rights"
+      ],
+      "flags": [
+        "tn_portability"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "tn_tenncare_tennessee_medicaid_ohip",
+        "tn_regional_one_health_memphis_regional_med",
+        "tn_vanderbilt_university_medical_center_nas",
+        "tn_tennessee_primary_care_association_fqhcs",
+        "tn_church_health_memphis_major_safety_net_f",
+        "tn_tennessee_dept_of_commerce_and_insurance"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "civil_rights"
+      ],
+      "flags": [
+        "tn_portability"
+      ]
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "tn_tennessee_tanf_families_first_dhs",
+        "tn_tennessee_liheap_low_income_home_energy_"
+      ],
+      "oversight_chains": [
+        "employer",
+        "landlord",
+        "civil_rights"
+      ],
+      "flags": [
+        "tn_portability"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "tn_involuntary_hold_law",
+        "tn_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "tn_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "tn_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "tn_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "tn_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "tn_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "tn_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "tn_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "tn_restraint_seclusion_limits",
+        "tn_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "tn_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "tn_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "tn_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

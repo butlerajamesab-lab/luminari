@@ -1,0 +1,312 @@
+{
+  "meta": {
+    "state": "WA",
+    "layer": "layer0_flags",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "source": "Luminari WA Registry v1.0 \u2014 Northwest Hope Foundation"
+  },
+  "flags": [
+    {
+      "flag_id": "wa_just_cause_eviction",
+      "title": "WA Just Cause Eviction Protection",
+      "severity": "info",
+      "trigger": {
+        "pipeline_ids": [
+          "tenant_rights"
+        ],
+        "condition": "always"
+      },
+      "message": "Washington requires just cause for eviction under RCW 59.18.650. Landlords must provide specific legal grounds.",
+      "action_items": [
+        "Verify landlord has stated just cause",
+        "Check if 14-day or 60-day notice applies",
+        "Review local eviction moratorium status"
+      ],
+      "legal_basis": "RCW 59.18.650",
+      "bundle_pairings": [
+        "housing"
+      ]
+    },
+    {
+      "flag_id": "wa_basic_food_expanded",
+      "title": "WA Basic Food Expanded Eligibility",
+      "severity": "info",
+      "trigger": {
+        "pipeline_ids": [
+          "benefits_denial",
+          "snap_denial"
+        ],
+        "condition": "always"
+      },
+      "message": "Washington's Basic Food program uses broad-based categorical eligibility with 200% FPL gross income limit. No asset test for most households.",
+      "action_items": [
+        "Check if household qualifies under BBCE",
+        "Verify no asset test applies",
+        "Note WA uses WashingtonConnection.org for applications"
+      ],
+      "legal_basis": "WAC 388-414-0001",
+      "bundle_pairings": [
+        "food"
+      ]
+    },
+    {
+      "flag_id": "wa_apple_health_expansion",
+      "title": "WA Apple Health (Medicaid) Expansion",
+      "severity": "info",
+      "trigger": {
+        "pipeline_ids": [
+          "insurance_claim_denial"
+        ],
+        "condition": "always"
+      },
+      "message": "Washington expanded Medicaid (Apple Health) to 138% FPL for adults. Covers comprehensive benefits including behavioral health.",
+      "action_items": [
+        "Check Apple Health eligibility",
+        "Note behavioral health coverage",
+        "Verify managed care plan assignment"
+      ],
+      "legal_basis": "RCW 74.09.510",
+      "bundle_pairings": [
+        "healthcare"
+      ]
+    },
+    {
+      "flag_id": "wa_paid_family_medical_leave",
+      "title": "WA Paid Family & Medical Leave",
+      "severity": "info",
+      "trigger": {
+        "pipeline_ids": [
+          "wage_theft",
+          "workplace_discrimination"
+        ],
+        "condition": "always"
+      },
+      "message": "Washington has mandatory Paid Family & Medical Leave (PFML) \u2014 up to 12 weeks paid leave at 90% of wages up to cap.",
+      "action_items": [
+        "Check PFML eligibility (820 hours worked)",
+        "Verify employer compliance with premium payments",
+        "Note 12-week duration with possible 16-week combined"
+      ],
+      "legal_basis": "RCW 50A.15",
+      "bundle_pairings": [
+        "workplace"
+      ]
+    },
+    {
+      "flag_id": "wa_wicwa_enhanced_protections",
+      "title": "WA Indian Child Welfare Act (WICWA) Enhanced Protections",
+      "severity": "warning",
+      "trigger": {
+        "pipeline_ids": [
+          "child_welfare",
+          "domestic_violence"
+        ],
+        "condition": "tribal_affiliation"
+      },
+      "message": "Washington's WICWA (RCW 13.38) provides protections beyond federal ICWA, including broader definitions of Indian child and active efforts requirements.",
+      "action_items": [
+        "Apply WICWA standards (broader than federal ICWA)",
+        "Contact tribe and WICWA liaison",
+        "Ensure active efforts documented per RCW 13.38.040"
+      ],
+      "legal_basis": "RCW 13.38",
+      "bundle_pairings": [
+        "custody",
+        "vulnerable_population"
+      ]
+    },
+    {
+      "flag_id": "wa_utility_shutoff_protection",
+      "title": "WA Utility Shutoff Protections",
+      "severity": "warning",
+      "trigger": {
+        "pipeline_ids": [
+          "tenant_rights"
+        ],
+        "condition": "utility_shutoff"
+      },
+      "message": "Washington prohibits utility disconnection November 15 \u2013 March 15 for low-income households. Medical emergency protections available year-round.",
+      "action_items": [
+        "Check winter moratorium status (Nov 15 \u2013 Mar 15)",
+        "Verify low-income qualification",
+        "Check medical emergency certification"
+      ],
+      "legal_basis": "WAC 480-100-128",
+      "bundle_pairings": [
+        "housing"
+      ]
+    },
+    {
+      "flag_id": "wa_elder_abuse_mandatory_reporting",
+      "title": "WA Elder Abuse Mandatory Reporting",
+      "severity": "warning",
+      "trigger": {
+        "pipeline_ids": [
+          "elder_abuse"
+        ],
+        "condition": "always"
+      },
+      "message": "Washington has mandatory reporting for elder abuse. Reports must be made to DSHS Adult Protective Services within 48 hours.",
+      "action_items": [
+        "File APS report within 48 hours",
+        "Contact local law enforcement if immediate danger",
+        "Document all observations"
+      ],
+      "legal_basis": "RCW 74.34.035",
+      "bundle_pairings": [
+        "vulnerable_population"
+      ]
+    },
+    {
+      "flag_id": "wa_involuntary_hold_law",
+      "title": "Involuntary Hold: Washington 72-Hour Hold (ITA)",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "WA involuntary psychiatric hold law: Washington 72-Hour Hold (ITA). Statutory authority: RCW \u00a7 71.05.150. Maximum initial hold duration: 72 hours. Legal standard: danger to self/others or gravely disabled. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 72 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "RCW \u00a7 71.05.150"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "wa_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in WA retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "wa_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in WA: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "wa_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Washington Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "wa_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Washington Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "wa_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Washington Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

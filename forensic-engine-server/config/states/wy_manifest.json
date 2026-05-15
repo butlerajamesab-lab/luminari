@@ -1,0 +1,66 @@
+{
+  "state": "WY",
+  "state_name": "Wyoming",
+  "version": "3.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-09",
+  "source": "luminari-wy-registry.docx",
+  "datasets": [
+    "housing",
+    "cash_assistance",
+    "healthcare",
+    "food",
+    "general",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "consumer_protection",
+    "disability_claim",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "utility_dispute",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "general",
+    "insurer",
+    "landlord",
+    "consumer"
+  ],
+  "policy_flags": [
+    "wy_non_expansion_thinnest_fqhc",
+    "wy_wind_river_two_tribes",
+    "wy_smallest_legal_aid",
+    "wy_energy_boom_bust",
+    "wy_ui_10_day_appeal"
+  ],
+  "statistics": {
+    "total_programs": 16,
+    "total_oversight_chains": 5,
+    "total_oversight_bodies": 10,
+    "total_flags": 5
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "food",
+    "general"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ],
+  "portability_score": "52%"
+}

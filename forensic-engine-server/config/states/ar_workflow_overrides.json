@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "state": "AR",
+    "version": "3.0",
+    "date": "2026-03-09"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "ar_housing_violation",
+      "title": "Housing Violation",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Document violations + 3-day notice",
+          "contact": "Landlord certified mail",
+          "deadline": "3 DAYS — FATAL"
+        },
+        {
+          "step": 2,
+          "action": "File code enforcement",
+          "contact": "Little Rock: 501-371-4800 · Fayetteville: 479-575-8302",
+          "deadline": "Same day"
+        },
+        {
+          "step": 3,
+          "action": "Contact legal aid — SAME DAY",
+          "contact": "CALS: 501-376-3423 · Legal Aid AR: 870-932-5765",
+          "deadline": "Same day as any notice — 3-day timeline is extremely fast"
+        }
+      ],
+      "statutes": "Arkansas Residential Landlord-Tenant Act Ark. Code §18-16-101; §18-17-401 (Landlord Duties); §18-60-304 (Unlawful Detainer)"
+    },
+    {
+      "workflow_id": "ar_wage_theft",
+      "title": "Wage Theft",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Document wages owed",
+          "contact": "Personal records",
+          "deadline": "2-year SOL"
+        },
+        {
+          "step": 2,
+          "action": "File Arkansas DOL",
+          "contact": "AR DOL: 501-682-4500",
+          "deadline": "2-year SOL"
+        },
+        {
+          "step": 3,
+          "action": "File federal WHD simultaneously",
+          "contact": "WHD Little Rock: 501-324-5292 · dol.gov/whd",
+          "deadline": "2-year SOL (3 if willful) — FATAL"
+        }
+      ],
+      "statutes": "Arkansas minimum wage $11.00/hr; FLSA 29 USC §201"
+    },
+    {
+      "workflow_id": "ar_benefits_denial",
+      "title": "Benefits Denial",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Review Notice of Action",
+          "contact": "Personal records",
+          "deadline": "UI: 20 DAYS — FATAL"
+        },
+        {
+          "step": 2,
+          "action": "Request fair hearing",
+          "contact": "AR DHS: 501-682-8375 · ADWS: 501-682-2121",
+          "deadline": "30 days (benefits) · 20 days (UI) — FATAL"
+        },
+        {
+          "step": 3,
+          "action": "Contact legal aid",
+          "contact": "CALS: 501-376-3423 · Legal Aid AR: 870-932-5765",
+          "deadline": "As soon as possible"
+        }
+      ]
+    },
+    {
+      "workflow_id": "ar_insurance_denial",
+      "title": "Insurance Denial",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Document denial",
+          "contact": "Personal records",
+          "deadline": "Immediately"
+        },
+        {
+          "step": 2,
+          "action": "File internal appeal",
+          "contact": "Insurer per plan",
+          "deadline": "180 days private · 90 days ARHOME"
+        },
+        {
+          "step": 3,
+          "action": "Arkansas DOI external review",
+          "contact": "AR Insurance: 800-852-5494 · insurance.arkansas.gov",
+          "deadline": "After internal denial"
+        }
+      ]
+    }
+  ]
+}

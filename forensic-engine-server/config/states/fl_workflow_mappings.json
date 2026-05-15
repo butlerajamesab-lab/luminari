@@ -1,0 +1,14 @@
+{
+  "workflow_mappings": [],
+  "resolution_order": [
+    "federal_baseline",
+    "state_registry",
+    "county_override",
+    "tribal_override",
+    "pipeline_rule_injection"
+  ],
+  "meta": {
+    "state": "FL",
+    "version": "3.0"
+  }
+}

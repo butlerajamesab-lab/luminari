@@ -1,0 +1,512 @@
+{
+  "meta": {
+    "state": "HI",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "hi_hawaii_snap_food_assistance_dhs",
+      "program_name": "Hawaii SNAP / Food Assistance (DHS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial",
+        "disability_claim"
+      ],
+      "agency": "Hawaii SNAP / Food Assistance",
+      "phone": "808-586-5230",
+      "website": "https://humanservices.hawaii.gov/snap",
+      "eligibility": "Income < 130% FPL. Oahu: 808-586-5230. Maui: 808-243-5440. Hawaii Island: 808-933-0339. Kauai: 808-274-3060.",
+      "apply_notes": "Monthly food assistance \u2014 applied through Benefits Online System (BOS)",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "hi_hawaii_foodbank_maui_food_bank",
+      "program_name": "Hawaii Foodbank / Maui Food Bank",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Hawaii Foodbank / Maui Food Bank",
+      "phone": "808-836-3600",
+      "website": "https://hawaiifoodbank.org",
+      "eligibility": "Anyone in need. Oahu: 808-836-3600. Maui: 808-243-9494. Hawaii Island: Foodbasket (808-933-6030). Kauai: 808-335-0019.",
+      "apply_notes": "Food pantry network \u2014 statewide distribution",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "hi_wic_hawaii",
+      "program_name": "WIC Hawaii",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WIC Hawaii",
+      "phone": "808-586-8175",
+      "website": "https://health.hawaii.gov/wic",
+      "eligibility": "Pregnant, postpartum women, infants, children under 5. Income < 185% FPL. Find clinic: health.hawaii.gov/wic.",
+      "apply_notes": "Nutrition assistance for women, infants, children",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "hi_hawaii_medicaid_quest_integration_dhs",
+      "program_name": "Hawaii Medicaid QUEST Integration (DHS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial",
+        "insurance_claim_denial"
+      ],
+      "agency": "Hawaii Medicaid QUEST Integration",
+      "phone": "800-316-8005",
+      "website": "https://humanservices.hawaii.gov/quest",
+      "eligibility": "Adults 19\u201364 to 138% FPL. Children, families, elderly, disabled \u2014 QUEST covers most low-income residents. Apply: mybenefits.hawaii.gov.",
+      "apply_notes": "Comprehensive health coverage \u2014 pre-ACA expansion, very broad eligibility",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "hi_the_queen_s_medical_center_oahu_safety_n",
+      "program_name": "The Queen's Medical Center (Oahu Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "The Queen's Medical Center",
+      "phone": "808-538-9011",
+      "website": "https://queensmedicalcenter.org",
+      "eligibility": "Oahu primary safety net. Charity care for income < 200% FPL. Also Kapiolani Medical Center (808-535-7000) for women/children.",
+      "apply_notes": "Major Honolulu hospital \u2014 charity care, trauma center",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "hi_hawaii_community_health_centers_fqhcs",
+      "program_name": "Hawaii Community Health Centers (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Hawaii Community Health Centers",
+      "phone": "808-521-2846",
+      "website": "https://hachc.org",
+      "eligibility": "Anyone regardless of insurance. hachc.org / findahealthcenter.hrsa.gov. Key: Waianae Coast Comprehensive Health Center (808-696-7081 \u2014 underserved west Oahu Native Hawaiian community), Kokua Kalihi Valley (808-848-0976 \u2014 immigrant/refugee Oahu).",
+      "apply_notes": "Federally qualified health centers \u2014 sliding-scale, all islands",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "hi_office_of_hawaiian_affairs_oha",
+      "program_name": "Office of Hawaiian Affairs (OHA)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Office of Hawaiian Affairs",
+      "phone": "808-594-1888",
+      "website": "https://oha.org",
+      "eligibility": "Native Hawaiians (any quantum). oha.org \u2014 grants, housing assistance, legal referrals. Kamehameha Schools (808-842-8211) for education. Department of Hawaiian Home Lands for homestead land.",
+      "apply_notes": "Native Hawaiian social services, legal aid, economic development, health",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "hi_hawaii_public_housing_authority_hpha",
+      "program_name": "Hawaii Public Housing Authority (HPHA)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Hawaii Public Housing Authority",
+      "phone": "808-832-4682",
+      "website": "https://hpha.hawaii.gov",
+      "eligibility": "Low-income Hawaii renters. hpha.hawaii.gov. CRITICAL: waiting lists are years-long \u2014 apply immediately and pursue all alternatives simultaneously.",
+      "apply_notes": "Section 8/HCV, public housing, rental assistance \u2014 all islands",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "hi_legal_aid_society_of_hawaii_lash",
+      "program_name": "Legal Aid Society of Hawaii (LASH)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute"
+      ],
+      "agency": "Legal Aid Society of Hawaii",
+      "phone": "808-536-4302",
+      "website": "https://legalaidhawaii.org",
+      "eligibility": "Income < 200% FPL. legalaidhawaii.org \u2014 Oahu, Maui, Hawaii Island, Kauai offices. Also Hawaii Appleseed Center (808-587-3656) for systemic advocacy.",
+      "apply_notes": "Free civil legal aid statewide \u2014 eviction, family, benefits, DV, immigration",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "hi_hawaii_tanf_tanf_up_dhs",
+      "program_name": "Hawaii TANF / TANF-UP (DHS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "Hawaii TANF / TANF-UP",
+      "phone": "808-586-5230",
+      "website": "https://humanservices.hawaii.gov/bessd/tanf",
+      "eligibility": "Families with children \u2014 up to $735/month for family of 3. 60-month limit. Work requirements apply. Pair with SNAP, QUEST, and child care (CCCH).",
+      "apply_notes": "Cash assistance for families with children",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "hi_hawaii_ui_dlir",
+      "program_name": "Hawaii UI (DLIR)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "employment_dispute"
+      ],
+      "agency": "Hawaii UI",
+      "phone": "808-762-5751",
+      "website": "https://labor.hawaii.gov/ui",
+      "eligibility": "Workers who lost job through no fault \u2014 up to $793/week, 26 weeks. labor.hawaii.gov \u2014 file online. Appeal: 10 days from mailing.",
+      "apply_notes": "Weekly income replacement for workers who lost jobs",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "hi_hawaii_liheap_low_income_home_energy_ass",
+      "program_name": "Hawaii LIHEAP / Low Income Home Energy Assistance (DHS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Hawaii LIHEAP / Low Income Home Energy Assistance",
+      "phone": "808-586-5230",
+      "website": "https://humanservices.hawaii.gov/bessd/liheap",
+      "eligibility": "Income < 60% state median. Hawaii climate means cooling assistance critical \u2014 apply summer months. Hawaii Gas utility program (808-535-5933) also available.",
+      "apply_notes": "Energy assistance \u2014 cooling, refrigeration, crisis utility help",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "hi_aloha_united_way_211_hawaii",
+      "program_name": "Aloha United Way / 211 Hawaii",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Aloha United Way / 211 Hawaii",
+      "phone": "",
+      "website": "https://auw.org",
+      "eligibility": "Anyone. 211hawaii.org \u2014 statewide. Primary triage for neighbor island isolated clients.",
+      "apply_notes": "211 navigation, benefits enrollment, community resource coordination",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "hi_helping_hands_hawaii_oahu_emergency",
+      "program_name": "Helping Hands Hawaii (Oahu Emergency)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Helping Hands Hawaii",
+      "phone": "808-536-7234",
+      "website": "https://helpinghandshawaii.org",
+      "eligibility": "Oahu residents in crisis. helpinghandshawaii.org.",
+      "apply_notes": "Emergency rental assistance, utility assistance, food, basic needs \u2014 Oahu",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "hi_catholic_charities_hawaii_immigrant_refu",
+      "program_name": "Catholic Charities Hawaii (Immigrant/Refugee)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Catholic Charities Hawaii",
+      "phone": "808-537-6321",
+      "website": "https://catholiccharitieshawaii.org",
+      "eligibility": "Immigrants, refugees, low-income residents. Primary immigrant services on Oahu. IRC Hawaii also at 808-551-3490.",
+      "apply_notes": "Immigration legal services, refugee resettlement, social services",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "hi_hawaii_dv_domestic_violence_action_cente",
+      "program_name": "Hawaii DV / Domestic Violence Action Center",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Hawaii DV / Domestic Violence Action Center",
+      "phone": "808-534-0040",
+      "website": "https://domesticviolenceactioncenter.org",
+      "eligibility": "Anyone experiencing DV. DVAC Oahu: 808-534-0040. Neighbor island: 800-690-6200. YWCA Maui: 808-579-9581.",
+      "apply_notes": "24/7 DV hotline, legal advocacy, shelter coordination statewide",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "hi_hawaii_veterans_services_vhso",
+      "program_name": "Hawaii Veterans Services (VHSO)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial",
+        "insurance_claim_denial"
+      ],
+      "agency": "Hawaii Veterans Services",
+      "phone": "808-433-0420",
+      "website": "https://hivetcenter.va.gov",
+      "eligibility": "Hawaii veterans and families. Spark M. Matsunaga VA Medical Center (Honolulu: 808-433-0600). State Veterans Services (808-433-0420).",
+      "apply_notes": "VA benefits, state veterans services, healthcare",
+      "source": "luminari-hawaii-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "HI",
+      "federal_interface": false
+    }
+  ]
+}

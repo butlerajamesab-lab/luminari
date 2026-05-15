@@ -1,0 +1,25 @@
+{
+  "foia_templates": [],
+  "agency_targets": [],
+  "statute": {
+    "name": "Texas Public Information Act",
+    "citation": "Tex. Gov't Code § 552"
+  },
+  "agencies": [
+    {
+      "agency_id": "tx_oag_open_records",
+      "name": "Office of the Attorney General – Open Records Division",
+      "url": "https://www.texasattorneygeneral.gov/open-government"
+    }
+  ],
+  "structured_rules": [
+    {
+      "rule_id": "tx_pia",
+      "domain": "public_records"
+    }
+  ],
+  "meta": {
+    "state": "TX",
+    "version": "3.0"
+  }
+}

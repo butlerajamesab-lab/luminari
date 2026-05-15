@@ -1,0 +1,107 @@
+{
+  "state": "AL",
+  "state_name": "Alabama",
+  "version": "3.0.0",
+  "schema": "luminari-registry-v1",
+  "date_created": "2026-03-08",
+  "status": "active",
+  "validation_status": "valid",
+  "datasets": [
+    "programs",
+    "workflows",
+    "oversight",
+    "layer0_flags",
+    "layer1_cards",
+    "county_overrides",
+    "tribal_overrides",
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings",
+    "foia",
+    "mental_health"
+  ],
+  "statistics": {
+    "programs": {
+      "total_programs": 17,
+      "categories": {
+        "food": 3,
+        "healthcare": 4,
+        "housing": 3,
+        "legal_aid": 1,
+        "dv_safety": 1,
+        "cash_assistance": 2,
+        "utilities": 1,
+        "tribal_indigenous": 1,
+        "community_navigation": 1
+      },
+      "layers": [
+        "state"
+      ]
+    },
+    "workflows": {
+      "total_workflows": 4,
+      "total_steps": 12
+    },
+    "oversight": {
+      "total_entity_types": 4,
+      "total_oversight_bodies": 8,
+      "entity_types": [
+        "benefits_agency",
+        "employer",
+        "insurer",
+        "landlord"
+      ]
+    },
+    "layer0_flags": {
+      "total_flags": 8
+    },
+    "layer1_cards": {
+      "total_clusters": 8
+    },
+    "pipeline_mappings": {
+      "total_pipelines": 12
+    },
+    "lens_mappings": {
+      "total_lenses": 4
+    },
+    "workflow_mappings": {
+      "total_mappings": 5
+    }
+  },
+  "oversight_entities": [
+    "insurer",
+    "employer",
+    "landlord",
+    "benefits_agency"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "snap_denial",
+    "insurance_claim_denial",
+    "tenant_rights",
+    "eviction_defense",
+    "domestic_violence",
+    "wage_theft",
+    "workplace_discrimination",
+    "child_welfare",
+    "unemployment_benefits",
+    "consumer_fraud",
+    "disability_rights",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "policy_flags": [
+    "al_medicaid_not_expanded",
+    "al_black_belt_underserved",
+    "al_ui_275_lowest",
+    "al_tanf_215",
+    "al_poarch_creek_only_tribe",
+    "al_civil_rights_weak",
+    "al_birmingham_huntsville_dual",
+    "al_eviction_7day"
+  ]
+}

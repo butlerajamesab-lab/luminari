@@ -1,0 +1,478 @@
+{
+  "meta": {
+    "state": "NM",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "nm_new_mexico_snap_yesnm_hsd",
+      "program_name": "New Mexico SNAP (YesNM / HSD)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "New Mexico SNAP",
+      "phone": "800-283-4465",
+      "website": "https://yes.state.nm",
+      "eligibility": "Income < 130% FPL. yes.state.nm.us. Bernalillo County (Albuquerque): 505-841-6000. Dona Ana County (Las Cruces): 575-524-6300. Santa Fe County: 505-827-2300. McKinley County (Gallup \u2014 Navajo): 505-722-0025.",
+      "apply_notes": "Monthly food assistance \u2014 county ISD offices",
+      "source": "luminari-new-mexico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "NM",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nm_roadrunner_food_bank_albuquerque_high_de",
+      "program_name": "Roadrunner Food Bank (Albuquerque) / High Desert Food Bank",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Roadrunner Food Bank",
+      "phone": "505-247-2052",
+      "website": "https://rrfb.org",
+      "eligibility": "Anyone in need. rrfb.org. Also High Desert Food Bank (Farmington \u2014 Four Corners: 505-327-6549). Las Cruces food pantries: Mesilla Valley (575-523-6532).",
+      "apply_notes": "Primary NM food bank \u2014 central NM distribution",
+      "source": "luminari-new-mexico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "NM",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nm_wic_new_mexico",
+      "program_name": "WIC New Mexico",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WIC New Mexico",
+      "phone": "505-476-8800",
+      "website": "https://nmhealth.org/wic",
+      "eligibility": "Pregnant, postpartum women, infants, children under 5. Income < 185% FPL. nmhealth.org/wic.",
+      "apply_notes": "Nutrition assistance for women, infants, children",
+      "source": "luminari-new-mexico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "NM",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nm_nm_medicaid_centennial_care_hsd",
+      "program_name": "NM Medicaid / Centennial Care (HSD)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "NM Medicaid / Centennial Care",
+      "phone": "800-283-4465",
+      "website": "https://hsd.state.nm",
+      "eligibility": "Adults 19\u201364 to 138% FPL. Children, families, elderly, disabled. yes.state.nm.us. Plans: BlueCross BlueShield, Molina, Presbyterian, United Healthcare.",
+      "apply_notes": "Medicaid \u2014 expanded 2014, Centennial Care managed care",
+      "source": "luminari-new-mexico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NM",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nm_unm_hospital_albuquerque_safety_net",
+      "program_name": "UNM Hospital (Albuquerque Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "UNM Hospital",
+      "phone": "505-272-2111",
+      "website": "https://hospitals.unm.edu",
+      "eligibility": "Bernalillo County and statewide referrals. Charity care income < 200% FPL. Also Presbyterian Hospital (Albuquerque: 505-841-1234).",
+      "apply_notes": "Academic medical center \u2014 Level 1 trauma, charity care",
+      "source": "luminari-new-mexico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NM",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nm_ihs_albuquerque_area_office_all_nm_tribe",
+      "program_name": "IHS Albuquerque Area Office (All NM Tribes)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "IHS Albuquerque Area Office",
+      "phone": "505-248-4000",
+      "website": "https://ihs.gov/albuquerque",
+      "eligibility": "Enrolled members of all NM tribes. 5304 Homestead Rd NE, Albuquerque. Also Navajo Area IHS (Gallup: 505-722-1000) specifically for Navajo Nation members. Each Pueblo has own health program.",
+      "apply_notes": "IHS coordination for 23 NM federally recognized tribes",
+      "source": "luminari-new-mexico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "NM",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nm_nm_primary_care_association_fqhcs",
+      "program_name": "NM Primary Care Association (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "NM Primary Care Association",
+      "phone": "505-242-8671",
+      "website": "https://nmpca.net",
+      "eligibility": "Anyone. 20+ FQHCs. nmpca.net / findahealthcenter.hrsa.gov. Key: First Choice Community Healthcare (Albuquerque: 505-244-4400). La Clinica de Familia (Las Cruces \u2014 colonias: 575-526-3600). Espanola Valley Physicians (northern NM: 505-747-1800).",
+      "apply_notes": "Federally qualified health centers \u2014 sliding scale statewide",
+      "source": "luminari-new-mexico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NM",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nm_dna_legal_services_navajo_nation_legal_a",
+      "program_name": "DNA Legal Services (Navajo Nation Legal Aid)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute"
+      ],
+      "agency": "DNA Legal Services",
+      "phone": "928-871-4151",
+      "website": "https://dnalegalservices.org",
+      "eligibility": "Enrolled Navajo Nation members and Navajo Nation residents. Offices in Window Rock AZ, Shiprock NM, Gallup NM, Farmington NM, and others. dnalegalservices.org.",
+      "apply_notes": "Primary legal aid for Navajo Nation members \u2014 housing, family, benefits, civil rights",
+      "source": "luminari-new-mexico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "NM",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nm_new_mexico_legal_aid_statewide",
+      "program_name": "New Mexico Legal Aid (Statewide)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute"
+      ],
+      "agency": "New Mexico Legal Aid",
+      "phone": "505-243-7871",
+      "website": "https://nmlegalaid.org",
+      "eligibility": "Income < 200% FPL. nmlegalaid.org. Las Cruces: 575-541-4815. Santa Fe: 505-982-9886. Roswell: 575-623-9669.",
+      "apply_notes": "Free civil legal aid statewide \u2014 eviction, benefits, family, DV, immigration, tribal",
+      "source": "luminari-new-mexico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "",
+      "state": "NM",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nm_nm_mortgage_finance_authority_mfa_housin",
+      "program_name": "NM Mortgage Finance Authority (MFA \u2014 Housing)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "NM Mortgage Finance Authority",
+      "phone": "505-843-6880",
+      "website": "https://housingnm.org",
+      "eligibility": "Low-income NM renters. housingnm.org. Albuquerque Housing Authority: 505-764-3920.",
+      "apply_notes": "Section 8/HCV, HOME, emergency rental assistance",
+      "source": "luminari-new-mexico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "NM",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nm_nm_tanf_new_mexico_works_hsd",
+      "program_name": "NM TANF / New Mexico Works (HSD)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "NM TANF / New Mexico Works",
+      "phone": "800-283-4465",
+      "website": "https://yes.state.nm",
+      "eligibility": "Families with children. Work requirements apply. yes.state.nm.us.",
+      "apply_notes": "Cash assistance for families \u2014 60-month lifetime limit",
+      "source": "luminari-new-mexico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NM",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nm_nm_ui_dws",
+      "program_name": "NM UI (DWS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "NM UI",
+      "phone": "877-664-6984",
+      "website": "https://dws.state.nm",
+      "eligibility": "Workers who lost job through no fault. dws.state.nm.us. CRITICAL: 14-day appeal deadline from mailing.",
+      "apply_notes": "Weekly income replacement \u2014 up to $511/week, 26 weeks",
+      "source": "luminari-new-mexico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NM",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nm_nm_liheap_low_income_energy_assistance_h",
+      "program_name": "NM LIHEAP / Low-Income Energy Assistance (HSD)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "NM LIHEAP / Low-Income Energy Assistance",
+      "phone": "800-283-4465",
+      "website": "https://hsd.state.nm",
+      "eligibility": "Income < 60% state median. Apply through county HSD offices or community action agencies.",
+      "apply_notes": "Heating and cooling assistance",
+      "source": "luminari-new-mexico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NM",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nm_la_clinica_de_familia_colonias_border_co",
+      "program_name": "La Clinica de Familia (Colonias / Border Community)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "La Clinica de Familia",
+      "phone": "575-526-3600",
+      "website": "https://laclinicarc.org",
+      "eligibility": "Dona Ana County and border colonias. laclinicarc.org. Critical for colonia residents who may lack water/sewage infrastructure.",
+      "apply_notes": "Border community health \u2014 colonias (unincorporated border communities lacking infrastructure)",
+      "source": "luminari-new-mexico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NM",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nm_nm_dv_crisis_line_nm_cadsv",
+      "program_name": "NM DV Crisis Line (NM CADSV)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "NM DV Crisis Line",
+      "phone": "505-246-9240",
+      "website": "https://nmcadv.org",
+      "eligibility": "Anyone experiencing DV. nmcadv.org. La Casa (Las Cruces: 575-526-9513). DOVE (Albuquerque: 505-247-4219).",
+      "apply_notes": "24/7 DV crisis line and shelter referral statewide",
+      "source": "luminari-new-mexico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "NM",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nm_nm_veterans_services_nmvsd",
+      "program_name": "NM Veterans Services (NMVSD)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "NM Veterans Services",
+      "phone": "505-827-6300",
+      "website": "https://nmdvs.org",
+      "eligibility": "NM veterans and families. New Mexico VA Health Care System (Albuquerque: 505-265-1711).",
+      "apply_notes": "VA benefits navigation, state veterans services",
+      "source": "luminari-new-mexico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "NM",
+      "federal_interface": false
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "state": "OH",
+    "state_name": "Ohio",
+    "layer": "workflow_mappings",
+    "version": "1.0.0",
+    "date_created": "2026-03-07",
+    "source": "Luminari OH Three-Layer Registry"
+  },
+  "workflow_mappings": [
+    {
+      "workflow_id": "housing_violation",
+      "label": "Housing Violation",
+      "pipeline_ids": [
+        "tenant_rights"
+      ],
+      "cluster_ids": [
+        "oh_housing",
+        "oh_legal"
+      ],
+      "flag_ids": [
+        "oh_eviction_fast"
+      ]
+    },
+    {
+      "workflow_id": "wage_theft",
+      "label": "Wage Theft",
+      "pipeline_ids": [
+        "wage_theft"
+      ],
+      "cluster_ids": [
+        "oh_cash",
+        "oh_legal",
+        "oh_civil_rights"
+      ],
+      "flag_ids": [
+        "oh_minimum_wage"
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial",
+      "label": "Benefits Denial",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "cluster_ids": [
+        "oh_food",
+        "oh_cash",
+        "oh_utilities",
+        "oh_healthcare"
+      ],
+      "flag_ids": [
+        "oh_snap_abawd",
+        "oh_tanf_36month",
+        "oh_ui_21day",
+        "oh_heap_season"
+      ]
+    },
+    {
+      "workflow_id": "insurance_denial",
+      "label": "Insurance / Medicaid Denial",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "medicaid_denial"
+      ],
+      "cluster_ids": [
+        "oh_healthcare"
+      ],
+      "flag_ids": [
+        "oh_medicaid_expansion"
+      ]
+    }
+  ],
+  "resolution_order": [
+    "federal_baseline",
+    "state_registry",
+    "county_override",
+    "tribal_override",
+    "pipeline_rule_injection"
+  ]
+}

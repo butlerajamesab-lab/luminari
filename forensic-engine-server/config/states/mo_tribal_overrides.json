@@ -1,0 +1,226 @@
+{
+  "meta": {
+    "state": "MO",
+    "state_name": "Missouri",
+    "schema_version": "2.0.0",
+    "last_updated": "2026-03-06",
+    "status": "active",
+    "description": "Missouri tribal overrides \u2014 ICWA activation rules, Osage Nation contacts, urban Native services, and IHS Nashville Area Office. Missouri has no in-state federally recognized tribes with reservations but must support ICWA compliance and urban Native populations."
+  },
+  "tribal_context": {
+    "federally_recognized_tribes_in_state": 0,
+    "historical_tribal_nations": [
+      "Osage Nation",
+      "Eastern Shawnee Tribe of Oklahoma",
+      "Wyandotte Nation",
+      "Miami Tribe of Oklahoma",
+      "Peoria Tribe of Indians of Oklahoma"
+    ],
+    "notes": "Missouri's original tribal nations were removed during the 1800s. The Osage Nation (headquartered in Pawhuska, OK) retains the strongest historical and legal connection to Missouri. No federally recognized tribes maintain reservations within Missouri borders. Urban Native populations are concentrated in Kansas City and St. Louis metro areas."
+  },
+  "tribal_entities": [
+    {
+      "tribal_entity_id": "osage_nation_social_services",
+      "tribal_entity_name": "Osage Nation Social Services",
+      "tribal_role": "social_services",
+      "tribe": "Osage Nation",
+      "address": "627 Grandview Ave., Pawhuska, OK 74056",
+      "phone": "918-287-5325",
+      "portal": "https://osagenation-nsn.gov/what-we-do/social-services",
+      "region": "statewide",
+      "federal_interface": true,
+      "services": [
+        "child_welfare",
+        "family_services",
+        "elder_services",
+        "burial_assistance",
+        "emergency_assistance"
+      ],
+      "jurisdiction_notes": "Osage Nation Social Services serves enrolled Osage citizens regardless of residence. Missouri residents with Osage enrollment or eligibility should contact this office for tribal-specific benefits.",
+      "icwa_authority": false,
+      "city": "Kansas City",
+      "state": "MO"
+    },
+    {
+      "tribal_entity_id": "osage_nation_icwa",
+      "tribal_entity_name": "Osage Nation ICWA Office",
+      "tribal_role": "icwa_authority",
+      "tribe": "Osage Nation",
+      "address": "627 Grandview Ave., Pawhuska, OK 74056",
+      "phone": "918-287-5326",
+      "portal": "https://osagenation-nsn.gov/what-we-do/social-services/icwa",
+      "region": "statewide",
+      "federal_interface": true,
+      "services": [
+        "icwa_compliance",
+        "tribal_court_transfer",
+        "placement_preferences",
+        "family_reunification"
+      ],
+      "jurisdiction_notes": "The Osage Nation ICWA Office must receive notice for any child custody proceeding in Missouri involving a child who is or may be eligible for enrollment in the Osage Nation. 25 USC \u00a71912(a) requires notice by registered mail with return receipt.",
+      "icwa_authority": true,
+      "icwa_contact_method": "registered_mail_with_return_receipt",
+      "icwa_response_deadline_days": 20,
+      "icwa_notes": "If tribe requests transfer to tribal court, state court must transfer unless good cause exists. Tribe has right to intervene at any point in proceeding.",
+      "city": "Kansas City",
+      "state": "MO"
+    },
+    {
+      "tribal_entity_id": "mo_naco_kc",
+      "tribal_entity_name": "Native American Community Organization (NACO) \u2014 Kansas City",
+      "tribal_role": "urban_indian_services",
+      "tribe": null,
+      "address": "3240 Roanoke Road, Kansas City, MO 64111",
+      "phone": "816-531-3930",
+      "portal": null,
+      "region": "kc_metro",
+      "federal_interface": false,
+      "services": [
+        "cultural_programs",
+        "social_services",
+        "youth_programs",
+        "elder_services",
+        "referrals",
+        "community_events"
+      ],
+      "jurisdiction_notes": "Serves urban Native American community in Kansas City metro area regardless of tribal enrollment. Provides referrals to tribal-specific services and cultural programming.",
+      "icwa_authority": false,
+      "city": "Kansas City",
+      "state": "MO"
+    },
+    {
+      "tribal_entity_id": "mo_aic",
+      "tribal_entity_name": "American Indian Center of Missouri",
+      "tribal_role": "urban_indian_services",
+      "tribe": null,
+      "address": "St. Louis, MO",
+      "phone": null,
+      "portal": null,
+      "region": "stl_metro",
+      "federal_interface": false,
+      "services": [
+        "cultural_programs",
+        "community_support",
+        "referrals",
+        "cultural_events",
+        "education"
+      ],
+      "jurisdiction_notes": "Serves urban Native American community in St. Louis metro area. Provides cultural programming and referrals to tribal-specific services.",
+      "icwa_authority": false,
+      "city": "Kansas City",
+      "state": "MO"
+    },
+    {
+      "tribal_entity_id": "ihs_nashville",
+      "tribal_entity_name": "Indian Health Service \u2014 Nashville Area Office",
+      "tribal_role": "federal_health_services",
+      "tribe": null,
+      "address": "711 Stewarts Ferry Pike, Nashville, TN 37214",
+      "phone": "615-467-1500",
+      "portal": "https://ihs.gov/nashville",
+      "region": "statewide",
+      "federal_interface": true,
+      "services": [
+        "healthcare_referrals",
+        "contract_health_services",
+        "purchased_referred_care"
+      ],
+      "jurisdiction_notes": "IHS Nashville Area Office covers Missouri. Enrolled tribal members in Missouri may be eligible for Purchased/Referred Care (PRC) for healthcare services. Contact IHS for eligibility determination.",
+      "icwa_authority": false,
+      "eligibility_notes": "Must be enrolled member of a federally recognized tribe or descendant meeting IHS eligibility criteria. Missouri has no IHS direct care facilities; services provided through PRC referrals.",
+      "city": "Kansas City",
+      "state": "MO"
+    }
+  ],
+  "icwa_activation_rules": [
+    {
+      "rule_id": "mo_icwa_child_welfare",
+      "trigger_pipeline": "child_welfare",
+      "trigger_condition": "User identifies as American Indian or Alaska Native (AI/AN), OR child is or may be eligible for enrollment in a federally recognized tribe",
+      "activation_steps": [
+        {
+          "step": 1,
+          "action": "Identify tribal affiliation",
+          "description": "Determine which federally recognized tribe(s) the child is or may be eligible for enrollment in. If Osage Nation, activate Osage-specific contacts."
+        },
+        {
+          "step": 2,
+          "action": "Activate ICWA workflow",
+          "description": "Surface ICWA compliance requirements: notice to tribe (25 USC \u00a71912(a)), active efforts standard (not just reasonable efforts), placement preferences (25 USC \u00a71915)."
+        },
+        {
+          "step": 3,
+          "action": "Surface Osage Nation ICWA Office",
+          "description": "If Osage affiliation identified or suspected, surface osage_nation_icwa contact. Notice must be sent by registered mail with return receipt. Tribe has 20 days to respond."
+        },
+        {
+          "step": 4,
+          "action": "Surface urban Native services",
+          "description": "Based on user region, surface applicable urban Indian services: mo_naco_kc for kc_metro, mo_aic for stl_metro. These organizations can assist with cultural support and referrals during child welfare proceedings."
+        }
+      ],
+      "legal_references": [
+        "25 USC \u00a71901\u20131963 (Indian Child Welfare Act)",
+        "25 CFR Part 23 (ICWA regulations)",
+        "Haaland v. Brackeen, 599 U.S. 255 (2023) \u2014 upheld constitutionality of ICWA",
+        "RSMo \u00a7211.442 (Missouri ICWA compliance provisions)"
+      ],
+      "notes": "ICWA applies to any child custody proceeding involving an Indian child, including foster care placement, termination of parental rights, pre-adoptive placement, and adoptive placement. ICWA does not apply to custody disputes between parents in divorce proceedings."
+    },
+    {
+      "rule_id": "mo_icwa_healthcare",
+      "trigger_pipeline": "medicaid_denial",
+      "trigger_condition": "User identifies as AI/AN and is enrolled in a federally recognized tribe",
+      "activation_steps": [
+        {
+          "step": 1,
+          "action": "Surface IHS Nashville Area Office",
+          "description": "Enrolled tribal members may be eligible for IHS Purchased/Referred Care (PRC). Contact IHS Nashville for eligibility determination and referral authorization."
+        },
+        {
+          "step": 2,
+          "action": "Check MO HealthNet eligibility",
+          "description": "AI/AN individuals may qualify for MO HealthNet (Medicaid) with special provisions. AI/AN Medicaid recipients are exempt from cost-sharing under ACA \u00a72901."
+        }
+      ],
+      "legal_references": [
+        "25 USC \u00a71601 et seq. (Indian Health Care Improvement Act)",
+        "42 USC \u00a71396d(b) (100% FMAP for IHS/tribal facility services)"
+      ]
+    }
+  ],
+  "urban_indian_programs": [
+    {
+      "program_id": "mo_kc_indian_center",
+      "program_name": "Kansas City Indian Center",
+      "services": [
+        "cultural_programs",
+        "social_services",
+        "youth_programs",
+        "elder_services",
+        "powwow_coordination"
+      ],
+      "region": "kc_metro",
+      "status": "active",
+      "notes": "Primary urban Indian organization for KC metro. Partners with NACO for service delivery.",
+      "city": "Kansas City",
+      "state": "MO"
+    },
+    {
+      "program_id": "mo_stl_native_services",
+      "program_name": "St. Louis Native American Community Services",
+      "services": [
+        "referrals",
+        "cultural_events",
+        "community_support",
+        "education"
+      ],
+      "region": "stl_metro",
+      "status": "active",
+      "notes": "Serves STL metro Native community. Partners with American Indian Center of Missouri.",
+      "city": "Kansas City",
+      "state": "MO"
+    }
+  ],
+  "tribal_courts": []
+}

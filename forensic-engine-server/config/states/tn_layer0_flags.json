@@ -1,0 +1,196 @@
+{
+  "meta": {
+    "state": "TN",
+    "version": "3.0",
+    "date": "2026-03-09",
+    "flag_count": 6
+  },
+  "flags": [
+    {
+      "flag_id": "tn_tenncare_1115_waiver",
+      "severity": "alert",
+      "title": "TennCare 1115 Waiver \u2014 More Restrictive Than Standard Medicaid",
+      "summary": "Tennessee operates Medicaid through TennCare, a Section 1115 waiver that is MORE RESTRICTIVE than standard Medicaid. Enrollment is capped and periodic enrollment freezes occur. Adults without children are generally NOT eligible. Verify current enrollment status before assuming Medicaid coverage. TennCare Connect: 855-259-0701 / tenncareconnect.tn.gov."
+    },
+    {
+      "flag_id": "tn_tanf_lowest",
+      "severity": "alert",
+      "title": "TANF $185/Month \u2014 Lowest Cash Assistance in Registry",
+      "summary": "Tennessee TANF (Families First) provides only $185/month for a family of 3 \u2014 the lowest cash assistance amount in the entire registry. This is insufficient for any basic need. Supplement with SNAP, LIHEAP, and community resources immediately. Apply: tn.gov/humanservices."
+    },
+    {
+      "flag_id": "tn_ui_275_lowest",
+      "severity": "warning",
+      "title": "UI $275/Week Maximum \u2014 Lowest UI Benefit in Registry",
+      "summary": "Tennessee unemployment insurance maximum is $275/week \u2014 the lowest in the registry. Duration: up to 26 weeks. Appeal deadline: 15 days from mailing. Contact TN DOL&WD: 844-224-5818 / jobs4tn.gov."
+    },
+    {
+      "flag_id": "tn_memphis_deep_poverty",
+      "severity": "warning",
+      "title": "Memphis Deep Poverty \u2014 24-27% Poverty Rate, Church Health Model",
+      "summary": "Memphis has 24-27% poverty rate with concentrated poverty in North Memphis, South Memphis, and Frayser. Church Health (founded by Dr. Scott Morris) provides healthcare for working uninsured adults \u2014 a model unique to Memphis. Church Health: 901-272-7170 / churchhealth.org. Memphis Area Legal Services: 901-523-8822 / malsi.org."
+    },
+    {
+      "flag_id": "tn_nashville_refugee_hub",
+      "severity": "info",
+      "title": "Nashville Refugee Hub \u2014 Kurdish, Somali, Burmese, Congolese Communities",
+      "summary": "Nashville is one of the largest refugee resettlement cities in the US with significant Kurdish (largest Kurdish population in US), Somali, Burmese, and Congolese communities. Language access is critical. Tennessee Immigrant & Refugee Rights Coalition (TIRRC): 615-833-0384 / tirrc.org. Catholic Charities of TN: 615-352-3087."
+    },
+    {
+      "flag_id": "tn_urlta_patchwork",
+      "severity": "warning",
+      "title": "URLTA Patchwork \u2014 Not All Counties Have Adopted Tenant Protections",
+      "summary": "Tennessee's Uniform Residential Landlord and Tenant Act (URLTA) has NOT been adopted by all counties. Rural counties may have weaker tenant protections. Verify whether the client's county has adopted URLTA before advising on tenant rights. TN Fair Housing Council: 615-874-2344."
+    },
+    {
+      "flag_id": "tn_involuntary_hold_law",
+      "title": "Involuntary Hold: Tennessee Emergency Detention",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "TN involuntary psychiatric hold law: Tennessee Emergency Detention. Statutory authority: Tenn. Code \u00a7 33-6-401. Maximum initial hold duration: 72 hours. Legal standard: danger to self/others. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 72 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "Tenn. Code \u00a7 33-6-401"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "tn_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in TN retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "tn_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in TN: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "tn_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Tennessee Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "tn_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Tennessee Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "tn_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Tennessee Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

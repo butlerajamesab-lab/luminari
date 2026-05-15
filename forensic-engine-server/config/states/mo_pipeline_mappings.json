@@ -1,0 +1,468 @@
+{
+  "meta": {
+    "state": "MO",
+    "type": "pipeline_mappings",
+    "version": "1.0.0",
+    "status": "active",
+    "description": "Maps canonical pipeline IDs to MO-specific programs, workflows, oversight chains, and Layer 0/1 resources"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "tenant_rights",
+      "workflow_id": "tenant_rights_workflow",
+      "oversight_entity_types": [
+        "landlord"
+      ],
+      "layer0_flag_ids": [
+        "mo_cold_weather_rule"
+      ],
+      "layer1_cluster_ids": [
+        "mo_housing_utilities"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "housing_authority",
+        "circuit_court",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "tenant_rights"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "wage_theft",
+      "workflow_id": "wage_theft_workflow",
+      "oversight_entity_types": [
+        "employer"
+      ],
+      "layer0_flag_ids": [
+        "mo_no_state_paid_leave"
+      ],
+      "layer1_cluster_ids": [
+        "mo_legal"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "circuit_court",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "wage_theft"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "benefits_denial",
+      "workflow_id": "benefits_denial_workflow",
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "mo_snap_application_barrier",
+        "mo_tanf_structural_insufficiency"
+      ],
+      "layer1_cluster_ids": [
+        "mo_food",
+        "mo_cash_assistance"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "child_welfare"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "benefits_denial",
+          "public_assistance_dispute"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "snap_denial",
+      "workflow_id": "benefits_denial_workflow",
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "mo_snap_application_barrier"
+      ],
+      "layer1_cluster_ids": [
+        "mo_food"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "snap_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "workflow_id": "insurance_claim_denial_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "mo_healthcare"
+      ],
+      "foia_rule_ids": [
+        "medical"
+      ],
+      "county_override_sections": [
+        "circuit_court"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "insurance_claim_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "domestic_violence",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "family_court"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "mo_dv_safety"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "circuit_court",
+        "law_enforcement",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "domestic_violence"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "disability_claim_denial",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "mo_healthnet_renewal_churn"
+      ],
+      "layer1_cluster_ids": [
+        "mo_healthcare"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "disability_claim_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "workers_compensation",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "employer"
+      ],
+      "layer0_flag_ids": [
+        "mo_no_state_paid_leave"
+      ],
+      "layer1_cluster_ids": [
+        "mo_legal"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "circuit_court"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "workers_compensation"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "immigration_case",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "mo_noncitizen_medicaid_restriction"
+      ],
+      "layer1_cluster_ids": [
+        "mo_immigration"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "tribal_override_sections": [],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "immigration_case",
+          "immigration_benefits"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "asylum_claim",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "mo_noncitizen_medicaid_restriction"
+      ],
+      "layer1_cluster_ids": [
+        "mo_immigration"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "asylum_claim"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "work_authorization_dispute",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "government_agency",
+        "employer"
+      ],
+      "layer0_flag_ids": [
+        "mo_noncitizen_medicaid_restriction"
+      ],
+      "layer1_cluster_ids": [
+        "mo_immigration"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "work_authorization_dispute"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "immigration_benefits",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "mo_noncitizen_medicaid_restriction"
+      ],
+      "layer1_cluster_ids": [
+        "mo_immigration"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "immigration_benefits"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "public_assistance_dispute",
+      "workflow_id": "benefits_denial_workflow",
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "mo_snap_application_barrier",
+        "mo_tanf_structural_insufficiency"
+      ],
+      "layer1_cluster_ids": [
+        "mo_food",
+        "mo_cash_assistance"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "child_welfare"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "public_assistance_dispute"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "mo_involuntary_hold_law",
+        "mo_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "mo_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "mo_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "mo_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "mo_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "mo_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "mo_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "mo_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "mo_restraint_seclusion_limits",
+        "mo_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "mo_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "mo_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "mo_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

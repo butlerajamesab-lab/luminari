@@ -1,0 +1,330 @@
+{
+  "meta": {
+    "state": "GA",
+    "version": "3.0",
+    "cluster_count": 9
+  },
+  "clusters": [
+    {
+      "cluster_id": "ga_food",
+      "cluster_label": "Food",
+      "cards": [
+        {
+          "card_id": "ga_snap",
+          "title": "SNAP (Georgia Food Stamps)",
+          "phone": "877-423-4746",
+          "website": "https://dfcs.georgia.gov",
+          "notes": "Federal food assistance"
+        },
+        {
+          "card_id": "ga_wic",
+          "title": "WIC (Georgia)",
+          "phone": "800-228-9173",
+          "website": "https://dph.georgia.gov/WIC",
+          "notes": "Nutrition for pregnant women, infants, children"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ga_health",
+      "cluster_label": "Health",
+      "cards": [
+        {
+          "card_id": "ga_medicaid_categorical",
+          "title": "Georgia Medicaid (Categorical \u2014 No Expansion)",
+          "phone": "800-766-4456",
+          "website": "https://medicaid.georgia.gov",
+          "notes": "Medicaid for children, pregnant women, elderly, disabled ONLY. Coverage gap: 250K-400K adults 0-138% FPL have NO coverage pathway."
+        },
+        {
+          "card_id": "ga_peachcare_chip",
+          "title": "PeachCare for Kids (CHIP)",
+          "phone": "877-427-3224",
+          "website": "https://dch.georgia.gov/peachcare-kids",
+          "notes": "Children's health insurance for families above Medicaid but below 247% FPL"
+        },
+        {
+          "card_id": "ga_grady_health",
+          "title": "Grady Health System (Safety Net)",
+          "phone": "404-616-1000",
+          "website": "https://www.gradyhealth.org",
+          "notes": "Atlanta safety net hospital, Grady Gold Card for uninsured"
+        },
+        {
+          "card_id": "ga_fqhc_network",
+          "title": "Georgia FQHC Network",
+          "phone": "",
+          "website": "https://www.gaprimarycare.org",
+          "notes": "Federally Qualified Health Centers \u2014 first-line for uninsured due to coverage gap"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ga_benefits",
+      "cluster_label": "Benefits",
+      "cards": [
+        {
+          "card_id": "ga_tanf",
+          "title": "TANF (Georgia)",
+          "phone": "877-423-4746",
+          "website": "https://dfcs.georgia.gov",
+          "notes": "Cash assistance \u2014 among lowest in nation at $280/month for family of 3"
+        },
+        {
+          "card_id": "ga_united_way_211",
+          "title": "United Way 211 Georgia",
+          "phone": "211",
+          "website": "",
+          "notes": "General social services referral"
+        },
+        {
+          "card_id": "ga_fulton_dfcs",
+          "title": "Fulton County DFCS",
+          "phone": "877-423-4746",
+          "website": "https://dfcs.georgia.gov",
+          "notes": "SNAP, TANF, Medicaid for Fulton County"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ga_employment",
+      "cluster_label": "Employment",
+      "cards": [
+        {
+          "card_id": "ga_unemployment_insurance",
+          "title": "Georgia Unemployment Insurance",
+          "phone": "877-709-8185",
+          "website": "https://www.dol.state.ga.us",
+          "notes": "UI benefits, 14-20 week duration \u2014 one of shortest in country"
+        },
+        {
+          "card_id": "ga_wage_division",
+          "title": "GA DOL Wage & Hour",
+          "phone": "404-232-3260",
+          "website": "https://www.dol.state.ga.us",
+          "notes": "Wage complaints \u2014 Georgia has federal minimum wage $7.25/hr"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ga_housing",
+      "cluster_label": "Housing",
+      "cards": [
+        {
+          "card_id": "ga_section_8",
+          "title": "Section 8 Housing Choice Voucher",
+          "phone": "404-679-4940",
+          "website": "https://www.dca.ga.gov",
+          "notes": "Rental assistance vouchers"
+        },
+        {
+          "card_id": "ga_atlanta_housing_authority",
+          "title": "Atlanta Housing Authority",
+          "phone": "404-892-4700",
+          "website": "https://atlantahousing.org",
+          "notes": "Section 8 and public housing for Atlanta"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ga_utilities",
+      "cluster_label": "Utilities",
+      "cards": [
+        {
+          "card_id": "ga_liheap",
+          "title": "LIHEAP (Georgia)",
+          "phone": "877-423-4746",
+          "website": "https://dfcs.georgia.gov",
+          "notes": "Energy assistance for low-income households"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ga_legal",
+      "cluster_label": "Legal",
+      "cards": [
+        {
+          "card_id": "ga_legal_aid",
+          "title": "Georgia Legal Services Program",
+          "phone": "800-498-9469",
+          "website": "https://www.glsp.org",
+          "notes": "Free civil legal aid for low-income Georgians"
+        },
+        {
+          "card_id": "ga_atlanta_legal_aid",
+          "title": "Atlanta Legal Aid Society",
+          "phone": "404-524-5811",
+          "website": "https://atlantalegalaid.org",
+          "notes": "Emergency eviction defense and civil legal aid"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ga_safety",
+      "cluster_label": "Safety",
+      "cards": [
+        {
+          "card_id": "ga_dv_hotline",
+          "title": "Georgia Domestic Violence Hotline",
+          "phone": "800-334-2836",
+          "website": "https://gcadv.org",
+          "notes": "24/7 crisis support and shelter referrals"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ga_immigration",
+      "cluster_label": "Immigration",
+      "cards": [
+        {
+          "card_id": "ga_irc_atlanta",
+          "title": "IRC Atlanta (Refugee Services)",
+          "phone": "404-292-7800",
+          "website": "https://rescue.org/united-states/atlanta-ga",
+          "notes": "Refugee resettlement and integration services"
+        },
+        {
+          "card_id": "ga_new_american_pathways",
+          "title": "New American Pathways",
+          "phone": "404-299-0122",
+          "website": "https://newamericanpathways.org",
+          "notes": "Refugee and immigration services"
+        },
+        {
+          "card_id": "ga_latin_american_assoc",
+          "title": "Latin American Association (LAA)",
+          "phone": "404-638-1800",
+          "website": "https://thelaa.org",
+          "notes": "Services for Latino community"
+        }
+      ]
+    },
+    {
+      "cluster_id": "ga_mental_health",
+      "cluster_name": "Mental Health System",
+      "icon": "brain",
+      "cards": [
+        {
+          "card_id": "ga_mh_crisis_line",
+          "title": "988 Suicide & Crisis Lifeline",
+          "summary": "Call or text 988 for immediate mental health crisis support. Free, confidential, 24/7. Trained counselors can help with suicidal thoughts, emotional distress, substance use, and mental health crises. Also available via chat at 988lifeline.org.",
+          "who_qualifies": "Anyone experiencing a mental health crisis, suicidal thoughts, or emotional distress.",
+          "how_to_access": "Call or text 988. Chat at 988lifeline.org. For veterans, press 1 after dialing 988.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "ga_mh_nami",
+          "title": "NAMI Helpline & Support Groups",
+          "summary": "National Alliance on Mental Illness provides free peer support, education, and advocacy. NAMI HelpLine: 1-800-950-NAMI (6264). Family-to-Family program helps families understand mental health conditions and navigate the system.",
+          "who_qualifies": "Individuals with mental health conditions and their family members.",
+          "how_to_access": "Call 1-800-950-NAMI or text 'HELPLINE' to 62640. Find local NAMI affiliate at nami.org/find-support.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "ga_mh_protection_advocacy",
+          "title": "Protection & Advocacy Organization",
+          "summary": "Every state has a federally mandated Protection & Advocacy (P&A) organization with legal authority to investigate abuse and neglect in psychiatric facilities. P&A organizations can enter any facility, access records, and file lawsuits. This is often the most powerful tool available for people harmed in the mental health system.",
+          "who_qualifies": "Anyone with a disability who has experienced abuse, neglect, or rights violations in a facility.",
+          "how_to_access": "Find your state P&A at ndrn.org/about/ndrn-member-agencies/ or call the NDRN at 202-408-9514.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "ga_mh_know_your_rights",
+          "title": "Know Your Rights: Georgia Emergency Evaluation",
+          "summary": "If you are placed on an involuntary hold in GA, you have rights: the initial hold cannot exceed 48 hours without a court hearing. You have the right to an attorney at the hearing. You have the right to present evidence and call witnesses. You have the right to an independent psychiatric evaluation. You can challenge the hold at any time.",
+          "who_qualifies": "Anyone placed on an involuntary psychiatric hold or facing commitment proceedings.",
+          "how_to_access": "Request to speak with the patient advocate. Ask for a copy of your patient rights. Contact your state's Protection & Advocacy organization.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "ga_mh_records_rights",
+          "title": "Your Right to Your Psychiatric Records",
+          "summary": "Under HIPAA (45 CFR \u00a7 164.524), you have the right to access your complete medical record, including psychiatric treatment records. The facility must respond within 30 days. If they deny access, you can file a complaint with HHS Office for Civil Rights. Under HIPAA \u00a7 164.526, you also have the right to request amendments to inaccurate records.",
+          "who_qualifies": "Any current or former psychiatric patient.",
+          "how_to_access": "Submit a written request to the facility's Health Information Management department. If denied, file complaint at hhs.gov/ocr.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "ga_mh_samhsa",
+          "title": "SAMHSA National Helpline",
+          "summary": "Free, confidential, 24/7 treatment referral and information service for mental health and substance use disorders. Available in English and Spanish. Provides referrals to local treatment facilities, support groups, and community-based organizations.",
+          "who_qualifies": "Anyone seeking mental health or substance use treatment information and referrals.",
+          "how_to_access": "Call 1-800-662-HELP (4357) or visit findtreatment.gov.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        }
+      ]
+    }
+  ]
+}

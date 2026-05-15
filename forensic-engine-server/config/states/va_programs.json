@@ -1,0 +1,952 @@
+{
+  "meta": {
+    "state": "VA",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "va_virginia_snap_food_assistance_dss",
+      "program_name": "Virginia SNAP / Food Assistance (DSS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Virginia SNAP / Food Assistance",
+      "phone": "804-726-7000",
+      "website": "https://commonhelp.virginia.gov",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: Apply at commonhelp.virginia.gov (online \u2014 functional). ABAWD work requirements active. Each locality has its own DSS office. Arlington County DSS: 703-228-1350. Fairfax County DSS: 703-324-7500. Richmond City DSS: 804-646-7702.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_feeding_america_southwest_virginia_roano",
+      "program_name": "Feeding America Southwest Virginia (Roanoke)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Feeding America Southwest Virginia",
+      "phone": "540-342-3011",
+      "website": "https://faswva.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: faswva.org \u2014 primary food bank for southwest Virginia. Critical for Appalachian region with high food insecurity and limited grocery access.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Roanoke",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_capital_area_food_bank_richmond_central_",
+      "program_name": "Capital Area Food Bank (Richmond / Central VA)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Capital Area Food Bank",
+      "phone": "804-521-2500",
+      "website": "https://cafbva.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: cafbva.org \u2014 largest food bank in Virginia. SNAP enrollment assistance embedded. Also Northern Virginia Food Bank (Falls Church: 703-207-9173) for NoVA.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_wic_virginia",
+      "program_name": "WIC Virginia",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "WIC Virginia",
+      "phone": "804-864-7990",
+      "website": "https://vdh.virginia.gov/wic",
+      "eligibility": "",
+      "apply_notes": "",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_virginia_medicaid_famis_ccc_plus_dmas",
+      "program_name": "Virginia Medicaid / FAMIS / CCC Plus (DMAS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Virginia Medicaid / FAMIS / CCC Plus",
+      "phone": "804-786-7933",
+      "website": "https://dmas.virginia.gov",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: commonhelp.virginia.gov \u2014 apply online. Verify managed care plan enrollment. Plans: Anthem HealthKeepers Plus, Optima Health, Aetna Better Health VA, Molina Healthcare VA, Virginia Premier. Pamunkey tribal members: may access tribal IHS services.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_vcu_health_medical_college_of_virginia_r",
+      "program_name": "VCU Health / Medical College of Virginia (Richmond Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "VCU Health / Medical College of Virginia",
+      "phone": "804-628-0000",
+      "website": "https://vcuhealth.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: vcuhealth.org \u2014 charity care for income < 200% FPL. Level 1 trauma center. Also Richmond City Health District clinics (804-482-5500) for public health and FQHC-adjacent services.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_inova_health_system_northern_virginia_sa",
+      "program_name": "Inova Health System (Northern Virginia Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Inova Health System",
+      "phone": "703-776-4001",
+      "website": "https://inova.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: inova.org \u2014 charity care application: 703-776-4001. Primary NoVA safety net for insured and uninsured. Also George Mason University CHHS clinics for sliding scale primary care.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Falls Church",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_virginia_community_healthcare_associatio",
+      "program_name": "Virginia Community Healthcare Association (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Virginia Community Healthcare Association",
+      "phone": "804-965-6530",
+      "website": "https://vcha.net",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: vcha.net / findahealthcenter.hrsa.gov \u2014 Key: Neighborhood Health (Alexandria: 703-535-5568), CrossOver Healthcare Ministry (Richmond: 804-678-4100), Clinica del Pueblo (NoVA: 703-671-0730 \u2014 Latino community), Appalachian Agency for Senior Citizens (SW VA: 276-964-4915).",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Glen Allen",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_virginia_housing_vhda_virginia_housing_d",
+      "program_name": "Virginia Housing (VHDA \u2014 Virginia Housing Development Authority)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Virginia Housing",
+      "phone": "800-968-7837",
+      "website": "https://virginiahousing.com",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: virginiahousing.com \u2014 state-level coordination. Richmond Redevelopment and Housing Authority: 804-780-4200. Alexandria Housing: 703-549-7115. Arlington Housing Authority: 703-228-3760.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_central_virginia_legal_aid_society_cvlas",
+      "program_name": "Central Virginia Legal Aid Society (CVLAS)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Central Virginia Legal Aid Society",
+      "phone": "804-648-1012",
+      "website": "https://cvlas.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: cvlas.org \u2014 emergency eviction triage same day. Primary legal aid for Richmond metro.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_legal_aid_justice_center_lajc",
+      "program_name": "Legal Aid Justice Center (LAJC)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Legal Aid Justice Center",
+      "phone": "434-977-0553",
+      "website": "https://justice4all.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: justice4all.org \u2014 strong immigration and civil rights capacity. Northern Virginia office (Falls Church: 703-778-3450) serves the large immigrant community. Charlottesville eviction triage.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Charlottesville",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_southwest_virginia_legal_aid_society_svl",
+      "program_name": "Southwest Virginia Legal Aid Society (SVLAS)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Southwest Virginia Legal Aid Society",
+      "phone": "276-783-6576",
+      "website": "https://svlas.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: svlas.org \u2014 only legal aid covering the coalfield counties. Extremely limited resources relative to need. Phone intake covers all SW VA counties.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Marion",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_virginia_sexual_and_domestic_violence_ac",
+      "program_name": "Virginia Sexual and Domestic Violence Action Alliance (Hotline)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Virginia Sexual and Domestic Violence Action Alliance",
+      "phone": "800-838-8238",
+      "website": "https://vsdvalliance.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: vsdvalliance.org \u2014 coordinates 75+ local DV and SA programs. Text-based crisis available. Routes to local shelters and legal advocacy.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_safeplace_richmond_area_dv",
+      "program_name": "SafePlace (Richmond area DV)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "SafePlace",
+      "phone": "804-330-2399",
+      "website": "https://safeplaceva.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: safeplaceva.org \u2014 Richmond area DV. Routes to Central Virginia Legal Aid for legal protection orders.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_virginia_legal_aid_society_vlas_hampton_",
+      "program_name": "Virginia Legal Aid Society (VLAS \u2014 Hampton Roads)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "utility_dispute"
+      ],
+      "agency": "Virginia Legal Aid Society",
+      "phone": "757-627-5423",
+      "website": "https://virginialegalaid.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: virginialegalaid.org \u2014 primary legal aid for Hampton Roads / Tidewater region.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Norfolk",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_blue_ridge_legal_services_brls_shenandoa",
+      "program_name": "Blue Ridge Legal Services (BRLS \u2014 Shenandoah / NW VA)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Blue Ridge Legal Services",
+      "phone": "540-433-1830",
+      "website": "https://brls.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: brls.org \u2014 Shenandoah Valley primary legal aid. Also serves Roanoke corridor through coordination with SVLAS.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Harrisonburg",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_legal_services_of_northern_virginia_lsnv",
+      "program_name": "Legal Services of Northern Virginia (LSNV)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Legal Services of Northern Virginia",
+      "phone": "703-534-4343",
+      "website": "https://lsnv.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: lsnv.org \u2014 primary legal aid for Northern Virginia. Large immigrant/refugee community capacity. Spanish, Arabic, Amharic, Vietnamese language services.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Falls Church",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_virginia_tanf_view_virginia_initiative_f",
+      "program_name": "Virginia TANF (VIEW \u2014 Virginia Initiative for Employment not Welfare)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "housing_dispute",
+        "employment_dispute",
+        "child_welfare",
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Virginia TANF",
+      "phone": "804-726-7000",
+      "website": "https://dss.virginia.gov",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: commonhelp.virginia.gov or local DSS. Work requirement enforced \u2014 VIEW program is work-first design. Always pair with SNAP, Medicaid, child care (CCAP), fuel assistance (LIHEAP), and emergency housing.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_virginia_ui_vec_virginia_employment_comm",
+      "program_name": "Virginia UI (VEC \u2014 Virginia Employment Commission)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial",
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "Virginia UI",
+      "phone": "866-832-2363",
+      "website": "https://vec.virginia.gov",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: vec.virginia.gov \u2014 file online. 30-day appeal deadline from determination. VEC has high denial rates \u2014 appeal virtually every denial. Contact legal aid within 14 days of any denial.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_virginia_liheap_fuel_assistance_dss",
+      "program_name": "Virginia LIHEAP / Fuel Assistance (DSS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Virginia LIHEAP / Fuel Assistance",
+      "phone": "804-726-7000",
+      "website": "https://dss.virginia.gov/benefit/liheap.cgi",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: dss.virginia.gov \u2014 apply through local DSS office. Opens November 1. Crisis component year-round. Virginia has NO winter shutoff moratorium by law \u2014 utility company shutoff protection agreements vary by provider.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_state_corporation_commission_scc_utility",
+      "program_name": "State Corporation Commission (SCC) \u2014 Utility Complaints",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "consumer_protection",
+        "utility_dispute"
+      ],
+      "agency": "State Corporation Commission",
+      "phone": "804-371-9141",
+      "website": "https://scc.virginia.gov",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: scc.virginia.gov \u2014 file complaint; Dominion Energy and Appalachian Power have low-income assistance programs separate from LIHEAP. Note: Virginia has NO statutory winter shutoff moratorium \u2014 cold weather shutoffs are possible.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_pamunkey_indian_tribe_tribal_government",
+      "program_name": "Pamunkey Indian Tribe \u2014 Tribal Government",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial",
+        "insurance_claim_denial"
+      ],
+      "agency": "Pamunkey Indian Tribe \u2014 Tribal Government",
+      "phone": "804-843-4792",
+      "website": "https://pamunkey.net",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: pamunkey.net \u2014 Virginia's only federally recognized tribe. IHS Nashville Area (615-467-1500) for health services. BIA Mid-Atlantic Regional Office (215-861-3900) for federal benefits.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "King William",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_virginia_council_on_indians",
+      "program_name": "Virginia Council on Indians",
+      "layer": "state",
+      "benefit_category": "tribal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Virginia Council on Indians",
+      "phone": "804-225-2084",
+      "website": "https://indians.vipnet.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: indians.vipnet.org \u2014 primary state resource for Virginia's six state-recognized tribes. Routes to individual tribal cultural programs. No access to federal programs for state-recognized members.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "tribal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "tribal",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_ihs_nashville_area_office_covers_pamunke",
+      "program_name": "IHS Nashville Area Office (covers Pamunkey)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "IHS Nashville Area Office",
+      "phone": "615-467-1500",
+      "website": "https://ihs.gov/nashville",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: ihs.gov/nashville \u2014 covers southeastern US federal tribes. Coordinates urban Indian health referrals for AI/AN Virginia residents.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Nashville",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_virginia_bureau_of_insurance_boi_scc",
+      "program_name": "Virginia Bureau of Insurance (BOI) / SCC",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "consumer_protection"
+      ],
+      "agency": "Virginia Bureau of Insurance",
+      "phone": "804-371-9741",
+      "website": "https://scc.virginia.gov/boi",
+      "eligibility": "",
+      "apply_notes": "Escalation: Virginia AG Consumer Protection for systemic patterns",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_virginia_dmas_medicaid_managed_care_appe",
+      "program_name": "Virginia DMAS \u2014 Medicaid Managed Care Appeals",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial",
+        "insurance_claim_denial"
+      ],
+      "agency": "Virginia DMAS \u2014 Medicaid Managed Care Appeals",
+      "phone": "804-786-6801",
+      "website": "https://dmas.virginia.gov",
+      "eligibility": "",
+      "apply_notes": "Escalation: DMAS \u2192 Virginia Circuit Court for adverse decisions",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_virginia_council_on_human_rights_vchr_ho",
+      "program_name": "Virginia Council on Human Rights (VCHR) \u2014 Housing",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Virginia Council on Human Rights",
+      "phone": "800-669-9777",
+      "website": "https://vchr.virginia.gov",
+      "eligibility": "",
+      "apply_notes": "Escalation: HUD Fair Housing (800-669-9777) concurrently; private lawsuit under VHRA",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_virginia_doli_labor_and_employment_law_d",
+      "program_name": "Virginia DOLI \u2014 Labor and Employment Law Division",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "employment_dispute"
+      ],
+      "agency": "Virginia DOLI \u2014 Labor and Employment Law Division",
+      "phone": "804-371-2327",
+      "website": "https://doli.virginia.gov",
+      "eligibility": "",
+      "apply_notes": "Escalation: Private Circuit Court lawsuit for treble damages; Virginia AG",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_virginia_council_on_human_rights_vchr_em",
+      "program_name": "Virginia Council on Human Rights (VCHR) \u2014 Employment",
+      "layer": "state",
+      "benefit_category": "employment",
+      "pipeline_ids": [
+        "employment_dispute"
+      ],
+      "agency": "Virginia Council on Human Rights",
+      "phone": "804-225-2292",
+      "website": "https://vchr.virginia.gov",
+      "eligibility": "",
+      "apply_notes": "Escalation: Private lawsuit under VHRA as alternative to EEOC right-to-sue",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "employment"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "employment"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "employment",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_virginia_dss_office_of_hearing_and_appea",
+      "program_name": "Virginia DSS \u2014 Office of Hearing and Appeals",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Virginia DSS \u2014 Office of Hearing and Appeals",
+      "phone": "804-726-7017",
+      "website": "https://dss.virginia.gov",
+      "eligibility": "",
+      "apply_notes": "Escalation: Virginia Circuit Court for adverse decisions",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_virginia_employment_commission_vec_appea",
+      "program_name": "Virginia Employment Commission (VEC) \u2014 Appeals",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial",
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "Virginia Employment Commission",
+      "phone": "804-786-8031",
+      "website": "https://vec.virginia.gov",
+      "eligibility": "",
+      "apply_notes": "Escalation: Contact legal aid within 14 days of any UI denial",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "va_richmond_office_of_community_wealth_buil",
+      "program_name": "Richmond Office of Community Wealth Building / Police Accountability",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Richmond Office of Community Wealth Building / Police Accountability",
+      "phone": "804-646-7500",
+      "website": "https://rva.gov",
+      "eligibility": "",
+      "apply_notes": "Escalation: DOJ Civil Rights; FBI Richmond (804-261-1044) for federal civil rights crimes",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Richmond",
+      "state": "VA",
+      "federal_interface": false
+    }
+  ]
+}

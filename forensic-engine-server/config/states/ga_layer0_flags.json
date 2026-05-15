@@ -1,0 +1,240 @@
+{
+  "meta": {
+    "state": "GA",
+    "version": "3.0",
+    "flag_count": 8
+  },
+  "flags": [
+    {
+      "flag_id": "ga_no_medicaid_expansion",
+      "severity": "alert",
+      "title": "NO Medicaid Expansion \u2014 Coverage Gap Exists",
+      "summary": "Georgia has NOT expanded Medicaid. 250K-400K adults between 0-138% FPL have NO coverage pathway. Route to FQHCs, charity care, and ACA marketplace.",
+      "affected_programs": [
+        "ga_medicaid_categorical"
+      ],
+      "effective_date": "2026-03-08"
+    },
+    {
+      "flag_id": "ga_lowest_tanf",
+      "severity": "alert",
+      "title": "TANF Benefits Among Lowest in Nation ($280/month)",
+      "summary": "Georgia TANF provides $280/month for a family of 3 \u2014 among the lowest in the country.",
+      "affected_programs": [
+        "ga_tanf"
+      ],
+      "effective_date": "2026-03-08"
+    },
+    {
+      "flag_id": "ga_short_ui",
+      "severity": "warning",
+      "title": "UI Duration 14-20 Weeks \u2014 One of Shortest",
+      "summary": "Georgia UI duration is 14-20 weeks depending on unemployment rate, one of the shortest in the country.",
+      "affected_programs": [
+        "ga_unemployment_insurance"
+      ],
+      "effective_date": "2026-03-08"
+    },
+    {
+      "flag_id": "ga_federal_minimum_wage",
+      "severity": "warning",
+      "title": "Federal Minimum Wage Only ($7.25/hr)",
+      "summary": "Georgia has no state minimum wage above the federal $7.25/hr. FLSA is the primary enforcement mechanism.",
+      "affected_programs": [
+        "ga_wage_division"
+      ],
+      "effective_date": "2026-03-08"
+    },
+    {
+      "flag_id": "ga_weak_tenant_protections",
+      "severity": "alert",
+      "title": "Weakest Tenant Protections in Registry",
+      "summary": "Georgia has extremely limited tenant protections. Anti-retaliation protections are weak (O.C.G.A. \u00a744-7-23). No rent control. Rapid eviction process.",
+      "affected_programs": [
+        "ga_section_8",
+        "ga_atlanta_housing_authority"
+      ],
+      "effective_date": "2026-03-08"
+    },
+    {
+      "flag_id": "ga_refugee_hub",
+      "severity": "info",
+      "title": "Atlanta Major Refugee Resettlement Hub",
+      "summary": "Atlanta metro is a significant refugee resettlement hub with Haitian, Congolese, Burmese, and Central American communities.",
+      "affected_programs": [
+        "ga_irc_atlanta",
+        "ga_new_american_pathways"
+      ],
+      "effective_date": "2026-03-08"
+    },
+    {
+      "flag_id": "ga_non_expansion_routing",
+      "severity": "warning",
+      "title": "Non-Expansion State Routing Required",
+      "summary": "Benefits workflows must account for coverage gap. FQHC and charity care pathways are first-line for many uninsured adults.",
+      "affected_programs": [
+        "ga_fqhc_network",
+        "ga_grady_health"
+      ],
+      "effective_date": "2026-03-08"
+    },
+    {
+      "flag_id": "ga_no_state_civil_rights",
+      "severity": "warning",
+      "title": "Limited State Civil Rights Enforcement",
+      "summary": "Georgia Commission on Human Relations has limited enforcement power. Federal agencies (EEOC, HUD) are primary discrimination complaint channels.",
+      "affected_programs": [],
+      "effective_date": "2026-03-08"
+    },
+    {
+      "flag_id": "ga_involuntary_hold_law",
+      "title": "Involuntary Hold: Georgia Emergency Evaluation",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "GA involuntary psychiatric hold law: Georgia Emergency Evaluation. Statutory authority: O.C.G.A. \u00a7 37-3-41. Maximum initial hold duration: 48 hours. Legal standard: danger to self/others. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 48 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "O.C.G.A. \u00a7 37-3-41"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "ga_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in GA retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "ga_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in GA: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "ga_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Georgia Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "ga_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Georgia Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "ga_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Georgia Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

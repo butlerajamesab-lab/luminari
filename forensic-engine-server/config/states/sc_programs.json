@@ -1,0 +1,654 @@
+{
+  "meta": {
+    "state": "SC",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "sc_south_carolina_snap_food_assistance_dss",
+      "program_name": "South Carolina SNAP / Food Assistance (DSS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial",
+        "disability_claim"
+      ],
+      "agency": "South Carolina SNAP / Food Assistance",
+      "phone": "800-311-7220",
+      "website": "https://benefitsweb.sc.gov",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: benefitsweb.sc.gov \u2014 apply online. ABAWD active. Richland County DSS (Columbia): 803-898-7360. Charleston County DSS: 843-727-4950. Greenville County DSS: 864-467-7750.",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Columbia",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_harvest_hope_food_bank_midlands_statewid",
+      "program_name": "Harvest Hope Food Bank (Midlands / Statewide)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Harvest Hope Food Bank",
+      "phone": "803-254-4432",
+      "website": "https://harvesthope.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: harvesthope.org \u2014 SC's largest food bank. Also Lowcountry Food Bank (Charleston: 843-747-8146) and Harvest Hope Greenville (864-233-6002).",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Columbia",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_lowcountry_food_bank_charleston_coastal_",
+      "program_name": "Lowcountry Food Bank (Charleston / Coastal SC)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Lowcountry Food Bank",
+      "phone": "843-747-8146",
+      "website": "https://lowcountryfoodbank.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: lowcountryfoodbank.org \u2014 primary food bank for Charleston metro and Lowcountry.",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Charleston",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_wic_south_carolina",
+      "program_name": "WIC South Carolina",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "WIC South Carolina",
+      "phone": "800-868-0404",
+      "website": "https://scdhec.gov/wic",
+      "eligibility": "",
+      "apply_notes": "",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_sc_medicaid_healthy_connections_scdhhs",
+      "program_name": "SC Medicaid / Healthy Connections (SCDHHS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial",
+        "insurance_claim_denial"
+      ],
+      "agency": "SC Medicaid / Healthy Connections",
+      "phone": "888-549-0820",
+      "website": "https://scdhhs.gov",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: benefitsweb.sc.gov \u2014 apply online. Same categorical limitation as Georgia registry. Screen for eligibility before routing.",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Columbia",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_musc_health_charleston_safety_net",
+      "program_name": "MUSC Health (Charleston Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "MUSC Health",
+      "phone": "843-792-2300",
+      "website": "https://muschealth.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: muschealth.org \u2014 charity care for income < 200% FPL. Level 1 trauma center. Also Roper St. Francis Healthcare charity care program.",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Charleston",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_prisma_health_columbia_upstate_safety_ne",
+      "program_name": "Prisma Health (Columbia / Upstate Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Prisma Health",
+      "phone": "803-296-2100",
+      "website": "https://prismahealth.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: prismahealth.org \u2014 charity care for income < 200% FPL. Level 1 trauma centers at both Midlands and Upstate campuses.",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Columbia",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_sc_primary_health_care_association_fqhcs",
+      "program_name": "SC Primary Health Care Association (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "SC Primary Health Care Association",
+      "phone": "803-788-2589",
+      "website": "https://scphca.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: scphca.org / findahealthcenter.hrsa.gov \u2014 Key: Eau Claire Cooperative Health (Columbia: 803-256-0001), Family Health Centers (Charleston: 843-763-7837), Healthy Connections (Greenville: 864-281-5000), Sea Island Comprehensive Health Care Corp (Beaufort/Gullah: 843-522-0790).",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Columbia",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_sea_island_comprehensive_health_care_cor",
+      "program_name": "Sea Island Comprehensive Health Care Corp (Gullah Geechee FQHC)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Sea Island Comprehensive Health Care Corp",
+      "phone": "843-522-0790",
+      "website": "https://sichcc.com",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: sichcc.com \u2014 primary FQHC for Lowcountry Gullah Geechee community. Language and cultural competency for Gullah communities.",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Beaufort",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_sc_state_housing_finance_and_development",
+      "program_name": "SC State Housing Finance and Development Authority (SC Housing)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "SC State Housing Finance and Development Authority",
+      "phone": "803-896-9001",
+      "website": "https://schousing.com",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: schousing.com \u2014 state-level coordination. Columbia Housing Authority: 803-254-3886. Charleston Housing Authority: 843-722-4991. Greenville Housing Authority: 864-467-4250.",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Columbia",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_south_carolina_legal_services_scls",
+      "program_name": "South Carolina Legal Services (SCLS)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "South Carolina Legal Services",
+      "phone": "888-346-5592",
+      "website": "https://sclegal.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: sclegal.org \u2014 statewide primary legal aid. Emergency eviction triage. Heirs property program for Lowcountry and rural clients. Charleston office: 843-722-0107. Greenville: 864-467-3900.",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Columbia",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_sc_appleseed_legal_justice_center_columb",
+      "program_name": "SC Appleseed Legal Justice Center (Columbia \u2014 Systemic Advocacy)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "SC Appleseed Legal Justice Center",
+      "phone": "803-779-1113",
+      "website": "https://scappleseed.net",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: scappleseed.net \u2014 systemic partner to SC Legal Services. Heirs property protection is a core practice area \u2014 critical for Gullah Geechee community.",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Columbia",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_south_carolina_coalition_against_domesti",
+      "program_name": "South Carolina Coalition Against Domestic Violence and Sexual Assault (SCCADVASA)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "South Carolina Coalition Against Domestic Violence and Sexual Assault",
+      "phone": "800-260-9293",
+      "website": "https://sccadvasa.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: sccadvasa.org \u2014 SC DV hotline: 800-260-9293. Routes to 30+ local programs.",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "Columbia",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_sc_tanf_family_independence_dss",
+      "program_name": "SC TANF / Family Independence (DSS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial",
+        "insurance_claim_denial",
+        "child_welfare",
+        "utility_dispute"
+      ],
+      "agency": "SC TANF / Family Independence",
+      "phone": "800-311-7220",
+      "website": "https://benefitsweb.sc.gov",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: benefitsweb.sc.gov \u2014 Work requirement strictly enforced. Pair with SNAP, Medicaid (where eligible), child care, LIHEAP.",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Columbia",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_sc_ui_dew_dept_of_employment_and_workfor",
+      "program_name": "SC UI / DEW (Dept of Employment and Workforce)",
+      "layer": "state",
+      "benefit_category": "employment",
+      "pipeline_ids": [
+        "benefits_denial",
+        "employment_dispute"
+      ],
+      "agency": "SC UI / DEW",
+      "phone": "866-831-1724",
+      "website": "https://dew.sc.gov",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: dew.sc.gov \u2014 file online. CRITICAL: 10-day appeal deadline from mailing. Contact legal aid within 5 days of any denial.",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "employment"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "employment"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "employment",
+      "city": "Columbia",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_sc_lieap_energy_assistance_dss",
+      "program_name": "SC LIEAP / Energy Assistance (DSS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "SC LIEAP / Energy Assistance",
+      "phone": "800-311-7220",
+      "website": "https://scdhhs.gov/lieap",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: scdhhs.gov/lieap \u2014 apply through county DSS or Community Action Agency. No statutory winter shutoff moratorium in SC. Duke Energy and Dominion SC have limited payment assistance programs.",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "Columbia",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_catawba_indian_nation_social_services",
+      "program_name": "Catawba Indian Nation \u2014 Social Services",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Catawba Indian Nation \u2014 Social Services",
+      "phone": "803-366-4792",
+      "website": "https://catawba.com",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: catawba.com \u2014 tribal headquarters in Rock Hill, York County. Federal recognition 1993. IHS Nashville Area (615-467-1500) for health services coordination. Limited trust land.",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Rock Hill",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_catawba_indian_nation_health_center",
+      "program_name": "Catawba Indian Nation Health Center",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Catawba Indian Nation Health Center",
+      "phone": "803-366-4792",
+      "website": "https://catawba.com",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: catawba.com \u2014 IHS compact health services. For AI/AN in SC not enrolled in Catawba: route to IHS Nashville Area for referral.",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Rock Hill",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_sc_dhhs_medicaid_managed_care_grievances",
+      "program_name": "SC DHHS \u2014 Medicaid Managed Care Grievances",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "SC DHHS \u2014 Medicaid Managed Care Grievances",
+      "phone": "888-549-0820",
+      "website": "https://scdhhs.gov",
+      "eligibility": "",
+      "apply_notes": "Escalation: SC Administrative Law Court",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Columbia",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_sc_human_affairs_commission_schac",
+      "program_name": "SC Human Affairs Commission (SCHAC)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "SC Human Affairs Commission",
+      "phone": "803-737-7800",
+      "website": "https://schac.sc.gov",
+      "eligibility": "",
+      "apply_notes": "Escalation: Dual-file EEOC and HUD always",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Columbia",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_sc_dss_administrative_appeals",
+      "program_name": "SC DSS \u2014 Administrative Appeals",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "SC DSS \u2014 Administrative Appeals",
+      "phone": "803-898-7601",
+      "website": "https://dss.sc.gov",
+      "eligibility": "",
+      "apply_notes": "Escalation: SC Administrative Law Court",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Columbia",
+      "state": "SC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sc_sc_dew_appeal_tribunal",
+      "program_name": "SC DEW \u2014 Appeal Tribunal",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "SC DEW \u2014 Appeal Tribunal",
+      "phone": "866-831-1724",
+      "website": "https://dew.sc.gov",
+      "eligibility": "",
+      "apply_notes": "Escalation: Contact legal aid within 5 days of any denial",
+      "source": "luminari-south-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Columbia",
+      "state": "SC",
+      "federal_interface": false
+    }
+  ]
+}

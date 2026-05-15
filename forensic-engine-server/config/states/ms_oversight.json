@@ -1,0 +1,352 @@
+{
+  "meta": {
+    "state": "MS",
+    "version": "2.0",
+    "date": "2026-03-08",
+    "total_chains": 6,
+    "total_bodies": 11,
+    "entity_types": [
+      "general",
+      "employer",
+      "insurer",
+      "landlord",
+      "consumer",
+      "utility"
+    ],
+    "source": "luminari-ms-registry.docx"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "general",
+      "state": "MS",
+      "bodies": [
+        {
+          "oversight_body": "MDES \u2014 UI Appeals",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "UI denial appeals \u2014 14-day deadline from mailing.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "14 days \u2014 FATAL. Contact MCJ (601-352-2269) or Coast Legal (228-374-4656) within 7 days.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "MDHS \u2014 Fair Hearings (Benefits)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "SNAP, Medicaid, TANF fair hearings \u2014 30-day appeal window.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "30 days from notice \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "MBCI \u2014 Tribal Court (Wind River Choctaw Sovereignty)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Tribal court jurisdiction over matters involving enrolled MBCI members on reservation land.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "Varies \u2014 consult tribal attorney",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "MS Bond of Review (UI Second Level)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Second-level UI appeal after initial MDES referee decision.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "10 days from referee decision \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "employer",
+      "state": "MS",
+      "bodies": [
+        {
+          "oversight_body": "EEOC \u2014 Birmingham District (covers MS)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Federal employment discrimination \u2014 300-day deadline. LGBTQ+ EEOC only in MS (no state law protections).",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "300 days \u2014 FATAL. File MCRC (601-359-6571) simultaneously.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Mississippi Civil Rights Commission (MCRC)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "State employment/housing discrimination. Mississippi statutes do not cover LGBTQ+ \u2014 use EEOC for sexual orientation/gender identity.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "180 days \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOL WHD \u2014 Jackson (Only Wage Enforcement in MS)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "FLSA only \u2014 Mississippi has NO state minimum wage law, no state wage enforcement agency. WHD is sole wage enforcement mechanism.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "2 years FLSA (3 if willful) \u2014 FATAL. MS has no state wage fallback.",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "insurer",
+      "state": "MS",
+      "bodies": [
+        {
+          "oversight_body": "Mississippi DOI (Insurance)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Private insurance complaints, external review.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "180 days from denial",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "landlord",
+      "state": "MS",
+      "bodies": [
+        {
+          "oversight_body": "HUD \u2014 Fort Worth Regional Office (covers MS, Fair Housing)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Fair Housing Act enforcement in Mississippi.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "1 year \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "consumer",
+      "state": "MS",
+      "bodies": [
+        {
+          "oversight_body": "MS AG \u2014 Consumer Protection Division",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Consumer fraud, unfair/deceptive practices.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "3 years (MS Consumer Protection Act)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "utility",
+      "state": "MS",
+      "bodies": [
+        {
+          "oversight_body": "Jackson Water/Infrastructure Advocacy (MCJ)",
+          "jurisdiction": "primary",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "Jackson water crisis ongoing \u2014 MCJ provides infrastructure rights advocacy, FEMA coordination, state accountability escalation.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "Immediate \u2014 infrastructure rights have no fixed SOL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "ms_med_board",
+          "name": "Mississippi Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Mississippi Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MS"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "ms_patient_adv",
+          "name": "Mississippi Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Mississippi Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MS"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "ms_health_dept",
+          "name": "Mississippi Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Mississippi Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MS"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MS"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "ms_pharm_board",
+          "name": "Mississippi Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Mississippi Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MS"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "ms_pa",
+          "name": "Mississippi Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Mississippi Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MS"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "ms_mha",
+          "name": "Mississippi Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Mississippi Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MS"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MS"
+    }
+  ]
+}

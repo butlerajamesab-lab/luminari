@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "state": "NJ",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "nj_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "nj_legal_services_of_nj_lsnj",
+        "nj_make_the_road_nj_wind_immigration_servic"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "nj_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "nj_nj_housing_and_mortgage_finance_agency_n",
+        "nj_nj_dv_hotline_njcasa"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "nj_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "nj_nj_tanf_workfirst_nj_dcf",
+        "nj_new_jersey_ui_nj_dol",
+        "nj_nj_liheap_lifeline_utility_assistance_dh",
+        "nj_nj_veterans_service_network_dvs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "nj_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "nj_nj_familycare_medicaid_dmahs",
+        "nj_university_hospital_newark_nj_safety_net",
+        "nj_nj_primary_care_association_fqhcs",
+        "nj_nj_tdi_temporary_disability_insurance_do",
+        "nj_nj_fli_family_leave_insurance_dol"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "nj_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "nj_njhelps_nj_snap_dcf",
+        "nj_community_foodbank_of_nj_nj_food_bank_ne",
+        "nj_wic_new_jersey"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    }
+  ]
+}

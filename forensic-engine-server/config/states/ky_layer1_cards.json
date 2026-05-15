@@ -1,0 +1,339 @@
+{
+  "meta": {
+    "state": "KY",
+    "version": "3.0",
+    "cluster_count": 7
+  },
+  "clusters": [
+    {
+      "cluster_id": "ky_benefits",
+      "cluster_label": "Benefits",
+      "cards": [
+        {
+          "card_id": "ky_snap_kentucky_food_benefits",
+          "title": "SNAP / Kentucky Food Benefits (DCBS - kynect)",
+          "phone": "855-459-6328",
+          "website": "kynect.ky.gov",
+          "notes": "Provides food benefits to low-income individuals and families."
+        },
+        {
+          "card_id": "ky_gods_pantry_food_bank",
+          "title": "God's Pantry Food Bank",
+          "phone": "859-255-6592",
+          "website": "godspantry.org",
+          "notes": "Largest food bank in central/eastern Kentucky, serving 50 counties."
+        },
+        {
+          "card_id": "ky_dare_to_care_food_bank",
+          "title": "Dare to Care Food Bank",
+          "phone": "502-966-2821",
+          "website": "daretocare.org",
+          "notes": "Primary food bank for Louisville and surrounding counties."
+        },
+        {
+          "card_id": "ky_community_action_kentucky_food_pantry_network",
+          "title": "Community Action Kentucky - Food Pantry Network",
+          "phone": "859-233-4600",
+          "website": "communityactionky.org",
+          "notes": "Statewide network of Community Action Agencies providing emergency food, SNAP outreach, and basic needs."
+        },
+        {
+          "card_id": "ky_kentucky_liheap_low_income_energy_assistance",
+          "title": "Kentucky LIHEAP / Low-Income Energy Assistance",
+          "phone": "800-456-3452",
+          "website": "chfs.ky.gov/liheap",
+          "notes": "Provides heating, cooling, and crisis shutoff prevention assistance."
+        }
+      ]
+    },
+    {
+      "cluster_id": "ky_health",
+      "cluster_label": "Health",
+      "cards": [
+        {
+          "card_id": "ky_wic_kentucky",
+          "title": "WIC Kentucky",
+          "phone": "502-564-3827",
+          "website": "chfs.ky.gov/wic",
+          "notes": "Provides supplemental nutrition for pregnant, postpartum women, infants, and children under 5."
+        },
+        {
+          "card_id": "ky_kentucky_medicaid_kynect",
+          "title": "Kentucky Medicaid / kynect (CHFS)",
+          "phone": "855-459-6328",
+          "website": "kynect.ky.gov",
+          "notes": "Provides health coverage to low-income individuals and families."
+        },
+        {
+          "card_id": "ky_university_of_louisville_hospital_uofl_health",
+          "title": "University of Louisville Hospital / UofL Health",
+          "phone": "502-562-3000",
+          "website": "uoflhealth.org",
+          "notes": "Academic medical center with charity care, safety net hospital."
+        },
+        {
+          "card_id": "ky_university_of_kentucky_healthcare",
+          "title": "University of Kentucky HealthCare",
+          "phone": "859-323-5000",
+          "website": "ukhealthcare.uky.edu",
+          "notes": "Academic medical center, charity care, rural outreach."
+        },
+        {
+          "card_id": "ky_kentucky_federally_qualified_health_centers",
+          "title": "Kentucky Federally Qualified Health Centers (FQHCs)",
+          "phone": null,
+          "website": "findahealthcenter.hrsa.gov",
+          "notes": "Provides primary, dental, and behavioral health services regardless of insurance."
+        },
+        {
+          "card_id": "ky_volunteers_of_america_mid_states",
+          "title": "Volunteers of America Mid-States",
+          "phone": "502-585-9100",
+          "website": "voamid.org",
+          "notes": "Provides behavioral health, SUD treatment, opioid recovery, and housing for adults with mental illness."
+        }
+      ]
+    },
+    {
+      "cluster_id": "ky_housing",
+      "cluster_label": "Housing",
+      "cards": [
+        {
+          "card_id": "ky_kentucky_housing_corporation",
+          "title": "Kentucky Housing Corporation (KHC)",
+          "phone": "502-564-7630",
+          "website": "kyhousing.org",
+          "notes": "State-level coordination of housing assistance programs."
+        }
+      ]
+    },
+    {
+      "cluster_id": "ky_civil_rights",
+      "cluster_label": "Civil Rights",
+      "cards": [
+        {
+          "card_id": "ky_legal_aid_of_the_bluegrass",
+          "title": "Legal Aid of the Bluegrass",
+          "phone": "859-233-3840",
+          "website": "lablaw.org",
+          "notes": "Provides legal assistance for housing, family, benefits, and DV cases."
+        },
+        {
+          "card_id": "ky_appalachian_research_and_defense_fund_of_kentucky",
+          "title": "Appalachian Research and Defense Fund of Kentucky (AppalReD)",
+          "phone": "800-888-7233",
+          "website": "appalmhp.org",
+          "notes": "Primary legal aid for Eastern Kentucky Appalachian corridor."
+        },
+        {
+          "card_id": "ky_louisville_legal_aid_society_kentucky_legal_aid",
+          "title": "Louisville Legal Aid Society / Kentucky Legal Aid",
+          "phone": "502-584-1254",
+          "website": "kyjustice.org",
+          "notes": "Primary legal aid for Louisville."
+        },
+        {
+          "card_id": "ky_kentucky_legal_aid",
+          "title": "Kentucky Legal Aid",
+          "phone": "502-584-1254",
+          "website": "kyjustice.org",
+          "notes": "Primary Louisville legal aid."
+        },
+        {
+          "card_id": "ky_appalred_appalachian_research_and_defense_fund",
+          "title": "AppalReD - Appalachian Research and Defense Fund",
+          "phone": "800-888-7233",
+          "website": "appalmhp.org",
+          "notes": "Unique capacity for Eastern Kentucky coal country."
+        },
+        {
+          "card_id": "ky_kentucky_bar_association_lawyer_finder",
+          "title": "Kentucky Bar Association Lawyer Finder",
+          "phone": "502-564-3795",
+          "website": "kybar.org",
+          "notes": "Referral to civil legal aid and low-cost private attorneys."
+        }
+      ]
+    },
+    {
+      "cluster_id": "ky_family",
+      "cluster_label": "Family",
+      "cards": [
+        {
+          "card_id": "ky_kentucky_coalition_against_dv_kcade_safeline",
+          "title": "Kentucky Coalition Against DV (KCADV) / SafeLine",
+          "phone": "800-544-2022",
+          "website": "kcadv.org",
+          "notes": "24/7 statewide DV/SA hotline, crisis intervention, shelter referral, and safety planning."
+        },
+        {
+          "card_id": "ky_center_for_women_and_families",
+          "title": "Center for Women and Families",
+          "phone": "502-581-7200",
+          "website": "thecenteronline.org",
+          "notes": "Largest DV program in Kentucky, providing shelter, legal advocacy, and transitional housing."
+        },
+        {
+          "card_id": "ky_hope_healing_our_people_everyday",
+          "title": "HOPE (Healing Our People Everyday)",
+          "phone": "606-329-9304",
+          "website": "hopeofkentucky.org",
+          "notes": "Rural Eastern Kentucky DV service providing shelter, advocacy, and legal referral."
+        }
+      ]
+    },
+    {
+      "cluster_id": "ky_employment",
+      "cluster_label": "Employment",
+      "cards": [
+        {
+          "card_id": "ky_kentucky_ui_kewes",
+          "title": "Kentucky UI (KEWES)",
+          "phone": "502-564-2900",
+          "website": "kcc.ky.gov",
+          "notes": "Provides unemployment benefits to eligible workers."
+        }
+      ]
+    },
+    {
+      "cluster_id": "ky_consumer",
+      "cluster_label": "Consumer",
+      "cards": [
+        {
+          "card_id": "ky_kentucky_public_service_commission",
+          "title": "Kentucky Public Service Commission (PSC)",
+          "phone": "800-772-4636",
+          "website": "psc.ky.gov",
+          "notes": "Handles utility shutoff complaints and provides winter shutoff protection."
+        }
+      ]
+    },
+    {
+      "cluster_id": "ky_mental_health",
+      "cluster_name": "Mental Health System",
+      "icon": "brain",
+      "cards": [
+        {
+          "card_id": "ky_mh_crisis_line",
+          "title": "988 Suicide & Crisis Lifeline",
+          "summary": "Call or text 988 for immediate mental health crisis support. Free, confidential, 24/7. Trained counselors can help with suicidal thoughts, emotional distress, substance use, and mental health crises. Also available via chat at 988lifeline.org.",
+          "who_qualifies": "Anyone experiencing a mental health crisis, suicidal thoughts, or emotional distress.",
+          "how_to_access": "Call or text 988. Chat at 988lifeline.org. For veterans, press 1 after dialing 988.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "ky_mh_nami",
+          "title": "NAMI Helpline & Support Groups",
+          "summary": "National Alliance on Mental Illness provides free peer support, education, and advocacy. NAMI HelpLine: 1-800-950-NAMI (6264). Family-to-Family program helps families understand mental health conditions and navigate the system.",
+          "who_qualifies": "Individuals with mental health conditions and their family members.",
+          "how_to_access": "Call 1-800-950-NAMI or text 'HELPLINE' to 62640. Find local NAMI affiliate at nami.org/find-support.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "ky_mh_protection_advocacy",
+          "title": "Protection & Advocacy Organization",
+          "summary": "Every state has a federally mandated Protection & Advocacy (P&A) organization with legal authority to investigate abuse and neglect in psychiatric facilities. P&A organizations can enter any facility, access records, and file lawsuits. This is often the most powerful tool available for people harmed in the mental health system.",
+          "who_qualifies": "Anyone with a disability who has experienced abuse, neglect, or rights violations in a facility.",
+          "how_to_access": "Find your state P&A at ndrn.org/about/ndrn-member-agencies/ or call the NDRN at 202-408-9514.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "ky_mh_know_your_rights",
+          "title": "Know Your Rights: Kentucky 72-Hour Hold",
+          "summary": "If you are placed on an involuntary hold in KY, you have rights: the initial hold cannot exceed 72 hours without a court hearing. You have the right to an attorney at the hearing. You have the right to present evidence and call witnesses. You have the right to an independent psychiatric evaluation. You can challenge the hold at any time.",
+          "who_qualifies": "Anyone placed on an involuntary psychiatric hold or facing commitment proceedings.",
+          "how_to_access": "Request to speak with the patient advocate. Ask for a copy of your patient rights. Contact your state's Protection & Advocacy organization.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "ky_mh_records_rights",
+          "title": "Your Right to Your Psychiatric Records",
+          "summary": "Under HIPAA (45 CFR \u00a7 164.524), you have the right to access your complete medical record, including psychiatric treatment records. The facility must respond within 30 days. If they deny access, you can file a complaint with HHS Office for Civil Rights. Under HIPAA \u00a7 164.526, you also have the right to request amendments to inaccurate records.",
+          "who_qualifies": "Any current or former psychiatric patient.",
+          "how_to_access": "Submit a written request to the facility's Health Information Management department. If denied, file complaint at hhs.gov/ocr.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "ky_mh_samhsa",
+          "title": "SAMHSA National Helpline",
+          "summary": "Free, confidential, 24/7 treatment referral and information service for mental health and substance use disorders. Available in English and Spanish. Provides referrals to local treatment facilities, support groups, and community-based organizations.",
+          "who_qualifies": "Anyone seeking mental health or substance use treatment information and referrals.",
+          "how_to_access": "Call 1-800-662-HELP (4357) or visit findtreatment.gov.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        }
+      ]
+    }
+  ]
+}

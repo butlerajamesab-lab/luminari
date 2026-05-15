@@ -1,0 +1,281 @@
+{
+  "meta": {
+    "state": "WY",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "wy_wyoming_food_for_thought_food_bank_of_wy",
+        "wy_wyoming_medicaid_dfs_categorical_only",
+        "wy_wyoming_legal_services_only_statewide_le",
+        "wy_wyoming_ui_dws",
+        "wy_wyoming_dv_services_wdvsa",
+        "wy_wyoming_veterans_commission"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "wy_wic_wyoming",
+        "wy_eastern_shoshone_tribe_social_services",
+        "wy_northern_arapaho_tribe_social_services",
+        "wy_wyoming_tanf_dfs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "consumer_protection",
+      "programs": [
+        "wy_wyoming_legal_services_only_statewide_le"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "wy_wyoming_snap_food_assistance_dfs",
+        "wy_wic_wyoming",
+        "wy_wyoming_community_development_authority_",
+        "wy_wyoming_tanf_dfs",
+        "wy_wyoming_liheap_dfs",
+        "wy_wyoming_veterans_commission"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "wy_wyoming_community_development_authority_",
+        "wy_wyoming_legal_services_only_statewide_le",
+        "wy_eastern_shoshone_tribe_social_services",
+        "wy_northern_arapaho_tribe_social_services"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "wy_wyoming_medicaid_dfs_categorical_only",
+        "wy_wyoming_coverage_gap_routing_non_categor",
+        "wy_ihs_wind_river_service_unit_eastern_shos",
+        "wy_wyoming_primary_care_association_fqhcs",
+        "wy_eastern_shoshone_tribe_social_services",
+        "wy_northern_arapaho_tribe_social_services"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "wy_wyoming_liheap_dfs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "wy_involuntary_hold_law",
+        "wy_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "wy_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "wy_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "wy_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "wy_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "wy_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "wy_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "wy_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "wy_restraint_seclusion_limits",
+        "wy_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "wy_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "wy_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "wy_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

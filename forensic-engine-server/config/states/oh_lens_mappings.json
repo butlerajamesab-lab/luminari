@@ -1,0 +1,152 @@
+{
+  "meta": {
+    "state": "OH",
+    "state_name": "Ohio",
+    "layer": "lens_mappings",
+    "version": "1.0.0",
+    "date_created": "2026-03-07",
+    "source": "Luminari OH Three-Layer Registry"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "housing",
+      "cluster_ids": [
+        "oh_housing",
+        "oh_legal"
+      ],
+      "pipeline_ids": [
+        "tenant_rights"
+      ],
+      "flag_ids": [
+        "oh_eviction_fast"
+      ]
+    },
+    {
+      "lens_id": "workplace",
+      "cluster_ids": [
+        "oh_cash",
+        "oh_civil_rights",
+        "oh_legal"
+      ],
+      "pipeline_ids": [
+        "wage_theft"
+      ],
+      "flag_ids": [
+        "oh_minimum_wage",
+        "oh_ui_21day"
+      ]
+    },
+    {
+      "lens_id": "consumer",
+      "cluster_ids": [
+        "oh_food",
+        "oh_cash",
+        "oh_utilities",
+        "oh_healthcare"
+      ],
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "flag_ids": [
+        "oh_snap_abawd",
+        "oh_tanf_36month",
+        "oh_heap_season"
+      ]
+    },
+    {
+      "lens_id": "medical",
+      "cluster_ids": [
+        "oh_healthcare"
+      ],
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "medicaid_denial"
+      ],
+      "flag_ids": [
+        "oh_medicaid_expansion"
+      ]
+    },
+    {
+      "lens_id": "safety_risk",
+      "cluster_ids": [
+        "oh_dv",
+        "oh_legal"
+      ],
+      "pipeline_ids": [
+        "tenant_rights"
+      ],
+      "flag_ids": []
+    },
+    {
+      "lens_id": "institutional_accountability",
+      "cluster_ids": [
+        "oh_civil_rights",
+        "oh_legal"
+      ],
+      "pipeline_ids": [
+        "police_misconduct",
+        "wage_theft",
+        "tenant_rights"
+      ],
+      "flag_ids": [
+        "oh_ocrc_2year"
+      ]
+    },
+    {
+      "lens_id": "custody",
+      "cluster_ids": [
+        "oh_food",
+        "oh_healthcare",
+        "oh_cash",
+        "oh_legal"
+      ],
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "flag_ids": [
+        "oh_tanf_36month"
+      ]
+    },
+    {
+      "lens_id": "regulatory_compliance",
+      "cluster_ids": [
+        "oh_utilities"
+      ],
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "flag_ids": [
+        "oh_heap_season"
+      ]
+    },
+    {
+      "lens_id": "vulnerable_population",
+      "cluster_ids": [],
+      "pipeline_ids": [],
+      "flag_ids": []
+    },
+    {
+      "lens_id": "elder_abuse",
+      "cluster_ids": [
+        "oh_healthcare",
+        "oh_legal"
+      ],
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "flag_ids": []
+    },
+    {
+      "lens_id": "procedural_timeliness",
+      "cluster_ids": [
+        "oh_legal",
+        "oh_healthcare"
+      ],
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "flag_ids": []
+    }
+  ]
+}

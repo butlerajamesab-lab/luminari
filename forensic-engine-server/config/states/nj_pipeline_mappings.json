@@ -1,0 +1,280 @@
+{
+  "meta": {
+    "state": "NJ",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "nj_community_foodbank_of_nj_nj_food_bank_ne",
+        "nj_nj_familycare_medicaid_dmahs",
+        "nj_university_hospital_newark_nj_safety_net",
+        "nj_legal_services_of_nj_lsnj",
+        "nj_new_jersey_ui_nj_dol",
+        "nj_make_the_road_nj_wind_immigration_servic",
+        "nj_nj_veterans_service_network_dvs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "nj_njhelps_nj_snap_dcf",
+        "nj_wic_new_jersey",
+        "nj_nj_tanf_workfirst_nj_dcf",
+        "nj_nj_fli_family_leave_insurance_dol"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "nj_njhelps_nj_snap_dcf",
+        "nj_wic_new_jersey",
+        "nj_nj_housing_and_mortgage_finance_agency_n",
+        "nj_nj_tanf_workfirst_nj_dcf",
+        "nj_nj_tdi_temporary_disability_insurance_do",
+        "nj_nj_liheap_lifeline_utility_assistance_dh",
+        "nj_nj_veterans_service_network_dvs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "employment_dispute",
+      "programs": [
+        "nj_nj_tdi_temporary_disability_insurance_do"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "nj_nj_housing_and_mortgage_finance_agency_n",
+        "nj_legal_services_of_nj_lsnj",
+        "nj_nj_dv_hotline_njcasa"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "nj_nj_familycare_medicaid_dmahs",
+        "nj_nj_primary_care_association_fqhcs",
+        "nj_nj_tdi_temporary_disability_insurance_do",
+        "nj_nj_fli_family_leave_insurance_dol"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "nj_nj_liheap_lifeline_utility_assistance_dh"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nj_involuntary_hold_law",
+        "nj_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nj_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nj_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nj_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nj_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nj_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "nj_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nj_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nj_restraint_seclusion_limits",
+        "nj_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nj_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "nj_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nj_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

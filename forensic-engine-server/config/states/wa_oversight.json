@@ -1,0 +1,873 @@
+{
+  "meta": {
+    "state": "WA",
+    "state_name": "Washington",
+    "layer": "oversight",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "date_verified": "2026-03-06",
+    "source": "Luminari WA Master Template v1.0 \u2014 Northwest Hope Foundation"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "insurer",
+      "state": "WA",
+      "bodies": [
+        {
+          "oversight_body": "WA Office of Insurance Commissioner (OIC)",
+          "jurisdiction": "primary",
+          "phone": "800-562-6900",
+          "complaint_portal": "https://oic.wa.gov/file-complaint",
+          "what_to_report": "Claim denial, bad faith, coverage dispute",
+          "legal_threshold": "Insurer violates WA insurance regulations or acts in bad faith",
+          "response_timeline": "Response within 15 business days typically",
+          "escalation_next": "WA Attorney General Consumer Protection",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://oic.wa.gov",
+          "street_address": "302 Sid Snyder Ave SW Ste 200",
+          "city": "Olympia",
+          "state_code": "WA",
+          "zip": "98504",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "WA Attorney General \u2014 Consumer Protection",
+          "jurisdiction": "state_escalation",
+          "phone": "800-551-4636",
+          "complaint_portal": "https://ag.wa.gov/consumer/file-complaint",
+          "what_to_report": "Pattern of consumer fraud, systemic bad faith",
+          "legal_threshold": "Pattern of unfair or deceptive practices under CPA",
+          "response_timeline": "Escalate if OIC does not act within 60 days",
+          "escalation_next": "CFPB (federal)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://ag.wa.gov",
+          "street_address": "800 5th Ave Ste 2000",
+          "city": "Seattle",
+          "state_code": "WA",
+          "zip": "98104",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Consumer Financial Protection Bureau (CFPB)",
+          "jurisdiction": "federal",
+          "phone": "855-411-2372",
+          "complaint_portal": "https://consumerfinance.gov/complaint",
+          "what_to_report": "Billing disputes, ERISA plan issues",
+          "legal_threshold": "Federal jurisdiction for ERISA employer plans",
+          "response_timeline": "Federal investigation timeline",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "CFPB",
+          "pattern_threshold": 10,
+          "source": "https://consumerfinance.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CMS (Centers for Medicare & Medicaid Services)",
+          "jurisdiction": "federal",
+          "phone": "800-633-4227",
+          "complaint_portal": "https://cms.gov/medicare/appeals",
+          "what_to_report": "Medicare Advantage or Medicaid managed care denials",
+          "legal_threshold": "Federal jurisdiction for federal payer programs",
+          "response_timeline": "Federal investigation timeline",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "CMS",
+          "pattern_threshold": 10,
+          "source": "https://cms.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "landlord",
+      "state": "WA",
+      "bodies": [
+        {
+          "oversight_body": "Seattle Office of Housing",
+          "jurisdiction": "primary",
+          "phone": "206-684-0383",
+          "complaint_portal": "https://seattle.gov/housing/report-a-problem",
+          "what_to_report": "Seattle housing code violations, illegal lockouts, utility shutoff",
+          "legal_threshold": "Violation of Seattle housing code or RCW 59.18",
+          "response_timeline": "Inspector dispatched within days for urgent complaints",
+          "escalation_next": "WA Attorney General Renters' Rights",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://seattle.gov/housing",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "King County Code Enforcement",
+          "jurisdiction": "primary",
+          "phone": "206-296-6600",
+          "complaint_portal": "https://kingcounty.gov/code-enforcement",
+          "what_to_report": "Unincorporated KC housing code violations",
+          "legal_threshold": "Violation of King County housing code",
+          "response_timeline": "Complaint triggers inspection",
+          "escalation_next": "WA Attorney General",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://kingcounty.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "WA Attorney General \u2014 Renters' Rights Hotline",
+          "jurisdiction": "state_escalation",
+          "phone": "833-457-4922",
+          "complaint_portal": "https://ag.wa.gov/renters-rights",
+          "what_to_report": "Tenant rights info, referral, complaint routing",
+          "legal_threshold": "Navigation and referral \u2014 not direct enforcement",
+          "response_timeline": "Not enforcement \u2014 navigation and referral",
+          "escalation_next": "WA AG Consumer Protection",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://ag.wa.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "WA Attorney General \u2014 Consumer Protection",
+          "jurisdiction": "state_escalation",
+          "phone": "800-551-4636",
+          "complaint_portal": "https://ag.wa.gov/consumer/file-complaint",
+          "what_to_report": "Pattern of landlord fraud, illegal practices across multiple tenants",
+          "legal_threshold": "Pattern of violations under WA Consumer Protection Act",
+          "response_timeline": "For systemic violations across multiple tenants",
+          "escalation_next": "HUD Fair Housing (if discrimination)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://ag.wa.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "HUD Fair Housing",
+          "jurisdiction": "federal",
+          "phone": "800-669-9777",
+          "complaint_portal": "https://hud.gov/program_offices/fair_housing",
+          "what_to_report": "Housing discrimination based on protected class",
+          "legal_threshold": "Fair Housing Act violation \u2014 discrimination in housing",
+          "response_timeline": "File within 1 year of discrimination",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "HUD",
+          "pattern_threshold": 10,
+          "source": "https://hud.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Seattle Office for Civil Rights (SOCR)",
+          "jurisdiction": "city",
+          "phone": "206-684-4500",
+          "complaint_portal": "https://seattle.gov/civilrights/file-complaint",
+          "what_to_report": "Housing discrimination in Seattle",
+          "legal_threshold": "Seattle Fair Housing Ordinance violation",
+          "response_timeline": "File within 1 year \u2014 may dual-file with HUD",
+          "escalation_next": "HUD Fair Housing",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://seattle.gov/civilrights",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "nursing_home",
+      "state": "WA",
+      "bodies": [
+        {
+          "oversight_body": "WA Adult Protective Services (APS)",
+          "jurisdiction": "primary",
+          "phone": "866-363-4276",
+          "complaint_portal": "https://dshs.wa.gov/aps",
+          "what_to_report": "Abuse, neglect, exploitation of vulnerable adults",
+          "legal_threshold": "Reasonable cause to believe abuse/neglect/exploitation under RCW 74.34",
+          "response_timeline": "24/7 intake \u2014 investigates within 24\u201372 hours",
+          "escalation_next": "WA DSHS Residential Care Services",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://dshs.wa.gov/aps",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "WA DSHS Residential Care Services (RCS)",
+          "jurisdiction": "primary",
+          "phone": "800-562-6078",
+          "complaint_portal": "https://dshs.wa.gov/rcs/file-complaint",
+          "what_to_report": "Nursing home / assisted living facility violations",
+          "legal_threshold": "Licensing violations, care standard violations",
+          "response_timeline": "Investigates licensing and care standards",
+          "escalation_next": "WA LTC Ombudsman",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://dshs.wa.gov/rcs",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "WA Long-Term Care Ombudsman",
+          "jurisdiction": "state_advocacy",
+          "phone": "800-562-6028",
+          "complaint_portal": "https://waombudsman.org/file-complaint",
+          "what_to_report": "Resident rights, care quality, discharge disputes",
+          "legal_threshold": "Resident rights violation or care quality concern",
+          "response_timeline": "Free, confidential, resident-centered advocacy",
+          "escalation_next": "CMS (federal)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://waombudsman.org",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CMS \u2014 Medicare/Medicaid Certification",
+          "jurisdiction": "federal",
+          "phone": "800-633-4227",
+          "complaint_portal": "https://cms.gov/medicare/provider-enrollment-and-certification",
+          "what_to_report": "Medicare/Medicaid certified facility complaints",
+          "legal_threshold": "Federal oversight for federally certified facilities",
+          "response_timeline": "Federal investigation \u2014 serious violations",
+          "escalation_next": "DOJ Elder Justice Initiative",
+          "federal_hook": true,
+          "federal_agency": "CMS",
+          "pattern_threshold": 10,
+          "source": "https://cms.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "DOJ Elder Justice Initiative",
+          "jurisdiction": "federal_escalation",
+          "phone": "833-372-8311",
+          "complaint_portal": "https://justice.gov/elderjustice/elder-fraud-hotline",
+          "what_to_report": "Criminal elder abuse, fraud, systematic neglect",
+          "legal_threshold": "Criminal conduct or federal fraud",
+          "response_timeline": "For criminal conduct or federal fraud",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "DOJ",
+          "pattern_threshold": 10,
+          "source": "https://justice.gov/elderjustice",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "employer",
+      "state": "WA",
+      "bodies": [
+        {
+          "oversight_body": "WA Department of Labor & Industries (L&I) \u2014 Labor Standards",
+          "jurisdiction": "primary",
+          "phone": "866-219-7321",
+          "complaint_portal": "https://lni.wa.gov/workers-rights/file-complaint",
+          "what_to_report": "Wage theft, overtime, minimum wage, final paycheck",
+          "legal_threshold": "Violation of RCW 49.48 (Wage Payment Act) or RCW 49.46 (Minimum Wage Act)",
+          "response_timeline": "WA: 3-year statute of limitations",
+          "escalation_next": "WA AG Consumer Protection (pattern)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://lni.wa.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "WA State Human Rights Commission (WSHRC)",
+          "jurisdiction": "primary",
+          "phone": "800-233-3247",
+          "complaint_portal": "https://hum.wa.gov/file-complaint",
+          "what_to_report": "Employment discrimination (race, gender, disability, etc.)",
+          "legal_threshold": "Violation of RCW 49.60 (WA Law Against Discrimination)",
+          "response_timeline": "File within 6 months of last discriminatory act",
+          "escalation_next": "EEOC (federal)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://hum.wa.gov",
+          "street_address": "711 S Capitol Way Ste 402",
+          "city": "Olympia",
+          "state_code": "WA",
+          "zip": "98504",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "EEOC \u2014 Seattle Field Office",
+          "jurisdiction": "federal",
+          "phone": "800-669-4000",
+          "complaint_portal": "https://eeoc.gov/filing-charge-discrimination",
+          "what_to_report": "Federal discrimination claims (Title VII, ADA, ADEA)",
+          "legal_threshold": "Federal employment discrimination law",
+          "response_timeline": "File within 300 days \u2014 required before federal lawsuit",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "EEOC",
+          "pattern_threshold": 10,
+          "source": "https://eeoc.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "US DOL Wage and Hour Division (WHD)",
+          "jurisdiction": "federal",
+          "phone": "866-487-9243",
+          "complaint_portal": "https://dol.gov/agencies/whd/contact",
+          "what_to_report": "FLSA violations \u2014 federal overtime, minimum wage",
+          "legal_threshold": "FLSA violation (interstate commerce, federal contractors)",
+          "response_timeline": "Federal: 2-year statute, 3 if willful",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "DOL WHD",
+          "pattern_threshold": 10,
+          "source": "https://dol.gov/agencies/whd",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "NLRB \u2014 Seattle Regional Office",
+          "jurisdiction": "federal",
+          "phone": "206-220-6300",
+          "complaint_portal": "https://nlrb.gov/case-activity/file-charge",
+          "what_to_report": "Labor relations violations, union rights, retaliation",
+          "legal_threshold": "Unfair labor practice under NLRA",
+          "response_timeline": "File within 6 months of violation",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "NLRB",
+          "pattern_threshold": 10,
+          "source": "https://nlrb.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "WA Attorney General \u2014 Consumer Protection (pattern)",
+          "jurisdiction": "state_escalation",
+          "phone": "800-551-4636",
+          "complaint_portal": "https://ag.wa.gov/consumer/file-complaint",
+          "what_to_report": "Pattern of wage theft or labor violations across multiple workers",
+          "legal_threshold": "Pattern of violations under WA Consumer Protection Act",
+          "response_timeline": "Escalate if L&I investigation does not resolve",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://ag.wa.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "government_agency",
+      "state": "WA",
+      "bodies": [
+        {
+          "oversight_body": "WA DSHS Office of Administrative Hearings (OAH)",
+          "jurisdiction": "primary",
+          "phone": "360-407-2700",
+          "complaint_portal": "https://oah.wa.gov",
+          "what_to_report": "Any DSHS benefit denial, reduction, or termination",
+          "legal_threshold": "Right to fair hearing under WAC 388-02",
+          "response_timeline": "Benefits may continue pending appeal if timely requested",
+          "escalation_next": "WA Governor's Constituent Services",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://oah.wa.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "WA Health Care Authority (HCA) Appeals",
+          "jurisdiction": "primary",
+          "phone": "800-562-3022",
+          "complaint_portal": "https://hca.wa.gov/appeals-and-grievances",
+          "what_to_report": "Apple Health (Medicaid) denials",
+          "legal_threshold": "Right to appeal under HCA regulations",
+          "response_timeline": "File appeal within 90 days",
+          "escalation_next": "HHS/CMS (federal Medicaid oversight)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://hca.wa.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "WA Employment Security Department (ESD) Appeals",
+          "jurisdiction": "primary",
+          "phone": "800-318-6022",
+          "complaint_portal": "https://esd.wa.gov/unemployment/appeals",
+          "what_to_report": "Unemployment insurance denial or overpayment",
+          "legal_threshold": "Right to appeal UI determination",
+          "response_timeline": "Appeal within 30 days of initial determination",
+          "escalation_next": "WA Governor's Constituent Services",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://esd.wa.gov",
+          "street_address": "212 Maple Park Ave SE",
+          "city": "Olympia",
+          "state_code": "WA",
+          "zip": "98504",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "WA Governor's Constituent Services",
+          "jurisdiction": "state_escalation",
+          "phone": "360-902-4111",
+          "complaint_portal": "https://governor.wa.gov/contact",
+          "what_to_report": "Systemic agency failures, non-responsive agencies",
+          "legal_threshold": "Escalation when agencies are non-responsive",
+          "response_timeline": "Escalate if OAH or agency unresponsive",
+          "escalation_next": "WA State Legislature",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://governor.wa.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "WA State Legislature \u2014 Constituent Services",
+          "jurisdiction": "state_escalation",
+          "phone": null,
+          "complaint_portal": "https://leg.wa.gov/legislature/pages/contactlegislator.aspx",
+          "what_to_report": "Pattern of agency misapplication affecting many people",
+          "legal_threshold": "Systemic issues requiring legislative pressure",
+          "response_timeline": "Legislative pressure for systemic issues",
+          "escalation_next": "HHS/CMS (federal)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 10,
+          "source": "https://leg.wa.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "HHS / CMS (Federal Medicaid Oversight)",
+          "jurisdiction": "federal",
+          "phone": "877-267-2323",
+          "complaint_portal": "https://cms.gov/about-cms/contact-cms",
+          "what_to_report": "Systemic Medicaid issues or federal program violations",
+          "legal_threshold": "Federal jurisdiction over federal Medicaid dollars",
+          "response_timeline": "Federal investigation timeline",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "HHS/CMS",
+          "pattern_threshold": 10,
+          "source": "https://cms.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "law_enforcement",
+      "state": "WA",
+      "bodies": [
+        {
+          "oversight_body": "Seattle Office of Police Accountability (OPA)",
+          "jurisdiction": "primary",
+          "phone": "206-233-5030",
+          "complaint_portal": "https://seattle.gov/opa/file-a-complaint",
+          "what_to_report": "SPD officer misconduct complaints",
+          "legal_threshold": "SPD officer conduct violation",
+          "response_timeline": "OPA investigates SPD officer conduct",
+          "escalation_next": "WA CJTC",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://seattle.gov/opa",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "WA State Patrol \u2014 Internal Affairs",
+          "jurisdiction": "primary",
+          "phone": "360-596-4000",
+          "complaint_portal": "https://wsp.wa.gov/about/internal-affairs",
+          "what_to_report": "WSP officer misconduct",
+          "legal_threshold": "WSP officer conduct violation",
+          "response_timeline": "File complaint in writing to WSP IA",
+          "escalation_next": "WA CJTC",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://wsp.wa.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "King County Sheriff \u2014 Office of Police Ombudsman",
+          "jurisdiction": "primary",
+          "phone": "206-296-9199",
+          "complaint_portal": "https://kingcounty.gov/elected/sheriff/opo",
+          "what_to_report": "KCSO deputy misconduct",
+          "legal_threshold": "KCSO deputy conduct violation",
+          "response_timeline": "Office of Police Ombudsman investigates",
+          "escalation_next": "WA CJTC",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://kingcounty.gov/elected/sheriff",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "WA State Criminal Justice Training Commission (CJTC)",
+          "jurisdiction": "state_oversight",
+          "phone": "206-835-7300",
+          "complaint_portal": "https://cjtc.wa.gov/about/executive-director",
+          "what_to_report": "Officer certification issues, training violations",
+          "legal_threshold": "Can decertify officers for misconduct",
+          "response_timeline": "Can decertify officers for misconduct",
+          "escalation_next": "DOJ Civil Rights Division",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://cjtc.wa.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "DOJ Civil Rights Division",
+          "jurisdiction": "federal",
+          "phone": "202-514-3847",
+          "complaint_portal": "https://justice.gov/crt/contact-crt",
+          "what_to_report": "Pattern or practice of police misconduct / civil rights violations",
+          "legal_threshold": "Pattern and practice investigation under 42 USC 14141",
+          "response_timeline": "Federal pattern and practice investigations",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "DOJ CRT",
+          "pattern_threshold": 10,
+          "source": "https://justice.gov/crt",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "FBI Seattle (Federal Civil Rights)",
+          "jurisdiction": "federal",
+          "phone": "206-622-0460",
+          "complaint_portal": "https://tips.fbi.gov",
+          "what_to_report": "Federal civil rights violations by law enforcement",
+          "legal_threshold": "Criminal civil rights violations under color of law (18 USC 242)",
+          "response_timeline": "Criminal referral for civil rights violations",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "FBI",
+          "pattern_threshold": 10,
+          "source": "https://fbi.gov/seattle",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "family_court",
+      "state": "WA",
+      "bodies": [
+        {
+          "oversight_body": "WA Commission on Judicial Conduct (CJC)",
+          "jurisdiction": "primary",
+          "phone": "360-753-4585",
+          "complaint_portal": "https://cjc.courts.wa.gov/complaint",
+          "what_to_report": "Judicial misconduct, bias, ethical violations",
+          "legal_threshold": "Judicial conduct violation under CJC rules",
+          "response_timeline": "CJC investigates judges statewide \u2014 complaints public after investigation",
+          "escalation_next": "WA Court of Appeals",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://cjc.courts.wa.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "WA State Bar Association (WSBA)",
+          "jurisdiction": "primary",
+          "phone": "206-443-9722",
+          "complaint_portal": "https://wsba.org/for-the-public/file-a-complaint",
+          "what_to_report": "Attorney misconduct (including GAL attorneys)",
+          "legal_threshold": "Attorney ethical violation under WA Rules of Professional Conduct",
+          "response_timeline": "Investigates attorney ethical violations",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://wsba.org",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "WA DCYF \u2014 Complaints about CPS Workers",
+          "jurisdiction": "state_oversight",
+          "phone": "866-363-4276",
+          "complaint_portal": "https://dcyf.wa.gov/contact",
+          "what_to_report": "CPS worker misconduct or procedure violations",
+          "legal_threshold": "DCYF internal complaint process",
+          "response_timeline": "DCYF internal complaint process",
+          "escalation_next": "WA Governor's Constituent Services",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://dcyf.wa.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "WA Court of Appeals \u2014 Appellate Review",
+          "jurisdiction": "state_escalation",
+          "phone": "360-956-5200",
+          "complaint_portal": "https://courts.wa.gov/appellate_trial_courts",
+          "what_to_report": "Appeal of family court orders",
+          "legal_threshold": "Legal error in family court proceedings",
+          "response_timeline": "Must file within deadlines \u2014 seek legal help first",
+          "escalation_next": "DOJ Civil Rights (if constitutional violation)",
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://courts.wa.gov",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "DOJ Civil Rights \u2014 Family Court Due Process",
+          "jurisdiction": "federal",
+          "phone": "202-514-3847",
+          "complaint_portal": "https://justice.gov/crt/contact-crt",
+          "what_to_report": "Constitutional due process violations in family court",
+          "legal_threshold": "Constitutional due process violation (14th Amendment)",
+          "response_timeline": "Federal jurisdiction for constitutional violations",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "DOJ CRT",
+          "pattern_threshold": 10,
+          "source": "https://justice.gov/crt",
+          "city": "Olympia",
+          "state": "WA",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "wa_med_board",
+          "name": "Washington Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Washington Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WA"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "wa_patient_adv",
+          "name": "Washington Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Washington Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WA"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "wa_health_dept",
+          "name": "Washington Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Washington Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WA"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WA"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "wa_pharm_board",
+          "name": "Washington Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Washington Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WA"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "wa_pa",
+          "name": "Washington Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Washington Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WA"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "wa_mha",
+          "name": "Washington Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Washington Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WA"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WA"
+    }
+  ]
+}

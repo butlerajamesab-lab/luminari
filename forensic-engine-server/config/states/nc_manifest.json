@@ -1,0 +1,73 @@
+{
+  "state": "NC",
+  "state_name": "North Carolina",
+  "version": "3.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-09",
+  "source": "luminari-nc-registry.docx",
+  "datasets": [
+    "food",
+    "cash_assistance",
+    "tribal",
+    "legal",
+    "healthcare",
+    "employment",
+    "housing",
+    "general",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "disability_claim",
+    "employment_dispute",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "utility_dispute",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "general",
+    "insurer",
+    "landlord",
+    "law_enforcement"
+  ],
+  "policy_flags": [
+    "nc_medicaid_expanded_dec2023",
+    "nc_farmworker_critical",
+    "nc_ui_350_10day_appeal",
+    "nc_snap_abawd_active",
+    "nc_ebci_sovereignty",
+    "nc_no_lgbtq_state_protection",
+    "nc_charlotte_metro_growth",
+    "nc_wage_claim_federal_primary"
+  ],
+  "statistics": {
+    "total_programs": 31,
+    "total_oversight_chains": 5,
+    "total_oversight_bodies": 12,
+    "total_flags": 8,
+    "total_help_contacts": 19,
+    "total_workflows": 4
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "employment",
+    "food"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ]
+}

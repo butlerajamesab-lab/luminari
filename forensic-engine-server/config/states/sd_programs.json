@@ -1,0 +1,392 @@
+{
+  "meta": {
+    "state": "SD",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "sd_south_dakota_medicaid_expanded",
+      "program_name": "South Dakota Medicaid (Expanded)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "South Dakota Medicaid",
+      "phone": "888-828-0059",
+      "website": "https://dss.sd.gov/medicaid",
+      "eligibility": "Adults 19\u201364 \u2264138% FPL; children \u2264201% FPL; elderly/disabled on SSI",
+      "apply_notes": "Medicaid expansion effective July 2023 (post-ballot initiative). Covers adults 19\u201364 up to 138% FPL. Apply through DSS.",
+      "source": "luminari-south-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "SD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sd_south_dakota_chip_healthy_kids",
+      "program_name": "South Dakota CHIP (Healthy Kids)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "South Dakota CHIP",
+      "phone": "888-828-0059",
+      "website": "https://dss.sd.gov",
+      "eligibility": "Children under 19; income 138\u2013201% FPL",
+      "apply_notes": "Child health coverage above Medicaid threshold. Covers through age 18.",
+      "source": "luminari-south-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "SD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sd_south_dakota_snap",
+      "program_name": "South Dakota SNAP",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "South Dakota SNAP",
+      "phone": "888-828-0059",
+      "website": "https://dss.sd.gov/snap",
+      "eligibility": "Income \u2264130% FPL; work requirements for ABD adults 18\u201349",
+      "apply_notes": "SNAP benefits through SD Dept. of Social Services. Apply online or at DSS offices.",
+      "source": "luminari-south-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "SD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sd_south_dakota_tanf_family_assistance",
+      "program_name": "South Dakota TANF (Family Assistance)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "South Dakota TANF",
+      "phone": "888-828-0059",
+      "website": "https://dss.sd.gov",
+      "eligibility": "Families with minor children; income and asset limits",
+      "apply_notes": "Cash assistance: $633/month (family of 3) \u2014 higher than most conservative states. 60-month lifetime limit.",
+      "source": "luminari-south-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "SD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sd_south_dakota_unemployment_insurance",
+      "program_name": "South Dakota Unemployment Insurance",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "employment_dispute"
+      ],
+      "agency": "South Dakota Unemployment Insurance",
+      "phone": "605-626-2452",
+      "website": "https://dlr.sd.gov",
+      "eligibility": "Involuntary separation; base period earnings required",
+      "apply_notes": "UI: max $547/week. Duration 26 weeks. Administered by SD Dept. of Labor.",
+      "source": "luminari-south-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "SD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sd_south_dakota_housing_development_authori",
+      "program_name": "South Dakota Housing Development Authority (SDHDA)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "South Dakota Housing Development Authority",
+      "phone": "605-773-3181",
+      "website": "https://sdhda.org",
+      "eligibility": "Income-based; varies by program",
+      "apply_notes": "Affordable housing, Section 8 vouchers, rental assistance, homebuyer programs.",
+      "source": "luminari-south-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "SD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sd_south_dakota_wic",
+      "program_name": "South Dakota WIC",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "South Dakota WIC",
+      "phone": "800-738-2301",
+      "website": "https://doh.sd.gov/wic",
+      "eligibility": "Pregnant/postpartum women, infants, children under 5; income \u2264185% FPL",
+      "apply_notes": "Women, Infants and Children nutrition through SD Dept. of Health.",
+      "source": "luminari-south-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "SD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sd_nine_tribal_nations_programs",
+      "program_name": "Nine Tribal Nations Programs",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Nine Tribal Nations Programs",
+      "phone": "",
+      "website": "https://bia.gov/regional-offices/great-plains",
+      "eligibility": "Tribal enrollment; IHS service area",
+      "apply_notes": "Nine Oceti Sakowin (Great Sioux Nation) tribal nations: Oglala Sioux, Rosebud Sioux, Standing Rock Sioux, Cheyenne River Sioux, Lower Brule Sioux, Crow Creek Sioux, Flandreau Santee Sioux, Sisseton-Wahpeton, and Yankton Sioux. Each operates IHS facilities, tribal social services, housing, and courts. Largest: Oglala Sioux 605-867-5821; Rosebud Sioux 605-747-2381.",
+      "source": "luminari-south-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "SD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sd_sd_division_of_aging_ageoptions",
+      "program_name": "SD Division of Aging (AgeOptions)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "SD Division of Aging",
+      "phone": "866-854-5465",
+      "website": "https://dhs.sd.gov/eldercare",
+      "eligibility": "Adults 60+; low-income priority",
+      "apply_notes": "Services for adults 60+: meal delivery, transportation, caregiver support. Eleven Area Agencies on Aging.",
+      "source": "luminari-south-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "SD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sd_south_dakota_vocational_rehabilitation",
+      "program_name": "South Dakota Vocational Rehabilitation",
+      "layer": "state",
+      "benefit_category": "employment",
+      "pipeline_ids": [
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "South Dakota Vocational Rehabilitation",
+      "phone": "605-773-3195",
+      "website": "https://dhs.sd.gov/vr",
+      "eligibility": "Documented disability; employment goal",
+      "apply_notes": "Employment services for people with disabilities.",
+      "source": "luminari-south-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "employment"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "employment"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "employment",
+      "city": "",
+      "state": "SD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sd_liheap_south_dakota",
+      "program_name": "LIHEAP South Dakota",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "LIHEAP South Dakota",
+      "phone": "888-828-0059",
+      "website": "https://dss.sd.gov",
+      "eligibility": "Income \u2264150% FPL",
+      "apply_notes": "Home energy assistance through community action agencies and DSS.",
+      "source": "luminari-south-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "SD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sd_east_river_dakota_plains_legal_services",
+      "program_name": "East River / Dakota Plains Legal Services",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "East River / Dakota Plains Legal Services",
+      "phone": "800-952-3015",
+      "website": "https://elpsd.org",
+      "eligibility": "Income \u2264125% FPL; tribal members may access regardless of income",
+      "apply_notes": "Free civil legal aid for low-income residents and tribal members. Two agencies cover the state.",
+      "source": "luminari-south-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "SD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "sd_sd_behavioral_health_services",
+      "program_name": "SD Behavioral Health Services",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "SD Behavioral Health Services",
+      "phone": "605-367-5236",
+      "website": "https://dss.sd.gov/behavioralhealth",
+      "eligibility": "All residents; Medicaid accepted; sliding scale",
+      "apply_notes": "Mental health and substance use services through DSS and community mental health centers. Crisis line: 988.",
+      "source": "luminari-south-dakota-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "SD",
+      "federal_interface": false
+    }
+  ]
+}

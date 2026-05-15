@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "state": "WI",
+    "version": "3.0"
+  },
+  "regions": [],
+  "county_overrides": [
+    {
+      "county_id": "milwaukee",
+      "county_name": "Milwaukee",
+      "fips_code": "",
+      "region": "statewide",
+      "population_estimate": "",
+      "courts": [],
+      "prosecutor": "",
+      "housing_authority": "",
+      "legal_aid": "",
+      "child_welfare": "",
+      "law_enforcement": "",
+      "utilities": "",
+      "override_details": "Extreme racial segregation and concentrated poverty. City and County are separate jurisdictions. Most benefit programs are county-administered. Housing court is in Milwaukee County Circuit Court. Police accountability is city. Health Department is both city and county (separate departments).",
+      "affected_programs": []
+    }
+  ],
+  "resolution_chain": []
+}

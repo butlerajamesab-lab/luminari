@@ -1,0 +1,361 @@
+{
+  "meta": {
+    "state": "NC",
+    "version": "3.0",
+    "date": "2026-03-09",
+    "total_chains": 5,
+    "total_bodies": 12,
+    "entity_types": [
+      "employer",
+      "general",
+      "insurer",
+      "landlord",
+      "law_enforcement"
+    ],
+    "source": "luminari-nc-registry"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "employer",
+      "state": "NC",
+      "bodies": [
+        {
+          "oversight_body": "NC Human Relations Commission (NCHRC)",
+          "jurisdiction": "primary",
+          "phone": "919-431-3030",
+          "complaint_portal": "https://ncdhhs.gov",
+          "what_to_report": "Housing/employment discrimination. 180-day SOL. No LGBTQ+ protection \u2014 EEOC only for those claims.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "180 DAYS \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC \u2014 Charlotte District (PRIMARY)",
+          "jurisdiction": "primary",
+          "phone": "800-669-4000",
+          "complaint_portal": "https://eeoc.gov",
+          "what_to_report": "Federal employment discrimination \u2014 PRIMARY pathway for LGBTQ+ claims in NC.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "300 days \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOL WHD \u2014 Raleigh (PRIMARY Wage)",
+          "jurisdiction": "primary",
+          "phone": "919-790-2741",
+          "complaint_portal": "https://dol.gov/whd",
+          "address": "4407 Bland Rd Ste 260, Raleigh, NC 27609",
+          "what_to_report": "FLSA wage claims \u2014 PRIMARY pathway (state process weak).",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "2 years (3 if willful) \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOL WHD \u2014 Charlotte",
+          "jurisdiction": "primary",
+          "phone": "704-749-3360",
+          "complaint_portal": "https://dol.gov/whd",
+          "address": "8701 Mallard Creek Rd Ste 240, Charlotte, NC 28262",
+          "what_to_report": "FLSA wage claims \u2014 Charlotte metro area.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "2 years (3 if willful) \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "NC DOL \u2014 Wage and Hour Bureau (Secondary)",
+          "jurisdiction": "secondary",
+          "phone": "919-707-7970",
+          "complaint_portal": "https://labor.nc.gov",
+          "what_to_report": "NCWHA wage claims \u2014 secondary to federal WHD.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "2 years",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "general",
+      "state": "NC",
+      "bodies": [
+        {
+          "oversight_body": "NC OAH \u2014 Benefits/UI Hearings",
+          "jurisdiction": "primary",
+          "phone": "919-431-3000",
+          "complaint_portal": "https://oah.nc.gov",
+          "address": "1711 New Hope Church Rd, Raleigh, NC 27609",
+          "what_to_report": "SNAP/Medicaid/TANF fair hearings (30 days). UI appeals (10 DAYS \u2014 FATAL).",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "30 days (benefits) / 10 days (UI) \u2014 FATAL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "NC DES \u2014 UI Appeals",
+          "jurisdiction": "primary",
+          "phone": "919-629-3000",
+          "complaint_portal": "https://des.nc.gov",
+          "address": "700 Wade Ave, Raleigh, NC 27605",
+          "what_to_report": "UI denial appeals \u2014 10-day deadline from mailing.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "10 DAYS from mailing \u2014 FATAL (contact legal aid within 5 days)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "insurer",
+      "state": "NC",
+      "bodies": [
+        {
+          "oversight_body": "NC Department of Insurance",
+          "jurisdiction": "primary",
+          "phone": "855-408-1212",
+          "complaint_portal": "https://ncdoi.gov",
+          "what_to_report": "Claim denial, bad faith. Insurance external review after internal denial.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "180 days",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "NC DHHS \u2014 Medicaid Managed Care",
+          "jurisdiction": "primary",
+          "phone": "888-245-0179",
+          "complaint_portal": "https://medicaid.ncdhhs.gov",
+          "what_to_report": "Medicaid managed care grievances.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "90 days",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "landlord",
+      "state": "NC",
+      "bodies": [
+        {
+          "oversight_body": "HUD Fair Housing \u2014 Mid-Atlantic",
+          "jurisdiction": "primary",
+          "phone": "800-669-9777",
+          "complaint_portal": "https://hud.gov",
+          "what_to_report": "Housing discrimination.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "1 year",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "law_enforcement",
+      "state": "NC",
+      "bodies": [
+        {
+          "oversight_body": "CMPD Internal Affairs",
+          "jurisdiction": "local",
+          "phone": "704-336-2307",
+          "complaint_portal": "https://charlottenc.gov",
+          "what_to_report": "Police misconduct \u2014 Charlotte-Mecklenburg.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "6 years",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "NC SBI \u2014 Civil Rights Unit",
+          "jurisdiction": "primary",
+          "phone": "919-662-4500",
+          "complaint_portal": "https://ncdoj.gov",
+          "what_to_report": "Civil rights violations \u2014 statewide.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "6 years",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "nc_med_board",
+          "name": "North Carolina Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "North Carolina Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "NC"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "nc_patient_adv",
+          "name": "North Carolina Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "North Carolina Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "NC"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "nc_health_dept",
+          "name": "North Carolina Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "North Carolina Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "NC"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "NC"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "nc_pharm_board",
+          "name": "North Carolina Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "North Carolina Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "NC"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "nc_pa",
+          "name": "North Carolina Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "North Carolina Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "NC"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "nc_mha",
+          "name": "North Carolina Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "North Carolina Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "NC"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "NC"
+    }
+  ]
+}

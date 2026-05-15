@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "state": "WI",
+    "version": "3.0"
+  },
+  "tribal_context": "Wisconsin tribal nations and urban Indian programs",
+  "tribal_entities": [
+    {
+      "tribal_entity_id": "menominee_indian_tribe_of_wisconsin",
+      "tribal_entity_name": "Menominee Indian Tribe of Wisconsin",
+      "tribal_role": "tribal_government",
+      "tribe": "Menominee Indian Tribe of Wisconsin",
+      "address": "",
+      "phone": "",
+      "portal": "",
+      "region": "Keshena, WI",
+      "federal_interface": "BIA",
+      "services": "Comprehensive tribal services",
+      "jurisdiction_notes": "One of the most self-sufficient tribal nations in Wisconsin.",
+      "icwa_authority": true,
+      "city": "Keshena",
+      "state": "WI"
+    },
+    {
+      "tribal_entity_id": "hochunk_nation",
+      "tribal_entity_name": "Ho-Chunk Nation",
+      "tribal_role": "tribal_government",
+      "tribe": "Ho-Chunk Nation",
+      "address": "",
+      "phone": "",
+      "portal": "",
+      "region": "Black River Falls, WI (and multiple counties)",
+      "federal_interface": "BIA",
+      "services": "Comprehensive tribal services",
+      "jurisdiction_notes": "Trust land and members throughout Wisconsin.",
+      "icwa_authority": true,
+      "city": "Black River Falls",
+      "state": "WI"
+    },
+    {
+      "tribal_entity_id": "lac_du_flambeau_band_of_lake_superior_chippewa",
+      "tribal_entity_name": "Lac du Flambeau Band of Lake Superior Chippewa",
+      "tribal_role": "tribal_government",
+      "tribe": "Lac du Flambeau Band of Lake Superior Chippewa",
+      "address": "",
+      "phone": "",
+      "portal": "",
+      "region": "Lac du Flambeau, WI",
+      "federal_interface": "BIA",
+      "services": "Comprehensive tribal services",
+      "jurisdiction_notes": "Northern Wisconsin Ojibwe tribe with significant tourism and gaming economy.",
+      "icwa_authority": true,
+      "city": "Lac du Flambeau",
+      "state": "WI"
+    }
+  ],
+  "icwa_activation_rules": [
+    {
+      "rule_id": "wi_icwa_child_welfare",
+      "trigger_pipeline": "child_welfare",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Apply federal ICWA standards per 25 U.S.C. §§ 1901-1963",
+        "Verify tribal enrollment or eligibility",
+        "Notify relevant tribe(s) of proceedings"
+      ]
+    }
+  ],
+  "urban_indian_programs": [],
+  "tribal_courts": []
+}

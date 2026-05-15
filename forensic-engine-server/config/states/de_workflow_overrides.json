@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "state": "DE",
+    "version": "3.0",
+    "date": "2026-03-09"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "de_housing_violation",
+      "title": "Housing Violation",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Document violations",
+          "contact": "Personal records",
+          "deadline": "Immediately"
+        },
+        {
+          "step": 2,
+          "action": "Send written repair notice",
+          "contact": "Landlord certified mail",
+          "deadline": "5-day notice under 25 Del. C. §5101"
+        },
+        {
+          "step": 3,
+          "action": "Contact CLASI — SAME DAY",
+          "contact": "CLASI: 302-575-0660",
+          "deadline": "Same day as any eviction notice"
+        }
+      ],
+      "statutes": "DE Residential Landlord-Tenant Code 25 Del. C. §5101"
+    },
+    {
+      "workflow_id": "de_wage_theft",
+      "title": "Wage Theft",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Document wages owed",
+          "contact": "Personal records",
+          "deadline": "3-year SOL (DE WPCA)"
+        },
+        {
+          "step": 2,
+          "action": "Send written demand",
+          "contact": "Employer",
+          "deadline": "Before filing"
+        },
+        {
+          "step": 3,
+          "action": "File DE DOL wage complaint",
+          "contact": "DE DOL: 302-761-8200 · dol.delaware.gov",
+          "deadline": "3-year SOL"
+        },
+        {
+          "step": 4,
+          "action": "File federal WHD simultaneously",
+          "contact": "WHD Wilmington: 302-791-1210 · dol.gov/whd",
+          "deadline": "2-year SOL (3 if willful)"
+        }
+      ],
+      "statutes": "Delaware WPCA 19 Del. C. §1101 — 3-year SOL, liquidated damages, private right of action"
+    },
+    {
+      "workflow_id": "de_benefits_denial",
+      "title": "Benefits Denial",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Review Notice of Action",
+          "contact": "Personal records",
+          "deadline": "UI: 10 DAYS — FATAL"
+        },
+        {
+          "step": 2,
+          "action": "Request fair hearing",
+          "contact": "DE OAH: 302-744-4500 · oah.delaware.gov",
+          "deadline": "30 days (benefits) · 10 days (UI) — FATAL"
+        },
+        {
+          "step": 3,
+          "action": "UI appeal",
+          "contact": "DE DOL: 302-761-8446",
+          "deadline": "10 days — FATAL"
+        },
+        {
+          "step": 4,
+          "action": "Contact legal aid",
+          "contact": "CLASI: 302-575-0660",
+          "deadline": "Within 5 days of any UI denial"
+        }
+      ]
+    }
+  ]
+}

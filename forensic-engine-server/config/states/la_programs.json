@@ -1,0 +1,479 @@
+{
+  "meta": {
+    "state": "LA",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "la_louisiana_snap_dsnap_disaster_snap_dcfs",
+      "program_name": "Louisiana SNAP / DSNAP Disaster SNAP (DCFS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "Louisiana SNAP / DSNAP Disaster SNAP",
+      "phone": "888-524-3578",
+      "website": "https://dcfs.la.gov/snap",
+      "eligibility": "Income < 130% FPL. benefitsgov.la.gov. Orleans Parish (New Orleans): 504-568-2800. Jefferson Parish (Metairie): 504-736-7300. East Baton Rouge: 225-342-1700. Calcasieu Parish (Lake Charles): 337-491-2000.",
+      "apply_notes": "Monthly food assistance \u2014 parish DCFS offices",
+      "source": "luminari-louisiana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "LA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "la_second_harvest_food_bank_nola_food_bank",
+      "program_name": "Second Harvest Food Bank / NOLA Food Bank",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Second Harvest Food Bank / NOLA Food Bank",
+      "phone": "504-734-1322",
+      "website": "https://no-hunger.org",
+      "eligibility": "Anyone in need. no-hunger.org. Also Greater Baton Rouge Food Bank (225-359-9940). Food Bank of Central Louisiana (318-445-2773). Community Food Bank of SE Louisiana (985-872-9490).",
+      "apply_notes": "Primary food bank for SE Louisiana including New Orleans",
+      "source": "luminari-louisiana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "LA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "la_wic_louisiana",
+      "program_name": "WIC Louisiana",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WIC Louisiana",
+      "phone": "877-455-9942",
+      "website": "https://ldh.la.gov/wic",
+      "eligibility": "Pregnant, postpartum women, infants, children under 5. Income < 185% FPL. ldh.la.gov/wic \u2014 find local clinic.",
+      "apply_notes": "Nutrition assistance for women, infants, children",
+      "source": "luminari-louisiana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "LA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "la_louisiana_medicaid_ldh",
+      "program_name": "Louisiana Medicaid (LDH)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Louisiana Medicaid",
+      "phone": "888-342-6207",
+      "website": "https://ldh.la.gov/medicaid",
+      "eligibility": "Adults 19\u201364 to 138% FPL. Children, families, elderly, disabled. benefitsgov.la.gov. Managed care plans: Aetna Better Health, AmeriHealth Caritas, Healthy Blue, Louisiana Healthcare Connections, United Healthcare.",
+      "apply_notes": "Medicaid \u2014 expanded 2016, covers adults 19-64 to 138% FPL",
+      "source": "luminari-louisiana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "LA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "la_tulane_ochsner_university_medical_center",
+      "program_name": "Tulane / Ochsner / University Medical Center (New Orleans Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Tulane / Ochsner / University Medical Center",
+      "phone": "504-702-3000",
+      "website": "https://umcno.org",
+      "eligibility": "New Orleans. Charity care income < 200% FPL. Also Tulane Medical Center (504-988-5263). Ochsner Health System (504-842-3000) for insured.",
+      "apply_notes": "New Orleans primary academic safety net hospital",
+      "source": "luminari-louisiana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "LA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "la_louisiana_primary_care_association_fqhcs",
+      "program_name": "Louisiana Primary Care Association (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Louisiana Primary Care Association",
+      "phone": "225-927-7662",
+      "website": "https://lpca.net",
+      "eligibility": "Anyone. lpca.net / findahealthcenter.hrsa.gov. Key: CrescentCare (New Orleans LGBTQ+ focus: 504-942-8010), Southwest Louisiana Area Health Education Center (Lake Charles: 337-558-6520), Tulane Covenant House (504-821-3700 \u2014 youth).",
+      "apply_notes": "Federally qualified health centers \u2014 sliding scale statewide",
+      "source": "luminari-louisiana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "LA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "la_louisiana_housing_corporation_lhc",
+      "program_name": "Louisiana Housing Corporation (LHC)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Louisiana Housing Corporation",
+      "phone": "225-763-8700",
+      "website": "https://lhc.la.gov",
+      "eligibility": "Low-income LA renters. lhc.la.gov. New Orleans Housing Authority (HANO): 504-670-3300. Baton Rouge Housing Authority: 225-923-3003.",
+      "apply_notes": "Section 8/HCV, HOME program, rental assistance, CDBG-DR disaster recovery housing",
+      "source": "luminari-louisiana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "LA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "la_southeast_louisiana_legal_services_slls",
+      "program_name": "Southeast Louisiana Legal Services (SLLS)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Southeast Louisiana Legal Services",
+      "phone": "504-529-1000",
+      "website": "https://slls.org",
+      "eligibility": "Income < 200% FPL. slls.org. Hurricane Ida disaster relief legal aid. Also Acadiana Legal Service (Lafayette: 337-237-4320). Baton Rouge Bar Pro Bono: 225-344-9926.",
+      "apply_notes": "Free civil legal aid \u2014 SE Louisiana including New Orleans and the River Parishes",
+      "source": "luminari-louisiana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "",
+      "state": "LA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "la_louisiana_tanf_fitap_dcfs",
+      "program_name": "Louisiana TANF / FITAP (DCFS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "Louisiana TANF / FITAP",
+      "phone": "888-524-3578",
+      "website": "https://dcfs.la.gov/tanf",
+      "eligibility": "Families with children. 60-month limit. Work requirements apply. dcfs.la.gov. Pair with SNAP, Medicaid, and child care (CCAP).",
+      "apply_notes": "Cash assistance for families \u2014 $240/month family of 3 (federally funded, low benefit)",
+      "source": "luminari-louisiana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "LA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "la_louisiana_ui_lwc",
+      "program_name": "Louisiana UI (LWC)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Louisiana UI",
+      "phone": "866-783-5567",
+      "website": "https://laworks.net",
+      "eligibility": "Workers who lost job through no fault. $247/week maximum \u2014 second lowest after MS. laworks.net. Appeal: 15 days from mailing.",
+      "apply_notes": "Weekly income replacement \u2014 $247/week max (second lowest in registry)",
+      "source": "luminari-louisiana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "LA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "la_louisiana_liheap_dcfs",
+      "program_name": "Louisiana LIHEAP (DCFS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Louisiana LIHEAP",
+      "phone": "888-524-3578",
+      "website": "https://dcfs.la.gov/liheap",
+      "eligibility": "Income < 60% state median. Apply through parish DCFS or community action. South Central Planning (985-876-0509). Community Action of Southeast Louisiana (504-347-9222).",
+      "apply_notes": "Energy assistance \u2014 cooling critical in Louisiana climate",
+      "source": "luminari-louisiana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "LA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "la_vietnamese_american_young_leaders_associ",
+      "program_name": "Vietnamese American Young Leaders Association (VAYLA \u2014 New Orleans)",
+      "layer": "state",
+      "benefit_category": "employment",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Vietnamese American Young Leaders Association",
+      "phone": "504-309-8008",
+      "website": "https://vayla-no.org",
+      "eligibility": "Vietnamese and Asian communities in SE Louisiana. vayla-no.org. Also Mary Queen of Vietnam CDC (504-307-1228).",
+      "apply_notes": "Vietnamese community services, immigration, workforce, Gulf Coast recovery",
+      "source": "luminari-louisiana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "employment"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "employment"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "employment",
+      "city": "",
+      "state": "LA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "la_louisiana_dv_hotline_btnla",
+      "program_name": "Louisiana DV Hotline / BTNLA",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Louisiana DV Hotline / BTNLA",
+      "phone": "888-411-1333",
+      "website": "https://btnla.org",
+      "eligibility": "Anyone experiencing DV. Also New Orleans DVRC (504-482-5900). Acadiana Outreach (Lafayette: 337-232-8954).",
+      "apply_notes": "24/7 DV crisis line, shelter referral, legal advocacy statewide",
+      "source": "luminari-louisiana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "LA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "la_louisiana_veterans_services_lvs",
+      "program_name": "Louisiana Veterans Services (LVS)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Louisiana Veterans Services",
+      "phone": "877-838-8785",
+      "website": "https://vetaffairs.la.gov",
+      "eligibility": "LA veterans and families. Southeast Louisiana Veterans Health Care System (NOLA: 504-935-1700). Overton Brooks VAMC (Shreveport: 318-221-8411).",
+      "apply_notes": "VA benefits navigation, state veterans services",
+      "source": "luminari-louisiana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "LA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "la_greater_new_orleans_foundation_united_wa",
+      "program_name": "Greater New Orleans Foundation / United Way (Resource Navigation)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Greater New Orleans Foundation / United Way",
+      "phone": "504-723-7770",
+      "website": "https://211la.org",
+      "eligibility": "Anyone. 211la.org \u2014 24/7. Critical for post-hurricane disaster recovery navigation.",
+      "apply_notes": "211 Louisiana \u2014 statewide resource and crisis navigation",
+      "source": "luminari-louisiana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "LA",
+      "federal_interface": false
+    },
+    {
+      "program_id": "la_immigrant_services_network_of_new_orlean",
+      "program_name": "Immigrant Services Network of New Orleans (ISNO)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Immigrant Services Network of New Orleans",
+      "phone": "504-304-9867",
+      "website": "https://isnola.org",
+      "eligibility": "Immigrants in SE Louisiana. isnola.org. Also Puentes New Orleans (504-355-0225).",
+      "apply_notes": "Immigration legal services, worker rights, integration services",
+      "source": "luminari-louisiana-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "",
+      "state": "LA",
+      "federal_interface": false
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "state": "PA",
+    "layer": "tribal_overrides",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "source": "Luminari PA Registry v1.0 \u2014 Northwest Hope Foundation",
+    "note": "Pennsylvania has no federally recognized tribes within state borders. Urban Native services are provided through urban Indian organizations."
+  },
+  "icwa_activation_rules": [
+    {
+      "rule_id": "pa_icwa_child_welfare",
+      "trigger_pipeline": "child_welfare",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Identify tribal affiliation and notify tribe per 25 USC \u00a71912(a)",
+        "Contact PA DHS ICWA liaison for placement preferences"
+      ],
+      "routing_note": "PA has no in-state tribes; route to tribe of origin. Contact Council of Three Rivers American Indian Center for local support."
+    }
+  ],
+  "tribal_entities": [
+    {
+      "tribal_entity_id": "pa_council_three_rivers",
+      "tribal_entity_name": "Council of Three Rivers American Indian Center",
+      "entity_type": "urban_indian_organization",
+      "region": "pittsburgh_metro",
+      "services": [
+        "cultural support",
+        "referral services",
+        "ICWA advocacy"
+      ],
+      "phone": "412-782-4457",
+      "website": "https://www.cotraic.org",
+      "federal_interface": true,
+      "street_address": "900 Rebecca Ave",
+      "city": "Pittsburgh",
+      "state_code": "PA",
+      "zip": "15221"
+    },
+    {
+      "tribal_entity_id": "pa_united_american_indians",
+      "tribal_entity_name": "United American Indians of the Delaware Valley",
+      "entity_type": "urban_indian_organization",
+      "region": "philadelphia_metro",
+      "services": [
+        "cultural support",
+        "social services",
+        "ICWA advocacy",
+        "health referrals"
+      ],
+      "phone": "215-574-9020",
+      "website": "https://www.uaidv.org",
+      "federal_interface": true,
+      "city": "Philadelphia",
+      "state": "PA"
+    },
+    {
+      "tribal_entity_id": "ihs_nashville",
+      "tribal_entity_name": "IHS Nashville Area Office",
+      "entity_type": "federal_health_service",
+      "region": "statewide",
+      "services": [
+        "healthcare referral",
+        "contract health services",
+        "tribal health coordination"
+      ],
+      "phone": "615-467-1500",
+      "website": "https://www.ihs.gov/nashville",
+      "federal_interface": true,
+      "city": "Philadelphia",
+      "state": "PA"
+    }
+  ],
+  "urban_indian_programs": [
+    {
+      "program_id": "pa_cotraic_services",
+      "program_name": "Council of Three Rivers American Indian Center Services",
+      "region": "pittsburgh_metro",
+      "services": [
+        "cultural programs",
+        "youth services",
+        "elder services",
+        "ICWA support"
+      ],
+      "city": "Philadelphia",
+      "state": "PA"
+    },
+    {
+      "program_id": "pa_uaidv_services",
+      "program_name": "United American Indians of Delaware Valley Services",
+      "region": "philadelphia_metro",
+      "services": [
+        "social services",
+        "cultural programs",
+        "health referrals",
+        "ICWA support"
+      ],
+      "city": "Philadelphia",
+      "state": "PA"
+    }
+  ],
+  "tribal_context": {
+    "federally_recognized_tribes_in_state": 3,
+    "notes": "PA tribal context"
+  },
+  "tribal_courts": []
+}

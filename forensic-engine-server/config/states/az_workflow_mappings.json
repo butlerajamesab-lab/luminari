@@ -1,0 +1,259 @@
+{
+  "meta": {
+    "state": "AZ",
+    "layer": "workflow_mappings",
+    "version": "1.0.0",
+    "last_updated": "2026-03-06"
+  },
+  "workflow_mappings": [
+    {
+      "workflow_id": "tenant_rights_workflow",
+      "trigger_pipelines": [
+        "tenant_rights"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "notice",
+          "target_entity_type": "landlord",
+          "deadline_days": 10,
+          "description": "Send written repair notice citing ARS \u00a733-1324 (10-business-day cure period)"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "complaint",
+          "target_entity_type": "government_agency",
+          "deadline_days": 30,
+          "description": "File complaint with city/county code enforcement for inspection"
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "legal_action",
+          "target_entity_type": "landlord",
+          "deadline_days": 60,
+          "description": "Contact CLS AZ (602-258-3434) or SALA (520-623-9461) for rent withhold or repair-and-deduct under ARS \u00a733-1363/1364"
+        },
+        {
+          "step_index": 4,
+          "escalation_type": "agency_complaint",
+          "target_entity_type": "government_agency",
+          "deadline_days": 90,
+          "description": "File AG Consumer Protection complaint if pattern of violations (602-542-5763)"
+        },
+        {
+          "step_index": 5,
+          "escalation_type": "federal_escalation",
+          "target_entity_type": "government_agency",
+          "deadline_days": 365,
+          "description": "File HUD Fair Housing complaint if discrimination involved (800-669-9777)"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft_workflow",
+      "trigger_pipelines": [
+        "wage_theft"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "documentation",
+          "target_entity_type": "employer",
+          "deadline_days": 7,
+          "description": "Document wages owed with pay stubs, time records, employment agreements"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "demand",
+          "target_entity_type": "employer",
+          "deadline_days": 14,
+          "description": "Send written demand to employer for specific unpaid amount"
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "agency_complaint",
+          "target_entity_type": "government_agency",
+          "deadline_days": 365,
+          "description": "File wage claim with ICA (602-542-4515) \u2014 1-year SOL under ARS \u00a723-364(G)"
+        },
+        {
+          "step_index": 4,
+          "escalation_type": "federal_dual_file",
+          "target_entity_type": "government_agency",
+          "deadline_days": 730,
+          "description": "Dual-file with federal DOL WHD (866-487-9243) \u2014 2-year FLSA SOL (3 if willful)"
+        },
+        {
+          "step_index": 5,
+          "escalation_type": "legal_action",
+          "target_entity_type": "employer",
+          "deadline_days": 365,
+          "description": "Contact CLS AZ (602-258-3434) for legal representation \u2014 treble damages available under ARS \u00a723-364(G)"
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial_workflow",
+      "trigger_pipelines": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "documentation",
+          "target_entity_type": "government_agency",
+          "deadline_days": 5,
+          "description": "Get written denial notice with reason code and appeal deadline from DES"
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "appeal",
+          "target_entity_type": "government_agency",
+          "deadline_days": 30,
+          "description": "File appeal with DES Office of Appeals (602-364-2722) \u2014 SNAP 30 days, AHCCCS 90 days, UI 15 days"
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "legal_help",
+          "target_entity_type": "government_agency",
+          "deadline_days": 45,
+          "description": "Contact CLS AZ (602-258-3434) for hearing representation"
+        },
+        {
+          "step_index": 4,
+          "escalation_type": "escalation",
+          "target_entity_type": "government_agency",
+          "deadline_days": 90,
+          "description": "File complaint with Governor's Constituent Services (602-542-4331) for systemic failures"
+        },
+        {
+          "step_index": 5,
+          "escalation_type": "federal_escalation",
+          "target_entity_type": "government_agency",
+          "deadline_days": 180,
+          "description": "File with HHS/CMS (877-267-2323) for federal Medicaid/SNAP program violations"
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_claim_denial_workflow",
+      "trigger_pipelines": [
+        "insurance_claim_denial",
+        "medicaid_denial"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": true,
+        "region_filter": null,
+        "demographic_filter": null
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "documentation",
+          "target_entity_type": "insurer",
+          "deadline_days": 7,
+          "description": "Collect denial letter, EOB, original claim, all correspondence. Note exact denial reason."
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "internal_appeal",
+          "target_entity_type": "insurer",
+          "deadline_days": 180,
+          "description": "File internal appeal within 180 days of denial. Request full claims file."
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "external_review",
+          "target_entity_type": "government_agency",
+          "deadline_days": 120,
+          "description": "Request independent external review through DIFI (602-364-2499) under ARS \u00a720-2533"
+        },
+        {
+          "step_index": 4,
+          "escalation_type": "agency_complaint",
+          "target_entity_type": "government_agency",
+          "deadline_days": 180,
+          "description": "File DIFI complaint regardless of appeal outcome to document pattern"
+        },
+        {
+          "step_index": 5,
+          "escalation_type": "legal_action",
+          "target_entity_type": "insurer",
+          "deadline_days": 365,
+          "description": "Contact CLS AZ or private attorney for bad faith claim under ARS \u00a720-461"
+        }
+      ]
+    },
+    {
+      "workflow_id": "child_welfare_icwa_workflow",
+      "trigger_pipelines": [
+        "child_welfare"
+      ],
+      "trigger_conditions": {
+        "any_pipeline_match": false,
+        "region_filter": null,
+        "demographic_filter": "tribal_affiliation"
+      },
+      "escalation_rules": [
+        {
+          "step_index": 1,
+          "escalation_type": "icwa_notice",
+          "target_entity_type": "government_agency",
+          "deadline_days": 1,
+          "description": "Notify ITCA (602-248-0071) and specific tribal ICWA office. DCS must provide active efforts."
+        },
+        {
+          "step_index": 2,
+          "escalation_type": "tribal_intervention",
+          "target_entity_type": "family_court",
+          "deadline_days": 7,
+          "description": "Tribe has right to intervene in state proceedings. Contact DNA (928-871-4151) for Navajo cases."
+        },
+        {
+          "step_index": 3,
+          "escalation_type": "placement_preference",
+          "target_entity_type": "family_court",
+          "deadline_days": 30,
+          "description": "ICWA placement preferences: (1) extended family, (2) tribal foster home, (3) Indian foster home, (4) institution approved by tribe"
+        },
+        {
+          "step_index": 4,
+          "escalation_type": "expert_witness",
+          "target_entity_type": "family_court",
+          "deadline_days": 60,
+          "description": "Qualified expert witness required for foster care placement or TPR under ICWA"
+        },
+        {
+          "step_index": 5,
+          "escalation_type": "federal_escalation",
+          "target_entity_type": "government_agency",
+          "deadline_days": 180,
+          "description": "File with BIA (602-379-6600) for ICWA compliance failures"
+        }
+      ]
+    }
+  ],
+  "resolution_order": [
+    "federal_baseline",
+    "state_registry",
+    "county_override",
+    "tribal_override",
+    "pipeline_rule_injection"
+  ]
+}

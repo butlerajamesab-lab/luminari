@@ -1,0 +1,173 @@
+{
+  "meta": {
+    "state": "AZ",
+    "layer": "lens_mappings",
+    "version": "1.0.0",
+    "last_updated": "2026-03-06"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "housing",
+      "activation_pipelines": [
+        "tenant_rights",
+        "eviction_defense",
+        "housing_discrimination"
+      ],
+      "state_specific_rules": [
+        "ARS \u00a733-1301 (Landlord-Tenant Act)",
+        "10-business-day repair notice",
+        "ACC R14-2-211 (utility disconnect)"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "consumer",
+      "activation_pipelines": [
+        "debt_collection_abuse",
+        "consumer_fraud",
+        "predatory_lending"
+      ],
+      "state_specific_rules": [
+        "ARS \u00a744-1521 (Consumer Fraud Act)",
+        "AG Consumer Protection Division"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "workplace",
+      "activation_pipelines": [
+        "wage_theft",
+        "workplace_discrimination",
+        "wrongful_termination"
+      ],
+      "state_specific_rules": [
+        "ARS \u00a723-364(G) (1-year wage SOL)",
+        "ARS \u00a723-350 (minimum wage $14.70)",
+        "ICA jurisdiction"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "domestic_violence",
+      "activation_pipelines": [
+        "domestic_violence",
+        "domestic_violence_emergency"
+      ],
+      "state_specific_rules": [
+        "ARS \u00a713-3601 (DV statute)",
+        "Order of Protection (ARS \u00a713-3602)",
+        "ACESDV coordination"
+      ],
+      "priority_boost": 10
+    },
+    {
+      "lens_id": "insurance",
+      "activation_pipelines": [
+        "insurance_claim_denial",
+        "medicaid_denial",
+        "health_insurance_denial"
+      ],
+      "state_specific_rules": [
+        "ARS \u00a720-2533 (external review)",
+        "DIFI jurisdiction",
+        "AHCCCS no asset limit"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "vulnerable_population",
+      "activation_pipelines": [
+        "elder_abuse",
+        "disability_rights",
+        "vulnerable_adult_protection"
+      ],
+      "state_specific_rules": [
+        "ARS \u00a746-451 (Adult Protective Services)",
+        "APS 24/7 hotline 877-767-2385"
+      ],
+      "priority_boost": 5
+    },
+    {
+      "lens_id": "custody",
+      "activation_pipelines": [
+        "custody",
+        "custody_dispute",
+        "parental_rights_termination"
+      ],
+      "state_specific_rules": [
+        "ARS \u00a725-403 (best interests)",
+        "CJC judicial oversight",
+        "DCS complaints"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "elder_abuse",
+      "activation_pipelines": [
+        "elder_abuse",
+        "nursing_home_abuse",
+        "long_term_care_neglect"
+      ],
+      "state_specific_rules": [
+        "ADHS licensing",
+        "APS mandatory reporting",
+        "LTC Ombudsman"
+      ],
+      "priority_boost": 5
+    },
+    {
+      "lens_id": "medical",
+      "activation_pipelines": [
+        "medical_malpractice",
+        "hospital_billing_abuse",
+        "prior_authorization_abuse"
+      ],
+      "state_specific_rules": [
+        "AHCCCS managed care",
+        "DIFI external review",
+        "ARS \u00a720-2533"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "safety_risk",
+      "activation_pipelines": [
+        "immediate_threat",
+        "domestic_violence_emergency",
+        "child_endangerment"
+      ],
+      "state_specific_rules": [
+        "911 + APS 877-767-2385",
+        "DCS hotline 888-767-2445",
+        "Heat emergency 211"
+      ],
+      "priority_boost": 20
+    },
+    {
+      "lens_id": "trauma_informed",
+      "activation_pipelines": [
+        "domestic_violence",
+        "child_abuse",
+        "human_trafficking"
+      ],
+      "state_specific_rules": [
+        "ACESDV trauma-informed services",
+        "DVLAP legal advocacy"
+      ],
+      "priority_boost": 5
+    },
+    {
+      "lens_id": "public_records_escalation",
+      "activation_pipelines": [
+        "government_accountability",
+        "public_corruption"
+      ],
+      "state_specific_rules": [
+        "ARS \u00a739-121 (Public Records Law)",
+        "AG enforcement",
+        "Ombudsman-Citizens' Aide"
+      ],
+      "priority_boost": 0
+    }
+  ]
+}

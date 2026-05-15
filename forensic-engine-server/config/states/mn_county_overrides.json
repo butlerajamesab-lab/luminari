@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "state": "MN",
+    "version": "3.0"
+  },
+  "regions": [],
+  "county_overrides": [
+    {
+      "county_id": "hennepin",
+      "county_name": "Hennepin",
+      "fips_code": "",
+      "region": "statewide",
+      "population_estimate": "",
+      "courts": [],
+      "prosecutor": "",
+      "housing_authority": "",
+      "legal_aid": "",
+      "child_welfare": "",
+      "law_enforcement": "",
+      "utilities": "",
+      "override_details": "Hennepin County (Minneapolis): 612-348-4111",
+      "affected_programs": [
+        "minnesota_snap_food_support"
+      ]
+    },
+    {
+      "county_id": "ramsey",
+      "county_name": "Ramsey",
+      "fips_code": "",
+      "region": "statewide",
+      "population_estimate": "",
+      "courts": [],
+      "prosecutor": "",
+      "housing_authority": "",
+      "legal_aid": "",
+      "child_welfare": "",
+      "law_enforcement": "",
+      "utilities": "",
+      "override_details": "Ramsey County (Saint Paul): 651-266-4444",
+      "affected_programs": [
+        "minnesota_snap_food_support"
+      ]
+    }
+  ],
+  "resolution_chain": []
+}

@@ -1,0 +1,505 @@
+{
+  "meta": {
+    "state": "MI",
+    "version": "3.0",
+    "program_count": 24
+  },
+  "programs": [
+    {
+      "program_id": "mi_snap_fap",
+      "program_name": "SNAP / Food Assistance Program (FAP)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "agency": "MI DHHS",
+      "phone": "844-799-9876",
+      "website": "https://newmibridges.michigan.gov",
+      "eligibility": "Income < 130% FPL",
+      "region": "statewide",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Federal food assistance for low-income households",
+      "city": "Lansing",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_healthy_michigan_plan",
+      "program_name": "Healthy Michigan Plan (Medicaid Expansion)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "health_insurance_denial",
+        "medicaid_denial"
+      ],
+      "agency": "MI DHHS",
+      "phone": "844-799-9876",
+      "website": "https://www.michigan.gov/healthymichiganplan",
+      "eligibility": "Adults 19-64, income < 138% FPL",
+      "region": "statewide",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Medicaid expansion for adults 19-64 at 0-138% FPL",
+      "city": "Lansing",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_traditional_medicaid",
+      "program_name": "Traditional Medicaid",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "health_insurance_denial",
+        "medicaid_denial"
+      ],
+      "agency": "MI DHHS",
+      "phone": "844-799-9876",
+      "website": "https://www.michigan.gov/mdhhs",
+      "eligibility": "Categorical eligibility",
+      "region": "statewide",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Medicaid for children, pregnant women, elderly, disabled",
+      "city": "Lansing",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_sda_emergency_relief",
+      "program_name": "State Disability Assistance (SDA) / Emergency Relief",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "agency": "MI DHHS",
+      "phone": "844-799-9876",
+      "website": "https://newmibridges.michigan.gov",
+      "eligibility": "Disabled adults, income eligible",
+      "region": "statewide",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Cash assistance for disabled adults not eligible for SSI",
+      "city": "Lansing",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_fip_tanf",
+      "program_name": "Family Independence Program (FIP/TANF)",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "agency": "MI DHHS",
+      "phone": "844-799-9876",
+      "website": "https://newmibridges.michigan.gov",
+      "eligibility": "Families with children, income eligible",
+      "region": "statewide",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Cash assistance for families with children",
+      "city": "Lansing",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_cdc_child_care",
+      "program_name": "Child Development and Care (CDC)",
+      "layer": "state",
+      "benefit_category": "children_families",
+      "pipeline_ids": [
+        "family_law"
+      ],
+      "agency": "MI DHHS",
+      "phone": "844-799-9876",
+      "website": "https://newmibridges.michigan.gov",
+      "eligibility": "Working families, income eligible",
+      "region": "statewide",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Subsidized child care for working families",
+      "city": "Lansing",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_liheap_home_heating",
+      "program_name": "Michigan Home Heating Credit / LIHEAP",
+      "layer": "state",
+      "benefit_category": "utilities",
+      "pipeline_ids": [
+        "utility_shutoff_abuse"
+      ],
+      "agency": "MI DHHS",
+      "phone": "844-799-9876",
+      "website": "https://newmibridges.michigan.gov",
+      "eligibility": "Income eligible households",
+      "region": "statewide",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Heating assistance and utility shutoff prevention",
+      "city": "Lansing",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_section_8_housing",
+      "program_name": "Section 8 Housing Choice Voucher",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights",
+        "tenant_rights"
+      ],
+      "agency": "MSHDA",
+      "phone": "517-373-8370",
+      "website": "https://www.michigan.gov/mshda",
+      "eligibility": "Income < 50% AMI",
+      "region": "statewide",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Rental assistance vouchers",
+      "city": "Lansing",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_emergency_shelter",
+      "program_name": "Emergency Solutions Grant (ESG)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights",
+        "tenant_rights"
+      ],
+      "agency": "MSHDA",
+      "phone": "517-373-8370",
+      "website": "https://www.michigan.gov/mshda",
+      "eligibility": "Homeless or at risk",
+      "region": "statewide",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Emergency shelter and rapid rehousing",
+      "city": "Lansing",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_legal_services",
+      "program_name": "Michigan Legal Services",
+      "layer": "state",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [
+        "civil_rights_violation"
+      ],
+      "agency": "Michigan Legal Services",
+      "phone": "313-964-4130",
+      "website": "https://michiganlegalservices.org",
+      "eligibility": "Income < 125% FPL",
+      "region": "statewide",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Free civil legal aid for low-income residents",
+      "city": "Detroit",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_lakeshore_legal_aid",
+      "program_name": "Lakeshore Legal Aid",
+      "layer": "state",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [
+        "civil_rights_violation"
+      ],
+      "agency": "Lakeshore Legal Aid",
+      "phone": "800-968-1442",
+      "website": "https://lakeshorelegalaid.org",
+      "eligibility": "Low-income SE Michigan residents",
+      "region": "southeast",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Eviction defense, benefits, MiDAS fraud cases",
+      "city": "Detroit",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_unemployment_insurance",
+      "program_name": "Michigan Unemployment Insurance",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "wage_theft",
+        "workplace_discrimination"
+      ],
+      "agency": "LEO/UIA",
+      "phone": "866-500-0017",
+      "website": "https://www.michigan.gov/leo/bureaus-agencies/uia",
+      "eligibility": "Unemployed workers who meet wage requirements",
+      "region": "statewide",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "UI benefits, 20-week duration cap — shortest in region",
+      "city": "Lansing",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_wage_hour_division",
+      "program_name": "MI Wage & Hour Division",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "wage_theft",
+        "workplace_discrimination"
+      ],
+      "agency": "LEO",
+      "phone": "855-464-9243",
+      "website": "https://www.michigan.gov/leo",
+      "eligibility": "All workers in Michigan",
+      "region": "statewide",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Wage theft complaints, minimum wage enforcement ($10.56/hr)",
+      "city": "Lansing",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_dv_hotline",
+      "program_name": "Michigan Domestic Violence Hotline",
+      "layer": "state",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "MCEDSV",
+      "phone": "800-799-7233",
+      "website": "https://mcedsv.org",
+      "eligibility": "All DV survivors",
+      "region": "statewide",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "24/7 crisis support and shelter referrals",
+      "city": "Lansing",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_wic",
+      "program_name": "WIC (Women, Infants, Children)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "agency": "MI DHHS",
+      "phone": "844-799-9876",
+      "website": "https://www.michigan.gov/mdhhs",
+      "eligibility": "Pregnant/postpartum women, infants, children < 5, income < 185% FPL",
+      "region": "statewide",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Nutrition assistance for pregnant women, infants, children",
+      "city": "Lansing",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_detroit_human_services",
+      "program_name": "Detroit Human Services Dept",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "agency": "City of Detroit",
+      "phone": "313-224-3000",
+      "website": "https://detroitmi.gov/government/departments/human-services",
+      "eligibility": "Detroit residents",
+      "region": "detroit_wayne",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "City-specific social services for Detroit residents",
+      "city": "Detroit",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_wayne_metro_caa",
+      "program_name": "Wayne Metro Community Action Agency",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "agency": "Wayne Metro CAA",
+      "phone": "313-388-9799",
+      "website": "https://waynemetro.org",
+      "eligibility": "Wayne County residents",
+      "region": "detroit_wayne",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Primary Community Action for Wayne County",
+      "city": "Detroit",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_detroit_housing_commission",
+      "program_name": "Detroit Housing Commission",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights",
+        "tenant_rights"
+      ],
+      "agency": "DHC",
+      "phone": "313-877-8000",
+      "website": "https://detroithousingcomm.com",
+      "eligibility": "Low-income Detroit residents",
+      "region": "detroit_wayne",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Section 8 and public housing for Detroit",
+      "city": "Detroit",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_access_dearborn",
+      "program_name": "ACCESS (Arab Community Center)",
+      "layer": "state",
+      "benefit_category": "immigration",
+      "pipeline_ids": [
+        "immigration_case"
+      ],
+      "agency": "ACCESS",
+      "phone": "313-842-7010",
+      "website": "https://accesscommunity.org",
+      "eligibility": "All community members",
+      "region": "detroit_wayne",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Social services for Arab American and immigrant communities in Dearborn",
+      "city": "Dearborn",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_covenant_house",
+      "program_name": "Covenant House Michigan",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights",
+        "tenant_rights"
+      ],
+      "agency": "Covenant House",
+      "phone": "313-463-2000",
+      "website": "https://covenanthousingmi.org",
+      "eligibility": "Youth 18-24",
+      "region": "detroit_wayne",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Shelter and services for youth 18-24",
+      "city": "Detroit",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_neighborhood_legal",
+      "program_name": "Neighborhood Legal Services Michigan",
+      "layer": "state",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [
+        "civil_rights_violation"
+      ],
+      "agency": "NLSM",
+      "phone": "313-964-0111",
+      "website": "https://nlsmi.org",
+      "eligibility": "Low-income residents",
+      "region": "detroit_wayne",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Civil legal help for Detroit area",
+      "city": "Detroit",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_dwsd_water",
+      "program_name": "Detroit Water & Sewerage Dept",
+      "layer": "state",
+      "benefit_category": "utilities",
+      "pipeline_ids": [
+        "utility_shutoff_abuse"
+      ],
+      "agency": "DWSD",
+      "phone": "313-224-4710",
+      "website": "https://detroitmi.gov/dwsd",
+      "eligibility": "Detroit water customers",
+      "region": "detroit_wayne",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Water shutoff assistance and payment plans",
+      "city": "Detroit",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_upper_peninsula_caa",
+      "program_name": "Upper Peninsula Community Action Agencies",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "benefits_denial",
+        "snap_denial"
+      ],
+      "agency": "Various CAAs",
+      "phone": "906-228-5420",
+      "website": "",
+      "eligibility": "UP residents",
+      "region": "upper_peninsula",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Community action services for remote UP communities",
+      "city": "Marquette",
+      "state": "MI"
+    },
+    {
+      "program_id": "mi_mshda_eviction_diversion",
+      "program_name": "MSHDA Eviction Diversion Program",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights",
+        "tenant_rights"
+      ],
+      "agency": "MSHDA",
+      "phone": "517-373-8370",
+      "website": "https://www.michigan.gov/mshda",
+      "eligibility": "Tenants facing eviction",
+      "region": "statewide",
+      "source": "Michigan State Registry v3",
+      "date_verified": "2026-03-08",
+      "federal_interface": "",
+      "apply_notes": "Eviction prevention and diversion program",
+      "city": "Lansing",
+      "state": "MI"
+    }
+  ]
+}

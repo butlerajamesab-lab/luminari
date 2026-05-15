@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "state": "GA",
+    "version": "3.0"
+  },
+  "regions": [],
+  "county_overrides": [
+    {
+      "county_id": "fulton_county",
+      "county_name": "Fulton County",
+      "fips_code": "",
+      "region": "statewide",
+      "population_estimate": "",
+      "courts": [],
+      "prosecutor": "",
+      "housing_authority": "",
+      "legal_aid": "",
+      "child_welfare": "",
+      "law_enforcement": "",
+      "utilities": "",
+      "override_details": "Atlanta-specific programs and agencies",
+      "affected_programs": [
+        "ga_fulton_dfcs",
+        "ga_atlanta_housing_authority",
+        "ga_atlanta_legal_aid",
+        "ga_grady_health"
+      ]
+    },
+    {
+      "county_id": "dekalb_county",
+      "county_name": "DeKalb County",
+      "fips_code": "",
+      "region": "statewide",
+      "population_estimate": "",
+      "courts": [],
+      "prosecutor": "",
+      "housing_authority": "",
+      "legal_aid": "",
+      "child_welfare": "",
+      "law_enforcement": "",
+      "utilities": "",
+      "override_details": "Refugee resettlement concentration",
+      "affected_programs": [
+        "ga_irc_atlanta",
+        "ga_new_american_pathways"
+      ]
+    }
+  ],
+  "resolution_chain": []
+}

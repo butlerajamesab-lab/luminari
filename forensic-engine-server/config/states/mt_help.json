@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "state": "MT",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "MT DPHHS",
+      "role": "SNAP/TANF/Medicaid",
+      "phone": "888-706-1535",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "211 Montana",
+      "role": "Social services referral",
+      "phone": "211",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "MLSA",
+      "role": "Only statewide legal aid",
+      "phone": "800-666-6899",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "MT DLI",
+      "role": "UI Appeals",
+      "phone": "406-444-2545",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "CSI",
+      "role": "Insurance complaints",
+      "phone": "406-444-2040",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "MT HRB",
+      "role": "Civil rights",
+      "phone": "406-444-2884",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "MT DV Hotline",
+      "role": "Domestic violence crisis",
+      "phone": "800-655-7867",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "Blackfeet Nation",
+      "role": "Tribal services",
+      "phone": "406-338-7521",
+      "email": null,
+      "hours": null
+    }
+  ],
+  "regions": [],
+  "missing_sections": []
+}

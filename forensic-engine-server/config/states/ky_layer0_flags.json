@@ -1,0 +1,227 @@
+{
+  "meta": {
+    "state": "KY",
+    "version": "3.0",
+    "flag_count": 8
+  },
+  "flags": [
+    {
+      "flag_id": "ky_5_year_wage_sol",
+      "severity": "info",
+      "title": "Kentucky 5-Year Wage SOL (KRS 413.120)",
+      "summary": "Kentucky Revised Statutes sec. 413.120 provides a 5-year statute of limitations for wage claims under a written or oral contract \u2014 the longest wage SOL of any state in the Luminari registry. This is a massive strategic advantage: Kentucky workers can recover up to 5 years of back wages under state law, compared to 2 years under federal FLSA and 3 years in Illinois and Michigan. Always file both Kentucky DOL AND federal WHD simultaneously. Frame state claim for maximum recovery under KRS 413.120. This applies to minimum wage violations, overtime, and any contractual wage term. Most wage theft victims in Eastern Kentucky coal, agriculture, and construction have been underpaid for years \u2014 the 5-year window makes Kentucky state filing essential.",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "ky_medicaid_expanded_2014_work_requirement_blocked",
+      "severity": "info",
+      "title": "Medicaid Expanded 2014, Work Requirement BLOCKED in Court",
+      "summary": "Kentucky expanded Medicaid in 2014 \u2014 adults 19-64 to 138% FPL qualify. No coverage gap. A work requirement waiver (Kentucky HEALTH) was proposed and partially implemented but was struck down by the U.S. Court of Appeals for the D.C. Circuit in 2019 for failing to consider coverage impact. As of 2025, no Medicaid work requirement is in effect in Kentucky. Monitor kynect.ky.gov for status changes. Managed care organizations: Anthem, Humana CareSource, Molina, Passport by Molina, WellCare of Kentucky. Always verify MCO enrollment before routing specialty care.",
+      "affected_programs": [
+        "kentucky_medicaid_kynect"
+      ],
+      "effective_date": "2019"
+    },
+    {
+      "flag_id": "ky_eastern_kentucky_appalachian_poverty_crisis",
+      "severity": "alert",
+      "title": "Eastern Kentucky Appalachian Poverty Crisis - Special Navigation Required",
+      "summary": "Eastern Kentucky's Appalachian coalfield counties (Pike, Harlan, Letcher, Floyd, Knott, Perry, Breathitt, Magoffin, Johnson, Martin, Lawrence counties) have poverty rates of 25-40% \u2014 among the highest in the continental United States. The simultaneous collapse of the coal economy, opioid epidemic, high disability rates, and extreme rural isolation create a distinct navigation context. Key facts: (1) disability benefits (SSI/SSDI) are the primary income source for a large percentage of Eastern Kentucky adults; (2) legal aid infrastructure is thin \u2014 Legal Aid of the Bluegrass and Appalachian Research and Defense Fund (AppalReD) are the primary providers; (3) broadband access is severely limited in many hollows \u2014 phone intake is often the only option; (4) opioid recovery intersects with SNAP drug felony policies, UI disqualifications, and housing discrimination. Always ask about disability history, opioid recovery status, and prior benefits at intake for Eastern Kentucky clients.",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "ky_kentucky_minimum_wage_7_25_hr",
+      "severity": "warning",
+      "title": "Kentucky Minimum Wage $7.25/hr - Federal Floor, No Local Preemption Exception",
+      "summary": "Kentucky pays only the federal minimum wage of $7.25/hr. State law preempts local minimum wage ordinances \u2014 Louisville's attempt to raise the minimum wage to $9/hr was struck down by the Kentucky Supreme Court in 2016. This means no Kentucky city can pay above federal minimum. Wage theft is pervasive in Eastern Kentucky coal-adjacent industries, Louisville food service and care work, and throughout the agricultural sector. The 5-year state SOL (KY-01 above) makes this less damaging than in Indiana or Wisconsin where SOLs are shorter \u2014 but always document carefully from the earliest date wages were underpaid.",
+      "affected_programs": [],
+      "effective_date": "2016"
+    },
+    {
+      "flag_id": "ky_snap_abawd_work_requirements_active",
+      "severity": "alert",
+      "title": "SNAP ABAWD Work Requirements Active - Rural Eastern KY Has Limited E&T Options",
+      "summary": "Kentucky SNAP ABAWD work requirements are fully active \u2014 no statewide waiver. ABAWDs 18-54 must document 80 hours/month. Surface exemptions at intake. Critical: Eastern Kentucky counties with extremely high unemployment rates MAY qualify for county-level geographic exemptions based on unemployment data \u2014 check DCBS ABAWD county list at chfs.ky.gov. Eastern Kentucky's limited job training infrastructure means routing to SNAP E&T program participation is essential for clients who cannot meet work requirements through employment alone. Apply: kynect.ky.gov or local DCBS office.",
+      "affected_programs": [
+        "snap_kentucky_food_benefits"
+      ],
+      "effective_date": null
+    },
+    {
+      "flag_id": "ky_kentucky_ktap_tanf",
+      "severity": "warning",
+      "title": "Kentucky KTAP (TANF) - $262/mo Max Family of 3, 60-Month Limit",
+      "summary": "Kentucky TANF is called KTAP (Kentucky Transitional Assistance Program). Maximum benefit: $262/month for a family of 3 \u2014 one of the lowest TANF amounts in the country and among the lowest in the Luminari registry. Federal 60-month lifetime limit applies (Kentucky does not impose a shorter state limit). Work requirement: 30 hours/week. The low benefit amount makes KTAP almost meaningless as standalone income support \u2014 always pair with SNAP, Medicaid, LIHEAP, child care (CCAP), and emergency food from food banks. Document all other income and benefit sources before routing to KTAP.",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "ky_louisville_metro_immigrant_community_needs",
+      "severity": "info",
+      "title": "Louisville Metro - Immigrant Community Needs Arabic, Somali, Spanish Language Access",
+      "summary": "Louisville Metro (Louisville/Jefferson County) has experienced significant refugee and immigrant resettlement since the 1990s \u2014 among the largest per-capita refugee populations of any US city. Key communities: Somali (largest Somali community in Kentucky), Congolese (large DRC community from refugee resettlement), Hispanic/Latino (growing throughout Louisville Metro). Specific resources: Kentucky Refugee Ministries (502-479-9180), Catholic Charities of Louisville (502-637-9786), Louisville Metro Office for Immigrant Affairs (502-574-5257). Federal language access rights apply to all federally-funded programs. Always identify preferred language at intake.",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "ky_kentucky_kchr_civil_rights_sol_180_days",
+      "severity": "warning",
+      "title": "Kentucky KCHR Civil Rights SOL 180 Days - Strategic Disadvantage vs. Federal 300 Days",
+      "summary": "Kentucky Commission on Human Rights (KCHR) has a 180-day SOL for employment and housing discrimination \u2014 shorter than the federal EEOC/HUD 300-day deadline. This is a strategic disadvantage (same as Indiana ICRC). Always file EEOC simultaneously with KCHR to preserve the full 300-day federal window. For workers between 180 and 300 days post-discrimination: KCHR filing is expired but EEOC filing is still open \u2014 file EEOC immediately. KCHR covers same classes as federal law plus additional Kentucky-specific protections.",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "ky_involuntary_hold_law",
+      "title": "Involuntary Hold: Kentucky 72-Hour Hold",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "KY involuntary psychiatric hold law: Kentucky 72-Hour Hold. Statutory authority: KRS \u00a7 202A.028. Maximum initial hold duration: 72 hours. Legal standard: danger to self/others or others. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 72 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "KRS \u00a7 202A.028"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "ky_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in KY retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "ky_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in KY: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "ky_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Kentucky Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "ky_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Kentucky Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "ky_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Kentucky Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

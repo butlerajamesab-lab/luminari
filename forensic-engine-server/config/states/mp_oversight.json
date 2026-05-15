@@ -1,0 +1,263 @@
+{
+  "meta": {
+    "state": "MP",
+    "version": "3.0",
+    "date": "2026-03-09",
+    "total_chains": 4,
+    "total_bodies": 5,
+    "entity_types": [
+      "employer",
+      "general",
+      "consumer",
+      "civil_rights"
+    ],
+    "source": "luminari-mp-registry"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "civil_rights",
+      "state": "MP",
+      "bodies": [
+        {
+          "oversight_body": "CNMI Human Rights Commission",
+          "jurisdiction": "primary",
+          "phone": "670-664-2370",
+          "complaint_portal": "https://cnmihrc.net",
+          "address": "P.O. Box 504379, Saipan, MP 96950",
+          "what_to_report": "Employment, housing discrimination.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "180 DAYS",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "employer",
+      "state": "MP",
+      "bodies": [
+        {
+          "oversight_body": "CNMI DOLI \u2014 Labor Standards",
+          "jurisdiction": "primary",
+          "phone": "670-664-2023",
+          "complaint_portal": "https://doli.gov.mp",
+          "address": "Caller Box 10007, Saipan, MP 96950",
+          "what_to_report": "Wage claims, labor standards, CW-1 visa issues.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "2 years",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "US DOL Wage & Hour Division \u2014 Saipan",
+          "jurisdiction": "federal",
+          "phone": "670-233-0222",
+          "complaint_portal": "https://dol.gov/whd",
+          "address": "P.O. Box 504127, Saipan, MP 96950",
+          "what_to_report": "FLSA wage claims.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "2 years (3 if willful)",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC \u2014 Honolulu District (covers CNMI)",
+          "jurisdiction": "federal",
+          "phone": "808-541-3118",
+          "complaint_portal": "https://eeoc.gov",
+          "what_to_report": "Federal employment discrimination.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "180/300 days",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "consumer",
+      "state": "MP",
+      "bodies": [
+        {
+          "oversight_body": "CNMI Attorney General \u2014 Consumer Affairs",
+          "jurisdiction": "primary",
+          "phone": "670-664-2341",
+          "complaint_portal": "https://cnmilaw.org",
+          "what_to_report": "Consumer fraud, utilities.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "Varies",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "mp_med_board",
+          "name": "Northern Mariana Islands Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Northern Mariana Islands Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MP"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "mp_patient_adv",
+          "name": "Northern Mariana Islands Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Northern Mariana Islands Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MP"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "mp_health_dept",
+          "name": "Northern Mariana Islands Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Northern Mariana Islands Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MP"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MP"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "mp_pharm_board",
+          "name": "Northern Mariana Islands Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Northern Mariana Islands Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MP"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "mp_pa",
+          "name": "Northern Mariana Islands Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Northern Mariana Islands Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MP"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "mp_mha",
+          "name": "Northern Mariana Islands Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Northern Mariana Islands Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MP"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "MP"
+    }
+  ]
+}

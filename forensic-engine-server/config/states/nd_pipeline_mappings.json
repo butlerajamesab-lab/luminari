@@ -1,0 +1,282 @@
+{
+  "meta": {
+    "state": "ND",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "nd_north_dakota_snap",
+        "nd_north_dakota_aging_services",
+        "nd_legal_services_of_north_dakota"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "nd_medicaid_expansion",
+        "nd_portability"
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "nd_north_dakota_chip_healthy_steps",
+        "nd_north_dakota_wic"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "nd_medicaid_expansion",
+        "nd_portability"
+      ]
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "nd_tanf_north_dakota",
+        "nd_north_dakota_housing_finance_agency_ndhf",
+        "nd_north_dakota_vocational_rehabilitation",
+        "nd_community_action_agencies_211_north_dako"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "nd_medicaid_expansion",
+        "nd_portability"
+      ]
+    },
+    {
+      "pipeline_id": "employment_dispute",
+      "programs": [
+        "nd_north_dakota_unemployment_insurance",
+        "nd_north_dakota_vocational_rehabilitation"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "nd_medicaid_expansion",
+        "nd_portability"
+      ]
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "nd_north_dakota_housing_finance_agency_ndhf",
+        "nd_nd_tribal_nations_health_social_services",
+        "nd_community_action_agencies_211_north_dako",
+        "nd_legal_services_of_north_dakota"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "nd_medicaid_expansion",
+        "nd_portability"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "nd_north_dakota_medicaid",
+        "nd_north_dakota_chip_healthy_steps",
+        "nd_north_dakota_unemployment_insurance",
+        "nd_north_dakota_wic",
+        "nd_nd_tribal_nations_health_social_services",
+        "nd_nd_department_of_human_services_behavior"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "nd_medicaid_expansion",
+        "nd_portability"
+      ]
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "nd_community_action_agencies_211_north_dako"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "nd_medicaid_expansion",
+        "nd_portability"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nd_involuntary_hold_law",
+        "nd_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nd_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nd_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nd_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nd_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nd_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "nd_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nd_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nd_restraint_seclusion_limits",
+        "nd_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nd_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "nd_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nd_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

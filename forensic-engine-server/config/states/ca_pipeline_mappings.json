@@ -1,0 +1,413 @@
+{
+  "meta": {
+    "state": "CA",
+    "layer": "pipeline_mappings",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "status": "placeholder",
+    "description": "Pipeline mappings \u2014 pending ingestion"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "tenant_rights",
+      "workflow_id": "tenant_rights_workflow",
+      "oversight_entity_types": [
+        "landlord"
+      ],
+      "layer0_flag_ids": [
+        "ca_tenant_protection_act"
+      ],
+      "layer1_cluster_ids": [
+        "ca_housing"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "housing_authority",
+        "courts",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "tenant_rights"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "wage_theft",
+      "workflow_id": "wage_theft_workflow",
+      "oversight_entity_types": [
+        "employer"
+      ],
+      "layer0_flag_ids": [
+        "ca_paid_family_leave"
+      ],
+      "layer1_cluster_ids": [
+        "ca_legal"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "courts",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "wage_theft"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "benefits_denial",
+      "workflow_id": "benefits_denial_workflow",
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "ca_calfresh_expanded",
+        "ca_tribal_tanf_programs"
+      ],
+      "layer1_cluster_ids": [
+        "ca_food",
+        "ca_healthcare"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "benefits_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "snap_denial",
+      "workflow_id": "benefits_denial_workflow",
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "ca_calfresh_expanded"
+      ],
+      "layer1_cluster_ids": [
+        "ca_food"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": "food",
+        "pipeline_ids_include": [
+          "snap_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "workflow_id": "insurance_claim_denial_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [
+        "ca_medi_cal_expansion"
+      ],
+      "layer1_cluster_ids": [
+        "ca_healthcare"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": "healthcare",
+        "pipeline_ids_include": [
+          "insurance_claim_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "medicaid_denial",
+      "workflow_id": "insurance_claim_denial_workflow",
+      "oversight_entity_types": [
+        "insurer",
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "ca_medi_cal_expansion"
+      ],
+      "layer1_cluster_ids": [
+        "ca_healthcare"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": "healthcare",
+        "pipeline_ids_include": [
+          "medicaid_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "domestic_violence",
+      "workflow_id": "tenant_rights_workflow",
+      "oversight_entity_types": [
+        "law_enforcement",
+        "family_court"
+      ],
+      "layer0_flag_ids": [
+        "ca_dv_firearms_relinquishment"
+      ],
+      "layer1_cluster_ids": [
+        "ca_dv_safety",
+        "ca_housing"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "courts",
+        "legal_aid",
+        "law_enforcement"
+      ],
+      "program_filter": {
+        "category": "dv_safety",
+        "pipeline_ids_include": [
+          "domestic_violence"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "workflow_id": "benefits_denial_workflow",
+      "oversight_entity_types": [
+        "government_agency",
+        "family_court"
+      ],
+      "layer0_flag_ids": [
+        "ca_tribal_tanf_programs"
+      ],
+      "layer1_cluster_ids": [
+        "ca_tribal",
+        "ca_legal"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "child_welfare",
+        "courts",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "child_welfare"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "elder_abuse",
+      "workflow_id": "benefits_denial_workflow",
+      "oversight_entity_types": [
+        "nursing_home",
+        "government_agency"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "ca_healthcare",
+        "ca_legal"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid",
+        "law_enforcement"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "elder_abuse"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "housing_discrimination",
+      "workflow_id": "tenant_rights_workflow",
+      "oversight_entity_types": [
+        "landlord"
+      ],
+      "layer0_flag_ids": [
+        "ca_tenant_protection_act"
+      ],
+      "layer1_cluster_ids": [
+        "ca_housing",
+        "ca_legal"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "housing_authority",
+        "courts",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": "housing",
+        "pipeline_ids_include": [
+          "housing_discrimination"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ca_involuntary_hold_law",
+        "ca_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ca_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ca_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ca_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ca_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ca_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "ca_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ca_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ca_restraint_seclusion_limits",
+        "ca_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ca_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "ca_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ca_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

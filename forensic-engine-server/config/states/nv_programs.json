@@ -1,0 +1,433 @@
+{
+  "meta": {
+    "state": "NV",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "nv_nevada_medicaid_dwss",
+      "program_name": "Nevada Medicaid (DWSS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "disability_claim"
+      ],
+      "agency": "Nevada Medicaid",
+      "phone": "800-992-0900",
+      "website": "https://dwss.nv.gov/medicaid",
+      "eligibility": "Adults \u2264138% FPL; children \u2264200% FPL; elderly/disabled",
+      "apply_notes": "Expanded Medicaid. Covers adults to 138% FPL. Apply online at dwss.nv.gov.",
+      "source": "luminari-nevada-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nv_nevada_check_up_chip",
+      "program_name": "Nevada Check Up (CHIP)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "Nevada Check Up",
+      "phone": "800-360-6044",
+      "website": "https://nevadacheckup.nv.gov",
+      "eligibility": "Children under 19; income 138\u2013200% FPL",
+      "apply_notes": "Children's health coverage for families above Medicaid level.",
+      "source": "luminari-nevada-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nv_nevada_snap",
+      "program_name": "Nevada SNAP",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial",
+        "disability_claim"
+      ],
+      "agency": "Nevada SNAP",
+      "phone": "800-992-0900",
+      "website": "https://dwss.nv.gov/snap",
+      "eligibility": "Income \u2264130% FPL; work requirements for ABD adults",
+      "apply_notes": "SNAP benefits through DWSS. Apply online, by phone, or at local DWSS office.",
+      "source": "luminari-nevada-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "NV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nv_nevada_tanf_nevada_works",
+      "program_name": "Nevada TANF (Nevada Works)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Nevada TANF",
+      "phone": "800-992-0900",
+      "website": "https://dwss.nv.gov",
+      "eligibility": "Families with minor children; 24-month state time limit; income/asset limits",
+      "apply_notes": "Cash assistance. $390/month family of 3. 24-month state limit (more restrictive than federal). Strong work requirements.",
+      "source": "luminari-nevada-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nv_nevada_unemployment_insurance_detr",
+      "program_name": "Nevada Unemployment Insurance (DETR)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "Nevada Unemployment Insurance",
+      "phone": "888-890-8211",
+      "website": "https://ui.nv.gov",
+      "eligibility": "Involuntary separation; base period earnings required",
+      "apply_notes": "UI: max $469/week. Duration 26 weeks. Administered by NV Dept. of Employment, Training and Rehabilitation.",
+      "source": "luminari-nevada-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nv_nevada_housing_division",
+      "program_name": "Nevada Housing Division",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Nevada Housing Division",
+      "phone": "702-486-7220",
+      "website": "https://housing.nv.gov",
+      "eligibility": "Income \u226450% AMI; waitlists common",
+      "apply_notes": "Affordable rental housing, Section 8 vouchers, emergency rental assistance. Las Vegas and Reno housing crises require long waitlists.",
+      "source": "luminari-nevada-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nv_nevada_wic",
+      "program_name": "Nevada WIC",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "Nevada WIC",
+      "phone": "775-684-5942",
+      "website": "https://dhhs.nv.gov/Programs/WIC",
+      "eligibility": "Pregnant/postpartum women, infants, children under 5; income \u2264185% FPL",
+      "apply_notes": "Women, Infants and Children nutrition through DWSS and health district offices.",
+      "source": "luminari-nevada-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nv_nevada_child_care_assistance_ccdf",
+      "program_name": "Nevada Child Care Assistance (CCDF)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "Nevada Child Care Assistance",
+      "phone": "702-486-7670",
+      "website": "https://dwss.nv.gov",
+      "eligibility": "Working families; income \u226485% SMI; children under 13",
+      "apply_notes": "Subsidized childcare for working families through DWSS.",
+      "source": "luminari-nevada-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nv_nevada_vocational_rehabilitation_bvr_bsb",
+      "program_name": "Nevada Vocational Rehabilitation (BVR/BSBH)",
+      "layer": "state",
+      "benefit_category": "employment",
+      "pipeline_ids": [
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "Nevada Vocational Rehabilitation",
+      "phone": "775-684-4040",
+      "website": "https://detr.nv.gov/vr",
+      "eligibility": "Documented disability; employment goal",
+      "apply_notes": "Employment services for people with disabilities. Bureau of Vocational Rehabilitation and Bureau for Services to the Blind and Visually Impaired.",
+      "source": "luminari-nevada-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "employment"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "employment"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "employment",
+      "city": "",
+      "state": "NV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nv_nevada_aging_and_disability_services_div",
+      "program_name": "Nevada Aging and Disability Services Division (ADSD)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Nevada Aging and Disability Services Division",
+      "phone": "775-687-4210",
+      "website": "https://adsd.nv.gov",
+      "eligibility": "Adults 60+; people with disabilities; income-based for some programs",
+      "apply_notes": "Services for adults 60+ and people with disabilities. Home and community-based care, elder rights, Nevada Senior Medicare Patrol.",
+      "source": "luminari-nevada-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nv_nevada_liheap",
+      "program_name": "Nevada LIHEAP",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Nevada LIHEAP",
+      "phone": "702-486-1452",
+      "website": "https://dwss.nv.gov/energy",
+      "eligibility": "Income \u2264150% FPL",
+      "apply_notes": "Home energy bill assistance through DWSS. High AC demand in summer makes cooling assistance critical.",
+      "source": "luminari-nevada-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nv_nevada_legal_aid_center_of_southern_neva",
+      "program_name": "Nevada Legal Aid Center of Southern Nevada / Nevada Legal Services",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Nevada Legal Aid Center of Southern Nevada / Nevada Legal Services",
+      "phone": "702-386-1070",
+      "website": "https://lacsn.org",
+      "eligibility": "Income \u2264125% FPL; some programs 200% FPL",
+      "apply_notes": "Free civil legal aid. Legal Aid Center serves Clark County; Nevada Legal Services serves rural and northern NV.",
+      "source": "luminari-nevada-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "",
+      "state": "NV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nv_nevada_211_nv211",
+      "program_name": "Nevada 211 / NV211",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "housing_dispute",
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Nevada 211 / NV211",
+      "phone": "",
+      "website": "https://nv211.org",
+      "eligibility": "Open to all",
+      "apply_notes": "Statewide resource and referral hotline. Food, shelter, utility assistance, health, transportation.",
+      "source": "luminari-nevada-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NV",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nv_nevada_division_of_public_and_behavioral",
+      "program_name": "Nevada Division of Public and Behavioral Health (DPBH)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "Nevada Division of Public and Behavioral Health",
+      "phone": "702-486-6000",
+      "website": "https://dpbh.nv.gov",
+      "eligibility": "All residents; Medicaid accepted; sliding scale",
+      "apply_notes": "Mental health and substance use services. Crisis line: 988. Southern Nevada Adult Mental Health and Child/Adolescent Services.",
+      "source": "luminari-nevada-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NV",
+      "federal_interface": false
+    }
+  ]
+}

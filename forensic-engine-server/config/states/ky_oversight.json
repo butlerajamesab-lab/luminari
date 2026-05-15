@@ -1,0 +1,371 @@
+{
+  "meta": {
+    "state": "KY",
+    "version": "3.0",
+    "chain_count": 3
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "insurer",
+      "state": "KY",
+      "bodies": [
+        {
+          "oversight_body": "Kentucky Department of Insurance (DOI)",
+          "jurisdiction": "primary",
+          "phone": "800-595-6053",
+          "complaint_portal": "insurance.ky.gov",
+          "what_to_report": "Private health, life, property insurance",
+          "legal_threshold": "Investigates claim denials, bad faith, and coverage disputes. Administers external review program.",
+          "city": "Frankfort",
+          "state": "KY",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Kentucky CHFS - Medicaid MCO Complaints",
+          "jurisdiction": "primary",
+          "phone": "855-459-6328",
+          "complaint_portal": "chfs.ky.gov",
+          "what_to_report": "Medicaid MCO grievances, access failures, prior auth denials, opioid treatment access",
+          "legal_threshold": "Handles complaints and facilitates state fair hearings.",
+          "city": "Frankfort",
+          "state": "KY",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Kentucky Labor Cabinet - Division of Wages & Hours",
+          "jurisdiction": "primary",
+          "phone": "502-564-3070",
+          "complaint_portal": "labor.ky.gov",
+          "what_to_report": "Kentucky minimum wage, Wages and Hours Act violations, child labor, prevailing wage",
+          "legal_threshold": "Investigates wage and hour complaints.",
+          "city": "Frankfort",
+          "state": "KY",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Kentucky DCBS Fair Hearings",
+          "jurisdiction": "primary",
+          "phone": "502-564-3703",
+          "complaint_portal": "chfs.ky.gov",
+          "what_to_report": "SNAP, Medicaid, KTAP fair hearings",
+          "legal_threshold": "Conducts fair hearings for state benefit appeals.",
+          "city": "Frankfort",
+          "state": "KY",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Kentucky Office of Unemployment Insurance - Appeals",
+          "jurisdiction": "primary",
+          "phone": "502-564-2900",
+          "complaint_portal": "kcc.ky.gov",
+          "what_to_report": "UI denial / overpayment",
+          "legal_threshold": "Handles appeals for unemployment insurance decisions.",
+          "city": "Frankfort",
+          "state": "KY",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Kentucky Cabinet for Health and Family Services - DCBS",
+          "jurisdiction": "primary",
+          "phone": "877-597-2331",
+          "complaint_portal": "chfs.ky.gov",
+          "what_to_report": "Child abuse/neglect investigation; ICWA for enrolled tribal members; foster care",
+          "legal_threshold": "Investigates child abuse and neglect, and handles child welfare cases.",
+          "city": "Frankfort",
+          "state": "KY",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "benefits_agency",
+      "state": "KY",
+      "bodies": [
+        {
+          "oversight_body": "Kentucky Commission on Human Rights (KCHR) - Fair Housing",
+          "jurisdiction": "primary",
+          "phone": "502-595-0029",
+          "complaint_portal": "kchr.ky.gov",
+          "what_to_report": "Housing discrimination under Kentucky Fair Housing Act",
+          "legal_threshold": "Investigates housing discrimination complaints.",
+          "city": "Frankfort",
+          "state": "KY",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Louisville Metro Human Relations Commission (LMHRC)",
+          "jurisdiction": "primary",
+          "phone": "502-574-3631",
+          "complaint_portal": "louisvilleky.gov/mhrc",
+          "what_to_report": "Louisville-specific housing and employment discrimination",
+          "legal_threshold": "Investigates discrimination complaints within Louisville Metro.",
+          "city": "Louisville",
+          "state": "KY",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "HUD Fair Housing - Louisville Field Office",
+          "jurisdiction": "primary",
+          "phone": "800-669-9777",
+          "complaint_portal": "hud.gov/fairhousing",
+          "what_to_report": "Federal Fair Housing Act violations",
+          "legal_threshold": "Investigates housing discrimination complaints under federal law.",
+          "city": "Louisville",
+          "state": "KY",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Kentucky Commission on Human Rights (KCHR) - Employment",
+          "jurisdiction": "primary",
+          "phone": "502-595-0029",
+          "complaint_portal": "kchr.ky.gov",
+          "what_to_report": "Employment discrimination under Kentucky Civil Rights Act",
+          "legal_threshold": "Investigates employment discrimination complaints.",
+          "city": "Frankfort",
+          "state": "KY",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC - Louisville Field Office",
+          "jurisdiction": "primary",
+          "phone": "800-669-4000",
+          "complaint_portal": "eeoc.gov",
+          "what_to_report": "Federal employment discrimination",
+          "legal_threshold": "Investigates employment discrimination complaints under federal law.",
+          "city": "Louisville",
+          "state": "KY",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOL Wage and Hour Division - Louisville",
+          "jurisdiction": "primary",
+          "phone": "502-582-5226",
+          "complaint_portal": "dol.gov/whd",
+          "what_to_report": "FLSA minimum wage, overtime, FMLA",
+          "legal_threshold": "Enforces federal wage and hour laws.",
+          "city": "Louisville",
+          "state": "KY",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Louisville Community Oversight of Police",
+          "jurisdiction": "primary",
+          "phone": "502-574-2020",
+          "complaint_portal": "louisvilleky.gov/cop",
+          "what_to_report": "Louisville Metro Police Department oversight",
+          "legal_threshold": "Civilian oversight board with independent investigation powers.",
+          "city": "Louisville",
+          "state": "KY",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Kentucky Law Enforcement Council (KLEC)",
+          "jurisdiction": "primary",
+          "phone": "859-622-6453",
+          "complaint_portal": "klec.ky.gov",
+          "what_to_report": "Kentucky officer certification",
+          "legal_threshold": "Handles decertification process for Kentucky officers for serious misconduct or criminal conviction.",
+          "city": "Richmond",
+          "state": "KY",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "family_court",
+      "state": "KY",
+      "bodies": [
+        {
+          "oversight_body": "Kentucky Judicial Conduct Commission",
+          "jurisdiction": "primary",
+          "phone": "859-543-7760",
+          "complaint_portal": "courts.ky.gov/about/JCC",
+          "what_to_report": "Kentucky judge misconduct",
+          "legal_threshold": "Investigates complaints of judicial misconduct.",
+          "city": "Lexington",
+          "state": "KY",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "ky_med_board",
+          "name": "Kentucky Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Kentucky Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "KY"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "ky_patient_adv",
+          "name": "Kentucky Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Kentucky Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "KY"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "ky_health_dept",
+          "name": "Kentucky Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Kentucky Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "KY"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "KY"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "ky_pharm_board",
+          "name": "Kentucky Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Kentucky Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "KY"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "ky_pa",
+          "name": "Kentucky Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Kentucky Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "KY"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "ky_mha",
+          "name": "Kentucky Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Kentucky Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "KY"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "KY"
+    }
+  ]
+}

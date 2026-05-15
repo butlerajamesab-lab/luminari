@@ -1,0 +1,170 @@
+{
+  "meta": {
+    "state": "CO",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "PEAK",
+      "role": "Online portal for SNAP, Medicaid, and Colorado Works applications and case management.",
+      "phone": "303-866-5700",
+      "email": null,
+      "hours": null,
+      "specialty": "benefits"
+    },
+    {
+      "contact_name": "211 Colorado",
+      "role": "24/7 statewide information and referral service.",
+      "phone": "211",
+      "email": null,
+      "hours": "24/7",
+      "specialty": "general"
+    },
+    {
+      "contact_name": "Colorado Legal Services (Statewide)",
+      "role": "Statewide legal aid for low-income Coloradans.",
+      "phone": "303-837-1313",
+      "email": null,
+      "hours": null,
+      "specialty": "legal"
+    },
+    {
+      "contact_name": "CDHS Office of Appeals (Benefits)",
+      "role": "Handles appeals for public assistance benefits.",
+      "phone": "303-866-5150",
+      "email": null,
+      "hours": null,
+      "specialty": "legal"
+    },
+    {
+      "contact_name": "CDLE UI Appeals",
+      "role": "Handles appeals for unemployment insurance benefits.",
+      "phone": "303-318-9299",
+      "email": null,
+      "hours": null,
+      "specialty": "legal"
+    },
+    {
+      "contact_name": "Colorado DLSS (Wage Claims)",
+      "role": "Investigates wage theft complaints.",
+      "phone": "303-318-8441",
+      "email": null,
+      "hours": null,
+      "specialty": "legal"
+    },
+    {
+      "contact_name": "Colorado CCRD (Civil Rights)",
+      "role": "Investigates discrimination complaints.",
+      "phone": "303-894-2997",
+      "email": null,
+      "hours": null,
+      "specialty": "legal"
+    },
+    {
+      "contact_name": "Colorado DOI (Insurance)",
+      "role": "Handles consumer complaints against insurance companies.",
+      "phone": "303-894-7490",
+      "email": null,
+      "hours": null,
+      "specialty": "legal"
+    },
+    {
+      "contact_name": "Colorado LEAP (Energy Assistance)",
+      "role": "Provides assistance with home energy costs.",
+      "phone": "866-432-8435",
+      "email": null,
+      "hours": null,
+      "specialty": "benefits"
+    },
+    {
+      "contact_name": "Colorado DV Hotline (CCADV)",
+      "role": "Statewide domestic violence hotline.",
+      "phone": "303-831-9959",
+      "email": null,
+      "hours": "24/7",
+      "specialty": "crisis"
+    },
+    {
+      "contact_name": "Denver Health (Safety Net)",
+      "role": "Safety-net hospital and FQHC network for Denver.",
+      "phone": "303-436-6000",
+      "email": null,
+      "hours": null,
+      "specialty": "health"
+    },
+    {
+      "contact_name": "Colorado Coalition for Homeless",
+      "role": "Services for people experiencing homelessness in Denver.",
+      "phone": "303-595-9561",
+      "email": null,
+      "hours": null,
+      "specialty": "housing"
+    },
+    {
+      "contact_name": "Denver Office of Housing Stability (HOST)",
+      "role": "Housing assistance and resources for Denver residents.",
+      "phone": "720-913-1600",
+      "email": null,
+      "hours": null,
+      "specialty": "housing"
+    },
+    {
+      "contact_name": "RMIAN (Immigration Legal)",
+      "role": "Immigration legal services.",
+      "phone": "303-433-2812",
+      "email": null,
+      "hours": null,
+      "specialty": "legal"
+    },
+    {
+      "contact_name": "Colorado Immigrant Rights Coalition",
+      "role": "Advocacy and resources for immigrants.",
+      "phone": "303-592-8899",
+      "email": null,
+      "hours": null,
+      "specialty": "immigration"
+    },
+    {
+      "contact_name": "Southern Ute Social Services",
+      "role": "Social services for Southern Ute tribal members.",
+      "phone": "970-563-0100",
+      "email": null,
+      "hours": null,
+      "specialty": "tribal"
+    },
+    {
+      "contact_name": "Ute Mountain Ute Social Services",
+      "role": "Social services for Ute Mountain Ute tribal members.",
+      "phone": "970-565-3751",
+      "email": null,
+      "hours": null,
+      "specialty": "tribal"
+    },
+    {
+      "contact_name": "Denver Indian Health & Family Services",
+      "role": "Health and social services for urban American Indians and Alaska Natives in Denver.",
+      "phone": "303-953-8271",
+      "email": null,
+      "hours": null,
+      "specialty": "tribal"
+    },
+    {
+      "contact_name": "EEOC Denver",
+      "role": "Federal agency for employment discrimination complaints.",
+      "phone": "800-669-4000",
+      "email": null,
+      "hours": null,
+      "specialty": "legal"
+    },
+    {
+      "contact_name": "Colorado AG Consumer Protection",
+      "role": "State agency for consumer protection issues.",
+      "phone": "800-222-4444",
+      "email": null,
+      "hours": null,
+      "specialty": "legal"
+    }
+  ],
+  "regions": [],
+  "missing_sections": []
+}

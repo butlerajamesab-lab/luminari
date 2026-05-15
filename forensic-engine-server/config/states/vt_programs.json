@@ -1,0 +1,395 @@
+{
+  "meta": {
+    "state": "VT",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "vt_vermont_medicaid_green_mountain_care",
+      "program_name": "Vermont Medicaid / Green Mountain Care",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Vermont Medicaid / Green Mountain Care",
+      "phone": "800-250-8427",
+      "website": "https://dvha.vermont.gov",
+      "eligibility": "Adults \u2264138% FPL; elderly/disabled; children under Dr. Dynasaur",
+      "apply_notes": "Expanded Medicaid. Covers adults up to 138% FPL. Vermont's 1115 waiver (Global Commitment to Health) allows creative program design.",
+      "source": "luminari-vermont-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "VT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vt_dr_dynasaur_chip",
+      "program_name": "Dr. Dynasaur (CHIP+)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "Dr. Dynasaur",
+      "phone": "800-250-8427",
+      "website": "https://dvha.vermont.gov/drdynasaur",
+      "eligibility": "All children under 19 regardless of immigration status; income \u2264312% FPL",
+      "apply_notes": "Vermont's children's health program. Covers ALL children up to age 19 regardless of immigration status\u2014one of most expansive in the registry.",
+      "source": "luminari-vermont-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "VT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vt_vermont_snap_3squaresvt",
+      "program_name": "Vermont SNAP (3SquaresVT)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Vermont SNAP",
+      "phone": "800-287-0589",
+      "website": "https://dcf.vermont.gov/snap",
+      "eligibility": "Income \u2264130% FPL; some categorical eligibility expansions",
+      "apply_notes": "SNAP benefits administered by DCF. Vermont markets the program as 3SquaresVT to reduce stigma.",
+      "source": "luminari-vermont-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "VT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vt_reach_up_tanf_vermont",
+      "program_name": "Reach Up (TANF Vermont)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "Reach Up",
+      "phone": "800-287-0589",
+      "website": "https://dcf.vermont.gov/reachup",
+      "eligibility": "Families with minor children; income limits; VT residency",
+      "apply_notes": "Cash assistance: $1,027/month (family of 3)\u2014among highest in the registry. 60-month limit. Focus on education and job training, not just work hours.",
+      "source": "luminari-vermont-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "VT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vt_vermont_unemployment_insurance",
+      "program_name": "Vermont Unemployment Insurance",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "employment_dispute"
+      ],
+      "agency": "Vermont Unemployment Insurance",
+      "phone": "877-214-3332",
+      "website": "https://labor.vermont.gov",
+      "eligibility": "Involuntary separation; base period earnings required",
+      "apply_notes": "UI: max $498/week, 26 weeks. One of highest replacement rates relative to average wages in New England.",
+      "source": "luminari-vermont-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "VT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vt_vermont_housing_finance_agency_vhfa",
+      "program_name": "Vermont Housing Finance Agency (VHFA)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Vermont Housing Finance Agency",
+      "phone": "802-864-5743",
+      "website": "https://vhfa.org",
+      "eligibility": "Income-based; waitlists typically long",
+      "apply_notes": "Affordable rental housing, homebuyer assistance, Section 8 vouchers. Vermont has among nation's lowest vacancy rates.",
+      "source": "luminari-vermont-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "VT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vt_vermont_wic",
+      "program_name": "Vermont WIC",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare"
+      ],
+      "agency": "Vermont WIC",
+      "phone": "800-640-4673",
+      "website": "https://healthvermont.gov/wic",
+      "eligibility": "Pregnant/postpartum women, infants, children under 5; income \u2264185% FPL",
+      "apply_notes": "Women, Infants and Children nutrition through VDH.",
+      "source": "luminari-vermont-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "VT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vt_child_development_division_cdd_child_car",
+      "program_name": "Child Development Division (CDD) / Child Care Financial Assistance",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "Child Development Division",
+      "phone": "800-649-2642",
+      "website": "https://dcf.vermont.gov/cdd",
+      "eligibility": "Working families; income \u2264350% FPL for some tiers; children under 13",
+      "apply_notes": "Subsidized child care for working Vermont families. Among more generous CCDF implementations.",
+      "source": "luminari-vermont-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "VT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vt_vermont_vocational_rehabilitation_vocreh",
+      "program_name": "Vermont Vocational Rehabilitation (VocRehab)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "Vermont Vocational Rehabilitation",
+      "phone": "866-879-6757",
+      "website": "https://vocrehab.vermont.gov",
+      "eligibility": "Documented disability; employment goal",
+      "apply_notes": "Employment services for people with disabilities. Strong integration with mental health and substance use services.",
+      "source": "luminari-vermont-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "VT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vt_vermont_senior_programs_dail",
+      "program_name": "Vermont Senior Programs (DAIL)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Vermont Senior Programs",
+      "phone": "800-642-5119",
+      "website": "https://dail.vermont.gov",
+      "eligibility": "Adults 60+; income-based for some programs",
+      "apply_notes": "Services for adults 60+. Home and community-based, Meals on Wheels, adult day, caregiver support. Senior Help Line.",
+      "source": "luminari-vermont-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "VT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vt_vermont_legal_aid_vlsc",
+      "program_name": "Vermont Legal Aid / VLSC",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Vermont Legal Aid / VLSC",
+      "phone": "800-889-2047",
+      "website": "https://vtlegalaid.org",
+      "eligibility": "Income \u2264125% FPL; expanded thresholds for elder and housing",
+      "apply_notes": "Free civil legal services statewide. Benefits, housing, family law, elder law, disability rights.",
+      "source": "luminari-vermont-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "VT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vt_vermont_paid_family_and_medical_leave_pf",
+      "program_name": "Vermont Paid Family and Medical Leave (PFML)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Vermont Paid Family and Medical Leave",
+      "phone": "855-667-9358",
+      "website": "https://pfml.vermont.gov",
+      "eligibility": "Vermont-covered employees; waiting period may apply",
+      "apply_notes": "State-run PFML launched 2024. Up to 12 weeks paid leave for birth, adoption, or serious illness. Employer and employee contributions.",
+      "source": "luminari-vermont-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "VT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vt_department_of_mental_health_vermont_dmh",
+      "program_name": "Department of Mental Health Vermont (DMH)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Department of Mental Health Vermont",
+      "phone": "800-464-4343",
+      "website": "https://mentalhealth.vermont.gov",
+      "eligibility": "All residents; Medicaid accepted; sliding scale",
+      "apply_notes": "Mental health and substance use services. Designated agencies in each region. Strong commitment to community-based care.",
+      "source": "luminari-vermont-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "VT",
+      "federal_interface": false
+    }
+  ]
+}

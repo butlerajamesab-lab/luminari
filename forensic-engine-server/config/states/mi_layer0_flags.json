@@ -1,0 +1,238 @@
+{
+  "meta": {
+    "state": "MI",
+    "version": "3.0",
+    "flag_count": 8
+  },
+  "flags": [
+    {
+      "flag_id": "mi_midas_fraud_system",
+      "severity": "alert",
+      "title": "MiDAS Automated Fraud System \u2014 Mass False Fraud Flags",
+      "summary": "Michigan's MiDAS system generated over 40,000 false fraud determinations. Any UI fraud flag must be cross-checked against MiDAS error patterns.",
+      "affected_programs": [
+        "mi_unemployment_insurance"
+      ],
+      "effective_date": "2026-03-08"
+    },
+    {
+      "flag_id": "mi_20_week_ui_cap",
+      "severity": "alert",
+      "title": "20-Week UI Duration Cap \u2014 Shortest in Region",
+      "summary": "Michigan caps UI at 20 weeks, the shortest in the Great Lakes region. Federal extensions may apply during high unemployment.",
+      "affected_programs": [
+        "mi_unemployment_insurance"
+      ],
+      "effective_date": "2026-03-08"
+    },
+    {
+      "flag_id": "mi_medicaid_expansion_healthy_michigan",
+      "severity": "warning",
+      "title": "Healthy Michigan Plan Work Requirements (Enjoined)",
+      "summary": "Work requirements were approved but enjoined by federal courts. Monitor for reinstatement.",
+      "affected_programs": [
+        "mi_healthy_michigan_plan"
+      ],
+      "effective_date": "2026-03-08"
+    },
+    {
+      "flag_id": "mi_detroit_water_shutoffs",
+      "severity": "alert",
+      "title": "Detroit Mass Water Shutoffs \u2014 UN Human Rights Concern",
+      "summary": "Detroit has conducted mass water shutoffs affecting tens of thousands. Shutoff assistance programs exist but are underfunded.",
+      "affected_programs": [
+        "mi_dwsd_water"
+      ],
+      "effective_date": "2026-03-08"
+    },
+    {
+      "flag_id": "mi_eviction_crisis",
+      "severity": "warning",
+      "title": "Detroit Eviction Rate Among Highest in Nation",
+      "summary": "Detroit has one of the highest eviction rates in the US. Eviction diversion programs are active but capacity-limited.",
+      "affected_programs": [
+        "mi_mshda_eviction_diversion",
+        "mi_detroit_housing_commission"
+      ],
+      "effective_date": "2026-03-08"
+    },
+    {
+      "flag_id": "mi_minimum_wage_increase",
+      "severity": "info",
+      "title": "MI Minimum Wage Increase Track Through 2028",
+      "summary": "Michigan minimum wage is $10.56/hr with scheduled increases through 2028 under the Improved Workforce Opportunity Wage Act.",
+      "affected_programs": [
+        "mi_wage_hour_division"
+      ],
+      "effective_date": "2026-03-08"
+    },
+    {
+      "flag_id": "mi_icwa_12_tribes",
+      "severity": "warning",
+      "title": "12 Federally Recognized Tribes \u2014 ICWA Applies",
+      "summary": "Michigan has 12 federally recognized tribes. ICWA applies for any child welfare matter involving enrolled members. Always check tribal enrollment before routing.",
+      "affected_programs": [],
+      "effective_date": "2026-03-08"
+    },
+    {
+      "flag_id": "mi_upper_peninsula_access",
+      "severity": "warning",
+      "title": "Upper Peninsula Geographic Isolation",
+      "summary": "The UP is geographically remote with limited urban services. Phone and online access may be the only viable intake channels for many UP residents.",
+      "affected_programs": [
+        "mi_upper_peninsula_caa"
+      ],
+      "effective_date": "2026-03-08"
+    },
+    {
+      "flag_id": "mi_involuntary_hold_law",
+      "title": "Involuntary Hold: Michigan Emergency Admission",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "MI involuntary psychiatric hold law: Michigan Emergency Admission. Statutory authority: MCL \u00a7 330.1427. Maximum initial hold duration: 24 hours. Legal standard: danger to self/others. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 24 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "MCL \u00a7 330.1427"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "mi_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in MI retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "mi_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in MI: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "mi_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Michigan Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "mi_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Michigan Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "mi_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Michigan Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

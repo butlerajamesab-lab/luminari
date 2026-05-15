@@ -1,0 +1,485 @@
+{
+  "meta": {
+    "state": "WY",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "wy_wyoming_snap_food_assistance_dfs",
+      "program_name": "Wyoming SNAP / Food Assistance (DFS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Wyoming SNAP / Food Assistance",
+      "phone": "307-777-6312",
+      "website": "https://wyo.gov/snap",
+      "eligibility": "Income < 130% FPL. wyoming.gov/dfsweb. Laramie County (Cheyenne): 307-777-6312. Natrona County (Casper): 307-235-9340. Albany County (Laramie): 307-460-2850.",
+      "apply_notes": "Monthly food assistance \u2014 county DFS offices",
+      "source": "luminari-wyoming-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "WY",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wy_wyoming_food_for_thought_food_bank_of_wy",
+      "program_name": "Wyoming Food for Thought / Food Bank of Wyoming",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Wyoming Food for Thought / Food Bank of Wyoming",
+      "phone": "307-773-2244",
+      "website": "https://wyomingfoodforthought.com",
+      "eligibility": "Anyone in need. wyomingfoodforthought.com. Also Food Bank of Wyoming (Casper: 307-237-2161). Laramie Food Basket (307-745-9315).",
+      "apply_notes": "Statewide food bank network",
+      "source": "luminari-wyoming-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "WY",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wy_wic_wyoming",
+      "program_name": "WIC Wyoming",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WIC Wyoming",
+      "phone": "307-777-6523",
+      "website": "https://health.wyo.gov/publichealth/wic",
+      "eligibility": "Pregnant, postpartum women, infants, children under 5. Income < 185% FPL. health.wyo.gov/wic \u2014 find local clinic.",
+      "apply_notes": "Nutrition assistance for women, infants, children",
+      "source": "luminari-wyoming-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "WY",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wy_wyoming_medicaid_dfs_categorical_only",
+      "program_name": "Wyoming Medicaid (DFS) \u2014 Categorical Only",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial",
+        "insurance_claim_denial"
+      ],
+      "agency": "Wyoming Medicaid",
+      "phone": "307-777-6312",
+      "website": "https://health.wyo.gov/healthcarefin/medicaid",
+      "eligibility": "Children, pregnant women, parents <77% FPL, elderly, disabled \u2014 NOT expanded. wyoming.gov/dfsweb. KidCare CHIP for children: 307-777-7531.",
+      "apply_notes": "Medicaid \u2014 not expanded, categorical eligibility only",
+      "source": "luminari-wyoming-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "WY",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wy_wyoming_coverage_gap_routing_non_categor",
+      "program_name": "Wyoming Coverage Gap Routing (Non-Categorical Adults)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Wyoming Coverage Gap Routing",
+      "phone": "307-635-1299",
+      "website": "https://wypca.org",
+      "eligibility": "WY Primary Care Association (FQHCs): 307-635-1299. Cheyenne Regional Medical Center charity care: 307-633-7701. Wyoming Medical Center charity care (Casper: 307-577-7201). Ryan White for HIV+. IHS Wind River for enrolled tribal members.",
+      "apply_notes": "CRITICAL: Non-categorical adults have NO Medicaid \u2014 route to FQHCs and charity care",
+      "source": "luminari-wyoming-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "WY",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wy_ihs_wind_river_service_unit_eastern_shos",
+      "program_name": "IHS Wind River Service Unit (Eastern Shoshone + Northern Arapaho)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "IHS Wind River Service Unit",
+      "phone": "307-332-7901",
+      "website": "https://ihs.gov/billings",
+      "eligibility": "Enrolled Eastern Shoshone and Northern Arapaho members. 115 Blue Sky Hwy, Fort Washakie WY 82514. Under Billings Area IHS.",
+      "apply_notes": "IHS comprehensive health for Wind River Reservation tribal members",
+      "source": "luminari-wyoming-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "WY",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wy_wyoming_primary_care_association_fqhcs",
+      "program_name": "Wyoming Primary Care Association (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Wyoming Primary Care Association",
+      "phone": "307-635-1299",
+      "website": "https://wypca.org",
+      "eligibility": "Anyone regardless of insurance. Key: Community Health Center of Central Wyoming (Casper: 307-577-0555), Cheyenne Health and Wellness Center (307-637-9991), Carbon County Public Health (Rawlins: 307-328-2234).",
+      "apply_notes": "Federally qualified health centers \u2014 only 8 in state, thinnest network in registry",
+      "source": "luminari-wyoming-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "WY",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wy_wyoming_community_development_authority_",
+      "program_name": "Wyoming Community Development Authority (WCDA)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Wyoming Community Development Authority",
+      "phone": "307-265-0603",
+      "website": "https://wcda.state.wy",
+      "eligibility": "Low-income WY renters. wcda.state.wy.us. Cheyenne Housing Authority: 307-635-5801. Casper Housing Authority: 307-235-8318.",
+      "apply_notes": "Section 8/HCV, HOME program, rental assistance",
+      "source": "luminari-wyoming-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "WY",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wy_wyoming_legal_services_only_statewide_le",
+      "program_name": "Wyoming Legal Services (Only Statewide Legal Aid)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute",
+        "consumer_protection"
+      ],
+      "agency": "Wyoming Legal Services",
+      "phone": "800-442-6170",
+      "website": "https://wyominglegalservices.org",
+      "eligibility": "All 23 WY counties. wyominglegalservices.org. Very limited capacity \u2014 call same day for urgent matters. 211 W 19th St, Cheyenne WY 82001.",
+      "apply_notes": "ONLY statewide civil legal aid \u2014 housing, family, benefits, DV, consumer",
+      "source": "luminari-wyoming-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "WY",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wy_eastern_shoshone_tribe_social_services",
+      "program_name": "Eastern Shoshone Tribe \u2014 Social Services",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "housing_dispute",
+        "child_welfare"
+      ],
+      "agency": "Eastern Shoshone Tribe \u2014 Social Services",
+      "phone": "307-332-3532",
+      "website": "https://easternshoshone.net",
+      "eligibility": "Enrolled Eastern Shoshone members only. Separate government from Northern Arapaho. Confirm enrollment before routing. easternshoshone.net.",
+      "apply_notes": "Tribal TANF, housing, health, elder, child welfare for enrolled Eastern Shoshone",
+      "source": "luminari-wyoming-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "WY",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wy_northern_arapaho_tribe_social_services",
+      "program_name": "Northern Arapaho Tribe \u2014 Social Services",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "housing_dispute",
+        "child_welfare"
+      ],
+      "agency": "Northern Arapaho Tribe \u2014 Social Services",
+      "phone": "307-856-6682",
+      "website": "https://northernarapaho.com",
+      "eligibility": "Enrolled Northern Arapaho members only. Separate government from Eastern Shoshone. northernarapaho.com. BIA Wind River Agency: 307-332-7810.",
+      "apply_notes": "Tribal TANF, housing, health, elder, child welfare for enrolled Northern Arapaho",
+      "source": "luminari-wyoming-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "WY",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wy_wyoming_tanf_dfs",
+      "program_name": "Wyoming TANF (DFS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "Wyoming TANF",
+      "phone": "307-777-6312",
+      "website": "https://wyo.gov/tanf",
+      "eligibility": "Families with children. 60-month limit. Work requirement enforced. wyoming.gov/dfsweb.",
+      "apply_notes": "Cash assistance for families with children",
+      "source": "luminari-wyoming-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "WY",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wy_wyoming_ui_dws",
+      "program_name": "Wyoming UI (DWS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Wyoming UI",
+      "phone": "307-235-3217",
+      "website": "https://wyomingworkforce.org",
+      "eligibility": "Workers who lost job through no fault. wyomingworkforce.org \u2014 file online. CRITICAL: 10-day appeal deadline from mailing.",
+      "apply_notes": "Weekly income replacement \u2014 up to $508/week, 26 weeks",
+      "source": "luminari-wyoming-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "WY",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wy_wyoming_liheap_dfs",
+      "program_name": "Wyoming LIHEAP (DFS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Wyoming LIHEAP",
+      "phone": "307-777-6312",
+      "website": "https://health.wyo.gov/liheap",
+      "eligibility": "Income < 60% state median. Apply through county DFS offices. Community Action of Laramie County: 307-635-5561.",
+      "apply_notes": "Heating assistance \u2014 critical in WY winters",
+      "source": "luminari-wyoming-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "WY",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wy_wyoming_dv_services_wdvsa",
+      "program_name": "Wyoming DV Services (WDVSA)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Wyoming DV Services",
+      "phone": "307-235-1026",
+      "website": "https://wyomingdvsa.org",
+      "eligibility": "Anyone experiencing DV. wyomingdvsa.org. Safe Harbor (Cheyenne: 307-637-7233). SafeHouse (Casper: 307-235-2814).",
+      "apply_notes": "DV coalition \u2014 24/7 hotline, 10 programs statewide",
+      "source": "luminari-wyoming-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "WY",
+      "federal_interface": false
+    },
+    {
+      "program_id": "wy_wyoming_veterans_commission",
+      "program_name": "Wyoming Veterans Commission",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial",
+        "disability_claim"
+      ],
+      "agency": "Wyoming Veterans Commission",
+      "phone": "307-777-5290",
+      "website": "https://wyo.gov/veterans",
+      "eligibility": "WY veterans and families. Cheyenne VA Medical Center: 307-778-7550. Casper CBOC: 307-235-4143.",
+      "apply_notes": "VA benefits navigation, state veterans services, emergency assistance",
+      "source": "luminari-wyoming-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "WY",
+      "federal_interface": false
+    }
+  ]
+}

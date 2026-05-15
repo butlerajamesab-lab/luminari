@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "state": "NV",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "nv_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "nv_nevada_medicaid_dwss",
+        "nv_nevada_check_up_chip",
+        "nv_nevada_unemployment_insurance_detr",
+        "nv_nevada_housing_division",
+        "nv_nevada_wic",
+        "nv_nevada_aging_and_disability_services_div",
+        "nv_nevada_211_nv211",
+        "nv_nevada_division_of_public_and_behavioral"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "nv_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "nv_nevada_snap"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "nv_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "nv_nevada_tanf_nevada_works",
+        "nv_nevada_child_care_assistance_ccdf",
+        "nv_nevada_liheap"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "nv_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "nv_nevada_legal_aid_center_of_southern_neva"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "nv_lens_employment",
+      "lens_type": "employment",
+      "programs": [
+        "nv_nevada_vocational_rehabilitation_bvr_bsb"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    }
+  ]
+}

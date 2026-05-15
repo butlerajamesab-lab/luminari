@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "state": "VI",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "vi_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "vi_usvi_medicaid_vidoh",
+        "vi_usvi_unemployment_insurance_dlca",
+        "vi_usvi_behavioral_health_dbhs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "vi_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "vi_usvi_snap_food_assistance_program",
+        "vi_usvi_wic",
+        "vi_usvi_senior_citizen_center"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "vi_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "vi_usvi_tanf_cash_assistance",
+        "vi_usvi_child_care_assistance",
+        "vi_usvi_energy_office_liheap"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "vi_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "vi_usvi_housing_finance_authority_vihfa",
+        "vi_virgin_islands_legal_services_vils"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility"
+      ]
+    },
+    {
+      "lens_id": "vi_lens_employment",
+      "lens_type": "employment",
+      "programs": [
+        "vi_usvi_vocational_rehabilitation_vidvr"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility"
+      ]
+    }
+  ]
+}

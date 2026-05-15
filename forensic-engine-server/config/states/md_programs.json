@@ -1,0 +1,448 @@
+{
+  "meta": {
+    "state": "MD",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "md_maryland_snap_food_supplement_program_ld",
+      "program_name": "Maryland SNAP / Food Supplement Program (LDSS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Maryland SNAP / Food Supplement Program",
+      "phone": "800-332-6347",
+      "website": "https://mydhhr.org",
+      "eligibility": "Income < 130% FPL. mydhhr.org. Baltimore City DSS: 410-361-2000. Montgomery DHHS: 240-777-4500. PG County DSS: 301-909-6300. Wicomico (Eastern Shore): 410-334-0700.",
+      "apply_notes": "Monthly food assistance \u2014 24 counties plus Baltimore City",
+      "source": "luminari-maryland-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "MD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "md_maryland_food_bank_capital_area_food_ban",
+      "program_name": "Maryland Food Bank / Capital Area Food Bank",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Maryland Food Bank / Capital Area Food Bank",
+      "phone": "410-737-8282",
+      "website": "https://mdfoodbank.org",
+      "eligibility": "Anyone in need. mdfoodbank.org. Capital Area Food Bank (DC/suburban MD: 202-526-5344). Shore Food Bank (Eastern Shore: 410-877-3761). Mountainside Food Bank (Western MD: 301-777-5550).",
+      "apply_notes": "Central Maryland food bank network",
+      "source": "luminari-maryland-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "MD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "md_wic_maryland",
+      "program_name": "WIC Maryland",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WIC Maryland",
+      "phone": "410-767-6980",
+      "website": "https://phpa.health.maryland",
+      "eligibility": "Pregnant, postpartum women, infants, children under 5. Income < 185% FPL. phpa.health.maryland.gov/wic.",
+      "apply_notes": "Nutrition assistance for women, infants, children",
+      "source": "luminari-maryland-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "MD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "md_maryland_healthchoice_medicaid_dhmh",
+      "program_name": "Maryland HealthChoice / Medicaid (DHMH)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Maryland HealthChoice / Medicaid",
+      "phone": "800-492-5231",
+      "website": "https://mmcp.health.maryland",
+      "eligibility": "Adults 19\u201364 to 138% FPL. Children (MCHP), families, elderly, disabled. marylandhealthconnection.gov. Plans: Amerigroup, CareFirst, Jai Medical, Priority Partners, United Healthcare.",
+      "apply_notes": "Medicaid \u2014 expanded 2014, managed care via HealthChoice",
+      "source": "luminari-maryland-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "md_university_of_maryland_medical_system_ba",
+      "program_name": "University of Maryland Medical System (Baltimore Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "University of Maryland Medical System",
+      "phone": "410-328-8667",
+      "website": "https://umms.org",
+      "eligibility": "Baltimore City region. Charity care income < 200% FPL. Also Johns Hopkins Hospital (410-955-5000). Sinai Hospital of Baltimore (410-601-9000).",
+      "apply_notes": "Baltimore academic medical center \u2014 charity care, Level 1 trauma",
+      "source": "luminari-maryland-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "md_maryland_community_health_centers_fqhcs",
+      "program_name": "Maryland Community Health Centers (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Maryland Community Health Centers",
+      "phone": "410-383-8300",
+      "website": "https://mchcmd.org",
+      "eligibility": "Anyone. mchcmd.org / findahealthcenter.hrsa.gov. Key: Chase Brexton Health Care (Baltimore LGBTQ+ focus: 410-837-2050). Esperanza Health Center (Langley Park immigrant: 301-431-5002). Eastern Shore Rural Health (410-742-8999).",
+      "apply_notes": "Federally qualified health centers \u2014 sliding scale statewide",
+      "source": "luminari-maryland-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "md_maryland_dhcd_housing_and_community_deve",
+      "program_name": "Maryland DHCD (Housing and Community Development)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Maryland DHCD",
+      "phone": "301-429-7400",
+      "website": "https://dhcd.maryland.gov",
+      "eligibility": "Low-income MD renters. dhcd.maryland.gov. Baltimore City Housing Authority: 410-396-3232. Montgomery Housing: 240-627-9400. PG County Housing: 301-883-5540.",
+      "apply_notes": "Section 8/HCV, HOME program, rental assistance, homelessness prevention",
+      "source": "luminari-maryland-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "MD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "md_maryland_legal_aid_statewide",
+      "program_name": "Maryland Legal Aid (Statewide)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute"
+      ],
+      "agency": "Maryland Legal Aid",
+      "phone": "800-999-8904",
+      "website": "https://mdlab.org",
+      "eligibility": "Income < 200% FPL. mdlab.org. Baltimore City Legal Aid Bureau: 410-539-5340. Eastern Shore: 410-546-5511. PG County: 301-539-4601. Montgomery: 240-314-0373.",
+      "apply_notes": "Free civil legal aid statewide \u2014 eviction, rent escrow, MWPCL, benefits, DV",
+      "source": "luminari-maryland-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "MD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "md_maryland_tca_tanf_dhr",
+      "program_name": "Maryland TCA / TANF (DHR)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Maryland TCA / TANF",
+      "phone": "800-332-6347",
+      "website": "https://mydhhr.org",
+      "eligibility": "Families with children. 60-month limit. Pair with child care (CCS), SNAP, LIHEAP. mydhhr.org.",
+      "apply_notes": "Cash assistance for families \u2014 up to $727/month family of 3",
+      "source": "luminari-maryland-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "MD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "md_maryland_ui_dllr",
+      "program_name": "Maryland UI (DLLR)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Maryland UI",
+      "phone": "410-949-0033",
+      "website": "https://dllr.state.md",
+      "eligibility": "Workers who lost job through no fault. CRITICAL: 15-day appeal deadline from mailing. dllr.state.md.us.",
+      "apply_notes": "Weekly income replacement \u2014 up to $430/week, 26 weeks",
+      "source": "luminari-maryland-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "MD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "md_maryland_eusp_meap_liheap_energy_assista",
+      "program_name": "Maryland EUSP / MEAP / LIHEAP (Energy Assistance)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Maryland EUSP / MEAP / LIHEAP",
+      "phone": "800-332-6347",
+      "website": "https://mydhhr.org",
+      "eligibility": "Income < 175% FPL. BGE customers: BGE WARMTH (800-685-0123). Pepco: 202-833-7500. Washington Gas: 888-862-6487.",
+      "apply_notes": "Electric utility discount (EUSP year-round), heating/cooling (MEAP/LIHEAP)",
+      "source": "luminari-maryland-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "MD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "md_casa_immigrant_services_pg_montgomery",
+      "program_name": "CASA (Immigrant Services \u2014 PG/Montgomery)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "CASA",
+      "phone": "301-431-4185",
+      "website": "https://casa.org",
+      "eligibility": "Immigrant communities in PG, Montgomery, Howard counties. casa.org. Also Maryland ISAP (301-328-5600).",
+      "apply_notes": "Immigration legal services, workers rights, civic engagement \u2014 largest Latino/immigrant org in MD",
+      "source": "luminari-maryland-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "",
+      "state": "MD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "md_baltimore_city_health_department_social_",
+      "program_name": "Baltimore City Health Department \u2014 Social Services",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Baltimore City Health Department \u2014 Social Services",
+      "phone": "410-396-4398",
+      "website": "https://health.baltimorecity.gov",
+      "eligibility": "Baltimore City residents. BCHD (410-396-4398). BHA (Behavioral Health Admin): 410-402-8600. Lead paint: MDE 800-633-6101 for children under 6.",
+      "apply_notes": "City-specific: overdose services, lead paint coordination, Ryan White HIV, mental health",
+      "source": "luminari-maryland-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "MD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "md_maryland_dv_program_mnadv",
+      "program_name": "Maryland DV Program (MNADV)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Maryland DV Program",
+      "phone": "",
+      "website": "https://mnadv.org",
+      "eligibility": "Anyone experiencing DV. mnadv.org. House of Ruth Baltimore (410-889-7884). Heartly House (Frederick: 301-662-8800).",
+      "apply_notes": "24/7 DV hotline and shelter network statewide",
+      "source": "luminari-maryland-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "MD",
+      "federal_interface": false
+    },
+    {
+      "program_id": "md_maryland_veterans_services_mdva",
+      "program_name": "Maryland Veterans Services (MDVA)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Maryland Veterans Services",
+      "phone": "800-446-4926",
+      "website": "https://veterans.maryland.gov",
+      "eligibility": "MD veterans and families. VA Maryland Health Care System (Baltimore: 800-463-6295). Perry Point VAMC: 410-642-2411.",
+      "apply_notes": "VA benefits navigation, state veterans services",
+      "source": "luminari-maryland-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "MD",
+      "federal_interface": false
+    }
+  ]
+}

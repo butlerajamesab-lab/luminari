@@ -1,0 +1,305 @@
+{
+  "meta": {
+    "type": "meta_registry",
+    "schema": "luminari-meta-registry-v1",
+    "generated": "2026-03-06T22:56:15.068597",
+    "canonical_reference": "MO",
+    "canonical_schema_version": "luminari-registry-v1",
+    "resolution_order": [
+      "federal_baseline",
+      "state_registry",
+      "county_override",
+      "tribal_override",
+      "pipeline_rule_injection"
+    ],
+    "total_canonical_layers": 12
+  },
+  "states": {
+    "AZ": {
+      "state_name": "Arizona",
+      "status": "active",
+      "version": "1.0.0",
+      "date_created": "2026-03-06",
+      "date_activated": "2026-03-07",
+      "validation_status": "complete",
+      "datasets_present": [
+        "layer0_flags",
+        "layer1_cards",
+        "county_overrides",
+        "tribal_overrides",
+        "pipeline_mappings",
+        "lens_mappings",
+        "workflow_mappings",
+        "programs",
+        "oversight",
+        "foia",
+        "workflow_overrides",
+        "manifest"
+      ],
+      "datasets_missing": [],
+      "schema_conformance": "pass",
+      "layer_counts": {
+        "layer0_flags": 8,
+        "layer1_cards": 24,
+        "layer1_clusters": 8,
+        "county_overrides": 2,
+        "tribal_entities": 8,
+        "pipeline_mappings": 10,
+        "lens_mappings": 12,
+        "workflow_mappings": 5,
+        "programs": 147,
+        "oversight_bodies": 43,
+        "workflow_overrides": 4
+      }
+    },
+    "CA": {
+      "state_name": "California",
+      "status": "active",
+      "version": "1.0.0",
+      "date_created": "2026-03-06",
+      "date_activated": "2026-03-07",
+      "validation_status": "complete",
+      "datasets_present": [
+        "layer0_flags",
+        "layer1_cards",
+        "county_overrides",
+        "tribal_overrides",
+        "pipeline_mappings",
+        "lens_mappings",
+        "workflow_mappings",
+        "programs",
+        "oversight",
+        "foia",
+        "workflow_overrides",
+        "manifest"
+      ],
+      "datasets_missing": [],
+      "schema_conformance": "pass",
+      "layer_counts": {
+        "layer0_flags": 6,
+        "layer1_cards": 15,
+        "layer1_clusters": 6,
+        "county_overrides": 5,
+        "tribal_entities": 10,
+        "pipeline_mappings": 10,
+        "lens_mappings": 12,
+        "workflow_mappings": 5,
+        "programs": 180,
+        "oversight_bodies": 39,
+        "workflow_overrides": 4,
+        "foia_agencies": 7
+      }
+    },
+    "MO": {
+      "state_name": "Missouri",
+      "status": "active",
+      "version": "1.0.0",
+      "date_created": "2026-03-06",
+      "date_activated": "2026-03-06",
+      "validation_status": "complete",
+      "datasets_present": [
+        "layer0_flags",
+        "layer1_cards",
+        "county_overrides",
+        "tribal_overrides",
+        "pipeline_mappings",
+        "lens_mappings",
+        "workflow_mappings",
+        "programs",
+        "oversight",
+        "foia",
+        "workflow_overrides",
+        "manifest"
+      ],
+      "datasets_missing": [],
+      "schema_conformance": "pass",
+      "layer_counts": {
+        "layer0_flags": 6,
+        "layer1_cards": 39,
+        "layer1_clusters": 8,
+        "county_overrides": 5,
+        "tribal_entities": 5,
+        "pipeline_mappings": 13,
+        "lens_mappings": 12,
+        "workflow_mappings": 6,
+        "programs": 149,
+        "oversight_bodies": 37,
+        "workflow_overrides": 4
+      }
+    },
+    "OR": {
+      "state_name": "Oregon",
+      "status": "active",
+      "version": "1.0.0",
+      "date_created": "2026-03-06",
+      "date_activated": "2026-03-07",
+      "validation_status": "complete",
+      "datasets_present": [
+        "layer0_flags",
+        "layer1_cards",
+        "county_overrides",
+        "tribal_overrides",
+        "pipeline_mappings",
+        "lens_mappings",
+        "workflow_mappings",
+        "programs",
+        "oversight",
+        "foia",
+        "workflow_overrides",
+        "manifest"
+      ],
+      "datasets_missing": [],
+      "schema_conformance": "pass",
+      "layer_counts": {
+        "layer0_flags": 8,
+        "layer1_cards": 21,
+        "layer1_clusters": 8,
+        "county_overrides": 1,
+        "tribal_entities": 9,
+        "pipeline_mappings": 8,
+        "lens_mappings": 12,
+        "workflow_mappings": 4,
+        "programs": 154,
+        "oversight_bodies": 34,
+        "workflow_overrides": 4
+      }
+    },
+    "PA": {
+      "state_name": "Pennsylvania",
+      "status": "active",
+      "version": "1.0.0",
+      "date_created": "2026-03-06",
+      "date_activated": "2026-03-06",
+      "validation_status": "complete",
+      "datasets_present": [
+        "layer0_flags",
+        "layer1_cards",
+        "county_overrides",
+        "tribal_overrides",
+        "pipeline_mappings",
+        "lens_mappings",
+        "workflow_mappings",
+        "programs",
+        "oversight",
+        "foia",
+        "workflow_overrides",
+        "manifest"
+      ],
+      "datasets_missing": [],
+      "schema_conformance": "pass",
+      "layer_counts": {
+        "layer0_flags": 6,
+        "layer1_cards": 15,
+        "layer1_clusters": 5,
+        "county_overrides": 5,
+        "tribal_entities": 3,
+        "pipeline_mappings": 7,
+        "lens_mappings": 8,
+        "workflow_mappings": 5,
+        "programs": 108,
+        "oversight_bodies": 42,
+        "workflow_overrides": 4
+      }
+    },
+    "WA": {
+      "state_name": "Washington",
+      "status": "active",
+      "version": "1.0.0",
+      "date_created": "2026-03-06",
+      "date_activated": "2026-03-06",
+      "validation_status": "complete",
+      "datasets_present": [
+        "layer0_flags",
+        "layer1_cards",
+        "county_overrides",
+        "tribal_overrides",
+        "pipeline_mappings",
+        "lens_mappings",
+        "workflow_mappings",
+        "programs",
+        "oversight",
+        "foia",
+        "workflow_overrides",
+        "manifest"
+      ],
+      "datasets_missing": [],
+      "schema_conformance": "pass",
+      "layer_counts": {
+        "layer0_flags": 7,
+        "layer1_cards": 19,
+        "layer1_clusters": 7,
+        "county_overrides": 5,
+        "tribal_entities": 7,
+        "pipeline_mappings": 10,
+        "lens_mappings": 9,
+        "workflow_mappings": 7,
+        "programs": 90,
+        "oversight_bodies": 38,
+        "workflow_overrides": 6
+      }
+    },
+    "OH": {
+      "state_name": "Ohio",
+      "status": "active",
+      "version": "1.0.0",
+      "date_created": "2026-03-07",
+      "date_activated": "2026-03-07",
+      "validation_status": "complete",
+      "datasets_present": [
+        "layer0_flags",
+        "layer1_cards",
+        "county_overrides",
+        "tribal_overrides",
+        "pipeline_mappings",
+        "lens_mappings",
+        "workflow_mappings",
+        "programs",
+        "oversight",
+        "foia",
+        "workflow_overrides",
+        "manifest"
+      ],
+      "datasets_missing": [],
+      "schema_conformance": "pass",
+      "layer_counts": {
+        "layer0_flags": 8,
+        "layer1_cards": 16,
+        "layer1_clusters": 8,
+        "county_overrides": 1,
+        "tribal_entities": 3,
+        "pipeline_mappings": 7,
+        "lens_mappings": 12,
+        "workflow_mappings": 4,
+        "programs": 23,
+        "oversight_bodies": 17,
+        "workflow_overrides": 4
+      }
+    }
+  },
+  "gap_analysis": {
+    "states_needing_activation": [],
+    "states_with_missing_datasets": {},
+    "schema_failures": []
+  },
+  "global_statistics": {
+    "active_states": 6,
+    "staged_states": 0,
+    "total_states": 6,
+    "total_programs": 828,
+    "total_oversight_bodies": 233,
+    "total_pipeline_mappings": 58,
+    "total_lens_mappings": 65,
+    "last_updated": "2026-03-07T09:16:27Z"
+  },
+  "next_phase": {
+    "priority": [
+      "CA"
+    ],
+    "pipeline": [
+      "FL",
+      "NY",
+      "TX"
+    ],
+    "notes": "CA structural completion, then FL/NY/TX full ingestion, then registry compiler for scaling"
+  }
+}

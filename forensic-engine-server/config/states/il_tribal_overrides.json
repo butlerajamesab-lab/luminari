@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "state": "IL",
+    "version": "3.0"
+  },
+  "tribal_context": "Illinois tribal nations and urban Indian programs",
+  "tribal_entities": [],
+  "icwa_activation_rules": [],
+  "urban_indian_programs": [
+    {
+      "program_id": "american_indian_center_of_chicago_aic",
+      "program_name": "American Indian Center of Chicago (AIC)",
+      "services": "social services, cultural programming, elder services, youth programs, food pantry",
+      "region": "Chicago",
+      "status": "active",
+      "notes": "",
+      "city": "Chicago",
+      "state": "IL"
+    },
+    {
+      "program_id": "native_american_educational_services_naes_college",
+      "program_name": "Native American Educational Services (NAES) College",
+      "services": "accredited college specifically serving Native American students, community resources and referrals",
+      "region": "Chicago",
+      "status": "active",
+      "notes": "",
+      "city": "Chicago",
+      "state": "IL"
+    },
+    {
+      "program_id": "ihs_chicago_urban_indian_health_program",
+      "program_name": "IHS Chicago Urban Indian Health Program",
+      "services": "comprehensive health services through IHS urban program",
+      "region": "Chicago",
+      "status": "active",
+      "notes": "",
+      "city": "Chicago",
+      "state": "IL"
+    }
+  ],
+  "tribal_courts": []
+}

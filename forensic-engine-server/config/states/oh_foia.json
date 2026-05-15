@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "state": "OH",
+    "state_name": "Ohio",
+    "layer": "foia",
+    "version": "1.0.0",
+    "date_created": "2026-03-07",
+    "source": "Luminari OH Three-Layer Registry"
+  },
+  "statute": {
+    "name": "Ohio Public Records Act",
+    "citation": "ORC §149.43",
+    "scope": "All records kept by public offices; broad definition — any document created/received by public office",
+    "exemptions": "Law enforcement investigatory records, trial preparation records, medical records, adoption records, security records, infrastructure records",
+    "response_deadline": "Reasonable period — no fixed statutory deadline; courts have interpreted as prompt",
+    "fee_structure": "Actual cost of copies; no search fees; electronic records at cost of medium",
+    "appeal_process": "Ohio Court of Claims (expedited) or county Court of Common Pleas; attorney fees available for prevailing requestor"
+  },
+  "structured_rules": [
+    {
+      "rule_id": "oh_public_records",
+      "domain": "public_records"
+    }
+  ],
+  "agencies": [
+    {
+      "name": "Ohio JFS",
+      "foia_contact": "jfs.ohio.gov — Public Records Request",
+      "phone": "614-466-6282",
+      "agency_id": "oh_agency_0"
+    },
+    {
+      "name": "Ohio Department of Health",
+      "foia_contact": "odh.ohio.gov — Public Records",
+      "phone": "614-644-8562",
+      "agency_id": "oh_agency_1"
+    },
+    {
+      "name": "Ohio Department of Insurance",
+      "foia_contact": "insurance.ohio.gov — Public Records",
+      "phone": "800-686-1526",
+      "agency_id": "oh_agency_2"
+    },
+    {
+      "name": "Ohio Attorney General",
+      "foia_contact": "ohioattorneygeneral.gov — Public Records",
+      "phone": "800-282-0515",
+      "agency_id": "oh_agency_3"
+    },
+    {
+      "name": "Cleveland Police Department",
+      "foia_contact": "clevelandohio.gov — Public Records",
+      "phone": "216-623-5000",
+      "agency_id": "oh_agency_4"
+    },
+    {
+      "name": "Columbus Division of Police",
+      "foia_contact": "columbus.gov — Public Records",
+      "phone": "614-645-4545",
+      "agency_id": "oh_agency_5"
+    }
+  ],
+  "appeals_workflow": [
+    "Submit written public records request to agency",
+    "If denied or delayed: file complaint with Ohio Court of Claims (expedited process) or county Court of Common Pleas",
+    "Court may award attorney fees and statutory damages for willful non-compliance",
+    "Ohio AG Public Records Mediation Program available as informal resolution"
+  ],
+  "request_templates": {
+    "standard": "Dear Records Custodian: Pursuant to Ohio Public Records Act (ORC §149.43), I request copies of [describe records]. I request these records in electronic format if available. Please provide within a reasonable time. No identification or reason for request is required under Ohio law.",
+    "expedited": "Dear Records Custodian: Pursuant to ORC §149.43, I request immediate access to [describe records]. This request concerns [urgent matter]. Ohio law requires prompt response. If any records are withheld, please cite the specific statutory exemption."
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "tribal_entities": [
+    {
+      "tribal_entity_id": "ny_tribal_0",
+      "tribal_entity_name": "Mohawk Nation at Akwesasne — Social Services",
+      "coverage": "hogansburg",
+      "phone": "518-358-2272",
+      "portal": "https://akwesasne.ca",
+      "street_address": "PO Box 579 Rt 37",
+      "city": "Hogansburg",
+      "state_code": "NY",
+      "zip": "13655",
+      "services": []
+    },
+    {
+      "tribal_entity_id": "ny_tribal_1",
+      "tribal_entity_name": "Seneca Nation of Indians — Social Services",
+      "coverage": "irving",
+      "phone": "716-532-4900",
+      "portal": "https://sni.org",
+      "street_address": "12837 Rt 438",
+      "city": "Irving",
+      "state_code": "NY",
+      "zip": "14081",
+      "services": []
+    }
+  ],
+  "urban_indian_programs": [],
+  "meta": {
+    "state": "NY",
+    "version": "3.0"
+  },
+  "tribal_context": {
+    "state": "NY",
+    "icwa_activation_rules": [],
+    "tribal_entities": [
+      {
+        "tribal_entity_id": "ny_tribal_0",
+        "tribal_entity_name": "Mohawk Nation at Akwesasne — Social Services",
+        "coverage": "hogansburg",
+        "phone": "518-358-2272",
+        "portal": "https://akwesasne.ca",
+        "street_address": "PO Box 579 Rt 37",
+        "city": "Hogansburg",
+        "state_code": "NY",
+        "zip": "13655",
+        "services": []
+      },
+      {
+        "tribal_entity_id": "ny_tribal_1",
+        "tribal_entity_name": "Seneca Nation of Indians — Social Services",
+        "coverage": "irving",
+        "phone": "716-532-4900",
+        "portal": "https://sni.org",
+        "street_address": "12837 Rt 438",
+        "city": "Irving",
+        "state_code": "NY",
+        "zip": "14081",
+        "services": []
+      }
+    ],
+    "urban_indian_programs": []
+  }
+}

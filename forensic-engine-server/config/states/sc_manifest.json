@@ -1,0 +1,68 @@
+{
+  "state": "SC",
+  "state_name": "South Carolina",
+  "version": "3.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-09",
+  "source": "luminari-sc-registry.docx",
+  "datasets": [
+    "general",
+    "employment",
+    "legal",
+    "food",
+    "healthcare",
+    "housing",
+    "cash_assistance",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "disability_claim",
+    "employment_dispute",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "utility_dispute",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "insurer",
+    "landlord",
+    "employer",
+    "civil_rights"
+  ],
+  "policy_flags": [
+    "sc_scpwa_treble_damages",
+    "sc_gullah_geechee_heirs_property",
+    "sc_catawba_nation",
+    "sc_upstate_latino_manufacturing",
+    "sc_ui_10_day_appeal",
+    "sc_minimum_wage_above_federal"
+  ],
+  "statistics": {
+    "total_programs": 22,
+    "total_oversight_chains": 4,
+    "total_oversight_bodies": 6,
+    "total_flags": 6
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "employment",
+    "food"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ],
+  "portability_score": "53%"
+}

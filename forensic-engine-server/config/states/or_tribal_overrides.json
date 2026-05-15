@@ -1,0 +1,304 @@
+{
+  "meta": {
+    "state": "OR",
+    "layer": "tribal_overrides",
+    "version": "1.0.0",
+    "last_updated": "2026-03-06"
+  },
+  "tribal_context": "Oregon has 9 federally recognized tribes. ICWA applies to all child welfare cases involving AI/AN children. Oregon also has strong urban Indian programs through NAYA and NARA NW in Portland. Governor's Office of Tribal Relations coordinates state-tribal relations.",
+  "icwa_activation_rules": [
+    {
+      "rule_id": "or_icwa_child_welfare",
+      "trigger_pipeline": "child_welfare",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Apply federal ICWA (25 USC \u00a71901) standards",
+        "Contact specific tribal ICWA office if tribe identified",
+        "Contact NAPOLS (503-236-6813) for legal representation",
+        "DHS must provide active efforts to prevent removal",
+        "Qualified expert witness required for foster care placement or TPR"
+      ],
+      "routing_entities": [
+        "or_warm_springs",
+        "or_umatilla",
+        "or_grand_ronde",
+        "or_klamath",
+        "or_siletz"
+      ]
+    },
+    {
+      "rule_id": "or_icwa_healthcare",
+      "trigger_pipeline": "insurance_claim_denial",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Check IHS eligibility before OHP application",
+        "AI/AN members exempt from OHP cost-sharing",
+        "Route to nearest tribal health program or IHS Portland Area",
+        "Contact NARA NW (503-230-9875) for Portland metro"
+      ],
+      "routing_entities": [
+        "or_ihs_portland",
+        "or_nara_nw"
+      ]
+    },
+    {
+      "rule_id": "or_tribal_tanf",
+      "trigger_pipeline": "benefits_denial",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Check tribal TANF eligibility (separate from state TANF)",
+        "Warm Springs, Umatilla, Grand Ronde, Klamath operate tribal TANF",
+        "Tribal TANF may have different time limits and work requirements",
+        "Contact tribal social services for application"
+      ],
+      "routing_entities": [
+        "or_warm_springs",
+        "or_umatilla",
+        "or_grand_ronde",
+        "or_klamath"
+      ]
+    }
+  ],
+  "tribal_entities": [
+    {
+      "tribal_entity_id": "or_warm_springs",
+      "tribal_entity_name": "Confederated Tribes of Warm Springs",
+      "tribal_role": "social_services",
+      "tribe": "Warm Springs",
+      "address": "Warm Springs, OR 97761",
+      "phone": "541-553-3205",
+      "portal": "https://warmsprings-nsn.gov",
+      "services": [
+        "social_services",
+        "TANF",
+        "FDPIR",
+        "housing",
+        "health",
+        "ICWA",
+        "tribal_court"
+      ],
+      "coverage": "warm_springs_reservation",
+      "city": "Portland",
+      "state": "OR"
+    },
+    {
+      "tribal_entity_id": "or_umatilla",
+      "tribal_entity_name": "Confederated Tribes of the Umatilla Indian Reservation",
+      "tribal_role": "social_services",
+      "tribe": "Umatilla",
+      "address": "Pendleton, OR 97801",
+      "phone": "541-276-3165",
+      "portal": "https://ctuir.org",
+      "services": [
+        "social_services",
+        "TANF",
+        "FDPIR",
+        "housing",
+        "health",
+        "ICWA",
+        "tribal_court",
+        "DV"
+      ],
+      "coverage": "umatilla_reservation",
+      "city": "Portland",
+      "state": "OR"
+    },
+    {
+      "tribal_entity_id": "or_grand_ronde",
+      "tribal_entity_name": "Confederated Tribes of Grand Ronde",
+      "tribal_role": "social_services",
+      "tribe": "Grand Ronde",
+      "address": "Grand Ronde, OR 97347",
+      "phone": "503-879-5211",
+      "portal": "https://grandronde.org",
+      "services": [
+        "social_services",
+        "TANF",
+        "housing",
+        "health",
+        "ICWA",
+        "tribal_court",
+        "DV"
+      ],
+      "coverage": "grand_ronde_reservation",
+      "city": "Portland",
+      "state": "OR"
+    },
+    {
+      "tribal_entity_id": "or_klamath",
+      "tribal_entity_name": "Klamath Tribes",
+      "tribal_role": "social_services",
+      "tribe": "Klamath",
+      "address": "Chiloquin, OR 97624",
+      "phone": "541-783-2219",
+      "portal": "https://klamathtribes.org",
+      "services": [
+        "social_services",
+        "TANF",
+        "FDPIR",
+        "housing",
+        "health",
+        "ICWA"
+      ],
+      "coverage": "klamath_region",
+      "city": "Portland",
+      "state": "OR"
+    },
+    {
+      "tribal_entity_id": "or_siletz",
+      "tribal_entity_name": "Confederated Tribes of Siletz Indians",
+      "tribal_role": "social_services",
+      "tribe": "Siletz",
+      "address": "Siletz, OR 97380",
+      "phone": "541-444-2532",
+      "portal": "https://ctsi.nsn.us",
+      "services": [
+        "social_services",
+        "housing",
+        "health",
+        "ICWA",
+        "DV"
+      ],
+      "coverage": "siletz_reservation",
+      "city": "Portland",
+      "state": "OR"
+    },
+    {
+      "tribal_entity_id": "or_burns_paiute",
+      "tribal_entity_name": "Burns Paiute Tribe",
+      "tribal_role": "social_services",
+      "tribe": "Burns Paiute",
+      "address": "Burns, OR 97720",
+      "phone": "541-573-2088",
+      "portal": "https://burnspaiute-nsn.gov",
+      "services": [
+        "social_services",
+        "housing",
+        "health",
+        "ICWA"
+      ],
+      "coverage": "burns_paiute_reservation",
+      "city": "Portland",
+      "state": "OR"
+    },
+    {
+      "tribal_entity_id": "or_naya",
+      "tribal_entity_name": "Native American Youth and Family Center (NAYA)",
+      "tribal_role": "urban_indian_services",
+      "tribe": "All AI/AN (Portland)",
+      "address": "5135 NE Columbia Blvd, Portland, OR 97218",
+      "phone": "503-288-8177",
+      "portal": "https://nayapdx.org",
+      "services": [
+        "housing",
+        "food",
+        "education",
+        "employment",
+        "DV",
+        "health",
+        "youth"
+      ],
+      "coverage": "portland_metro",
+      "city": "Portland",
+      "state": "OR"
+    },
+    {
+      "tribal_entity_id": "or_nara_nw",
+      "tribal_entity_name": "Native American Rehabilitation Association of the Northwest (NARA NW)",
+      "tribal_role": "healthcare",
+      "tribe": "All AI/AN (Portland)",
+      "address": "17645 NW St. Helens Rd, Portland, OR 97231",
+      "phone": "503-230-9875",
+      "portal": "https://naranorthwest.org",
+      "services": [
+        "primary_care",
+        "behavioral_health",
+        "substance_abuse",
+        "housing",
+        "cultural"
+      ],
+      "coverage": "portland_metro",
+      "city": "Portland",
+      "state": "OR"
+    },
+    {
+      "tribal_entity_id": "or_ihs_portland",
+      "tribal_entity_name": "IHS Portland Area Office",
+      "tribal_role": "healthcare",
+      "tribe": "All OR tribes",
+      "address": "1414 NW Northrup St, Portland, OR 97209",
+      "phone": "503-414-5555",
+      "portal": "https://ihs.gov/portland",
+      "services": [
+        "healthcare",
+        "dental",
+        "behavioral_health",
+        "pharmacy"
+      ],
+      "coverage": "statewide",
+      "street_address": "1414 NW Northrup St Ste 800",
+      "city": "Portland",
+      "state_code": "OR",
+      "zip": "97209"
+    }
+  ],
+  "tribal_courts": [
+    {
+      "court_id": "or_warm_springs_court",
+      "name": "Warm Springs Tribal Court",
+      "tribe": "Warm Springs",
+      "phone": "541-553-3278",
+      "jurisdiction": "Civil, criminal, family, juvenile matters on Warm Springs Reservation"
+    },
+    {
+      "court_id": "or_umatilla_court",
+      "name": "Umatilla Tribal Court",
+      "tribe": "Umatilla",
+      "phone": "541-429-7402",
+      "jurisdiction": "Civil, criminal, family, juvenile matters on Umatilla Reservation"
+    },
+    {
+      "court_id": "or_grand_ronde_court",
+      "name": "Grand Ronde Tribal Court",
+      "tribe": "Grand Ronde",
+      "phone": "503-879-2303",
+      "jurisdiction": "Civil, criminal, family, juvenile matters on Grand Ronde Reservation"
+    }
+  ],
+  "urban_indian_programs": [
+    {
+      "program_id": "or_naya_portland",
+      "name": "NAYA (Portland)",
+      "phone": "503-288-8177",
+      "portal": "https://nayapdx.org",
+      "services": [
+        "housing",
+        "food",
+        "education",
+        "employment",
+        "DV",
+        "health",
+        "youth"
+      ],
+      "coverage": "portland_metro",
+      "city": "Portland",
+      "state": "OR"
+    },
+    {
+      "program_id": "or_nara_nw_portland",
+      "name": "NARA NW (Portland)",
+      "phone": "503-230-9875",
+      "portal": "https://naranorthwest.org",
+      "services": [
+        "primary_care",
+        "behavioral_health",
+        "substance_abuse",
+        "housing",
+        "cultural"
+      ],
+      "coverage": "portland_metro",
+      "city": "Portland",
+      "state": "OR"
+    }
+  ]
+}

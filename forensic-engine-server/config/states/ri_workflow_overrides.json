@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "state": "RI",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "standard_appeal",
+      "state": "RI",
+      "override_type": "timeline",
+      "description": "Rhode Island standard appeal timeline",
+      "source": "registry"
+    },
+    {
+      "workflow_id": "expedited_review",
+      "state": "RI",
+      "override_type": "eligibility",
+      "description": "Rhode Island expedited review criteria",
+      "source": "registry"
+    }
+  ]
+}

@@ -1,0 +1,303 @@
+{
+  "meta": {
+    "state": "OR",
+    "layer": "layer0_flags",
+    "version": "1.0.0",
+    "last_updated": "2026-03-06"
+  },
+  "flags": [
+    {
+      "flag_id": "or_snap_work_requirement_2026",
+      "title": "SNAP Work Requirements Rolled Out Statewide (Jan 2026)",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "benefits_denial",
+          "snap_denial"
+        ],
+        "benefit_categories": [
+          "food"
+        ],
+        "conditions": []
+      },
+      "message": "Oregon SNAP work requirements rolled out statewide January 2026. ABAWDs 18-54 must meet 80-hour/month work requirement. Exemptions: students, caregivers, people with disabilities, tribal members on reservations. Check county-specific waivers. Contact ODHS at 800-723-3638.",
+      "statute": "OAR 461-130-0315",
+      "bundle_pairings": []
+    },
+    {
+      "flag_id": "or_healthier_oregon",
+      "title": "Healthier Oregon Program \u2014 Undocumented Adults Covered",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "insurance_claim_denial",
+          "benefits_denial"
+        ],
+        "benefit_categories": [
+          "healthcare"
+        ],
+        "conditions": []
+      },
+      "message": "Oregon covers undocumented adults 19-64 through the Healthier Oregon Program (OHP-like benefits). No immigration status barrier. Apply at ONE.Oregon.gov or call 800-699-9075. This is unique among US states.",
+      "statute": "HB 3352 (2021) / ORS 414.231",
+      "bundle_pairings": []
+    },
+    {
+      "flag_id": "or_eprr_eviction_prevention",
+      "title": "OR-EPRR Eviction Prevention \u2014 Active Court Case Required",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "tenant_rights"
+        ],
+        "benefit_categories": [
+          "housing"
+        ],
+        "conditions": []
+      },
+      "message": "Oregon Emergency Rental Assistance (OR-EPRR) requires an active court case and monthly reapplication. Funds close quickly when available. Apply at OregonRentalAssistance.org. Also check local CAA programs and OHCS resources.",
+      "statute": "ORS 456.555",
+      "bundle_pairings": [
+        "or_sb599_immigration_housing"
+      ]
+    },
+    {
+      "flag_id": "or_sb599_immigration_housing",
+      "title": "SB 599 \u2014 Landlords Cannot Ask Immigration Status",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "tenant_rights",
+          "immigration_case"
+        ],
+        "benefit_categories": [
+          "housing"
+        ],
+        "conditions": []
+      },
+      "message": "Oregon SB 599 (2025) prohibits landlords from asking about or discriminating based on immigration status. Violations reportable to BOLI (971-673-0761) and Fair Housing Council of Oregon (800-424-3247).",
+      "statute": "SB 599 (2025)",
+      "bundle_pairings": [
+        "or_healthier_oregon"
+      ]
+    },
+    {
+      "flag_id": "or_paid_family_leave",
+      "title": "Oregon Paid Family and Medical Leave (Advantage)",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "wage_theft",
+          "benefits_denial"
+        ],
+        "benefit_categories": [
+          "cash_assistance"
+        ],
+        "conditions": []
+      },
+      "message": "Oregon Paid Leave provides 60-100% wage replacement for up to 12 weeks (14 for pregnancy complications). All workers who earned $1,000+ in base year qualify. Apply at paidleave.oregon.gov or call 833-854-0166.",
+      "statute": "ORS 657B",
+      "bundle_pairings": []
+    },
+    {
+      "flag_id": "or_boli_6yr_wage_sol",
+      "title": "BOLI 6-Year Wage Claim SOL (Generous)",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "wage_theft"
+        ],
+        "benefit_categories": [],
+        "conditions": []
+      },
+      "message": "Oregon allows wage claims going back 6 years under ORS 652.150 \u2014 among the most generous in the US. File with BOLI (971-673-0761). Also dual-file with federal DOL WHD for FLSA claims (2-3 year SOL).",
+      "statute": "ORS 652.150",
+      "bundle_pairings": []
+    },
+    {
+      "flag_id": "or_7day_repair_timeline",
+      "title": "7-Day Urgent Repair Timeline",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "tenant_rights"
+        ],
+        "benefit_categories": [
+          "housing"
+        ],
+        "conditions": []
+      },
+      "message": "Oregon ORS 90.320 requires landlords to maintain habitable conditions. 7-day cure period for urgent repairs (30 days for non-urgent). Rent withhold (ORS 90.365) and repair-and-deduct available. Contact LASO CLEAR at 855-412-8429.",
+      "statute": "ORS 90.320 / ORS 90.365",
+      "bundle_pairings": [
+        "or_eprr_eviction_prevention"
+      ]
+    },
+    {
+      "flag_id": "or_retaliation_90day",
+      "title": "90-Day Retaliation Complaint Deadline",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "wage_theft",
+          "tenant_rights"
+        ],
+        "benefit_categories": [],
+        "conditions": []
+      },
+      "message": "Oregon retaliation complaints must be filed within 90 days under ORS 659A.199. If employer retaliates for wage claim or tenant exercises rights, file immediately with BOLI (971-673-0761).",
+      "statute": "ORS 659A.199",
+      "bundle_pairings": []
+    },
+    {
+      "flag_id": "or_involuntary_hold_law",
+      "title": "Involuntary Hold: Oregon Emergency Hold",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "OR involuntary psychiatric hold law: Oregon Emergency Hold. Statutory authority: ORS \u00a7 426.232. Maximum initial hold duration: 48 hours. Legal standard: danger to self/others. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 48 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "ORS \u00a7 426.232"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "or_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in OR retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "or_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in OR: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "or_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Oregon Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "or_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Oregon Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "or_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Oregon Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,325 @@
+{
+  "meta": {
+    "state": "MO",
+    "state_name": "Missouri",
+    "layer": "workflow_overrides",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "date_verified": "2026-03-06",
+    "source": "Luminari MO Three-Layer Registry v1.0 — Northwest Hope Foundation"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "tenant_rights_workflow",
+      "state": "MO",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document the violation with timestamps. Photograph the issue. Keep all correspondence with landlord in writing (text or email). Note dates, times, conditions.",
+          "documents_needed": "Photos, written communications, lease copy",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "24 hours of discovering violation",
+          "statute": "RSMo §441.234 (MO URLTA — Uniform Residential Landlord and Tenant Act)",
+          "notes": "Creates paper trail for all subsequent steps. MO URLTA applies to most residential rentals.",
+          "source": "https://missourilegalservices.org"
+        },
+        {
+          "step_number": 2,
+          "action": "Send written notice to landlord stating the violation, citing RSMo §441.234. Give landlord 14 days to remedy for non-emergency repairs, or reasonable time for emergency conditions.",
+          "documents_needed": "Written notice to landlord (certified mail recommended)",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately after documenting — creates paper trail",
+          "statute": "RSMo §441.234",
+          "notes": "14-day notice required before rent withholding or repair-and-deduct under MO law",
+          "source": "https://missourilegalservices.org"
+        },
+        {
+          "step_number": 3,
+          "action": "File complaint with local code enforcement. In Kansas City: KC 311 or Neighborhood Services. In St. Louis: Building Division. Rural areas: contact county health department.",
+          "documents_needed": "Photos, correspondence, lease",
+          "state_agency": "KC 311 / STL Building Division / County Health Department",
+          "phone": "816-513-1313 (KC 311) / 314-622-3535 (STL Building)",
+          "complaint_portal": "https://kcmo.gov/311",
+          "deadline": "Within days of violation",
+          "statute": "RSMo §441.234, local housing codes",
+          "notes": "Code enforcement is local in MO — no statewide housing agency. KC and STL have strongest enforcement.",
+          "source": "https://kcmo.gov/311"
+        },
+        {
+          "step_number": 4,
+          "action": "Contact legal aid for tenant representation. LAWMO (western MO) or LSEM (eastern MO). Missouri Tenant Help (HUD-funded eviction defense statewide).",
+          "documents_needed": "All documentation, lease, correspondence, code enforcement reports",
+          "state_agency": "LAWMO / LSEM / Missouri Tenant Help",
+          "phone": "816-474-6750 (LAWMO) / 314-534-4200 (LSEM)",
+          "complaint_portal": "https://missouritenanthelp.org",
+          "deadline": "Before any court hearing — immediately if eviction filed",
+          "statute": "RSMo §441.880 (Retaliatory Conduct), §534.350 (Rent and Possession)",
+          "notes": "Missouri Tenant Help is HUD-funded eviction defense for low-income renters statewide",
+          "source": "https://lawmo.org"
+        },
+        {
+          "step_number": 5,
+          "action": "File housing discrimination complaint with MCHR (Missouri Commission on Human Rights) or HUD Kansas City Regional Office if discrimination is involved.",
+          "documents_needed": "Evidence of discriminatory conduct, timeline, correspondence",
+          "state_agency": "MCHR / HUD Kansas City",
+          "phone": "877-781-4236 (MCHR) / 913-551-5462 (HUD KC)",
+          "complaint_portal": "https://labor.mo.gov/mohumanrights/file-complaint",
+          "deadline": "180 days from discriminatory act (MCHR) — SHORTER than federal 365 days",
+          "statute": "Missouri Human Rights Act (RSMo Chapter 213)",
+          "notes": "MCHR has SHORTER filing deadline than federal HUD (180 vs 365 days). Dual-file recommended.",
+          "source": "https://labor.mo.gov/mohumanrights"
+        },
+        {
+          "step_number": 6,
+          "action": "Escalate to Missouri AG Consumer Protection if pattern of landlord violations affecting multiple tenants. File complaint online.",
+          "documents_needed": "All prior documentation, evidence of pattern across tenants",
+          "state_agency": "Missouri Attorney General — Consumer Protection",
+          "phone": "800-392-8222",
+          "complaint_portal": "https://ago.mo.gov/consumer/file-complaint",
+          "deadline": "No strict deadline — pattern threshold: 3+ tenants with similar violations",
+          "statute": "RSMo §407 (Missouri Merchandising Practices Act)",
+          "notes": "AG can pursue injunctive relief and civil penalties for pattern violations",
+          "source": "https://ago.mo.gov"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft_workflow",
+      "state": "MO",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document all hours worked, pay received, and discrepancies. Save pay stubs, time records, texts/emails about hours or pay. Calculate amount owed.",
+          "documents_needed": "Pay stubs, time records, employment agreement, written communications",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately — begin documentation",
+          "statute": "RSMo §290.080–290.170 (Missouri Wage Payment Laws)",
+          "notes": "MO wage enforcement is weaker than most states — dual-file with federal DOL WHD recommended",
+          "source": "https://labor.mo.gov/DLS"
+        },
+        {
+          "step_number": 2,
+          "action": "File wage complaint with Missouri Division of Labor Standards (DLS) — Wage and Hour Section. File online or by mail.",
+          "documents_needed": "Pay stubs, time records, employment agreement",
+          "state_agency": "MO Division of Labor Standards — Wage & Hour",
+          "phone": "573-751-3403",
+          "complaint_portal": "https://labor.mo.gov/DLS/wagesandhours",
+          "deadline": "Within 2 years of wage violation (RSMo §290.527)",
+          "statute": "RSMo §290.080–290.170, §290.502, §290.527",
+          "notes": "NOTE: MO enforcement weaker than most states — also file federal WHD complaint",
+          "source": "https://labor.mo.gov/DLS"
+        },
+        {
+          "step_number": 3,
+          "action": "Simultaneously file with federal DOL Wage and Hour Division (WHD) — Kansas City area office. Federal FLSA enforcement is often more effective than MO state process.",
+          "documents_needed": "Same documentation as state filing",
+          "state_agency": "DOL Wage and Hour Division — Kansas City",
+          "phone": "816-285-5284",
+          "complaint_portal": "https://dol.gov/agencies/whd/contact",
+          "deadline": "2-year SOL (3 years if willful violation)",
+          "statute": "29 USC §201 et seq. (Fair Labor Standards Act)",
+          "notes": "Federal WHD is often more effective than MO DLS for wage recovery — dual-file recommended",
+          "source": "https://dol.gov/whd"
+        },
+        {
+          "step_number": 4,
+          "action": "File employment discrimination complaint with MCHR if wage theft involves discriminatory treatment. Also file with EEOC St. Louis District Office.",
+          "documents_needed": "Evidence of discriminatory pay practices, comparator information",
+          "state_agency": "MCHR / EEOC St. Louis District",
+          "phone": "877-781-4236 (MCHR) / 800-669-4000 (EEOC)",
+          "complaint_portal": "https://labor.mo.gov/mohumanrights/file-complaint",
+          "deadline": "180 days (MCHR) / 300 days (EEOC) — MCHR deadline SHORTER",
+          "statute": "Missouri Human Rights Act (RSMo Chapter 213), Title VII",
+          "notes": "MCHR and EEOC are FEPA dual-file partners — filing with one counts for both",
+          "source": "https://labor.mo.gov/mohumanrights"
+        },
+        {
+          "step_number": 5,
+          "action": "Contact legal aid for representation. LAWMO (western MO) or LSEM (eastern MO) handle wage theft cases for income-eligible workers.",
+          "documents_needed": "All prior documentation and filings",
+          "state_agency": "LAWMO / LSEM",
+          "phone": "816-474-6750 (LAWMO) / 314-534-4200 (LSEM)",
+          "complaint_portal": "https://lawmo.org",
+          "deadline": "Before SOL expires",
+          "statute": "RSMo §290.527",
+          "notes": "Legal aid can pursue private action for unpaid wages + penalties",
+          "source": "https://lawmo.org"
+        },
+        {
+          "step_number": 6,
+          "action": "Escalate to MO AG Consumer Protection if pattern of wage theft by same employer affecting 3+ workers.",
+          "documents_needed": "Evidence of pattern across multiple workers",
+          "state_agency": "Missouri Attorney General — Consumer Protection",
+          "phone": "800-392-8222",
+          "complaint_portal": "https://ago.mo.gov/consumer/file-complaint",
+          "deadline": "No strict deadline — pattern threshold: 3+ workers with same employer",
+          "statute": "RSMo §407 (Missouri Merchandising Practices Act)",
+          "notes": "AG can pursue pattern violations as unfair business practices",
+          "source": "https://ago.mo.gov"
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial_workflow",
+      "state": "MO",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Request written Notice of Action (NOA) from MO FSD. Document the denial reason, date received, and all communications with FSD caseworker.",
+          "documents_needed": "Notice of Action (NOA), application documents, income verification",
+          "state_agency": "MO Family Support Division (FSD)",
+          "phone": "855-373-4636",
+          "complaint_portal": "https://mydss.mo.gov",
+          "deadline": "Request NOA immediately upon denial",
+          "statute": "RSMo §208.080 (Public Assistance), 7 CFR §273.15 (SNAP Fair Hearings)",
+          "notes": "NOA must state reason for denial and appeal rights — if not received, request in writing",
+          "source": "https://mydss.mo.gov"
+        },
+        {
+          "step_number": 2,
+          "action": "Request Administrative Fair Hearing within 90 days of NOA. Contact local FSD office or call 573-751-2730 (DSS Administrative Hearing Unit).",
+          "documents_needed": "NOA, supporting documents, income records",
+          "state_agency": "MO DSS — Administrative Fair Hearing",
+          "phone": "573-751-2730",
+          "complaint_portal": null,
+          "deadline": "90 days from NOA — benefits may continue during appeal if requested within 10 days of NOA",
+          "statute": "RSMo §208.080, 7 CFR §273.15",
+          "notes": "CRITICAL: Request hearing within 10 days of NOA to continue benefits during appeal",
+          "source": "https://mydss.mo.gov"
+        },
+        {
+          "step_number": 3,
+          "action": "For unemployment denial: appeal to MO Division of Employment Security (DES) within 30 days of determination. File online at uinteract.labor.mo.gov.",
+          "documents_needed": "Determination letter, employment records, separation documentation",
+          "state_agency": "MO Division of Employment Security — Appeals",
+          "phone": "573-751-3215",
+          "complaint_portal": "https://uinteract.labor.mo.gov",
+          "deadline": "30 days from determination — SHORTER than many states",
+          "statute": "RSMo §288.070 (Employment Security Law)",
+          "notes": "MO UI appeal deadline is 30 days — shorter than many states. Do not miss.",
+          "source": "https://des.mo.gov"
+        },
+        {
+          "step_number": 4,
+          "action": "Contact legal aid for representation at hearing. LAWMO (western MO), LSEM (eastern MO), MO Protection & Advocacy (disability benefits).",
+          "documents_needed": "All prior documentation, NOA, appeal filing",
+          "state_agency": "LAWMO / LSEM / MO P&A",
+          "phone": "816-474-6750 (LAWMO) / 314-534-4200 (LSEM) / 800-392-8667 (MO P&A)",
+          "complaint_portal": "https://lawmo.org",
+          "deadline": "Before hearing date",
+          "statute": "RSMo §208.080",
+          "notes": "MO P&A specializes in SSI/SSDI and disability benefits appeals",
+          "source": "https://lawmo.org"
+        },
+        {
+          "step_number": 5,
+          "action": "Escalate to MO Governor's Constituent Services or state legislators if DSS or DES is non-responsive for 60+ days.",
+          "documents_needed": "Timeline of all contacts, appeal filings, lack of response",
+          "state_agency": "MO Governor's Constituent Services / MO General Assembly",
+          "phone": "573-751-3222 (Governor) / senate.mo.gov / house.mo.gov",
+          "complaint_portal": "https://governor.mo.gov/contact",
+          "deadline": "After 60+ days of non-response from agency",
+          "statute": null,
+          "notes": "Legislative oversight especially effective during session (Jan–May). Contact both state senator and representative.",
+          "source": "https://governor.mo.gov"
+        },
+        {
+          "step_number": 6,
+          "action": "For MO HealthNet (Medicaid) systemic issues: escalate to HHS/CMS (federal Medicaid oversight) if state agency is systematically denying eligible applicants.",
+          "documents_needed": "Evidence of systematic denial pattern, individual case documentation",
+          "state_agency": "HHS / CMS (Federal Medicaid Oversight)",
+          "phone": "877-267-2323",
+          "complaint_portal": "https://cms.gov/about-cms/contact-cms",
+          "deadline": "No strict deadline — federal jurisdiction over federal Medicaid dollars",
+          "statute": "42 USC §1396 (Medicaid Act)",
+          "notes": "Federal jurisdiction over MO HealthNet federal funding — for systemic violations only",
+          "source": "https://cms.gov"
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_claim_denial_workflow",
+      "state": "MO",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Request written denial with specific reason codes and policy provisions cited. Document all communications with insurer. Request complete claim file.",
+          "documents_needed": "Denial letter, policy, claim file, medical records if health insurance",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately upon denial",
+          "statute": "RSMo §376.383 (Insurance Claim Practices)",
+          "notes": "Insurer must provide written denial with specific reasons under MO law",
+          "source": "https://insurance.mo.gov"
+        },
+        {
+          "step_number": 2,
+          "action": "File internal appeal with insurance company. For health insurance: request independent medical review if denial is based on medical necessity.",
+          "documents_needed": "Denial letter, supporting medical records, policy provisions",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Within 180 days of denial (check policy for specific deadline)",
+          "statute": "RSMo §376.383, §376.694 (Health Insurance External Review)",
+          "notes": "Internal appeal is required before external review for most health insurance claims",
+          "source": "https://insurance.mo.gov"
+        },
+        {
+          "step_number": 3,
+          "action": "File complaint with Missouri Department of Insurance (MDI). MDI investigates unfair claim practices and can order corrective action.",
+          "documents_needed": "Denial letter, internal appeal result, policy, all correspondence",
+          "state_agency": "Missouri Department of Insurance (MDI)",
+          "phone": "800-726-7390",
+          "complaint_portal": "https://insurance.mo.gov/consumers/complaints",
+          "deadline": "No strict deadline — file promptly after internal appeal exhausted",
+          "statute": "RSMo §375.930–375.948 (Unfair Claims Settlement Practices Act)",
+          "notes": "MDI is Missouri's primary insurance regulator — can investigate and fine insurers",
+          "source": "https://insurance.mo.gov"
+        },
+        {
+          "step_number": 4,
+          "action": "For health insurance: request external review through MDI. Missouri has independent external review for health insurance medical necessity denials.",
+          "documents_needed": "Internal appeal denial, medical records, treating physician statement",
+          "state_agency": "MDI — External Review",
+          "phone": "800-726-7390",
+          "complaint_portal": "https://insurance.mo.gov/consumers/complaints",
+          "deadline": "Within 4 months of internal appeal denial (RSMo §376.694)",
+          "statute": "RSMo §376.694 (Health Insurance External Review Act), §354.535 (HMO External Review)",
+          "notes": "External review decision is binding on insurer. Separate process for HMO plans under §354.535.",
+          "source": "https://insurance.mo.gov"
+        },
+        {
+          "step_number": 5,
+          "action": "Contact CLAIM (Missouri SHIP) for Medicare-related insurance issues. For MO HealthNet managed care: contact MO HealthNet Division.",
+          "documents_needed": "Medicare/Medicaid documentation, denial letters",
+          "state_agency": "CLAIM (SHIP) / MO HealthNet Division",
+          "phone": "800-390-3330 (CLAIM) / 800-348-6627 (MO HealthNet)",
+          "complaint_portal": "https://claims.mo.gov",
+          "deadline": "Varies by program",
+          "statute": "42 USC §1395 (Medicare), 42 USC §1396 (Medicaid)",
+          "notes": "CLAIM provides free Medicare counseling. MO HealthNet Division handles managed care complaints.",
+          "source": "https://claims.mo.gov"
+        },
+        {
+          "step_number": 6,
+          "action": "Escalate to MO AG Consumer Protection or CFPB (for financial products). AG can pursue pattern violations by insurers.",
+          "documents_needed": "All prior documentation, evidence of pattern if applicable",
+          "state_agency": "MO AG Consumer Protection / CFPB",
+          "phone": "800-392-8222 (AG) / 855-411-2372 (CFPB)",
+          "complaint_portal": "https://ago.mo.gov/consumer/file-complaint",
+          "deadline": "No strict deadline — pattern threshold for AG action",
+          "statute": "RSMo §407 (Missouri Merchandising Practices Act)",
+          "notes": "AG can pursue insurers for pattern of unfair claim practices",
+          "source": "https://ago.mo.gov"
+        }
+      ]
+    }
+  ]
+}

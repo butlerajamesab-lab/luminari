@@ -1,0 +1,481 @@
+{
+  "meta": {
+    "state": "WA",
+    "state_name": "Washington",
+    "layer": "workflow_overrides",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "date_verified": "2026-03-06",
+    "source": "Luminari WA Master Template v1.0 — Northwest Hope Foundation"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "tenant_rights_workflow",
+      "state": "WA",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document the violation with timestamp. Photograph the issue. Keep all correspondence with landlord in writing (text or email). Note dates, times, temperatures if applicable.",
+          "documents_needed": "Photos, written communications",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "24 hours of discovering violation",
+          "statute": "RCW 59.18 (WA Residential Landlord-Tenant Act)",
+          "notes": "Creates paper trail for all subsequent steps",
+          "source": "https://tenantsunion.org"
+        },
+        {
+          "step_number": 2,
+          "action": "Send written notice (text or email) to landlord stating the violation, citing RCW 59.18. Give landlord reasonable time to remedy.",
+          "documents_needed": "Written notice to landlord",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately — creates paper trail",
+          "statute": "RCW 59.18",
+          "notes": null,
+          "source": "https://tenantsunion.org"
+        },
+        {
+          "step_number": 3,
+          "action": "File complaint with Seattle Office of Housing (city), or King County Code Enforcement, or WA Attorney General Renters' Rights Hotline.",
+          "documents_needed": "Photos, correspondence, lease",
+          "state_agency": "Seattle Office of Housing / King County Code Enforcement / WA AG Renters' Rights",
+          "phone": "206-684-0383 (Seattle) / 206-296-6600 (KC) / 833-457-4922 (AG)",
+          "complaint_portal": "https://seattle.gov/housing/report-a-problem",
+          "deadline": "Within days of violation",
+          "statute": "RCW 59.18",
+          "notes": "City, county, or state depending on jurisdiction",
+          "source": "https://seattle.gov/housing"
+        },
+        {
+          "step_number": 4,
+          "action": "Request city or county housing inspection. Inspection report becomes official documentation.",
+          "documents_needed": "Complaint number from step 3",
+          "state_agency": "Seattle Office of Housing / King County Code Enforcement",
+          "phone": "206-684-0383 (Seattle) / 206-296-6600 (KC)",
+          "complaint_portal": null,
+          "deadline": "Schedule within 1–2 weeks",
+          "statute": null,
+          "notes": "Inspection report is critical evidence for legal proceedings",
+          "source": "https://seattle.gov/housing"
+        },
+        {
+          "step_number": 5,
+          "action": "Contact Housing Justice Project (free eviction defense) or Northwest Justice Project CLEAR hotline. Consider rent withholding remedy under RCW 59.18.115.",
+          "documents_needed": "All documentation from steps 1–4",
+          "state_agency": "Housing Justice Project / NJP CLEAR",
+          "phone": "206-267-7090 (HJP) / 888-201-1014 (CLEAR)",
+          "complaint_portal": "https://tenantlawcenter.org",
+          "deadline": "If landlord does not remedy within reasonable time",
+          "statute": "RCW 59.18.115 (rent withholding remedy)",
+          "notes": "Free legal help at courthouse for eviction defense",
+          "source": "https://tenantlawcenter.org"
+        },
+        {
+          "step_number": 6,
+          "action": "File complaint with WA Attorney General Consumer Protection Division. If health/safety threat, contact Seattle-King County Public Health.",
+          "documents_needed": "Full documentation package",
+          "state_agency": "WA Attorney General Consumer Protection / Seattle-King County Public Health",
+          "phone": "800-551-4636 (AG)",
+          "complaint_portal": "https://ag.wa.gov/consumer/file-complaint",
+          "deadline": "If agency does not respond within 30 days",
+          "statute": null,
+          "notes": "Escalation step — for systemic or unresolved violations",
+          "source": "https://ag.wa.gov"
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_denial_workflow",
+      "state": "WA",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Collect denial letter, Explanation of Benefits (EOB), original claim, and all correspondence. Note exact denial language and reason code.",
+          "documents_needed": "Denial letter, EOB, original claim",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately upon receiving denial",
+          "statute": null,
+          "notes": "Denial letter contains appeal deadline — do not miss it",
+          "source": "https://oic.wa.gov"
+        },
+        {
+          "step_number": 2,
+          "action": "File internal appeal with insurer within the deadline stated in denial letter (typically 180 days for ACA plans). Request full claims file.",
+          "documents_needed": "Written appeal letter, supporting medical records",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Before deadline in denial letter (typically 180 days for ACA plans)",
+          "statute": null,
+          "notes": "Internal appeal is required before external review in most cases",
+          "source": "https://oic.wa.gov"
+        },
+        {
+          "step_number": 3,
+          "action": "Get treating physician to write letter of medical necessity. Get clinical notes and peer-reviewed evidence supporting the treatment.",
+          "documents_needed": "Physician letter, clinical notes, peer-reviewed evidence",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "As part of internal appeal",
+          "statute": null,
+          "notes": "Physician support letter is the strongest evidence for medical necessity appeals",
+          "source": "https://oic.wa.gov"
+        },
+        {
+          "step_number": 4,
+          "action": "If internal appeal denied, request Independent Review Organization (IRO) external review through WA Office of Insurance Commissioner.",
+          "documents_needed": "Internal appeal denial, all medical documentation",
+          "state_agency": "WA Office of Insurance Commissioner (OIC)",
+          "phone": "800-562-6900",
+          "complaint_portal": "https://oic.wa.gov/file-complaint",
+          "deadline": "Within 4 months of internal appeal denial (WA law)",
+          "statute": "RCW 48.43.535 (WA external review law)",
+          "notes": "IRO decision is binding on insurer. OIC administers the process.",
+          "source": "https://oic.wa.gov"
+        },
+        {
+          "step_number": 5,
+          "action": "File formal complaint with WA OIC if insurer acted in bad faith, delayed processing, or violated WA insurance regulations.",
+          "documents_needed": "Full documentation package including all denials and appeals",
+          "state_agency": "WA Office of Insurance Commissioner (OIC)",
+          "phone": "800-562-6900",
+          "complaint_portal": "https://oic.wa.gov/file-complaint",
+          "deadline": "No strict deadline — but file promptly",
+          "statute": "RCW 48.30 (WA Unfair Practices Act)",
+          "notes": "OIC investigates and can fine insurers. Complaint creates regulatory record.",
+          "source": "https://oic.wa.gov"
+        },
+        {
+          "step_number": 6,
+          "action": "Seek legal help. Contact NJP CLEAR hotline or private insurance bad faith attorney. Consider filing with CFPB for billing disputes on ERISA plans.",
+          "documents_needed": "All documentation from steps 1–5",
+          "state_agency": "NJP CLEAR / CFPB (federal)",
+          "phone": "888-201-1014 (CLEAR) / 855-411-2372 (CFPB)",
+          "complaint_portal": "https://consumerfinance.gov/complaint",
+          "deadline": "If OIC complaint does not resolve within 60 days",
+          "statute": null,
+          "notes": "Private attorneys often take insurance bad faith cases on contingency",
+          "source": "https://nwjustice.org"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft_workflow",
+      "state": "WA",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Calculate unpaid wages using pay stubs, time records, or personal records. Document specific dates, hours worked, amounts paid vs. owed.",
+          "documents_needed": "Pay stubs, time records, offer letter",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately — statute of limitations applies",
+          "statute": "RCW 49.48 (WA Wage Payment Act)",
+          "notes": "WA statute of limitations: 3 years for wage claims",
+          "source": "https://lni.wa.gov"
+        },
+        {
+          "step_number": 2,
+          "action": "Send written demand to employer for unpaid wages. Keep copy. Creates record and sometimes resolves without agency involvement.",
+          "documents_needed": "Written demand letter",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Before filing agency complaint",
+          "statute": null,
+          "notes": "Written demand creates paper trail and may resolve issue directly",
+          "source": "https://lni.wa.gov"
+        },
+        {
+          "step_number": 3,
+          "action": "File wage complaint with WA Department of Labor & Industries, Labor Standards Program. Free. L&I investigates and can recover wages + penalties.",
+          "documents_needed": "Documentation from step 1",
+          "state_agency": "WA Department of Labor & Industries — Labor Standards",
+          "phone": "866-219-7321",
+          "complaint_portal": "https://lni.wa.gov/workers-rights/file-complaint",
+          "deadline": "WA statute of limitations: 3 years",
+          "statute": "RCW 49.48, RCW 49.46 (WA Minimum Wage Act)",
+          "notes": "L&I can recover wages plus penalties. Free to file.",
+          "source": "https://lni.wa.gov/workers-rights/file-complaint"
+        },
+        {
+          "step_number": 4,
+          "action": "File complaint with federal Wage and Hour Division (WHD) if federal law applies (FLSA — interstate commerce, federal contractors, etc.).",
+          "documents_needed": "Same documentation",
+          "state_agency": "US DOL Wage and Hour Division",
+          "phone": "866-487-9243",
+          "complaint_portal": "https://dol.gov/agencies/whd/contact",
+          "deadline": "Federal FLSA: 2-year statute, 3 if willful",
+          "statute": "FLSA (Fair Labor Standards Act)",
+          "notes": "Can dual-file with L&I and DOL WHD",
+          "source": "https://dol.gov/agencies/whd"
+        },
+        {
+          "step_number": 5,
+          "action": "Seek legal help. Contact NJP CLEAR hotline or Unemployment Law Project. Private attorney option: wage theft cases often taken on contingency.",
+          "documents_needed": "All documentation",
+          "state_agency": "NJP CLEAR / Unemployment Law Project",
+          "phone": "888-201-1014 (CLEAR) / 206-441-9178 (ULP)",
+          "complaint_portal": "https://nwjustice.org",
+          "deadline": "If L&I investigation stalls or employer retaliates",
+          "statute": null,
+          "notes": "Private attorneys often take wage theft on contingency",
+          "source": "https://nwjustice.org"
+        },
+        {
+          "step_number": 6,
+          "action": "If employer retaliates for filing complaint, file retaliation complaint with L&I within 180 days. Retaliation is separately actionable.",
+          "documents_needed": "Evidence of adverse action",
+          "state_agency": "WA Department of Labor & Industries",
+          "phone": "866-219-7321",
+          "complaint_portal": "https://lni.wa.gov/workers-rights/file-complaint",
+          "deadline": "Within 180 days of retaliation",
+          "statute": "RCW 49.48.082 (WA anti-retaliation)",
+          "notes": "Retaliation is separately unlawful — file even if original claim is pending",
+          "source": "https://lni.wa.gov"
+        }
+      ]
+    },
+    {
+      "workflow_id": "elder_abuse_workflow",
+      "state": "WA",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "If immediate danger, call 911. If not immediate, document observations: dates, injuries, statements, witness names.",
+          "documents_needed": "Notes, photos if safe",
+          "state_agency": null,
+          "phone": "911 (emergency)",
+          "complaint_portal": null,
+          "deadline": "Immediately",
+          "statute": null,
+          "notes": "Safety first — document only when safe to do so",
+          "source": "https://dshs.wa.gov/aps"
+        },
+        {
+          "step_number": 2,
+          "action": "Call WA Adult Protective Services hotline. APS investigates abuse of vulnerable adults in any setting.",
+          "documents_needed": "Your observations",
+          "state_agency": "WA Adult Protective Services (APS)",
+          "phone": "866-363-4276",
+          "complaint_portal": "https://dshs.wa.gov/aps",
+          "deadline": "Within 24 hours — APS has legal authority to investigate",
+          "statute": "RCW 74.34 (WA Vulnerable Adults Act)",
+          "notes": "APS hotline is 24/7. Mandatory reporters must report within 48 hours.",
+          "source": "https://dshs.wa.gov/aps"
+        },
+        {
+          "step_number": 3,
+          "action": "Call WA Long-Term Care Ombudsman. Ombudsman advocates specifically for nursing home and assisted living residents. Free and confidential.",
+          "documents_needed": "Resident name, facility name",
+          "state_agency": "WA LTC Ombudsman",
+          "phone": "800-562-6028",
+          "complaint_portal": "https://waombudsman.org/file-complaint",
+          "deadline": "Alongside or after APS report",
+          "statute": null,
+          "notes": "Free, confidential, resident-centered advocacy",
+          "source": "https://waombudsman.org"
+        },
+        {
+          "step_number": 4,
+          "action": "File complaint with WA DSHS Residential Care Services (RCS). RCS licenses and inspects care facilities.",
+          "documents_needed": "Facility name, specific complaint details",
+          "state_agency": "WA DSHS Residential Care Services (RCS)",
+          "phone": "800-562-6078",
+          "complaint_portal": "https://dshs.wa.gov/rcs/file-complaint",
+          "deadline": "Can file simultaneously with APS",
+          "statute": null,
+          "notes": "RCS investigates licensing violations and care standards",
+          "source": "https://dshs.wa.gov/rcs"
+        },
+        {
+          "step_number": 5,
+          "action": "If Medicare/Medicaid facility, file complaint with CMS. Federal oversight.",
+          "documents_needed": "Facility name, Medicare/Medicaid certification number if known",
+          "state_agency": "CMS (Centers for Medicare & Medicaid Services)",
+          "phone": "800-633-4227",
+          "complaint_portal": "https://cms.gov/medicare/provider-enrollment-and-certification",
+          "deadline": "In addition to state reports",
+          "statute": null,
+          "notes": "Federal jurisdiction for Medicare/Medicaid certified facilities",
+          "source": "https://cms.gov"
+        },
+        {
+          "step_number": 6,
+          "action": "Seek legal help. Contact Elder Law Program at ELAP, NJP CLEAR hotline, or private elder law attorney. Consider guardianship review if financial exploitation.",
+          "documents_needed": "All documentation",
+          "state_agency": "ELAP Elder Law / NJP CLEAR",
+          "phone": "425-747-7274 (ELAP) / 888-201-1014 (CLEAR)",
+          "complaint_portal": "https://elap.org",
+          "deadline": "If pattern of abuse or financial exploitation suspected",
+          "statute": null,
+          "notes": "Financial exploitation may require guardianship review",
+          "source": "https://elap.org"
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial_workflow",
+      "state": "WA",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Get the denial notice in writing. Note the reason code, date, and appeal deadline. WA requires written notice with appeal rights.",
+          "documents_needed": "Denial notice",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately — appeal deadlines are strict",
+          "statute": null,
+          "notes": "Denial notice contains the appeal deadline — do not miss it",
+          "source": "https://dshs.wa.gov"
+        },
+        {
+          "step_number": 2,
+          "action": "File request for Administrative Fair Hearing with DSHS Office of Administrative Hearings (OAH). Deadline: 90 days from denial date for most WA benefits.",
+          "documents_needed": "Written hearing request",
+          "state_agency": "WA DSHS Office of Administrative Hearings (OAH)",
+          "phone": "360-407-2700",
+          "complaint_portal": "https://oah.wa.gov",
+          "deadline": "Within 90 days — benefits may continue during appeal if requested",
+          "statute": "WAC 388-02 (WA Administrative Hearings)",
+          "notes": "Fair hearing is a legal right — free process",
+          "source": "https://oah.wa.gov"
+        },
+        {
+          "step_number": 3,
+          "action": "At same time as hearing request, request that benefits continue while appeal is pending. WA allows this if timely requested.",
+          "documents_needed": "Hearing request form",
+          "state_agency": "WA DSHS OAH",
+          "phone": "360-407-2700",
+          "complaint_portal": null,
+          "deadline": "Must request at time of appeal",
+          "statute": "WAC 388-02",
+          "notes": "Benefits continuation is critical — prevents gap in coverage during appeal",
+          "source": "https://oah.wa.gov"
+        },
+        {
+          "step_number": 4,
+          "action": "Gather documents supporting eligibility: income records, medical records, housing records, anything contradicting denial reason.",
+          "documents_needed": "Documents specific to denial reason",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Before hearing date",
+          "statute": null,
+          "notes": "Focus evidence on the specific reason for denial",
+          "source": "https://dshs.wa.gov"
+        },
+        {
+          "step_number": 5,
+          "action": "Contact NJP CLEAR hotline or Solid Ground Benefits Legal Help. Free representation at fair hearings available.",
+          "documents_needed": "Denial notice and documentation",
+          "state_agency": "NJP CLEAR / Solid Ground",
+          "phone": "888-201-1014 (CLEAR)",
+          "complaint_portal": "https://nwjustice.org",
+          "deadline": "As soon as possible after receiving denial",
+          "statute": null,
+          "notes": "Free legal representation at fair hearings is available for qualifying individuals",
+          "source": "https://nwjustice.org"
+        },
+        {
+          "step_number": 6,
+          "action": "If hearing decision adverse, appeal to Superior Court. File complaint with DSHS constituent services and state legislators if systemic error.",
+          "documents_needed": "Hearing decision",
+          "state_agency": "WA Superior Court / DSHS Constituent Services / State Legislature",
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Within 30 days of hearing decision",
+          "statute": null,
+          "notes": "Escalation for systemic agency errors — legislative pressure can be effective",
+          "source": "https://dshs.wa.gov"
+        }
+      ]
+    },
+    {
+      "workflow_id": "workplace_discrimination_workflow",
+      "state": "WA",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Write down dates, incidents, witnesses, what was said or done. Keep all relevant emails, texts, performance reviews, HR correspondence.",
+          "documents_needed": "Personal contemporaneous notes, communications",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately and ongoing",
+          "statute": null,
+          "notes": "Contemporaneous notes are strong evidence — write them the same day",
+          "source": "https://hum.wa.gov"
+        },
+        {
+          "step_number": 2,
+          "action": "File complaint with HR or supervisor (if not the problem). Creates internal record. Note HR's response and timeline.",
+          "documents_needed": "Written complaint to HR",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Per company policy — before external filing in most cases",
+          "statute": null,
+          "notes": "Internal complaint creates record but is not legally required before filing with WSHRC",
+          "source": "https://hum.wa.gov"
+        },
+        {
+          "step_number": 3,
+          "action": "File complaint with WA State Human Rights Commission within 6 months of last discriminatory act. WSHRC investigates discrimination in employment.",
+          "documents_needed": "Written complaint with dates and incidents",
+          "state_agency": "WA State Human Rights Commission (WSHRC)",
+          "phone": "800-233-3247",
+          "complaint_portal": "https://hum.wa.gov/file-complaint",
+          "deadline": "Within 6 months — this deadline is strict",
+          "statute": "RCW 49.60 (WA Law Against Discrimination)",
+          "notes": "WSHRC has broader protections than federal law in some areas",
+          "source": "https://hum.wa.gov"
+        },
+        {
+          "step_number": 4,
+          "action": "File charge with federal EEOC within 300 days. Dual-file with WSHRC if possible. EEOC required before federal lawsuit.",
+          "documents_needed": "Same documentation",
+          "state_agency": "EEOC — Seattle Field Office",
+          "phone": "800-669-4000",
+          "complaint_portal": "https://eeoc.gov/filing-charge-discrimination",
+          "deadline": "Within 300 days — can dual-file with WSHRC",
+          "statute": "Title VII, ADA, ADEA (federal)",
+          "notes": "EEOC charge is prerequisite for federal discrimination lawsuit",
+          "source": "https://eeoc.gov"
+        },
+        {
+          "step_number": 5,
+          "action": "Document any retaliation after filing complaint. File separate retaliation charge with WSHRC/EEOC. Retaliation is separately unlawful.",
+          "documents_needed": "Evidence of adverse actions post-complaint",
+          "state_agency": "WSHRC / EEOC",
+          "phone": "800-233-3247 (WSHRC) / 800-669-4000 (EEOC)",
+          "complaint_portal": "https://hum.wa.gov/file-complaint",
+          "deadline": "Within 6 months of retaliation (WSHRC)",
+          "statute": "RCW 49.60, Title VII",
+          "notes": "Retaliation is separately unlawful — file even if original claim is pending",
+          "source": "https://hum.wa.gov"
+        },
+        {
+          "step_number": 6,
+          "action": "Seek legal help. Contact NJP CLEAR hotline or ACLU-WA. For unpaid wages component, contact L&I. Private employment attorneys often work on contingency.",
+          "documents_needed": "All documentation",
+          "state_agency": "NJP CLEAR / ACLU-WA / L&I",
+          "phone": "888-201-1014 (CLEAR) / 206-624-2184 (ACLU-WA)",
+          "complaint_portal": "https://nwjustice.org",
+          "deadline": "If agency investigation stalls",
+          "statute": null,
+          "notes": "Private employment attorneys often take discrimination cases on contingency",
+          "source": "https://nwjustice.org"
+        }
+      ]
+    }
+  ]
+}

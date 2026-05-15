@@ -1,0 +1,478 @@
+{
+  "meta": {
+    "state": "UT",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "ut_utah_snap_food_assistance_dws",
+      "program_name": "Utah SNAP / Food Assistance (DWS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Utah SNAP / Food Assistance",
+      "phone": "801-526-0950",
+      "website": "https://jobs.utah.gov/snap",
+      "eligibility": "Income < 130% FPL. connect.utah.gov. Salt Lake County: 801-526-0950. Utah County (Provo): 801-763-4000. Weber County (Ogden): 801-625-1300. San Juan County (Monticello \u2014 Navajo): 435-587-3225.",
+      "apply_notes": "Monthly food assistance \u2014 county DWS offices",
+      "source": "luminari-utah-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "UT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ut_utah_food_bank_food_bank_of_utah",
+      "program_name": "Utah Food Bank / Food Bank of Utah",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Utah Food Bank / Food Bank of Utah",
+      "phone": "801-978-2452",
+      "website": "https://utahfoodbank.org",
+      "eligibility": "Anyone in need. utahfoodbank.org. Also Community Action Services and Food Bank (Provo: 801-373-8200). Cache Food Pantry (Logan: 435-753-2570).",
+      "apply_notes": "Statewide food bank network",
+      "source": "luminari-utah-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "UT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ut_wic_utah",
+      "program_name": "WIC Utah",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WIC Utah",
+      "phone": "801-273-2871",
+      "website": "https://health.utah.gov/wic",
+      "eligibility": "Pregnant, postpartum women, infants, children under 5. Income < 185% FPL. health.utah.gov/wic.",
+      "apply_notes": "Nutrition assistance for women, infants, children",
+      "source": "luminari-utah-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "UT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ut_utah_medicaid_utah_access_plus_dhhs",
+      "program_name": "Utah Medicaid / Utah Access Plus (DHHS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Utah Medicaid / Utah Access Plus",
+      "phone": "800-662-9651",
+      "website": "https://medicaid.utah.gov",
+      "eligibility": "Adults 19\u201364 to 138% FPL (Utah Access Plus). Children, families, elderly, disabled. connect.utah.gov. Prior authorization requirements apply for many services.",
+      "apply_notes": "Medicaid \u2014 expanded January 2020 after Prop 3 voter initiative",
+      "source": "luminari-utah-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "UT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ut_university_of_utah_health_salt_lake_safe",
+      "program_name": "University of Utah Health (Salt Lake Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "University of Utah Health",
+      "phone": "801-581-2121",
+      "website": "https://healthcare.utah.edu",
+      "eligibility": "Salt Lake City metro. Charity care income < 200% FPL. Also Intermountain Health (Primary Children's for pediatric: 801-662-1000).",
+      "apply_notes": "Academic medical center \u2014 charity care, Level 1 trauma",
+      "source": "luminari-utah-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "UT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ut_association_for_utah_community_health_fq",
+      "program_name": "Association for Utah Community Health (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Association for Utah Community Health",
+      "phone": "801-973-9717",
+      "website": "https://auch.org",
+      "eligibility": "Anyone. 12+ FQHCs. auch.org / findahealthcenter.hrsa.gov. Key: Maliheh Free Clinic (Salt Lake: 801-486-0600 \u2014 free for uninsured adults). Community Health Centers of Utah (801-478-8900). Neighborhood Health Centers (Ogden: 801-776-6636).",
+      "apply_notes": "Federally qualified health centers \u2014 sliding scale statewide",
+      "source": "luminari-utah-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "UT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ut_utah_navajo_health_system_san_juan_count",
+      "program_name": "Utah Navajo Health System (San Juan County)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Utah Navajo Health System",
+      "phone": "435-678-3281",
+      "website": "https://utahnavajohealthsystem.org",
+      "eligibility": "Enrolled Navajo Nation members in UT. Blanding UT 84511. For Navajo Nation social services: 928-871-6352 (Window Rock AZ). DNA Legal Services (Navajo legal aid): 928-871-4151.",
+      "apply_notes": "Health services for Navajo Nation members in Utah",
+      "source": "luminari-utah-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "UT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ut_ihs_uintah_basin_northern_ute_fort_duche",
+      "program_name": "IHS Uintah Basin / Northern Ute (Fort Duchesne)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "IHS Uintah Basin / Northern Ute",
+      "phone": "435-722-5131",
+      "website": "https://ihs.gov/billings",
+      "eligibility": "Enrolled Ute Indian Tribe members. Ute Tribe Social Services: 435-722-5141. utetribe.com.",
+      "apply_notes": "IHS health services for Ute Indian Tribe of the Uintah and Ouray Reservation",
+      "source": "luminari-utah-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "UT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ut_utah_housing_corporation_uhc",
+      "program_name": "Utah Housing Corporation (UHC)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Utah Housing Corporation",
+      "phone": "801-902-8200",
+      "website": "https://utahhousingcorp.org",
+      "eligibility": "Low-income UT renters. utahhousingcorp.org. Salt Lake City Housing Authority: 801-487-2161. Utah County Housing: 801-373-8333.",
+      "apply_notes": "Section 8/HCV, HOME program, rental assistance",
+      "source": "luminari-utah-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "UT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ut_utah_legal_services_statewide",
+      "program_name": "Utah Legal Services (Statewide)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute"
+      ],
+      "agency": "Utah Legal Services",
+      "phone": "801-328-8891",
+      "website": "https://utahlegalservices.org",
+      "eligibility": "Income < 200% FPL. utahlegalservices.org. Salt Lake: 801-328-8891. Logan: 435-752-7405. St. George: 435-674-9471. Pro Bono Program: 801-531-9110.",
+      "apply_notes": "Free civil legal aid statewide \u2014 eviction, benefits, family, DV, immigration",
+      "source": "luminari-utah-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "",
+      "state": "UT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ut_utah_tanf_dws",
+      "program_name": "Utah TANF (DWS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "Utah TANF",
+      "phone": "801-526-9675",
+      "website": "https://jobs.utah.gov/tanf",
+      "eligibility": "Families with children. 36-month state limit (shorter than federal 60). Work requirements apply. connect.utah.gov.",
+      "apply_notes": "Cash assistance for families with children",
+      "source": "luminari-utah-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "UT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ut_utah_ui_dws",
+      "program_name": "Utah UI (DWS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Utah UI",
+      "phone": "801-526-4400",
+      "website": "https://jobs.utah.gov/ui",
+      "eligibility": "Workers who lost job through no fault. jobs.utah.gov/ui. CRITICAL: 10-day appeal deadline from mailing.",
+      "apply_notes": "Weekly income replacement \u2014 up to $660/week, 26 weeks",
+      "source": "luminari-utah-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "UT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ut_utah_heat_home_energy_assistance_target_",
+      "program_name": "Utah HEAT \u2014 Home Energy Assistance Target (DHHS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Utah HEAT \u2014 Home Energy Assistance Target",
+      "phone": "866-435-7414",
+      "website": "https://heat.utah.gov",
+      "eligibility": "Income < 150% FPL. heat.utah.gov. Community Action Services (Utah County: 801-373-8200) also administers.",
+      "apply_notes": "Heating and cooling assistance \u2014 apply Oct\u2013April",
+      "source": "luminari-utah-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "UT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ut_irc_salt_lake_city_refugees_pacific_isla",
+      "program_name": "IRC Salt Lake City (Refugees / Pacific Islander)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "IRC Salt Lake City",
+      "phone": "801-328-1091",
+      "website": "https://rescue.org/saltlake",
+      "eligibility": "Refugees and immigrants. Salt Lake City is primary UT resettlement hub. Also Catholic Community Services of Utah (801-977-9119).",
+      "apply_notes": "Refugee resettlement, Tongan/Somali Bantu/Burmese community services",
+      "source": "luminari-utah-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "UT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ut_utah_dv_coalition_udvc",
+      "program_name": "Utah DV Coalition (UDVC)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Utah DV Coalition",
+      "phone": "800-897-5465",
+      "website": "https://udvc.org",
+      "eligibility": "Anyone experiencing DV. udvc.org. YWCA Utah (Salt Lake: 801-537-8600). Project Promise (Ogden: 801-392-7273).",
+      "apply_notes": "24/7 DV hotline and shelter network statewide",
+      "source": "luminari-utah-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "UT",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ut_utah_veterans_services_udvs",
+      "program_name": "Utah Veterans Services (UDVS)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Utah Veterans Services",
+      "phone": "801-326-2372",
+      "website": "https://veterans.utah.gov",
+      "eligibility": "UT veterans and families. George E. Wahlen VAMC (Salt Lake: 801-582-1565).",
+      "apply_notes": "VA benefits navigation, state veterans services",
+      "source": "luminari-utah-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "UT",
+      "federal_interface": false
+    }
+  ]
+}

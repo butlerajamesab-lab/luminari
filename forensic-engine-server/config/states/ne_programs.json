@@ -1,0 +1,480 @@
+{
+  "meta": {
+    "state": "NE",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "ne_nebraska_snap_food_assistance_dhhs",
+      "program_name": "Nebraska SNAP / Food Assistance (DHHS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Nebraska SNAP / Food Assistance",
+      "phone": "800-383-4278",
+      "website": "https://dhhs.ne.gov/Pages/SNAP.aspx",
+      "eligibility": "Income < 130% FPL. access.ne.gov \u2014 apply online. Work requirements strictly enforced. Douglas County (Omaha): 402-444-7000. Lancaster County (Lincoln): 402-471-8553. Dakota County (South Sioux City \u2014 meatpacking community): 402-987-2188.",
+      "apply_notes": "Monthly food assistance through DHHS",
+      "source": "luminari-nebraska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "NE",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ne_food_bank_of_lincoln_omaha_food_bank",
+      "program_name": "Food Bank of Lincoln / Omaha Food Bank",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Food Bank of Lincoln / Omaha Food Bank",
+      "phone": "402-466-8170",
+      "website": "https://lincolnfoodbank.org",
+      "eligibility": "Anyone in need. Food Bank for the Heartland (Omaha: 402-331-1213). Food Bank of Lincoln (402-466-8170). Tri-Cities Food Bank (Hastings \u2014 Central NE: 402-461-4544).",
+      "apply_notes": "Primary food banks \u2014 statewide network coordination",
+      "source": "luminari-nebraska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "NE",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ne_wic_nebraska",
+      "program_name": "WIC Nebraska",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WIC Nebraska",
+      "phone": "800-942-1171",
+      "website": "https://dhhs.ne.gov/Pages/WIC.aspx",
+      "eligibility": "Pregnant, postpartum women, infants, children under 5. Income < 185% FPL. dhhs.ne.gov/Pages/WIC.aspx.",
+      "apply_notes": "Nutrition assistance for women, infants, children",
+      "source": "luminari-nebraska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "NE",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ne_nebraska_medicaid_heritage_health_dhhs",
+      "program_name": "Nebraska Medicaid / Heritage Health (DHHS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Nebraska Medicaid / Heritage Health",
+      "phone": "855-632-7633",
+      "website": "https://dhhs.ne.gov/Pages/Medicaid.aspx",
+      "eligibility": "Adults 19\u201364 to 138% FPL (Heritage Health). Children to 185% FPL (Kids Connection). Elderly, disabled. access.ne.gov. Plans: Nebraska Total Care, UnitedHealthcare Community.",
+      "apply_notes": "Medicaid \u2014 expanded October 2020, managed care via Heritage Health",
+      "source": "luminari-nebraska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NE",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ne_nebraska_medicine_unmc_omaha_safety_net",
+      "program_name": "Nebraska Medicine / UNMC (Omaha Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Nebraska Medicine / UNMC",
+      "phone": "402-552-2000",
+      "website": "https://nebraskamed.com",
+      "eligibility": "Omaha metro. Charity care income < 200% FPL. Also CHI Health (402-449-4000). Bryan Health (Lincoln: 402-481-1111).",
+      "apply_notes": "Academic medical center \u2014 charity care, Level 1 trauma",
+      "source": "luminari-nebraska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NE",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ne_nebraska_primary_care_association_fqhcs",
+      "program_name": "Nebraska Primary Care Association (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Nebraska Primary Care Association",
+      "phone": "402-742-8700",
+      "website": "https://neonenet.org",
+      "eligibility": "Anyone. neonenet.org / findahealthcenter.hrsa.gov. Key: OneWorld Community Health Center (Omaha \u2014 immigrant/refugee: 402-734-4110). Family Health Services (Omaha: 402-734-0001). People's Health Center (Lincoln: 402-476-1455).",
+      "apply_notes": "Federally qualified health centers \u2014 sliding scale statewide",
+      "source": "luminari-nebraska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NE",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ne_ihs_carl_t_curtis_health_education_cente",
+      "program_name": "IHS \u2014 Carl T. Curtis Health Education Center (Macy \u2014 Omaha Tribe)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "IHS \u2014 Carl T. Curtis Health Education Center",
+      "phone": "402-837-5381",
+      "website": "https://ihs.gov/greatplains",
+      "eligibility": "Enrolled Omaha Tribe members. Also: Santee Sioux Health Center (402-857-2242). Winnebago IHS (402-878-2231). BIA Great Plains: 605-226-7343.",
+      "apply_notes": "IHS health services for Omaha Tribe; Great Plains Area IHS coordination for all 3 NE tribes",
+      "source": "luminari-nebraska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NE",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ne_nebraska_investment_finance_authority_ni",
+      "program_name": "Nebraska Investment Finance Authority (NIFA \u2014 Housing)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Nebraska Investment Finance Authority",
+      "phone": "402-434-3900",
+      "website": "https://nifa.org",
+      "eligibility": "Low-income NE renters. nifa.org. Omaha Housing Authority: 402-444-4000. Lincoln Housing Authority: 402-434-5500.",
+      "apply_notes": "Affordable housing, Section 8 vouchers, rural housing assistance",
+      "source": "luminari-nebraska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "NE",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ne_legal_aid_of_nebraska",
+      "program_name": "Legal Aid of Nebraska",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute",
+        "consumer_protection"
+      ],
+      "agency": "Legal Aid of Nebraska",
+      "phone": "844-268-5627",
+      "website": "https://legalaidofnebraska.org",
+      "eligibility": "Income < 125% FPL. legalaidofnebraska.org. Omaha: 402-348-1069. Lincoln: 402-435-2161. Norfolk: 402-379-3117.",
+      "apply_notes": "Statewide civil legal aid \u2014 housing, benefits, family, consumer, immigration",
+      "source": "luminari-nebraska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "NE",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ne_nebraska_tanf_employment_first_dhhs",
+      "program_name": "Nebraska TANF / Employment First (DHHS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "Nebraska TANF / Employment First",
+      "phone": "800-383-4278",
+      "website": "https://dhhs.ne.gov/Pages/Employment-First.aspx",
+      "eligibility": "Families with children. 24-month state limit. Strong work and education focus. Pair with child care (Child Care Subsidy), SNAP, LIHEAP. access.ne.gov.",
+      "apply_notes": "Cash assistance \u2014 $364/month family of 3; 24-month state limit (shorter than federal 60)",
+      "source": "luminari-nebraska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NE",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ne_nebraska_ui_ndol",
+      "program_name": "Nebraska UI (NDOL)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Nebraska UI",
+      "phone": "402-458-2500",
+      "website": "https://dol.nebraska.gov/UIBenefits",
+      "eligibility": "Workers who lost job through no fault. dol.nebraska.gov/UIBenefits \u2014 file online. Appeal: 20 days from mailing.",
+      "apply_notes": "Weekly income replacement \u2014 up to $468/week, 26 weeks",
+      "source": "luminari-nebraska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NE",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ne_nebraska_liheap_energy_assistance_dhhs",
+      "program_name": "Nebraska LIHEAP / Energy Assistance (DHHS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Nebraska LIHEAP / Energy Assistance",
+      "phone": "800-383-4278",
+      "website": "https://dhhs.ne.gov/Pages/Energy-Assistance.aspx",
+      "eligibility": "Income < 150% FPL. Community Action Agencies: Community Action of Nebraska (402-477-1264). No Limit Nebraska (Omaha: 402-341-4925).",
+      "apply_notes": "Heating and cooling assistance",
+      "source": "luminari-nebraska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NE",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ne_nebraska_behavioral_health_crisis_dhhs",
+      "program_name": "Nebraska Behavioral Health / Crisis (DHHS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Nebraska Behavioral Health / Crisis",
+      "phone": "402-471-7818",
+      "website": "https://dhhs.ne.gov/Pages/Behavioral-Health.aspx",
+      "eligibility": "All residents. Medicaid accepted. dhhs.ne.gov/Pages/Behavioral-Health.aspx. Behavioral Health Regions coordinate county-level services.",
+      "apply_notes": "Mental health and substance use through Behavioral Health Regions \u2014 988 crisis line",
+      "source": "luminari-nebraska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "NE",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ne_immigrant_and_refugee_community_services",
+      "program_name": "Immigrant and Refugee Community Services (Nebraska)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Immigrant and Refugee Community Services",
+      "phone": "402-734-4510",
+      "website": "https://neimm.org",
+      "eligibility": "Immigrants and refugees. neimm.org. Also Lutheran Family Services (Omaha: 402-896-5501). Catholic Social Services (402-554-0520). Meatpacking community outreach in Schuyler/Lexington.",
+      "apply_notes": "Immigration legal services, refugee resettlement \u2014 Omaha primary hub",
+      "source": "luminari-nebraska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "",
+      "state": "NE",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ne_nebraska_dv_hotline_nncadsv",
+      "program_name": "Nebraska DV Hotline / NNCADSV",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Nebraska DV Hotline / NNCADSV",
+      "phone": "800-876-6238",
+      "website": "https://nebraskacoalition.org",
+      "eligibility": "Anyone experiencing DV. nebraskacoalition.org. Heartland Family Service DV (Omaha: 402-552-7400). YWCA Lincoln DV: 402-434-3000.",
+      "apply_notes": "24/7 DV crisis line and shelter referral statewide",
+      "source": "luminari-nebraska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "NE",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ne_nebraska_veterans_services_ndva",
+      "program_name": "Nebraska Veterans Services (NDVA)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial",
+        "disability_claim"
+      ],
+      "agency": "Nebraska Veterans Services",
+      "phone": "402-471-2458",
+      "website": "https://veterans.nebraska.gov",
+      "eligibility": "NE veterans and families. Omaha VA Medical Center: 402-346-8800. Lincoln CBOC: 402-489-3802.",
+      "apply_notes": "VA benefits navigation, state veterans services, emergency assistance",
+      "source": "luminari-nebraska-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "NE",
+      "federal_interface": false
+    }
+  ]
+}

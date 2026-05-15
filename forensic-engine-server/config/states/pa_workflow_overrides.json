@@ -1,0 +1,217 @@
+{
+  "meta": {
+    "state": "PA",
+    "state_name": "Pennsylvania",
+    "layer": "workflow_overrides",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "date_verified": "2026-03-06",
+    "source": "Luminari PA Registry v1.0 \u2014 Northwest Hope Foundation"
+  },
+  "workflow_overrides": [
+    {
+      "pipeline_id": "tenant_rights",
+      "state_statute": "68 P.S. \u00a7250.101 (Landlord and Tenant Act of 1951); Philadelphia Code \u00a79-3900 (Eviction Diversion Program)",
+      "state_agency": "PA Attorney General / Philadelphia L&I / Pittsburgh BBI",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Document the violation and send written notice to landlord",
+          "detail": "Under 68 P.S. \u00a7250.101, tenant must provide written notice of habitability issues. Keep dated copy. For rent withholding, escrow payments must be made to court.",
+          "deadline": "Immediately upon discovery; 30-day cure period for most violations",
+          "step_number": 1
+        },
+        {
+          "step": 2,
+          "action": "Request inspection from local code enforcement",
+          "detail": "Philadelphia: L&I (215-686-2463). Pittsburgh: BBI (412-255-2175). Other counties: contact local code enforcement. Document all inspection results.",
+          "deadline": "Within 7 days of landlord non-response",
+          "step_number": 2
+        },
+        {
+          "step": 3,
+          "action": "Contact legal aid for representation",
+          "detail": "Philadelphia: CLS (215-981-3700) walk-in Mon/Wed/Fri 9am-12pm, PEPP (215-523-9501). Pittsburgh: NLS (412-255-6700). Other: palawhelp.org for county-specific legal aid.",
+          "deadline": "Before any court appearance",
+          "step_number": 3
+        },
+        {
+          "step": 4,
+          "action": "If in Philadelphia: Engage Eviction Diversion Program (EDP)",
+          "detail": "Philadelphia Code \u00a79-3900 requires EDP mediation before most evictions can proceed. Landlord must participate. Contact PEPP at 215-523-9501 or phillytenant.org.",
+          "deadline": "Mandatory before landlord can file eviction in Philadelphia",
+          "step_number": 4
+        },
+        {
+          "step": 5,
+          "action": "File complaint with PA AG or HUD if discrimination involved",
+          "detail": "PA AG Civil Rights: 717-787-4410. Philadelphia FHC: 215-686-4670 (broader protections than federal). HUD: 800-669-9777. PHRC: 717-787-4410.",
+          "deadline": "PHRC: 180 days. HUD: 1 year. Philadelphia FHC: 1 year",
+          "step_number": 5
+        },
+        {
+          "step": 6,
+          "action": "Attend court hearing with documentation and legal representation",
+          "detail": "Bring all notices, inspection reports, photos, rent payment records, and correspondence. PA allows rent escrow defense \u2014 tenant deposits rent with court to prove good faith.",
+          "deadline": "As scheduled by court; do not miss",
+          "step_number": 6
+        }
+      ],
+      "workflow_id": "tenant_rights_workflow",
+      "state": "PA"
+    },
+    {
+      "pipeline_id": "wage_theft",
+      "state_statute": "43 P.S. \u00a7333.101 (Wage Payment and Collection Law \u2014 WPCL); 43 P.S. \u00a7260.1 (Minimum Wage Act)",
+      "state_agency": "PA Bureau of Labor Law Compliance (BLLC)",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Document all unpaid wages with records",
+          "detail": "Gather pay stubs, time records, employment agreement, text/email communications about pay. WPCL covers all wages, commissions, bonuses, and fringe benefits owed.",
+          "deadline": "Immediately \u2014 preserve all records",
+          "step_number": 1
+        },
+        {
+          "step": 2,
+          "action": "Send written demand to employer",
+          "detail": "Certified mail with return receipt. Cite WPCL (43 P.S. \u00a7333.101). PA law provides 25% liquidated damages on top of wages owed if employer acted in bad faith.",
+          "deadline": "Within 30 days of wage non-payment",
+          "step_number": 2
+        },
+        {
+          "step": 3,
+          "action": "File complaint with PA Bureau of Labor Law Compliance",
+          "detail": "BLLC: 800-482-2383 or dli.pa.gov/bllc. File wage complaint form. BLLC investigates and can order payment. Also file with PHRC if discrimination-based.",
+          "deadline": "WPCL: 3-year statute of limitations. FLSA: 2 years (3 if willful)",
+          "step_number": 3
+        },
+        {
+          "step": 4,
+          "action": "Contact legal aid for representation if needed",
+          "detail": "Philadelphia: CLS (215-981-3700), JEVS (215-854-1800). Pittsburgh: NLS (412-255-6700). Statewide: palawhelp.org. Private attorneys may take on contingency given 25% liquidated damages.",
+          "deadline": "Before filing private lawsuit",
+          "step_number": 4
+        },
+        {
+          "step": 5,
+          "action": "File private lawsuit if BLLC resolution insufficient",
+          "detail": "Under WPCL, employee can sue in court of common pleas. 25% liquidated damages + attorney fees recoverable. Can also file federal FLSA claim in parallel.",
+          "deadline": "Within 3 years of violation (WPCL)",
+          "step_number": 5
+        },
+        {
+          "step": 6,
+          "action": "Escalate to federal agencies if pattern or retaliation",
+          "detail": "WHD (866-487-9243) for FLSA violations. EEOC (800-669-4000) if discrimination-based. NLRB if collective action retaliation. PA AG for pattern/practice.",
+          "deadline": "EEOC: 300 days. NLRB: 180 days",
+          "step_number": 6
+        }
+      ],
+      "workflow_id": "wage_theft_workflow",
+      "state": "PA"
+    },
+    {
+      "pipeline_id": "benefits_denial",
+      "state_statute": "55 Pa. Code \u00a7275 (DHS Fair Hearing); 34 Pa. Code \u00a7101 (UC Appeals)",
+      "state_agency": "PA DHS Bureau of Hearings and Appeals / PA UC Board of Review",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Review denial notice and identify appeal deadline",
+          "detail": "CRITICAL SHORT DEADLINES: SNAP/MA denial: 30 days to appeal. UC denial: 21 days (shorter than most states). Workers' Comp: 20 days. Missing these deadlines forfeits appeal rights.",
+          "deadline": "SNAP/MA: 30 days. UC: 21 days. WC: 20 days",
+          "step_number": 1
+        },
+        {
+          "step": 2,
+          "action": "Contact PHLP for healthcare-related denials",
+          "detail": "PA Health Law Project (800-274-3258, phlp.org) is CRITICAL \u2014 they often resolve MA/CHIP/marketplace issues without formal hearing. Free advocacy statewide.",
+          "deadline": "Immediately upon denial \u2014 before appeal deadline",
+          "step_number": 2
+        },
+        {
+          "step": 3,
+          "action": "File appeal with appropriate agency",
+          "detail": "SNAP/MA: DHS Bureau of Hearings and Appeals (800-692-7462). UC: file at uc.pa.gov or UC Service Center (888-313-7284). WC: file with Workers' Compensation Judge.",
+          "deadline": "Within deadline identified in Step 1",
+          "step_number": 3
+        },
+        {
+          "step": 4,
+          "action": "Request aid-paid-pending if applicable",
+          "detail": "For SNAP/MA: if appeal filed within 10 days of adverse action, benefits continue during appeal (55 Pa. Code \u00a7275.4). UC: benefits may continue pending appeal.",
+          "deadline": "Within 10 days of adverse action notice",
+          "step_number": 4
+        },
+        {
+          "step": 5,
+          "action": "Prepare for hearing with legal representation",
+          "detail": "CLS (215-981-3700), NLS (412-255-6700), or county legal aid. DRP (800-692-7443) for disability-related denials. Gather medical records, income docs, correspondence.",
+          "deadline": "Before scheduled hearing date",
+          "step_number": 5
+        },
+        {
+          "step": 6,
+          "action": "Escalate if state hearing fails",
+          "detail": "DHS: appeal to Commonwealth Court within 30 days. UC: appeal to UC Board of Review, then Commonwealth Court. Federal: HHS for Medicaid, DOL for UC. Governor's office for systemic issues.",
+          "deadline": "Commonwealth Court: 30 days from final agency decision",
+          "step_number": 6
+        }
+      ],
+      "workflow_id": "benefits_denial_workflow",
+      "state": "PA"
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "state_statute": "40 P.S. \u00a7764h (Act 68 \u2014 HMO Act); 40 P.S. \u00a7991.2101 (Unfair Insurance Practices Act)",
+      "state_agency": "PA Insurance Department (PID) / PA Health Law Project (PHLP)",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Review denial letter and identify plan type",
+          "detail": "Identify if plan is state-regulated (PID jurisdiction), self-funded ERISA (federal DOL), or Medicare/Medicaid (CMS). This determines appeal pathway. Keep all EOBs and denial letters.",
+          "deadline": "Immediately upon denial",
+          "step_number": 1
+        },
+        {
+          "step": 2,
+          "action": "Contact PHLP for advocacy",
+          "detail": "PA Health Law Project (800-274-3258, phlp.org) provides free advocacy for all insurance access issues. They often resolve denials without formal appeal. CRITICAL RESOURCE.",
+          "deadline": "Before filing formal appeal",
+          "step_number": 2
+        },
+        {
+          "step": 3,
+          "action": "File internal appeal with insurer",
+          "detail": "Under Act 68, HMOs must provide internal grievance process. All insurers must allow at least one level of internal appeal. Request expedited review if urgent medical need.",
+          "deadline": "Within 180 days of denial (most plans); 72 hours for urgent/expedited",
+          "step_number": 3
+        },
+        {
+          "step": 4,
+          "action": "Request external review through PID",
+          "detail": "PA Insurance Department (877-881-6388, insurance.pa.gov). Under 40 P.S. \u00a7764h, external review is required by law for HMO denials. Independent review organization makes binding decision.",
+          "deadline": "Within 4 months of final internal denial",
+          "step_number": 4
+        },
+        {
+          "step": 5,
+          "action": "File complaint with PID for unfair practices",
+          "detail": "PA Insurance Department Consumer Hotline: 877-881-6388. File complaint at insurance.pa.gov. PID investigates unfair claims practices under 40 P.S. \u00a7991.2101.",
+          "deadline": "No strict deadline but file promptly",
+          "step_number": 5
+        },
+        {
+          "step": 6,
+          "action": "Escalate to federal agencies or litigation if needed",
+          "detail": "ERISA plans: DOL (866-444-3272). Medicare: CMS (800-633-4227). Bad faith: private lawsuit under 42 Pa.C.S. \u00a78371 (bad faith insurance statute \u2014 punitive damages available). PA AG for pattern violations.",
+          "deadline": "ERISA: varies by plan. Bad faith: 2-year statute of limitations",
+          "step_number": 6
+        }
+      ],
+      "workflow_id": "insurance_claim_denial_workflow",
+      "state": "PA"
+    }
+  ]
+}

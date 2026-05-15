@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "state": "OK",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "standard_appeal",
+      "state": "OK",
+      "override_type": "timeline",
+      "description": "Oklahoma standard appeal timeline",
+      "source": "registry"
+    },
+    {
+      "workflow_id": "expedited_review",
+      "state": "OK",
+      "override_type": "eligibility",
+      "description": "Oklahoma expedited review criteria",
+      "source": "registry"
+    }
+  ]
+}

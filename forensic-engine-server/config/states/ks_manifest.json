@@ -1,0 +1,60 @@
+{
+  "state": "KS",
+  "state_name": "Kansas",
+  "version": "2.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-08",
+  "source": "luminari-ks-registry.docx",
+  "datasets": [
+    "healthcare",
+    "food",
+    "cash_assistance",
+    "housing",
+    "employment",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "consumer_protection",
+    "disability_claim",
+    "employment_dispute",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "utility",
+    "insurer",
+    "consumer"
+  ],
+  "policy_flags": [
+    "ks_portability"
+  ],
+  "statistics": {
+    "total_programs": 14,
+    "total_oversight_chains": 4,
+    "total_oversight_bodies": 6,
+    "total_flags": 1
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "employment",
+    "food"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ]
+}

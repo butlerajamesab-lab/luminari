@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "state": "AR",
+    "version": "3.0",
+    "date": "2026-03-09"
+  },
+  "routing_index": [
+    {
+      "service": "Arkansas DHS (SNAP/ARHOME/TANF)",
+      "phone": "501-682-8375",
+      "website": "access.arkansas.gov",
+      "address": "700 Main St, Little Rock, AR 72201"
+    },
+    {
+      "service": "211 Arkansas",
+      "phone": "211",
+      "website": "ar211.org"
+    },
+    {
+      "service": "Center for AR Legal Services (CALS)",
+      "phone": "501-376-3423",
+      "website": "arlegalservices.org",
+      "address": "1300 W 6th St, Little Rock, AR 72201"
+    },
+    {
+      "service": "Legal Aid of Arkansas (NE/Delta)",
+      "phone": "870-932-5765",
+      "website": "arlegalaid.org",
+      "address": "Jonesboro, AR"
+    },
+    {
+      "service": "CALS Fayetteville (NW AR)",
+      "phone": "479-442-0600"
+    },
+    {
+      "service": "AR ADWS (UI Appeals)",
+      "phone": "501-682-2121",
+      "website": "dws.arkansas.gov"
+    },
+    {
+      "service": "AR DHS Hearings",
+      "phone": "501-682-8375",
+      "website": "humanservices.arkansas.gov"
+    },
+    {
+      "service": "AR Insurance Dept",
+      "phone": "800-852-5494",
+      "website": "insurance.arkansas.gov"
+    },
+    {
+      "service": "LIHEAP Arkansas",
+      "phone": "501-682-8375",
+      "website": "ace.arkansas.gov"
+    },
+    {
+      "service": "AR DV Hotline",
+      "phone": "800-332-4443",
+      "website": "domesticpeace.com"
+    },
+    {
+      "service": "UAMS Medical (Little Rock)",
+      "phone": "501-686-7000",
+      "website": "uamshealth.com",
+      "address": "4301 W Markham St, Little Rock, AR 72205"
+    },
+    {
+      "service": "COMPIE (Marshallese - Springdale)",
+      "phone": "479-316-0050"
+    },
+    {
+      "service": "WHD Little Rock",
+      "phone": "501-324-5292",
+      "website": "dol.gov/whd"
+    },
+    {
+      "service": "EEOC Little Rock",
+      "phone": "501-324-5060",
+      "website": "eeoc.gov",
+      "address": "820 Louisiana St Ste 200, Little Rock, AR 72201"
+    }
+  ]
+}

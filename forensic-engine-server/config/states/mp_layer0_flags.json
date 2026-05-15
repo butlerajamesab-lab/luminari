@@ -1,0 +1,194 @@
+{
+  "meta": {
+    "state": "MP",
+    "version": "3.0",
+    "flag_count": 5
+  },
+  "flags": [
+    {
+      "flag_id": "mp_us_citizens_covenant",
+      "severity": "info",
+      "title": "CNMI Residents Are US Citizens \u2014 Covenant Relationship Since 1978",
+      "summary": "Unlike American Samoa, CNMI residents are US citizens at birth under the Covenant (1978). Full constitutional protections apply. However, federal program implementation varies \u2014 some programs have CNMI-specific rules or delayed implementation.",
+      "affected_programs": []
+    },
+    {
+      "flag_id": "mp_federal_law_extension_2008",
+      "severity": "warning",
+      "title": "Federal Law Extension 2008 \u2014 Guest Worker Legacy Population",
+      "summary": "The CNMI Worker Protection Act (2008) brought federal immigration, labor, and benefit laws to CNMI for the first time. This created a large population of former guest workers \u2014 primarily from China, the Philippines, and Bangladesh \u2014 in transitional immigration status (CW-1 visa). CW-1 workers generally excluded from Medicaid. Route: CNMI Legal Services Corporation: 670-234-7223 / cnmilsc.org. Verify current CW-1 status and federal benefit eligibility.",
+      "affected_programs": []
+    },
+    {
+      "flag_id": "mp_chamorro_carolinian_non_ihs",
+      "severity": "alert",
+      "title": "Chamorro and Carolinian Indigenous Populations \u2014 Non-IHS",
+      "summary": "Like Guam, the indigenous Chamorro (southern islands) and Carolinian (northern islands) peoples of CNMI are NOT IHS-eligible \u2014 they are not federally recognized under the Indian Reorganization Act framework. Route: CNMI Division of Cultural Affairs: 670-664-2120 / cnmidcca.com. Commonwealth Health Center: 670-234-8950 (primary healthcare).",
+      "affected_programs": []
+    },
+    {
+      "flag_id": "mp_typhoon_yutu_2018",
+      "severity": "warning",
+      "title": "Typhoon Yutu (2018) \u2014 Infrastructure Recovery Ongoing",
+      "summary": "Typhoon Yutu (October 2018) was one of the strongest typhoons ever to hit US territory, with sustained winds of 180 mph causing catastrophic damage to Saipan and Tinian. As of 2026, infrastructure recovery continues. Confirm current utility and housing status. FEMA IA and HUD CDBG-DR funds distributed \u2014 verify what clients received. CNMI Housing Authority: 670-234-6866 / cnmihousing.com. FEMA: disasterassistance.gov.",
+      "affected_programs": []
+    },
+    {
+      "flag_id": "mp_limited_legal_services",
+      "severity": "alert",
+      "title": "Extremely Limited Legal Services \u2014 Most Remote US Jurisdiction",
+      "summary": "CNMI has minimal legal aid infrastructure. CNMI Legal Services Corporation provides limited civil legal aid. No LSC-funded program specific to CNMI. For complex federal claims, may need to route to Hawaii or Guam-based attorneys. CNMI LSC Saipan: 670-234-7223.",
+      "affected_programs": []
+    },
+    {
+      "flag_id": "mp_involuntary_hold_law",
+      "title": "Involuntary Hold: CNMI Emergency Admission",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "MP involuntary psychiatric hold law: CNMI Emergency Admission. Statutory authority: 3 CMC \u00a7 2311. Maximum initial hold duration: 72 hours. Legal standard: danger to self/others. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 72 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "3 CMC \u00a7 2311"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "mp_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in MP retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "mp_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in MP: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "mp_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Northern Mariana Islands Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "mp_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Northern Mariana Islands Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "mp_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Northern Mariana Islands Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

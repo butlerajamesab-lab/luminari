@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "state": "MN",
+    "version": "3.0"
+  },
+  "statute": {
+    "name": "Minnesota Government Data Practices Act (MGDPA)",
+    "citation": "Minn. Stat. § 13"
+  },
+  "structured_rules": [
+    {
+      "rule_id": "mn_open_records",
+      "domain": "public_records"
+    }
+  ],
+  "agencies": [
+    {
+      "agency_id": "mn_records_custodian",
+      "name": "Agency Records Custodian",
+      "url": ""
+    }
+  ],
+  "appeals_workflow": []
+}

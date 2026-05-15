@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "state": "MS",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "MDHS",
+      "role": "SNAP/TANF/Medicaid",
+      "phone": "601-359-4500",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "211 Mississippi",
+      "role": "Social services referral",
+      "phone": "211",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "MS Center for Justice",
+      "role": "Statewide legal advocacy",
+      "phone": "601-352-2269",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "Coast Legal Services",
+      "role": "Gulf Coast legal aid",
+      "phone": "228-374-4656",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "MDES",
+      "role": "UI Appeals",
+      "phone": "888-844-3577",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "MS DOI",
+      "role": "Insurance complaints",
+      "phone": "601-359-3569",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "MS DV Hotline",
+      "role": "Domestic violence crisis",
+      "phone": "800-898-3234",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "UMMC Jackson",
+      "role": "Jackson safety net",
+      "phone": "601-984-1000",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "Delta Health Center",
+      "role": "Delta FQHC",
+      "phone": "662-741-2151",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "MBCI Tribal",
+      "role": "Choctaw tribal services",
+      "phone": "601-656-5251",
+      "email": null,
+      "hours": null
+    }
+  ],
+  "regions": [],
+  "missing_sections": []
+}

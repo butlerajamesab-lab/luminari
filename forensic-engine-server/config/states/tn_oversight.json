@@ -1,0 +1,259 @@
+{
+  "meta": {
+    "state": "TN",
+    "version": "2.0",
+    "date": "2026-03-08",
+    "total_chains": 3,
+    "total_bodies": 5,
+    "entity_types": [
+      "employer",
+      "landlord",
+      "civil_rights"
+    ],
+    "source": "luminari-tn-registry.docx"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "employer",
+      "state": "TN",
+      "bodies": [
+        {
+          "oversight_body": "Tennessee UI / LWD (Dept of Labor and Workforce Development)",
+          "jurisdiction": "primary",
+          "phone": "844-224-5818",
+          "complaint_portal": "https://jobs.tennessee.gov",
+          "what_to_report": "Apply / Notes: jobs.tennessee.gov \u2014 file online. CRITICAL: 15-day appeal deadline from mailing. Contact legal aid within 7 days of any denial. Document all contacts.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC \u2014 Memphis District Office (Federal Hook \u2014 Primary)",
+          "jurisdiction": "primary",
+          "phone": "800-669-4000",
+          "complaint_portal": "https://eeoc.gov",
+          "what_to_report": "Escalation: File THRC simultaneously",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOL Wage and Hour Division \u2014 Nashville (Primary)",
+          "jurisdiction": "primary",
+          "phone": "615-781-5344",
+          "complaint_portal": "https://dol.gov/whd",
+          "what_to_report": "Escalation: TN DOL simultaneously",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "landlord",
+      "state": "TN",
+      "bodies": [
+        {
+          "oversight_body": "HUD Fair Housing \u2014 Southeast Region (Federal Hook)",
+          "jurisdiction": "primary",
+          "phone": "800-669-9777",
+          "complaint_portal": "https://hud.gov/fairhousing",
+          "what_to_report": "Escalation: DOJ Housing; Tennessee Human Rights Commission (615-741-5825)",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "civil_rights",
+      "state": "TN",
+      "bodies": [
+        {
+          "oversight_body": "Metropolitan Nashville Police Department \u2014 Office of Professional Accountability",
+          "jurisdiction": "primary",
+          "phone": "615-862-7341",
+          "complaint_portal": "https://nashville.gov/opa",
+          "what_to_report": "Escalation: DOJ Civil Rights; FBI Memphis (901-747-4300) for federal civil rights",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "statute_of_limitations": "",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "tn_med_board",
+          "name": "Tennessee Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Tennessee Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "TN"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "tn_patient_adv",
+          "name": "Tennessee Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Tennessee Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "TN"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "tn_health_dept",
+          "name": "Tennessee Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Tennessee Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "TN"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "TN"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "tn_pharm_board",
+          "name": "Tennessee Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Tennessee Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "TN"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "tn_pa",
+          "name": "Tennessee Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Tennessee Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "TN"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "tn_mha",
+          "name": "Tennessee Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Tennessee Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "TN"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "TN"
+    }
+  ]
+}

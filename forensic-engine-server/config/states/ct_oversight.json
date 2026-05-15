@@ -1,0 +1,392 @@
+{
+  "meta": {
+    "state": "CT",
+    "version": "3.0",
+    "date": "2026-03-09"
+  },
+  "oversight_chains": [
+    {
+      "chain": "discrimination",
+      "bodies": [
+        {
+          "body_id": "ct_chro",
+          "oversight_body": "ct_chro",
+          "name": "ct_chro",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "body_id": "eeoc_boston",
+          "oversight_body": "eeoc_boston",
+          "name": "eeoc_boston",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CT"
+    },
+    {
+      "chain": "labor",
+      "bodies": [
+        {
+          "body_id": "ct_dol_wage",
+          "oversight_body": "ct_dol_wage",
+          "name": "ct_dol_wage",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "body_id": "whd_hartford",
+          "oversight_body": "whd_hartford",
+          "name": "whd_hartford",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CT"
+    },
+    {
+      "chain": "benefits",
+      "bodies": [
+        {
+          "body_id": "ct_oah",
+          "oversight_body": "ct_oah",
+          "name": "ct_oah",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CT"
+    },
+    {
+      "chain": "ui",
+      "bodies": [
+        {
+          "body_id": "ct_dol_ui",
+          "oversight_body": "ct_dol_ui",
+          "name": "ct_dol_ui",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CT"
+    },
+    {
+      "chain": "insurance",
+      "bodies": [
+        {
+          "body_id": "ct_insurance_dept",
+          "oversight_body": "ct_insurance_dept",
+          "name": "ct_insurance_dept",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CT"
+    },
+    {
+      "chain": "consumer",
+      "bodies": [
+        {
+          "body_id": "ct_ag_consumer",
+          "oversight_body": "ct_ag_consumer",
+          "name": "ct_ag_consumer",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CT"
+    },
+    {
+      "chain": "labor_relations",
+      "bodies": [
+        {
+          "body_id": "nlrb_34_hartford",
+          "oversight_body": "nlrb_34_hartford",
+          "name": "nlrb_34_hartford",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CT"
+    },
+    {
+      "chain": "housing",
+      "bodies": [
+        {
+          "body_id": "hud_boston",
+          "oversight_body": "hud_boston",
+          "name": "hud_boston",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CT"
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "ct_med_board",
+          "name": "Connecticut Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Connecticut Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CT"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "ct_patient_adv",
+          "name": "Connecticut Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Connecticut Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CT"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "ct_health_dept",
+          "name": "Connecticut Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Connecticut Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CT"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CT"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "ct_pharm_board",
+          "name": "Connecticut Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Connecticut Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CT"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "ct_pa",
+          "name": "Connecticut Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Connecticut Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CT"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "ct_mha",
+          "name": "Connecticut Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Connecticut Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CT"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CT"
+    }
+  ],
+  "bodies": [
+    {
+      "body_id": "ct_chro",
+      "name": "CT Commission on Human Rights and Opportunities",
+      "jurisdiction": "Primary \u2014 civil rights",
+      "phone": "860-541-3400",
+      "website": "ct.gov/chro",
+      "address": "450 Columbus Blvd Ste 7, Hartford, CT 06103",
+      "reports": "Employment, housing discrimination",
+      "sol": "300 days \u2014 FATAL"
+    },
+    {
+      "body_id": "eeoc_boston",
+      "name": "EEOC - Boston Area Office",
+      "jurisdiction": "Federal hook",
+      "phone": "800-669-4000",
+      "website": "eeoc.gov/field/boston",
+      "reports": "Federal discrimination",
+      "sol": "300 days \u2014 FATAL"
+    },
+    {
+      "body_id": "ct_dol_wage",
+      "name": "CT DOL - Wage Enforcement",
+      "jurisdiction": "Primary \u2014 wages",
+      "phone": "860-263-6790",
+      "website": "ctdol.state.ct.us",
+      "reports": "Wage claims",
+      "sol": "2 years \u2014 FATAL"
+    },
+    {
+      "body_id": "ct_dol_ui",
+      "name": "CT DOL - UI Appeals",
+      "jurisdiction": "State \u2014 UI",
+      "phone": "860-263-6000",
+      "website": "ctdol.state.ct.us",
+      "reports": "UI denials",
+      "sol": "21 days \u2014 FATAL"
+    },
+    {
+      "body_id": "ct_oah",
+      "name": "CT OAH - Benefits Appeals",
+      "jurisdiction": "State \u2014 benefits",
+      "phone": "860-418-6050",
+      "website": "ct.gov/oah",
+      "reports": "SNAP/HUSKY/TFA hearings",
+      "sol": "30 days \u2014 FATAL"
+    },
+    {
+      "body_id": "ct_insurance_dept",
+      "name": "CT Insurance Department",
+      "jurisdiction": "Primary \u2014 insurance",
+      "phone": "800-203-3447",
+      "website": "ct.gov/cid",
+      "reports": "Insurance complaints",
+      "sol": "180 days"
+    },
+    {
+      "body_id": "hud_boston",
+      "name": "HUD - Boston Regional Office",
+      "jurisdiction": "Federal \u2014 housing",
+      "phone": "617-994-8200",
+      "website": "hud.gov",
+      "reports": "Fair housing complaints",
+      "sol": "1 year"
+    },
+    {
+      "body_id": "ct_ag_consumer",
+      "name": "CT AG - Consumer Protection",
+      "jurisdiction": "State escalation",
+      "website": "portal.ct.gov/ag/consumer",
+      "reports": "CUTPA violations",
+      "sol": "3 years"
+    },
+    {
+      "body_id": "nlrb_34_hartford",
+      "name": "NLRB - Region 34 Hartford",
+      "jurisdiction": "Federal hook",
+      "website": "nlrb.gov/case-activity/region-34",
+      "reports": "Labor relations",
+      "sol": "6 months \u2014 FATAL"
+    },
+    {
+      "body_id": "whd_hartford",
+      "name": "WHD Hartford",
+      "jurisdiction": "Federal \u2014 wages",
+      "phone": "860-240-4160",
+      "website": "dol.gov/whd",
+      "reports": "FLSA wage claims",
+      "sol": "2 years (3 if willful)"
+    }
+  ]
+}

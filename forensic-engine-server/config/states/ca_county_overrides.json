@@ -1,0 +1,492 @@
+{
+  "meta": {
+    "state": "CA",
+    "layer": "county_overrides",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "status": "placeholder",
+    "description": "County overrides \u2014 pending ingestion (58 counties)"
+  },
+  "county_overrides": [
+    {
+      "county_id": "ca_los_angeles",
+      "county_name": "Los Angeles County",
+      "fips_code": "06037",
+      "region": "socal_metro",
+      "population_estimate": 9830000,
+      "courts": {
+        "superior_court": {
+          "name": "Los Angeles County Superior Court",
+          "address": "111 N. Hill Street, Los Angeles, CA 90012",
+          "phone": "213-830-0803",
+          "portal": "https://lacourt.org",
+          "divisions": [
+            "civil",
+            "criminal",
+            "family",
+            "probate",
+            "juvenile",
+            "small_claims",
+            "traffic"
+          ]
+        },
+        "housing_court": {
+          "name": "Stanley Mosk Courthouse \u2014 Unlawful Detainer",
+          "address": "111 N. Hill Street, Los Angeles, CA 90012",
+          "phone": "213-830-0803",
+          "portal": "https://lacourt.org/division/civil/CI0046.aspx"
+        }
+      },
+      "prosecutor": {
+        "office": "Los Angeles County District Attorney",
+        "address": "211 W. Temple Street, Los Angeles, CA 90012",
+        "phone": "213-974-3512",
+        "portal": "https://da.lacounty.gov",
+        "victim_services_phone": "800-380-3811"
+      },
+      "housing_authority": {
+        "name": "Housing Authority of the City of Los Angeles (HACLA)",
+        "address": "2600 Wilshire Blvd, Los Angeles, CA 90057",
+        "phone": "213-252-2500",
+        "portal": "https://hacla.org",
+        "programs": [
+          "Section 8 HCV",
+          "Public Housing",
+          "VASH",
+          "Family Self-Sufficiency"
+        ],
+        "waitlist_status": "Typically closed; check portal for openings"
+      },
+      "legal_aid": {
+        "primary": {
+          "name": "Legal Aid Foundation of Los Angeles (LAFLA)",
+          "phone": "800-399-4529",
+          "portal": "https://lafla.org",
+          "coverage": "LA County \u2014 housing, DV, immigration, public benefits, consumer"
+        },
+        "secondary": {
+          "name": "Bet Tzedek Legal Services",
+          "phone": "323-939-0506",
+          "portal": "https://bettzedek.org"
+        }
+      },
+      "child_welfare": {
+        "office": "LA County DCFS",
+        "phone": "800-540-4000",
+        "portal": "https://dcfs.lacounty.gov",
+        "hotline": "800-540-4000"
+      },
+      "law_enforcement": {
+        "primary": {
+          "name": "Los Angeles Police Department (LAPD)",
+          "phone": "877-275-5273",
+          "portal": "https://lapdonline.org"
+        },
+        "sheriff": {
+          "name": "LA County Sheriff's Department",
+          "phone": "213-229-1700",
+          "portal": "https://lasd.org"
+        }
+      },
+      "utilities": {
+        "electric": {
+          "name": "LADWP",
+          "phone": "800-342-5397",
+          "portal": "https://ladwp.com",
+          "shutoff_moratorium": "CARE/FERA low-income programs available"
+        },
+        "gas": {
+          "name": "SoCalGas",
+          "phone": "800-427-2200",
+          "portal": "https://socalgas.com"
+        },
+        "water": {
+          "name": "LADWP Water",
+          "phone": "800-342-5397",
+          "portal": "https://ladwp.com"
+        }
+      }
+    },
+    {
+      "county_id": "ca_san_francisco",
+      "county_name": "San Francisco County",
+      "fips_code": "06075",
+      "region": "bay_area",
+      "population_estimate": 874000,
+      "courts": {
+        "superior_court": {
+          "name": "San Francisco Superior Court",
+          "address": "400 McAllister Street, San Francisco, CA 94102",
+          "phone": "415-551-4000",
+          "portal": "https://sfsuperiorcourt.org",
+          "divisions": [
+            "civil",
+            "criminal",
+            "family",
+            "probate",
+            "unified_family_court",
+            "small_claims"
+          ]
+        }
+      },
+      "prosecutor": {
+        "office": "San Francisco District Attorney",
+        "address": "350 Rhode Island Street, San Francisco, CA 94103",
+        "phone": "628-652-4000",
+        "portal": "https://sfdistrictattorney.org",
+        "victim_services_phone": "628-652-4100"
+      },
+      "housing_authority": {
+        "name": "San Francisco Housing Authority (SFHA)",
+        "address": "1815 Egbert Avenue, San Francisco, CA 94124",
+        "phone": "415-715-3200",
+        "portal": "https://sfha.org",
+        "programs": [
+          "Section 8 HCV",
+          "Public Housing",
+          "HOPE SF"
+        ],
+        "waitlist_status": "Typically closed; check portal for openings"
+      },
+      "legal_aid": {
+        "primary": {
+          "name": "Bay Area Legal Aid (BayLegal)",
+          "phone": "800-551-5554",
+          "portal": "https://baylegal.org",
+          "coverage": "SF Bay Area \u2014 housing, benefits, DV, consumer, health"
+        },
+        "secondary": {
+          "name": "Tenderloin Housing Clinic",
+          "phone": "415-771-2427",
+          "portal": "https://thclinic.org"
+        }
+      },
+      "child_welfare": {
+        "office": "SF Human Services Agency \u2014 Family & Children's Services",
+        "phone": "800-856-5553",
+        "portal": "https://sfhsa.org",
+        "hotline": "800-856-5553"
+      },
+      "law_enforcement": {
+        "primary": {
+          "name": "San Francisco Police Department (SFPD)",
+          "phone": "415-553-0123",
+          "portal": "https://sanfranciscopolice.org"
+        }
+      },
+      "utilities": {
+        "electric": {
+          "name": "PG&E / SF Public Utilities Commission",
+          "phone": "800-743-5000",
+          "portal": "https://pge.com",
+          "shutoff_moratorium": "CARE/FERA programs; SFPUC CleanPowerSF"
+        },
+        "gas": {
+          "name": "PG&E",
+          "phone": "800-743-5000",
+          "portal": "https://pge.com"
+        },
+        "water": {
+          "name": "SF Public Utilities Commission",
+          "phone": "415-551-3000",
+          "portal": "https://sfpuc.org"
+        }
+      }
+    },
+    {
+      "county_id": "ca_san_diego",
+      "county_name": "San Diego County",
+      "fips_code": "06073",
+      "region": "socal_metro",
+      "population_estimate": 3340000,
+      "courts": {
+        "superior_court": {
+          "name": "San Diego County Superior Court",
+          "address": "1100 Union Street, San Diego, CA 92101",
+          "phone": "619-844-2700",
+          "portal": "https://sdcourt.ca.gov",
+          "divisions": [
+            "civil",
+            "criminal",
+            "family",
+            "probate",
+            "juvenile",
+            "small_claims"
+          ]
+        }
+      },
+      "prosecutor": {
+        "office": "San Diego County District Attorney",
+        "address": "330 W. Broadway, San Diego, CA 92101",
+        "phone": "619-531-4040",
+        "portal": "https://sdcda.org",
+        "victim_services_phone": "619-531-4041"
+      },
+      "housing_authority": {
+        "name": "San Diego Housing Commission (SDHC)",
+        "address": "1122 Broadway, Suite 300, San Diego, CA 92101",
+        "phone": "619-231-9400",
+        "portal": "https://sdhc.org",
+        "programs": [
+          "Section 8 HCV",
+          "Public Housing",
+          "VASH",
+          "Moving to Work"
+        ],
+        "waitlist_status": "Check portal for openings"
+      },
+      "legal_aid": {
+        "primary": {
+          "name": "Legal Aid Society of San Diego",
+          "phone": "877-534-2524",
+          "portal": "https://lassd.org",
+          "coverage": "San Diego County \u2014 housing, DV, immigration, consumer, benefits"
+        },
+        "secondary": {
+          "name": "San Diego Volunteer Lawyer Program",
+          "phone": "619-235-5656",
+          "portal": "https://sdvlp.org"
+        }
+      },
+      "child_welfare": {
+        "office": "SD County Health & Human Services \u2014 Child Welfare Services",
+        "phone": "858-560-2191",
+        "portal": "https://sandiegocounty.gov/hhsa/programs/cs",
+        "hotline": "858-560-2191"
+      },
+      "law_enforcement": {
+        "primary": {
+          "name": "San Diego Police Department (SDPD)",
+          "phone": "619-531-2000",
+          "portal": "https://sandiego.gov/police"
+        },
+        "sheriff": {
+          "name": "San Diego County Sheriff's Department",
+          "phone": "858-565-5200",
+          "portal": "https://sdsheriff.gov"
+        }
+      },
+      "utilities": {
+        "electric": {
+          "name": "SDG&E",
+          "phone": "800-411-7343",
+          "portal": "https://sdge.com",
+          "shutoff_moratorium": "CARE/FERA programs available"
+        },
+        "gas": {
+          "name": "SDG&E",
+          "phone": "800-411-7343",
+          "portal": "https://sdge.com"
+        },
+        "water": {
+          "name": "City of San Diego Public Utilities",
+          "phone": "619-515-3500",
+          "portal": "https://sandiego.gov/public-utilities"
+        }
+      }
+    },
+    {
+      "county_id": "ca_sacramento",
+      "county_name": "Sacramento County",
+      "fips_code": "06067",
+      "region": "central_valley",
+      "population_estimate": 1585000,
+      "courts": {
+        "superior_court": {
+          "name": "Sacramento County Superior Court",
+          "address": "720 9th Street, Sacramento, CA 95814",
+          "phone": "916-874-5522",
+          "portal": "https://saccourt.ca.gov",
+          "divisions": [
+            "civil",
+            "criminal",
+            "family",
+            "probate",
+            "juvenile",
+            "small_claims"
+          ]
+        }
+      },
+      "prosecutor": {
+        "office": "Sacramento County District Attorney",
+        "address": "901 G Street, Sacramento, CA 95814",
+        "phone": "916-874-5801",
+        "portal": "https://sacda.org",
+        "victim_services_phone": "916-874-5803"
+      },
+      "housing_authority": {
+        "name": "Sacramento Housing and Redevelopment Agency (SHRA)",
+        "address": "801 12th Street, Sacramento, CA 95814",
+        "phone": "916-444-9210",
+        "portal": "https://shra.org",
+        "programs": [
+          "Section 8 HCV",
+          "Public Housing",
+          "VASH"
+        ],
+        "waitlist_status": "Check portal for openings"
+      },
+      "legal_aid": {
+        "primary": {
+          "name": "Legal Services of Northern California",
+          "phone": "916-551-2150",
+          "portal": "https://lsnc.net",
+          "coverage": "Sacramento region \u2014 housing, benefits, DV, consumer, elder"
+        },
+        "secondary": {
+          "name": "Sacramento County Bar Association Lawyer Referral",
+          "phone": "916-442-0111",
+          "portal": "https://sacbar.org"
+        }
+      },
+      "child_welfare": {
+        "office": "Sacramento County CPS",
+        "phone": "916-875-5437",
+        "portal": "https://dhhs.saccounty.gov/CPS",
+        "hotline": "916-875-5437"
+      },
+      "law_enforcement": {
+        "primary": {
+          "name": "Sacramento Police Department",
+          "phone": "916-264-5471",
+          "portal": "https://cityofsacramento.org/police"
+        },
+        "sheriff": {
+          "name": "Sacramento County Sheriff's Office",
+          "phone": "916-874-5115",
+          "portal": "https://sacsheriff.com"
+        }
+      },
+      "utilities": {
+        "electric": {
+          "name": "SMUD",
+          "phone": "888-742-7683",
+          "portal": "https://smud.org",
+          "shutoff_moratorium": "EAPR low-income assistance"
+        },
+        "gas": {
+          "name": "PG&E",
+          "phone": "800-743-5000",
+          "portal": "https://pge.com"
+        },
+        "water": {
+          "name": "City of Sacramento Utilities",
+          "phone": "916-264-5011",
+          "portal": "https://cityofsacramento.org/utilities"
+        }
+      }
+    },
+    {
+      "county_id": "ca_alameda",
+      "county_name": "Alameda County",
+      "fips_code": "06001",
+      "region": "bay_area",
+      "population_estimate": 1670000,
+      "courts": {
+        "superior_court": {
+          "name": "Alameda County Superior Court",
+          "address": "1225 Fallon Street, Oakland, CA 94612",
+          "phone": "510-891-6000",
+          "portal": "https://alameda.courts.ca.gov",
+          "divisions": [
+            "civil",
+            "criminal",
+            "family",
+            "probate",
+            "juvenile",
+            "small_claims"
+          ]
+        }
+      },
+      "prosecutor": {
+        "office": "Alameda County District Attorney",
+        "address": "1225 Fallon Street, Oakland, CA 94612",
+        "phone": "510-272-6222",
+        "portal": "https://alcoda.org",
+        "victim_services_phone": "510-272-6180"
+      },
+      "housing_authority": {
+        "name": "Oakland Housing Authority (OHA)",
+        "address": "1619 Harrison Street, Oakland, CA 94612",
+        "phone": "510-874-1500",
+        "portal": "https://oakha.org",
+        "programs": [
+          "Section 8 HCV",
+          "Public Housing",
+          "VASH"
+        ],
+        "waitlist_status": "Check portal for openings"
+      },
+      "legal_aid": {
+        "primary": {
+          "name": "Bay Area Legal Aid (BayLegal)",
+          "phone": "800-551-5554",
+          "portal": "https://baylegal.org",
+          "coverage": "Alameda County \u2014 housing, benefits, DV, consumer"
+        },
+        "secondary": {
+          "name": "Centro Legal de la Raza",
+          "phone": "510-437-1554",
+          "portal": "https://centrolegal.org"
+        }
+      },
+      "child_welfare": {
+        "office": "Alameda County Social Services \u2014 Children & Family Services",
+        "phone": "510-259-1800",
+        "portal": "https://alamedasocialservices.org",
+        "hotline": "510-259-1800"
+      },
+      "law_enforcement": {
+        "primary": {
+          "name": "Oakland Police Department",
+          "phone": "510-238-3455",
+          "portal": "https://oaklandca.gov/departments/police"
+        },
+        "sheriff": {
+          "name": "Alameda County Sheriff's Office",
+          "phone": "510-667-7721",
+          "portal": "https://alamedacountysheriff.org"
+        }
+      },
+      "utilities": {
+        "electric": {
+          "name": "PG&E / East Bay Community Energy",
+          "phone": "800-743-5000",
+          "portal": "https://pge.com",
+          "shutoff_moratorium": "CARE/FERA programs available"
+        },
+        "gas": {
+          "name": "PG&E",
+          "phone": "800-743-5000",
+          "portal": "https://pge.com"
+        },
+        "water": {
+          "name": "East Bay Municipal Utility District (EBMUD)",
+          "phone": "866-403-2683",
+          "portal": "https://ebmud.com"
+        }
+      }
+    }
+  ],
+  "regions": {
+    "socal_metro": {
+      "description": "Southern California metropolitan area (LA, San Diego, Orange County)"
+    },
+    "bay_area": {
+      "description": "San Francisco Bay Area (SF, Alameda, Santa Clara, Contra Costa)"
+    },
+    "central_valley": {
+      "description": "Central Valley region (Sacramento, Fresno, Bakersfield)"
+    },
+    "inland_empire": {
+      "description": "Inland Empire (Riverside, San Bernardino)"
+    },
+    "statewide": {
+      "description": "Statewide coverage"
+    }
+  },
+  "resolution_chain": {
+    "priority": "county_specific > region > statewide",
+    "fallback": "If no county override found, use statewide defaults"
+  }
+}

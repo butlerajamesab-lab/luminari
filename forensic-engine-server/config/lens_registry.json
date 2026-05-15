@@ -1,0 +1,1711 @@
+{
+  "version": "2.0.0",
+  "structural_lenses": [
+    {
+      "lens_id": "evidence",
+      "label": "Evidence Lens",
+      "category": "structural",
+      "description": "Extracts entities, claims, quotes, and relationships from documents.",
+      "priority": 100,
+      "activation_rules": {
+        "always": true
+      },
+      "metadata_fields": [
+        "entity_count",
+        "claim_count",
+        "quote_count",
+        "relationship_count"
+      ],
+      "analysis_hooks": [
+        "entity_extraction",
+        "claim_classification",
+        "quote_anchoring"
+      ],
+      "ui_surfaces": [
+        "case_overview_card",
+        "documents_panel",
+        "entity_list"
+      ]
+    },
+    {
+      "lens_id": "timeline",
+      "label": "Timeline Lens",
+      "category": "structural",
+      "description": "Normalizes events into chronological sequence and detects temporal gaps.",
+      "priority": 100,
+      "activation_rules": {
+        "always": true
+      },
+      "metadata_fields": [
+        "event_count",
+        "date_range_start",
+        "date_range_end",
+        "temporal_gaps"
+      ],
+      "analysis_hooks": [
+        "event_normalization",
+        "gap_detection",
+        "chronological_ordering"
+      ],
+      "ui_surfaces": [
+        "timeline_panel",
+        "case_overview_card"
+      ]
+    },
+    {
+      "lens_id": "network",
+      "label": "Network Lens",
+      "category": "structural",
+      "description": "Maps relationships between entities and detects network clusters.",
+      "priority": 100,
+      "activation_rules": {
+        "always": true
+      },
+      "metadata_fields": [
+        "node_count",
+        "edge_count",
+        "cluster_count"
+      ],
+      "analysis_hooks": [
+        "relationship_mapping",
+        "cluster_detection",
+        "centrality_analysis"
+      ],
+      "ui_surfaces": [
+        "network_graph",
+        "case_overview_card"
+      ]
+    },
+    {
+      "lens_id": "provenance",
+      "label": "Provenance Lens",
+      "category": "structural",
+      "description": "Tracks document origin, source attribution, and evidentiary chain.",
+      "priority": 100,
+      "activation_rules": {
+        "always": true
+      },
+      "metadata_fields": [
+        "source_types",
+        "statement_origins",
+        "provenance_coverage"
+      ],
+      "analysis_hooks": [
+        "source_attribution",
+        "origin_labeling",
+        "chain_validation"
+      ],
+      "ui_surfaces": [
+        "provenance_panel",
+        "document_detail"
+      ]
+    }
+  ],
+  "domain_lenses": [
+    {
+      "lens_id": "domestic_violence",
+      "label": "Domestic Violence Lens",
+      "category": "domain",
+      "description": "Interprets evidence through domestic violence case patterns: incident escalation, protective orders, risk indicators.",
+      "priority": 90,
+      "activation_rules": {
+        "domains": [
+          "domestic_violence",
+          "dv"
+        ]
+      },
+      "metadata_fields": [
+        "incident_types",
+        "protective_orders",
+        "risk_indicators",
+        "escalation_pattern"
+      ],
+      "analysis_hooks": [
+        "dv_incident_classification",
+        "protective_order_tracking",
+        "risk_assessment"
+      ],
+      "ui_surfaces": [
+        "domain_summary_card",
+        "safety_indicators",
+        "findings_filter"
+      ]
+    },
+    {
+      "lens_id": "custody",
+      "label": "Custody Lens",
+      "category": "domain",
+      "description": "Interprets evidence through family court custody patterns: court orders, parent roles, child welfare indicators.",
+      "priority": 90,
+      "activation_rules": {
+        "domains": [
+          "custody",
+          "custody_dispute"
+        ]
+      },
+      "metadata_fields": [
+        "custody_orders",
+        "parent_roles",
+        "child_welfare",
+        "visitation_schedule"
+      ],
+      "analysis_hooks": [
+        "custody_order_tracking",
+        "parental_fitness_indicators",
+        "child_welfare_flags"
+      ],
+      "ui_surfaces": [
+        "domain_summary_card",
+        "findings_filter"
+      ]
+    },
+    {
+      "lens_id": "housing",
+      "label": "Housing Lens",
+      "category": "domain",
+      "description": "Interprets evidence through housing dispute patterns: lease terms, repair requests, eviction proceedings.",
+      "priority": 90,
+      "activation_rules": {
+        "domains": [
+          "housing",
+          "housing_dispute",
+          "eviction",
+          "habitability_violation",
+          "landlord_harassment",
+          "housing_discrimination",
+          "tenant_rights",
+          "eviction_defense"
+        ]
+      },
+      "metadata_fields": [
+        "lease_terms",
+        "repair_requests",
+        "eviction_status",
+        "habitability_issues"
+      ],
+      "analysis_hooks": [
+        "lease_analysis",
+        "repair_timeline",
+        "eviction_procedure_check"
+      ],
+      "ui_surfaces": [
+        "domain_summary_card",
+        "findings_filter"
+      ]
+    },
+    {
+      "lens_id": "insurance",
+      "label": "Insurance Lens",
+      "category": "domain",
+      "description": "Interprets evidence through insurance denial patterns: denial reasoning, policy sections, appeal status.",
+      "priority": 90,
+      "activation_rules": {
+        "domains": [
+          "insurance",
+          "insurance_denial",
+          "insurance_bad_faith",
+          "insurance_claim_denial"
+        ]
+      },
+      "metadata_fields": [
+        "denial_reason",
+        "policy_section",
+        "appeal_status",
+        "claim_amount"
+      ],
+      "analysis_hooks": [
+        "denial_analysis",
+        "policy_cross_reference",
+        "appeal_tracking"
+      ],
+      "ui_surfaces": [
+        "domain_summary_card",
+        "findings_filter"
+      ]
+    },
+    {
+      "lens_id": "workplace",
+      "label": "Workplace Lens",
+      "category": "domain",
+      "description": "Interprets evidence through workplace dispute patterns: employment actions, disciplinary records, HR reports.",
+      "priority": 90,
+      "activation_rules": {
+        "domains": [
+          "workplace",
+          "employment",
+          "workplace_retaliation",
+          "workplace_discrimination",
+          "wage_theft",
+          "workplace_safety_violation",
+          "whistleblower_retaliation",
+          "wrongful_termination",
+          "workers_compensation"
+        ]
+      },
+      "metadata_fields": [
+        "employment_role",
+        "disciplinary_actions",
+        "hr_reports",
+        "retaliation_indicators"
+      ],
+      "analysis_hooks": [
+        "employment_action_tracking",
+        "retaliation_pattern",
+        "hr_compliance_check"
+      ],
+      "ui_surfaces": [
+        "domain_summary_card",
+        "findings_filter"
+      ]
+    },
+    {
+      "lens_id": "elder_abuse",
+      "label": "Elder Abuse Lens",
+      "category": "domain",
+      "description": "Interprets evidence through elder abuse patterns: caregiver roles, medical events, vulnerability indicators.",
+      "priority": 90,
+      "activation_rules": {
+        "domains": [
+          "elder_abuse",
+          "elderabuse"
+        ]
+      },
+      "metadata_fields": [
+        "caregiver_roles",
+        "medical_events",
+        "vulnerability_flags",
+        "financial_exploitation"
+      ],
+      "analysis_hooks": [
+        "caregiver_pattern_analysis",
+        "medical_event_correlation",
+        "exploitation_detection"
+      ],
+      "ui_surfaces": [
+        "domain_summary_card",
+        "safety_indicators",
+        "findings_filter"
+      ]
+    },
+    {
+      "lens_id": "medical",
+      "label": "Medical Lens",
+      "category": "domain",
+      "description": "Interprets evidence through medical harm patterns: provider actions, treatment events, medical record gaps.",
+      "priority": 90,
+      "activation_rules": {
+        "domains": [
+          "medical",
+          "medical_records",
+          "medical_malpractice",
+          "medical_record_access"
+        ]
+      },
+      "metadata_fields": [
+        "providers",
+        "treatment_events",
+        "medical_records",
+        "standard_of_care"
+      ],
+      "analysis_hooks": [
+        "treatment_timeline",
+        "provider_action_tracking",
+        "record_gap_detection"
+      ],
+      "ui_surfaces": [
+        "domain_summary_card",
+        "findings_filter"
+      ]
+    },
+    {
+      "lens_id": "consumer",
+      "label": "Consumer Lens",
+      "category": "domain",
+      "description": "Interprets evidence through consumer dispute patterns: contracts, payments, vendor relationships.",
+      "priority": 90,
+      "activation_rules": {
+        "domains": [
+          "consumer",
+          "consumer_fraud",
+          "predatorylending",
+          "debt_collection_abuse",
+          "contract_dispute",
+          "predatory_lending"
+        ]
+      },
+      "metadata_fields": [
+        "contracts",
+        "payments",
+        "vendor_relationships",
+        "disclosure_violations"
+      ],
+      "analysis_hooks": [
+        "contract_analysis",
+        "payment_tracking",
+        "disclosure_compliance"
+      ],
+      "ui_surfaces": [
+        "domain_summary_card",
+        "findings_filter"
+      ]
+    },
+    {
+      "lens_id": "mental_health",
+      "label": "Mental Health System Lens",
+      "description": "Activates forensic analysis patterns specific to psychiatric care settings: involuntary holds, medication management, restraint protocols, discharge planning, patient rights, and family access. Leads with belief in the person's experience, not clinical assumptions.",
+      "focus_areas": [
+        "involuntary_hold_legality",
+        "medication_safety_and_interactions",
+        "restraint_seclusion_compliance",
+        "discharge_planning_adequacy",
+        "patient_rights_compliance",
+        "family_access_and_communication",
+        "informed_consent_verification",
+        "records_accuracy_and_completeness"
+      ],
+      "signal_amplifiers": [
+        "missing_physician_order",
+        "hold_exceeds_statutory_duration",
+        "no_hearing_conducted",
+        "concurrent_medications_flagged",
+        "no_discharge_plan",
+        "family_communication_blocked",
+        "restraint_without_documentation",
+        "records_access_denied"
+      ],
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": {
+        "domains": [
+          "mental_health",
+          "psychiatric",
+          "involuntary_hold",
+          "psych_hold",
+          "medication_harm",
+          "restraint",
+          "seclusion"
+        ]
+      },
+      "metadata_fields": [
+        "hold_type",
+        "hold_duration",
+        "medication_count",
+        "restraint_incidents",
+        "discharge_plan_status",
+        "patient_rights_violations",
+        "family_access_barriers"
+      ],
+      "analysis_hooks": [
+        "hold_legality_check",
+        "polypharmacy_risk_assessment",
+        "restraint_compliance_review",
+        "discharge_adequacy_evaluation",
+        "patient_rights_audit"
+      ],
+      "ui_surfaces": [
+        "domain_summary_card",
+        "medication_timeline",
+        "hold_legality_indicators",
+        "findings_filter"
+      ]
+    },
+    {
+      "lens_id": "administrative_error_detection",
+      "label": "Administrative Error Detection",
+      "description": "Analysis lens for administrative error detection",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "capacity_evaluation",
+      "label": "Capacity Evaluation",
+      "description": "Analysis lens for capacity evaluation",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "child_best_interest",
+      "label": "Child Best Interest",
+      "description": "Analysis lens for child best interest",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "civil_rights_lens",
+      "label": "Civil Rights Lens",
+      "description": "Analysis lens for civil rights lens",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "claims_pattern_detection",
+      "label": "Claims Pattern Detection",
+      "description": "Analysis lens for claims pattern detection",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "constitutional_rights_lens",
+      "label": "Constitutional Rights Lens",
+      "description": "Analysis lens for constitutional rights lens",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "consumer_harm_lens",
+      "label": "Consumer Harm Lens",
+      "description": "Analysis lens for consumer harm lens",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "consumer_protection_lens",
+      "label": "Consumer Protection Lens",
+      "description": "Analysis lens for consumer protection lens",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "country_conditions_analysis",
+      "label": "Country Conditions Analysis",
+      "description": "Analysis lens for country conditions analysis",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "coverage_analysis",
+      "label": "Coverage Analysis",
+      "description": "Analysis lens for coverage analysis",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "crisis_intervention",
+      "label": "Crisis Intervention",
+      "description": "Analysis lens for crisis intervention",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "detention_conditions_lens",
+      "label": "Detention Conditions Lens",
+      "description": "Analysis lens for detention conditions lens",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "discrimination_detection",
+      "label": "Discrimination Detection",
+      "description": "Analysis lens for discrimination detection",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "due_process_lens",
+      "label": "Due Process Lens",
+      "description": "Analysis lens for due process lens",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "eligibility_analysis",
+      "label": "Eligibility Analysis",
+      "description": "Analysis lens for eligibility analysis",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "environmental_impact_lens",
+      "label": "Environmental Impact Lens",
+      "description": "Analysis lens for environmental impact lens",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "evidence_integrity",
+      "label": "Evidence Integrity",
+      "description": "Analysis lens for evidence integrity",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "federal_trust_responsibility",
+      "label": "Federal Trust Responsibility",
+      "description": "Analysis lens for federal trust responsibility",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "financial_exploitation_lens",
+      "label": "Financial Exploitation Lens",
+      "description": "Analysis lens for financial exploitation lens",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "financial_harm_assessment",
+      "label": "Financial Harm Assessment",
+      "description": "Analysis lens for financial harm assessment",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "habitability_assessment",
+      "label": "Habitability Assessment",
+      "description": "Analysis lens for habitability assessment",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "identity_protection_lens",
+      "label": "Identity Protection Lens",
+      "description": "Analysis lens for identity protection lens",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "immediate_risk_assessment",
+      "label": "Immediate Risk Assessment",
+      "description": "Analysis lens for immediate risk assessment",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "market_power_analysis",
+      "label": "Market Power Analysis",
+      "description": "Analysis lens for market power analysis",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "medical_necessity_lens",
+      "label": "Medical Necessity Lens",
+      "description": "Analysis lens for medical necessity lens",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "predatory_practice_detection",
+      "label": "Predatory Practice Detection",
+      "description": "Analysis lens for predatory practice detection",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "public_health_assessment",
+      "label": "Public Health Assessment",
+      "description": "Analysis lens for public health assessment",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "retaliation_pattern",
+      "label": "Retaliation Pattern",
+      "description": "Analysis lens for retaliation pattern",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "safety_planning_lens",
+      "label": "Safety Planning Lens",
+      "description": "Analysis lens for safety planning lens",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "sovereignty_lens",
+      "label": "Sovereignty Lens",
+      "description": "Analysis lens for sovereignty lens",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "tenant_rights_lens",
+      "label": "Tenant Rights Lens",
+      "description": "Analysis lens for tenant rights lens",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "treaty_rights_analysis",
+      "label": "Treaty Rights Analysis",
+      "description": "Analysis lens for treaty rights analysis",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "vulnerability_assessment",
+      "label": "Vulnerability Assessment",
+      "description": "Analysis lens for vulnerability assessment",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    },
+    {
+      "lens_id": "workplace_rights_lens",
+      "label": "Workplace Rights Lens",
+      "description": "Analysis lens for workplace rights lens",
+      "category": "domain",
+      "priority": 90,
+      "activation_rules": [],
+      "analysis_hooks": [],
+      "metadata_fields": [],
+      "ui_surfaces": [
+        "findings"
+      ]
+    }
+  ],
+  "interpretive_lenses": [
+    {
+      "lens_id": "safety_risk",
+      "label": "Safety Risk Lens",
+      "category": "interpretive",
+      "description": "Evaluates risk patterns, escalation indicators, and threat assessment across evidence.",
+      "priority": 95,
+      "activation_rules": {
+        "domains": [
+          "domestic_violence",
+          "dv",
+          "custody",
+          "custody_dispute",
+          "elder_abuse",
+          "elderabuse",
+          "workplace",
+          "employment",
+          "stalking_harassment",
+          "sexual_assault",
+          "coercive_control",
+          "child_abuse",
+          "wrongful_termination"
+        ],
+        "evidence_signals": [
+          "threat",
+          "injury",
+          "stalking"
+        ]
+      },
+      "signal_threshold": 1,
+      "confidence_weights": {
+        "threat": 1.5,
+        "injury": 1.2,
+        "stalking": 1.0
+      },
+      "supports": [
+        "trauma_informed",
+        "coercive_control_lens"
+      ],
+      "metadata_fields": [
+        "risk_level",
+        "risk_factors",
+        "vulnerable_parties",
+        "escalation_indicators"
+      ],
+      "analysis_hooks": [
+        "escalation_pattern",
+        "threat_assessment",
+        "vulnerability_scoring"
+      ],
+      "ui_surfaces": [
+        "safety_indicators",
+        "case_overview_card",
+        "findings_filter"
+      ]
+    },
+    {
+      "lens_id": "coercive_control_lens",
+      "label": "Coercive Control Lens",
+      "category": "interpretive",
+      "description": "Identifies patterns of domination through isolation, financial control, surveillance, and psychological manipulation.",
+      "priority": 93,
+      "activation_rules": {
+        "domains": [
+          "domestic_violence",
+          "dv",
+          "coercive_control",
+          "custody",
+          "custody_dispute",
+          "stalking_harassment"
+        ],
+        "evidence_signals": [
+          "threat",
+          "stalking",
+          "harassment_language"
+        ]
+      },
+      "signal_threshold": 1,
+      "confidence_weights": {
+        "threat": 1.3,
+        "stalking": 1.5,
+        "harassment_language": 1.0
+      },
+      "supports": [
+        "safety_risk"
+      ],
+      "metadata_fields": [
+        "isolation_indicators",
+        "financial_control_patterns",
+        "surveillance_evidence",
+        "manipulation_tactics"
+      ],
+      "analysis_hooks": [
+        "isolation_pattern_detection",
+        "financial_control_analysis",
+        "surveillance_tracking"
+      ],
+      "ui_surfaces": [
+        "safety_indicators",
+        "findings_filter"
+      ]
+    },
+    {
+      "lens_id": "trauma_informed",
+      "label": "Trauma-Informed Lens",
+      "category": "interpretive",
+      "description": "Applies trauma-aware interpretation to evidence, flagging re-traumatization risks and inconsistency patterns consistent with trauma response.",
+      "priority": 88,
+      "activation_rules": {
+        "domains": [
+          "domestic_violence",
+          "dv",
+          "elder_abuse",
+          "elderabuse",
+          "custody",
+          "custody_dispute",
+          "sexual_assault",
+          "child_abuse",
+          "stalking_harassment"
+        ],
+        "evidence_signals": [
+          "injury",
+          "threat"
+        ]
+      },
+      "supports": [
+        "safety_risk"
+      ],
+      "confidence_weights": {
+        "injury": 1.3,
+        "threat": 1.0
+      },
+      "metadata_fields": [
+        "trauma_indicators",
+        "inconsistency_context",
+        "retraumatization_risks"
+      ],
+      "analysis_hooks": [
+        "trauma_pattern_recognition",
+        "inconsistency_contextualization"
+      ],
+      "ui_surfaces": [
+        "findings_filter",
+        "safety_indicators"
+      ]
+    },
+    {
+      "lens_id": "vulnerable_population",
+      "label": "Vulnerable Population Lens",
+      "category": "interpretive",
+      "description": "Identifies evidence involving minors, elderly, disabled, or other vulnerable populations requiring heightened scrutiny.",
+      "priority": 91,
+      "activation_rules": {
+        "domains": [
+          "elder_abuse",
+          "elderabuse",
+          "child_abuse",
+          "custody",
+          "custody_dispute",
+          "guardianship",
+          "foster_care_misconduct",
+          "foster_care"
+        ],
+        "evidence_signals": [
+          "injury",
+          "threat"
+        ]
+      },
+      "signal_threshold": 1,
+      "confidence_weights": {
+        "injury": 1.4,
+        "threat": 1.0
+      },
+      "supports": [
+        "safety_risk",
+        "trauma_informed"
+      ],
+      "metadata_fields": [
+        "vulnerable_parties",
+        "capacity_indicators",
+        "guardian_roles",
+        "protective_measures"
+      ],
+      "analysis_hooks": [
+        "vulnerability_identification",
+        "capacity_assessment",
+        "protective_measure_tracking"
+      ],
+      "ui_surfaces": [
+        "safety_indicators",
+        "findings_filter"
+      ]
+    },
+    {
+      "lens_id": "systems_failure",
+      "label": "Systems Failure Lens",
+      "category": "interpretive",
+      "description": "Detects institutional procedural failures, delayed responses, and missing documentation patterns.",
+      "priority": 85,
+      "activation_rules": {
+        "domains": [
+          "housing",
+          "housing_dispute",
+          "eviction",
+          "habitability_violation",
+          "medical",
+          "medical_records",
+          "medical_malpractice",
+          "workplace",
+          "employment",
+          "custody",
+          "custody_dispute",
+          "child_welfare_failure",
+          "police_misconduct",
+          "regulatory_violation",
+          "foster_care_misconduct",
+          "tenant_rights",
+          "eviction_defense",
+          "medical_record_access",
+          "wrongful_termination",
+          "child_welfare",
+          "environmental_violation",
+          "foster_care"
+        ]
+      },
+      "metadata_fields": [
+        "procedural_failures",
+        "delayed_responses",
+        "missing_documents",
+        "compliance_gaps"
+      ],
+      "analysis_hooks": [
+        "procedure_compliance_check",
+        "response_timeline_analysis",
+        "documentation_gap_detection"
+      ],
+      "ui_surfaces": [
+        "findings_filter",
+        "narrative_section"
+      ]
+    },
+    {
+      "lens_id": "institutional_accountability",
+      "label": "Institutional Accountability Lens",
+      "category": "interpretive",
+      "description": "Checks regulatory compliance obligations and institutional duty-of-care requirements.",
+      "priority": 82,
+      "activation_rules": {
+        "domains": [
+          "medical",
+          "medical_records",
+          "medical_malpractice",
+          "housing",
+          "housing_dispute",
+          "habitability_violation",
+          "elder_abuse",
+          "elderabuse",
+          "police_misconduct",
+          "child_welfare_failure",
+          "regulatory_violation",
+          "foster_care_misconduct",
+          "medical_record_access",
+          "tenant_rights",
+          "child_welfare",
+          "environmental_violation",
+          "foster_care"
+        ],
+        "evidence_signals": [
+          "regulatory_violation"
+        ]
+      },
+      "metadata_fields": [
+        "regulatory_obligations",
+        "compliance_status",
+        "duty_of_care_indicators"
+      ],
+      "analysis_hooks": [
+        "regulatory_cross_reference",
+        "compliance_gap_analysis",
+        "duty_of_care_check"
+      ],
+      "ui_surfaces": [
+        "findings_filter",
+        "narrative_section"
+      ]
+    },
+    {
+      "lens_id": "regulatory_compliance",
+      "label": "Regulatory Compliance Lens",
+      "category": "interpretive",
+      "description": "Tracks regulatory requirements, filing deadlines, statutory obligations, and compliance documentation.",
+      "priority": 83,
+      "activation_rules": {
+        "domains": [
+          "housing",
+          "housing_dispute",
+          "habitability_violation",
+          "workplace",
+          "employment",
+          "workplace_safety_violation",
+          "medical",
+          "medical_malpractice",
+          "insurance_denial",
+          "insurance_bad_faith",
+          "regulatory_violation",
+          "tenant_rights",
+          "wrongful_termination",
+          "workers_compensation",
+          "insurance_claim_denial",
+          "environmental_violation"
+        ],
+        "evidence_signals": [
+          "regulatory_violation"
+        ]
+      },
+      "signal_threshold": 1,
+      "confidence_weights": {
+        "regulatory_violation": 1.5
+      },
+      "metadata_fields": [
+        "regulatory_requirements",
+        "filing_deadlines",
+        "statutory_obligations",
+        "compliance_documentation"
+      ],
+      "analysis_hooks": [
+        "deadline_tracking",
+        "statutory_cross_reference",
+        "compliance_documentation_check"
+      ],
+      "ui_surfaces": [
+        "findings_filter",
+        "narrative_section"
+      ]
+    },
+    {
+      "lens_id": "procedural_timeliness",
+      "label": "Procedural Timeliness Lens",
+      "category": "interpretive",
+      "description": "Evaluates whether institutional responses, filings, and actions occurred within required timeframes.",
+      "priority": 79,
+      "dependencies": [
+        "timeline"
+      ],
+      "activation_rules": {
+        "domains": [
+          "housing",
+          "housing_dispute",
+          "eviction",
+          "insurance_denial",
+          "insurance_bad_faith",
+          "workplace",
+          "employment",
+          "medical_malpractice",
+          "police_misconduct",
+          "regulatory_violation",
+          "tenant_rights",
+          "eviction_defense",
+          "insurance_claim_denial",
+          "wrongful_termination",
+          "environmental_violation"
+        ],
+        "evidence_signals": [
+          "regulatory_violation"
+        ]
+      },
+      "metadata_fields": [
+        "response_deadlines",
+        "filing_timeliness",
+        "statutory_timeframes",
+        "delay_patterns"
+      ],
+      "analysis_hooks": [
+        "deadline_compliance_check",
+        "delay_pattern_detection",
+        "statutory_timeframe_analysis"
+      ],
+      "ui_surfaces": [
+        "timeline_panel",
+        "findings_filter"
+      ]
+    },
+    {
+      "lens_id": "financial_forensic",
+      "label": "Financial Forensic Lens",
+      "category": "interpretive",
+      "description": "Analyzes financial discrepancies, billing patterns, and monetary flow irregularities.",
+      "priority": 80,
+      "activation_rules": {
+        "domains": [
+          "insurance",
+          "insurance_denial",
+          "insurance_bad_faith",
+          "consumer",
+          "consumer_fraud",
+          "predatorylending",
+          "debt_collection_abuse",
+          "contract_dispute",
+          "workplace",
+          "employment",
+          "wage_theft",
+          "insurance_claim_denial",
+          "predatory_lending",
+          "wrongful_termination"
+        ],
+        "evidence_signals": [
+          "financial_transaction",
+          "invoice",
+          "payment",
+          "billing"
+        ]
+      },
+      "signal_threshold": 1,
+      "confidence_weights": {
+        "financial_transaction": 1.5,
+        "invoice": 1.0,
+        "payment": 1.0,
+        "billing": 0.8
+      },
+      "metadata_fields": [
+        "financial_flows",
+        "billing_discrepancies",
+        "payment_patterns"
+      ],
+      "analysis_hooks": [
+        "financial_flow_analysis",
+        "billing_discrepancy_detection",
+        "payment_pattern_correlation"
+      ],
+      "ui_surfaces": [
+        "findings_filter",
+        "narrative_section"
+      ]
+    },
+    {
+      "lens_id": "contract_analysis",
+      "label": "Contract Analysis Lens",
+      "category": "interpretive",
+      "description": "Examines contract terms, obligations, breach indicators, and contractual compliance.",
+      "priority": 77,
+      "activation_rules": {
+        "domains": [
+          "consumer",
+          "consumer_fraud",
+          "contract_dispute",
+          "insurance_denial",
+          "insurance_bad_faith",
+          "predatorylending",
+          "housing",
+          "housing_dispute",
+          "workplace",
+          "employment",
+          "insurance_claim_denial",
+          "predatory_lending",
+          "tenant_rights",
+          "wrongful_termination"
+        ],
+        "evidence_signals": [
+          "contract_reference"
+        ]
+      },
+      "signal_threshold": 1,
+      "confidence_weights": {
+        "contract_reference": 1.5
+      },
+      "metadata_fields": [
+        "contract_terms",
+        "obligation_tracking",
+        "breach_indicators",
+        "compliance_status"
+      ],
+      "analysis_hooks": [
+        "term_extraction",
+        "obligation_mapping",
+        "breach_detection"
+      ],
+      "ui_surfaces": [
+        "findings_filter",
+        "narrative_section"
+      ]
+    },
+    {
+      "lens_id": "billing_integrity",
+      "label": "Billing Integrity Lens",
+      "category": "interpretive",
+      "description": "Detects billing irregularities, overcharges, duplicate charges, and billing documentation gaps.",
+      "priority": 76,
+      "activation_rules": {
+        "domains": [
+          "insurance_denial",
+          "insurance_bad_faith",
+          "medical",
+          "medical_malpractice",
+          "consumer",
+          "consumer_fraud",
+          "debt_collection_abuse",
+          "insurance_claim_denial"
+        ],
+        "evidence_signals": [
+          "billing",
+          "invoice",
+          "payment"
+        ]
+      },
+      "signal_threshold": 1,
+      "confidence_weights": {
+        "billing": 1.5,
+        "invoice": 1.2,
+        "payment": 1.0
+      },
+      "metadata_fields": [
+        "billing_records",
+        "charge_discrepancies",
+        "duplicate_charges",
+        "documentation_gaps"
+      ],
+      "analysis_hooks": [
+        "charge_comparison",
+        "duplicate_detection",
+        "billing_documentation_audit"
+      ],
+      "ui_surfaces": [
+        "findings_filter",
+        "narrative_section"
+      ]
+    },
+    {
+      "lens_id": "fraud_pattern_detection",
+      "label": "Fraud Pattern Detection Lens",
+      "category": "interpretive",
+      "description": "Identifies recurring fraud indicators, deceptive patterns, and misrepresentation across evidence.",
+      "priority": 84,
+      "activation_rules": {
+        "domains": [
+          "consumer_fraud",
+          "insurance_bad_faith",
+          "predatorylending",
+          "debt_collection_abuse",
+          "insurance_claim_denial",
+          "predatory_lending"
+        ],
+        "evidence_signals": [
+          "financial_transaction",
+          "billing",
+          "contract_reference"
+        ]
+      },
+      "signal_threshold": 1,
+      "confidence_weights": {
+        "financial_transaction": 1.3,
+        "billing": 1.0,
+        "contract_reference": 1.2
+      },
+      "metadata_fields": [
+        "fraud_indicators",
+        "deceptive_patterns",
+        "misrepresentation_evidence"
+      ],
+      "analysis_hooks": [
+        "fraud_indicator_detection",
+        "deception_pattern_matching",
+        "misrepresentation_flagging"
+      ],
+      "ui_surfaces": [
+        "findings_filter",
+        "narrative_section"
+      ]
+    },
+    {
+      "lens_id": "asset_flow_mapping",
+      "label": "Asset Flow Mapping Lens",
+      "category": "interpretive",
+      "description": "Traces asset transfers, financial flows between entities, and monetary movement patterns.",
+      "priority": 74,
+      "dependencies": [
+        "network"
+      ],
+      "activation_rules": {
+        "domains": [
+          "elder_abuse",
+          "elderabuse",
+          "consumer_fraud",
+          "predatorylending",
+          "guardianship",
+          "predatory_lending"
+        ],
+        "evidence_signals": [
+          "financial_transaction",
+          "payment"
+        ]
+      },
+      "signal_threshold": 1,
+      "confidence_weights": {
+        "financial_transaction": 1.5,
+        "payment": 1.2
+      },
+      "metadata_fields": [
+        "asset_transfers",
+        "flow_paths",
+        "entity_financial_links"
+      ],
+      "analysis_hooks": [
+        "transfer_tracing",
+        "flow_path_construction",
+        "entity_financial_linking"
+      ],
+      "ui_surfaces": [
+        "network_graph",
+        "findings_filter"
+      ]
+    },
+    {
+      "lens_id": "narrative_reconstruction",
+      "label": "Narrative Reconstruction Lens",
+      "category": "interpretive",
+      "description": "Builds chronological narrative from evidence spine, organizing findings into coherent sections.",
+      "priority": 75,
+      "dependencies": [
+        "timeline"
+      ],
+      "activation_rules": {
+        "always": true
+      },
+      "metadata_fields": [
+        "narrative_sections",
+        "chronological_coverage"
+      ],
+      "analysis_hooks": [
+        "narrative_assembly",
+        "section_ordering",
+        "gap_bridging"
+      ],
+      "ui_surfaces": [
+        "narrative_panel",
+        "statement_of_facts"
+      ]
+    },
+    {
+      "lens_id": "timeline_integrity",
+      "label": "Timeline Integrity Lens",
+      "category": "interpretive",
+      "description": "Validates chronological consistency, detects date conflicts, and identifies temporal manipulation patterns.",
+      "priority": 81,
+      "dependencies": [
+        "timeline"
+      ],
+      "activation_rules": {
+        "domains": [
+          "domestic_violence",
+          "dv",
+          "custody",
+          "custody_dispute",
+          "insurance_denial",
+          "insurance_bad_faith",
+          "workplace",
+          "employment",
+          "medical_malpractice",
+          "police_misconduct",
+          "insurance_claim_denial",
+          "wrongful_termination"
+        ],
+        "evidence_signals": [
+          "threat",
+          "regulatory_violation"
+        ]
+      },
+      "metadata_fields": [
+        "date_conflicts",
+        "temporal_gaps",
+        "chronological_inconsistencies",
+        "manipulation_indicators"
+      ],
+      "analysis_hooks": [
+        "date_conflict_detection",
+        "temporal_gap_analysis",
+        "chronological_validation"
+      ],
+      "ui_surfaces": [
+        "timeline_panel",
+        "findings_filter"
+      ]
+    },
+    {
+      "lens_id": "evidence_gap_detection",
+      "label": "Evidence Gap Detection Lens",
+      "category": "interpretive",
+      "description": "Identifies missing evidence, unexplained gaps in documentation, and areas requiring additional records.",
+      "priority": 73,
+      "activation_rules": {
+        "always": true
+      },
+      "metadata_fields": [
+        "missing_evidence_types",
+        "documentation_gaps",
+        "unexplained_periods",
+        "recommended_records"
+      ],
+      "analysis_hooks": [
+        "gap_identification",
+        "missing_record_inference",
+        "acquisition_recommendation"
+      ],
+      "ui_surfaces": [
+        "findings_filter",
+        "foia_panel"
+      ]
+    },
+    {
+      "lens_id": "pattern_network",
+      "label": "Pattern & Network Lens",
+      "category": "interpretive",
+      "description": "Detects recurring actors, behavioral patterns, and cross-entity correlation networks.",
+      "priority": 78,
+      "dependencies": [
+        "network"
+      ],
+      "activation_rules": {
+        "always": true
+      },
+      "metadata_fields": [
+        "recurring_actors",
+        "behavioral_patterns",
+        "cross_entity_correlations"
+      ],
+      "analysis_hooks": [
+        "actor_recurrence_detection",
+        "behavioral_pattern_matching",
+        "cross_entity_correlation"
+      ],
+      "ui_surfaces": [
+        "network_graph",
+        "pattern_panel"
+      ]
+    },
+    {
+      "lens_id": "agency_mapping",
+      "label": "Agency Mapping Lens",
+      "category": "interpretive",
+      "description": "Maps government agencies, regulatory bodies, and institutional actors involved in the case for records targeting.",
+      "priority": 72,
+      "activation_rules": {
+        "domains": [
+          "police_misconduct",
+          "child_welfare_failure",
+          "regulatory_violation",
+          "housing",
+          "housing_dispute",
+          "habitability_violation",
+          "medical_malpractice",
+          "child_welfare",
+          "environmental_violation",
+          "tenant_rights"
+        ],
+        "evidence_signals": [
+          "regulatory_violation"
+        ]
+      },
+      "metadata_fields": [
+        "agencies_identified",
+        "jurisdictions",
+        "regulatory_bodies",
+        "contact_information"
+      ],
+      "analysis_hooks": [
+        "agency_identification",
+        "jurisdiction_mapping",
+        "regulatory_body_classification"
+      ],
+      "ui_surfaces": [
+        "foia_panel",
+        "findings_filter"
+      ]
+    },
+    {
+      "lens_id": "acquisition_strategy",
+      "label": "Acquisition Strategy Lens",
+      "category": "interpretive",
+      "description": "Determines evidence acquisition priorities: which records to request, which agencies to target, FOIA strategy.",
+      "priority": 70,
+      "activation_rules": {
+        "always": true
+      },
+      "metadata_fields": [
+        "priority_records",
+        "target_agencies",
+        "acquisition_urgency"
+      ],
+      "analysis_hooks": [
+        "record_gap_prioritization",
+        "agency_targeting",
+        "foia_strategy"
+      ],
+      "ui_surfaces": [
+        "foia_panel",
+        "missing_records"
+      ]
+    },
+    {
+      "lens_id": "public_records_escalation",
+      "label": "Public Records Escalation Lens",
+      "category": "interpretive",
+      "description": "Tracks FOIA/public records request status, identifies escalation triggers, and recommends next actions for stalled requests.",
+      "priority": 69,
+      "activation_rules": {
+        "domains": [
+          "police_misconduct",
+          "child_welfare_failure",
+          "regulatory_violation",
+          "child_welfare",
+          "environmental_violation"
+        ],
+        "evidence_signals": [
+          "regulatory_violation"
+        ]
+      },
+      "metadata_fields": [
+        "request_status",
+        "escalation_triggers",
+        "response_deadlines",
+        "next_actions"
+      ],
+      "analysis_hooks": [
+        "request_status_tracking",
+        "escalation_trigger_detection",
+        "deadline_monitoring"
+      ],
+      "ui_surfaces": [
+        "foia_panel",
+        "findings_filter"
+      ]
+    }
+  ],
+  "signals": [
+    "threat",
+    "injury",
+    "stalking",
+    "financial_transaction",
+    "invoice",
+    "payment",
+    "billing",
+    "contract_reference",
+    "medical_record",
+    "harassment_language",
+    "regulatory_violation",
+    "employment_action"
+  ],
+  "mutual_exclusion_groups": [
+    {
+      "group": "primary_risk_assessment",
+      "lenses": [
+        "safety_risk",
+        "financial_forensic"
+      ],
+      "resolution": "highest_priority"
+    }
+  ]
+}

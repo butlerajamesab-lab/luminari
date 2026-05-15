@@ -1,0 +1,1109 @@
+{
+  "version": "2.0.0",
+  "description": "Canonical pipeline type definitions organized by category. Source of truth for the pipeline resolver, lens engine, and intake system. Aligned with pipeline_registry.json v1.0.0.",
+  "categories": {
+    "justice": {
+      "label": "Justice & Accountability",
+      "pipelines": [
+        {
+          "id": "police_misconduct",
+          "label": "Excessive force, false arrest, civil rights violations, evidence tampering, or patterns of law enforcement misconduct",
+          "description": "Cases involving excessive force, false arrest, civil rights violations, evidence tampering, or patterns of law enforcement misconduct."
+        },
+        {
+          "id": "prosecutorial_misconduct",
+          "label": "Prosecutorial overreach, brady violations, witness tampering, or failure to disclose exculpatory evidence",
+          "description": "Cases involving prosecutorial overreach, Brady violations, witness tampering, or failure to disclose exculpatory evidence."
+        },
+        {
+          "id": "judicial_misconduct",
+          "label": "Judicial bias, ex parte communications, failure to recuse, or abuse of judicial authority",
+          "description": "Cases involving judicial bias, ex parte communications, failure to recuse, or abuse of judicial authority."
+        },
+        {
+          "id": "wrongful_conviction",
+          "label": "Wrongful conviction, innocence claims, dna exoneration, or post-conviction relief proceedings",
+          "description": "Cases involving wrongful conviction, innocence claims, DNA exoneration, or post-conviction relief proceedings."
+        },
+        {
+          "id": "whistleblower_retaliation",
+          "label": "Retaliation against employees who report fraud, safety violations, or other wrongdoing to authorities",
+          "description": "Cases involving retaliation against employees who report fraud, safety violations, or other wrongdoing to authorities."
+        },
+        {
+          "id": "government_accountability",
+          "label": "Government agency failures, foia non-compliance, public records obstruction, or administrative misconduct",
+          "description": "Cases involving government agency failures, FOIA non-compliance, public records obstruction, or administrative misconduct."
+        },
+        {
+          "id": "civil_rights_violation",
+          "label": "Violations of constitutional or statutory civil rights, including discrimination, due process failures, and equal protection claims",
+          "description": "Cases involving violations of constitutional or statutory civil rights, including discrimination, due process failures, and equal protection claims."
+        },
+        {
+          "id": "public_corruption",
+          "label": "Bribery, embezzlement, conflicts of interest, or abuse of public office by government officials",
+          "description": "Cases involving bribery, embezzlement, conflicts of interest, or abuse of public office by government officials."
+        },
+        {
+          "id": "criminal_case_review",
+          "label": "Review of criminal proceedings, sentencing errors, ineffective assistance of counsel, or appellate issues",
+          "description": "Cases involving review of criminal proceedings, sentencing errors, ineffective assistance of counsel, or appellate issues."
+        },
+        {
+          "id": "investigative_journalism",
+          "label": "Cases supporting investigative journalism with public records analysis, source document verification, and pattern detection across institutional records",
+          "description": "Cases supporting investigative journalism with public records analysis, source document verification, and pattern detection across institutional records."
+        },
+        {
+          "id": "prison_conditions",
+          "label": "Inhumane prison conditions, medical neglect in custody, solitary confinement abuse, or correctional facility failures",
+          "description": "Cases involving inhumane prison conditions, medical neglect in custody, solitary confinement abuse, or correctional facility failures."
+        },
+        {
+          "id": "parole_probation_violation",
+          "label": "Disputed parole or probation violations, revocation hearings, or supervision condition disputes",
+          "description": "Cases involving disputed parole or probation violations, revocation hearings, or supervision condition disputes."
+        },
+        {
+          "id": "use_of_force_review",
+          "label": "Review of law enforcement use-of-force incidents, body camera analysis, and departmental policy compliance",
+          "description": "Cases involving review of law enforcement use-of-force incidents, body camera analysis, and departmental policy compliance."
+        },
+        {
+          "id": "civil_asset_forfeiture",
+          "label": "Seizure of property by law enforcement without criminal conviction, forfeiture proceedings, and due process challenges",
+          "description": "Cases involving seizure of property by law enforcement without criminal conviction, forfeiture proceedings, and due process challenges."
+        },
+        {
+          "id": "wrongful_arrest",
+          "label": "Arrest without probable cause, false imprisonment, mistaken identity arrests, or unlawful detention",
+          "description": "Cases involving arrest without probable cause, false imprisonment, mistaken identity arrests, or unlawful detention."
+        }
+      ]
+    },
+    "family": {
+      "label": "Family Law",
+      "pipelines": [
+        {
+          "id": "domestic_violence",
+          "label": "Intimate partner violence, physical abuse, emotional abuse, or threats within a domestic relationship",
+          "description": "Cases involving intimate partner violence, physical abuse, emotional abuse, or threats within a domestic relationship."
+        },
+        {
+          "id": "custody",
+          "label": "Child custody, visitation rights, parenting plans, and family court proceedings",
+          "description": "Cases involving child custody, visitation rights, parenting plans, and family court proceedings."
+        },
+        {
+          "id": "custody_dispute",
+          "label": "Contested custody arrangements, modification petitions, relocation disputes, or parental alienation claims",
+          "description": "Cases involving contested custody arrangements, modification petitions, relocation disputes, or parental alienation claims."
+        },
+        {
+          "id": "family_law",
+          "label": "General family law matters including divorce, property division, spousal support, and prenuptial agreement disputes",
+          "description": "General family law matters including divorce, property division, spousal support, and prenuptial agreement disputes."
+        },
+        {
+          "id": "child_abuse",
+          "label": "Physical, emotional, or sexual abuse of minors, including institutional failures to protect",
+          "description": "Cases involving physical, emotional, or sexual abuse of minors, including institutional failures to protect."
+        },
+        {
+          "id": "child_welfare",
+          "label": "Cps investigations, wrongful removal, failure to investigate, or systemic child welfare system breakdowns",
+          "description": "Cases involving CPS investigations, wrongful removal, failure to investigate, or systemic child welfare system breakdowns."
+        },
+        {
+          "id": "foster_care",
+          "label": "Foster care placement failures, abuse in foster homes, record falsification, or oversight breakdowns",
+          "description": "Cases involving foster care placement failures, abuse in foster homes, record falsification, or oversight breakdowns."
+        },
+        {
+          "id": "juvenile_case",
+          "label": "Juvenile court proceedings, juvenile detention, school-to-prison pipeline issues, or youth justice matters",
+          "description": "Cases involving juvenile court proceedings, juvenile detention, school-to-prison pipeline issues, or youth justice matters."
+        },
+        {
+          "id": "guardianship",
+          "label": "Guardianship or conservatorship proceedings, including challenges, oversight failures, and capacity disputes",
+          "description": "Cases involving guardianship or conservatorship proceedings, including challenges, oversight failures, and capacity disputes."
+        },
+        {
+          "id": "parental_rights_termination",
+          "label": "Involuntary termination of parental rights, tpr proceedings, and due process challenges",
+          "description": "Cases involving involuntary termination of parental rights, TPR proceedings, and due process challenges."
+        },
+        {
+          "id": "family_services_failure",
+          "label": "Failures by family services agencies, including inadequate investigations, delayed responses, or systemic breakdowns",
+          "description": "Cases involving failures by family services agencies, including inadequate investigations, delayed responses, or systemic breakdowns."
+        },
+        {
+          "id": "child_support_modification",
+          "label": "Child support calculation disputes, modification petitions, enforcement actions, or arrears disputes",
+          "description": "Cases involving child support calculation disputes, modification petitions, enforcement actions, or arrears disputes."
+        },
+        {
+          "id": "adoption_disruption",
+          "label": "Failed adoptions, adoption fraud, disrupted placements, or post-adoption support failures",
+          "description": "Cases involving failed adoptions, adoption fraud, disrupted placements, or post-adoption support failures."
+        },
+        {
+          "id": "kinship_placement_dispute",
+          "label": "Disputes over kinship care placements, relative caregiver rights, or kinship navigator program failures",
+          "description": "Cases involving disputes over kinship care placements, relative caregiver rights, or kinship navigator program failures."
+        },
+        {
+          "id": "supervised_visitation_dispute",
+          "label": "Disputes over supervised visitation arrangements, monitor conduct, or visitation center failures",
+          "description": "Cases involving disputes over supervised visitation arrangements, monitor conduct, or visitation center failures."
+        }
+      ]
+    },
+    "elder": {
+      "label": "Elder & Disability",
+      "pipelines": [
+        {
+          "id": "elder_abuse",
+          "label": "Physical, financial, or emotional abuse or neglect of elderly individuals",
+          "description": "Cases involving physical, financial, or emotional abuse or neglect of elderly individuals."
+        },
+        {
+          "id": "eldercare",
+          "label": "General eldercare cases involving quality of care disputes, caregiver negligence, or inadequate services",
+          "description": "General eldercare cases involving quality of care disputes, caregiver negligence, or inadequate services."
+        },
+        {
+          "id": "nursing_home_abuse",
+          "label": "Abuse, neglect, or exploitation in nursing homes and assisted living facilities",
+          "description": "Cases involving abuse, neglect, or exploitation in nursing homes and assisted living facilities."
+        },
+        {
+          "id": "disability_rights",
+          "label": "Disability discrimination, ada violations, reasonable accommodation denials, or accessibility failures",
+          "description": "Cases involving disability discrimination, ADA violations, reasonable accommodation denials, or accessibility failures."
+        },
+        {
+          "id": "guardianship_abuse",
+          "label": "Abuse of guardianship or conservatorship powers, financial exploitation by guardians, or oversight failures",
+          "description": "Cases involving abuse of guardianship or conservatorship powers, financial exploitation by guardians, or oversight failures."
+        },
+        {
+          "id": "long_term_care_neglect",
+          "label": "Neglect in long-term care facilities, including medication errors, falls, malnutrition, and inadequate staffing",
+          "description": "Cases involving neglect in long-term care facilities, including medication errors, falls, malnutrition, and inadequate staffing."
+        },
+        {
+          "id": "elder_financial_exploitation",
+          "label": "Financial exploitation of elderly individuals, including scams, undue influence, and unauthorized transactions",
+          "description": "Cases involving financial exploitation of elderly individuals, including scams, undue influence, and unauthorized transactions."
+        },
+        {
+          "id": "vulnerable_adult_protection",
+          "label": "Protection of vulnerable adults from abuse, neglect, or exploitation, including adult protective services investigations",
+          "description": "Cases involving protection of vulnerable adults from abuse, neglect, or exploitation, including adult protective services investigations."
+        },
+        {
+          "id": "ada_accommodation_dispute",
+          "label": "Disputes over reasonable accommodations under the ada, including workplace, housing, and public access accommodations",
+          "description": "Cases involving disputes over reasonable accommodations under the ADA, including workplace, housing, and public access accommodations."
+        },
+        {
+          "id": "home_health_agency_misconduct",
+          "label": "Misconduct by home health agencies, including billing fraud, inadequate care, or caregiver abuse",
+          "description": "Cases involving misconduct by home health agencies, including billing fraud, inadequate care, or caregiver abuse."
+        },
+        {
+          "id": "medicare_elder_fraud",
+          "label": "Medicare fraud targeting elderly beneficiaries, including phantom billing, upcoding, and kickback schemes",
+          "description": "Cases involving Medicare fraud targeting elderly beneficiaries, including phantom billing, upcoding, and kickback schemes."
+        }
+      ]
+    },
+    "tribal": {
+      "label": "Tribal & Indigenous",
+      "pipelines": [
+        {
+          "id": "tribal_law",
+          "label": "General tribal law matters involving tribal courts, tribal codes, and the intersection of tribal and federal/state jurisdiction",
+          "description": "General tribal law matters involving tribal courts, tribal codes, and the intersection of tribal and federal/state jurisdiction."
+        },
+        {
+          "id": "tribal_enrollment",
+          "label": "Tribal enrollment disputes, blood quantum challenges, or membership eligibility determinations",
+          "description": "Cases involving tribal enrollment disputes, blood quantum challenges, or membership eligibility determinations."
+        },
+        {
+          "id": "tribal_land_rights",
+          "label": "Tribal land claims, allotment disputes, trust land management, or land-into-trust applications",
+          "description": "Cases involving tribal land claims, allotment disputes, trust land management, or land-into-trust applications."
+        },
+        {
+          "id": "tribal_housing",
+          "label": "Housing on tribal lands, nahasda compliance, hud-onap disputes, or tribal housing authority failures",
+          "description": "Cases involving housing on tribal lands, NAHASDA compliance, HUD-ONAP disputes, or tribal housing authority failures."
+        },
+        {
+          "id": "treaty_rights",
+          "label": "Treaty right violations, fishing/hunting rights, water rights, or federal trust responsibility breaches",
+          "description": "Cases involving treaty right violations, fishing/hunting rights, water rights, or federal trust responsibility breaches."
+        },
+        {
+          "id": "indigenous_sovereignty",
+          "label": "Tribal sovereignty challenges, jurisdictional disputes, or federal recognition proceedings",
+          "description": "Cases involving tribal sovereignty challenges, jurisdictional disputes, or federal recognition proceedings."
+        },
+        {
+          "id": "mmiw_cases",
+          "label": "Missing and murdered indigenous women and people, including investigation failures and jurisdictional gaps",
+          "description": "Cases involving missing and murdered Indigenous women and people, including investigation failures and jurisdictional gaps."
+        },
+        {
+          "id": "tribal_governance",
+          "label": "Tribal government disputes, council elections, constitutional challenges, or governance structure conflicts",
+          "description": "Cases involving tribal government disputes, council elections, constitutional challenges, or governance structure conflicts."
+        },
+        {
+          "id": "tribal_state_jurisdiction_conflict",
+          "label": "Jurisdictional conflicts between tribal, state, and federal authorities, including pl-280 disputes",
+          "description": "Cases involving jurisdictional conflicts between tribal, state, and federal authorities, including PL-280 disputes."
+        },
+        {
+          "id": "icwa_compliance",
+          "label": "Indian child welfare act compliance, including placement preferences, active efforts requirements, and qualified expert witness standards",
+          "description": "Cases involving Indian Child Welfare Act compliance, including placement preferences, active efforts requirements, and qualified expert witness standards."
+        }
+      ]
+    },
+    "insurance": {
+      "label": "Insurance & Medical",
+      "pipelines": [
+        {
+          "id": "insurance_claim_denial",
+          "label": "Denied insurance claims, bad faith practices, and coverage disputes across health, auto, home, and disability insurance",
+          "description": "Cases involving denied insurance claims, bad faith practices, and coverage disputes across health, auto, home, and disability insurance."
+        },
+        {
+          "id": "health_insurance_denial",
+          "label": "Health insurance claim denials, prior authorization disputes, network adequacy failures, or mental health parity violations",
+          "description": "Cases involving health insurance claim denials, prior authorization disputes, network adequacy failures, or mental health parity violations."
+        },
+        {
+          "id": "medical_malpractice",
+          "label": "Medical negligence, surgical errors, misdiagnosis, failure to treat, or informed consent violations",
+          "description": "Cases involving medical negligence, surgical errors, misdiagnosis, failure to treat, or informed consent violations."
+        },
+        {
+          "id": "medicaid_denial",
+          "label": "Medicaid eligibility denials, coverage disputes, or administrative hearing challenges",
+          "description": "Cases involving Medicaid eligibility denials, coverage disputes, or administrative hearing challenges."
+        },
+        {
+          "id": "medicare_denial",
+          "label": "Medicare coverage denials, appeals, or administrative law judge proceedings",
+          "description": "Cases involving Medicare coverage denials, appeals, or administrative law judge proceedings."
+        },
+        {
+          "id": "hospital_billing_abuse",
+          "label": "Hospital billing fraud, surprise billing, balance billing, or chargemaster abuse",
+          "description": "Cases involving hospital billing fraud, surprise billing, balance billing, or chargemaster abuse."
+        },
+        {
+          "id": "medical_record_access",
+          "label": "Denial of access to medical records, hipaa violations, or medical record falsification",
+          "description": "Cases involving denial of access to medical records, HIPAA violations, or medical record falsification."
+        },
+        {
+          "id": "disability_claim_denial",
+          "label": "Disability insurance claim denials, erisa disputes, or long-term disability benefit terminations",
+          "description": "Cases involving disability insurance claim denials, ERISA disputes, or long-term disability benefit terminations."
+        },
+        {
+          "id": "prior_authorization_abuse",
+          "label": "Prior authorization delays, denials, or systematic obstruction of medically necessary care",
+          "description": "Cases involving prior authorization delays, denials, or systematic obstruction of medically necessary care."
+        },
+        {
+          "id": "surprise_billing",
+          "label": "Surprise medical bills, out-of-network charges, no surprises act violations, or emergency room billing disputes",
+          "description": "Cases involving surprise medical bills, out-of-network charges, No Surprises Act violations, or emergency room billing disputes."
+        },
+        {
+          "id": "pharmacy_benefit_manager_dispute",
+          "label": "Pbm practices, formulary manipulation, clawback provisions, or pharmacy reimbursement disputes",
+          "description": "Cases involving PBM practices, formulary manipulation, clawback provisions, or pharmacy reimbursement disputes."
+        },
+        {
+          "id": "medical_device_injury",
+          "label": "Injuries from defective medical devices, fda reporting failures, or product liability claims",
+          "description": "Cases involving injuries from defective medical devices, FDA reporting failures, or product liability claims."
+        }
+      ]
+    },
+    "housing": {
+      "label": "Housing & Property",
+      "pipelines": [
+        {
+          "id": "tenant_rights",
+          "label": "General tenant rights cases including lease violations, security deposit disputes, and landlord-tenant conflicts",
+          "description": "General tenant rights cases including lease violations, security deposit disputes, and landlord-tenant conflicts."
+        },
+        {
+          "id": "housing_discrimination",
+          "label": "Discrimination in housing based on race, disability, familial status, or other protected characteristics",
+          "description": "Cases involving discrimination in housing based on race, disability, familial status, or other protected characteristics."
+        },
+        {
+          "id": "eviction_defense",
+          "label": "Eviction proceedings, unlawful detainer, self-help eviction, or retaliatory eviction defense",
+          "description": "Cases involving eviction proceedings, unlawful detainer, self-help eviction, or retaliatory eviction defense."
+        },
+        {
+          "id": "section8_disputes",
+          "label": "Section 8 voucher terminations, housing authority disputes, or hud compliance failures",
+          "description": "Cases involving Section 8 voucher terminations, housing authority disputes, or HUD compliance failures."
+        },
+        {
+          "id": "hoa_disputes",
+          "label": "Homeowner association disputes, selective enforcement, assessment disputes, or governance failures",
+          "description": "Cases involving homeowner association disputes, selective enforcement, assessment disputes, or governance failures."
+        },
+        {
+          "id": "landlord_harassment",
+          "label": "Landlord intimidation, illegal lockouts, utility shutoffs, or harassment to force tenant departure",
+          "description": "Cases involving landlord intimidation, illegal lockouts, utility shutoffs, or harassment to force tenant departure."
+        },
+        {
+          "id": "foreclosure_dispute",
+          "label": "Wrongful foreclosure, dual tracking, loan modification disputes, or servicer misconduct",
+          "description": "Cases involving wrongful foreclosure, dual tracking, loan modification disputes, or servicer misconduct."
+        },
+        {
+          "id": "property_rights",
+          "label": "Property ownership disputes, adverse possession, easement conflicts, or title issues",
+          "description": "Cases involving property ownership disputes, adverse possession, easement conflicts, or title issues."
+        },
+        {
+          "id": "mobile_home_park_dispute",
+          "label": "Mobile home park disputes, lot rent increases, park closure, or manufactured housing rights",
+          "description": "Cases involving mobile home park disputes, lot rent increases, park closure, or manufactured housing rights."
+        },
+        {
+          "id": "short_term_rental_dispute",
+          "label": "Short-term rental disputes, airbnb/vrbo issues, local ordinance violations, or neighbor complaints",
+          "description": "Cases involving short-term rental disputes, Airbnb/VRBO issues, local ordinance violations, or neighbor complaints."
+        },
+        {
+          "id": "utility_shutoff_abuse",
+          "label": "Illegal utility shutoffs, service disconnection disputes, or utility company misconduct",
+          "description": "Cases involving illegal utility shutoffs, service disconnection disputes, or utility company misconduct."
+        },
+        {
+          "id": "code_enforcement_retaliation",
+          "label": "Retaliatory code enforcement actions, selective enforcement, or code enforcement as harassment tool",
+          "description": "Cases involving retaliatory code enforcement actions, selective enforcement, or code enforcement as harassment tool."
+        }
+      ]
+    },
+    "financial": {
+      "label": "Financial & Consumer",
+      "pipelines": [
+        {
+          "id": "debt_collection_abuse",
+          "label": "Fdcpa violations, harassment by debt collectors, false representations, or unfair collection practices",
+          "description": "Cases involving FDCPA violations, harassment by debt collectors, false representations, or unfair collection practices."
+        },
+        {
+          "id": "predatory_lending",
+          "label": "Predatory lending practices, usurious interest rates, deceptive loan terms, or targeting of vulnerable borrowers",
+          "description": "Cases involving predatory lending practices, usurious interest rates, deceptive loan terms, or targeting of vulnerable borrowers."
+        },
+        {
+          "id": "bankruptcy_dispute",
+          "label": "Bankruptcy proceedings, creditor disputes, discharge challenges, or trustee misconduct",
+          "description": "Cases involving bankruptcy proceedings, creditor disputes, discharge challenges, or trustee misconduct."
+        },
+        {
+          "id": "tax_dispute",
+          "label": "Tax assessment disputes, irs collection actions, tax lien challenges, or property tax appeals",
+          "description": "Cases involving tax assessment disputes, IRS collection actions, tax lien challenges, or property tax appeals."
+        },
+        {
+          "id": "consumer_fraud",
+          "label": "Deceptive business practices, unfair contracts, or fraudulent schemes targeting consumers",
+          "description": "Cases involving deceptive business practices, unfair contracts, or fraudulent schemes targeting consumers."
+        },
+        {
+          "id": "identity_theft",
+          "label": "Identity theft, unauthorized account access, credit report disputes, or synthetic identity fraud",
+          "description": "Cases involving identity theft, unauthorized account access, credit report disputes, or synthetic identity fraud."
+        },
+        {
+          "id": "financial_exploitation",
+          "label": "Financial exploitation of vulnerable individuals, undue influence, or unauthorized financial transactions",
+          "description": "Cases involving financial exploitation of vulnerable individuals, undue influence, or unauthorized financial transactions."
+        },
+        {
+          "id": "securities_fraud",
+          "label": "Securities fraud, insider trading, ponzi schemes, or investment advisor misconduct",
+          "description": "Cases involving securities fraud, insider trading, Ponzi schemes, or investment advisor misconduct."
+        },
+        {
+          "id": "crypto_fraud",
+          "label": "Cryptocurrency fraud, rug pulls, exchange failures, or defi exploitation",
+          "description": "Cases involving cryptocurrency fraud, rug pulls, exchange failures, or DeFi exploitation."
+        },
+        {
+          "id": "online_marketplace_fraud",
+          "label": "Online marketplace scams, platform liability, counterfeit goods, or seller fraud",
+          "description": "Cases involving online marketplace scams, platform liability, counterfeit goods, or seller fraud."
+        },
+        {
+          "id": "subscription_trap_billing",
+          "label": "Deceptive subscription billing, dark patterns, unauthorized recurring charges, or cancellation obstruction",
+          "description": "Cases involving deceptive subscription billing, dark patterns, unauthorized recurring charges, or cancellation obstruction."
+        },
+        {
+          "id": "bank_account_closure",
+          "label": "Wrongful bank account closures, frozen funds, de-banking, or suspicious activity report disputes",
+          "description": "Cases involving wrongful bank account closures, frozen funds, de-banking, or suspicious activity report disputes."
+        }
+      ]
+    },
+    "employment": {
+      "label": "Employment & Labor",
+      "pipelines": [
+        {
+          "id": "workplace_discrimination",
+          "label": "Employment discrimination based on race, gender, age, disability, religion, or other protected characteristics",
+          "description": "Cases involving employment discrimination based on race, gender, age, disability, religion, or other protected characteristics."
+        },
+        {
+          "id": "wrongful_termination",
+          "label": "Wrongful termination, constructive discharge, or termination in violation of public policy",
+          "description": "Cases involving wrongful termination, constructive discharge, or termination in violation of public policy."
+        },
+        {
+          "id": "workers_compensation",
+          "label": "Workers compensation claim disputes, benefit denials, or employer retaliation for filing claims",
+          "description": "Cases involving workers compensation claim disputes, benefit denials, or employer retaliation for filing claims."
+        },
+        {
+          "id": "wage_theft",
+          "label": "Unpaid wages, overtime violations, misclassification, tip theft, or minimum wage violations",
+          "description": "Cases involving unpaid wages, overtime violations, misclassification, tip theft, or minimum wage violations."
+        },
+        {
+          "id": "labor_violation",
+          "label": "Nlra violations, union busting, collective bargaining failures, or unfair labor practices",
+          "description": "Cases involving NLRA violations, union busting, collective bargaining failures, or unfair labor practices."
+        },
+        {
+          "id": "workplace_harassment",
+          "label": "Workplace harassment, hostile work environment, sexual harassment, or bullying",
+          "description": "Cases involving workplace harassment, hostile work environment, sexual harassment, or bullying."
+        },
+        {
+          "id": "unemployment_benefits",
+          "label": "Unemployment benefit denials, appeals, or employer-contested claims",
+          "description": "Cases involving unemployment benefit denials, appeals, or employer-contested claims."
+        },
+        {
+          "id": "gig_worker_misclassification",
+          "label": "Misclassification of employees as independent contractors, gig economy disputes, or abc test violations",
+          "description": "Cases involving misclassification of employees as independent contractors, gig economy disputes, or ABC test violations."
+        },
+        {
+          "id": "non_compete_dispute",
+          "label": "Non-compete agreement enforcement, trade secret disputes, or restrictive covenant challenges",
+          "description": "Cases involving non-compete agreement enforcement, trade secret disputes, or restrictive covenant challenges."
+        },
+        {
+          "id": "wage_garnishment_error",
+          "label": "Excessive wage garnishment, calculation errors, or garnishment of exempt income",
+          "description": "Cases involving excessive wage garnishment, calculation errors, or garnishment of exempt income."
+        },
+        {
+          "id": "workplace_surveillance",
+          "label": "Excessive workplace surveillance, privacy violations, or monitoring of protected activities",
+          "description": "Cases involving excessive workplace surveillance, privacy violations, or monitoring of protected activities."
+        }
+      ]
+    },
+    "benefits": {
+      "label": "Benefits & Public Assistance",
+      "pipelines": [
+        {
+          "id": "benefits_denial",
+          "label": "General benefits denial cases involving administrative hearings, fair hearing requests, or benefit termination disputes",
+          "description": "General benefits denial cases involving administrative hearings, fair hearing requests, or benefit termination disputes."
+        },
+        {
+          "id": "snap_denial",
+          "label": "Snap (food stamps) benefit denials, reductions, or administrative hearing challenges",
+          "description": "Cases involving SNAP (food stamps) benefit denials, reductions, or administrative hearing challenges."
+        },
+        {
+          "id": "veterans_benefits",
+          "label": "Va benefits denials, disability rating disputes, or board of veterans appeals proceedings",
+          "description": "Cases involving VA benefits denials, disability rating disputes, or Board of Veterans Appeals proceedings."
+        },
+        {
+          "id": "social_security_disability",
+          "label": "Ssdi or ssi denials, alj hearings, or appeals council reviews",
+          "description": "Cases involving SSDI or SSI denials, ALJ hearings, or Appeals Council reviews."
+        },
+        {
+          "id": "public_assistance_dispute",
+          "label": "Public assistance program disputes, tanf denials, general assistance terminations, or fair hearing requests",
+          "description": "Cases involving public assistance program disputes, TANF denials, general assistance terminations, or fair hearing requests."
+        },
+        {
+          "id": "voucher_termination",
+          "label": "Housing voucher terminations, section 8 hearing disputes, or housing authority administrative actions",
+          "description": "Cases involving housing voucher terminations, Section 8 hearing disputes, or housing authority administrative actions."
+        },
+        {
+          "id": "medicaid_ltc_eligibility",
+          "label": "Medicaid long-term care eligibility disputes, spend-down calculations, or asset transfer penalties",
+          "description": "Cases involving Medicaid long-term care eligibility disputes, spend-down calculations, or asset transfer penalties."
+        },
+        {
+          "id": "benefits_overpayment_recoupment",
+          "label": "Benefit overpayment recoupment demands, waiver requests, or administrative offset disputes",
+          "description": "Cases involving benefit overpayment recoupment demands, waiver requests, or administrative offset disputes."
+        }
+      ]
+    },
+    "market": {
+      "label": "Market & Corporate",
+      "pipelines": [
+        {
+          "id": "market_concentration",
+          "label": "Market concentration analysis, merger challenges, or monopolistic behavior documentation",
+          "description": "Cases involving market concentration analysis, merger challenges, or monopolistic behavior documentation."
+        },
+        {
+          "id": "antitrust_violation",
+          "label": "Antitrust violations, price fixing, bid rigging, or market allocation schemes",
+          "description": "Cases involving antitrust violations, price fixing, bid rigging, or market allocation schemes."
+        },
+        {
+          "id": "corporate_capture",
+          "label": "Corporate capture of regulatory agencies, revolving door practices, or industry influence on policy",
+          "description": "Cases involving corporate capture of regulatory agencies, revolving door practices, or industry influence on policy."
+        },
+        {
+          "id": "supply_chain_exploitation",
+          "label": "Supply chain labor exploitation, forced labor, or supply chain transparency violations",
+          "description": "Cases involving supply chain labor exploitation, forced labor, or supply chain transparency violations."
+        },
+        {
+          "id": "agriculture_exploitation",
+          "label": "Agricultural worker exploitation, pesticide exposure, or agricultural industry regulatory failures",
+          "description": "Cases involving agricultural worker exploitation, pesticide exposure, or agricultural industry regulatory failures."
+        },
+        {
+          "id": "nonprofit_compliance",
+          "label": "Nonprofit governance failures, misuse of charitable funds, or irs compliance violations",
+          "description": "Cases involving nonprofit governance failures, misuse of charitable funds, or IRS compliance violations."
+        },
+        {
+          "id": "public_contract_abuse",
+          "label": "Public contract fraud, bid manipulation, kickbacks, or government procurement misconduct",
+          "description": "Cases involving public contract fraud, bid manipulation, kickbacks, or government procurement misconduct."
+        },
+        {
+          "id": "regulatory_capture",
+          "label": "Regulatory agency capture by the industries they regulate, weakened enforcement, or conflicts of interest",
+          "description": "Cases involving regulatory agency capture by the industries they regulate, weakened enforcement, or conflicts of interest."
+        },
+        {
+          "id": "corporate_tax_avoidance",
+          "label": "Corporate tax avoidance schemes, transfer pricing abuse, or offshore tax shelters",
+          "description": "Cases involving corporate tax avoidance schemes, transfer pricing abuse, or offshore tax shelters."
+        },
+        {
+          "id": "public_utility_monopoly_abuse",
+          "label": "Public utility monopoly abuse, rate manipulation, or utility commission capture",
+          "description": "Cases involving public utility monopoly abuse, rate manipulation, or utility commission capture."
+        },
+        {
+          "id": "algorithmic_discrimination",
+          "label": "Algorithmic bias, ai discrimination, automated decision-making failures, or digital redlining",
+          "description": "Cases involving algorithmic bias, AI discrimination, automated decision-making failures, or digital redlining."
+        }
+      ]
+    },
+    "environment": {
+      "label": "Environmental & Public Health",
+      "pipelines": [
+        {
+          "id": "environmental_violation",
+          "label": "Violations of environmental regulations, epa enforcement actions, or permit violations",
+          "description": "Cases involving violations of environmental regulations, EPA enforcement actions, or permit violations."
+        },
+        {
+          "id": "water_contamination",
+          "label": "Water contamination, pfas exposure, lead in water, or safe drinking water act violations",
+          "description": "Cases involving water contamination, PFAS exposure, lead in water, or Safe Drinking Water Act violations."
+        },
+        {
+          "id": "public_health_risk",
+          "label": "Public health risks from environmental exposure, disease clusters, or community health threats",
+          "description": "Cases involving public health risks from environmental exposure, disease clusters, or community health threats."
+        },
+        {
+          "id": "community_harm",
+          "label": "Environmental justice, disproportionate pollution burden, or community-level environmental harm",
+          "description": "Cases involving environmental justice, disproportionate pollution burden, or community-level environmental harm."
+        },
+        {
+          "id": "land_use_dispute",
+          "label": "Zoning disputes, eminent domain, land use permit challenges, or environmental impact assessment failures",
+          "description": "Cases involving zoning disputes, eminent domain, land use permit challenges, or environmental impact assessment failures."
+        },
+        {
+          "id": "air_quality_violation",
+          "label": "Clean air act violations, emissions exceedances, or air quality monitoring failures",
+          "description": "Cases involving Clean Air Act violations, emissions exceedances, or air quality monitoring failures."
+        },
+        {
+          "id": "industrial_noise_nuisance",
+          "label": "Industrial noise violations, nuisance claims, or failure to comply with noise ordinances",
+          "description": "Cases involving industrial noise violations, nuisance claims, or failure to comply with noise ordinances."
+        },
+        {
+          "id": "toxic_exposure",
+          "label": "Toxic substance exposure, chemical spills, hazardous waste, or occupational exposure claims",
+          "description": "Cases involving toxic substance exposure, chemical spills, hazardous waste, or occupational exposure claims."
+        },
+        {
+          "id": "wildfire_liability",
+          "label": "Wildfire liability, utility company negligence, evacuation failures, or fire prevention regulation violations",
+          "description": "Cases involving wildfire liability, utility company negligence, evacuation failures, or fire prevention regulation violations."
+        }
+      ]
+    },
+    "immigration": {
+      "label": "Immigration",
+      "pipelines": [
+        {
+          "id": "immigration_case",
+          "label": "General immigration cases including removal proceedings, visa disputes, or naturalization challenges",
+          "description": "General immigration cases including removal proceedings, visa disputes, or naturalization challenges."
+        },
+        {
+          "id": "asylum_claim",
+          "label": "Asylum applications, credible fear interviews, withholding of removal, or convention against torture claims",
+          "description": "Cases involving asylum applications, credible fear interviews, withholding of removal, or Convention Against Torture claims."
+        },
+        {
+          "id": "detention_abuse",
+          "label": "Abuse in immigration detention facilities, medical neglect, solitary confinement, or conditions of confinement",
+          "description": "Cases involving abuse in immigration detention facilities, medical neglect, solitary confinement, or conditions of confinement."
+        },
+        {
+          "id": "immigration_benefits",
+          "label": "Immigration benefit applications, adjustment of status, green card processing, or uscis delays",
+          "description": "Cases involving immigration benefit applications, adjustment of status, green card processing, or USCIS delays."
+        },
+        {
+          "id": "family_separation_case",
+          "label": "Family separation at the border, reunification efforts, or zero-tolerance policy impacts",
+          "description": "Cases involving family separation at the border, reunification efforts, or zero-tolerance policy impacts."
+        },
+        {
+          "id": "work_authorization_dispute",
+          "label": "Work authorization disputes, ead processing delays, or employer i-9 violations",
+          "description": "Cases involving work authorization disputes, EAD processing delays, or employer I-9 violations."
+        },
+        {
+          "id": "consular_processing_failure",
+          "label": "Consular processing delays, visa refusals, or consular officer misconduct",
+          "description": "Cases involving consular processing delays, visa refusals, or consular officer misconduct."
+        }
+      ]
+    },
+    "public_safety": {
+      "label": "Public Safety & Emergency",
+      "pipelines": [
+        {
+          "id": "emergency_safety",
+          "label": "General emergency safety situations requiring immediate assessment and resource coordination",
+          "description": "General emergency safety situations requiring immediate assessment and resource coordination."
+        },
+        {
+          "id": "immediate_threat",
+          "label": "Immediate threats to personal safety requiring urgent intervention and documentation",
+          "description": "Cases involving immediate threats to personal safety requiring urgent intervention and documentation."
+        },
+        {
+          "id": "domestic_violence_emergency",
+          "label": "Emergency domestic violence situations requiring immediate safety planning and protective order documentation",
+          "description": "Emergency domestic violence situations requiring immediate safety planning and protective order documentation."
+        },
+        {
+          "id": "missing_person",
+          "label": "Missing person investigations, including documentation of last known contacts and institutional response timelines",
+          "description": "Cases involving missing person investigations, including documentation of last known contacts and institutional response timelines."
+        },
+        {
+          "id": "human_trafficking",
+          "label": "Human trafficking, labor trafficking, or sex trafficking, including victim identification and institutional response",
+          "description": "Cases involving human trafficking, labor trafficking, or sex trafficking, including victim identification and institutional response."
+        },
+        {
+          "id": "child_endangerment",
+          "label": "Immediate child endangerment situations requiring urgent protective intervention",
+          "description": "Cases involving immediate child endangerment situations requiring urgent protective intervention."
+        },
+        {
+          "id": "public_health_emergency",
+          "label": "Public health emergencies, pandemic response failures, or quarantine disputes",
+          "description": "Cases involving public health emergencies, pandemic response failures, or quarantine disputes."
+        },
+        {
+          "id": "environmental_hazard",
+          "label": "Immediate environmental hazards requiring emergency response, evacuation, or remediation",
+          "description": "Cases involving immediate environmental hazards requiring emergency response, evacuation, or remediation."
+        },
+        {
+          "id": "disaster_relief_denial",
+          "label": "Denial of disaster relief benefits, fema disputes, or emergency assistance failures",
+          "description": "Cases involving denial of disaster relief benefits, FEMA disputes, or emergency assistance failures."
+        },
+        {
+          "id": "emergency_shelter_access",
+          "label": "Denial of emergency shelter access, shelter condition complaints, or emergency housing failures",
+          "description": "Cases involving denial of emergency shelter access, shelter condition complaints, or emergency housing failures."
+        },
+        {
+          "id": "missing_vulnerable_adult",
+          "label": "Missing vulnerable adults, including elderly individuals with dementia or adults with disabilities",
+          "description": "Cases involving missing vulnerable adults, including elderly individuals with dementia or adults with disabilities."
+        }
+      ]
+    },
+    "general": {
+      "label": "General Investigation",
+      "pipelines": [
+        {
+          "id": "general_investigation",
+          "label": "General investigation cases that do not fit a specific domain category",
+          "description": "General investigation cases that do not fit a specific domain category."
+        },
+        {
+          "id": "personal_case",
+          "label": "Personal investigation cases involving individual matters that span multiple domains",
+          "description": "Personal investigation cases involving individual matters that span multiple domains."
+        },
+        {
+          "id": "community_case",
+          "label": "Community-level investigation cases involving collective action or community-wide issues",
+          "description": "Community-level investigation cases involving collective action or community-wide issues."
+        },
+        {
+          "id": "cross_border_jurisdiction_dispute",
+          "label": "Jurisdictional disputes across state or national borders, choice of law issues, or multi-jurisdiction proceedings",
+          "description": "Cases involving jurisdictional disputes across state or national borders, choice of law issues, or multi-jurisdiction proceedings."
+        },
+        {
+          "id": "multi_party_community_action",
+          "label": "Multi-party community actions, class action support, or collective advocacy documentation",
+          "description": "Cases involving multi-party community actions, class action support, or collective advocacy documentation."
+        },
+        {
+          "id": "other",
+          "label": "Cases that do not fit any defined pipeline category",
+          "description": "Cases that do not fit any defined pipeline category. Used as a catch-all for unclassified matters."
+        },
+        {
+          "id": "complaint_filing",
+          "label": "Complaint Filing Assistance",
+          "description": "Complaint Filing Assistance pipeline"
+        },
+        {
+          "id": "document_review",
+          "label": "Document Review",
+          "description": "Document Review pipeline"
+        },
+        {
+          "id": "general_legal_question",
+          "label": "General Legal Question",
+          "description": "General Legal Question pipeline"
+        },
+        {
+          "id": "legal_research",
+          "label": "Legal Research",
+          "description": "Legal Research pipeline"
+        },
+        {
+          "id": "pro_se_assistance",
+          "label": "Pro Se Assistance",
+          "description": "Pro Se Assistance pipeline"
+        },
+        {
+          "id": "records_request",
+          "label": "Records Request",
+          "description": "Records Request pipeline"
+        }
+      ]
+    },
+    "lgbtq_rights": {
+      "label": "LGBTQ+ Rights",
+      "description": "Legal protections and advocacy for LGBTQ+ individuals",
+      "pipelines": [
+        {
+          "id": "lgbtq_discrimination",
+          "label": "LGBTQ+ Discrimination",
+          "description": "Employment, housing, and service discrimination"
+        },
+        {
+          "id": "conversion_therapy_harm",
+          "label": "Conversion Therapy Harm",
+          "description": "Documenting conversion therapy harm"
+        },
+        {
+          "id": "gender_marker_change",
+          "label": "Gender Marker Change",
+          "description": "Legal name and gender marker changes"
+        },
+        {
+          "id": "lgbtq_healthcare_denial",
+          "label": "LGBTQ+ Healthcare Denial",
+          "description": "Denial of gender-affirming care"
+        },
+        {
+          "id": "lgbtq_family_recognition",
+          "label": "LGBTQ+ Family Recognition",
+          "description": "Same-sex marriage, adoption, parental rights"
+        },
+        {
+          "id": "lgbtq_housing_discrimination",
+          "label": "LGBTQ+ Housing Discrimination",
+          "description": "Housing discrimination based on SOGI"
+        },
+        {
+          "id": "lgbtq_workplace_harassment",
+          "label": "LGBTQ+ Workplace Harassment",
+          "description": "Workplace harassment based on SOGI"
+        },
+        {
+          "id": "lgbtq_youth_protection",
+          "label": "LGBTQ+ Youth Protection",
+          "description": "Protection of LGBTQ+ youth"
+        }
+      ]
+    },
+    "mental_health": {
+      "label": "Mental Health System",
+      "pipelines": [
+        {
+          "id": "involuntary_hold",
+          "label": "Involuntary psychiatric holds, commitment proceedings, and patient rights during detention",
+          "description": "Cases involving involuntary psychiatric holds (72-hour holds, emergency petitions) where patients were detained without proper legal process, informed consent, or judicial review."
+        },
+        {
+          "id": "polypharmacy_harm",
+          "label": "Dangerous medication combinations, prescribing failures, and pharmaceutical harm",
+          "description": "Cases where patients were prescribed multiple psychiatric medications simultaneously without proper monitoring, interaction checks, or informed consent about risks."
+        },
+        {
+          "id": "discharge_failure",
+          "label": "Unsafe discharge, no follow-up plan, and continuity of care breakdowns",
+          "description": "Cases where patients were discharged from psychiatric facilities without adequate discharge planning, follow-up appointments, medication management, or community support."
+        },
+        {
+          "id": "family_exclusion",
+          "label": "Family excluded from care decisions, denied information, or blocked from advocacy",
+          "description": "Cases where family members were systematically excluded from treatment decisions, denied information about their loved one's condition, or prevented from advocating for appropriate care."
+        },
+        {
+          "id": "restraint_seclusion",
+          "label": "Physical restraint, chemical restraint, seclusion, and forced treatment",
+          "description": "Cases involving the use of physical restraints, chemical restraints, seclusion rooms, or forced medication/treatment that may have violated patient rights or exceeded legal authority."
+        },
+        {
+          "id": "record_correction",
+          "label": "Medical record errors, involuntary hold records, and documentation disputes",
+          "description": "Cases where psychiatric records contain errors, involuntary hold documentation needs correction, or patients need to challenge inaccurate clinical narratives that affect their rights and future care."
+        }
+      ]
+    }
+  },
+  "all_canonical_ids": [
+    "police_misconduct",
+    "prosecutorial_misconduct",
+    "judicial_misconduct",
+    "wrongful_conviction",
+    "whistleblower_retaliation",
+    "government_accountability",
+    "civil_rights_violation",
+    "public_corruption",
+    "criminal_case_review",
+    "investigative_journalism",
+    "prison_conditions",
+    "parole_probation_violation",
+    "use_of_force_review",
+    "civil_asset_forfeiture",
+    "wrongful_arrest",
+    "domestic_violence",
+    "custody",
+    "custody_dispute",
+    "family_law",
+    "child_abuse",
+    "child_welfare",
+    "foster_care",
+    "juvenile_case",
+    "guardianship",
+    "parental_rights_termination",
+    "family_services_failure",
+    "child_support_modification",
+    "adoption_disruption",
+    "kinship_placement_dispute",
+    "supervised_visitation_dispute",
+    "elder_abuse",
+    "eldercare",
+    "nursing_home_abuse",
+    "disability_rights",
+    "guardianship_abuse",
+    "long_term_care_neglect",
+    "elder_financial_exploitation",
+    "vulnerable_adult_protection",
+    "ada_accommodation_dispute",
+    "home_health_agency_misconduct",
+    "medicare_elder_fraud",
+    "tribal_law",
+    "tribal_enrollment",
+    "tribal_land_rights",
+    "tribal_housing",
+    "treaty_rights",
+    "indigenous_sovereignty",
+    "mmiw_cases",
+    "tribal_governance",
+    "tribal_state_jurisdiction_conflict",
+    "icwa_compliance",
+    "insurance_claim_denial",
+    "health_insurance_denial",
+    "medical_malpractice",
+    "medicaid_denial",
+    "medicare_denial",
+    "hospital_billing_abuse",
+    "medical_record_access",
+    "disability_claim_denial",
+    "prior_authorization_abuse",
+    "surprise_billing",
+    "pharmacy_benefit_manager_dispute",
+    "medical_device_injury",
+    "tenant_rights",
+    "housing_discrimination",
+    "eviction_defense",
+    "section8_disputes",
+    "hoa_disputes",
+    "landlord_harassment",
+    "foreclosure_dispute",
+    "property_rights",
+    "mobile_home_park_dispute",
+    "short_term_rental_dispute",
+    "utility_shutoff_abuse",
+    "code_enforcement_retaliation",
+    "debt_collection_abuse",
+    "predatory_lending",
+    "bankruptcy_dispute",
+    "tax_dispute",
+    "consumer_fraud",
+    "identity_theft",
+    "financial_exploitation",
+    "securities_fraud",
+    "crypto_fraud",
+    "online_marketplace_fraud",
+    "subscription_trap_billing",
+    "bank_account_closure",
+    "workplace_discrimination",
+    "wrongful_termination",
+    "workers_compensation",
+    "wage_theft",
+    "labor_violation",
+    "workplace_harassment",
+    "unemployment_benefits",
+    "gig_worker_misclassification",
+    "non_compete_dispute",
+    "wage_garnishment_error",
+    "workplace_surveillance",
+    "benefits_denial",
+    "snap_denial",
+    "veterans_benefits",
+    "social_security_disability",
+    "public_assistance_dispute",
+    "voucher_termination",
+    "medicaid_ltc_eligibility",
+    "benefits_overpayment_recoupment",
+    "market_concentration",
+    "antitrust_violation",
+    "corporate_capture",
+    "supply_chain_exploitation",
+    "agriculture_exploitation",
+    "nonprofit_compliance",
+    "public_contract_abuse",
+    "regulatory_capture",
+    "corporate_tax_avoidance",
+    "public_utility_monopoly_abuse",
+    "algorithmic_discrimination",
+    "environmental_violation",
+    "water_contamination",
+    "public_health_risk",
+    "community_harm",
+    "land_use_dispute",
+    "air_quality_violation",
+    "industrial_noise_nuisance",
+    "toxic_exposure",
+    "wildfire_liability",
+    "immigration_case",
+    "asylum_claim",
+    "detention_abuse",
+    "immigration_benefits",
+    "family_separation_case",
+    "work_authorization_dispute",
+    "consular_processing_failure",
+    "emergency_safety",
+    "immediate_threat",
+    "domestic_violence_emergency",
+    "missing_person",
+    "human_trafficking",
+    "child_endangerment",
+    "public_health_emergency",
+    "environmental_hazard",
+    "disaster_relief_denial",
+    "emergency_shelter_access",
+    "missing_vulnerable_adult",
+    "general_investigation",
+    "personal_case",
+    "community_case",
+    "cross_border_jurisdiction_dispute",
+    "multi_party_community_action",
+    "other",
+    "lgbtq_discrimination",
+    "conversion_therapy_harm",
+    "gender_marker_change",
+    "lgbtq_healthcare_denial",
+    "lgbtq_family_recognition",
+    "lgbtq_housing_discrimination",
+    "lgbtq_workplace_harassment",
+    "lgbtq_youth_protection",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction",
+    "complaint_filing",
+    "document_review",
+    "general_legal_question",
+    "legal_research",
+    "pro_se_assistance",
+    "records_request"
+  ]
+}

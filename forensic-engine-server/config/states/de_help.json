@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "state": "DE",
+    "version": "3.0",
+    "date": "2026-03-09"
+  },
+  "routing_index": [
+    {
+      "service": "Compass (SNAP/Medicaid/TANF)",
+      "phone": "302-255-9500",
+      "website": "compass.dhss.delaware.gov"
+    },
+    {
+      "service": "DE CLASI (Statewide Legal Aid)",
+      "phone": "302-575-0660",
+      "website": "declasi.org"
+    },
+    {
+      "service": "DE OAH (Benefits)",
+      "phone": "302-744-4500",
+      "website": "oah.delaware.gov"
+    },
+    {
+      "service": "La Esperanza (Sussex County)",
+      "phone": "302-856-6310",
+      "website": "laesperanzadelaware.com"
+    },
+    {
+      "service": "EEOC Philadelphia (covers DE)",
+      "phone": "267-589-9700",
+      "website": "eeoc.gov"
+    },
+    {
+      "service": "WHD Wilmington",
+      "phone": "302-791-1210",
+      "website": "dol.gov/whd"
+    },
+    {
+      "service": "211 Delaware",
+      "phone": "211",
+      "website": "211.org"
+    },
+    {
+      "service": "DE DOL (UI + Wage)",
+      "phone_ui": "302-761-8446",
+      "phone_wage": "302-761-8200",
+      "website": "dol.delaware.gov"
+    }
+  ]
+}

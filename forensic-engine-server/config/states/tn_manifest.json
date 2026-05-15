@@ -1,0 +1,67 @@
+{
+  "state": "TN",
+  "state_name": "Tennessee",
+  "version": "3.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-09",
+  "source": "luminari-tn-registry.docx",
+  "datasets": [
+    "general",
+    "employment",
+    "legal",
+    "food",
+    "healthcare",
+    "housing",
+    "cash_assistance",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "consumer_protection",
+    "disability_claim",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "utility_dispute",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "landlord",
+    "civil_rights"
+  ],
+  "policy_flags": [
+    "tn_tenncare_1115_waiver",
+    "tn_tanf_lowest",
+    "tn_ui_275_lowest",
+    "tn_memphis_deep_poverty",
+    "tn_nashville_refugee_hub",
+    "tn_urlta_patchwork"
+  ],
+  "statistics": {
+    "total_programs": 22,
+    "total_oversight_chains": 3,
+    "total_oversight_bodies": 5,
+    "total_flags": 6
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "employment",
+    "food"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ],
+  "portability_score": "50%"
+}

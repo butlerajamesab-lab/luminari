@@ -1,0 +1,277 @@
+{
+  "meta": {
+    "state": "VI",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "vi_usvi_senior_citizen_center",
+        "vi_virgin_islands_legal_services_vils"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility"
+      ],
+      "flags": [
+        "vi_portability"
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "vi_usvi_tanf_cash_assistance",
+        "vi_usvi_wic",
+        "vi_usvi_child_care_assistance"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility"
+      ],
+      "flags": [
+        "vi_portability"
+      ]
+    },
+    {
+      "pipeline_id": "consumer_protection",
+      "programs": [
+        "vi_virgin_islands_legal_services_vils"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility"
+      ],
+      "flags": [
+        "vi_portability"
+      ]
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "vi_usvi_snap_food_assistance_program",
+        "vi_usvi_tanf_cash_assistance",
+        "vi_usvi_vocational_rehabilitation_vidvr",
+        "vi_usvi_child_care_assistance",
+        "vi_usvi_energy_office_liheap"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility"
+      ],
+      "flags": [
+        "vi_portability"
+      ]
+    },
+    {
+      "pipeline_id": "employment_dispute",
+      "programs": [
+        "vi_usvi_unemployment_insurance_dlca",
+        "vi_usvi_vocational_rehabilitation_vidvr"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility"
+      ],
+      "flags": [
+        "vi_portability"
+      ]
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "vi_usvi_housing_finance_authority_vihfa",
+        "vi_virgin_islands_legal_services_vils"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility"
+      ],
+      "flags": [
+        "vi_portability"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "vi_usvi_medicaid_vidoh",
+        "vi_usvi_unemployment_insurance_dlca",
+        "vi_usvi_behavioral_health_dbhs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility"
+      ],
+      "flags": [
+        "vi_portability"
+      ]
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "vi_usvi_energy_office_liheap"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility"
+      ],
+      "flags": [
+        "vi_portability"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "vi_involuntary_hold_law",
+        "vi_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "vi_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "vi_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "vi_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "vi_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "vi_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "vi_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "vi_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "vi_restraint_seclusion_limits",
+        "vi_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "vi_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "vi_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "vi_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

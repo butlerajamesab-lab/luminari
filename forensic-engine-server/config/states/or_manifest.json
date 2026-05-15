@@ -1,0 +1,104 @@
+{
+  "state": "OR",
+  "state_name": "Oregon",
+  "version": "1.0.0",
+  "schema": "luminari-registry-v1",
+  "date_created": "2026-03-06",
+  "date_verified": "2026-03-06",
+  "source": "Luminari OR Three-Layer Registry v1.0 \u2014 Northwest Hope Foundation",
+  "datasets": [
+    "programs",
+    "workflows",
+    "oversight",
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "domestic_violence",
+    "immigration_case",
+    "insurance_claim_denial",
+    "snap_denial",
+    "tenant_rights",
+    "wage_theft",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "family_court",
+    "government_agency",
+    "insurer",
+    "landlord",
+    "nursing_home"
+  ],
+  "policy_flags": [
+    "medicaid_expansion_state",
+    "rent_stabilization_sb608",
+    "just_cause_eviction_statewide",
+    "paid_family_leave_2023",
+    "measure_110_drug_decriminalization",
+    "oregon_health_plan_open_enrollment"
+  ],
+  "statistics": {
+    "programs": {
+      "total_programs": 156,
+      "categories": {
+        "food": 23,
+        "healthcare": 27,
+        "housing": 28,
+        "dv_safety": 24,
+        "legal_aid": 20,
+        "cash_assistance": 18,
+        "tribal_indigenous": 16
+      },
+      "layers": [
+        "city",
+        "county",
+        "nonprofit",
+        "state",
+        "tribal"
+      ]
+    },
+    "workflows": {
+      "total_workflows": 4,
+      "total_steps": 24
+    },
+    "oversight": {
+      "total_entity_types": 6,
+      "total_oversight_bodies": 34,
+      "pattern_threshold_coverage": "34/34",
+      "total_oversight_chains": 6
+    }
+  },
+  "status": "active",
+  "validation_status": "complete",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings"
+  ],
+  "date_activated": "2026-03-07",
+  "regions": [
+    "portland_metro",
+    "willamette_valley",
+    "southern_or",
+    "eastern_or",
+    "coast",
+    "tribal_nation",
+    "statewide"
+  ],
+  "help_contacts_count": 12,
+  "program_count": 159,
+  "last_enriched": "2026-03-09",
+  "enrichment_source": "LASO (lasoregon.org) \u2014 statewide hotlines, farmworker, NAPOLS, tax clinic"
+}

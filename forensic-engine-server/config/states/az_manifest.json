@@ -1,0 +1,109 @@
+{
+  "state": "AZ",
+  "state_name": "Arizona",
+  "version": "1.0.0",
+  "schema": "luminari-registry-v1",
+  "date_created": "2026-03-06",
+  "date_verified": "2026-03-06",
+  "source": "Luminari AZ Three-Layer Registry v1.0 \u2014 Northwest Hope Foundation",
+  "datasets": [
+    "programs",
+    "workflows",
+    "oversight",
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "domestic_violence",
+    "elder_abuse",
+    "immigration_case",
+    "insurance_claim_denial",
+    "medicaid_denial",
+    "snap_denial",
+    "tenant_rights",
+    "wage_theft",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "family_court",
+    "government_agency",
+    "insurer",
+    "landlord",
+    "law_enforcement",
+    "nursing_home"
+  ],
+  "policy_flags": [
+    "tanf_24_month_lifetime_limit",
+    "no_state_paid_family_leave",
+    "wage_claim_1_year_sol",
+    "ui_appeal_15_day_deadline",
+    "extreme_heat_life_safety",
+    "22_federally_recognized_tribes",
+    "heat_relief_network_critical",
+    "medicaid_expansion_active",
+    "minimum_wage_14_70"
+  ],
+  "statistics": {
+    "programs": {
+      "total_programs": 149,
+      "categories": {
+        "healthcare": 24,
+        "food": 17,
+        "housing": 22,
+        "dv_safety": 20,
+        "legal_aid": 14,
+        "cash_assistance": 10,
+        "utilities": 11,
+        "tribal_indigenous": 12,
+        "immigration": 8,
+        "lgbtq": 5,
+        "community_navigation": 6
+      },
+      "layers": [
+        "city",
+        "community",
+        "county",
+        "nonprofit",
+        "state",
+        "tribal"
+      ]
+    },
+    "workflows": {
+      "total_workflows": 4,
+      "total_steps": 23
+    },
+    "oversight": {
+      "total_entity_types": 7,
+      "total_oversight_bodies": 43,
+      "pattern_threshold_coverage": "43/43",
+      "total_oversight_chains": 7
+    }
+  },
+  "status": "active",
+  "validation_status": "complete",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings"
+  ],
+  "date_activated": "2026-03-07",
+  "regions": [
+    "phoenix_metro",
+    "tucson_metro",
+    "northern_az",
+    "tribal_nation",
+    "statewide"
+  ]
+}

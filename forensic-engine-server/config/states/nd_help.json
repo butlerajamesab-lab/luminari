@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "state": "ND",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "ND DHHS (SNAP/Medicaid)",
+      "role": "Benefits",
+      "phone": "701-328-2316",
+      "website": "https://nd.gov/dhs",
+      "address": "600 E Boulevard Ave, Bismarck, ND 58505"
+    },
+    {
+      "contact_name": "Legal Services ND",
+      "role": "Statewide legal aid",
+      "phone": "800-634-5263",
+      "website": "https://legalassist.org",
+      "address": "418 E Broadway Ste 321, Bismarck, ND 58501"
+    },
+    {
+      "contact_name": "Job Service ND (UI)",
+      "role": "UI appeals — 12 days FATAL",
+      "phone": "701-328-4995",
+      "website": "https://jobsnd.com/unemployment"
+    },
+    {
+      "contact_name": "Great Plains Food Bank",
+      "role": "Food assistance",
+      "phone": "701-232-6219",
+      "website": "https://greatplainsfoodbank.org",
+      "address": "1720 3rd Ave N, Fargo, ND 58102"
+    },
+    {
+      "contact_name": "IHS Bismarck Area",
+      "role": "Indian Health Service",
+      "phone": "701-355-2280",
+      "website": "https://ihs.gov/bismarck",
+      "address": "3315 1/2 N 10th St, Bismarck, ND 58503"
+    },
+    {
+      "contact_name": "MHA Nation",
+      "role": "Three Affiliated Tribes",
+      "phone": "701-627-4781",
+      "website": "https://mhanation.com",
+      "address": "404 Frontage Rd, New Town, ND 58763"
+    },
+    {
+      "contact_name": "Spirit Lake Nation",
+      "role": "Tribal services",
+      "phone": "701-766-4221",
+      "website": "https://spiritlakenation.com"
+    },
+    {
+      "contact_name": "Turtle Mountain Band of Chippewa",
+      "role": "Tribal services",
+      "phone": "701-477-6451",
+      "website": "https://tmbci.net"
+    },
+    {
+      "contact_name": "Standing Rock Sioux Tribe",
+      "role": "Tribal services",
+      "phone": "701-854-7201",
+      "website": "https://standingrock.org"
+    },
+    {
+      "contact_name": "WHD Bismarck",
+      "role": "Federal wage enforcement",
+      "phone": "701-250-4515",
+      "website": "https://dol.gov/whd"
+    },
+    {
+      "contact_name": "ND DV Hotline",
+      "role": "Domestic violence — 24/7",
+      "phone": "800-472-2911",
+      "website": null
+    },
+    {
+      "contact_name": "211 North Dakota",
+      "role": "Social services referral",
+      "phone": "211",
+      "website": "https://211.org"
+    }
+  ]
+}

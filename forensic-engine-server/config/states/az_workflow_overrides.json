@@ -1,0 +1,313 @@
+{
+  "meta": {
+    "state": "AZ",
+    "state_name": "Arizona",
+    "layer": "workflow_overrides",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "date_verified": "2026-03-06",
+    "source": "Luminari AZ Three-Layer Registry v1.0 — Northwest Hope Foundation"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "tenant_rights_workflow",
+      "state": "AZ",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document the violation with timestamps. Photograph the issue. Keep all correspondence with landlord in writing. Note dates, times, conditions. AZ Residential Landlord and Tenant Act (ARS §33-1324) requires landlord to maintain habitable premises.",
+          "documents_needed": "Photos, written communications, lease copy",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "24 hours of discovering violation",
+          "statute": "ARS §33-1324 (Landlord Obligations), ARS §33-1361 (Tenant Remedies)",
+          "notes": "Creates paper trail. AZ ARLTA applies to most residential rentals. CRITICAL: Heat/AC is a habitability issue in AZ — landlord must maintain cooling systems.",
+          "source": "https://www.azleg.gov/ars/33/01324.htm"
+        },
+        {
+          "step_number": 2,
+          "action": "Send written notice to landlord stating the violation, citing ARS §33-1361. Give landlord 10 BUSINESS DAYS to remedy for non-emergency repairs. For emergency conditions (no AC in summer, no water), landlord must act within 5 days or tenant may exercise remedies.",
+          "documents_needed": "Written notice to landlord (certified mail recommended)",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately after documenting — creates paper trail",
+          "statute": "ARS §33-1361 (Noncompliance by Landlord), ARS §33-1365 (Damage or Destruction)",
+          "notes": "10-business-day repair deadline is AZ-specific. For heat emergencies, shorter timeline applies. Tenant may repair and deduct up to $300 or half month's rent (whichever is greater) after proper notice.",
+          "source": "https://www.azleg.gov/ars/33/01361.htm"
+        },
+        {
+          "step_number": 3,
+          "action": "File complaint with local code enforcement. Phoenix: Neighborhood Services (602-262-7456). Tucson: Code Enforcement (520-791-5843). Other cities: contact city/county code enforcement. For heat emergencies, also contact AZ Heat Relief Network (211).",
+          "documents_needed": "Photos, correspondence, lease",
+          "state_agency": "Phoenix Neighborhood Services / Tucson Code Enforcement",
+          "phone": "602-262-7456 (Phoenix) / 520-791-5843 (Tucson)",
+          "complaint_portal": "https://www.phoenix.gov/nsd",
+          "deadline": "Within days of violation",
+          "statute": "ARS §33-1324, local housing codes",
+          "notes": "Code enforcement is local in AZ. Phoenix and Tucson have strongest enforcement. For heat emergencies (no AC in summer), this is a LIFE SAFETY issue — call 211 for cooling stations.",
+          "source": "https://www.phoenix.gov/nsd"
+        },
+        {
+          "step_number": 4,
+          "action": "Contact legal aid for tenant representation. CLS AZ (Phoenix/Maricopa) or SALA (Tucson/Southern AZ). For tribal housing issues, contact DNA People's Legal Services.",
+          "documents_needed": "All documentation, lease, correspondence, code enforcement reports",
+          "state_agency": "CLS AZ / SALA / DNA People's Legal",
+          "phone": "602-258-3434 (CLS) / 520-623-9461 (SALA) / 928-871-4151 (DNA)",
+          "complaint_portal": "https://www.clsaz.org",
+          "deadline": "Before any court hearing — immediately if eviction filed",
+          "statute": "ARS §33-1381 (Retaliatory Conduct), ARS §33-1375 (Wrongful Failure to Supply Essential Services)",
+          "notes": "AZ has anti-retaliation protections. Landlord cannot retaliate for code complaints. For tribal land housing, tribal courts may have jurisdiction.",
+          "source": "https://www.clsaz.org"
+        },
+        {
+          "step_number": 5,
+          "action": "File complaint with AZ Attorney General Consumer Protection or HUD Fair Housing. AG handles consumer fraud and pattern violations. HUD handles discrimination complaints.",
+          "documents_needed": "All documentation including code enforcement results",
+          "state_agency": "AZ Attorney General / HUD Region IX",
+          "phone": "602-542-5763 (AZ AG) / 800-669-9777 (HUD)",
+          "complaint_portal": "https://www.azag.gov/consumer/complaint",
+          "deadline": "HUD: within 1 year of violation. AG: no strict deadline",
+          "statute": "ARS §44-1521 (Consumer Fraud Act), Fair Housing Act 42 USC §3601",
+          "notes": "HUD complaint triggers federal investigation. AZ AG can pursue pattern cases. AZ Civil Rights Division handles state discrimination claims.",
+          "source": "https://www.azag.gov"
+        },
+        {
+          "step_number": 6,
+          "action": "File lawsuit in AZ Justice Court (claims < $3,500) or Superior Court. Tenant may seek damages, injunctive relief, attorney fees under ARS §33-1381.",
+          "documents_needed": "All documentation, legal aid referral, filing fee (waiver available)",
+          "state_agency": "AZ Justice Court / AZ Superior Court",
+          "phone": "602-372-5375 (Maricopa Justice Court)",
+          "complaint_portal": "https://www.superiorcourt.maricopa.gov",
+          "deadline": "Statute of limitations: 1 year for lease violations, 2 years for property damage",
+          "statute": "ARS §33-1381 (Retaliatory Conduct), ARS §12-541 (SOL)",
+          "notes": "AZ allows attorney fee recovery for prevailing tenant under ARLTA. Justice Court is faster and cheaper for smaller claims.",
+          "source": "https://www.superiorcourt.maricopa.gov"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft_workflow",
+      "state": "AZ",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document all unpaid wages. Keep records of hours worked, pay stubs, employment agreements, text messages about work. AZ minimum wage is $14.70/hr (Jan 2026). Flagstaff has higher local minimum wage.",
+          "documents_needed": "Pay stubs, time records, employment agreement, text/email communications",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately — 1-YEAR statute of limitations for wage claims (shorter than most states!)",
+          "statute": "ARS §23-350 (Minimum Wage), ARS §23-363 (Wage Claim SOL)",
+          "notes": "CRITICAL: AZ has only a 1-YEAR SOL for wage claims — much shorter than federal 2-year FLSA SOL. Document immediately. Flagstaff minimum wage is higher than state minimum.",
+          "source": "https://www.azica.gov"
+        },
+        {
+          "step_number": 2,
+          "action": "File wage claim with AZ Industrial Commission (ICA). ICA handles minimum wage, overtime, and final paycheck violations. Employer must pay final wages within 7 days of termination or next regular payday (whichever is sooner).",
+          "documents_needed": "Completed ICA wage claim form, pay stubs, employment records",
+          "state_agency": "AZ Industrial Commission (ICA)",
+          "phone": "800-837-8583",
+          "complaint_portal": "https://www.azica.gov/claims/wage-claims",
+          "deadline": "Within 1 YEAR of violation (ARS §23-364)",
+          "statute": "ARS §23-350 through §23-364 (Wage Act), ARS §23-353 (Final Paycheck)",
+          "notes": "1-YEAR SOL is critical — do not delay. ICA investigates and can order payment. Employer owes treble damages for willful violations. Final paycheck must be paid within 7 days.",
+          "source": "https://www.azica.gov"
+        },
+        {
+          "step_number": 3,
+          "action": "File complaint with AZ Civil Rights Division (CRD) if wage theft involves discrimination. File with EEOC if federal discrimination applies.",
+          "documents_needed": "Wage claim documentation, evidence of discrimination",
+          "state_agency": "AZ CRD / EEOC Phoenix",
+          "phone": "602-542-5263 (CRD) / 800-669-4000 (EEOC)",
+          "complaint_portal": "https://www.azag.gov/civil-rights",
+          "deadline": "CRD: 180 days. EEOC: 300 days (with CRD cross-filing)",
+          "statute": "ARS §41-1463 (AZ Civil Rights Act), Title VII",
+          "notes": "CRD and EEOC have worksharing agreement. Filing with one preserves rights with other.",
+          "source": "https://www.azag.gov/civil-rights"
+        },
+        {
+          "step_number": 4,
+          "action": "Contact legal aid for representation. CLS AZ (Phoenix/Maricopa) or SALA (Tucson/Southern AZ). For federal wage claims, contact DOL Wage and Hour Division.",
+          "documents_needed": "All documentation, ICA claim results",
+          "state_agency": "CLS AZ / SALA / DOL WHD",
+          "phone": "602-258-3434 (CLS) / 520-623-9461 (SALA) / 866-487-9243 (DOL)",
+          "complaint_portal": "https://www.dol.gov/agencies/whd/contact/complaints",
+          "deadline": "Federal FLSA: 2 years (3 years if willful)",
+          "statute": "FLSA 29 USC §216, ARS §23-364",
+          "notes": "Federal FLSA has longer SOL (2-3 years) than AZ state claim (1 year). Consider filing both. DOL can investigate federal minimum wage and overtime violations.",
+          "source": "https://www.dol.gov/agencies/whd"
+        },
+        {
+          "step_number": 5,
+          "action": "File lawsuit in AZ court. Justice Court for claims < $3,500, Superior Court for larger claims. Prevailing employee may recover treble damages and attorney fees.",
+          "documents_needed": "All documentation, legal representation",
+          "state_agency": "AZ Justice Court / AZ Superior Court",
+          "phone": "602-372-5375 (Maricopa Justice Court)",
+          "complaint_portal": "https://www.superiorcourt.maricopa.gov",
+          "deadline": "Within 1 year of violation (state) or 2-3 years (federal FLSA)",
+          "statute": "ARS §23-364 (Treble Damages), FLSA §216(b)",
+          "notes": "AZ allows treble damages for willful wage violations. Class/collective actions possible under FLSA.",
+          "source": "https://www.superiorcourt.maricopa.gov"
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial_workflow",
+      "state": "AZ",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Request written denial notice. All benefit programs must provide written notice of denial, reduction, or termination with appeal rights. Keep the denial letter — it contains your appeal deadline.",
+          "documents_needed": "Denial letter, application materials, supporting documents",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately upon receiving denial",
+          "statute": "ARS §46-212 (DES Fair Hearing), 42 CFR §431.200 (Medicaid)",
+          "notes": "CRITICAL: AZ has very short appeal deadlines. UI appeal: 15 DAYS. SNAP: 30 days. AHCCCS: 90 days. Read denial letter carefully for your specific deadline.",
+          "source": "https://www.azdes.gov"
+        },
+        {
+          "step_number": 2,
+          "action": "File appeal within deadline. SNAP: 30 days for fair hearing. AHCCCS: 60 days for grievance, 90 days for appeal. UI: 15 DAYS (very short!). TANF: 30 days. Request continued benefits pending appeal if currently receiving.",
+          "documents_needed": "Denial letter, appeal form, supporting evidence",
+          "state_agency": "DES Office of Appeals / AHCCCS",
+          "phone": "855-432-7587 (DES) / 602-417-4000 (AHCCCS)",
+          "complaint_portal": "https://www.azdes.gov/appeals",
+          "deadline": "UI: 15 DAYS. SNAP: 30 days. TANF: 30 days. AHCCCS: 90 days.",
+          "statute": "ARS §46-212, ARS §23-671 (UI Appeals), 42 CFR §431.220",
+          "notes": "UI 15-day deadline is one of the shortest in the US. Mark calendar immediately. Request aid-paid-pending for SNAP/AHCCCS if filing within 10 days of denial.",
+          "source": "https://www.azdes.gov/appeals"
+        },
+        {
+          "step_number": 3,
+          "action": "Contact legal aid for representation at hearing. CLS AZ (Phoenix), SALA (Tucson), or ACDL (disability-related denials). For AHCCCS managed care denials, also contact the managed care plan's grievance department.",
+          "documents_needed": "All documentation, denial letter, appeal filing confirmation",
+          "state_agency": "CLS AZ / SALA / ACDL",
+          "phone": "602-258-3434 (CLS) / 520-623-9461 (SALA) / 602-274-6287 (ACDL)",
+          "complaint_portal": "https://www.clsaz.org",
+          "deadline": "Before hearing date",
+          "statute": "ARS §46-212, 42 USC §1983",
+          "notes": "Legal representation significantly improves hearing outcomes. ACDL specializes in disability benefit denials.",
+          "source": "https://www.clsaz.org"
+        },
+        {
+          "step_number": 4,
+          "action": "Attend fair hearing. DES hearings are by phone or in person. Bring all documentation. You may have a representative. The hearing officer's decision is binding unless appealed to Superior Court.",
+          "documents_needed": "All evidence, witness list, legal representative",
+          "state_agency": "DES Office of Appeals",
+          "phone": "602-542-0373",
+          "complaint_portal": null,
+          "deadline": "As scheduled — do not miss",
+          "statute": "ARS §46-212, ARS §41-1092 (Administrative Procedure Act)",
+          "notes": "Missing the hearing results in dismissal. Request continuance if needed. Phone hearings are common in AZ.",
+          "source": "https://www.azdes.gov/appeals"
+        },
+        {
+          "step_number": 5,
+          "action": "If denied at hearing, appeal to AZ Superior Court (judicial review). File within 35 days of final administrative decision. Contact legal aid for court representation.",
+          "documents_needed": "Hearing decision, all prior documentation, legal representation",
+          "state_agency": "AZ Superior Court",
+          "phone": "602-506-3204 (Maricopa Superior Court)",
+          "complaint_portal": "https://www.superiorcourt.maricopa.gov",
+          "deadline": "35 days from final administrative decision",
+          "statute": "ARS §12-901 (Judicial Review of Administrative Decisions)",
+          "notes": "Judicial review is on the administrative record — no new evidence. Court reviews for abuse of discretion.",
+          "source": "https://www.superiorcourt.maricopa.gov"
+        },
+        {
+          "step_number": 6,
+          "action": "File federal complaint if systemic issues. Contact HHS Office for Civil Rights for Medicaid access issues. Contact USDA for SNAP systemic issues. Contact DOL for UI systemic issues.",
+          "documents_needed": "All documentation, evidence of systemic pattern",
+          "state_agency": "HHS OCR / USDA / DOL",
+          "phone": "800-368-1019 (HHS OCR) / 800-221-5689 (USDA)",
+          "complaint_portal": "https://www.hhs.gov/civil-rights/filing-a-complaint",
+          "deadline": "180 days for OCR complaints",
+          "statute": "42 USC §1983, Title VI, ADA",
+          "notes": "Federal complaints appropriate when state system has systemic failures or discrimination patterns.",
+          "source": "https://www.hhs.gov/civil-rights"
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_claim_denial_workflow",
+      "state": "AZ",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Request written denial with specific reason codes. Review your policy for covered benefits. Document all communications with insurer. Keep copies of all claims and EOBs.",
+          "documents_needed": "Denial letter, EOB, policy/certificate of coverage, claim forms",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately upon receiving denial",
+          "statute": "ARS §20-2533 (External Review), ARS §20-1110 (Unfair Claims Practices)",
+          "notes": "AZ has strong external review rights under ARS §20-2533. For AHCCCS managed care, separate grievance process applies.",
+          "source": "https://insurance.az.gov"
+        },
+        {
+          "step_number": 2,
+          "action": "File internal appeal with insurance company. Most plans allow 180 days for internal appeal. Request expedited review for urgent medical situations. For AHCCCS managed care, file grievance with the plan.",
+          "documents_needed": "Appeal letter, supporting medical records, doctor's letter of medical necessity",
+          "state_agency": null,
+          "phone": "Number on insurance card",
+          "complaint_portal": null,
+          "deadline": "180 days from denial (check plan documents)",
+          "statute": "ARS §20-2533, ERISA §503 (employer plans)",
+          "notes": "Internal appeal is usually required before external review. Expedited review available for urgent situations.",
+          "source": "https://insurance.az.gov"
+        },
+        {
+          "step_number": 3,
+          "action": "File complaint with AZ Department of Insurance and Financial Institutions (DIFI). DIFI regulates all insurance in AZ and investigates consumer complaints.",
+          "documents_needed": "Denial letter, appeal results, all correspondence",
+          "state_agency": "AZ DIFI",
+          "phone": "602-364-3100",
+          "complaint_portal": "https://insurance.az.gov/consumers/file-complaint",
+          "deadline": "No strict deadline — file promptly",
+          "statute": "ARS §20-461 (DIFI Authority), ARS §20-1110 (Unfair Claims Practices)",
+          "notes": "DIFI investigates and can take enforcement action against insurers. Also handles agent/broker complaints.",
+          "source": "https://insurance.az.gov"
+        },
+        {
+          "step_number": 4,
+          "action": "Request external review through DIFI. AZ provides independent external review for health insurance denials. For AHCCCS, request AHCCCS fair hearing.",
+          "documents_needed": "Internal appeal denial, all medical records, external review request form",
+          "state_agency": "AZ DIFI / AHCCCS",
+          "phone": "602-364-3100 (DIFI) / 602-417-4000 (AHCCCS)",
+          "complaint_portal": "https://insurance.az.gov/external-review",
+          "deadline": "4 months from internal appeal denial",
+          "statute": "ARS §20-2533 (External Review Act)",
+          "notes": "External review is binding on the insurer. Independent medical experts review the denial. AHCCCS has separate administrative hearing process.",
+          "source": "https://insurance.az.gov"
+        },
+        {
+          "step_number": 5,
+          "action": "Contact legal aid or file lawsuit. CLS AZ or SALA for low-income individuals. Private attorneys for bad faith claims. AZ allows bad faith lawsuits against insurers.",
+          "documents_needed": "All documentation, external review results",
+          "state_agency": "AZ Superior Court",
+          "phone": "602-258-3434 (CLS) / 520-623-9461 (SALA)",
+          "complaint_portal": "https://www.clsaz.org",
+          "deadline": "Varies by claim type — typically 2 years for bad faith",
+          "statute": "ARS §20-1110, Rawlings v. Apodaca (AZ bad faith standard)",
+          "notes": "AZ recognizes insurance bad faith as a tort. Punitive damages available for egregious conduct. ERISA preempts state claims for employer-sponsored plans.",
+          "source": "https://www.clsaz.org"
+        },
+        {
+          "step_number": 6,
+          "action": "File federal complaint if applicable. CMS for Medicare/Medicaid issues. DOL for ERISA plan violations. CFPB for financial product insurance.",
+          "documents_needed": "All documentation, evidence of federal law violation",
+          "state_agency": "CMS / DOL / CFPB",
+          "phone": "800-633-4227 (CMS) / 866-444-3272 (DOL)",
+          "complaint_portal": "https://www.cms.gov/Medicare/CMS-Forms/CMS-Forms/Downloads/CMS1696.pdf",
+          "deadline": "Varies by federal program",
+          "statute": "42 USC §1395ff (Medicare), ERISA §502, Dodd-Frank",
+          "notes": "Federal remedies supplement state remedies. CMS handles Medicare Advantage and Part D denials.",
+          "source": "https://www.cms.gov"
+        }
+      ]
+    }
+  ]
+}

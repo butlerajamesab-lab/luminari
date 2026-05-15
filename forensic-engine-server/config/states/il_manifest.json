@@ -1,0 +1,92 @@
+{
+  "state": "IL",
+  "state_name": "Illinois",
+  "version": "1.0.0",
+  "schema": "luminari-registry-v1",
+  "date_created": "2026-03-08",
+  "layers": {
+    "layer0": "il_layer0_flags.json",
+    "layer1_programs": "il_programs.json",
+    "layer1_cards": "il_layer1_cards.json",
+    "layer2_workflows": "il_workflow_overrides.json",
+    "layer3_oversight": "il_oversight.json",
+    "help": "il_help.json",
+    "foia": "il_foia.json",
+    "tribal": "il_tribal_overrides.json",
+    "county": "il_county_overrides.json",
+    "pipeline_mappings": "il_pipeline_mappings.json",
+    "lens_mappings": "il_lens_mappings.json",
+    "workflow_mappings": "il_workflow_mappings.json"
+  },
+  "status": "active",
+  "validation_status": "complete",
+  "datasets": [
+    "programs",
+    "workflows",
+    "oversight",
+    "layer0_flags",
+    "layer1_cards",
+    "county_overrides",
+    "tribal_overrides",
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings",
+    "foia",
+    "help",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "civil_rights_violation",
+    "disability_rights",
+    "family_law",
+    "health_insurance_denial",
+    "medicaid_denial",
+    "snap_denial",
+    "tenant_rights",
+    "wage_theft",
+    "workplace_discrimination",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "benefits_agency",
+    "employer",
+    "family_court",
+    "insurer"
+  ],
+  "policy_flags": [
+    "il_snap_abawd_work_requirements_march_2026",
+    "illinois_medicaid_expanded",
+    "il_chicago_minimum_wage_higher_than_state",
+    "il_chicago_just_cause_eviction_ordinance",
+    "illinois_tanf_cash_assistance_warning",
+    "il_idhr_election_of_remedies",
+    "illinois_workers_compensation_mandatory",
+    "il_chicago_cooling_centers_utility_shutoff"
+  ],
+  "statistics": {
+    "programs": {
+      "total_programs": 22,
+      "categories": {
+        "community_navigation": 5,
+        "healthcare": 6,
+        "housing": 4,
+        "legal_aid": 4,
+        "children_families": 2,
+        "disability": 1
+      }
+    },
+    "workflows": {
+      "total_workflows": 4
+    },
+    "oversight": {
+      "total_oversight_bodies": 21,
+      "total_oversight_chains": 4
+    }
+  }
+}

@@ -1,0 +1,280 @@
+{
+  "meta": {
+    "state": "NY"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "state": "NY",
+      "oversight_entity_types": [
+        "consumer",
+        "disability",
+        "employment"
+      ],
+      "activation_threshold": 3,
+      "evidence_types": [
+        "complaint",
+        "report",
+        "documentation"
+      ]
+    },
+    {
+      "pipeline_id": "elder_abuse",
+      "state": "NY",
+      "oversight_entity_types": [
+        "consumer",
+        "disability",
+        "employment"
+      ],
+      "activation_threshold": 3,
+      "evidence_types": [
+        "complaint",
+        "report",
+        "documentation"
+      ]
+    },
+    {
+      "pipeline_id": "tenant_rights",
+      "state": "NY",
+      "oversight_entity_types": [
+        "consumer",
+        "disability",
+        "employment"
+      ],
+      "activation_threshold": 3,
+      "evidence_types": [
+        "complaint",
+        "report",
+        "documentation"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "state": "NY",
+      "oversight_entity_types": [
+        "consumer",
+        "disability",
+        "employment"
+      ],
+      "activation_threshold": 3,
+      "evidence_types": [
+        "complaint",
+        "report",
+        "documentation"
+      ]
+    },
+    {
+      "pipeline_id": "wage_theft",
+      "state": "NY",
+      "oversight_entity_types": [
+        "consumer",
+        "disability",
+        "employment"
+      ],
+      "activation_threshold": 3,
+      "evidence_types": [
+        "complaint",
+        "report",
+        "documentation"
+      ]
+    },
+    {
+      "pipeline_id": "workplace_discrimination",
+      "state": "NY",
+      "oversight_entity_types": [
+        "consumer",
+        "disability",
+        "employment"
+      ],
+      "activation_threshold": 3,
+      "evidence_types": [
+        "complaint",
+        "report",
+        "documentation"
+      ]
+    },
+    {
+      "pipeline_id": "consumer_fraud",
+      "state": "NY",
+      "oversight_entity_types": [
+        "consumer",
+        "disability",
+        "employment"
+      ],
+      "activation_threshold": 3,
+      "evidence_types": [
+        "complaint",
+        "report",
+        "documentation"
+      ]
+    },
+    {
+      "pipeline_id": "disability_rights",
+      "state": "NY",
+      "oversight_entity_types": [
+        "consumer",
+        "disability",
+        "employment"
+      ],
+      "activation_threshold": 3,
+      "evidence_types": [
+        "complaint",
+        "report",
+        "documentation"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ny_involuntary_hold_law",
+        "ny_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ny_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ny_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ny_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ny_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ny_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "ny_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ny_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ny_restraint_seclusion_limits",
+        "ny_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ny_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "ny_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ny_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

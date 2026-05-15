@@ -1,0 +1,296 @@
+{
+  "meta": {
+    "state": "SC",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "sc_south_carolina_snap_food_assistance_dss",
+        "sc_harvest_hope_food_bank_midlands_statewid",
+        "sc_lowcountry_food_bank_charleston_coastal_",
+        "sc_wic_south_carolina",
+        "sc_sc_medicaid_healthy_connections_scdhhs",
+        "sc_sc_appleseed_legal_justice_center_columb",
+        "sc_south_carolina_coalition_against_domesti",
+        "sc_sc_tanf_family_independence_dss",
+        "sc_sc_ui_dew_dept_of_employment_and_workfor",
+        "sc_sc_dss_administrative_appeals",
+        "sc_sc_dew_appeal_tribunal"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "civil_rights"
+      ],
+      "flags": [
+        "sc_minimum_wage_above_federal",
+        "sc_portability"
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "sc_sc_tanf_family_independence_dss"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "civil_rights"
+      ],
+      "flags": [
+        "sc_minimum_wage_above_federal",
+        "sc_portability"
+      ]
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "sc_south_carolina_snap_food_assistance_dss",
+        "sc_sc_lieap_energy_assistance_dss",
+        "sc_sc_human_affairs_commission_schac"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "civil_rights"
+      ],
+      "flags": [
+        "sc_minimum_wage_above_federal",
+        "sc_portability"
+      ]
+    },
+    {
+      "pipeline_id": "employment_dispute",
+      "programs": [
+        "sc_sc_ui_dew_dept_of_employment_and_workfor"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "civil_rights"
+      ],
+      "flags": [
+        "sc_minimum_wage_above_federal",
+        "sc_portability"
+      ]
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "sc_sc_state_housing_finance_and_development",
+        "sc_south_carolina_legal_services_scls"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "civil_rights"
+      ],
+      "flags": [
+        "sc_minimum_wage_above_federal",
+        "sc_portability"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "sc_sc_medicaid_healthy_connections_scdhhs",
+        "sc_musc_health_charleston_safety_net",
+        "sc_prisma_health_columbia_upstate_safety_ne",
+        "sc_sc_primary_health_care_association_fqhcs",
+        "sc_sea_island_comprehensive_health_care_cor",
+        "sc_sc_tanf_family_independence_dss",
+        "sc_catawba_indian_nation_social_services",
+        "sc_catawba_indian_nation_health_center",
+        "sc_sc_dhhs_medicaid_managed_care_grievances"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "civil_rights"
+      ],
+      "flags": [
+        "sc_minimum_wage_above_federal",
+        "sc_portability"
+      ]
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "sc_sc_tanf_family_independence_dss",
+        "sc_sc_lieap_energy_assistance_dss"
+      ],
+      "oversight_chains": [
+        "insurer",
+        "landlord",
+        "employer",
+        "civil_rights"
+      ],
+      "flags": [
+        "sc_minimum_wage_above_federal",
+        "sc_portability"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "sc_involuntary_hold_law",
+        "sc_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "sc_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "sc_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "sc_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "sc_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "sc_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "sc_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "sc_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "sc_restraint_seclusion_limits",
+        "sc_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "sc_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "sc_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "sc_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

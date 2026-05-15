@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "state": "CA",
+    "status": "placeholder",
+    "schema": "luminari-foia-v1"
+  },
+  "statute": {
+    "name": "California Public Records Act",
+    "citation": "California state law",
+    "response_deadline_days": 10,
+    "fee_waiver_available": true
+  },
+  "agencies": [
+    {
+      "agency_id": "ca_ag_cpra",
+      "name": "California Attorney General \u2014 Public Records",
+      "jurisdiction": "Statewide \u2014 enforcement of CA Public Records Act",
+      "phone": "916-445-9555",
+      "portal": "https://oag.ca.gov/government/public-records",
+      "request_method": "online_portal",
+      "response_deadline_days": 10,
+      "extension_allowed_days": 14,
+      "fee_structure": "No fees for electronic records; actual cost for copies",
+      "appeal_body": "Superior Court"
+    },
+    {
+      "agency_id": "ca_dhcs_records",
+      "name": "CA Dept of Health Care Services \u2014 Records",
+      "jurisdiction": "Medi-Cal program records, managed care plan data",
+      "phone": "916-445-4171",
+      "portal": "https://dhcs.ca.gov",
+      "request_method": "written_request",
+      "response_deadline_days": 10,
+      "extension_allowed_days": 14,
+      "fee_structure": "Standard CPRA fee schedule",
+      "appeal_body": "Superior Court"
+    },
+    {
+      "agency_id": "ca_dmhc_records",
+      "name": "CA Dept of Managed Health Care \u2014 Records",
+      "jurisdiction": "HMO regulatory records, IMR decisions, enforcement actions",
+      "phone": "888-466-2219",
+      "portal": "https://healthhelp.ca.gov",
+      "request_method": "online_portal",
+      "response_deadline_days": 10,
+      "extension_allowed_days": 14,
+      "fee_structure": "No fees for electronic records",
+      "appeal_body": "Superior Court"
+    },
+    {
+      "agency_id": "ca_cdi_records",
+      "name": "CA Dept of Insurance \u2014 Records",
+      "jurisdiction": "Insurance regulatory records, complaint data, enforcement actions",
+      "phone": "800-927-4357",
+      "portal": "https://insurance.ca.gov",
+      "request_method": "written_request",
+      "response_deadline_days": 10,
+      "extension_allowed_days": 14,
+      "fee_structure": "Standard CPRA fee schedule",
+      "appeal_body": "Superior Court"
+    },
+    {
+      "agency_id": "ca_dlse_records",
+      "name": "CA Division of Labor Standards Enforcement \u2014 Records",
+      "jurisdiction": "Wage theft complaints, employer violations, enforcement data",
+      "phone": "844-522-6734",
+      "portal": "https://dir.ca.gov/dlse",
+      "request_method": "written_request",
+      "response_deadline_days": 10,
+      "extension_allowed_days": 14,
+      "fee_structure": "Standard CPRA fee schedule",
+      "appeal_body": "Superior Court"
+    },
+    {
+      "agency_id": "ca_hcd_records",
+      "name": "CA Dept of Housing and Community Development \u2014 Records",
+      "jurisdiction": "Housing program data, code enforcement, mobilehome park records",
+      "phone": "916-263-2911",
+      "portal": "https://hcd.ca.gov",
+      "request_method": "written_request",
+      "response_deadline_days": 10,
+      "extension_allowed_days": 14,
+      "fee_structure": "Standard CPRA fee schedule",
+      "appeal_body": "Superior Court"
+    },
+    {
+      "agency_id": "ca_cdss_records",
+      "name": "CA Dept of Social Services \u2014 Records",
+      "jurisdiction": "CalWORKs, CalFresh, child welfare, APS program data",
+      "phone": "916-651-8848",
+      "portal": "https://cdss.ca.gov",
+      "request_method": "written_request",
+      "response_deadline_days": 10,
+      "extension_allowed_days": 14,
+      "fee_structure": "Standard CPRA fee schedule",
+      "appeal_body": "Superior Court"
+    }
+  ],
+  "structured_rules": [],
+  "appeals_workflow": {
+    "steps": []
+  },
+  "request_templates": []
+}

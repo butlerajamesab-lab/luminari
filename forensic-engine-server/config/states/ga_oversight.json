@@ -1,0 +1,341 @@
+{
+  "meta": {
+    "state": "GA",
+    "version": "3.0",
+    "chain_count": 4
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "insurer",
+      "state": "GA",
+      "bodies": [
+        {
+          "oversight_body": "Georgia Office of Insurance Commissioner",
+          "jurisdiction": "primary",
+          "phone": "800-656-2298",
+          "complaint_portal": "https://oci.georgia.gov",
+          "what_to_report": "Insurance regulation, claim denials",
+          "legal_threshold": "Primary insurance regulator",
+          "city": "Atlanta",
+          "state": "GA",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "GA Dept of Community Health",
+          "jurisdiction": "primary",
+          "phone": "800-766-4456",
+          "complaint_portal": "https://dch.georgia.gov",
+          "what_to_report": "Medicaid, PeachCare administration",
+          "legal_threshold": "Healthcare program oversight",
+          "city": "Atlanta",
+          "state": "GA",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Georgia Dept of Labor",
+          "jurisdiction": "primary",
+          "phone": "877-709-8185",
+          "complaint_portal": "https://www.dol.state.ga.us",
+          "what_to_report": "Employment, UI, wage enforcement",
+          "legal_threshold": "Labor law enforcement",
+          "city": "Atlanta",
+          "state": "GA",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Georgia Dept of Community Affairs",
+          "jurisdiction": "primary",
+          "phone": "404-679-4940",
+          "complaint_portal": "https://www.dca.ga.gov",
+          "what_to_report": "Housing programs, fair housing",
+          "legal_threshold": "Housing program administration",
+          "city": "Atlanta",
+          "state": "GA",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Georgia Public Service Commission",
+          "jurisdiction": "primary",
+          "phone": "404-656-4501",
+          "complaint_portal": "https://psc.ga.gov",
+          "what_to_report": "Utility regulation",
+          "legal_threshold": "Utility rate and shutoff regulation",
+          "city": "Atlanta",
+          "state": "GA",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "employer",
+      "state": "GA",
+      "bodies": [
+        {
+          "oversight_body": "Georgia Attorney General",
+          "jurisdiction": "primary",
+          "phone": "404-651-8600",
+          "complaint_portal": "https://law.georgia.gov",
+          "what_to_report": "Consumer protection",
+          "legal_threshold": "Consumer fraud enforcement",
+          "city": "Atlanta",
+          "state": "GA",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "benefits_agency",
+      "state": "GA",
+      "bodies": [
+        {
+          "oversight_body": "DFCS Office of Inspector General",
+          "jurisdiction": "primary",
+          "phone": "877-423-4746",
+          "complaint_portal": "https://dfcs.georgia.gov",
+          "what_to_report": "Benefits fraud and abuse",
+          "legal_threshold": "DFCS program integrity",
+          "city": "Atlanta",
+          "state": "GA",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Georgia Commission on Human Relations",
+          "jurisdiction": "primary",
+          "phone": "404-656-1736",
+          "complaint_portal": "",
+          "what_to_report": "Discrimination complaints",
+          "legal_threshold": "Civil rights enforcement (limited)",
+          "city": "Atlanta",
+          "state": "GA",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "HUD Atlanta Regional Office",
+          "jurisdiction": "primary",
+          "phone": "404-331-5136",
+          "complaint_portal": "https://www.hud.gov",
+          "what_to_report": "Federal housing discrimination",
+          "legal_threshold": "Fair Housing Act enforcement",
+          "city": "Atlanta",
+          "state": "GA",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC Atlanta District Office",
+          "jurisdiction": "primary",
+          "phone": "800-669-4000",
+          "complaint_portal": "https://www.eeoc.gov",
+          "what_to_report": "Federal employment discrimination",
+          "legal_threshold": "Title VII, ADA enforcement",
+          "city": "Atlanta",
+          "state": "GA",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "US DOL Wage & Hour (Atlanta)",
+          "jurisdiction": "primary",
+          "phone": "404-893-4525",
+          "complaint_portal": "https://www.dol.gov/agencies/whd",
+          "what_to_report": "Federal wage theft, FLSA",
+          "legal_threshold": "FLSA enforcement \u2014 primary mechanism since GA has no state wage law above federal",
+          "city": "Atlanta",
+          "state": "GA",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "law_enforcement",
+      "state": "GA",
+      "bodies": [
+        {
+          "oversight_body": "Georgia State Auditor",
+          "jurisdiction": "primary",
+          "phone": "404-656-2174",
+          "complaint_portal": "https://www.audits.ga.gov",
+          "what_to_report": "State agency audits",
+          "legal_threshold": "Performance and financial audits",
+          "city": "Atlanta",
+          "state": "GA",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "ga_med_board",
+          "name": "Georgia Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Georgia Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "GA"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "ga_patient_adv",
+          "name": "Georgia Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Georgia Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "GA"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "ga_health_dept",
+          "name": "Georgia Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Georgia Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "GA"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "GA"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "ga_pharm_board",
+          "name": "Georgia Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Georgia Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "GA"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "ga_pa",
+          "name": "Georgia Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Georgia Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "GA"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "ga_mha",
+          "name": "Georgia Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Georgia Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "GA"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "GA"
+    }
+  ]
+}

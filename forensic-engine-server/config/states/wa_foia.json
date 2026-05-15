@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "state": "WA",
+    "status": "placeholder",
+    "schema": "luminari-foia-v1"
+  },
+  "statute": {
+    "name": "Washington Public Records Act",
+    "citation": "Washington state law",
+    "response_deadline_days": 5,
+    "fee_waiver_available": true
+  },
+  "agencies": [],
+  "structured_rules": [],
+  "appeals_workflow": {
+    "steps": []
+  },
+  "request_templates": []
+}

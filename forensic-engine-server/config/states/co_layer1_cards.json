@@ -1,0 +1,318 @@
+{
+  "meta": {
+    "state": "CO",
+    "version": "3.0",
+    "cluster_count": 7
+  },
+  "clusters": [
+    {
+      "cluster_id": "co_benefits",
+      "cluster_label": "Benefits",
+      "cards": [
+        {
+          "card_id": "colorado_snap_food_assistance",
+          "title": "Colorado SNAP / Food Assistance",
+          "phone": "303-866-5700",
+          "website": "peak.colorado.gov",
+          "notes": "Provides food assistance to low-income individuals and families."
+        },
+        {
+          "card_id": "co_food_bank_of_the_rockies",
+          "title": "Food Bank of the Rockies",
+          "phone": "303-371-9250",
+          "website": "foodbankrockies.org",
+          "notes": "The largest food bank in Colorado, serving a 31-county area and partnering with over 800 agencies."
+        },
+        {
+          "card_id": "co_care_and_share_food_bank",
+          "title": "Care and Share Food Bank",
+          "phone": "719-528-1247",
+          "website": "careandshare.org",
+          "notes": "Primary food bank for southern Colorado, serving a 21-county area."
+        },
+        {
+          "card_id": "co_wic_colorado",
+          "title": "WIC Colorado",
+          "phone": "303-692-2300",
+          "website": "cdphe.colorado.gov/wic",
+          "notes": "Provides supplemental nutrition for pregnant and postpartum women, infants, and children under 5."
+        },
+        {
+          "card_id": "colorado_works_tanf",
+          "title": "Colorado Works (TANF)",
+          "phone": "303-866-5700",
+          "website": "colorado.gov/cdhs",
+          "notes": "Provides cash assistance to families with children, with a 60-month lifetime limit."
+        },
+        {
+          "card_id": "colorado_leap",
+          "title": "Colorado LEAP (Low-Income Energy Assistance Program)",
+          "phone": "866-432-8435",
+          "website": "cdhs.colorado.gov/leap",
+          "notes": "Provides assistance with heating and cooling costs, crisis shutoff prevention, and weatherization."
+        }
+      ]
+    },
+    {
+      "cluster_id": "co_health",
+      "cluster_label": "Health",
+      "cards": [
+        {
+          "card_id": "co_health_first_colorado",
+          "title": "Health First Colorado (Medicaid)",
+          "phone": "800-221-3943",
+          "website": "colorado.gov/hcpf",
+          "notes": "Colorado's Medicaid program, providing comprehensive health coverage to low-income adults and children."
+        },
+        {
+          "card_id": "co_denver_health",
+          "title": "Denver Health",
+          "phone": "303-436-6000",
+          "website": "denverhealth.org",
+          "notes": "Denver's public hospital and FQHC network, serving as the primary safety net for uninsured and underinsured residents."
+        },
+        {
+          "card_id": "co_uc_health_university_of_colorado_hospital",
+          "title": "UC Health / University of Colorado Hospital",
+          "phone": "720-848-0000",
+          "website": "uchealth.org",
+          "notes": "Academic medical center providing healthcare services and financial assistance to uninsured patients."
+        },
+        {
+          "card_id": "colorado_community_health_network",
+          "title": "Colorado Community Health Network (FQHCs Statewide)",
+          "phone": "303-861-5165",
+          "website": "cchn.org",
+          "notes": "Network of over 20 FQHCs with more than 180 sites across Colorado, providing care regardless of insurance status."
+        }
+      ]
+    },
+    {
+      "cluster_id": "co_housing",
+      "cluster_label": "Housing",
+      "cards": [
+        {
+          "card_id": "colorado_division_of_housing",
+          "title": "Colorado Division of Housing (DOH) / CDHS",
+          "phone": "303-864-7810",
+          "website": "cdola.colorado.gov/housing",
+          "notes": "State-level coordination of emergency rental assistance, HOME program, and state-funded emergency housing."
+        },
+        {
+          "card_id": "colorado_coalition_for_the_homeless",
+          "title": "Colorado Coalition for the Homeless (CCH)",
+          "phone": "303-595-9561",
+          "website": "coloradocoalition.org",
+          "notes": "The largest homeless services provider in Colorado, offering shelter, transitional housing, permanent supportive housing, health care, and legal services."
+        },
+        {
+          "card_id": "co_denver_rescue_mission",
+          "title": "Denver Rescue Mission",
+          "phone": "303-297-1815",
+          "website": "denverrescuemission.org",
+          "notes": "The largest emergency shelter in Denver, providing meals, recovery services, and case management."
+        }
+      ]
+    },
+    {
+      "cluster_id": "co_civil_rights",
+      "cluster_label": "Civil Rights",
+      "cards": [
+        {
+          "card_id": "colorado_legal_services",
+          "title": "Colorado Legal Services (CLS)",
+          "phone": "303-837-1313",
+          "website": "coloradolegalservices.org",
+          "notes": "Statewide legal aid with a focus on housing, family, benefits, DV, consumer, and immigration issues."
+        },
+        {
+          "card_id": "colorado_dv_hotline_ccadv",
+          "title": "Colorado DV Hotline / CCADV",
+          "phone": "303-831-9959",
+          "website": "ccadv.org",
+          "notes": "24/7 statewide hotline for crisis support, shelter referral, and safety planning."
+        },
+        {
+          "card_id": "co_safehouse_denver",
+          "title": "SafeHouse Denver",
+          "phone": "303-318-9989",
+          "website": "safehousedenver.org",
+          "notes": "Primary Denver domestic violence shelter, providing emergency shelter, counseling, legal advocacy, and transitional housing."
+        },
+        {
+          "card_id": "colorado_lawyers_committee_metro_volunteer_lawyers",
+          "title": "Colorado Lawyer's Committee / Metro Volunteer Lawyers",
+          "phone": "303-825-1097",
+          "website": "coloradolawyerscommittee.org",
+          "notes": "Pro bono legal services for civil rights, discrimination, housing, and immigration cases."
+        }
+      ]
+    },
+    {
+      "cluster_id": "co_immigration",
+      "cluster_label": "Immigration",
+      "cards": [
+        {
+          "card_id": "co_cair_coalition_colorado_rocky_mountain_immigrant_advocacy_network",
+          "title": "CAIR Coalition Colorado / Rocky Mountain Immigrant Advocacy Network (RMIAN)",
+          "phone": "303-433-2812",
+          "website": "rmian.org",
+          "notes": "Primary immigration legal services provider in Colorado, offering representation to immigrants and detained individuals."
+        }
+      ]
+    },
+    {
+      "cluster_id": "co_employment",
+      "cluster_label": "Employment",
+      "cards": [
+        {
+          "card_id": "colorado_ui",
+          "title": "Colorado UI",
+          "phone": "303-318-9000",
+          "website": "myui.colorado.gov",
+          "notes": "Provides unemployment insurance benefits to workers who have lost their jobs through no fault of their own."
+        }
+      ]
+    },
+    {
+      "cluster_id": "co_consumer",
+      "cluster_label": "Consumer",
+      "cards": [
+        {
+          "card_id": "colorado_puc",
+          "title": "Colorado PUC (Public Utilities Commission)",
+          "phone": "303-894-2000",
+          "website": "puc.colorado.gov",
+          "notes": "Handles utility shutoff complaints and enforces winter shutoff protection."
+        }
+      ]
+    },
+    {
+      "cluster_id": "co_mental_health",
+      "cluster_name": "Mental Health System",
+      "icon": "brain",
+      "cards": [
+        {
+          "card_id": "co_mh_crisis_line",
+          "title": "988 Suicide & Crisis Lifeline",
+          "summary": "Call or text 988 for immediate mental health crisis support. Free, confidential, 24/7. Trained counselors can help with suicidal thoughts, emotional distress, substance use, and mental health crises. Also available via chat at 988lifeline.org.",
+          "who_qualifies": "Anyone experiencing a mental health crisis, suicidal thoughts, or emotional distress.",
+          "how_to_access": "Call or text 988. Chat at 988lifeline.org. For veterans, press 1 after dialing 988.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "co_mh_nami",
+          "title": "NAMI Helpline & Support Groups",
+          "summary": "National Alliance on Mental Illness provides free peer support, education, and advocacy. NAMI HelpLine: 1-800-950-NAMI (6264). Family-to-Family program helps families understand mental health conditions and navigate the system.",
+          "who_qualifies": "Individuals with mental health conditions and their family members.",
+          "how_to_access": "Call 1-800-950-NAMI or text 'HELPLINE' to 62640. Find local NAMI affiliate at nami.org/find-support.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "co_mh_protection_advocacy",
+          "title": "Protection & Advocacy Organization",
+          "summary": "Every state has a federally mandated Protection & Advocacy (P&A) organization with legal authority to investigate abuse and neglect in psychiatric facilities. P&A organizations can enter any facility, access records, and file lawsuits. This is often the most powerful tool available for people harmed in the mental health system.",
+          "who_qualifies": "Anyone with a disability who has experienced abuse, neglect, or rights violations in a facility.",
+          "how_to_access": "Find your state P&A at ndrn.org/about/ndrn-member-agencies/ or call the NDRN at 202-408-9514.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "co_mh_know_your_rights",
+          "title": "Know Your Rights: Colorado 72-Hour Hold",
+          "summary": "If you are placed on an involuntary hold in CO, you have rights: the initial hold cannot exceed 72 hours without a court hearing. You have the right to an attorney at the hearing. You have the right to present evidence and call witnesses. You have the right to an independent psychiatric evaluation. You can challenge the hold at any time.",
+          "who_qualifies": "Anyone placed on an involuntary psychiatric hold or facing commitment proceedings.",
+          "how_to_access": "Request to speak with the patient advocate. Ask for a copy of your patient rights. Contact your state's Protection & Advocacy organization.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "co_mh_records_rights",
+          "title": "Your Right to Your Psychiatric Records",
+          "summary": "Under HIPAA (45 CFR \u00a7 164.524), you have the right to access your complete medical record, including psychiatric treatment records. The facility must respond within 30 days. If they deny access, you can file a complaint with HHS Office for Civil Rights. Under HIPAA \u00a7 164.526, you also have the right to request amendments to inaccurate records.",
+          "who_qualifies": "Any current or former psychiatric patient.",
+          "how_to_access": "Submit a written request to the facility's Health Information Management department. If denied, file complaint at hhs.gov/ocr.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "co_mh_samhsa",
+          "title": "SAMHSA National Helpline",
+          "summary": "Free, confidential, 24/7 treatment referral and information service for mental health and substance use disorders. Available in English and Spanish. Provides referrals to local treatment facilities, support groups, and community-based organizations.",
+          "who_qualifies": "Anyone seeking mental health or substance use treatment information and referrals.",
+          "how_to_access": "Call 1-800-662-HELP (4357) or visit findtreatment.gov.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        }
+      ]
+    }
+  ]
+}

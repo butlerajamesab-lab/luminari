@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "state": "CT",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "ct_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "ct_husky_health_ct_medicaid_dss",
+        "ct_hartford_healthcare_hartford_hospital_ha",
+        "ct_ct_community_health_centers_fqhcs",
+        "ct_mashantucket_pequot_tribal_nation_social",
+        "ct_mohegan_tribe_social_services"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ct_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "ct_connecticut_legal_services_statewide",
+        "ct_make_the_road_ct_danbury_immigrant_servi"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ct_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "ct_ct_housing_finance_authority_chfa",
+        "ct_ct_dv_hotline_ctcadv"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ct_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "ct_ct_snap_connect_dss",
+        "ct_ct_food_bank_foodshare_statewide",
+        "ct_wic_connecticut"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ct_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "ct_yale_new_haven_hospital_bridgeport_hospi"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ct_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "ct_ct_tfa_tanf_dss",
+        "ct_connecticut_ui_ctdol",
+        "ct_ct_liheap_energy_assistance_dss"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,564 @@
+{
+  "meta": {
+    "state": "PA",
+    "state_name": "Pennsylvania",
+    "schema_version": "1.0.0",
+    "last_updated": "2026-03-06",
+    "description": "Layer 1 help cards \u2014 problem-cluster-organized guidance cards with routing rules"
+  },
+  "clusters": [
+    {
+      "cluster_id": "pa_food",
+      "cluster_name": "Food Assistance",
+      "icon": "utensils",
+      "cards": [
+        {
+          "card_id": "pa_food_snap_apply",
+          "title": "Apply for SNAP (Food Stamps)",
+          "summary": "Pennsylvania SNAP uses Broad-Based Categorical Eligibility \u2014 gross income limit is 200% FPL with no asset test. Apply online through COMPASS. Benefits loaded to EBT card monthly.",
+          "who_qualifies": "Gross income at or below 200% FPL. No asset test for most households. Students, elderly, and disabled have special provisions.",
+          "how_to_apply": "Apply online at compass.state.pa.us, by phone, or in person at County Assistance Office (CAO).",
+          "phone": "877-395-8930",
+          "website": "https://www.compass.state.pa.us",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income (pay stubs, SSI letter)",
+            "Proof of residence",
+            "Social Security numbers",
+            "Utility bills"
+          ],
+          "program_ids": [
+            "pa_snap"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "food",
+            "snap",
+            "ebt",
+            "hungry",
+            "groceries"
+          ]
+        },
+        {
+          "card_id": "pa_food_emergency",
+          "title": "Emergency Food \u2014 Food Banks & Pantries",
+          "summary": "Walk-in food pantries and mobile distributions available statewide. No income verification at most locations. Feeding Pennsylvania network covers all 67 counties.",
+          "who_qualifies": "Anyone in need. No income verification at most pantries.",
+          "how_to_apply": "Call 211 or visit feedingpa.org to find nearest pantry. Walk in during operating hours.",
+          "phone": "211",
+          "website": "https://www.feedingpa.org",
+          "documents_needed": [
+            "Photo ID (some locations)",
+            "Proof of address (some locations)"
+          ],
+          "program_ids": [
+            "pa_philabundance",
+            "pa_greater_pittsburgh_food_bank",
+            "pa_central_pa_food_bank"
+          ],
+          "urgency": "immediate",
+          "routing_tags": [
+            "food",
+            "hungry",
+            "emergency",
+            "pantry",
+            "food bank"
+          ]
+        },
+        {
+          "card_id": "pa_food_wic",
+          "title": "WIC \u2014 Women, Infants & Children",
+          "summary": "Supplemental nutrition for pregnant/postpartum women, infants, and children under 5. PA WIC provides eWIC card for approved food items plus nutrition counseling.",
+          "who_qualifies": "Pregnant, postpartum, breastfeeding women, infants, and children under 5. Income at or below 185% FPL.",
+          "how_to_apply": "Contact local WIC office. Find locations at pawic.com or call PA WIC hotline.",
+          "phone": "800-942-9467",
+          "website": "https://www.pawic.com",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "Proof of residence",
+            "Child immunization records"
+          ],
+          "program_ids": [
+            "pa_wic"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "food",
+            "wic",
+            "pregnant",
+            "baby",
+            "infant",
+            "children"
+          ]
+        }
+      ]
+    },
+    {
+      "cluster_id": "pa_healthcare",
+      "cluster_name": "Healthcare Access",
+      "icon": "heart-pulse",
+      "cards": [
+        {
+          "card_id": "pa_health_medicaid",
+          "title": "PA Medicaid (HealthChoices)",
+          "summary": "Pennsylvania Medicaid provides comprehensive coverage through HealthChoices managed care plans. Covers medical, dental, vision, behavioral health, and substance use treatment. Presumptive eligibility available for immediate temporary coverage.",
+          "who_qualifies": "Adults 19-64 at or below 138% FPL. Children under 19 through CHIP (up to 300% FPL). Pregnant women up to 220% FPL.",
+          "how_to_apply": "Apply at compass.state.pa.us, by phone, or at County Assistance Office.",
+          "phone": "866-550-4355",
+          "website": "https://www.compass.state.pa.us",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "Social Security number",
+            "Proof of residence"
+          ],
+          "program_ids": [
+            "pa_medicaid"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "healthcare",
+            "medicaid",
+            "insurance",
+            "doctor",
+            "hospital"
+          ]
+        },
+        {
+          "card_id": "pa_health_chip",
+          "title": "CHIP \u2014 Children's Health Insurance",
+          "summary": "PA CHIP covers children under 19 in families with income too high for Medicaid but who cannot afford private insurance. Free for families under 200% FPL; low-cost for families 200-300% FPL.",
+          "who_qualifies": "Children under 19 not eligible for Medicaid. Family income up to 300% FPL. No asset test.",
+          "how_to_apply": "Apply at compass.state.pa.us or call CHIP hotline.",
+          "phone": "800-986-5437",
+          "website": "https://www.chipcoverspakids.com",
+          "documents_needed": [
+            "Child's Social Security number",
+            "Proof of family income",
+            "Proof of residence"
+          ],
+          "program_ids": [
+            "pa_chip"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "healthcare",
+            "children",
+            "chip",
+            "insurance",
+            "kids"
+          ]
+        },
+        {
+          "card_id": "pa_health_mental",
+          "title": "Mental Health & Crisis Services",
+          "summary": "PA provides crisis intervention through county-based crisis services, 988 Suicide & Crisis Lifeline, and community behavioral health centers. No insurance required for crisis services.",
+          "who_qualifies": "Anyone experiencing mental health crisis. Ongoing services based on income and insurance.",
+          "how_to_apply": "Crisis: Call 988 or local county crisis line. Non-crisis: Contact county behavioral health office.",
+          "phone": "988",
+          "website": "https://www.dhs.pa.gov/Services/Mental-Health-In-PA/Pages/default.aspx",
+          "documents_needed": [
+            "Photo ID (for ongoing services)",
+            "Insurance card (if applicable)"
+          ],
+          "program_ids": [
+            "pa_crisis_services",
+            "pa_community_behavioral_health"
+          ],
+          "urgency": "immediate",
+          "routing_tags": [
+            "mental health",
+            "crisis",
+            "counseling",
+            "depression",
+            "anxiety",
+            "suicide"
+          ]
+        }
+      ]
+    },
+    {
+      "cluster_id": "pa_housing_utilities",
+      "cluster_name": "Housing & Utilities",
+      "icon": "home",
+      "cards": [
+        {
+          "card_id": "pa_housing_emergency",
+          "title": "Emergency Shelter & Homeless Services",
+          "summary": "Emergency shelters and rapid rehousing available through county-based Homeless Assistance Programs (HAP). Call 211 for immediate placement.",
+          "who_qualifies": "Anyone experiencing homelessness or imminent risk. Priority for families, veterans, and DV survivors.",
+          "how_to_apply": "Call 211 or contact county HAP office.",
+          "phone": "211",
+          "website": "https://www.dhs.pa.gov/Services/Assistance/Pages/Homeless-Assistance.aspx",
+          "documents_needed": [
+            "Photo ID (helpful but not required)"
+          ],
+          "program_ids": [
+            "pa_hap"
+          ],
+          "urgency": "immediate",
+          "routing_tags": [
+            "housing",
+            "homeless",
+            "shelter",
+            "emergency"
+          ]
+        },
+        {
+          "card_id": "pa_housing_tenant_rights",
+          "title": "Tenant Rights & Eviction Defense",
+          "summary": "PA Landlord-Tenant Act (68 Pa.C.S. \u00a7250) protects tenants. Philadelphia has Right to Counsel for low-income tenants facing eviction. Statewide legal aid available for eviction defense.",
+          "who_qualifies": "Any PA tenant facing eviction, habitability issues, or landlord disputes. Philadelphia: Right to Counsel for income-eligible tenants.",
+          "how_to_apply": "Philadelphia: Contact PLA (215-981-3800). Statewide: Contact local legal aid or call PA 211.",
+          "phone": "215-981-3800",
+          "website": "https://www.philalegal.org",
+          "documents_needed": [
+            "Lease agreement",
+            "Eviction notice",
+            "Photos of issues",
+            "Communication records"
+          ],
+          "program_ids": [
+            "pa_pla",
+            "pa_legal_aid"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "housing",
+            "tenant",
+            "eviction",
+            "landlord",
+            "lease",
+            "repair"
+          ]
+        },
+        {
+          "card_id": "pa_utilities_liheap",
+          "title": "LIHEAP \u2014 Utility Assistance",
+          "summary": "PA LIHEAP provides cash grants for heating bills (Nov\u2013Apr) and crisis grants for utility emergencies. Also funds weatherization services.",
+          "who_qualifies": "Income at or below 150% FPL. Must be responsible for heating costs.",
+          "how_to_apply": "Apply at compass.state.pa.us or at County Assistance Office.",
+          "phone": "866-857-7095",
+          "website": "https://www.compass.state.pa.us",
+          "documents_needed": [
+            "Photo ID",
+            "Social Security cards",
+            "Proof of income",
+            "Recent utility bill"
+          ],
+          "program_ids": [
+            "pa_liheap"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "utilities",
+            "electric",
+            "gas",
+            "heating",
+            "liheap",
+            "shutoff"
+          ]
+        }
+      ]
+    },
+    {
+      "cluster_id": "pa_dv_safety",
+      "cluster_name": "Domestic Violence & Safety",
+      "icon": "shield",
+      "cards": [
+        {
+          "card_id": "pa_dv_crisis",
+          "title": "DV Crisis Hotline & Immediate Safety",
+          "summary": "24/7 crisis support through PCADV statewide hotline and local DV programs. Confidential safety planning, emergency shelter, and legal advocacy.",
+          "who_qualifies": "Anyone experiencing domestic violence, sexual assault, or stalking. No income or immigration requirements.",
+          "how_to_apply": "Call PCADV hotline or National DV Hotline. Confidential. No appointment needed.",
+          "phone": "800-799-7233",
+          "website": "https://www.pcadv.org",
+          "documents_needed": [
+            "None required for crisis services"
+          ],
+          "program_ids": [
+            "pa_pcadv",
+            "pa_ndvh"
+          ],
+          "urgency": "immediate",
+          "routing_tags": [
+            "domestic violence",
+            "abuse",
+            "safety",
+            "shelter",
+            "crisis",
+            "dv"
+          ]
+        },
+        {
+          "card_id": "pa_dv_pfa",
+          "title": "Protection From Abuse (PFA) Order",
+          "summary": "PA Protection From Abuse Act (23 Pa.C.S. \u00a76101) provides emergency and final PFA orders. Temporary PFA issued same day. Covers physical abuse, sexual violence, stalking, and harassment by family/household members.",
+          "who_qualifies": "Any person abused by a family/household member, intimate partner, or co-parent.",
+          "how_to_apply": "File petition at county courthouse. Free filing. Victim advocates available to assist. Available 24/7 through emergency PFA process.",
+          "phone": "800-799-7233",
+          "website": "https://www.pcadv.org/find-help/",
+          "documents_needed": [
+            "Photo ID",
+            "Documentation of abuse (police reports, photos, medical records)",
+            "Abuser's identifying information"
+          ],
+          "program_ids": [
+            "pa_pfa"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "protection order",
+            "pfa",
+            "domestic violence",
+            "abuse",
+            "court"
+          ]
+        },
+        {
+          "card_id": "pa_dv_legal",
+          "title": "DV Legal Advocacy & Representation",
+          "summary": "Free legal representation for DV survivors in PFA orders, custody, divorce, immigration relief (VAWA/U-visa), and housing. Available through legal aid and DV agencies statewide.",
+          "who_qualifies": "DV survivors. Income guidelines apply for legal aid (typically 125-200% FPL). DV agency advocates available regardless of income.",
+          "how_to_apply": "Philadelphia: Women Against Abuse Legal Center (215-386-1280). Pittsburgh: Neighborhood Legal Services (412-255-6700). Statewide: Contact local PCADV member program.",
+          "phone": "215-386-1280",
+          "website": "https://www.womenagainstabuse.org",
+          "documents_needed": [
+            "Documentation of DV",
+            "Income verification (for legal aid)",
+            "Immigration documents (for VAWA/U-visa)"
+          ],
+          "program_ids": [
+            "pa_waa_legal",
+            "pa_nls_dv"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "legal",
+            "domestic violence",
+            "custody",
+            "divorce",
+            "vawa",
+            "u-visa"
+          ]
+        }
+      ]
+    },
+    {
+      "cluster_id": "pa_legal",
+      "cluster_name": "Legal Aid & Rights",
+      "icon": "scale",
+      "cards": [
+        {
+          "card_id": "pa_legal_aid_general",
+          "title": "Free Legal Aid \u2014 Civil Matters",
+          "summary": "Pennsylvania has robust legal aid: Community Legal Services (Philadelphia), Neighborhood Legal Services (Pittsburgh), MidPenn Legal Services (central PA), and Legal Aid of Southeastern PA. Covers housing, benefits, family law, consumer, and employment.",
+          "who_qualifies": "Income at or below 125-200% FPL depending on program. Priority for seniors, veterans, DV survivors.",
+          "how_to_apply": "Call local legal aid intake line. Online applications available at most programs.",
+          "phone": "215-981-3700",
+          "website": "https://www.clsphila.org",
+          "documents_needed": [
+            "Photo ID",
+            "Proof of income",
+            "Documents related to legal issue"
+          ],
+          "program_ids": [
+            "pa_cls",
+            "pa_nls",
+            "pa_midpenn",
+            "pa_lasp"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "legal",
+            "lawyer",
+            "attorney",
+            "free legal",
+            "legal aid"
+          ]
+        },
+        {
+          "card_id": "pa_legal_wage_theft",
+          "title": "Wage Theft & Employment Rights",
+          "summary": "File wage claims with PA Department of Labor & Industry. PA Wage Payment and Collection Law provides 25% liquidated damages plus attorney's fees. 3-year statute of limitations.",
+          "who_qualifies": "Any worker in PA regardless of immigration status.",
+          "how_to_apply": "File complaint online with PA L&I or contact legal aid for representation.",
+          "phone": "717-787-4671",
+          "website": "https://www.dli.pa.gov/Individuals/Labor-Management-Relations/llc/Pages/Wage-Complaint-Form.aspx",
+          "documents_needed": [
+            "Pay stubs",
+            "Time records",
+            "Employment contract",
+            "Bank statements"
+          ],
+          "program_ids": [
+            "pa_dli_wage_claim"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "wage theft",
+            "unpaid wages",
+            "overtime",
+            "minimum wage",
+            "employment"
+          ]
+        },
+        {
+          "card_id": "pa_legal_benefits_appeal",
+          "title": "Benefits Denial Appeal Process",
+          "summary": "If denied SNAP, Medicaid, TANF, or other DHS benefits, request a fair hearing within 30 days of adverse action (90 days for SNAP). Legal aid can represent at hearing.",
+          "who_qualifies": "Anyone denied, reduced, or terminated from a DHS-administered benefit program.",
+          "how_to_apply": "Request fair hearing in writing to PA DHS Bureau of Hearings and Appeals. Legal aid can assist.",
+          "phone": "717-787-3481",
+          "website": "https://www.dhs.pa.gov/Services/Assistance/Pages/Fair-Hearing.aspx",
+          "documents_needed": [
+            "Denial/termination notice",
+            "Application documents",
+            "Income verification"
+          ],
+          "program_ids": [
+            "pa_dhs_fair_hearing"
+          ],
+          "urgency": "urgent",
+          "routing_tags": [
+            "benefits",
+            "denied",
+            "appeal",
+            "fair hearing",
+            "snap denied",
+            "medicaid denied"
+          ]
+        }
+      ]
+    },
+    {
+      "cluster_id": "pa_mental_health",
+      "cluster_name": "Mental Health System",
+      "icon": "brain",
+      "cards": [
+        {
+          "card_id": "pa_mh_crisis_line",
+          "title": "988 Suicide & Crisis Lifeline",
+          "summary": "Call or text 988 for immediate mental health crisis support. Free, confidential, 24/7. Trained counselors can help with suicidal thoughts, emotional distress, substance use, and mental health crises. Also available via chat at 988lifeline.org.",
+          "who_qualifies": "Anyone experiencing a mental health crisis, suicidal thoughts, or emotional distress.",
+          "how_to_access": "Call or text 988. Chat at 988lifeline.org. For veterans, press 1 after dialing 988.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "pa_mh_nami",
+          "title": "NAMI Helpline & Support Groups",
+          "summary": "National Alliance on Mental Illness provides free peer support, education, and advocacy. NAMI HelpLine: 1-800-950-NAMI (6264). Family-to-Family program helps families understand mental health conditions and navigate the system.",
+          "who_qualifies": "Individuals with mental health conditions and their family members.",
+          "how_to_access": "Call 1-800-950-NAMI or text 'HELPLINE' to 62640. Find local NAMI affiliate at nami.org/find-support.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "pa_mh_protection_advocacy",
+          "title": "Protection & Advocacy Organization",
+          "summary": "Every state has a federally mandated Protection & Advocacy (P&A) organization with legal authority to investigate abuse and neglect in psychiatric facilities. P&A organizations can enter any facility, access records, and file lawsuits. This is often the most powerful tool available for people harmed in the mental health system.",
+          "who_qualifies": "Anyone with a disability who has experienced abuse, neglect, or rights violations in a facility.",
+          "how_to_access": "Find your state P&A at ndrn.org/about/ndrn-member-agencies/ or call the NDRN at 202-408-9514.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "pa_mh_know_your_rights",
+          "title": "Know Your Rights: Pennsylvania Section 302",
+          "summary": "If you are placed on an involuntary hold in PA, you have rights: the initial hold cannot exceed 120 hours without a court hearing. You have the right to an attorney at the hearing. You have the right to present evidence and call witnesses. You have the right to an independent psychiatric evaluation. You can challenge the hold at any time.",
+          "who_qualifies": "Anyone placed on an involuntary psychiatric hold or facing commitment proceedings.",
+          "how_to_access": "Request to speak with the patient advocate. Ask for a copy of your patient rights. Contact your state's Protection & Advocacy organization.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "pa_mh_records_rights",
+          "title": "Your Right to Your Psychiatric Records",
+          "summary": "Under HIPAA (45 CFR \u00a7 164.524), you have the right to access your complete medical record, including psychiatric treatment records. The facility must respond within 30 days. If they deny access, you can file a complaint with HHS Office for Civil Rights. Under HIPAA \u00a7 164.526, you also have the right to request amendments to inaccurate records.",
+          "who_qualifies": "Any current or former psychiatric patient.",
+          "how_to_access": "Submit a written request to the facility's Health Information Management department. If denied, file complaint at hhs.gov/ocr.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        },
+        {
+          "card_id": "pa_mh_samhsa",
+          "title": "SAMHSA National Helpline",
+          "summary": "Free, confidential, 24/7 treatment referral and information service for mental health and substance use disorders. Available in English and Spanish. Provides referrals to local treatment facilities, support groups, and community-based organizations.",
+          "who_qualifies": "Anyone seeking mental health or substance use treatment information and referrals.",
+          "how_to_access": "Call 1-800-662-HELP (4357) or visit findtreatment.gov.",
+          "category": "mental_health",
+          "program_ids": [
+            "samhsa_helpline",
+            "nami_helpline",
+            "crisis_988"
+          ],
+          "urgency": "standard",
+          "routing_tags": [
+            "mental_health",
+            "patient_advocacy"
+          ],
+          "region": "statewide",
+          "federal_interface": "SAMHSA Block Grant"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,231 @@
+{
+  "meta": {
+    "state": "MN",
+    "version": "3.0",
+    "flag_count": 8
+  },
+  "flags": [
+    {
+      "flag_id": "mn_minnesota_snap_abawd",
+      "severity": "alert",
+      "title": "Minnesota SNAP ABAWD \u2014 Active Statewide, Partial County Waivers",
+      "summary": "Minnesota SNAP ABAWD work requirements are active for most of the state. Some counties with higher unemployment rates may qualify for geographic exemptions. Minneapolis and Saint Paul are generally not waived. Surface exemptions aggressively: disability documentation, caregiving, pregnancy, enrollment in education or job training. SNAP Employment and Training (E&T) program is the primary waiver pathway.",
+      "affected_programs": [
+        "minnesota_snap_food_support"
+      ],
+      "effective_date": "Active"
+    },
+    {
+      "flag_id": "mn_minnesota_minnesotacare",
+      "severity": "info",
+      "title": "Minnesota MinnesotaCare \u2014 Unique State Health Program, No Federal Equivalent",
+      "summary": "Minnesota has MinnesotaCare \u2014 a state-funded health insurance program for residents with income between 138% and 200% FPL who are not eligible for Medicaid and cannot afford private insurance. This fills the gap that exists in states without this program. Monthly premiums are income-based. Administered through MNsure.",
+      "affected_programs": [
+        "minnesotacare"
+      ],
+      "effective_date": "Active"
+    },
+    {
+      "flag_id": "mn_minnesota_tanf_mfip",
+      "severity": "info",
+      "title": "Minnesota TANF (MFIP) \u2014 $1,136/mo for Family of 3, 60-Month Federal Limit",
+      "summary": "Minnesota Family Investment Program (MFIP) \u2014 Minnesota TANF \u2014 pays up to $1,136/month for a family of 3 including the Food Portion. This is one of the highest TANF benefits in the nation. Minnesota uses the federal 60-month lifetime limit. Work requirement: 30 hours/week.",
+      "affected_programs": [
+        "mfip_minnesota_family_investment_program"
+      ],
+      "effective_date": "Active"
+    },
+    {
+      "flag_id": "mn_east_african_somali_hmong_karen_community_context",
+      "severity": "alert",
+      "title": "East African / Somali / Hmong / Karen Community Context \u2014 Twin Cities",
+      "summary": "Minneapolis-Saint Paul has the largest Somali diaspora in North America, a significant Hmong population, and growing Karen and other East African communities. These communities face language barriers, cultural mismatch with standard social services, and unique documentation challenges. Always surface specific community centers for language-competent intake.",
+      "affected_programs": [],
+      "effective_date": "Active"
+    },
+    {
+      "flag_id": "mn_minnesota_civil_rights",
+      "severity": "alert",
+      "title": "Minnesota Civil Rights \u2014 MDHR 1-Year SOL, Broad Class Coverage",
+      "summary": "Minnesota Department of Human Rights (MDHR) has a 1-year statute of limitations. The Minnesota Human Rights Act covers a very broad set of protected classes, including some not covered by federal law. Always file MDHR and EEOC simultaneously.",
+      "affected_programs": [],
+      "effective_date": "Active"
+    },
+    {
+      "flag_id": "mn_minnesota_ui",
+      "severity": "info",
+      "title": "Minnesota UI \u2014 $857/Week Maximum, Highest in Midwest",
+      "summary": "Minnesota UI maximum benefit is $857/week, among the highest in the nation. Duration: up to 26 weeks. The appeal deadline is 20 days from determination mailing.",
+      "affected_programs": [
+        "minnesota_ui_deed"
+      ],
+      "effective_date": "Active"
+    },
+    {
+      "flag_id": "mn_minnesota_tribal_context",
+      "severity": "info",
+      "title": "Minnesota Tribal Context \u2014 11 Federally Recognized Tribes, Major Sovereignty Infrastructure",
+      "summary": "Minnesota has 11 federally recognized tribes with significant casino revenue enabling robust tribal social services. Red Lake Band operates as a closed reservation. Route enrolled members to tribal programs before state programs.",
+      "affected_programs": [],
+      "effective_date": "Active"
+    },
+    {
+      "flag_id": "mn_minneapolis_rent_control_tenant_protections",
+      "severity": "alert",
+      "title": "Minneapolis Rent Control + Tenant Protections \u2014 Unique in Region",
+      "summary": "Minneapolis and Saint Paul have enacted rent control/stabilization ordinances limiting rent increases. These are among the only such policies in the Midwest. Any tenant in these cities facing a rent increase above the allowed limit may have a legal violation. Route to HOME Line for immediate triage.",
+      "affected_programs": [],
+      "effective_date": "Active"
+    },
+    {
+      "flag_id": "mn_involuntary_hold_law",
+      "title": "Involuntary Hold: Minnesota 72-Hour Hold",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "MN involuntary psychiatric hold law: Minnesota 72-Hour Hold. Statutory authority: Minn. Stat. \u00a7 253B.05. Maximum initial hold duration: 72 hours. Legal standard: danger to self/others or gravely disabled. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 72 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "Minn. Stat. \u00a7 253B.05"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "mn_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in MN retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "mn_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in MN: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "mn_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Minnesota Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "mn_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Minnesota Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "mn_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Minnesota Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

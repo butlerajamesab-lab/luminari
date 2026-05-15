@@ -1,0 +1,466 @@
+{
+  "meta": {
+    "state": "OH",
+    "state_name": "Ohio",
+    "layer": "oversight",
+    "version": "1.0.0",
+    "date_created": "2026-03-07",
+    "source": "Luminari OH Three-Layer Registry",
+    "total_bodies": 16,
+    "entity_types": [
+      "insurer",
+      "landlord",
+      "employer",
+      "benefits_agency",
+      "nursing_home",
+      "law_enforcement",
+      "family_court"
+    ]
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "insurer",
+      "state": "OH",
+      "bodies": [
+        {
+          "oversight_body": "Ohio Department of Insurance (ODI)",
+          "jurisdiction": "primary",
+          "phone": "800-686-1526",
+          "complaint_portal": "https://insurance.ohio.gov",
+          "what_to_report": "Private health, life, property insurance \u2014 claim denial, bad faith, coverage dispute, rate issues",
+          "legal_threshold": "Insurance Code ORC \u00a73901",
+          "sol": "180 days for external review request after internal denial",
+          "escalation": "Ohio AG Consumer Protection (800-282-0515) for systemic patterns; class action referral",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Ohio Medicaid Managed Care \u2014 ODM",
+          "jurisdiction": "primary",
+          "phone": "800-324-8680",
+          "complaint_portal": "https://medicaid.ohio.gov",
+          "what_to_report": "Medicaid managed care plan grievances, access failures, denials",
+          "legal_threshold": "ORC \u00a75160 Medicaid Managed Care",
+          "sol": "120 days from denial for state fair hearing",
+          "escalation": "Ohio JFS State Hearings \u2192 Ohio Court of Common Pleas",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "landlord",
+      "state": "OH",
+      "bodies": [
+        {
+          "oversight_body": "Ohio Civil Rights Commission (OCRC) \u2014 Housing",
+          "jurisdiction": "primary",
+          "phone": "888-278-7101",
+          "complaint_portal": "https://crc.ohio.gov",
+          "what_to_report": "Housing discrimination \u2014 race, color, sex, disability, national origin, familial status, ancestry",
+          "legal_threshold": "Ohio Civil Rights Act \u2014 2-year SOL (longer than HUD 1 year and EEOC 300 days)",
+          "sol": "2 years from discriminatory act \u2014 strategic advantage over federal deadline",
+          "escalation": "HUD Fair Housing (800-669-9777) concurrently; Ohio AG Civil Rights Section",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Local Code Enforcement \u2014 Columbus/Cleveland/Cincinnati",
+          "jurisdiction": "local",
+          "phone": "Columbus: 614-645-3111 \u00b7 Cleveland: 216-664-2493 \u00b7 Cincinnati: 513-591-6000",
+          "complaint_portal": "311 or city building department",
+          "what_to_report": "Building code and habitability violations",
+          "legal_threshold": "Local building codes",
+          "sol": null,
+          "escalation": "OCRC for discrimination; Ohio AG for serial violators",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "HUD Fair Housing \u2014 Ohio (Federal Hook)",
+          "jurisdiction": "federal",
+          "phone": "800-669-9777",
+          "complaint_portal": "https://hud.gov/fairhousing",
+          "what_to_report": "Federal Fair Housing Act \u2014 race, color, national origin, religion, sex, disability, familial status",
+          "legal_threshold": "Federal Fair Housing Act",
+          "sol": "1 year from discriminatory act",
+          "escalation": "DOJ Housing for systemic patterns",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "employer",
+      "state": "OH",
+      "bodies": [
+        {
+          "oversight_body": "Ohio Department of Commerce \u2014 Division of Labor",
+          "jurisdiction": "primary",
+          "phone": "614-644-2239",
+          "complaint_portal": "https://com.ohio.gov/divisions/industrial-compliance",
+          "what_to_report": "Ohio minimum wage, Prompt Pay Act, child labor, prevailing wage violations",
+          "legal_threshold": "ORC \u00a74113.15 (Prompt Pay Act), ORC \u00a74111 (Minimum Fair Wage Standards Act)",
+          "sol": "2 years from date wages were due \u2014 FATAL",
+          "escalation": "OCRC for discrimination; Ohio AG for systemic violations",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Ohio Civil Rights Commission (OCRC) \u2014 Employment",
+          "jurisdiction": "primary",
+          "phone": "888-278-7101",
+          "complaint_portal": "https://crc.ohio.gov",
+          "what_to_report": "Employment discrimination \u2014 2-year SOL (broader classes than federal, longer deadline)",
+          "legal_threshold": "Ohio Civil Rights Act \u2014 2-year SOL",
+          "sol": "2 years \u2014 much longer than EEOC 300 days \u2014 use OCRC for missed federal deadline",
+          "escalation": "EEOC simultaneously; Ohio AG; private lawsuit",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC \u2014 Cleveland Field Office (Federal Hook)",
+          "jurisdiction": "federal",
+          "phone": "216-522-2001",
+          "complaint_portal": "https://eeoc.gov",
+          "what_to_report": "Federal employment discrimination \u2014 Title VII, ADA, ADEA \u2014 300-day deadline",
+          "legal_threshold": "Title VII, ADA, ADEA",
+          "sol": "300 days \u2014 FATAL (but Ohio OCRC: 2 years)",
+          "escalation": "File OCRC even if EEOC deadline missed",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOL Wage and Hour Division \u2014 Ohio (Federal Hook)",
+          "jurisdiction": "federal",
+          "phone": "Columbus: 614-224-6670 \u00b7 Cleveland: 216-522-3892",
+          "complaint_portal": "https://dol.gov/whd",
+          "what_to_report": "FLSA wage violations \u2014 minimum wage, overtime, FMLA",
+          "legal_threshold": "FLSA 29 USC \u00a7201",
+          "sol": "2 years (3 if willful)",
+          "escalation": "File same day as Ohio DOL",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "benefits_agency",
+      "state": "OH",
+      "bodies": [
+        {
+          "oversight_body": "Ohio JFS State Hearing Section",
+          "jurisdiction": "primary",
+          "phone": "614-466-1654",
+          "complaint_portal": "https://jfs.ohio.gov",
+          "what_to_report": "SNAP, Medicaid, OWF denial/reduction/termination \u2014 state fair hearings",
+          "legal_threshold": "ORC \u00a75101 (Public Assistance), Ohio Admin Code \u00a75101:6",
+          "sol": "30 days from notice \u2014 FATAL",
+          "escalation": "Ohio Court of Common Pleas for adverse decisions; Ohio AG if systemic",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "ODJFS Unemployment Compensation \u2014 Appeals",
+          "jurisdiction": "primary",
+          "phone": "877-644-6562",
+          "complaint_portal": "https://unemployment.ohio.gov",
+          "what_to_report": "UI denial or overpayment determination",
+          "legal_threshold": "ORC \u00a74141 (UI Appeals)",
+          "sol": "21 days from mailing \u2014 FATAL",
+          "escalation": "Contact legal aid within 10 days of any UI denial",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "nursing_home",
+      "state": "OH",
+      "bodies": [
+        {
+          "oversight_body": "Ohio Department of Health \u2014 Long-Term Care Complaints",
+          "jurisdiction": "primary",
+          "phone": "800-342-0553",
+          "complaint_portal": "https://odh.ohio.gov",
+          "what_to_report": "Nursing home neglect, abuse, staffing violations, licensing violations",
+          "legal_threshold": "State survey authority",
+          "sol": null,
+          "escalation": "Ohio LTC Ombudsman (800-282-1206); Ohio AG Medicaid Fraud Control Unit (800-282-0515)",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Ohio Long-Term Care Ombudsman",
+          "jurisdiction": "primary",
+          "phone": "800-282-1206",
+          "complaint_portal": "https://aging.ohio.gov",
+          "what_to_report": "Resident rights, quality of care, discharge disputes",
+          "legal_threshold": "Older Americans Act",
+          "sol": null,
+          "escalation": "ODH for licensing enforcement; Ohio AG for financial exploitation",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "law_enforcement",
+      "state": "OH",
+      "bodies": [
+        {
+          "oversight_body": "Cleveland Community Police Commission",
+          "jurisdiction": "local",
+          "phone": "216-623-6000",
+          "complaint_portal": "https://clevelandcpc.org",
+          "what_to_report": "Cleveland Police Department oversight \u2014 use of force, misconduct patterns",
+          "legal_threshold": "DOJ consent decree",
+          "sol": "5 years (Ohio civil rights SOL)",
+          "escalation": "DOJ Civil Rights \u2014 Cleveland is under federal consent decree; FBI Cleveland (216-522-1400)",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOJ Civil Rights Division (Federal Hook)",
+          "jurisdiction": "federal",
+          "phone": "800-514-0301",
+          "complaint_portal": "https://justice.gov/crt",
+          "what_to_report": "Pattern or practice of constitutional violations \u2014 Cleveland, Columbus under scrutiny",
+          "legal_threshold": "42 USC \u00a714141",
+          "sol": null,
+          "escalation": "FBI for individual federal civil rights crimes",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "family_court",
+      "state": "OH",
+      "bodies": [
+        {
+          "oversight_body": "Ohio Supreme Court \u2014 Judicial Conduct Commission",
+          "jurisdiction": "primary",
+          "phone": "614-387-9370",
+          "complaint_portal": "https://supremecourt.ohio.gov",
+          "what_to_report": "Ohio judge misconduct \u2014 bias, conflicts, improper conduct",
+          "legal_threshold": "Ohio Code of Judicial Conduct",
+          "sol": null,
+          "escalation": "Ohio State Bar Association; Ohio AG for systemic judicial issues",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Ohio Dept of Job & Family Services \u2014 Children Services",
+          "jurisdiction": "primary",
+          "phone": "614-466-9274",
+          "complaint_portal": "https://jfs.ohio.gov",
+          "what_to_report": "Child abuse and neglect investigation; child welfare",
+          "legal_threshold": "ORC \u00a72151 (Juvenile Code)",
+          "sol": null,
+          "escalation": "ODJFS Inspector General for agency misconduct; Disability Rights Ohio for children with disabilities",
+          "city": "Columbus",
+          "state": "OH",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "oh_med_board",
+          "name": "Ohio Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Ohio Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "OH"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "oh_patient_adv",
+          "name": "Ohio Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Ohio Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "OH"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "oh_health_dept",
+          "name": "Ohio Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Ohio Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "OH"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "OH"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "oh_pharm_board",
+          "name": "Ohio Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Ohio Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "OH"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "oh_pa",
+          "name": "Ohio Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Ohio Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "OH"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "oh_mha",
+          "name": "Ohio Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Ohio Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "OH"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "OH"
+    }
+  ]
+}

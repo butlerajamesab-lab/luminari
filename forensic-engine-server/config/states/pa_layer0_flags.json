@@ -1,0 +1,323 @@
+{
+  "meta": {
+    "state": "PA",
+    "state_name": "Pennsylvania",
+    "schema_version": "1.0.0",
+    "last_updated": "2026-03-06",
+    "description": "Layer 0 policy flags \u2014 always-on contextual warnings activated by pipeline and user context"
+  },
+  "flags": [
+    {
+      "flag_id": "pa_snap_broad_based_categorical",
+      "title": "SNAP Broad-Based Categorical Eligibility",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "benefits_denial",
+          "snap_denial"
+        ],
+        "benefit_categories": [
+          "food"
+        ],
+        "conditions": []
+      },
+      "message": "Pennsylvania uses Broad-Based Categorical Eligibility (BBCE) for SNAP, raising the gross income limit to 200% FPL and eliminating the asset test for most households. This means more families qualify than in states without BBCE. If denied SNAP in PA, verify the denial is not based on outdated income thresholds.",
+      "action_items": [
+        "Verify denial letter cites correct 200% FPL threshold (not 130%)",
+        "If denied incorrectly, request fair hearing within 90 days",
+        "Apply online at compass.state.pa.us",
+        "Contact local County Assistance Office (CAO) for assistance"
+      ],
+      "legal_basis": "7 CFR \u00a7273.2(j)(2); PA DHS SNAP Policy Manual \u00a7581",
+      "bundle_pairings": []
+    },
+    {
+      "flag_id": "pa_medicaid_expansion_robust",
+      "title": "Robust Medicaid Expansion + Managed Care",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "benefits_denial",
+          "insurance_claim_denial"
+        ],
+        "benefit_categories": [
+          "healthcare"
+        ],
+        "conditions": []
+      },
+      "message": "Pennsylvania expanded Medicaid in 2015 under HealthChoices managed care. Coverage includes comprehensive benefits: medical, dental, vision, behavioral health, and substance use treatment. Adults up to 138% FPL qualify. PA also has a strong presumptive eligibility program allowing immediate temporary coverage while applications are processed.",
+      "action_items": [
+        "Apply at compass.state.pa.us or call PA Medicaid hotline",
+        "If urgent medical need, ask about presumptive eligibility at any hospital",
+        "Choose a HealthChoices managed care plan within 30 days of approval",
+        "If denied, appeal within 30 days for expedited review"
+      ],
+      "legal_basis": "62 Pa.C.S. \u00a7442.1; 55 Pa. Code \u00a7140",
+      "bundle_pairings": []
+    },
+    {
+      "flag_id": "pa_eviction_right_to_counsel",
+      "title": "Right to Counsel in Eviction (Philadelphia)",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "housing_violation"
+        ],
+        "benefit_categories": [
+          "housing"
+        ],
+        "conditions": [
+          "philadelphia",
+          "eviction"
+        ]
+      },
+      "message": "Philadelphia enacted a Right to Counsel ordinance (Bill No. 200357) providing free legal representation to tenants facing eviction in zip codes with the highest eviction rates. Income must be at or below 200% FPL. This is one of the strongest tenant protections in the country. Outside Philadelphia, PA does not guarantee counsel in eviction proceedings.",
+      "action_items": [
+        "If in Philadelphia, contact Philadelphia Legal Assistance (PLA): 215-981-3800",
+        "Verify zip code eligibility for Right to Counsel program",
+        "If outside Philadelphia, contact local legal aid for eviction defense",
+        "Never ignore an eviction notice \u2014 respond within the deadline on the notice"
+      ],
+      "legal_basis": "Philadelphia Bill No. 200357 (Right to Counsel); 68 Pa.C.S. \u00a7250.501 (Landlord-Tenant Act)",
+      "bundle_pairings": [
+        "pa_pla",
+        "pa_legal_aid"
+      ]
+    },
+    {
+      "flag_id": "pa_tanf_time_limit_60_months",
+      "title": "TANF 60-Month Lifetime Limit",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "benefits_denial"
+        ],
+        "benefit_categories": [
+          "cash_assistance"
+        ],
+        "conditions": []
+      },
+      "message": "Pennsylvania enforces the federal 60-month (5-year) lifetime limit on TANF cash assistance. Once exhausted, no further TANF benefits are available regardless of circumstances. PA TANF maximum for a family of 3 is $403/month. Track months used carefully and plan transition to employment or other support before limit is reached.",
+      "action_items": [
+        "Request TANF month count from County Assistance Office",
+        "If approaching 60 months, contact PA CareerLink for employment services",
+        "Apply for all supplemental programs (SNAP, Medicaid, LIHEAP) which have no time limit",
+        "Explore SSI/SSDI if disability prevents employment"
+      ],
+      "legal_basis": "62 Pa.C.S. \u00a7432.3; 42 USC \u00a7608(a)(7) (federal TANF time limit)",
+      "bundle_pairings": [
+        "pa_snap",
+        "pa_medicaid",
+        "pa_liheap",
+        "pa_careerlink"
+      ]
+    },
+    {
+      "flag_id": "pa_utility_winter_shutoff_ban",
+      "title": "Winter Utility Shutoff Protection (Dec 1 \u2013 Mar 31)",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "housing_violation",
+          "benefits_denial"
+        ],
+        "benefit_categories": [
+          "utilities"
+        ],
+        "conditions": [
+          "utility_shutoff",
+          "heating",
+          "winter"
+        ]
+      },
+      "message": "Pennsylvania PUC regulations (52 Pa. Code \u00a756.100) prohibit termination of heating-related utility service from December 1 through March 31 for households where someone is ill, elderly (65+), or has a child under 2. Income-based protections extend to households at or below 250% FPL. If disconnected during protected period, file emergency PUC complaint.",
+      "action_items": [
+        "Contact utility provider and assert winter protection rights",
+        "If disconnected, file emergency complaint with PA PUC: 800-692-7380",
+        "Apply for LIHEAP: 866-857-7095 or compass.state.pa.us",
+        "Contact local Community Action Agency for emergency utility funds",
+        "Obtain medical certificate from doctor if household member is ill"
+      ],
+      "legal_basis": "52 Pa. Code \u00a756.100 (Winter termination prohibition); 66 Pa.C.S. \u00a71406",
+      "bundle_pairings": [
+        "pa_liheap",
+        "pa_puc_complaint",
+        "pa_community_action"
+      ]
+    },
+    {
+      "flag_id": "pa_wage_theft_strong_enforcement",
+      "title": "Strong Wage Theft Enforcement \u2014 PA Wage Payment & Collection Law",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "wage_theft"
+        ],
+        "benefit_categories": [],
+        "conditions": []
+      },
+      "message": "Pennsylvania's Wage Payment and Collection Law (43 Pa.C.S. \u00a7260.1) provides strong worker protections including liquidated damages (25% of unpaid wages) and attorney's fees. The PA Department of Labor & Industry investigates wage complaints. Workers can also file private lawsuits. Statute of limitations is 3 years. All workers are protected regardless of immigration status.",
+      "action_items": [
+        "File wage complaint with PA Department of Labor & Industry online",
+        "Preserve all pay stubs, time records, and employment documents",
+        "Contact Community Legal Services (Philadelphia) or local legal aid for representation",
+        "If employer retaliates, document and report \u2014 retaliation is separately actionable"
+      ],
+      "legal_basis": "43 Pa.C.S. \u00a7260.1 (Wage Payment and Collection Law); 43 Pa.C.S. \u00a7333.101 (Minimum Wage Act)",
+      "bundle_pairings": [
+        "pa_dli_wage_claim",
+        "pa_cls"
+      ]
+    },
+    {
+      "flag_id": "pa_involuntary_hold_law",
+      "title": "Involuntary Hold: Pennsylvania Section 302",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "PA involuntary psychiatric hold law: Pennsylvania Section 302. Statutory authority: 50 P.S. \u00a7 7302. Maximum initial hold duration: 120 hours. Legal standard: clear and present danger. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 120 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "50 P.S. \u00a7 7302"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "pa_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in PA retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "pa_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in PA: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "pa_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Pennsylvania Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "pa_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Pennsylvania Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "pa_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Pennsylvania Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

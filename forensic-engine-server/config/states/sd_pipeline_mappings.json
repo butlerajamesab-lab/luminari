@@ -1,0 +1,279 @@
+{
+  "meta": {
+    "state": "SD",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "sd_south_dakota_snap",
+        "sd_sd_division_of_aging_ageoptions",
+        "sd_east_river_dakota_plains_legal_services"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "sd_medicaid_expansion",
+        "sd_portability"
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "sd_south_dakota_chip_healthy_kids",
+        "sd_south_dakota_wic"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "sd_medicaid_expansion",
+        "sd_portability"
+      ]
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "sd_south_dakota_tanf_family_assistance",
+        "sd_south_dakota_housing_development_authori",
+        "sd_south_dakota_vocational_rehabilitation",
+        "sd_liheap_south_dakota"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "sd_medicaid_expansion",
+        "sd_portability"
+      ]
+    },
+    {
+      "pipeline_id": "employment_dispute",
+      "programs": [
+        "sd_south_dakota_unemployment_insurance",
+        "sd_south_dakota_vocational_rehabilitation"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "sd_medicaid_expansion",
+        "sd_portability"
+      ]
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "sd_south_dakota_housing_development_authori",
+        "sd_nine_tribal_nations_programs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "sd_medicaid_expansion",
+        "sd_portability"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "sd_south_dakota_medicaid_expanded",
+        "sd_south_dakota_chip_healthy_kids",
+        "sd_south_dakota_unemployment_insurance",
+        "sd_south_dakota_wic",
+        "sd_sd_behavioral_health_services"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "sd_medicaid_expansion",
+        "sd_portability"
+      ]
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "sd_liheap_south_dakota"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "sd_medicaid_expansion",
+        "sd_portability"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "sd_involuntary_hold_law",
+        "sd_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "sd_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "sd_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "sd_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "sd_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "sd_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "sd_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "sd_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "sd_restraint_seclusion_limits",
+        "sd_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "sd_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "sd_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "sd_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

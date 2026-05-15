@@ -1,0 +1,5049 @@
+{
+  "meta": {
+    "state": "AZ",
+    "state_name": "Arizona",
+    "schema_version": "1.0.0",
+    "last_updated": "2026-03-06",
+    "total_programs": 147,
+    "categories": {
+      "healthcare": 24,
+      "food": 17,
+      "housing": 22,
+      "dv_safety": 19,
+      "legal_aid": 14,
+      "cash_assistance": 10,
+      "utilities": 11,
+      "tribal_indigenous": 12,
+      "immigration": 8,
+      "lgbtq": 5,
+      "community_navigation": 5
+    },
+    "description": "Arizona state-specific programs across 8 categories with Phoenix, Tucson, and 22-tribe sub-layers",
+    "layer": "programs",
+    "program_count": 147,
+    "version": "1.0.0"
+  },
+  "programs": [
+    {
+      "program_id": "az_ahcccs",
+      "program_name": "AHCCCS (Arizona Medicaid)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "benefits_denial"
+      ],
+      "agency": "AHCCCS",
+      "phone": "855-432-7587",
+      "website": "https://www.healthearizonaplus.gov",
+      "eligibility": "Adults 19-64 income < 138% FPL. Children through KidsCare up to 200% FPL. Pregnant women up to 156% FPL.",
+      "apply_notes": "Apply online at Health-e-Arizona Plus or at DES office.",
+      "source": "https://www.healthearizonaplus.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "medicaid",
+        "ahcccs",
+        "health insurance",
+        "doctor"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income",
+        "SSN",
+        "Proof of AZ residency"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_kidscare",
+      "program_name": "KidsCare (CHIP)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "benefits_denial"
+      ],
+      "agency": "AHCCCS",
+      "phone": "855-432-7587",
+      "website": "https://www.healthearizonaplus.gov",
+      "eligibility": "Children under 19 in families with income 138-200% FPL. No asset test.",
+      "apply_notes": "Apply through Health-e-Arizona Plus.",
+      "source": "https://www.healthearizonaplus.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "children",
+        "chip",
+        "kidscare",
+        "health insurance"
+      ],
+      "documents_needed": [
+        "Child's SSN",
+        "Proof of family income",
+        "Proof of AZ residency"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_ahcccs_freedom_to_work",
+      "program_name": "AHCCCS Freedom to Work",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "AHCCCS",
+      "phone": "855-432-7587",
+      "website": "https://www.azahcccs.gov/Members/GetCovered/Categories/FreedomToWork.html",
+      "eligibility": "Working adults with disabilities. Income < 250% FPL. Must be employed.",
+      "apply_notes": "Apply through Health-e-Arizona Plus. Must maintain employment.",
+      "source": "https://www.azahcccs.gov/Members/GetCovered/Categories/FreedomToWork.html",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "disability",
+        "working",
+        "medicaid"
+      ],
+      "documents_needed": [
+        "Proof of disability",
+        "Proof of employment",
+        "Income verification"
+      ],
+      "pipeline_categories": [
+        "healthcare",
+        "disability"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_ihs_phoenix",
+      "program_name": "IHS Phoenix Area",
+      "layer": "tribal",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "Indian Health Service",
+      "phone": "602-364-5039",
+      "website": "https://www.ihs.gov/phoenix/",
+      "eligibility": "American Indian/Alaska Native. Tribal enrollment or descendant.",
+      "apply_notes": "Walk in or call for appointment. No income requirement for IHS direct care.",
+      "source": "https://www.ihs.gov/phoenix/",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "native",
+        "ihs",
+        "indian health"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card or CDIB",
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "healthcare",
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_ihs_navajo",
+      "program_name": "IHS Navajo Area",
+      "layer": "tribal",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "Indian Health Service",
+      "phone": "928-871-5811",
+      "website": "https://www.ihs.gov/navajo/",
+      "eligibility": "Navajo Nation members and eligible AI/AN. Multiple facilities across Navajo Nation.",
+      "apply_notes": "Walk in or call for appointment at nearest IHS facility.",
+      "source": "https://www.ihs.gov/navajo/",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "navajo",
+        "tribal",
+        "ihs"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card or CDIB",
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "healthcare",
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_native_american_connections",
+      "program_name": "Native American Connections",
+      "layer": "nonprofit",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "Native American Connections",
+      "phone": "602-254-3247",
+      "website": "https://www.nativeconnections.org",
+      "eligibility": "Urban AI/AN in Phoenix metro. Behavioral health, substance use, housing.",
+      "apply_notes": "Call for intake. Serves urban AI/AN population.",
+      "source": "https://www.nativeconnections.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "urban native",
+        "behavioral health",
+        "phoenix"
+      ],
+      "documents_needed": [
+        "Tribal enrollment (preferred)",
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "healthcare",
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "street_address": "4520 N Central Ave Ste 600",
+      "city": "Phoenix",
+      "state_code": "AZ",
+      "zip": "85012",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_pascua_yaqui_health",
+      "program_name": "Pascua Yaqui Health",
+      "layer": "tribal",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "Pascua Yaqui Tribe",
+      "phone": "520-879-5430",
+      "website": "https://www.pascuayaqui-nsn.gov",
+      "eligibility": "Pascua Yaqui tribal members and eligible AI/AN in Tucson area.",
+      "apply_notes": "Call for appointment.",
+      "source": "https://www.pascuayaqui-nsn.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "pascua yaqui",
+        "tucson"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card",
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "healthcare",
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_circle_the_city",
+      "program_name": "Circle the City",
+      "layer": "nonprofit",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "Circle the City",
+      "phone": "602-776-5050",
+      "website": "https://www.circlethecity.org",
+      "eligibility": "Homeless and uninsured individuals in Phoenix metro. No income requirement.",
+      "apply_notes": "Walk in at clinic locations or call for mobile clinic schedule.",
+      "source": "https://www.circlethecity.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "homeless",
+        "uninsured",
+        "phoenix",
+        "clinic"
+      ],
+      "documents_needed": [
+        "None required for initial visit"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_el_rio_health",
+      "program_name": "El Rio Health Center",
+      "layer": "nonprofit",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "El Rio Health",
+      "phone": "520-670-3909",
+      "website": "https://www.elrio.org",
+      "eligibility": "All residents. Sliding fee scale. Accepts AHCCCS, Medicare, uninsured.",
+      "apply_notes": "Call for appointment. Multiple Tucson locations.",
+      "source": "https://www.elrio.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "fqhc",
+        "tucson",
+        "sliding scale",
+        "clinic"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income (for sliding scale)"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_mountain_park_health",
+      "program_name": "Mountain Park Health Center",
+      "layer": "nonprofit",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "Mountain Park Health",
+      "phone": "602-243-7277",
+      "website": "https://www.mountainparkhealth.org",
+      "eligibility": "All residents. Sliding fee scale. Accepts AHCCCS, Medicare, uninsured.",
+      "apply_notes": "Call for appointment. Multiple Phoenix/Tempe locations.",
+      "source": "https://www.mountainparkhealth.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "fqhc",
+        "phoenix",
+        "sliding scale",
+        "clinic"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income (for sliding scale)"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_mihs",
+      "program_name": "Maricopa Integrated Health System",
+      "layer": "county",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "Maricopa County",
+      "phone": "602-344-5011",
+      "website": "https://www.mihs.org",
+      "eligibility": "Maricopa County residents. Safety net hospital. Accepts AHCCCS, uninsured.",
+      "apply_notes": "ER open 24/7. Clinics by appointment.",
+      "source": "https://www.mihs.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "hospital",
+        "safety net",
+        "maricopa",
+        "phoenix"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of Maricopa County residency"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "phoenix_metro",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_crisis_response_network",
+      "program_name": "Crisis Response Network",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "Crisis Response Network",
+      "phone": "602-222-9444",
+      "website": "https://www.crisisnetwork.org",
+      "eligibility": "Anyone experiencing behavioral health crisis in AZ. 24/7.",
+      "apply_notes": "Call 602-222-9444 or 988. Mobile crisis teams available.",
+      "source": "https://www.crisisnetwork.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "crisis",
+        "mental health",
+        "suicide",
+        "behavioral health"
+      ],
+      "documents_needed": [
+        "None required"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_988_crisis",
+      "program_name": "988 Suicide & Crisis Lifeline (AZ)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "SAMHSA",
+      "phone": "988",
+      "website": "https://988lifeline.org",
+      "eligibility": "Anyone in crisis. 24/7. Free and confidential.",
+      "apply_notes": "Call or text 988. Chat at 988lifeline.org.",
+      "source": "https://988lifeline.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "crisis",
+        "suicide",
+        "mental health"
+      ],
+      "documents_needed": [
+        "None"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_acdl",
+      "program_name": "AZ Center for Disability Law",
+      "layer": "nonprofit",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial",
+        "insurance_claim_denial"
+      ],
+      "agency": "ACDL",
+      "phone": "602-274-6287",
+      "website": "https://www.azdisabilitylaw.org",
+      "eligibility": "People with disabilities in AZ. Legal advocacy for disability rights.",
+      "apply_notes": "Call for intake. Handles Medicaid denials, disability discrimination, special education.",
+      "source": "https://www.azdisabilitylaw.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "disability",
+        "legal",
+        "advocacy",
+        "ada"
+      ],
+      "documents_needed": [
+        "Documentation of disability"
+      ],
+      "pipeline_categories": [
+        "healthcare",
+        "disability"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_snap",
+      "program_name": "SNAP (Nutrition Assistance)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "DES",
+      "phone": "855-432-7587",
+      "website": "https://www.healthearizonaplus.gov",
+      "eligibility": "Gross income < 130% FPL. Net income < 100% FPL. Asset limit $2,750 ($4,250 if elderly/disabled).",
+      "apply_notes": "Apply online at Health-e-Arizona Plus or at DES office. Interview required.",
+      "source": "https://www.healthearizonaplus.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "snap",
+        "food stamps",
+        "ebt",
+        "groceries"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income",
+        "SSN",
+        "Proof of AZ residency",
+        "Utility bills"
+      ],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_wic",
+      "program_name": "WIC",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [],
+      "agency": "ADHS",
+      "phone": "602-542-1886",
+      "website": "https://www.azdhs.gov/prevention/nutrition-physical-activity/wic/",
+      "eligibility": "Pregnant, postpartum, breastfeeding women, infants, children under 5. Income < 185% FPL.",
+      "apply_notes": "Call for appointment at local WIC clinic.",
+      "source": "https://www.azdhs.gov/prevention/nutrition-physical-activity/wic/",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "wic",
+        "pregnant",
+        "baby",
+        "infant",
+        "children"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income",
+        "Proof of AZ residency",
+        "Child immunization records"
+      ],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_community_food_bank_tucson",
+      "program_name": "Community Food Bank of Southern AZ",
+      "layer": "nonprofit",
+      "benefit_category": "food",
+      "pipeline_ids": [],
+      "agency": "Community Food Bank",
+      "phone": "520-622-0525",
+      "website": "https://www.communityfoodbank.org",
+      "eligibility": "Anyone in need in Southern AZ. No income verification.",
+      "apply_notes": "Walk in during distribution hours. Multiple locations.",
+      "source": "https://www.communityfoodbank.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "food bank",
+        "tucson",
+        "pantry",
+        "emergency food"
+      ],
+      "documents_needed": [
+        "Photo ID (some locations)"
+      ],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_st_marys_food_bank",
+      "program_name": "St. Mary's Food Bank",
+      "layer": "nonprofit",
+      "benefit_category": "food",
+      "pipeline_ids": [],
+      "agency": "St. Mary's Food Bank Alliance",
+      "phone": "602-242-3663",
+      "website": "https://www.firstfoodbank.org",
+      "eligibility": "Anyone in need in Phoenix metro. No income verification.",
+      "apply_notes": "Walk in during distribution hours. Multiple Phoenix locations.",
+      "source": "https://www.firstfoodbank.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "food bank",
+        "phoenix",
+        "pantry",
+        "emergency food"
+      ],
+      "documents_needed": [
+        "Photo ID (some locations)"
+      ],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_united_food_bank",
+      "program_name": "United Food Bank",
+      "layer": "nonprofit",
+      "benefit_category": "food",
+      "pipeline_ids": [],
+      "agency": "United Food Bank",
+      "phone": "480-926-4897",
+      "website": "https://www.unitedfoodbank.org",
+      "eligibility": "Anyone in need in East Valley/Mesa area. No income verification.",
+      "apply_notes": "Walk in during distribution hours.",
+      "source": "https://www.unitedfoodbank.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "food bank",
+        "mesa",
+        "east valley",
+        "pantry"
+      ],
+      "documents_needed": [
+        "Photo ID (some locations)"
+      ],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_navajo_food_distribution",
+      "program_name": "Navajo Nation Food Distribution",
+      "layer": "tribal",
+      "benefit_category": "food",
+      "pipeline_ids": [],
+      "agency": "Navajo Nation",
+      "phone": "928-871-6741",
+      "website": "https://www.navajo-nsn.gov",
+      "eligibility": "Navajo Nation members on or near reservation. FDPIR program.",
+      "apply_notes": "Apply at Navajo Nation Social Services office.",
+      "source": "https://www.navajo-nsn.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "navajo",
+        "tribal",
+        "fdpir",
+        "food distribution"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card",
+        "Proof of income",
+        "Proof of residence"
+      ],
+      "pipeline_categories": [
+        "food",
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_tefap",
+      "program_name": "TEFAP (Emergency Food Assistance)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [],
+      "agency": "USDA via DES",
+      "phone": "855-432-7587",
+      "website": "https://www.azdes.gov",
+      "eligibility": "Income < 185% FPL. Distributed through food banks.",
+      "apply_notes": "Available through participating food banks and pantries.",
+      "source": "https://www.azdes.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tefap",
+        "emergency food",
+        "usda"
+      ],
+      "documents_needed": [
+        "Self-declaration of income"
+      ],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_summer_ebt",
+      "program_name": "Summer EBT",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [],
+      "agency": "DES",
+      "phone": "855-432-7587",
+      "website": "https://www.healthearizonaplus.gov",
+      "eligibility": "Children eligible for free/reduced school meals during summer months.",
+      "apply_notes": "Automatic enrollment for eligible children.",
+      "source": "https://www.healthearizonaplus.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "summer",
+        "children",
+        "school meals",
+        "ebt"
+      ],
+      "documents_needed": [
+        "School enrollment verification"
+      ],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_senior_farmers_market",
+      "program_name": "Senior Farmers Market Nutrition",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [],
+      "agency": "USDA via ADHS",
+      "phone": "602-542-1886",
+      "website": "https://www.azdhs.gov",
+      "eligibility": "Seniors 60+ with income < 185% FPL.",
+      "apply_notes": "Apply through WIC offices or Area Agency on Aging.",
+      "source": "https://www.azdhs.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "senior",
+        "farmers market",
+        "elderly"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of age",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_fdpir_tribal",
+      "program_name": "FDPIR (Tribal Food Distribution)",
+      "layer": "tribal",
+      "benefit_category": "food",
+      "pipeline_ids": [],
+      "agency": "USDA via tribes",
+      "phone": "855-432-7587",
+      "website": "https://www.fns.usda.gov/fdpir",
+      "eligibility": "AI/AN on or near reservations. Cannot receive SNAP and FDPIR simultaneously.",
+      "apply_notes": "Apply through tribal social services office.",
+      "source": "https://www.fns.usda.gov/fdpir",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "fdpir",
+        "food distribution",
+        "native"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card",
+        "Proof of income",
+        "Proof of residence"
+      ],
+      "pipeline_categories": [
+        "food",
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_meals_on_wheels_maricopa",
+      "program_name": "Meals on Wheels (Maricopa)",
+      "layer": "nonprofit",
+      "benefit_category": "food",
+      "pipeline_ids": [],
+      "agency": "Area Agency on Aging",
+      "phone": "602-264-2255",
+      "website": "https://www.aaaphx.org",
+      "eligibility": "Homebound seniors 60+ in Maricopa County.",
+      "apply_notes": "Call for assessment and enrollment.",
+      "source": "https://www.aaaphx.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "meals on wheels",
+        "senior",
+        "homebound",
+        "maricopa"
+      ],
+      "documents_needed": [
+        "Proof of age",
+        "Proof of Maricopa County residency"
+      ],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_school_meals",
+      "program_name": "School Meals Programs",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [],
+      "agency": "USDA via ADE",
+      "phone": "602-542-8700",
+      "website": "https://www.azed.gov/hns",
+      "eligibility": "All enrolled students. Free for income < 130% FPL. Reduced for 130-185% FPL.",
+      "apply_notes": "Apply through school district. Some districts have Community Eligibility (free for all).",
+      "source": "https://www.azed.gov/hns",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "school meals",
+        "lunch",
+        "breakfast",
+        "children"
+      ],
+      "documents_needed": [
+        "School enrollment",
+        "Income verification (for free/reduced)"
+      ],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_des_housing",
+      "program_name": "DES Housing Assistance",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights"
+      ],
+      "agency": "DES",
+      "phone": "855-432-7587",
+      "website": "https://www.healthearizonaplus.gov",
+      "eligibility": "Low-income AZ residents. Emergency and transitional housing assistance.",
+      "apply_notes": "Apply through DES or local Community Action Agency.",
+      "source": "https://www.healthearizonaplus.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "housing",
+        "emergency",
+        "des"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income",
+        "Proof of AZ residency"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_section_8_phoenix",
+      "program_name": "Section 8 / HCV (Phoenix)",
+      "layer": "city",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights"
+      ],
+      "agency": "City of Phoenix Housing",
+      "phone": "602-534-1394",
+      "website": "https://www.phoenix.gov/housing",
+      "eligibility": "Income < 50% AMI. Phoenix residents. Waitlist typically open periodically.",
+      "apply_notes": "Apply when waitlist opens. Check website for status.",
+      "source": "https://www.phoenix.gov/housing",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "section 8",
+        "voucher",
+        "phoenix",
+        "hcv"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "SSN",
+        "Proof of income",
+        "Background check consent"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "phoenix_metro",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_section_8_tucson",
+      "program_name": "Section 8 / HCV (Tucson)",
+      "layer": "city",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights"
+      ],
+      "agency": "Tucson Housing Authority",
+      "phone": "520-791-4619",
+      "website": "https://www.tucsonaz.gov/housing",
+      "eligibility": "Income < 50% AMI. Tucson residents.",
+      "apply_notes": "Apply when waitlist opens.",
+      "source": "https://www.tucsonaz.gov/housing",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "section 8",
+        "voucher",
+        "tucson",
+        "hcv"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "SSN",
+        "Proof of income",
+        "Background check consent"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "tucson_metro",
+      "category": "housing",
+      "city": "Tucson",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_umom",
+      "program_name": "UMOM New Day Centers",
+      "layer": "nonprofit",
+      "benefit_category": "housing",
+      "pipeline_ids": [],
+      "agency": "UMOM",
+      "phone": "602-275-0364",
+      "website": "https://www.umom.org",
+      "eligibility": "Homeless families with children in Phoenix metro. Emergency and transitional shelter.",
+      "apply_notes": "Call for intake. Priority for families with children.",
+      "source": "https://www.umom.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "shelter",
+        "family",
+        "homeless",
+        "phoenix"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Children's birth certificates"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_community_bridges",
+      "program_name": "Community Bridges Inc.",
+      "layer": "nonprofit",
+      "benefit_category": "housing",
+      "pipeline_ids": [],
+      "agency": "CBI",
+      "phone": "480-831-7566",
+      "website": "https://www.communitybridgesaz.org",
+      "eligibility": "Homeless individuals in Phoenix/East Valley. Behavioral health + housing.",
+      "apply_notes": "Call for intake or walk in.",
+      "source": "https://www.communitybridgesaz.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "shelter",
+        "behavioral health",
+        "phoenix",
+        "homeless"
+      ],
+      "documents_needed": [
+        "Photo ID (helpful but not required)"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_andre_house",
+      "program_name": "Andr\u00e9 House",
+      "layer": "nonprofit",
+      "benefit_category": "housing",
+      "pipeline_ids": [],
+      "agency": "Andr\u00e9 House",
+      "phone": "602-255-0580",
+      "website": "https://www.andrehouse.org",
+      "eligibility": "Homeless individuals in Phoenix. Meals, showers, clothing, mail services.",
+      "apply_notes": "Walk in during service hours.",
+      "source": "https://www.andrehouse.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "shelter",
+        "meals",
+        "homeless",
+        "phoenix"
+      ],
+      "documents_needed": [
+        "None required"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_primavera",
+      "program_name": "Primavera Foundation",
+      "layer": "nonprofit",
+      "benefit_category": "housing",
+      "pipeline_ids": [],
+      "agency": "Primavera Foundation",
+      "phone": "520-623-4300",
+      "website": "https://www.primavera.org",
+      "eligibility": "Homeless and at-risk individuals in Tucson. Shelter, housing, workforce development.",
+      "apply_notes": "Call for intake or walk in at shelter.",
+      "source": "https://www.primavera.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "shelter",
+        "tucson",
+        "homeless",
+        "workforce"
+      ],
+      "documents_needed": [
+        "Photo ID (helpful)"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_old_pueblo",
+      "program_name": "Old Pueblo Community Services",
+      "layer": "nonprofit",
+      "benefit_category": "housing",
+      "pipeline_ids": [],
+      "agency": "OPCS",
+      "phone": "520-546-0122",
+      "website": "https://www.oldpueblo.org",
+      "eligibility": "Homeless individuals in Tucson. Transitional housing and supportive services.",
+      "apply_notes": "Call for intake.",
+      "source": "https://www.oldpueblo.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "shelter",
+        "tucson",
+        "transitional",
+        "homeless"
+      ],
+      "documents_needed": [
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "street_address": "2797 E Ajo Way",
+      "city": "Tucson",
+      "state_code": "AZ",
+      "zip": "85713",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_ssvf",
+      "program_name": "SSVF (Veterans Housing)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [],
+      "agency": "VA",
+      "phone": "877-424-3838",
+      "website": "https://www.va.gov/homeless/ssvf/",
+      "eligibility": "Veterans and veteran families who are homeless or at risk. Rapid rehousing and prevention.",
+      "apply_notes": "Call VA homeless hotline or local SSVF provider.",
+      "source": "https://www.va.gov/homeless/ssvf/",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "veteran",
+        "ssvf",
+        "housing",
+        "homeless"
+      ],
+      "documents_needed": [
+        "DD-214",
+        "Photo ID",
+        "Proof of veteran status"
+      ],
+      "pipeline_categories": [
+        "housing",
+        "veterans"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_navajo_housing",
+      "program_name": "Navajo Housing Authority",
+      "layer": "tribal",
+      "benefit_category": "housing",
+      "pipeline_ids": [],
+      "agency": "Navajo Housing Authority",
+      "phone": "928-871-2600",
+      "website": "https://www.navajohousing.org",
+      "eligibility": "Navajo Nation members. Rental, homeownership, and emergency housing.",
+      "apply_notes": "Apply at NHA office.",
+      "source": "https://www.navajohousing.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "navajo",
+        "tribal",
+        "housing"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card",
+        "Proof of income",
+        "Proof of Navajo Nation residency"
+      ],
+      "pipeline_categories": [
+        "housing",
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_gila_river_housing",
+      "program_name": "Gila River Indian Community Housing",
+      "layer": "tribal",
+      "benefit_category": "housing",
+      "pipeline_ids": [],
+      "agency": "GRIC",
+      "phone": "520-562-3465",
+      "website": "https://www.gilariver.org",
+      "eligibility": "Gila River Indian Community members.",
+      "apply_notes": "Apply at GRIC housing office.",
+      "source": "https://www.gilariver.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "gila river",
+        "housing"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "housing",
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_tohono_oodham_housing",
+      "program_name": "Tohono O'odham Housing Authority",
+      "layer": "tribal",
+      "benefit_category": "housing",
+      "pipeline_ids": [],
+      "agency": "TOHA",
+      "phone": "520-383-2221",
+      "website": "https://www.tonation-nsn.gov",
+      "eligibility": "Tohono O'odham Nation members.",
+      "apply_notes": "Apply at TOHA office.",
+      "source": "https://www.tonation-nsn.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "tohono oodham",
+        "housing"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "housing",
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_rural_development",
+      "program_name": "USDA Rural Development (AZ)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [],
+      "agency": "USDA",
+      "phone": "602-280-8701",
+      "website": "https://www.rd.usda.gov/az",
+      "eligibility": "Rural AZ residents. Home loans, rental assistance, home repair grants.",
+      "apply_notes": "Apply through USDA Rural Development office.",
+      "source": "https://www.rd.usda.gov/az",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "rural",
+        "usda",
+        "home loan",
+        "repair"
+      ],
+      "documents_needed": [
+        "Proof of income",
+        "Proof of rural residency",
+        "Credit history"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "street_address": "2850 N 24th St",
+      "city": "Phoenix",
+      "state_code": "AZ",
+      "zip": "85008",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_rapid_rehousing",
+      "program_name": "Rapid Rehousing Programs",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [],
+      "agency": "DES via local agencies",
+      "phone": "855-432-7587",
+      "website": "https://www.azdes.gov",
+      "eligibility": "Homeless individuals and families. Short-term rental assistance + case management.",
+      "apply_notes": "Contact local Continuum of Care or call 211.",
+      "source": "https://www.azdes.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "rapid rehousing",
+        "homeless",
+        "rental assistance"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of homelessness",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_sojourner_center",
+      "program_name": "Sojourner Center (DV Shelter)",
+      "layer": "nonprofit",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "Sojourner Center",
+      "phone": "602-244-0503",
+      "website": "https://www.sojournercenter.org",
+      "eligibility": "DV survivors and their children. Largest DV shelter in the US (capacity 250+).",
+      "apply_notes": "Call 24/7 crisis line. Confidential location.",
+      "source": "https://www.sojournercenter.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "dv",
+        "shelter",
+        "phoenix",
+        "domestic violence"
+      ],
+      "documents_needed": [
+        "None required for emergency entry"
+      ],
+      "pipeline_categories": [
+        "housing",
+        "domestic_violence"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_azcadv",
+      "program_name": "AZ Coalition Against DV",
+      "layer": "state",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "AzCADV",
+      "phone": "602-279-2900",
+      "website": "https://www.azcadv.org",
+      "eligibility": "Anyone experiencing DV in AZ. 47+ local member programs statewide.",
+      "apply_notes": "Call for referral to nearest DV program. 24/7.",
+      "source": "https://www.azcadv.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "domestic violence",
+        "dv",
+        "coalition",
+        "statewide"
+      ],
+      "documents_needed": [
+        "None required"
+      ],
+      "pipeline_categories": [
+        "domestic_violence"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "dv_safety",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_chrysalis",
+      "program_name": "Chrysalis",
+      "layer": "nonprofit",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "Chrysalis",
+      "phone": "602-955-9059",
+      "website": "https://www.noabuse.org",
+      "eligibility": "DV survivors in Phoenix metro. Shelter, counseling, legal advocacy.",
+      "apply_notes": "Call 24/7 crisis line.",
+      "source": "https://www.noabuse.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "dv",
+        "shelter",
+        "phoenix",
+        "counseling"
+      ],
+      "documents_needed": [
+        "None required for crisis services"
+      ],
+      "pipeline_categories": [
+        "domestic_violence"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "dv_safety",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_new_life_center",
+      "program_name": "New Life Center",
+      "layer": "nonprofit",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "New Life Center",
+      "phone": "623-932-4404",
+      "website": "https://www.newlifectr.org",
+      "eligibility": "DV survivors in West Valley (Goodyear/Buckeye area).",
+      "apply_notes": "Call 24/7 crisis line.",
+      "source": "https://www.newlifectr.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "dv",
+        "shelter",
+        "west valley",
+        "goodyear"
+      ],
+      "documents_needed": [
+        "None required for crisis services"
+      ],
+      "pipeline_categories": [
+        "domestic_violence"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "dv_safety",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_a_new_leaf",
+      "program_name": "A New Leaf",
+      "layer": "nonprofit",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "A New Leaf",
+      "phone": "480-890-3039",
+      "website": "https://www.turnanewleaf.org",
+      "eligibility": "DV survivors in East Valley (Mesa/Tempe/Chandler). Also serves homeless.",
+      "apply_notes": "Call crisis line. Also provides homeless services.",
+      "source": "https://www.turnanewleaf.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "dv",
+        "shelter",
+        "east valley",
+        "mesa"
+      ],
+      "documents_needed": [
+        "None required for crisis services"
+      ],
+      "pipeline_categories": [
+        "domestic_violence"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "dv_safety",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_fresh_start",
+      "program_name": "Fresh Start Women's Foundation",
+      "layer": "nonprofit",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "Fresh Start",
+      "phone": "602-261-8242",
+      "website": "https://www.freshstartwomen.org",
+      "eligibility": "Women in crisis or transition in Phoenix. Career training, financial literacy, personal development.",
+      "apply_notes": "Call for intake. Programs include career training and financial empowerment.",
+      "source": "https://www.freshstartwomen.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "women",
+        "career",
+        "phoenix",
+        "empowerment"
+      ],
+      "documents_needed": [
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "domestic_violence"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "dv_safety",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_laro",
+      "program_name": "AZ Latino Resource Organization (LARO)",
+      "layer": "nonprofit",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "LARO",
+      "phone": "602-249-0011",
+      "website": "https://www.laro.org",
+      "eligibility": "Latino/a DV survivors. Bilingual services. Also immigration assistance.",
+      "apply_notes": "Call for intake. Spanish-language services available.",
+      "source": "https://www.laro.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "dv",
+        "latino",
+        "spanish",
+        "immigration",
+        "phoenix"
+      ],
+      "documents_needed": [
+        "None required for crisis services"
+      ],
+      "pipeline_categories": [
+        "domestic_violence",
+        "immigration"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "dv_safety",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_cls_dv",
+      "program_name": "Community Legal Services (DV Legal)",
+      "layer": "nonprofit",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "CLS AZ",
+      "phone": "602-258-3434",
+      "website": "https://www.clsaz.org",
+      "eligibility": "DV survivors needing legal help in Maricopa/Yavapai counties. Orders of protection, custody, divorce.",
+      "apply_notes": "Call for legal intake.",
+      "source": "https://www.clsaz.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "dv",
+        "legal",
+        "protection order",
+        "phoenix"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Documentation of DV"
+      ],
+      "pipeline_categories": [
+        "domestic_violence",
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "dv_safety",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_emerge_tucson",
+      "program_name": "Emerge! (Tucson)",
+      "layer": "nonprofit",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "Emerge!",
+      "phone": "520-795-4266",
+      "website": "https://www.emergecenter.org",
+      "eligibility": "DV survivors in Tucson/Southern AZ. Shelter, counseling, legal advocacy.",
+      "apply_notes": "Call 24/7 crisis line.",
+      "source": "https://www.emergecenter.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "dv",
+        "shelter",
+        "tucson",
+        "southern az"
+      ],
+      "documents_needed": [
+        "None required for crisis services"
+      ],
+      "pipeline_categories": [
+        "domestic_violence"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "dv_safety",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_codac",
+      "program_name": "CODAC Health (DV + Behavioral Health)",
+      "layer": "nonprofit",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "CODAC",
+      "phone": "520-327-4505",
+      "website": "https://www.codac.org",
+      "eligibility": "DV survivors with co-occurring behavioral health needs in Tucson.",
+      "apply_notes": "Call for intake. Integrated DV + behavioral health services.",
+      "source": "https://www.codac.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "dv",
+        "behavioral health",
+        "tucson",
+        "substance use"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Insurance card (if applicable)"
+      ],
+      "pipeline_categories": [
+        "domestic_violence",
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "dv_safety",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_sacasa",
+      "program_name": "SACASA (Sexual Assault)",
+      "layer": "nonprofit",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "SACASA",
+      "phone": "520-327-7273",
+      "website": "https://www.sacasa.org",
+      "eligibility": "Sexual assault survivors in Tucson/Southern AZ. 24/7 crisis line.",
+      "apply_notes": "Call crisis line. Hospital accompaniment available.",
+      "source": "https://www.sacasa.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "sexual assault",
+        "rape",
+        "tucson",
+        "crisis"
+      ],
+      "documents_needed": [
+        "None required"
+      ],
+      "pipeline_categories": [
+        "domestic_violence"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "dv_safety",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_sala_dv",
+      "program_name": "SALA (DV Legal \u2014 Southern AZ)",
+      "layer": "nonprofit",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "SALA",
+      "phone": "520-623-9461",
+      "website": "https://www.sazlegalaid.org",
+      "eligibility": "DV survivors in Southern AZ (9 counties, 11 reservations). Legal representation.",
+      "apply_notes": "Call for legal intake. Serves tribal communities.",
+      "source": "https://www.sazlegalaid.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "dv",
+        "legal",
+        "tucson",
+        "tribal"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Documentation of DV"
+      ],
+      "pipeline_categories": [
+        "domestic_violence",
+        "legal",
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "dv_safety",
+      "city": "Tucson",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_pima_county_one",
+      "program_name": "Pima County ONE (Tucson)",
+      "layer": "county",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "Pima County",
+      "phone": "520-740-2600",
+      "website": "https://www.pima.gov",
+      "eligibility": "DV survivors in Pima County. Coordinated community response.",
+      "apply_notes": "Call for referral to services.",
+      "source": "https://www.pima.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "dv",
+        "tucson",
+        "pima county"
+      ],
+      "documents_needed": [
+        "None required"
+      ],
+      "pipeline_categories": [
+        "domestic_violence"
+      ],
+      "urgency": "standard",
+      "region": "tucson_metro",
+      "category": "dv_safety",
+      "city": "Tucson",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_jfcs_tucson",
+      "program_name": "Jewish Family & Children's Services (Tucson)",
+      "layer": "nonprofit",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "JFCS",
+      "phone": "520-795-0300",
+      "website": "https://www.jfcstucson.org",
+      "eligibility": "DV survivors and families in Tucson. Counseling, case management, emergency assistance.",
+      "apply_notes": "Call for intake. Serves all faiths and backgrounds.",
+      "source": "https://www.jfcstucson.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "dv",
+        "counseling",
+        "tucson",
+        "family"
+      ],
+      "documents_needed": [
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "domestic_violence"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "dv_safety",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_stronghearts",
+      "program_name": "StrongHearts Native Helpline",
+      "layer": "tribal",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "StrongHearts",
+      "phone": "844-762-8483",
+      "website": "https://www.strongheartshelpline.org",
+      "eligibility": "AI/AN experiencing DV, dating violence, sexual assault, stalking, sex trafficking.",
+      "apply_notes": "Call or text 24/7. Culturally appropriate support.",
+      "source": "https://www.strongheartshelpline.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "native",
+        "dv",
+        "helpline"
+      ],
+      "documents_needed": [
+        "None required"
+      ],
+      "pipeline_categories": [
+        "domestic_violence",
+        "tribal"
+      ],
+      "urgency": "immediate",
+      "region": "tribal_nation",
+      "category": "dv_safety",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_navajo_dv",
+      "program_name": "Navajo Nation DV Services",
+      "layer": "tribal",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "Navajo Nation",
+      "phone": "928-871-6111",
+      "website": "https://www.navajo-nsn.gov",
+      "eligibility": "Navajo Nation members experiencing DV. Shelter and advocacy.",
+      "apply_notes": "Call for crisis services.",
+      "source": "https://www.navajo-nsn.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "navajo",
+        "tribal",
+        "dv",
+        "shelter"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card (helpful)"
+      ],
+      "pipeline_categories": [
+        "domestic_violence",
+        "tribal"
+      ],
+      "urgency": "immediate",
+      "region": "tribal_nation",
+      "category": "dv_safety",
+      "street_address": "234 N Central Ave Ste 100",
+      "city": "Phoenix",
+      "state_code": "AZ",
+      "zip": "85004",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_gila_river_dv",
+      "program_name": "Gila River DV Services",
+      "layer": "tribal",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "GRIC",
+      "phone": "520-796-3100",
+      "website": "https://www.gilariver.org",
+      "eligibility": "Gila River Indian Community members experiencing DV.",
+      "apply_notes": "Call for crisis services.",
+      "source": "https://www.gilariver.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "gila river",
+        "dv"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card (helpful)"
+      ],
+      "pipeline_categories": [
+        "domestic_violence",
+        "tribal"
+      ],
+      "urgency": "immediate",
+      "region": "tribal_nation",
+      "category": "dv_safety",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_tohono_oodham_dv",
+      "program_name": "Tohono O'odham DV Services",
+      "layer": "tribal",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "Tohono O'odham Nation",
+      "phone": "520-383-2221",
+      "website": "https://www.tonation-nsn.gov",
+      "eligibility": "Tohono O'odham Nation members experiencing DV.",
+      "apply_notes": "Call for crisis services.",
+      "source": "https://www.tonation-nsn.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "tohono oodham",
+        "dv"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card (helpful)"
+      ],
+      "pipeline_categories": [
+        "domestic_violence",
+        "tribal"
+      ],
+      "urgency": "immediate",
+      "region": "tribal_nation",
+      "category": "dv_safety",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_itca_vawa",
+      "program_name": "ITCA Tribal VAWA Coordination",
+      "layer": "tribal",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "ITCA",
+      "phone": "602-248-0071",
+      "website": "https://www.itcaonline.com",
+      "eligibility": "AI/AN DV survivors across AZ's 22 tribes. VAWA coordination and technical assistance.",
+      "apply_notes": "Call for referral to tribal DV program.",
+      "source": "https://www.itcaonline.com",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "vawa",
+        "itca",
+        "coordination"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card"
+      ],
+      "pipeline_categories": [
+        "domestic_violence",
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "dv_safety",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_dvlap",
+      "program_name": "DV Legal Assistance Project (Statewide)",
+      "layer": "nonprofit",
+      "benefit_category": "dv_safety",
+      "pipeline_ids": [
+        "domestic_violence"
+      ],
+      "agency": "DVLAP",
+      "phone": "602-258-3434",
+      "website": "https://www.clsaz.org",
+      "eligibility": "DV survivors statewide needing legal representation. Orders of protection, custody, immigration.",
+      "apply_notes": "Call CLS AZ for intake.",
+      "source": "https://www.clsaz.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "dv",
+        "legal",
+        "statewide",
+        "protection order"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Documentation of DV"
+      ],
+      "pipeline_categories": [
+        "domestic_violence",
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "dv_safety",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_cls",
+      "program_name": "Community Legal Services (Phoenix)",
+      "layer": "nonprofit",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [
+        "tenant_rights",
+        "wage_theft",
+        "benefits_denial"
+      ],
+      "agency": "CLS AZ",
+      "phone": "602-258-3434",
+      "website": "https://www.clsaz.org",
+      "eligibility": "Low-income residents of Maricopa and Yavapai counties. Income < 125% FPL.",
+      "apply_notes": "Call for intake. Covers housing, family, benefits, consumer, employment.",
+      "source": "https://www.clsaz.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "legal aid",
+        "phoenix",
+        "maricopa",
+        "lawyer"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income",
+        "Documents related to legal issue"
+      ],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal_aid",
+      "street_address": "305 S 2nd Ave",
+      "city": "Phoenix",
+      "state_code": "AZ",
+      "zip": "85003",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_sala",
+      "program_name": "Southern AZ Legal Aid (Tucson)",
+      "layer": "nonprofit",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [
+        "tenant_rights",
+        "wage_theft",
+        "benefits_denial"
+      ],
+      "agency": "SALA",
+      "phone": "520-623-9461",
+      "website": "https://www.sazlegalaid.org",
+      "eligibility": "Low-income residents of 9 Southern AZ counties and 11 reservations.",
+      "apply_notes": "Call for intake. Covers housing, family, benefits, tribal law.",
+      "source": "https://www.sazlegalaid.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "legal aid",
+        "tucson",
+        "southern az",
+        "tribal"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income",
+        "Documents related to legal issue"
+      ],
+      "pipeline_categories": [
+        "legal",
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal_aid",
+      "street_address": "2343 E Broadway Blvd Ste 200",
+      "city": "Tucson",
+      "state_code": "AZ",
+      "zip": "85719",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_dna_peoples_legal",
+      "program_name": "DNA People's Legal Services",
+      "layer": "tribal",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [
+        "tenant_rights",
+        "benefits_denial"
+      ],
+      "agency": "DNA",
+      "phone": "928-871-4151",
+      "website": "https://www.dnalegalservices.org",
+      "eligibility": "AI/AN on Navajo Nation, Hopi, and other reservations. Federal Indian law.",
+      "apply_notes": "Call for intake. Primary tribal legal aid.",
+      "source": "https://www.dnalegalservices.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "navajo",
+        "hopi",
+        "legal aid",
+        "dna"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card",
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "legal",
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "legal_aid",
+      "street_address": "123 N Leroux St Ste 101",
+      "city": "Flagstaff",
+      "state_code": "AZ",
+      "zip": "86001",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_apache_legal_aid",
+      "program_name": "Apache County Legal Aid",
+      "layer": "nonprofit",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [],
+      "agency": "Apache County Legal Aid",
+      "phone": "928-337-4364",
+      "website": "https://www.azflse.org",
+      "eligibility": "Low-income residents of Apache County including tribal communities.",
+      "apply_notes": "Call for intake.",
+      "source": "https://www.azflse.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "legal aid",
+        "apache county",
+        "rural"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal_aid",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_azflse",
+      "program_name": "AZ Foundation for Legal Services & Education",
+      "layer": "nonprofit",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [],
+      "agency": "AZFLSE",
+      "phone": "602-252-4804",
+      "website": "https://www.azflse.org",
+      "eligibility": "Statewide legal aid coordination. Referrals to local legal aid programs.",
+      "apply_notes": "Call for referral to appropriate legal aid program.",
+      "source": "https://www.azflse.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "legal aid",
+        "statewide",
+        "referral",
+        "coordination"
+      ],
+      "documents_needed": [
+        "None for referral"
+      ],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal_aid",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_court_help",
+      "program_name": "AZ Court Help (Self-Help)",
+      "layer": "state",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [],
+      "agency": "AZ Courts",
+      "phone": "602-452-3200",
+      "website": "https://www.azcourthelp.gov",
+      "eligibility": "Any AZ resident needing court self-help resources. Free forms and guides.",
+      "apply_notes": "Visit website for forms, guides, and court information.",
+      "source": "https://www.azcourthelp.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "court",
+        "self-help",
+        "forms",
+        "pro se"
+      ],
+      "documents_needed": [
+        "None"
+      ],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal_aid",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_law_help",
+      "program_name": "AZ Law Help",
+      "layer": "nonprofit",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [],
+      "agency": "AZFLSE",
+      "phone": "602-252-4804",
+      "website": "https://www.azlawhelp.org",
+      "eligibility": "Any AZ resident seeking legal information. Free online legal resources.",
+      "apply_notes": "Visit website for legal information and referrals.",
+      "source": "https://www.azlawhelp.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "legal info",
+        "resources",
+        "referral"
+      ],
+      "documents_needed": [
+        "None"
+      ],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal_aid",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_acdl_legal",
+      "program_name": "AZ Center for Disability Law (Legal)",
+      "layer": "nonprofit",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "ACDL",
+      "phone": "602-274-6287",
+      "website": "https://www.azdisabilitylaw.org",
+      "eligibility": "People with disabilities. Protection & advocacy. Special education, ADA, Medicaid.",
+      "apply_notes": "Call for intake.",
+      "source": "https://www.azdisabilitylaw.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "disability",
+        "ada",
+        "special education",
+        "legal"
+      ],
+      "documents_needed": [
+        "Documentation of disability"
+      ],
+      "pipeline_categories": [
+        "legal",
+        "disability"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal_aid",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_senior_law_project",
+      "program_name": "AZ Senior Citizens Law Project",
+      "layer": "nonprofit",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [],
+      "agency": "ASLP",
+      "phone": "602-252-6710",
+      "website": "https://www.azlawhelp.org",
+      "eligibility": "Seniors 60+ in Maricopa County. Free legal services.",
+      "apply_notes": "Call for intake.",
+      "source": "https://www.azlawhelp.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "senior",
+        "elderly",
+        "legal aid",
+        "maricopa"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of age"
+      ],
+      "pipeline_categories": [
+        "legal",
+        "elder"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal_aid",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_state_bar_referral",
+      "program_name": "AZ State Bar Lawyer Referral",
+      "layer": "state",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [],
+      "agency": "AZ State Bar",
+      "phone": "602-252-4804",
+      "website": "https://www.azbar.org",
+      "eligibility": "Any AZ resident. Referral to private attorneys. Initial consultation fee may apply.",
+      "apply_notes": "Call or use online referral service.",
+      "source": "https://www.azbar.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "lawyer",
+        "attorney",
+        "referral",
+        "state bar"
+      ],
+      "documents_needed": [
+        "None for referral"
+      ],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal_aid",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_vlp",
+      "program_name": "Volunteer Lawyers Program (Southern AZ)",
+      "layer": "nonprofit",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [],
+      "agency": "VLP",
+      "phone": "520-623-9461",
+      "website": "https://www.sazlegalaid.org",
+      "eligibility": "Low-income residents of Southern AZ. Pro bono attorney matching.",
+      "apply_notes": "Apply through SALA.",
+      "source": "https://www.sazlegalaid.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "pro bono",
+        "volunteer",
+        "lawyer",
+        "tucson"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal_aid",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_chicanos_por_la_causa",
+      "program_name": "Chicanos Por La Causa",
+      "layer": "nonprofit",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "CPLC",
+      "phone": "602-257-0700",
+      "website": "https://www.cplc.org",
+      "eligibility": "Latino/a community. Immigration, benefits, housing assistance.",
+      "apply_notes": "Call for intake. Bilingual services.",
+      "source": "https://www.cplc.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "immigration",
+        "latino",
+        "benefits",
+        "phoenix"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Immigration documents (if applicable)"
+      ],
+      "pipeline_categories": [
+        "legal",
+        "immigration"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal_aid",
+      "street_address": "1112 E Buckeye Rd",
+      "city": "Phoenix",
+      "state_code": "AZ",
+      "zip": "85034",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_cils",
+      "program_name": "CA Indian Legal Services (Federal Indian Law)",
+      "layer": "nonprofit",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [],
+      "agency": "CILS",
+      "phone": "760-746-8941",
+      "website": "https://www.calindian.org",
+      "eligibility": "AI/AN with federal Indian law issues. Tribal sovereignty, ICWA, trust land.",
+      "apply_notes": "Call for intake. Handles federal Indian law matters.",
+      "source": "https://www.calindian.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "federal indian law",
+        "icwa",
+        "sovereignty"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card"
+      ],
+      "pipeline_categories": [
+        "legal",
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal_aid",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_narf",
+      "program_name": "Native American Rights Fund",
+      "layer": "nonprofit",
+      "benefit_category": "legal_aid",
+      "pipeline_ids": [],
+      "agency": "NARF",
+      "phone": "303-447-8760",
+      "website": "https://www.narf.org",
+      "eligibility": "AI/AN with tribal sovereignty and federal Indian law issues.",
+      "apply_notes": "Contact for case evaluation.",
+      "source": "https://www.narf.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "sovereignty",
+        "narf",
+        "federal"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card"
+      ],
+      "pipeline_categories": [
+        "legal",
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal_aid",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_tanf",
+      "program_name": "TANF/EMPOWER",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "DES",
+      "phone": "855-432-7587",
+      "website": "https://www.healthearizonaplus.gov",
+      "eligibility": "Families with children. Income < TANF limits. 24-MONTH LIFETIME LIMIT (shortest in US). Max $278/mo for family of 3.",
+      "apply_notes": "Apply at Health-e-Arizona Plus or DES office. 24-month lifetime limit \u2014 plan transition early.",
+      "source": "https://www.healthearizonaplus.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tanf",
+        "cash assistance",
+        "welfare",
+        "empower"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "SSN",
+        "Proof of income",
+        "Proof of AZ residency",
+        "Children's birth certificates"
+      ],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_emergency_assistance",
+      "program_name": "Emergency Assistance (One-Time TANF)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "DES",
+      "phone": "855-432-7587",
+      "website": "https://www.azdes.gov",
+      "eligibility": "Families in crisis. One-time payment for rent, utilities, or other emergencies.",
+      "apply_notes": "Apply at DES office. Does not count toward TANF time limit.",
+      "source": "https://www.azdes.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "emergency",
+        "one-time",
+        "crisis",
+        "rent"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of emergency",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "urgent",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_unemployment",
+      "program_name": "AZ Unemployment Insurance",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial",
+        "wage_theft"
+      ],
+      "agency": "DES",
+      "phone": "877-600-2722",
+      "website": "https://www.azui.com",
+      "eligibility": "Workers who lost job through no fault. Max $320/week for 26 weeks. Must actively seek work.",
+      "apply_notes": "File online at azui.com. 15-DAY appeal deadline if denied (very short!).",
+      "source": "https://www.azui.com",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "unemployment",
+        "ui",
+        "laid off",
+        "fired"
+      ],
+      "documents_needed": [
+        "SSN",
+        "Employment history",
+        "Reason for separation"
+      ],
+      "pipeline_categories": [
+        "cash_assistance",
+        "employment"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_workers_comp",
+      "program_name": "Workers' Compensation",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "wage_theft"
+      ],
+      "agency": "AZ ICA",
+      "phone": "800-837-8583",
+      "website": "https://www.azica.gov",
+      "eligibility": "Workers injured on the job. All AZ employers must carry workers' comp insurance.",
+      "apply_notes": "Report injury to employer immediately. File claim with ICA if employer doesn't.",
+      "source": "https://www.azica.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "workers comp",
+        "injury",
+        "workplace"
+      ],
+      "documents_needed": [
+        "Injury report",
+        "Medical records",
+        "Employment verification"
+      ],
+      "pipeline_categories": [
+        "cash_assistance",
+        "employment"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_eitc_vita",
+      "program_name": "EITC + VITA (Free Tax Prep)",
+      "layer": "nonprofit",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [],
+      "agency": "IRS via local partners",
+      "phone": "211",
+      "website": "https://www.irs.gov/eitc",
+      "eligibility": "Working families with income < $63,398. Free tax preparation through VITA sites.",
+      "apply_notes": "Call 211 for nearest VITA site. File during tax season (Jan-Apr).",
+      "source": "https://www.irs.gov/eitc",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "eitc",
+        "tax credit",
+        "vita",
+        "free tax prep"
+      ],
+      "documents_needed": [
+        "W-2s",
+        "SSN",
+        "Photo ID",
+        "Prior year tax return"
+      ],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_veterans_benefits",
+      "program_name": "AZ Veterans Benefits",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [],
+      "agency": "ADVS",
+      "phone": "602-255-3373",
+      "website": "https://www.dvs.az.gov",
+      "eligibility": "AZ veterans. State benefits supplement federal VA benefits.",
+      "apply_notes": "Contact ADVS or local veterans service officer.",
+      "source": "https://www.dvs.az.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "veteran",
+        "military",
+        "benefits"
+      ],
+      "documents_needed": [
+        "DD-214",
+        "Photo ID",
+        "VA disability rating (if applicable)"
+      ],
+      "pipeline_categories": [
+        "cash_assistance",
+        "veterans"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_liheap",
+      "program_name": "LIHEAP AZ",
+      "layer": "state",
+      "benefit_category": "utilities",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "DES",
+      "phone": "855-432-7587",
+      "website": "https://www.healthearizonaplus.gov",
+      "eligibility": "Income < 150% FPL. COOLING is primary use in AZ (desert heat). Also heating assistance.",
+      "apply_notes": "Apply at Health-e-Arizona Plus or DES office. Cooling assistance critical April-September.",
+      "source": "https://www.healthearizonaplus.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "liheap",
+        "utility",
+        "cooling",
+        "heating",
+        "electric"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "SSN",
+        "Proof of income",
+        "Recent utility bill"
+      ],
+      "pipeline_categories": [
+        "utilities"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "utilities",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_heat_relief_network",
+      "program_name": "AZ Heat Relief Network",
+      "layer": "state",
+      "benefit_category": "utilities",
+      "pipeline_ids": [],
+      "agency": "AZ Heat Relief",
+      "phone": "211",
+      "website": "https://www.heatrelief.maricopa.gov",
+      "eligibility": "Anyone in AZ during extreme heat. 100+ cooling stations statewide. LIFE-CRITICAL April-September.",
+      "apply_notes": "Call 211 for nearest cooling station. Open during heat warnings.",
+      "source": "https://www.heatrelief.maricopa.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "heat",
+        "cooling station",
+        "extreme heat",
+        "life safety"
+      ],
+      "documents_needed": [
+        "None required"
+      ],
+      "pipeline_categories": [
+        "utilities"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "utilities",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_phoenix_cea",
+      "program_name": "Phoenix Utility Assistance (CEA)",
+      "layer": "city",
+      "benefit_category": "utilities",
+      "pipeline_ids": [],
+      "agency": "City of Phoenix",
+      "phone": "602-262-6251",
+      "website": "https://www.phoenix.gov/humanservices",
+      "eligibility": "Phoenix residents. Emergency utility assistance.",
+      "apply_notes": "Apply at Phoenix Human Services Department.",
+      "source": "https://www.phoenix.gov/humanservices",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "phoenix",
+        "utility",
+        "emergency",
+        "electric"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of Phoenix residency",
+        "Utility bill",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "utilities"
+      ],
+      "urgency": "standard",
+      "region": "phoenix_metro",
+      "category": "utilities",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_aps_plus",
+      "program_name": "APS PLUS (Low-Income Rate)",
+      "layer": "community",
+      "benefit_category": "utilities",
+      "pipeline_ids": [],
+      "agency": "APS",
+      "phone": "602-371-7171",
+      "website": "https://www.aps.com",
+      "eligibility": "APS customers with income < 150% FPL. Discounted electric rate.",
+      "apply_notes": "Apply through APS or at DES office.",
+      "source": "https://www.aps.com",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "aps",
+        "electric",
+        "discount",
+        "low income"
+      ],
+      "documents_needed": [
+        "Proof of income",
+        "APS account number"
+      ],
+      "pipeline_categories": [
+        "utilities"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "utilities",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_aps_medical_baseline",
+      "program_name": "APS Medical Baseline",
+      "layer": "community",
+      "benefit_category": "utilities",
+      "pipeline_ids": [],
+      "agency": "APS",
+      "phone": "602-371-7171",
+      "website": "https://www.aps.com",
+      "eligibility": "APS customers with medical need for electricity (life support, cooling for medical conditions).",
+      "apply_notes": "Submit medical certification to APS. Provides additional baseline allowance.",
+      "source": "https://www.aps.com",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "aps",
+        "medical",
+        "life support",
+        "cooling"
+      ],
+      "documents_needed": [
+        "Doctor's certification",
+        "APS account number"
+      ],
+      "pipeline_categories": [
+        "utilities",
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "utilities",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_srp_share",
+      "program_name": "SRP SHARE Program",
+      "layer": "community",
+      "benefit_category": "utilities",
+      "pipeline_ids": [],
+      "agency": "SRP",
+      "phone": "602-236-8888",
+      "website": "https://www.srpnet.com",
+      "eligibility": "SRP customers in Phoenix East Valley. Emergency utility assistance funded by customer donations.",
+      "apply_notes": "Apply through SRP or Salvation Army.",
+      "source": "https://www.srpnet.com",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "srp",
+        "electric",
+        "east valley",
+        "emergency"
+      ],
+      "documents_needed": [
+        "SRP account number",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "utilities"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "utilities",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_tep_support",
+      "program_name": "TEP Energy Support (Tucson)",
+      "layer": "community",
+      "benefit_category": "utilities",
+      "pipeline_ids": [],
+      "agency": "TEP",
+      "phone": "520-623-7711",
+      "website": "https://www.tep.com",
+      "eligibility": "TEP customers in Tucson area. Low-income rate discount and emergency assistance.",
+      "apply_notes": "Apply through TEP customer service.",
+      "source": "https://www.tep.com",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tep",
+        "tucson",
+        "electric",
+        "discount"
+      ],
+      "documents_needed": [
+        "TEP account number",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "utilities"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "utilities",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_southwest_gas",
+      "program_name": "Southwest Gas Assistance",
+      "layer": "community",
+      "benefit_category": "utilities",
+      "pipeline_ids": [],
+      "agency": "Southwest Gas",
+      "phone": "877-860-6020",
+      "website": "https://www.swgas.com",
+      "eligibility": "Southwest Gas customers. Payment assistance and budget billing.",
+      "apply_notes": "Call customer service for assistance options.",
+      "source": "https://www.swgas.com",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "gas",
+        "heating",
+        "southwest gas"
+      ],
+      "documents_needed": [
+        "Account number",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "utilities"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "utilities",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_lifeline",
+      "program_name": "Lifeline Phone/Broadband",
+      "layer": "state",
+      "benefit_category": "utilities",
+      "pipeline_ids": [],
+      "agency": "FCC",
+      "phone": "800-234-9473",
+      "website": "https://www.lifelinesupport.org",
+      "eligibility": "Income < 135% FPL or participation in SNAP, Medicaid, TANF, etc.",
+      "apply_notes": "Apply online at lifelineapply.org or through phone carrier.",
+      "source": "https://www.lifelinesupport.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "phone",
+        "broadband",
+        "internet",
+        "lifeline"
+      ],
+      "documents_needed": [
+        "Proof of eligibility (benefit letter or income)"
+      ],
+      "pipeline_categories": [
+        "utilities"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "utilities",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_community_action",
+      "program_name": "AZ Community Action Association",
+      "layer": "nonprofit",
+      "benefit_category": "utilities",
+      "pipeline_ids": [],
+      "agency": "ACAA",
+      "phone": "602-604-0640",
+      "website": "https://www.azcaa.org",
+      "eligibility": "Low-income AZ residents. Weatherization, utility assistance, emergency services.",
+      "apply_notes": "Contact local Community Action Agency.",
+      "source": "https://www.azcaa.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "community action",
+        "weatherization",
+        "utility"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income",
+        "Utility bill"
+      ],
+      "pipeline_categories": [
+        "utilities"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "utilities",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_red_cross_utility",
+      "program_name": "Red Cross Utility/Disaster Assistance",
+      "layer": "nonprofit",
+      "benefit_category": "utilities",
+      "pipeline_ids": [],
+      "agency": "American Red Cross",
+      "phone": "800-733-2767",
+      "website": "https://www.redcross.org",
+      "eligibility": "Disaster-affected individuals. Emergency utility and housing assistance.",
+      "apply_notes": "Call after disaster event. Also provides general emergency assistance.",
+      "source": "https://www.redcross.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "red cross",
+        "disaster",
+        "emergency"
+      ],
+      "documents_needed": [
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "utilities"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "utilities",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_itca",
+      "program_name": "Inter Tribal Council of AZ (ITCA)",
+      "layer": "tribal",
+      "benefit_category": "tribal_indigenous",
+      "pipeline_ids": [],
+      "agency": "ITCA",
+      "phone": "602-248-0071",
+      "website": "https://www.itcaonline.com",
+      "eligibility": "Represents 21 of 22 AZ tribes. Policy coordination, technical assistance, program administration.",
+      "apply_notes": "Contact ITCA for referral to tribal programs.",
+      "source": "https://www.itcaonline.com",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "itca",
+        "coordination",
+        "policy"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card"
+      ],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "tribal_indigenous",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_tribal_relations",
+      "program_name": "Governor's Office of Tribal Relations",
+      "layer": "state",
+      "benefit_category": "tribal_indigenous",
+      "pipeline_ids": [],
+      "agency": "Governor's Office",
+      "phone": "602-542-1425",
+      "website": "https://www.azgovernor.gov/tribal-relations",
+      "eligibility": "State-tribal liaison. Policy coordination between AZ and 22 tribes.",
+      "apply_notes": "Contact for state-tribal issues.",
+      "source": "https://www.azgovernor.gov/tribal-relations",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "state",
+        "government",
+        "liaison"
+      ],
+      "documents_needed": [
+        "None"
+      ],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "tribal_indigenous",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_navajo_social_services",
+      "program_name": "Navajo Nation Social Services",
+      "layer": "tribal",
+      "benefit_category": "tribal_indigenous",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Navajo Nation",
+      "phone": "928-871-6741",
+      "website": "https://www.navajo-nsn.gov",
+      "eligibility": "Navajo Nation members. TANF, GA, child welfare, adult protective services.",
+      "apply_notes": "Apply at Navajo Nation Social Services office.",
+      "source": "https://www.navajo-nsn.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "navajo",
+        "social services",
+        "tanf",
+        "child welfare"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "tribal_indigenous",
+      "street_address": "Hwy 264 & Rte 12",
+      "city": "Window Rock",
+      "state_code": "AZ",
+      "zip": "86515",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_pascua_yaqui_services",
+      "program_name": "Pascua Yaqui Social Services",
+      "layer": "tribal",
+      "benefit_category": "tribal_indigenous",
+      "pipeline_ids": [],
+      "agency": "Pascua Yaqui Tribe",
+      "phone": "520-879-5430",
+      "website": "https://www.pascuayaqui-nsn.gov",
+      "eligibility": "Pascua Yaqui tribal members in Tucson area.",
+      "apply_notes": "Contact tribal social services office.",
+      "source": "https://www.pascuayaqui-nsn.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "pascua yaqui",
+        "tucson",
+        "tribal"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card"
+      ],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "tribal_indigenous",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_hopi_social_services",
+      "program_name": "Hopi Tribe Social Services",
+      "layer": "tribal",
+      "benefit_category": "tribal_indigenous",
+      "pipeline_ids": [],
+      "agency": "Hopi Tribe",
+      "phone": "928-734-3677",
+      "website": "https://www.hopi-nsn.gov",
+      "eligibility": "Hopi tribal members.",
+      "apply_notes": "Contact Hopi Social Services.",
+      "source": "https://www.hopi-nsn.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "hopi",
+        "tribal",
+        "social services"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card"
+      ],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "tribal_indigenous",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_bia_phoenix",
+      "program_name": "BIA Phoenix Regional Office",
+      "layer": "state",
+      "benefit_category": "tribal_indigenous",
+      "pipeline_ids": [],
+      "agency": "Bureau of Indian Affairs",
+      "phone": "602-265-1566",
+      "website": "https://www.bia.gov",
+      "eligibility": "AI/AN in AZ. Federal Indian affairs, trust land, tribal enrollment.",
+      "apply_notes": "Contact BIA for federal Indian affairs matters.",
+      "source": "https://www.bia.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "bia",
+        "federal",
+        "trust land",
+        "enrollment"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card or CDIB"
+      ],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "tribal_indigenous",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_tribal_tanf",
+      "program_name": "AZ Tribal TANF Programs",
+      "layer": "tribal",
+      "benefit_category": "tribal_indigenous",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Individual tribes",
+      "phone": "602-248-0071",
+      "website": "https://www.itcaonline.com",
+      "eligibility": "AI/AN on reservations. Each tribe administers own TANF with own rules and time limits.",
+      "apply_notes": "Contact your tribe's TANF office directly.",
+      "source": "https://www.itcaonline.com",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "tanf",
+        "cash assistance"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card",
+        "Proof of income",
+        "Proof of reservation residency"
+      ],
+      "pipeline_categories": [
+        "tribal",
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "tribal_indigenous",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_banner_health",
+      "program_name": "Banner Health Safety Net",
+      "layer": "nonprofit",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "Banner Health",
+      "phone": "602-747-4000",
+      "website": "https://www.bannerhealth.com",
+      "eligibility": "Uninsured/underinsured. Financial assistance available. Multiple AZ locations.",
+      "apply_notes": "Apply for financial assistance at any Banner facility.",
+      "source": "https://www.bannerhealth.com",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "hospital",
+        "safety net",
+        "banner",
+        "statewide"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_honor_health",
+      "program_name": "HonorHealth Community Health",
+      "layer": "nonprofit",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "HonorHealth",
+      "phone": "480-882-4000",
+      "website": "https://www.honorhealth.com",
+      "eligibility": "Scottsdale/North Phoenix. Community health programs and charity care.",
+      "apply_notes": "Apply for financial assistance program.",
+      "source": "https://www.honorhealth.com",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "hospital",
+        "scottsdale",
+        "charity care"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_valleywise",
+      "program_name": "Valleywise Health (formerly MIHS)",
+      "layer": "county",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "Maricopa County",
+      "phone": "602-344-5011",
+      "website": "https://www.valleywisehealth.org",
+      "eligibility": "Maricopa County residents. Safety net health system. Comprehensive care.",
+      "apply_notes": "Walk in or call for appointment. Financial assistance available.",
+      "source": "https://www.valleywisehealth.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "hospital",
+        "maricopa",
+        "safety net",
+        "comprehensive"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of Maricopa County residency"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "phoenix_metro",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_tucson_medical_center",
+      "program_name": "Tucson Medical Center Community Care",
+      "layer": "nonprofit",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "TMC",
+      "phone": "520-327-5461",
+      "website": "https://www.tmcaz.com",
+      "eligibility": "Tucson area. Charity care program for uninsured.",
+      "apply_notes": "Apply for charity care at TMC.",
+      "source": "https://www.tmcaz.com",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "hospital",
+        "tucson",
+        "charity care"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_mercy_care",
+      "program_name": "Mercy Care (AHCCCS Managed Care)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Mercy Care",
+      "phone": "602-263-3000",
+      "website": "https://www.mercycareaz.org",
+      "eligibility": "AHCCCS members assigned to Mercy Care plan. Behavioral health integration.",
+      "apply_notes": "Assigned through AHCCCS enrollment.",
+      "source": "https://www.mercycareaz.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "managed care",
+        "ahcccs",
+        "behavioral health"
+      ],
+      "documents_needed": [
+        "AHCCCS member ID"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_united_healthcare_cp",
+      "program_name": "UnitedHealthcare Community Plan (AHCCCS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "UHC",
+      "phone": "800-348-4058",
+      "website": "https://www.uhccommunityplan.com/az",
+      "eligibility": "AHCCCS members assigned to UHC plan.",
+      "apply_notes": "Assigned through AHCCCS enrollment.",
+      "source": "https://www.uhccommunityplan.com/az",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "managed care",
+        "ahcccs",
+        "uhc"
+      ],
+      "documents_needed": [
+        "AHCCCS member ID"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "street_address": "801 E Jefferson St",
+      "city": "Phoenix",
+      "state_code": "AZ",
+      "zip": "85034",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_banner_university_family_care",
+      "program_name": "Banner University Family Care (AHCCCS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Banner",
+      "phone": "800-582-8686",
+      "website": "https://www.banneruniversityfamilycare.com",
+      "eligibility": "AHCCCS members assigned to Banner plan.",
+      "apply_notes": "Assigned through AHCCCS enrollment.",
+      "source": "https://www.banneruniversityfamilycare.com",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "managed care",
+        "ahcccs",
+        "banner"
+      ],
+      "documents_needed": [
+        "AHCCCS member ID"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_copa_health",
+      "program_name": "Copa Health (Behavioral)",
+      "layer": "nonprofit",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "Copa Health",
+      "phone": "480-969-2231",
+      "website": "https://www.copahealth.org",
+      "eligibility": "Individuals with serious mental illness (SMI) or general mental health needs.",
+      "apply_notes": "Call for intake. Serves SMI and general behavioral health.",
+      "source": "https://www.copahealth.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "behavioral health",
+        "smi",
+        "mental health",
+        "phoenix"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "AHCCCS card (if applicable)",
+        "Referral"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_terros_health",
+      "program_name": "Terros Health",
+      "layer": "nonprofit",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "Terros Health",
+      "phone": "602-685-6000",
+      "website": "https://www.terroshealth.org",
+      "eligibility": "Individuals needing behavioral health, substance use, or crisis services in Phoenix.",
+      "apply_notes": "Call for intake. Walk-in crisis center available.",
+      "source": "https://www.terroshealth.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "behavioral health",
+        "substance use",
+        "crisis",
+        "phoenix"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "AHCCCS card (if applicable)"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_coyote_taskforce",
+      "program_name": "Coyote Crisis Collaborative",
+      "layer": "nonprofit",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [],
+      "agency": "Various",
+      "phone": "602-222-9444",
+      "website": "https://www.crisisnetwork.org",
+      "eligibility": "Behavioral health crisis response in Maricopa County. Mobile crisis teams.",
+      "apply_notes": "Call Crisis Response Network for dispatch.",
+      "source": "https://www.crisisnetwork.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "crisis",
+        "mobile team",
+        "behavioral health",
+        "maricopa"
+      ],
+      "documents_needed": [
+        "None required"
+      ],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_desert_mission",
+      "program_name": "Desert Mission Food Bank",
+      "layer": "nonprofit",
+      "benefit_category": "food",
+      "pipeline_ids": [],
+      "agency": "HonorHealth",
+      "phone": "480-882-7550",
+      "website": "https://www.honorhealth.com/community-benefit/desert-mission",
+      "eligibility": "North Phoenix/Sunnyslope area. Food boxes and hot meals.",
+      "apply_notes": "Walk in during distribution hours.",
+      "source": "https://www.honorhealth.com/community-benefit/desert-mission",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "food bank",
+        "phoenix",
+        "north phoenix",
+        "sunnyslope"
+      ],
+      "documents_needed": [
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_salvation_army_food",
+      "program_name": "Salvation Army Food Assistance (AZ)",
+      "layer": "nonprofit",
+      "benefit_category": "food",
+      "pipeline_ids": [],
+      "agency": "Salvation Army",
+      "phone": "602-267-4100",
+      "website": "https://www.salvationarmyphoenix.org",
+      "eligibility": "Anyone in need. Food boxes, hot meals, holiday meals.",
+      "apply_notes": "Walk in at local Salvation Army center.",
+      "source": "https://www.salvationarmyphoenix.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "salvation army",
+        "food",
+        "meals",
+        "emergency"
+      ],
+      "documents_needed": [
+        "Photo ID (some locations)"
+      ],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_association_food_banks",
+      "program_name": "AZ Association of Food Banks",
+      "layer": "nonprofit",
+      "benefit_category": "food",
+      "pipeline_ids": [],
+      "agency": "AAFB",
+      "phone": "602-528-3434",
+      "website": "https://www.azfoodbanks.org",
+      "eligibility": "Statewide coordination of 5 regional food banks serving all 15 AZ counties.",
+      "apply_notes": "Call or visit website for nearest food bank.",
+      "source": "https://www.azfoodbanks.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "food bank",
+        "statewide",
+        "coordination",
+        "referral"
+      ],
+      "documents_needed": [
+        "None for referral"
+      ],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_backpack_program",
+      "program_name": "Backpack Programs (Weekend Food)",
+      "layer": "nonprofit",
+      "benefit_category": "food",
+      "pipeline_ids": [],
+      "agency": "Various food banks",
+      "phone": "602-242-3663",
+      "website": "https://www.firstfoodbank.org",
+      "eligibility": "School-age children at risk of weekend hunger. Discreet food packs sent home Fridays.",
+      "apply_notes": "Enrolled through school counselors.",
+      "source": "https://www.firstfoodbank.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "children",
+        "school",
+        "weekend",
+        "backpack"
+      ],
+      "documents_needed": [
+        "School enrollment"
+      ],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_produce_on_wheels",
+      "program_name": "Produce on Wheels (Borderlands)",
+      "layer": "nonprofit",
+      "benefit_category": "food",
+      "pipeline_ids": [],
+      "agency": "Borderlands Food Bank",
+      "phone": "520-281-1002",
+      "website": "https://www.borderlandsfoodbank.org",
+      "eligibility": "Anyone in Southern AZ. 60 lbs of produce for $12 donation.",
+      "apply_notes": "Attend monthly distribution events.",
+      "source": "https://www.borderlandsfoodbank.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "produce",
+        "southern az",
+        "affordable",
+        "fresh food"
+      ],
+      "documents_needed": [
+        "None"
+      ],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_section_8_mesa",
+      "program_name": "Section 8 / HCV (Mesa)",
+      "layer": "city",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights"
+      ],
+      "agency": "Mesa Housing Authority",
+      "phone": "480-644-2244",
+      "website": "https://www.mesaaz.gov/residents/housing",
+      "eligibility": "Income < 50% AMI. Mesa residents.",
+      "apply_notes": "Apply when waitlist opens.",
+      "source": "https://www.mesaaz.gov/residents/housing",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "section 8",
+        "voucher",
+        "mesa",
+        "hcv"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "SSN",
+        "Proof of income",
+        "Background check consent"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_lihtc",
+      "program_name": "LIHTC Properties (Statewide)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [],
+      "agency": "AZ Dept of Housing",
+      "phone": "602-771-1000",
+      "website": "https://www.housing.az.gov",
+      "eligibility": "Income < 60% AMI. Tax credit affordable housing complexes statewide.",
+      "apply_notes": "Apply directly at LIHTC property.",
+      "source": "https://www.housing.az.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "lihtc",
+        "affordable",
+        "apartment",
+        "tax credit"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income",
+        "Background check"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "street_address": "1110 W Washington St Ste 310",
+      "city": "Phoenix",
+      "state_code": "AZ",
+      "zip": "85007",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_hud_counseling",
+      "program_name": "HUD Housing Counseling (AZ)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights"
+      ],
+      "agency": "HUD",
+      "phone": "800-569-4287",
+      "website": "https://www.hud.gov/counseling",
+      "eligibility": "Any AZ resident. Free housing counseling for renters, homebuyers, foreclosure prevention.",
+      "apply_notes": "Call HUD hotline for nearest counselor.",
+      "source": "https://www.hud.gov/counseling",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "hud",
+        "counseling",
+        "foreclosure",
+        "homebuyer"
+      ],
+      "documents_needed": [
+        "None for counseling"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_salvation_army_housing",
+      "program_name": "Salvation Army Emergency Shelter (AZ)",
+      "layer": "nonprofit",
+      "benefit_category": "housing",
+      "pipeline_ids": [],
+      "agency": "Salvation Army",
+      "phone": "602-267-4100",
+      "website": "https://www.salvationarmyphoenix.org",
+      "eligibility": "Homeless individuals and families. Emergency shelter and transitional housing.",
+      "apply_notes": "Call or walk in at local Salvation Army center.",
+      "source": "https://www.salvationarmyphoenix.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "shelter",
+        "salvation army",
+        "emergency",
+        "homeless"
+      ],
+      "documents_needed": [
+        "Photo ID (helpful)"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_st_vincent_de_paul_shelter",
+      "program_name": "St. Vincent de Paul Shelter (Phoenix)",
+      "layer": "nonprofit",
+      "benefit_category": "housing",
+      "pipeline_ids": [],
+      "agency": "SVdP",
+      "phone": "602-261-6886",
+      "website": "https://www.stvincentdepaul.net",
+      "eligibility": "Homeless individuals in Phoenix. Emergency shelter, meals, medical clinic.",
+      "apply_notes": "Walk in. Largest homeless services campus in AZ.",
+      "source": "https://www.stvincentdepaul.net",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "shelter",
+        "phoenix",
+        "homeless",
+        "meals"
+      ],
+      "documents_needed": [
+        "None required for emergency shelter"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_casa_grande_housing",
+      "program_name": "Casa Grande Housing Authority",
+      "layer": "city",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights"
+      ],
+      "agency": "Casa Grande HA",
+      "phone": "520-421-8670",
+      "website": "https://www.casagrandeaz.gov",
+      "eligibility": "Low-income residents of Casa Grande/Pinal County.",
+      "apply_notes": "Apply at housing authority office.",
+      "source": "https://www.casagrandeaz.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "section 8",
+        "casa grande",
+        "pinal county"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_flagstaff_housing",
+      "program_name": "Flagstaff Housing Authority",
+      "layer": "city",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "tenant_rights"
+      ],
+      "agency": "Flagstaff HA",
+      "phone": "928-779-6543",
+      "website": "https://www.flagstaffhousingauthority.com",
+      "eligibility": "Low-income residents of Flagstaff/Coconino County.",
+      "apply_notes": "Apply at housing authority office.",
+      "source": "https://www.flagstaffhousingauthority.com",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "section 8",
+        "flagstaff",
+        "coconino"
+      ],
+      "documents_needed": [
+        "Photo ID",
+        "Proof of income"
+      ],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "northern_az",
+      "category": "housing",
+      "city": "Flagstaff",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_ssi",
+      "program_name": "SSI (Supplemental Security Income)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "SSA",
+      "phone": "800-772-1213",
+      "website": "https://www.ssa.gov/ssi",
+      "eligibility": "Aged 65+, blind, or disabled with limited income and resources. Federal benefit.",
+      "apply_notes": "Apply at local SSA office or online. AZ does NOT supplement federal SSI.",
+      "source": "https://www.ssa.gov/ssi",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "ssi",
+        "disability",
+        "elderly",
+        "blind"
+      ],
+      "documents_needed": [
+        "Medical records",
+        "Proof of income",
+        "SSN",
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "cash_assistance",
+        "disability"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_ssdi",
+      "program_name": "SSDI (Social Security Disability)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "SSA",
+      "phone": "800-772-1213",
+      "website": "https://www.ssa.gov/disability",
+      "eligibility": "Workers with qualifying disability who have sufficient work credits.",
+      "apply_notes": "Apply at local SSA office or online.",
+      "source": "https://www.ssa.gov/disability",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "ssdi",
+        "disability",
+        "social security"
+      ],
+      "documents_needed": [
+        "Medical records",
+        "Work history",
+        "SSN",
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "cash_assistance",
+        "disability"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_general_assistance",
+      "program_name": "General Assistance (Tribal)",
+      "layer": "tribal",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "BIA/Tribes",
+      "phone": "602-265-1566",
+      "website": "https://www.bia.gov",
+      "eligibility": "AI/AN who don't qualify for other cash assistance. Administered by tribes or BIA.",
+      "apply_notes": "Apply through tribal social services or BIA.",
+      "source": "https://www.bia.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "tribal",
+        "general assistance",
+        "bia"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card",
+        "Proof of income",
+        "Proof of need"
+      ],
+      "pipeline_categories": [
+        "cash_assistance",
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "cash_assistance",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_child_support",
+      "program_name": "AZ Child Support Services",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [],
+      "agency": "DCSS",
+      "phone": "800-882-4151",
+      "website": "https://www.azdes.gov/dcss",
+      "eligibility": "Custodial parents seeking child support enforcement.",
+      "apply_notes": "Apply through DCSS. Free services for TANF recipients.",
+      "source": "https://www.azdes.gov/dcss",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "child support",
+        "custody",
+        "enforcement"
+      ],
+      "documents_needed": [
+        "Court order",
+        "Photo ID",
+        "Children's birth certificates"
+      ],
+      "pipeline_categories": [
+        "cash_assistance",
+        "family"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_florence_project",
+      "program_name": "Florence Immigrant & Refugee Rights Project",
+      "layer": "nonprofit",
+      "benefit_category": "immigration",
+      "pipeline_ids": [],
+      "agency": "Florence Project",
+      "phone": "520-868-0191",
+      "website": "https://www.firrp.org",
+      "eligibility": "Detained immigrants in AZ. Free legal services for immigration detainees.",
+      "apply_notes": "Services provided at AZ detention facilities. Also accepts referrals.",
+      "source": "https://www.firrp.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "immigration",
+        "detention",
+        "asylum",
+        "deportation"
+      ],
+      "documents_needed": [
+        "None required for initial consultation"
+      ],
+      "pipeline_categories": [
+        "immigration",
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "immigration",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_irc_phoenix",
+      "program_name": "International Rescue Committee (Phoenix)",
+      "layer": "nonprofit",
+      "benefit_category": "immigration",
+      "pipeline_ids": [],
+      "agency": "IRC",
+      "phone": "602-433-2440",
+      "website": "https://www.rescue.org/phoenix",
+      "eligibility": "Refugees and immigrants in Phoenix. Resettlement, employment, ESL, legal services.",
+      "apply_notes": "Call for intake.",
+      "source": "https://www.rescue.org/phoenix",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "refugee",
+        "resettlement",
+        "esl",
+        "phoenix"
+      ],
+      "documents_needed": [
+        "Immigration documents",
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "immigration"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "immigration",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_lirs",
+      "program_name": "Lutheran Immigration & Refugee Service (AZ)",
+      "layer": "nonprofit",
+      "benefit_category": "immigration",
+      "pipeline_ids": [],
+      "agency": "LIRS",
+      "phone": "602-944-8487",
+      "website": "https://www.lirs.org",
+      "eligibility": "Refugees, asylum seekers, and immigrants in AZ.",
+      "apply_notes": "Call for referral.",
+      "source": "https://www.lirs.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "refugee",
+        "asylum",
+        "immigration",
+        "lutheran"
+      ],
+      "documents_needed": [
+        "Immigration documents"
+      ],
+      "pipeline_categories": [
+        "immigration"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "immigration",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_cplc_immigration",
+      "program_name": "CPLC Immigration Services",
+      "layer": "nonprofit",
+      "benefit_category": "immigration",
+      "pipeline_ids": [],
+      "agency": "CPLC",
+      "phone": "602-257-0700",
+      "website": "https://www.cplc.org",
+      "eligibility": "Immigrants needing legal help with naturalization, DACA, family petitions.",
+      "apply_notes": "Call for intake. DOJ-accredited representatives.",
+      "source": "https://www.cplc.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "immigration",
+        "naturalization",
+        "daca",
+        "latino"
+      ],
+      "documents_needed": [
+        "Immigration documents",
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "immigration",
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "immigration",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_catholic_charities_immigration",
+      "program_name": "Catholic Charities Immigration (AZ)",
+      "layer": "nonprofit",
+      "benefit_category": "immigration",
+      "pipeline_ids": [],
+      "agency": "Catholic Charities",
+      "phone": "602-997-6105",
+      "website": "https://www.catholiccharitiesaz.org",
+      "eligibility": "Immigrants and refugees. Legal services, resettlement, social services.",
+      "apply_notes": "Call for intake.",
+      "source": "https://www.catholiccharitiesaz.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "immigration",
+        "refugee",
+        "catholic charities"
+      ],
+      "documents_needed": [
+        "Immigration documents",
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "immigration"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "immigration",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_kino_border",
+      "program_name": "Kino Border Initiative",
+      "layer": "nonprofit",
+      "benefit_category": "immigration",
+      "pipeline_ids": [],
+      "agency": "KBI",
+      "phone": "520-287-2570",
+      "website": "https://www.kinoborderinitiative.org",
+      "eligibility": "Migrants and deportees at AZ-Mexico border. Meals, shelter, legal orientation.",
+      "apply_notes": "Services at Nogales, AZ and Nogales, Sonora.",
+      "source": "https://www.kinoborderinitiative.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "border",
+        "nogales",
+        "migrants",
+        "deportees"
+      ],
+      "documents_needed": [
+        "None required"
+      ],
+      "pipeline_categories": [
+        "immigration"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "immigration",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_aclu_immigrants",
+      "program_name": "ACLU of AZ (Immigrants' Rights)",
+      "layer": "nonprofit",
+      "benefit_category": "immigration",
+      "pipeline_ids": [],
+      "agency": "ACLU AZ",
+      "phone": "602-650-1967",
+      "website": "https://www.acluaz.org",
+      "eligibility": "Immigrants facing civil rights violations in AZ.",
+      "apply_notes": "Contact for legal intake.",
+      "source": "https://www.acluaz.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "aclu",
+        "civil rights",
+        "immigration"
+      ],
+      "documents_needed": [
+        "Documentation of rights violation"
+      ],
+      "pipeline_categories": [
+        "immigration",
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "immigration",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_no_more_deaths",
+      "program_name": "No More Deaths / No M\u00e1s Muertes",
+      "layer": "nonprofit",
+      "benefit_category": "immigration",
+      "pipeline_ids": [],
+      "agency": "No More Deaths",
+      "phone": "520-495-1085",
+      "website": "https://www.nomoredeaths.org",
+      "eligibility": "Migrants in the Sonoran Desert. Humanitarian aid, water stations, medical aid.",
+      "apply_notes": "Humanitarian aid in desert. Also provides legal observation.",
+      "source": "https://www.nomoredeaths.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "desert",
+        "humanitarian",
+        "border",
+        "water"
+      ],
+      "documents_needed": [
+        "None required"
+      ],
+      "pipeline_categories": [
+        "immigration"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "immigration",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_one_n_ten",
+      "program_name": "one\u00b7n\u00b7ten (LGBTQ+ Youth)",
+      "layer": "nonprofit",
+      "benefit_category": "lgbtq",
+      "pipeline_ids": [],
+      "agency": "one\u00b7n\u00b7ten",
+      "phone": "602-400-2601",
+      "website": "https://www.onenten.org",
+      "eligibility": "LGBTQ+ youth ages 11-24 in AZ. Drop-in center, housing, mental health.",
+      "apply_notes": "Walk in at Phoenix drop-in center or call.",
+      "source": "https://www.onenten.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "lgbtq",
+        "youth",
+        "phoenix",
+        "housing",
+        "mental health"
+      ],
+      "documents_needed": [
+        "None required"
+      ],
+      "pipeline_categories": [
+        "lgbtq"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "lgbtq",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_equality_az",
+      "program_name": "Equality Arizona",
+      "layer": "nonprofit",
+      "benefit_category": "lgbtq",
+      "pipeline_ids": [],
+      "agency": "Equality AZ",
+      "phone": "602-248-8483",
+      "website": "https://www.equalityarizona.org",
+      "eligibility": "LGBTQ+ Arizonans. Policy advocacy, legal referrals, community resources.",
+      "apply_notes": "Contact for resources and referrals.",
+      "source": "https://www.equalityarizona.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "lgbtq",
+        "advocacy",
+        "equality",
+        "policy"
+      ],
+      "documents_needed": [
+        "None"
+      ],
+      "pipeline_categories": [
+        "lgbtq"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "lgbtq",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_aunt_ritas",
+      "program_name": "Aunt Rita's Foundation",
+      "layer": "nonprofit",
+      "benefit_category": "lgbtq",
+      "pipeline_ids": [],
+      "agency": "Aunt Rita's",
+      "phone": "602-882-7328",
+      "website": "https://www.auntritas.org",
+      "eligibility": "LGBTQ+ individuals, especially those affected by HIV/AIDS. Emergency assistance.",
+      "apply_notes": "Call for intake.",
+      "source": "https://www.auntritas.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "lgbtq",
+        "hiv",
+        "aids",
+        "emergency assistance"
+      ],
+      "documents_needed": [
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "lgbtq",
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "lgbtq",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_southwest_center",
+      "program_name": "Southwest Center for HIV/AIDS",
+      "layer": "nonprofit",
+      "benefit_category": "lgbtq",
+      "pipeline_ids": [],
+      "agency": "Southwest Center",
+      "phone": "602-307-5330",
+      "website": "https://www.swcenter.org",
+      "eligibility": "HIV/AIDS testing, prevention, and support services. LGBTQ+ affirming.",
+      "apply_notes": "Walk in for testing or call for services.",
+      "source": "https://www.swcenter.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "hiv",
+        "aids",
+        "testing",
+        "lgbtq",
+        "phoenix"
+      ],
+      "documents_needed": [
+        "Photo ID (for some services)"
+      ],
+      "pipeline_categories": [
+        "lgbtq",
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "lgbtq",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_trevor_project",
+      "program_name": "Trevor Project (AZ)",
+      "layer": "nonprofit",
+      "benefit_category": "lgbtq",
+      "pipeline_ids": [],
+      "agency": "Trevor Project",
+      "phone": "866-488-7386",
+      "website": "https://www.thetrevorproject.org",
+      "eligibility": "LGBTQ+ youth in crisis. 24/7 crisis line, chat, and text.",
+      "apply_notes": "Call, text START to 678-678, or chat online.",
+      "source": "https://www.thetrevorproject.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "lgbtq",
+        "youth",
+        "crisis",
+        "suicide"
+      ],
+      "documents_needed": [
+        "None"
+      ],
+      "pipeline_categories": [
+        "lgbtq"
+      ],
+      "urgency": "immediate",
+      "region": "statewide",
+      "category": "lgbtq",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_211",
+      "program_name": "2-1-1 Arizona",
+      "layer": "nonprofit",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [],
+      "agency": "Community Information & Referral",
+      "phone": "211",
+      "website": "https://www.211arizona.org",
+      "eligibility": "Anyone in AZ. Free referral to health, housing, food, utility, and social services.",
+      "apply_notes": "Dial 2-1-1 or visit website. Available 24/7.",
+      "source": "https://www.211arizona.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "211",
+        "referral",
+        "information",
+        "statewide"
+      ],
+      "documents_needed": [
+        "None"
+      ],
+      "pipeline_categories": [
+        "community_navigation"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "community_navigation",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_community_info_referral",
+      "program_name": "Community Information & Referral",
+      "layer": "nonprofit",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [],
+      "agency": "CIR",
+      "phone": "602-263-8856",
+      "website": "https://www.cir.org",
+      "eligibility": "Maricopa County. Comprehensive social services database and referral.",
+      "apply_notes": "Call or search online database.",
+      "source": "https://www.cir.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "referral",
+        "database",
+        "maricopa",
+        "social services"
+      ],
+      "documents_needed": [
+        "None"
+      ],
+      "pipeline_categories": [
+        "community_navigation"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "community_navigation",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_area_agency_aging",
+      "program_name": "Area Agency on Aging (Maricopa)",
+      "layer": "county",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [],
+      "agency": "AAA",
+      "phone": "602-264-2255",
+      "website": "https://www.aaaphx.org",
+      "eligibility": "Seniors 60+ and caregivers in Maricopa County. Information, referral, case management.",
+      "apply_notes": "Call for information and referral.",
+      "source": "https://www.aaaphx.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "senior",
+        "aging",
+        "caregiver",
+        "maricopa"
+      ],
+      "documents_needed": [
+        "Proof of age (for some services)"
+      ],
+      "pipeline_categories": [
+        "community_navigation",
+        "elder"
+      ],
+      "urgency": "standard",
+      "region": "phoenix_metro",
+      "category": "community_navigation",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_pcoa",
+      "program_name": "Pima Council on Aging",
+      "layer": "county",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [],
+      "agency": "PCOA",
+      "phone": "520-790-7262",
+      "website": "https://www.pcoa.org",
+      "eligibility": "Seniors 60+ in Pima County. Information, referral, benefits counseling.",
+      "apply_notes": "Call for information and referral.",
+      "source": "https://www.pcoa.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "senior",
+        "aging",
+        "tucson",
+        "pima"
+      ],
+      "documents_needed": [
+        "Proof of age (for some services)"
+      ],
+      "pipeline_categories": [
+        "community_navigation",
+        "elder"
+      ],
+      "urgency": "standard",
+      "region": "tucson_metro",
+      "category": "community_navigation",
+      "city": "Tucson",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_ddd",
+      "program_name": "DDD (Division of Developmental Disabilities)",
+      "layer": "state",
+      "benefit_category": "community_navigation",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "DES/DDD",
+      "phone": "844-770-9500",
+      "website": "https://www.azdes.gov/ddd",
+      "eligibility": "Individuals with developmental disabilities. Eligibility determination and service coordination.",
+      "apply_notes": "Apply for DDD eligibility determination.",
+      "source": "https://www.azdes.gov/ddd",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "disability",
+        "developmental",
+        "services",
+        "coordination"
+      ],
+      "documents_needed": [
+        "Documentation of developmental disability",
+        "Photo ID"
+      ],
+      "pipeline_categories": [
+        "community_navigation",
+        "disability"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "community_navigation",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_salt_river_services",
+      "program_name": "Salt River Pima-Maricopa Social Services",
+      "layer": "tribal",
+      "benefit_category": "tribal_indigenous",
+      "pipeline_ids": [],
+      "agency": "SRPMIC",
+      "phone": "480-362-7350",
+      "website": "https://www.srpmic-nsn.gov",
+      "eligibility": "Salt River Pima-Maricopa Indian Community members.",
+      "apply_notes": "Contact tribal social services.",
+      "source": "https://www.srpmic-nsn.gov",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "salt river",
+        "pima",
+        "maricopa",
+        "tribal"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card"
+      ],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "tribal_indigenous",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_ak_chin_services",
+      "program_name": "Ak-Chin Indian Community Services",
+      "layer": "tribal",
+      "benefit_category": "tribal_indigenous",
+      "pipeline_ids": [],
+      "agency": "Ak-Chin",
+      "phone": "520-568-1000",
+      "website": "https://www.ak-chin.nsn.us",
+      "eligibility": "Ak-Chin Indian Community members.",
+      "apply_notes": "Contact tribal services office.",
+      "source": "https://www.ak-chin.nsn.us",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "ak-chin",
+        "tribal",
+        "maricopa"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card"
+      ],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "tribal_indigenous",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_fort_mcdowell_services",
+      "program_name": "Fort McDowell Yavapai Nation Services",
+      "layer": "tribal",
+      "benefit_category": "tribal_indigenous",
+      "pipeline_ids": [],
+      "agency": "Fort McDowell",
+      "phone": "480-837-5121",
+      "website": "https://www.fmyn.org",
+      "eligibility": "Fort McDowell Yavapai Nation members.",
+      "apply_notes": "Contact tribal services office.",
+      "source": "https://www.fmyn.org",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "fort mcdowell",
+        "yavapai",
+        "tribal"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card"
+      ],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "tribal_indigenous",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_white_mountain_apache",
+      "program_name": "White Mountain Apache Tribe Services",
+      "layer": "tribal",
+      "benefit_category": "tribal_indigenous",
+      "pipeline_ids": [],
+      "agency": "WMAT",
+      "phone": "928-338-4346",
+      "website": "https://www.wmat.nsn.us",
+      "eligibility": "White Mountain Apache tribal members. Social services, housing, health.",
+      "apply_notes": "Contact tribal services office.",
+      "source": "https://www.wmat.nsn.us",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "white mountain",
+        "apache",
+        "tribal"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card"
+      ],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "tribal_indigenous",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_san_carlos_apache",
+      "program_name": "San Carlos Apache Tribe Services",
+      "layer": "tribal",
+      "benefit_category": "tribal_indigenous",
+      "pipeline_ids": [],
+      "agency": "San Carlos Apache",
+      "phone": "928-475-2361",
+      "website": "https://www.sancarlosapache.com",
+      "eligibility": "San Carlos Apache tribal members. Social services, housing, health.",
+      "apply_notes": "Contact tribal services office.",
+      "source": "https://www.sancarlosapache.com",
+      "date_verified": "2026-03-06",
+      "tags": [
+        "san carlos",
+        "apache",
+        "tribal"
+      ],
+      "documents_needed": [
+        "Tribal enrollment card"
+      ],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "tribal_nation",
+      "category": "tribal_indigenous",
+      "city": "Phoenix",
+      "state": "AZ",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_audit_147",
+      "program_name": "Arizona Coalition to End Sexual and Domestic Violence",
+      "agency": "Arizona Coalition to End Sexual and Domestic Violence",
+      "benefit_category": "dv_safety",
+      "category": "domestic_violence",
+      "region": "phoenix",
+      "phone": "602-279-2900",
+      "website": "https://acesdv.org",
+      "street_address": "2800 N Central Ave Ste 1570",
+      "city": "Phoenix",
+      "state_code": "AZ",
+      "zip": "85004",
+      "eligibility": "Contact for eligibility details",
+      "layer": "state",
+      "tags": [
+        "domestic_violence"
+      ],
+      "pipeline_categories": [],
+      "pipeline_ids": [],
+      "source": "address_audit",
+      "date_verified": "2026-03-08",
+      "apply_notes": "Contact agency for application details.",
+      "federal_interface": false
+    },
+    {
+      "program_id": "az_audit_148",
+      "program_name": "Valley of the Sun United Way (211)",
+      "agency": "Valley of the Sun United Way",
+      "benefit_category": "community_navigation",
+      "category": "general_assistance",
+      "region": "phoenix",
+      "phone": "602-631-4800",
+      "website": "https://vsuw.org",
+      "street_address": "1050 W Washington St Ste 250",
+      "city": "Phoenix",
+      "state_code": "AZ",
+      "zip": "85007",
+      "eligibility": "Contact for eligibility details",
+      "layer": "state",
+      "tags": [
+        "general_assistance"
+      ],
+      "pipeline_categories": [],
+      "pipeline_ids": [],
+      "source": "address_audit",
+      "date_verified": "2026-03-08",
+      "apply_notes": "Contact agency for application details.",
+      "federal_interface": false
+    }
+  ]
+}

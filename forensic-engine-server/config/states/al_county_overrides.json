@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "state": "AL",
+    "version": "3.0"
+  },
+  "regions": [],
+  "county_overrides": [
+    {
+      "county_id": "jefferson",
+      "county_name": "Jefferson County (Birmingham)",
+      "fips_code": "",
+      "region": "birmingham_metro",
+      "population_estimate": ""
+    },
+    {
+      "county_id": "madison",
+      "county_name": "Madison County (Huntsville)",
+      "fips_code": "",
+      "region": "huntsville_metro",
+      "population_estimate": ""
+    },
+    {
+      "county_id": "mobile",
+      "county_name": "Mobile County",
+      "fips_code": "",
+      "region": "mobile_metro",
+      "population_estimate": ""
+    },
+    {
+      "county_id": "dallas",
+      "county_name": "Dallas County (Black Belt)",
+      "fips_code": "",
+      "region": "black_belt",
+      "population_estimate": ""
+    }
+  ],
+  "resolution_chain": []
+}

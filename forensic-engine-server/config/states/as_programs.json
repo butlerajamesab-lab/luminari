@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "state": "AS",
+    "version": "3.0",
+    "date": "2026-03-09",
+    "program_count": 8
+  },
+  "programs": [
+    {
+      "program_id": "as_medicaid_block_grant",
+      "program_name": "AS Medicaid Block Grant",
+      "category": "healthcare",
+      "phone": "684-633-1187",
+      "website": "dhss.as.gov",
+      "address": "Tafuna, American Samoa, AS 96799",
+      "eligibility": "US nationals qualify. Block-capped at lowest federal matching rate.",
+      "notes": "Smallest federal health grant in registry. Provider network extremely limited.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "as_snap_nutrition",
+      "program_name": "AS SNAP / Nutrition Assistance",
+      "category": "food",
+      "phone": "684-633-1187",
+      "website": "dhss.as.gov",
+      "eligibility": "Income-based; US nationals; residency requirement. Block-grant nutrition assistance.",
+      "notes": "Block-granted \u2014 lower than mainland SNAP equivalents.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "as_tanf",
+      "program_name": "AS TANF",
+      "category": "cash_assistance",
+      "phone": "684-633-1187",
+      "website": "dhss.as.gov",
+      "eligibility": "Families with minor children; income and asset limits.",
+      "notes": "Amount lower than mainland equivalents.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "as_wic",
+      "program_name": "AS WIC",
+      "category": "food",
+      "phone": "684-633-2066",
+      "website": "dhss.as.gov",
+      "eligibility": "Pregnant/postpartum women, infants, children under 5. Income \u2264185% FPL.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "as_liheap",
+      "program_name": "AS LIHEAP",
+      "category": "energy",
+      "phone": "684-633-1187",
+      "website": "dhss.as.gov",
+      "eligibility": "Income \u2264150% FPL.",
+      "notes": "Very limited; high electricity costs in territory.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "as_head_start",
+      "program_name": "AS Head Start",
+      "category": "education",
+      "phone": "684-633-4191",
+      "website": "dhss.as.gov",
+      "eligibility": "Ages 3-5. Income \u2264100% FPL.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "as_lbj_tropical_medical",
+      "program_name": "LBJ Tropical Medical Center",
+      "category": "healthcare",
+      "phone": "684-633-1222",
+      "website": "lbjtmc.org",
+      "address": "Fagaalu, Pago Pago, AS 96799",
+      "eligibility": "All residents. Sliding fee scale.",
+      "notes": "ONLY hospital in territory. Government-operated. Medical evacuation to Hawaii for complex cases.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    },
+    {
+      "program_id": "as_community_college",
+      "program_name": "AS Community College",
+      "category": "education",
+      "phone": "684-699-9155",
+      "website": "amsamoa.edu",
+      "eligibility": "Open enrollment. Financial aid available for nationals.",
+      "notes": "Only institution of higher education in territory.",
+      "layer": "state",
+      "region": "statewide",
+      "federal_interface": false
+    }
+  ]
+}

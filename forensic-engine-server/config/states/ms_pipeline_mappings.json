@@ -1,0 +1,288 @@
+{
+  "meta": {
+    "state": "MS",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "ms_mississippi_center_for_justice_mcj",
+        "ms_coast_legal_services_gulf_coast",
+        "ms_mississippi_veterans_affairs_board"
+      ],
+      "oversight_chains": [
+        "general",
+        "employer",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "ms_wic_mississippi",
+        "ms_ummc_university_of_mississippi_medical_c"
+      ],
+      "oversight_chains": [
+        "general",
+        "employer",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "consumer_protection",
+      "programs": [
+        "ms_mississippi_center_for_justice_mcj"
+      ],
+      "oversight_chains": [
+        "general",
+        "employer",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "ms_mississippi_snap_dhs_food_assistance_mdh",
+        "ms_mississippi_food_network_mid_south_food_",
+        "ms_wic_mississippi",
+        "ms_mississippi_medicaid_dom_categorical_onl",
+        "ms_ummc_university_of_mississippi_medical_c",
+        "ms_mississippi_primary_health_care_associat",
+        "ms_choctaw_health_center_mississippi_band_o",
+        "ms_mississippi_center_for_justice_mcj",
+        "ms_mississippi_tanf_mdhs",
+        "ms_mississippi_ui_mdes",
+        "ms_mississippi_liheap_mdhs",
+        "ms_mississippi_veterans_affairs_board"
+      ],
+      "oversight_chains": [
+        "general",
+        "employer",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "ms_mississippi_medicaid_dom_categorical_onl",
+        "ms_mississippi_center_for_justice_mcj",
+        "ms_ms_band_of_choctaw_indians_social_servic",
+        "ms_ms_dv_program_hotline"
+      ],
+      "oversight_chains": [
+        "general",
+        "employer",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "ms_delta_health_center_mound_bayou_oldest_r",
+        "ms_mississippi_medicaid_dom_categorical_onl",
+        "ms_mississippi_primary_health_care_associat",
+        "ms_choctaw_health_center_mississippi_band_o"
+      ],
+      "oversight_chains": [
+        "general",
+        "employer",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "ms_mississippi_center_for_justice_mcj",
+        "ms_mississippi_liheap_mdhs"
+      ],
+      "oversight_chains": [
+        "general",
+        "employer",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ms_involuntary_hold_law",
+        "ms_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ms_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ms_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ms_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ms_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ms_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "ms_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ms_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ms_restraint_seclusion_limits",
+        "ms_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ms_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "ms_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ms_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

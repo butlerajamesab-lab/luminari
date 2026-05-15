@@ -1,0 +1,274 @@
+{
+  "meta": {
+    "state": "LA",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "la_second_harvest_food_bank_nola_food_bank",
+        "la_tulane_ochsner_university_medical_center",
+        "la_southeast_louisiana_legal_services_slls",
+        "la_louisiana_ui_lwc",
+        "la_vietnamese_american_young_leaders_associ",
+        "la_louisiana_veterans_services_lvs",
+        "la_greater_new_orleans_foundation_united_wa",
+        "la_immigrant_services_network_of_new_orlean"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": [
+        "la_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "la_louisiana_snap_dsnap_disaster_snap_dcfs",
+        "la_wic_louisiana",
+        "la_louisiana_tanf_fitap_dcfs",
+        "la_louisiana_liheap_dcfs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": [
+        "la_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "la_louisiana_snap_dsnap_disaster_snap_dcfs",
+        "la_wic_louisiana",
+        "la_louisiana_housing_corporation_lhc",
+        "la_louisiana_tanf_fitap_dcfs",
+        "la_louisiana_liheap_dcfs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": [
+        "la_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "la_louisiana_housing_corporation_lhc",
+        "la_louisiana_dv_hotline_btnla"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": [
+        "la_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "la_louisiana_medicaid_ldh",
+        "la_louisiana_primary_care_association_fqhcs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": [
+        "la_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "la_louisiana_liheap_dcfs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer"
+      ],
+      "flags": [
+        "la_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "la_involuntary_hold_law",
+        "la_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "la_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "la_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "la_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "la_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "la_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "la_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "la_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "la_restraint_seclusion_limits",
+        "la_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "la_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "la_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "la_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

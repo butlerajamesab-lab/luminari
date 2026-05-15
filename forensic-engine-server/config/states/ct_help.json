@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "state": "CT",
+    "version": "3.0",
+    "date": "2026-03-09"
+  },
+  "routing_index": [
+    {
+      "service": "ConneCT (SNAP/HUSKY/TFA)",
+      "phone": "855-626-6632",
+      "website": "connect.ct.gov",
+      "address": "55 Farmington Ave, Hartford, CT 06105"
+    },
+    {
+      "service": "211 Connecticut",
+      "phone": "211",
+      "website": "211ct.org"
+    },
+    {
+      "service": "Connecticut Legal Services",
+      "phone": "860-344-0380",
+      "website": "ctlegal.org"
+    },
+    {
+      "service": "CLS Danbury",
+      "phone": "203-917-0141",
+      "address": "151 Main St, Danbury, CT 06810"
+    },
+    {
+      "service": "New Haven Legal Assistance",
+      "phone": "203-946-4811",
+      "website": "nhlaa.org",
+      "address": "205 Orange St, New Haven, CT 06510"
+    },
+    {
+      "service": "CT OAH (Benefits Appeals)",
+      "phone": "860-418-6050",
+      "website": "ct.gov/oah"
+    },
+    {
+      "service": "CT DOL (UI + Wage)",
+      "phone_ui": "860-263-6000",
+      "phone_wage": "860-263-6790",
+      "website": "ctdol.state.ct.us"
+    },
+    {
+      "service": "CHRO (Civil Rights - 300 days)",
+      "phone": "860-541-3400",
+      "website": "ct.gov/chro",
+      "address": "450 Columbus Blvd Ste 7, Hartford, CT 06103"
+    },
+    {
+      "service": "CT CID (Insurance)",
+      "phone": "800-203-3447",
+      "website": "ct.gov/cid"
+    },
+    {
+      "service": "LIHEAP / Energy Assistance",
+      "phone": "855-626-6632",
+      "website": "ct.gov/dss/energy"
+    },
+    {
+      "service": "CT DV Hotline",
+      "phone": "888-774-2900",
+      "website": "ctcadv.org"
+    },
+    {
+      "service": "Hartford HealthCare",
+      "phone": "860-545-5000",
+      "website": "hartfordhealthcare.org",
+      "address": "80 Seymour St, Hartford, CT 06102"
+    },
+    {
+      "service": "Make the Road CT (Danbury)",
+      "phone": "203-553-4340",
+      "website": "maketheroadct.org"
+    },
+    {
+      "service": "WHD Hartford",
+      "phone": "860-240-4160",
+      "website": "dol.gov/whd"
+    },
+    {
+      "service": "Mashantucket Pequot Tribal Nation",
+      "phone": "860-396-6500",
+      "website": "mptn-nsn.gov",
+      "address": "110 Pequot Trail, Mashantucket, CT 06338"
+    },
+    {
+      "service": "Mohegan Tribe",
+      "phone": "860-862-6100",
+      "website": "mohegan.com",
+      "address": "13 Crow Hill Rd, Uncasville, CT 06382"
+    }
+  ]
+}

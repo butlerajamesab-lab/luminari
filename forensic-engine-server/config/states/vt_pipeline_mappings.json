@@ -1,0 +1,262 @@
+{
+  "meta": {
+    "state": "VT",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "vt_vermont_snap_3squaresvt",
+        "vt_vermont_senior_programs_dail",
+        "vt_vermont_legal_aid_vlsc",
+        "vt_vermont_paid_family_and_medical_leave_pf"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "vt_portability"
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "vt_dr_dynasaur_chip",
+        "vt_vermont_wic",
+        "vt_child_development_division_cdd_child_car"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "vt_portability"
+      ]
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "vt_reach_up_tanf_vermont",
+        "vt_vermont_housing_finance_agency_vhfa",
+        "vt_child_development_division_cdd_child_car",
+        "vt_vermont_vocational_rehabilitation_vocreh",
+        "vt_vermont_legal_aid_vlsc"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "vt_portability"
+      ]
+    },
+    {
+      "pipeline_id": "employment_dispute",
+      "programs": [
+        "vt_reach_up_tanf_vermont",
+        "vt_vermont_unemployment_insurance",
+        "vt_vermont_vocational_rehabilitation_vocreh"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "vt_portability"
+      ]
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "vt_vermont_housing_finance_agency_vhfa",
+        "vt_vermont_legal_aid_vlsc"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "vt_portability"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "vt_vermont_medicaid_green_mountain_care",
+        "vt_dr_dynasaur_chip",
+        "vt_vermont_unemployment_insurance",
+        "vt_vermont_vocational_rehabilitation_vocreh",
+        "vt_department_of_mental_health_vermont_dmh"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "vt_portability"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "vt_involuntary_hold_law",
+        "vt_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "vt_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "vt_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "vt_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "vt_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "vt_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "vt_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "vt_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "vt_restraint_seclusion_limits",
+        "vt_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "vt_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "vt_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "vt_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

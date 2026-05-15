@@ -1,0 +1,479 @@
+{
+  "meta": {
+    "state": "PR",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "pr_puerto_rico_nap_nutrition_assistance_pro",
+      "program_name": "Puerto Rico NAP / Nutrition Assistance Program (ASUME/ADSEF)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Puerto Rico NAP / Nutrition Assistance Program",
+      "phone": "787-625-2900",
+      "website": "https://adsef.pr.gov",
+      "eligibility": "Income-eligible PR residents. adsef.pr.gov. CRITICAL: NAP provides ~$160/month per household \u2014 less than half of mainland SNAP. Apply at ADSEF offices. San Juan: 787-625-2900.",
+      "apply_notes": "Puerto Rico equivalent of SNAP \u2014 capped block grant, lower benefit than mainland SNAP",
+      "source": "luminari-puerto-rico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "PR",
+      "federal_interface": false
+    },
+    {
+      "program_id": "pr_banco_de_alimentos_de_pr_food_bank",
+      "program_name": "Banco de Alimentos de PR (Food Bank)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Banco de Alimentos de PR",
+      "phone": "787-792-1919",
+      "website": "https://bancodealimentos.org",
+      "eligibility": "Anyone in need. bancodealimentos.org. Also Cosecha de Fe (787-761-5535) and local food pantries. Critical post-Maria ongoing food insecurity.",
+      "apply_notes": "Statewide food bank network \u2014 critical supplement to low NAP benefits",
+      "source": "luminari-puerto-rico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "PR",
+      "federal_interface": false
+    },
+    {
+      "program_id": "pr_wic_puerto_rico",
+      "program_name": "WIC Puerto Rico",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "WIC Puerto Rico",
+      "phone": "787-765-2929",
+      "website": "https://salud.pr.gov/wic",
+      "eligibility": "Pregnant, postpartum women, infants, children under 5. Income < 185% FPL. salud.pr.gov/wic \u2014 find clinic.",
+      "apply_notes": "Nutrition assistance for women, infants, children",
+      "source": "luminari-puerto-rico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "PR",
+      "federal_interface": false
+    },
+    {
+      "program_id": "pr_puerto_rico_medicaid_mi_salud_ases",
+      "program_name": "Puerto Rico Medicaid / Mi Salud (ASES)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Puerto Rico Medicaid / Mi Salud",
+      "phone": "787-474-3300",
+      "website": "https://ases.pr.gov",
+      "eligibility": "Low-income PR residents including children, families, elderly, disabled. CRITICAL: Medicaid is block-granted \u2014 coverage gaps exist and managed care plans (Mi Salud) have network limitations. Apply: ases.pr.gov.",
+      "apply_notes": "Health coverage \u2014 block grant funded, structural gaps vs mainland Medicaid",
+      "source": "luminari-puerto-rico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "PR",
+      "federal_interface": false
+    },
+    {
+      "program_id": "pr_centro_m_dico_upr_medical_center_san_jua",
+      "program_name": "Centro M\u00e9dico / UPR Medical Center (San Juan Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Centro M\u00e9dico / UPR Medical Center",
+      "phone": "787-754-0101",
+      "website": "https://rcmpr.org",
+      "eligibility": "San Juan and island-wide \u2014 primary safety net. Also Hospital del Maestro (787-758-8383) and Hospital Alejandro Otero Lopez (787-707-3800) in metro area.",
+      "apply_notes": "Puerto Rico primary academic medical center \u2014 public hospital, trauma, charity care",
+      "source": "luminari-puerto-rico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "PR",
+      "federal_interface": false
+    },
+    {
+      "program_id": "pr_pr_community_health_centers_fqhcs_assal",
+      "program_name": "PR Community Health Centers / FQHCs (ASSAL)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "PR Community Health Centers / FQHCs",
+      "phone": "787-765-2929",
+      "website": "https://findahealthcenter.hrsa.gov",
+      "eligibility": "Anyone. findahealthcenter.hrsa.gov for PR locations. Key: Concilio Salud Integral de Loiza (787-876-2135 \u2014 Afro-Puerto Rican community), IHS-affiliated urban AI/AN through IHS Navajo/Cherokee programs for mainland-connected.",
+      "apply_notes": "Federally qualified health centers \u2014 sliding scale regardless of insurance",
+      "source": "luminari-puerto-rico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "PR",
+      "federal_interface": false
+    },
+    {
+      "program_id": "pr_corporaci_n_de_vivienda_p_blica_cvp_publ",
+      "program_name": "Corporaci\u00f3n de Vivienda P\u00fablica (CVP \u2014 Public Housing)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Corporaci\u00f3n de Vivienda P\u00fablica",
+      "phone": "787-765-7577",
+      "website": "https://vivienda.pr.gov",
+      "eligibility": "Low-income PR residents. vivienda.pr.gov. CRITICAL: Maria/earthquake damage to housing stock \u2014 long waiting lists. Emergency rental assistance through CDBG-DR programs.",
+      "apply_notes": "Public housing, Section 8/HCV, housing vouchers",
+      "source": "luminari-puerto-rico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "PR",
+      "federal_interface": false
+    },
+    {
+      "program_id": "pr_servicios_legales_de_pr_puerto_rico_lega",
+      "program_name": "Servicios Legales de PR (Puerto Rico Legal Services)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute",
+        "consumer_protection"
+      ],
+      "agency": "Servicios Legales de PR",
+      "phone": "787-728-9645",
+      "website": "https://slpr.net",
+      "eligibility": "Income < 200% FPL. slpr.net \u2014 San Juan, Bayamon, Ponce, Mayaguez, Caguas, Arecibo offices. CRITICAL resource post-disaster for insurance and FEMA disputes.",
+      "apply_notes": "Free civil legal aid statewide \u2014 housing, benefits, family, consumer, DV",
+      "source": "luminari-puerto-rico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "PR",
+      "federal_interface": false
+    },
+    {
+      "program_id": "pr_pr_tanf_asistencia_econ_mica_adsef",
+      "program_name": "PR TANF / Asistencia Econ\u00f3mica (ADSEF)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "PR TANF / Asistencia Econ\u00f3mica",
+      "phone": "787-625-2900",
+      "website": "https://adsef.pr.gov",
+      "eligibility": "Families with children \u2014 PR TANF block grant. Benefit levels significantly below mainland. adsef.pr.gov.",
+      "apply_notes": "Cash assistance for families with children",
+      "source": "luminari-puerto-rico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "PR",
+      "federal_interface": false
+    },
+    {
+      "program_id": "pr_puerto_rico_ui_dtrh",
+      "program_name": "Puerto Rico UI (DTRH)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Puerto Rico UI",
+      "phone": "787-945-7000",
+      "website": "https://trabajo.pr.gov",
+      "eligibility": "Workers who lost job through no fault \u2014 up to $190/week, 26 weeks. CRITICAL: $190/week is second lowest in registry after American Samoa. trabajo.pr.gov. Appeal: 15 days.",
+      "apply_notes": "Weekly income replacement for workers \u2014 max $190/week",
+      "source": "luminari-puerto-rico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "PR",
+      "federal_interface": false
+    },
+    {
+      "program_id": "pr_liheap_puerto_rico_adsef",
+      "program_name": "LIHEAP Puerto Rico (ADSEF)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "LIHEAP Puerto Rico",
+      "phone": "787-625-2900",
+      "website": "https://adsef.pr.gov",
+      "eligibility": "Income < 60% territory median. AEE/LUMA Energy (787-521-3434) \u2014 request payment plan and low-income rate simultaneously.",
+      "apply_notes": "Energy assistance \u2014 cooling critical in tropical climate",
+      "source": "luminari-puerto-rico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "PR",
+      "federal_interface": false
+    },
+    {
+      "program_id": "pr_casa_protegida_julia_de_burgos_coordinad",
+      "program_name": "Casa Protegida Julia de Burgos / Coordinadora Paz para la Mujer (DV)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Casa Protegida Julia de Burgos / Coordinadora Paz para la Mujer",
+      "phone": "787-722-2323",
+      "website": "https://pazparalamujer.org",
+      "eligibility": "Anyone experiencing DV. Coordinadora Paz para la Mujer (787-281-7579) \u2014 umbrella org for PR DV network. LGBTQ+ specialized services available.",
+      "apply_notes": "DV services statewide \u2014 hotline, shelter, legal advocacy",
+      "source": "luminari-puerto-rico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "PR",
+      "federal_interface": false
+    },
+    {
+      "program_id": "pr_fema_individual_assistance_disaster_reli",
+      "program_name": "FEMA Individual Assistance (Disaster Relief)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "FEMA Individual Assistance",
+      "phone": "800-621-3362",
+      "website": "https://disasterassistance.gov",
+      "eligibility": "Households in declared disaster areas. disasterassistance.gov. Puerto Rico CDBG-DR long-term recovery: cdbg-dr.pr.gov.",
+      "apply_notes": "Ongoing disaster recovery assistance \u2014 Maria and earthquake-affected households still eligible for some programs",
+      "source": "luminari-puerto-rico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "PR",
+      "federal_interface": false
+    },
+    {
+      "program_id": "pr_fondos_unidos_de_puerto_rico_united_way_",
+      "program_name": "Fondos Unidos de Puerto Rico (United Way PR)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Fondos Unidos de Puerto Rico",
+      "phone": "787-728-8500",
+      "website": "https://fondosunidos.org",
+      "eligibility": "Anyone. 211pr.org \u2014 resource directory.",
+      "apply_notes": "Community resource navigation, 211 equivalent, benefit enrollment",
+      "source": "luminari-puerto-rico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "",
+      "state": "PR",
+      "federal_interface": false
+    },
+    {
+      "program_id": "pr_immigrant_returnee_services_centro_para_",
+      "program_name": "Immigrant/Returnee Services \u2014 Centro para Puerto Rico",
+      "layer": "state",
+      "benefit_category": "employment",
+      "pipeline_ids": [
+        "employment_dispute"
+      ],
+      "agency": "Immigrant/Returnee Services \u2014 Centro para Puerto Rico",
+      "phone": "787-724-7474",
+      "website": "https://centropr.org",
+      "eligibility": "Returning migrants and island residents. centropr.org.",
+      "apply_notes": "Services for Puerto Ricans returning from mainland, economic development, job placement",
+      "source": "luminari-puerto-rico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "employment"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "employment"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "employment",
+      "city": "",
+      "state": "PR",
+      "federal_interface": false
+    },
+    {
+      "program_id": "pr_pr_veterans_services_va_caribbean_health",
+      "program_name": "PR Veterans Services (VA Caribbean Healthcare)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial",
+        "insurance_claim_denial"
+      ],
+      "agency": "PR Veterans Services",
+      "phone": "787-641-7582",
+      "website": "https://caribbean.va.gov",
+      "eligibility": "Veterans in Puerto Rico. caribbean.va.gov. San Juan VAMC: 787-641-7582.",
+      "apply_notes": "VA healthcare and benefits \u2014 San Juan VA Medical Center",
+      "source": "luminari-puerto-rico-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "PR",
+      "federal_interface": false
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "state": "KY",
+    "version": "3.0"
+  },
+  "statute": {
+    "name": "Kentucky Open Records Act",
+    "citation": "KRS § 61.870 et seq."
+  },
+  "structured_rules": [
+    {
+      "rule_id": "ky_open_records",
+      "domain": "public_records"
+    }
+  ],
+  "agencies": [
+    {
+      "agency_id": "ky_records_custodian",
+      "name": "Agency Records Custodian",
+      "url": ""
+    }
+  ],
+  "appeals_workflow": []
+}

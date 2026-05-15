@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "state": "ID",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "id_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "id_idaho_medicaid",
+        "id_idaho_chip_chipping_in",
+        "id_idaho_snap_food_stamps",
+        "id_idaho_unemployment_insurance",
+        "id_wic_idaho",
+        "id_idaho_tribal_nations_programs",
+        "id_idaho_department_of_health_and_welfare_b"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "id_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "id_idaho_commission_for_aging_icoa"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "id_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "id_idaho_tanf_temporary_assistance_for_fami",
+        "id_idaho_child_care_assistance",
+        "id_liheap_idaho"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "id_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "id_idaho_housing_and_finance_association_ih",
+        "id_idaho_legal_aid_services"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    },
+    {
+      "lens_id": "id_lens_employment",
+      "lens_type": "employment",
+      "programs": [
+        "id_idaho_vocational_rehabilitation_idvr"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ]
+    }
+  ]
+}

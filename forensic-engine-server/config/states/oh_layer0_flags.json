@@ -1,0 +1,295 @@
+{
+  "meta": {
+    "state": "OH",
+    "state_name": "Ohio",
+    "layer": "layer0_flags",
+    "version": "1.0.0",
+    "date_created": "2026-03-07",
+    "source": "Luminari OH Three-Layer Registry",
+    "flag_count": 8
+  },
+  "flags": [
+    {
+      "flag_id": "oh_snap_abawd",
+      "title": "SNAP ABAWD Work Requirements \u2014 Active Statewide",
+      "severity": "alert",
+      "trigger": "state=OH AND benefit_type=SNAP AND age>=18 AND age<=54",
+      "message": "Ohio SNAP ABAWD work requirements are fully active \u2014 no statewide waiver. ABAWDs ages 18-54 must document 80 hours/month of work, education, job training, or qualifying volunteer activity. Waiver expired 2023. Surface exemptions immediately: documented disability, caregiving for dependent, pregnancy, enrollment in job training, participation in SNAP E&T program. Rural counties may qualify for county-level exemptions \u2014 check Ohio JFS ABAWD county list at jfs.ohio.gov.",
+      "action_items": [
+        "Check ABAWD exemptions",
+        "Verify county-level waiver status",
+        "Document work/training hours"
+      ],
+      "legal_basis": "7 CFR \u00a7273.24 (ABAWD provisions)",
+      "bundle_pairings": [
+        "oh_snap",
+        "oh_owf"
+      ]
+    },
+    {
+      "flag_id": "oh_medicaid_expansion",
+      "title": "Ohio Medicaid Expansion \u2014 Covered, But Work Requirement Proposed",
+      "severity": "warning",
+      "trigger": "state=OH AND benefit_type=Medicaid",
+      "message": "Ohio expanded Medicaid in 2013 \u2014 adults 19-64 to 138% FPL qualify with no coverage gap. As of 2025, Ohio has proposed but not implemented Medicaid work requirements (blocked in federal court historically). Monitor jfs.ohio.gov for status changes. Managed care plans: CareSource, Molina, Buckeye Health Plan, UnitedHealthcare Community Plan, Anthem. Always verify managed care plan enrollment before routing specialty care.",
+      "action_items": [
+        "Verify managed care plan enrollment",
+        "Monitor work requirement status",
+        "Check income eligibility"
+      ],
+      "legal_basis": "ACA \u00a71902(a)(10)(A)(i)(VIII)",
+      "bundle_pairings": [
+        "oh_medicaid"
+      ]
+    },
+    {
+      "flag_id": "oh_minimum_wage",
+      "title": "Ohio Minimum Wage $10.45/hr \u2014 Far Below Living Wage",
+      "severity": "warning",
+      "trigger": "state=OH AND issue_type=wage",
+      "message": "Ohio minimum wage is $10.45/hr (2025) \u2014 among the lowest in the Midwest. Federal minimum is $7.25/hr (Ohio supersedes). No major Ohio city has enacted a higher local minimum wage (preemption by state law). Wage theft is epidemic in Ohio's food service, care work, and construction sectors. Any worker earning close to minimum wage in Ohio is likely being underpaid relative to cost of living \u2014 always calculate hours and check for overtime violations.",
+      "action_items": [
+        "Calculate actual hourly rate",
+        "Check for overtime violations",
+        "Document all hours worked"
+      ],
+      "legal_basis": "ORC \u00a74111 (Minimum Fair Wage Standards Act)",
+      "bundle_pairings": [
+        "oh_ui"
+      ]
+    },
+    {
+      "flag_id": "oh_tanf_36month",
+      "title": "Ohio TANF (Ohio Works First) \u2014 $536/mo Max, 36-Month Lifetime Limit",
+      "severity": "warning",
+      "trigger": "state=OH AND benefit_type=TANF",
+      "message": "Ohio TANF (Ohio Works First / OWF) pays up to $536/month for a family of 3. CRITICAL: Ohio uses a 36-month lifetime limit \u2014 shorter than the 60-month federal limit. If a client has prior TANF history in Ohio, verify remaining months immediately before routing. Work requirement: 30 hours/week (20 for single parent with child under 6). Never present OWF as standalone \u2014 always pair with SNAP, Medicaid, CCAP, HEAP, and emergency assistance.",
+      "action_items": [
+        "Verify remaining TANF months",
+        "Check work requirement exemptions",
+        "Bundle with SNAP/Medicaid/HEAP"
+      ],
+      "legal_basis": "ORC \u00a75107 (Ohio Works First)",
+      "bundle_pairings": [
+        "oh_owf",
+        "oh_snap",
+        "oh_medicaid",
+        "oh_heap"
+      ]
+    },
+    {
+      "flag_id": "oh_heap_season",
+      "title": "Ohio HEAP \u2014 Opens November 1",
+      "severity": "info",
+      "trigger": "state=OH AND benefit_type=utility",
+      "message": "Ohio HEAP application opens November 1 each year for heating season. HEAP Crisis Component available year-round for imminent shutoff. Income limit: 175% FPL (higher than many states). Administered by local Community Action Agencies \u2014 50+ agencies statewide. Columbia Gas Ohio and AEP Ohio shutoff protections run October 15-April 15 (winter moratorium). Duke Energy Ohio: contact directly for winter shutoff protection program.",
+      "action_items": [
+        "Check HEAP application window",
+        "Identify local Community Action Agency",
+        "Verify utility shutoff protections"
+      ],
+      "legal_basis": "42 USC \u00a78621 (LIHEAP)",
+      "bundle_pairings": [
+        "oh_heap"
+      ]
+    },
+    {
+      "flag_id": "oh_eviction_fast",
+      "title": "Ohio Eviction Process \u2014 3-Day Notice + Expedited Hearing",
+      "severity": "alert",
+      "trigger": "state=OH AND issue_type=eviction",
+      "message": "Ohio has one of the fastest eviction timelines in the country. Landlord can serve 3-day notice to vacate (non-payment) with no cure period required. After 3-day notice expires, landlord files in Municipal or County Court. Hearing can be scheduled as soon as 3-7 days after filing. Total timeline: as fast as 10-14 days from notice to writ of restitution. Contact legal aid IMMEDIATELY when any eviction notice is served \u2014 do not wait for hearing date. Ohio does not require written leases for month-to-month tenancies.",
+      "action_items": [
+        "Contact legal aid SAME DAY",
+        "Document all violations",
+        "Request hearing continuance if possible"
+      ],
+      "legal_basis": "ORC \u00a71923 (Forcible Entry and Detainer)",
+      "bundle_pairings": [
+        "oh_legal_aid_columbus",
+        "oh_legal_aid_cleveland",
+        "oh_legal_aid_cincinnati"
+      ]
+    },
+    {
+      "flag_id": "oh_ui_21day",
+      "title": "Ohio UI \u2014 21-Day Appeal Deadline (Shorter Than Region)",
+      "severity": "warning",
+      "trigger": "state=OH AND benefit_type=unemployment",
+      "message": "Ohio unemployment insurance maximum duration is 26 weeks but actual duration is determined by base period wages. Ohio UI appeal deadline: 21 days from mailing date of determination \u2014 shorter than IL (30 days) and NY (30 days). Contact legal aid within 10 days of any denial. Ohio's UI system (JFS) has chronic backlogs and denial rates \u2014 appeal virtually every denial.",
+      "action_items": [
+        "Note 21-day appeal deadline",
+        "Contact legal aid within 10 days",
+        "Appeal virtually every denial"
+      ],
+      "legal_basis": "ORC \u00a74141 (Unemployment Compensation)",
+      "bundle_pairings": [
+        "oh_ui"
+      ]
+    },
+    {
+      "flag_id": "oh_ocrc_2year",
+      "title": "Ohio OCRC \u2014 2-Year Civil Rights SOL, Broader Than Federal 300 Days",
+      "severity": "info",
+      "trigger": "state=OH AND issue_type=discrimination",
+      "message": "Ohio Civil Rights Commission (OCRC) has a 2-year statute of limitations for employment and housing discrimination complaints \u2014 significantly longer than EEOC/HUD's 300-day federal deadline. This is a major strategic advantage: Ohio workers and tenants who missed the federal 300-day deadline may still have a valid state claim. Always file with OCRC even after federal deadlines expire. OCRC workshares with EEOC for employment claims.",
+      "action_items": [
+        "File with OCRC even if federal deadline missed",
+        "Check 2-year window",
+        "File EEOC simultaneously if within 300 days"
+      ],
+      "legal_basis": "ORC \u00a74112 (Ohio Civil Rights Act)",
+      "bundle_pairings": []
+    },
+    {
+      "flag_id": "oh_involuntary_hold_law",
+      "title": "Involuntary Hold: Ohio Emergency Admission",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "OH involuntary psychiatric hold law: Ohio Emergency Admission. Statutory authority: ORC \u00a7 5122.10. Maximum initial hold duration: 72 hours. Legal standard: danger to self/others. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 72 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "ORC \u00a7 5122.10"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "oh_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in OH retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "oh_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in OH: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "oh_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Ohio Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "oh_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Ohio Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "oh_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Ohio Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

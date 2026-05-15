@@ -1,0 +1,89 @@
+{
+  "state": "CO",
+  "state_name": "Colorado",
+  "version": "1.0.0",
+  "schema": "luminari-registry-v1",
+  "date_created": "2026-03-08",
+  "layers": {
+    "layer0": "co_layer0_flags.json",
+    "layer1_programs": "co_programs.json",
+    "layer1_cards": "co_layer1_cards.json",
+    "layer2_workflows": "co_workflow_overrides.json",
+    "layer3_oversight": "co_oversight.json",
+    "help": "co_help.json",
+    "foia": "co_foia.json",
+    "tribal": "co_tribal_overrides.json",
+    "county": "co_county_overrides.json",
+    "pipeline_mappings": "co_pipeline_mappings.json",
+    "lens_mappings": "co_lens_mappings.json",
+    "workflow_mappings": "co_workflow_mappings.json"
+  },
+  "status": "active",
+  "validation_status": "complete",
+  "datasets": [
+    "programs",
+    "workflows",
+    "oversight",
+    "layer0_flags",
+    "layer1_cards",
+    "county_overrides",
+    "tribal_overrides",
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings",
+    "foia",
+    "help",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "civil_rights_violation",
+    "consumer_fraud",
+    "health_insurance_denial",
+    "immigration_case",
+    "medicaid_denial",
+    "snap_denial",
+    "tenant_rights",
+    "wage_theft",
+    "workplace_discrimination",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "benefits_agency",
+    "insurer"
+  ],
+  "policy_flags": [
+    "co_denver_boulder_housing_cost_crisis",
+    "colorado_snap_abawd",
+    "colorado_tanf_colorado_works",
+    "colorado_3_year_wage_sol",
+    "colorado_ccrd_6_month_sol",
+    "colorado_unhoused_population_denver_hub",
+    "co_western_slope_rural_colorado_geographic_isolation",
+    "co_denver_latino_immigrant_community"
+  ],
+  "statistics": {
+    "programs": {
+      "total_programs": 20,
+      "categories": {
+        "community_navigation": 8,
+        "healthcare": 4,
+        "housing": 3,
+        "legal_aid": 4,
+        "immigration": 1
+      }
+    },
+    "workflows": {
+      "total_workflows": 4
+    },
+    "oversight": {
+      "total_oversight_bodies": 12,
+      "total_oversight_chains": 2
+    }
+  }
+}

@@ -1,0 +1,457 @@
+{
+  "meta": {
+    "state": "OK",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "ok_soonercare_oklahoma_medicaid",
+      "program_name": "SoonerCare (Oklahoma Medicaid)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "SoonerCare",
+      "phone": "800-987-7767",
+      "website": "https://oklahoma.gov/ohca",
+      "eligibility": "Adults \u2264138% FPL; children \u2264200% FPL; SoonerCare Traditional covers elderly/disabled",
+      "apply_notes": "Oklahoma's Medicaid program. SoonerCare 2.0 expanded adult coverage July 2021 by ballot initiative. Now covers adults up to 138% FPL.",
+      "source": "luminari-oklahoma-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "OK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ok_soonercare_chip",
+      "program_name": "SoonerCare CHIP",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "SoonerCare CHIP",
+      "phone": "800-987-7767",
+      "website": "https://oklahoma.gov/ohca",
+      "eligibility": "Children under 19; family income 138\u2013200% FPL",
+      "apply_notes": "Insure Oklahoma and SoonerCare CHIP for children in families above Medicaid level. Covers children up to 200% FPL.",
+      "source": "luminari-oklahoma-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "OK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ok_oklahoma_snap",
+      "program_name": "Oklahoma SNAP",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Oklahoma SNAP",
+      "phone": "405-521-3646",
+      "website": "https://okdhs.org",
+      "eligibility": "Income \u2264130% FPL (gross); 200% FPL net for elderly/disabled",
+      "apply_notes": "SNAP benefits administered by DHS. Average benefit ~$180/month. Apply online or at county DHS office.",
+      "source": "luminari-oklahoma-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "OK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ok_oklahoma_tanf_oklahoma_works",
+      "program_name": "Oklahoma TANF (Oklahoma Works)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "Oklahoma TANF",
+      "phone": "405-521-3646",
+      "website": "https://okdhs.org",
+      "eligibility": "Families with minor children; income and asset limits; citizenship required",
+      "apply_notes": "Cash assistance $292/month (family of 3). 60-month lifetime limit. Strong work requirements enforced.",
+      "source": "luminari-oklahoma-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "OK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ok_oklahoma_unemployment_insurance",
+      "program_name": "Oklahoma Unemployment Insurance",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "Oklahoma Unemployment Insurance",
+      "phone": "405-525-1500",
+      "website": "https://oesc.ok.gov",
+      "eligibility": "Involuntary separation; base period earnings requirement",
+      "apply_notes": "UI: $16\u2013$539/week. Duration up to 26 weeks. Administered by Oklahoma Employment Security Commission.",
+      "source": "luminari-oklahoma-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "OK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ok_oklahoma_housing_finance_agency_ohfa",
+      "program_name": "Oklahoma Housing Finance Agency (OHFA)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute",
+        "disability_claim"
+      ],
+      "agency": "Oklahoma Housing Finance Agency",
+      "phone": "405-848-1144",
+      "website": "https://ohfa.org",
+      "eligibility": "Income-based; varies by program",
+      "apply_notes": "Affordable rental housing, homebuyer assistance, Section 8 vouchers. Partners with local housing authorities.",
+      "source": "luminari-oklahoma-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "OK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ok_wic_oklahoma",
+      "program_name": "WIC Oklahoma",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "housing_dispute",
+        "child_welfare"
+      ],
+      "agency": "WIC Oklahoma",
+      "phone": "405-271-4676",
+      "website": "https://health.ok.gov/wic",
+      "eligibility": "Pregnant/postpartum women, infants, children under 5; income \u2264185% FPL",
+      "apply_notes": "Nutrition program for women, infants, children. Provides food vouchers, formula, health referrals.",
+      "source": "luminari-oklahoma-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "OK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ok_oklahoma_child_care_assistance_ccap",
+      "program_name": "Oklahoma Child Care Assistance (CCAP)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "Oklahoma Child Care Assistance",
+      "phone": "405-521-3561",
+      "website": "https://okdhs.org",
+      "eligibility": "Working families; income \u226485% SMI; children under 13",
+      "apply_notes": "Subsidized child care for working low-income families through DHS.",
+      "source": "luminari-oklahoma-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "OK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ok_oklahoma_tribal_nations_programs",
+      "program_name": "Oklahoma Tribal Nations Programs",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "housing_dispute"
+      ],
+      "agency": "Oklahoma Tribal Nations Programs",
+      "phone": "",
+      "website": "https://bia.gov/tribal-leaders-directory",
+      "eligibility": "Tribal enrollment (most) or tribal service area residency (some)",
+      "apply_notes": "39 federally recognized tribes offer independent social services: health (IHS + tribal clinics), housing, food, elder care. Contact tribal social services directly. Key: Cherokee Nation 918-458-6900, Chickasaw Nation 580-436-2603, Choctaw Nation 800-522-6170, Muscogee (Creek) Nation 918-732-7600, Osage Nation 918-287-5555.",
+      "source": "luminari-oklahoma-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "OK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ok_oklahoma_department_of_human_services_ad",
+      "program_name": "Oklahoma Department of Human Services - Adult & Family Services",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "Oklahoma Department of Human Services - Adult & Family Services",
+      "phone": "405-521-3646",
+      "website": "https://okdhs.org/services",
+      "eligibility": "Age, disability, income criteria vary by program",
+      "apply_notes": "Programs for adults, elderly, people with disabilities. Includes ADvantage Medicaid waiver, CHOICES, personal care services.",
+      "source": "luminari-oklahoma-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "OK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ok_legal_aid_services_of_oklahoma",
+      "program_name": "Legal Aid Services of Oklahoma",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute"
+      ],
+      "agency": "Legal Aid Services of Oklahoma",
+      "phone": "405-557-0020",
+      "website": "https://legalaidok.org",
+      "eligibility": "Income \u2264125% FPL; some programs higher",
+      "apply_notes": "Free civil legal services statewide. Family law, housing, benefits appeals, domestic violence, tribal court matters.",
+      "source": "luminari-oklahoma-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "OK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ok_oklahoma_department_of_mental_health_and",
+      "program_name": "Oklahoma Department of Mental Health and Substance Abuse Services (ODMHSAS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Oklahoma Department of Mental Health and Substance Abuse Services",
+      "phone": "800-522-9054",
+      "website": "https://odmhsas.org",
+      "eligibility": "All residents; sliding fee scale; Medicaid accepted",
+      "apply_notes": "Mental health and substance use treatment network statewide. Includes crisis line, inpatient, outpatient, recovery services.",
+      "source": "luminari-oklahoma-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "OK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ok_energy_assistance_program_liheap_oklahom",
+      "program_name": "Energy Assistance Program (LIHEAP Oklahoma)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "Energy Assistance Program",
+      "phone": "866-411-1877",
+      "website": "https://okdhs.org/energy",
+      "eligibility": "Income \u2264150% FPL",
+      "apply_notes": "Home heating/cooling bill assistance through DHS. Priority for elderly, disabled, households with young children.",
+      "source": "luminari-oklahoma-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "OK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ok_oklahoma_s_promise_higher_ed_scholarship",
+      "program_name": "Oklahoma's Promise (Higher Ed Scholarship)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Oklahoma's Promise",
+      "phone": "405-225-9239",
+      "website": "https://okcollegestart.org",
+      "eligibility": "Family income \u226455,000 at application; GPA and conduct requirements",
+      "apply_notes": "State scholarship for income-eligible students. Apply in grades 8\u201310. Covers tuition at Oklahoma public colleges.",
+      "source": "luminari-oklahoma-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "OK",
+      "federal_interface": false
+    },
+    {
+      "program_id": "ok_2_1_1_oklahoma",
+      "program_name": "2-1-1 Oklahoma",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "housing_dispute"
+      ],
+      "agency": "2-1-1 Oklahoma",
+      "phone": "",
+      "website": "https://211oklahoma.org",
+      "eligibility": "Open to all",
+      "apply_notes": "Statewide resource and referral hotline. Connects to food, shelter, utilities, health, mental health, and social services.",
+      "source": "luminari-oklahoma-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "OK",
+      "federal_interface": false
+    }
+  ]
+}

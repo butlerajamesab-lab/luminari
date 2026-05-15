@@ -1,0 +1,449 @@
+{
+  "meta": {
+    "state": "IL",
+    "version": "3.0",
+    "chain_count": 4
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "insurer",
+      "state": "IL",
+      "bodies": [
+        {
+          "oversight_body": "Illinois Department of Insurance (IDOI)",
+          "jurisdiction": "primary",
+          "phone": "877-527-9431",
+          "complaint_portal": "insurance.illinois.gov",
+          "what_to_report": "Private health, life, and property insurance companies.",
+          "legal_threshold": "Handles complaints, enforces market conduct, and administers the Independent Medical Review (IMR) program.",
+          "state": "IL",
+          "city": "Springfield",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Chicago Department of Buildings / 311",
+          "jurisdiction": "primary",
+          "phone": "312-744-5000 / 311",
+          "complaint_portal": "chicago.gov/buildings",
+          "what_to_report": "Buildings and properties within Chicago.",
+          "legal_threshold": "Enforces building codes, investigates habitability violations, and issues inspection reports.",
+          "state": "IL",
+          "city": "Chicago",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Illinois Department of Labor (IL DOL) \u2014 Fair Labor Standards",
+          "jurisdiction": "primary",
+          "phone": "312-793-2800 (Chicago) / 217-782-6206 (Springfield)",
+          "complaint_portal": "labor.illinois.gov",
+          "what_to_report": "Wage violations, minimum wage, child labor, and other labor standards.",
+          "legal_threshold": "Enforces Illinois wage and labor laws, can issue citations, and demand payment.",
+          "state": "IL",
+          "city": "Springfield",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Chicago Office of Labor Standards (OLS)",
+          "jurisdiction": "primary",
+          "phone": "312-744-9083",
+          "complaint_portal": "chicago.gov/ols",
+          "what_to_report": "Chicago minimum wage, paid sick leave, and fair workweek ordinances.",
+          "legal_threshold": "Enforces Chicago-specific labor ordinances independently.",
+          "state": "IL",
+          "city": "Chicago",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Illinois DHS Bureau of Hearings",
+          "jurisdiction": "primary",
+          "phone": "800-435-0774",
+          "complaint_portal": "dhs.state.il.us",
+          "what_to_report": "SNAP, Medicaid, and TANF denials, reductions, or terminations.",
+          "legal_threshold": "Conducts fair hearings for public benefit appeals.",
+          "state": "IL",
+          "city": "Springfield",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "IDES Appeals \u2014 UI Denial",
+          "jurisdiction": "primary",
+          "phone": "312-793-4910 (Chicago) / 217-785-5133 (Springfield)",
+          "complaint_portal": "ides.illinois.gov",
+          "what_to_report": "Unemployment insurance denials or overpayment determinations.",
+          "legal_threshold": "Handles appeals of UI determinations.",
+          "state": "IL",
+          "city": "Springfield",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Illinois Department of Public Health \u2014 Long-Term Care Complaint",
+          "jurisdiction": "primary",
+          "phone": "800-252-4343",
+          "complaint_portal": "dph.illinois.gov",
+          "what_to_report": "Nursing home neglect, abuse, and licensing violations.",
+          "legal_threshold": "Investigates complaints, conducts surveys, and can issue deficiencies and penalties.",
+          "state": "IL",
+          "city": "Springfield",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Illinois DCFS \u2014 Child Abuse Hotline",
+          "jurisdiction": "primary",
+          "phone": "800-252-2873",
+          "complaint_portal": "dcfs.illinois.gov",
+          "what_to_report": "Child abuse and neglect.",
+          "legal_threshold": "Mandatory reporting, investigation, and family services for child abuse and neglect.",
+          "state": "IL",
+          "city": "Springfield",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "benefits_agency",
+      "state": "IL",
+      "bodies": [
+        {
+          "oversight_body": "Illinois HFS Office of Inspector General",
+          "jurisdiction": "primary",
+          "phone": "800-368-1463",
+          "complaint_portal": "hfs.illinois.gov",
+          "what_to_report": "Medicaid managed care plans.",
+          "legal_threshold": "Investigates grievances, denials, and access failures in Medicaid managed care.",
+          "state": "IL",
+          "city": "Springfield",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Illinois Human Rights Act \u2014 IDHR Housing",
+          "jurisdiction": "primary",
+          "phone": "312-814-6200",
+          "complaint_portal": "dhr.illinois.gov",
+          "what_to_report": "Housing discrimination under the Illinois Human Rights Act.",
+          "legal_threshold": "Investigates housing discrimination complaints and can order remedies.",
+          "state": "IL",
+          "city": "Springfield",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Chicago Commission on Human Relations (CCHR)",
+          "jurisdiction": "primary",
+          "phone": "312-744-4111",
+          "complaint_portal": "chicago.gov/humanrelations",
+          "what_to_report": "Housing discrimination within Chicago.",
+          "legal_threshold": "Enforces Chicago's anti-discrimination ordinances with independent enforcement authority and stronger remedies.",
+          "state": "IL",
+          "city": "Chicago",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "HUD Fair Housing \u2014 Chicago Regional Office (Federal Hook)",
+          "jurisdiction": "primary",
+          "phone": "800-669-9777",
+          "complaint_portal": "hud.gov/fairhousing",
+          "what_to_report": "Federal Fair Housing Act violations.",
+          "legal_threshold": "Investigates complaints under the Fair Housing Act and work-shares with state and local agencies.",
+          "state": "IL",
+          "city": "Chicago",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Illinois Department of Human Rights (IDHR) \u2014 Employment",
+          "jurisdiction": "primary",
+          "phone": "312-814-6200",
+          "complaint_portal": "dhr.illinois.gov",
+          "what_to_report": "Employment discrimination under the Illinois Human Rights Act.",
+          "legal_threshold": "Investigates employment discrimination complaints and can order remedies.",
+          "state": "IL",
+          "city": "Springfield",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC Chicago District Office (Federal Hook)",
+          "jurisdiction": "primary",
+          "phone": "800-669-4000",
+          "complaint_portal": "eeoc.gov",
+          "what_to_report": "Federal employment discrimination laws.",
+          "legal_threshold": "Investigates complaints under federal EEO laws and work-shares with state and local agencies.",
+          "state": "IL",
+          "city": "Chicago",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Illinois Long-Term Care Ombudsman Program",
+          "jurisdiction": "primary",
+          "phone": "217-785-3143",
+          "complaint_portal": "aging.illinois.gov/LTCombudsman",
+          "what_to_report": "Resident rights, quality of care, and discharge disputes in nursing homes and assisted living.",
+          "legal_threshold": "Provides free, confidential advocacy for residents and investigates complaints.",
+          "state": "IL",
+          "city": "Springfield",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Civilian Office of Police Accountability (COPA) \u2014 Chicago",
+          "jurisdiction": "primary",
+          "phone": "312-746-3609",
+          "complaint_portal": "chicagocopa.org",
+          "what_to_report": "Chicago Police Department misconduct.",
+          "legal_threshold": "Independent civilian oversight body that investigates CPD complaints.",
+          "state": "IL",
+          "city": "Chicago",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Illinois Law Enforcement Training and Standards Board \u2014 Decertification",
+          "jurisdiction": "primary",
+          "phone": "217-782-4540",
+          "complaint_portal": "ptb.illinois.gov",
+          "what_to_report": "Illinois officer decertification for serious misconduct.",
+          "legal_threshold": "State-level law enforcement accountability for officers outside Chicago.",
+          "state": "IL",
+          "city": "Springfield",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOJ Civil Rights Division (Federal Hook)",
+          "jurisdiction": "primary",
+          "phone": "800-514-0301",
+          "complaint_portal": "justice.gov/crt",
+          "what_to_report": "Pattern or practice of constitutional violations by law enforcement agencies.",
+          "legal_threshold": "Handles systemic cases of law enforcement misconduct.",
+          "state": "DC",
+          "city": "Washington",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "ARDC \u2014 Attorney Registration and Disciplinary Commission",
+          "jurisdiction": "primary",
+          "phone": "800-826-8625",
+          "complaint_portal": "iardc.org",
+          "what_to_report": "Illinois attorney misconduct.",
+          "legal_threshold": "Investigates complaints of attorney misconduct and can suspend or disbar.",
+          "state": "IL",
+          "city": "Springfield",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "employer",
+      "state": "IL",
+      "bodies": [
+        {
+          "oversight_body": "Illinois Attorney General \u2014 Consumer Protection Division",
+          "jurisdiction": "primary",
+          "phone": "800-386-5438",
+          "complaint_portal": "illinoisattorneygeneral.gov",
+          "what_to_report": "Consumer fraud and deceptive business practices.",
+          "legal_threshold": "Investigates and litigates consumer protection cases.",
+          "state": "IL",
+          "city": "Springfield",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "family_court",
+      "state": "IL",
+      "bodies": [
+        {
+          "oversight_body": "Illinois Judicial Inquiry Board (JIB)",
+          "jurisdiction": "primary",
+          "phone": "217-782-7986",
+          "complaint_portal": "jib.illinois.gov",
+          "what_to_report": "Illinois judge misconduct.",
+          "legal_threshold": "Investigates complaints of judicial misconduct and can recommend discipline to the IL Supreme Court.",
+          "state": "IL",
+          "city": "Springfield",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "il_med_board",
+          "name": "Illinois Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Illinois Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IL"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "il_patient_adv",
+          "name": "Illinois Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Illinois Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IL"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "il_health_dept",
+          "name": "Illinois Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Illinois Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IL"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IL"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "il_pharm_board",
+          "name": "Illinois Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Illinois Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IL"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "il_pa",
+          "name": "Illinois Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Illinois Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IL"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "il_mha",
+          "name": "Illinois Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Illinois Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IL"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "IL"
+    }
+  ]
+}

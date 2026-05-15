@@ -1,0 +1,482 @@
+{
+  "meta": {
+    "state": "MO",
+    "state_name": "Missouri",
+    "schema_version": "2.0.0",
+    "last_updated": "2026-03-06",
+    "status": "active",
+    "description": "Missouri county-level overrides for 5 key counties. Each entry provides local courts, prosecutor, housing authority, legal aid, child welfare, law enforcement, and utility contacts that override or supplement statewide defaults."
+  },
+  "regions": {
+    "kc_metro": {
+      "label": "Kansas City Metro",
+      "counties": ["Jackson", "Clay", "Platte", "Cass", "Ray"],
+      "primary_legal_aid": "mo_lawmo"
+    },
+    "stl_metro": {
+      "label": "St. Louis Metro",
+      "counties": ["St. Louis City", "St. Louis County", "St. Charles", "Jefferson", "Franklin"],
+      "primary_legal_aid": "mo_lsem"
+    },
+    "springfield_region": {
+      "label": "Springfield Region",
+      "counties": ["Greene", "Christian", "Webster", "Taney", "Stone"],
+      "primary_legal_aid": "mo_lsswmo"
+    },
+    "rural_missouri": {
+      "label": "Rural Missouri",
+      "counties": [],
+      "primary_legal_aid": "mo_lsmo",
+      "notes": "Catch-all for counties not in metro regions. Legal Services of Missouri provides statewide coverage for rural areas."
+    }
+  },
+  "county_overrides": [
+    {
+      "county_id": "mo_jackson",
+      "county_name": "Jackson County",
+      "fips_code": "29095",
+      "region": "kc_metro",
+      "population_estimate": 717000,
+      "courts": {
+        "circuit_court": {
+          "name": "16th Judicial Circuit — Jackson County",
+          "address": "415 E. 12th Street, Kansas City, MO 64106",
+          "phone": "816-881-3526",
+          "portal": "https://www.16thcircuit.org",
+          "divisions": ["civil", "criminal", "family", "probate", "drug_court"],
+          "casenet_url": "https://courts.mo.gov/casenet"
+        },
+        "municipal_court": {
+          "name": "Kansas City Municipal Court",
+          "address": "1101 Locust Street, Kansas City, MO 64106",
+          "phone": "816-513-2700",
+          "portal": "https://kcmo.gov/municipal-court"
+        }
+      },
+      "prosecutor": {
+        "office": "Jackson County Prosecutor's Office",
+        "name": "Jean Peters Baker",
+        "address": "415 E. 12th Street, Suite 1100, Kansas City, MO 64106",
+        "phone": "816-881-3555",
+        "portal": "https://jacksoncountyprosecutor.com",
+        "victim_services_phone": "816-881-3000"
+      },
+      "housing_authority": {
+        "name": "Housing Authority of Kansas City, Missouri (HAKC)",
+        "address": "920 Main Street, Suite 700, Kansas City, MO 64105",
+        "phone": "816-968-4100",
+        "portal": "https://hakc.org",
+        "programs": ["Section 8 HCV", "Public Housing", "Family Self-Sufficiency"],
+        "waitlist_status": "Typically closed; check portal for openings"
+      },
+      "legal_aid": [
+        {
+          "provider_id": "mo_lawmo",
+          "name": "Legal Aid of Western Missouri (LAWMO)",
+          "address": "1125 Grand Blvd., Suite 1900, Kansas City, MO 64106",
+          "phone": "816-474-6750",
+          "intake_phone": "888-353-5293",
+          "portal": "https://lawmo.org",
+          "services": ["housing", "family", "consumer", "public_benefits", "immigration"],
+          "income_limit": "200% FPL"
+        },
+        {
+          "provider_id": "mo_kc_volunteer_lawyers",
+          "name": "Kansas City Volunteer Lawyers & Accountants for the Arts",
+          "phone": "816-474-4322",
+          "services": ["arts_legal", "nonprofit_legal"]
+        }
+      ],
+      "child_welfare": {
+        "office": "Children's Division — Jackson County",
+        "address": "615 E. 13th Street, Kansas City, MO 64106",
+        "phone": "816-889-2000",
+        "hotline": "800-392-3738",
+        "notes": "Child abuse/neglect hotline is statewide. Local office handles investigations for Jackson County."
+      },
+      "law_enforcement": [
+        {
+          "agency": "Kansas City Police Department (KCPD)",
+          "phone": "816-234-5000",
+          "non_emergency": "816-234-5111",
+          "portal": "https://kcpd.org",
+          "records_request": "https://kcpd.org/records",
+          "jurisdiction": "Kansas City city limits"
+        },
+        {
+          "agency": "Jackson County Sheriff's Office",
+          "phone": "816-524-4302",
+          "jurisdiction": "Unincorporated Jackson County"
+        }
+      ],
+      "utilities": [
+        {
+          "provider": "Kansas City Power & Light (Evergy)",
+          "type": "electric",
+          "phone": "888-471-5275",
+          "portal": "https://evergy.com",
+          "assistance_programs": ["LIHEAP", "Dollar-Aide", "Evergy Assist-a-Neighbor"],
+          "disconnect_protection": "Cold Weather Rule (Nov 1–Mar 31): no disconnect if temp below 32°F"
+        },
+        {
+          "provider": "Spire Missouri",
+          "type": "gas",
+          "phone": "800-582-1234",
+          "portal": "https://spireenergy.com",
+          "assistance_programs": ["LIHEAP", "Spire STARs"],
+          "disconnect_protection": "Cold Weather Rule applies"
+        },
+        {
+          "provider": "KC Water",
+          "type": "water",
+          "phone": "816-513-1313",
+          "portal": "https://kcwater.us",
+          "assistance_programs": ["KC Water Assistance Program"]
+        }
+      ]
+    },
+    {
+      "county_id": "mo_stl_city",
+      "county_name": "St. Louis City",
+      "fips_code": "29510",
+      "region": "stl_metro",
+      "population_estimate": 293000,
+      "courts": {
+        "circuit_court": {
+          "name": "22nd Judicial Circuit — St. Louis City",
+          "address": "10 N. Tucker Blvd., St. Louis, MO 63101",
+          "phone": "314-622-4405",
+          "portal": "https://stlcitycircuitcourt.com",
+          "divisions": ["civil", "criminal", "family", "probate", "associate"],
+          "casenet_url": "https://courts.mo.gov/casenet"
+        }
+      },
+      "prosecutor": {
+        "office": "St. Louis Circuit Attorney's Office",
+        "address": "1114 Market Street, Room 401, St. Louis, MO 63101",
+        "phone": "314-622-4941",
+        "portal": "https://circuitattorney.org",
+        "victim_services_phone": "314-622-4373"
+      },
+      "housing_authority": {
+        "name": "St. Louis Housing Authority (SLHA)",
+        "address": "3520 Page Blvd., St. Louis, MO 63106",
+        "phone": "314-531-4770",
+        "portal": "https://slha.org",
+        "programs": ["Section 8 HCV", "Public Housing", "ROSS", "Family Self-Sufficiency"],
+        "waitlist_status": "Typically closed; check portal for openings"
+      },
+      "legal_aid": [
+        {
+          "provider_id": "mo_lsem",
+          "name": "Legal Services of Eastern Missouri (LSEM)",
+          "address": "4232 Forest Park Ave., St. Louis, MO 63108",
+          "phone": "314-534-4200",
+          "intake_phone": "800-444-0514",
+          "portal": "https://lsem.org",
+          "services": ["housing", "family", "consumer", "public_benefits", "elder_law", "immigration"],
+          "income_limit": "200% FPL"
+        },
+        {
+          "provider_id": "mo_arch_city_defenders",
+          "name": "ArchCity Defenders",
+          "phone": "855-724-2489",
+          "portal": "https://archcitydefenders.org",
+          "services": ["criminal_defense", "civil_rights", "municipal_court"]
+        }
+      ],
+      "child_welfare": {
+        "office": "Children's Division — St. Louis City",
+        "address": "111 N. 7th Street, Suite 403, St. Louis, MO 63101",
+        "phone": "314-340-7777",
+        "hotline": "800-392-3738"
+      },
+      "law_enforcement": [
+        {
+          "agency": "St. Louis Metropolitan Police Department (SLMPD)",
+          "phone": "314-231-1212",
+          "non_emergency": "314-231-1212",
+          "portal": "https://slmpd.org",
+          "records_request": "Records Division: 314-444-5601",
+          "jurisdiction": "St. Louis City"
+        }
+      ],
+      "utilities": [
+        {
+          "provider": "Ameren Missouri",
+          "type": "electric_and_gas",
+          "phone": "800-552-7583",
+          "portal": "https://ameren.com",
+          "assistance_programs": ["LIHEAP", "Dollar More", "Ameren Cares"],
+          "disconnect_protection": "Cold Weather Rule (Nov 1–Mar 31)"
+        },
+        {
+          "provider": "St. Louis Water Division",
+          "type": "water",
+          "phone": "314-771-2255",
+          "portal": "https://stlouis-mo.gov/water",
+          "assistance_programs": ["Water Assistance Program"]
+        }
+      ]
+    },
+    {
+      "county_id": "mo_stl_county",
+      "county_name": "St. Louis County",
+      "fips_code": "29189",
+      "region": "stl_metro",
+      "population_estimate": 1004000,
+      "courts": {
+        "circuit_court": {
+          "name": "21st Judicial Circuit — St. Louis County",
+          "address": "105 S. Central Ave., Clayton, MO 63105",
+          "phone": "314-615-1500",
+          "portal": "https://stlcountycourts.com",
+          "divisions": ["civil", "criminal", "family", "probate", "juvenile"],
+          "casenet_url": "https://courts.mo.gov/casenet"
+        }
+      },
+      "prosecutor": {
+        "office": "St. Louis County Prosecuting Attorney's Office",
+        "address": "100 S. Central Ave., Clayton, MO 63105",
+        "phone": "314-615-2600",
+        "victim_services_phone": "314-615-2576"
+      },
+      "housing_authority": {
+        "name": "St. Louis County Housing Authority",
+        "address": "8865 Natural Bridge Road, St. Louis, MO 63121",
+        "phone": "314-428-3200",
+        "portal": "https://slcha.org",
+        "programs": ["Section 8 HCV", "Public Housing"],
+        "waitlist_status": "Check portal for current status"
+      },
+      "legal_aid": [
+        {
+          "provider_id": "mo_lsem",
+          "name": "Legal Services of Eastern Missouri (LSEM)",
+          "address": "4232 Forest Park Ave., St. Louis, MO 63108",
+          "phone": "314-534-4200",
+          "intake_phone": "800-444-0514",
+          "portal": "https://lsem.org",
+          "services": ["housing", "family", "consumer", "public_benefits", "elder_law"],
+          "income_limit": "200% FPL"
+        }
+      ],
+      "child_welfare": {
+        "office": "Children's Division — St. Louis County",
+        "address": "111 S. Meramec Ave., Suite 300, Clayton, MO 63105",
+        "phone": "314-615-7700",
+        "hotline": "800-392-3738"
+      },
+      "law_enforcement": [
+        {
+          "agency": "St. Louis County Police Department",
+          "phone": "314-889-2341",
+          "non_emergency": "314-889-2341",
+          "portal": "https://stlouiscountypolice.com",
+          "jurisdiction": "Unincorporated St. Louis County and contract municipalities"
+        }
+      ],
+      "utilities": [
+        {
+          "provider": "Ameren Missouri",
+          "type": "electric_and_gas",
+          "phone": "800-552-7583",
+          "portal": "https://ameren.com",
+          "assistance_programs": ["LIHEAP", "Dollar More", "Ameren Cares"],
+          "disconnect_protection": "Cold Weather Rule (Nov 1–Mar 31)"
+        },
+        {
+          "provider": "Missouri American Water",
+          "type": "water",
+          "phone": "866-430-0820",
+          "portal": "https://amwater.com/moaw",
+          "assistance_programs": ["H2O Help to Others"]
+        }
+      ]
+    },
+    {
+      "county_id": "mo_greene",
+      "county_name": "Greene County",
+      "fips_code": "29077",
+      "region": "springfield_region",
+      "population_estimate": 295000,
+      "courts": {
+        "circuit_court": {
+          "name": "31st Judicial Circuit — Greene County",
+          "address": "1010 Boonville Ave., Springfield, MO 65802",
+          "phone": "417-868-4074",
+          "portal": "https://greenecountymo.gov/circuit_court",
+          "divisions": ["civil", "criminal", "family", "probate", "drug_court"],
+          "casenet_url": "https://courts.mo.gov/casenet"
+        }
+      },
+      "prosecutor": {
+        "office": "Greene County Prosecuting Attorney's Office",
+        "address": "1010 Boonville Ave., Room 231, Springfield, MO 65802",
+        "phone": "417-868-4061",
+        "victim_services_phone": "417-868-4063"
+      },
+      "housing_authority": {
+        "name": "Springfield Housing Authority",
+        "address": "1015 N. Clay Ave., Springfield, MO 65802",
+        "phone": "417-866-3014",
+        "portal": null,
+        "programs": ["Section 8 HCV", "Public Housing"],
+        "waitlist_status": "Check with office for current status"
+      },
+      "legal_aid": [
+        {
+          "provider_id": "mo_lsswmo",
+          "name": "Legal Services of Southern Missouri (LSSM)",
+          "address": "209 N. Glenstone Ave., Springfield, MO 65802",
+          "phone": "417-881-1397",
+          "intake_phone": "800-444-4863",
+          "portal": "https://lsosm.org",
+          "services": ["housing", "family", "consumer", "public_benefits"],
+          "income_limit": "200% FPL"
+        }
+      ],
+      "child_welfare": {
+        "office": "Children's Division — Greene County",
+        "address": "1515 E. Pythian St., Springfield, MO 65802",
+        "phone": "417-895-6801",
+        "hotline": "800-392-3738"
+      },
+      "law_enforcement": [
+        {
+          "agency": "Springfield Police Department",
+          "phone": "417-864-1810",
+          "non_emergency": "417-864-1810",
+          "portal": "https://springfieldmo.gov/police",
+          "jurisdiction": "Springfield city limits"
+        },
+        {
+          "agency": "Greene County Sheriff's Office",
+          "phone": "417-868-4040",
+          "jurisdiction": "Unincorporated Greene County"
+        }
+      ],
+      "utilities": [
+        {
+          "provider": "City Utilities of Springfield",
+          "type": "electric_gas_water",
+          "phone": "417-863-9000",
+          "portal": "https://cityutilities.net",
+          "assistance_programs": ["LIHEAP", "CU Project Warmth"],
+          "disconnect_protection": "Cold Weather Rule (Nov 1–Mar 31)"
+        }
+      ]
+    },
+    {
+      "county_id": "mo_boone",
+      "county_name": "Boone County",
+      "fips_code": "29019",
+      "region": "rural_missouri",
+      "population_estimate": 183000,
+      "courts": {
+        "circuit_court": {
+          "name": "13th Judicial Circuit — Boone County",
+          "address": "705 E. Walnut St., Columbia, MO 65201",
+          "phone": "573-886-4000",
+          "portal": "https://boonecountymo.org/circuit_court",
+          "divisions": ["civil", "criminal", "family", "probate", "juvenile"],
+          "casenet_url": "https://courts.mo.gov/casenet"
+        }
+      },
+      "prosecutor": {
+        "office": "Boone County Prosecuting Attorney's Office",
+        "address": "705 E. Walnut St., Room 337, Columbia, MO 65201",
+        "phone": "573-886-4130",
+        "victim_services_phone": "573-886-4135"
+      },
+      "housing_authority": {
+        "name": "Columbia Housing Authority (CHA)",
+        "address": "201 Switzler St., Columbia, MO 65203",
+        "phone": "573-443-2556",
+        "portal": "https://columbiaha.com",
+        "programs": ["Section 8 HCV", "Public Housing"],
+        "waitlist_status": "Check with office for current status"
+      },
+      "legal_aid": [
+        {
+          "provider_id": "mo_lsmo",
+          "name": "Legal Services of Missouri (LSMO)",
+          "address": "205 E. Forest Ave., Columbia, MO 65203",
+          "phone": "573-442-0116",
+          "intake_phone": "800-444-4863",
+          "portal": "https://lsmo.org",
+          "services": ["housing", "family", "consumer", "public_benefits"],
+          "income_limit": "200% FPL"
+        },
+        {
+          "provider_id": "mo_mu_law_clinic",
+          "name": "University of Missouri School of Law — Legal Clinic",
+          "phone": "573-882-3963",
+          "services": ["family", "immigration", "criminal_defense", "mediation"]
+        }
+      ],
+      "child_welfare": {
+        "office": "Children's Division — Boone County",
+        "address": "1627 Moresource Blvd., Columbia, MO 65201",
+        "phone": "573-884-2700",
+        "hotline": "800-392-3738"
+      },
+      "law_enforcement": [
+        {
+          "agency": "Columbia Police Department",
+          "phone": "573-874-7652",
+          "non_emergency": "573-442-6131",
+          "portal": "https://como.gov/police",
+          "jurisdiction": "Columbia city limits"
+        },
+        {
+          "agency": "Boone County Sheriff's Department",
+          "phone": "573-875-1111",
+          "jurisdiction": "Unincorporated Boone County"
+        }
+      ],
+      "utilities": [
+        {
+          "provider": "Columbia Water & Light",
+          "type": "electric_and_water",
+          "phone": "573-874-7380",
+          "portal": "https://como.gov/utilities",
+          "assistance_programs": ["LIHEAP", "Columbia Cares"],
+          "disconnect_protection": "Cold Weather Rule (Nov 1–Mar 31)"
+        },
+        {
+          "provider": "Ameren Missouri",
+          "type": "gas",
+          "phone": "800-552-7583",
+          "portal": "https://ameren.com",
+          "assistance_programs": ["LIHEAP", "Dollar More"]
+        }
+      ]
+    }
+  ],
+  "resolution_chain": {
+    "description": "Runtime resolution order for county-level queries. Pipeline defaults are overridden by state registry, then by county override, then by tribal override where applicable.",
+    "order": [
+      {
+        "priority": 1,
+        "layer": "pipeline_defaults",
+        "description": "Default pipeline configuration from engine"
+      },
+      {
+        "priority": 2,
+        "layer": "state_registry",
+        "description": "Missouri statewide programs, oversight, and workflows"
+      },
+      {
+        "priority": 3,
+        "layer": "county_override",
+        "description": "County-specific courts, prosecutors, housing, legal aid, child welfare, law enforcement, utilities"
+      },
+      {
+        "priority": 4,
+        "layer": "tribal_override",
+        "description": "ICWA activation, tribal entity contacts, urban Native services"
+      }
+    ]
+  }
+}

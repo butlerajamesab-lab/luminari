@@ -1,0 +1,914 @@
+{
+  "meta": {
+    "state": "CA",
+    "state_name": "California",
+    "layer": "oversight",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "date_verified": "2026-03-06",
+    "source": "Luminari CA Registry v1.0 \u2014 Northwest Hope Foundation",
+    "entity_type_count": 7,
+    "disclaimer": "General guidance \u2014 not legal advice. Complaint processes and deadlines are statutory. Consult legal aid for time-sensitive matters."
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "insurer",
+      "state": "CA",
+      "bodies": [
+        {
+          "oversight_body": "CA Dept of Managed Health Care (DMHC)",
+          "jurisdiction": "HMOs, managed care plans, most employer-sponsored plans",
+          "phone": "888-466-2219",
+          "complaint_portal": "https://healthhelp.ca.gov",
+          "what_to_report": "DMHC is the primary regulator for HMOs in CA. Independent Medical Review (IMR) is free, binding, and fast. File IMR for medical necessity denials.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://healthhelp.ca.gov",
+          "street_address": "980 9th St Ste 500",
+          "city": "Sacramento",
+          "state_code": "CA",
+          "zip": "95814",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Dept of Insurance (CDI)",
+          "jurisdiction": "PPO plans, indemnity plans, life insurance, disability insurance",
+          "phone": "800-927-4357",
+          "complaint_portal": "https://insurance.ca.gov/01-consumers/101-help",
+          "what_to_report": "CDI regulates PPO and indemnity plans. File here if your plan is NOT an HMO. CDI also handles life, disability, auto, homeowners insurance.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://insurance.ca.gov",
+          "street_address": "300 Capitol Mall Ste 1700",
+          "city": "Sacramento",
+          "state_code": "CA",
+          "zip": "95814",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Dept of Health Care Services (DHCS)",
+          "jurisdiction": "Medi-Cal managed care plans, Medi-Cal fee-for-service",
+          "phone": "800-541-5555",
+          "complaint_portal": "https://dhcs.ca.gov/services/medi-cal/Pages/Medi-CalComplaints.aspx",
+          "what_to_report": "DHCS oversees Medi-Cal. For Medi-Cal managed care denials, file plan grievance first, then CDSS State Hearing (800-952-5253).",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://dhcs.ca.gov",
+          "street_address": "744 P St",
+          "city": "Sacramento",
+          "state_code": "CA",
+          "zip": "95814",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Attorney General \u2013 Insurance Fraud",
+          "jurisdiction": "Insurance fraud, unfair business practices, pattern of denials",
+          "phone": "800-952-5225",
+          "complaint_portal": "https://oag.ca.gov/consumers",
+          "what_to_report": "AG investigates patterns of insurance fraud and unfair claims practices. File after DMHC/CDI if systemic issue.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://oag.ca.gov",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CMS (Federal \u2013 Medicare/ACA)",
+          "jurisdiction": "Medicare, ACA marketplace plans (federal oversight layer)",
+          "phone": "800-633-4227",
+          "complaint_portal": "https://www.cms.gov/about-cms/what-we-do/consumer-complaint",
+          "what_to_report": "Federal oversight for Medicare and ACA compliance. File after state-level remedies exhausted.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "CMS (Federal \u2013 Medicare/ACA)",
+          "pattern_threshold": 10,
+          "source": "https://cms.gov",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "landlord",
+      "state": "CA",
+      "bodies": [
+        {
+          "oversight_body": "Local Code Enforcement / Building Inspection",
+          "jurisdiction": "Habitability violations, building code, health hazards",
+          "phone": "211",
+          "complaint_portal": "https://lawhelpca.org",
+          "what_to_report": "LA: LAHD 213-808-8808. SF: DBI 415-558-6220. Oakland: Code Enforcement 510-238-3381. Other cities: call 211.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://lawhelpca.org",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Local Rent Board (if applicable)",
+          "jurisdiction": "Rent stabilization, just cause eviction, relocation payments",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "LA Rent Board: 213-808-8888 / housing.lacity.gov. SF Rent Board: 415-252-4600 / sfrb.org. Oakland Rent Adjustment: 510-238-3721. Not all cities have rent control.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Civil Rights Dept (CRD, formerly DFEH) \u2013 Housing Discrimination",
+          "jurisdiction": "Housing discrimination based on protected class (race, disability, family status, etc.)",
+          "phone": "800-884-1684",
+          "complaint_portal": "https://calcivilrights.ca.gov/complaintprocess",
+          "what_to_report": "File within 3 years of discriminatory act. CRD investigates and can file civil action.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://calcivilrights.ca.gov",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Attorney General \u2013 Housing",
+          "jurisdiction": "Unfair business practices, systemic housing violations, fraud",
+          "phone": "800-952-5225",
+          "complaint_portal": "https://oag.ca.gov/consumers",
+          "what_to_report": "AG investigates patterns of landlord fraud, illegal evictions, and unfair practices.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://oag.ca.gov",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "HUD \u2013 Fair Housing (Federal)",
+          "jurisdiction": "Federal fair housing violations",
+          "phone": "800-669-9777",
+          "complaint_portal": "https://www.hud.gov/program_offices/fair_housing_equal_opp/online-complaint",
+          "what_to_report": "File within 1 year of discriminatory act. Federal overlay \u2014 file alongside CRD.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "HUD \u2013 Fair Housing (Federal)",
+          "pattern_threshold": 5,
+          "source": "https://hud.gov/fairhousing",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "employer",
+      "state": "CA",
+      "bodies": [
+        {
+          "oversight_body": "CA Division of Labor Standards Enforcement (DLSE / Labor Commissioner)",
+          "jurisdiction": "Wage theft, unpaid overtime, minimum wage, meal/rest breaks, final pay",
+          "phone": "844-522-6734",
+          "complaint_portal": "https://dir.ca.gov/dlse/howtofilewageclaim.htm",
+          "what_to_report": "Free wage claim process. DLSE can award wages + penalties + attorney fees. 3-year SOL for unpaid wages.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://dir.ca.gov/dlse",
+          "street_address": "49 South Van Ness Ave Ste 400",
+          "city": "San Francisco",
+          "state_code": "CA",
+          "zip": "94103",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Civil Rights Dept (CRD) \u2013 Employment Discrimination",
+          "jurisdiction": "Workplace discrimination, harassment, retaliation based on protected class",
+          "phone": "800-884-1684",
+          "complaint_portal": "https://calcivilrights.ca.gov/complaintprocess",
+          "what_to_report": "File within 3 years of discriminatory act. CRD investigates and can issue right-to-sue.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://calcivilrights.ca.gov",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Division of Occupational Safety and Health (Cal/OSHA)",
+          "jurisdiction": "Workplace safety violations, hazardous conditions, retaliation for safety complaints",
+          "phone": "800-963-9424",
+          "complaint_portal": "https://dir.ca.gov/dosh/complaint.htm",
+          "what_to_report": "File workplace safety complaints. Cal/OSHA inspects and can issue citations. Whistleblower protection under LC \u00a76310.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://dir.ca.gov/dosh",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Employment Development Dept (EDD) \u2013 Misclassification",
+          "jurisdiction": "Worker misclassification (independent contractor vs. employee), UI fraud",
+          "phone": "800-528-1783",
+          "complaint_portal": "https://edd.ca.gov/en/payroll_taxes/report_tax_fraud",
+          "what_to_report": "AB 5 codified ABC test. Report misclassification to EDD for tax enforcement.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://edd.ca.gov",
+          "street_address": "722 Capitol Mall",
+          "city": "Sacramento",
+          "state_code": "CA",
+          "zip": "95814",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Attorney General \u2013 Labor",
+          "jurisdiction": "Systemic wage theft, labor trafficking, pattern violations",
+          "phone": "800-952-5225",
+          "complaint_portal": "https://oag.ca.gov/consumers",
+          "what_to_report": "AG investigates large-scale wage theft and labor trafficking.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://oag.ca.gov",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "US DOL Wage and Hour Division (Federal)",
+          "jurisdiction": "FLSA violations \u2014 federal minimum wage, overtime, child labor",
+          "phone": "866-487-9243",
+          "complaint_portal": "https://www.dol.gov/agencies/whd/contact/complaints",
+          "what_to_report": "Federal overlay. CA law is generally more protective \u2014 file with DLSE first, WHD simultaneously if FLSA applies.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "US DOL Wage and Hour Division (Federal)",
+          "pattern_threshold": 10,
+          "source": "https://dol.gov/whd",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "EEOC (Federal \u2013 Employment Discrimination)",
+          "jurisdiction": "Federal employment discrimination (Title VII, ADA, ADEA)",
+          "phone": "800-669-4000",
+          "complaint_portal": "https://www.eeoc.gov/filing-charge-discrimination",
+          "what_to_report": "File within 300 days. CRD and EEOC have worksharing agreement \u2014 filing with one preserves rights with both.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "EEOC (Federal \u2013 Employment Discrimination)",
+          "pattern_threshold": 10,
+          "source": "https://eeoc.gov",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "nursing_home",
+      "state": "CA",
+      "bodies": [
+        {
+          "oversight_body": "CA Dept of Public Health (CDPH) \u2013 Licensing and Certification",
+          "jurisdiction": "Skilled nursing facilities (SNFs), intermediate care facilities",
+          "phone": "800-236-9747",
+          "complaint_portal": "https://cdph.ca.gov/Programs/CHCQ/LCP/Pages/ComplaintInvestigationProcess.aspx",
+          "what_to_report": "CDPH licenses and inspects SNFs. File complaint for abuse, neglect, or unsafe conditions. Complaint hotline: 800-236-9747.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://cdph.ca.gov/Programs/CHCQ/LCP",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA CDSS \u2013 Community Care Licensing (CCL)",
+          "jurisdiction": "Residential care facilities for the elderly (RCFE), assisted living",
+          "phone": "844-538-8766",
+          "complaint_portal": "https://cdss.ca.gov/ccl",
+          "what_to_report": "CCL licenses and inspects RCFEs (assisted living). File complaint for abuse, neglect, or licensing violations.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://cdss.ca.gov/ccl",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Long-Term Care Ombudsman Program",
+          "jurisdiction": "All long-term care facilities \u2014 advocacy for residents",
+          "phone": "800-231-4024",
+          "complaint_portal": "https://aging.ca.gov/programs-and-services/long-term-care-ombudsman",
+          "what_to_report": "Free, confidential advocacy. Ombudsman investigates complaints and advocates for residents. Call CRISISline: 800-231-4024.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://aging.ca.gov/programs-and-services/long-term-care-ombudsman",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "County Adult Protective Services (APS)",
+          "jurisdiction": "Elder abuse, neglect, financial exploitation \u2014 community and facility",
+          "phone": "833-401-0832",
+          "complaint_portal": "https://cdss.ca.gov/aps",
+          "what_to_report": "Mandatory reporters must report. Anyone can report suspected abuse. APS investigates and provides protective services.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 2,
+          "source": "https://cdss.ca.gov/aps",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Attorney General \u2013 Elder Abuse",
+          "jurisdiction": "Systemic elder abuse, financial exploitation, fraud targeting seniors",
+          "phone": "800-952-5225",
+          "complaint_portal": "https://oag.ca.gov/bmfea",
+          "what_to_report": "AG Bureau of Medi-Cal Fraud and Elder Abuse (BMFEA) investigates Medi-Cal fraud and elder abuse in facilities.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://oag.ca.gov/bmfea",
+          "street_address": "3333 Wilshire Blvd",
+          "city": "Los Angeles",
+          "state_code": "CA",
+          "zip": "90010",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CMS (Federal \u2013 Medicare Certification)",
+          "jurisdiction": "Medicare-certified nursing facilities \u2014 federal standards",
+          "phone": "800-633-4227",
+          "complaint_portal": "https://cms.gov",
+          "what_to_report": "Federal overlay for Medicare-certified facilities. CDPH conducts surveys on behalf of CMS.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "CMS (Federal \u2013 Medicare Certification)",
+          "pattern_threshold": 10,
+          "source": "https://cms.gov",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "government_agency",
+      "state": "CA",
+      "bodies": [
+        {
+          "oversight_body": "CA CDSS \u2013 State Hearings Division",
+          "jurisdiction": "CalFresh, CalWORKs, Medi-Cal, IHSS, CAPI \u2014 benefit denials and reductions",
+          "phone": "800-952-5253",
+          "complaint_portal": "https://cdss.ca.gov/hearing-requests",
+          "what_to_report": "Request State Hearing within 90 days of NOA. Benefits continue during appeal if timely requested.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://cdss.ca.gov/hearing-requests",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA State Auditor",
+          "jurisdiction": "Waste, fraud, abuse in state government programs",
+          "phone": "916-445-0255",
+          "complaint_portal": "https://auditor.ca.gov/hotline",
+          "what_to_report": "Whistleblower hotline for state employees and the public. Investigates improper government activities.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://auditor.ca.gov",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Attorney General \u2013 Government Accountability",
+          "jurisdiction": "Government fraud, waste, abuse, civil rights violations by government",
+          "phone": "800-952-5225",
+          "complaint_portal": "https://oag.ca.gov/consumers",
+          "what_to_report": "AG investigates government misconduct, civil rights violations, and systemic failures.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://oag.ca.gov",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Public Records Act (CPRA) Requests",
+          "jurisdiction": "Public records from state and local agencies",
+          "phone": "",
+          "complaint_portal": "https://oag.ca.gov/government/cpra",
+          "what_to_report": "Gov Code \u00a77920\u20137931. Agencies must respond within 10 days. If denied, file petition in Superior Court.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://oag.ca.gov/government/cpra",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Governor's Office \u2013 Constituent Services",
+          "jurisdiction": "Escalation for unresolved state agency issues",
+          "phone": "916-445-2841",
+          "complaint_portal": "https://gov.ca.gov/contact",
+          "what_to_report": "Last resort escalation for systemic state agency failures.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "Governor's Office \u2013 Constituent Services",
+          "pattern_threshold": 10,
+          "source": "https://gov.ca.gov/contact",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "law_enforcement",
+      "state": "CA",
+      "bodies": [
+        {
+          "oversight_body": "Local Internal Affairs / Civilian Oversight",
+          "jurisdiction": "Officer misconduct, excessive force, civil rights violations",
+          "phone": "",
+          "complaint_portal": "",
+          "what_to_report": "LA: LAPD IA 800-339-6868 + Civilian Oversight Commission. SF: DPA 415-241-7711. Oakland: CPRA 510-238-3159. File with local IA first.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA DOJ \u2013 Division of Law Enforcement",
+          "jurisdiction": "Pattern and practice investigations, officer-involved shootings, systemic misconduct",
+          "phone": "800-952-5225",
+          "complaint_portal": "https://oag.ca.gov/dle",
+          "what_to_report": "AG can open pattern-and-practice investigations under AB 1506. Investigates officer-involved shootings of unarmed civilians.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://oag.ca.gov/dle",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Commission on Peace Officer Standards and Training (POST)",
+          "jurisdiction": "Officer certification, training standards, decertification",
+          "phone": "916-227-3909",
+          "complaint_portal": "https://post.ca.gov",
+          "what_to_report": "SB 2 (2021) created decertification process. POST can revoke officer certification for serious misconduct.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://post.ca.gov",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "ACLU of California",
+          "jurisdiction": "Civil rights violations, systemic police misconduct, policy reform",
+          "phone": "",
+          "complaint_portal": "https://aclunc.org/our-work/get-help",
+          "what_to_report": "ACLU investigates systemic civil rights violations. Northern CA: aclunc.org. Southern CA: aclusocal.org.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://aclunc.org",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "US DOJ Civil Rights Division (Federal)",
+          "jurisdiction": "Federal civil rights violations by law enforcement",
+          "phone": "202-514-3847",
+          "complaint_portal": "https://civilrights.justice.gov",
+          "what_to_report": "Federal overlay \u2014 pattern-and-practice investigations, consent decrees. File after state remedies.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "US DOJ Civil Rights Division (Federal)",
+          "pattern_threshold": 10,
+          "source": "https://justice.gov/crt",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "family_court",
+      "state": "CA",
+      "bodies": [
+        {
+          "oversight_body": "County DCFS / CPS (Child Protective Services)",
+          "jurisdiction": "Child abuse and neglect investigations, foster care, family reunification",
+          "phone": "800-540-4000",
+          "complaint_portal": "https://dcfs.lacounty.gov",
+          "what_to_report": "LA: DCFS 800-540-4000. SF: FCS 415-557-5427. Other counties: call 211. Mandatory reporters must report.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://dcfs.lacounty.gov",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Judicial Council \u2013 Family Court Services",
+          "jurisdiction": "Family court operations, custody mediation, judicial conduct",
+          "phone": "415-865-4200",
+          "complaint_portal": "https://courts.ca.gov/programs-services/family-law",
+          "what_to_report": "Judicial Council oversees family court operations. For judicial misconduct: Commission on Judicial Performance.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://courts.ca.gov/programs-services/family-law",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Commission on Judicial Performance (CJP)",
+          "jurisdiction": "Judicial misconduct, bias, incompetence",
+          "phone": "415-557-1200",
+          "complaint_portal": "https://cjp.ca.gov/file_a_complaint",
+          "what_to_report": "File complaint against judges for misconduct, bias, or failure to follow law. Confidential process.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://cjp.ca.gov",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "California Indian Legal Services (CILS) \u2013 ICWA",
+          "jurisdiction": "ICWA compliance in CA child welfare and family court",
+          "phone": "800-829-0284",
+          "complaint_portal": "https://calindian.org",
+          "what_to_report": "CILS monitors ICWA compliance in CA courts. Contact immediately if AI/AN child is in child welfare system.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 3,
+          "source": "https://calindian.org",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA CDSS \u2013 Children and Family Services Division",
+          "jurisdiction": "State oversight of county child welfare, foster care, adoption",
+          "phone": "916-651-8100",
+          "complaint_portal": "https://cdss.ca.gov/cfsb",
+          "what_to_report": "CDSS oversees county child welfare programs. File complaint if county DCFS/CPS fails to act.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": false,
+          "federal_agency": null,
+          "pattern_threshold": 5,
+          "source": "https://cdss.ca.gov/cfsb",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "CA Attorney General \u2013 Child Welfare",
+          "jurisdiction": "Systemic child welfare failures, ICWA violations",
+          "phone": "800-952-5225",
+          "complaint_portal": "https://oag.ca.gov",
+          "what_to_report": "AG can investigate systemic failures in child welfare system.",
+          "legal_threshold": "",
+          "response_timeline": "",
+          "escalation_next": null,
+          "federal_hook": true,
+          "federal_agency": "CA Attorney General \u2013 Child Welfare",
+          "pattern_threshold": 10,
+          "source": "https://oag.ca.gov",
+          "city": "Sacramento",
+          "state": "CA",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "employment",
+      "state": "CA",
+      "bodies": [
+        {
+          "oversight_body": "CA Labor Commissioner (DLSE)",
+          "jurisdiction": "state",
+          "phone": "844-522-6734",
+          "complaint_portal": "https://dir.ca.gov/dlse",
+          "street_address": "1515 Clay St Ste 801",
+          "city": "Oakland",
+          "state_code": "CA",
+          "zip": "94612",
+          "pattern_threshold": 3,
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "ca_med_board",
+          "name": "California Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "California Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CA"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "ca_patient_adv",
+          "name": "California Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "California Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CA"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "ca_health_dept",
+          "name": "California Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "California Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CA"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CA"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "ca_pharm_board",
+          "name": "California Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "California Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CA"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "ca_pa",
+          "name": "California Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "California Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CA"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "ca_mha",
+          "name": "California Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "California Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CA"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "CA"
+    }
+  ]
+}

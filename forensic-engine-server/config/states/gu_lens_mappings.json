@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "state": "GU",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "gu_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "gu_guam_wic"
+      ],
+      "oversight_chains": [
+        "employer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "gu_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "gu_guam_tanf_cash_assistance",
+        "gu_guam_vocational_rehabilitation",
+        "gu_head_start_early_head_start",
+        "gu_guam_child_care_development_fund_ccdf",
+        "gu_guam_low_income_home_energy_assistance_l"
+      ],
+      "oversight_chains": [
+        "employer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "gu_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "gu_guam_housing_urban_renewal_authority_ghu",
+        "gu_guam_legal_services_corporation"
+      ],
+      "oversight_chains": [
+        "employer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "gu_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "gu_medicaid_medquam",
+        "gu_medquam_chip",
+        "gu_guam_snap_food_stamps",
+        "gu_guam_unemployment_insurance_gdol",
+        "gu_division_of_chamoru_affairs",
+        "gu_guam_behavioral_health_wellness_center",
+        "gu_snap_ed_guam"
+      ],
+      "oversight_chains": [
+        "employer",
+        "consumer"
+      ]
+    }
+  ]
+}

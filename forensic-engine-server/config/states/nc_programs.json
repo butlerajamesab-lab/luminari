@@ -1,0 +1,948 @@
+{
+  "meta": {
+    "state": "NC",
+    "version": "3.0",
+    "date": "2026-03-08",
+    "date_verified": "2026-03-09"
+  },
+  "programs": [
+    {
+      "program_id": "nc_north_carolina_snap_food_and_nutrition_s",
+      "program_name": "North Carolina SNAP / Food and Nutrition Services (DHHS/DSS)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "North Carolina SNAP / Food and Nutrition Services",
+      "phone": "919-527-6800",
+      "website": "https://epass.nc.gov",
+      "eligibility": "Income <130% FPL. 100 county DSS offices.",
+      "apply_notes": "Apply / Notes: epass.nc.gov \u2014 apply online. ABAWD work requirements active. Wake County DSS (Raleigh): 919-212-1000. Mecklenburg County DSS (Charlotte): 704-336-3000. Guilford County DSS (Greensboro): 336-641-7700.",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Raleigh",
+      "state": "NC",
+      "address": "820 S Boylan Ave, Raleigh, NC 27603",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_food_bank_of_central_and_eastern_nc_rale",
+      "program_name": "Food Bank of Central and Eastern NC (Raleigh)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Food Bank of Central and Eastern NC",
+      "phone": "919-875-0707",
+      "website": "https://foodbankcenc.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: foodbankcenc.org \u2014 primary food bank for Raleigh/Triangle and eastern NC. Partners with 800+ agencies. Also Second Harvest Food Bank of Northwest NC (Winston-Salem: 336-784-5770).",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Raleigh",
+      "state": "NC",
+      "address": "1924 Capital Blvd, Raleigh, NC 27604",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_loaves_and_fishes_friendship_trays_charl",
+      "program_name": "Loaves and Fishes / Friendship Trays (Charlotte)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Loaves and Fishes / Friendship Trays",
+      "phone": "704-376-8308",
+      "website": "https://loavesandfishescharlotte.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: loavesandfishescharlotte.org \u2014 Charlotte primary food access. Also Second Harvest Food Bank of Metrolina (Charlotte: 704-376-1785).",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "Charlotte",
+      "state": "NC",
+      "address": "500 Spratt St, Charlotte, NC 28206",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_wic_north_carolina",
+      "program_name": "WIC North Carolina",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "WIC North Carolina",
+      "phone": "919-707-5900",
+      "website": "https://nutritionnc.com",
+      "eligibility": "Pregnant/postpartum women, infants, children under 5. Income <185% FPL.",
+      "apply_notes": "",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "NC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_nc_medicaid_nc_tracks_nc_dhhs",
+      "program_name": "NC Medicaid / NC Tracks (NC DHHS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare"
+      ],
+      "agency": "NC Medicaid / NC Tracks",
+      "phone": "888-245-0179",
+      "website": "https://medicaid.ncdhhs.gov",
+      "eligibility": "Adults 19-64 to 138% FPL (expanded Dec 2023). Children under 19: NC Health Choice.",
+      "apply_notes": "Apply / Notes: epass.nc.gov \u2014 apply online. Confirm managed care plan. Children under 19: NC Health Choice. EBCI members: Cherokee Indian Hospital IHS services.",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Raleigh",
+      "state": "NC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_unc_hospitals_rex_health_chapel_hill_ral",
+      "program_name": "UNC Hospitals / Rex Health (Chapel Hill/Raleigh Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "disability_claim"
+      ],
+      "agency": "UNC Hospitals / Rex Health",
+      "phone": "984-974-1000",
+      "website": "https://unchealth.org",
+      "eligibility": "Charity care for income <200% FPL.",
+      "apply_notes": "Apply / Notes: unchealth.org \u2014 financial assistance for income < 200% FPL. Level 1 trauma center. Also Duke Health (Durham: 919-684-8111) for Triangle region.",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Chapel Hill",
+      "state": "NC",
+      "address": "101 Manning Dr, Chapel Hill, NC 27514",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_atrium_health_charlotte_safety_net",
+      "program_name": "Atrium Health (Charlotte Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Atrium Health",
+      "phone": "704-355-2000",
+      "website": "https://atriumhealth.org",
+      "eligibility": "Charity care for income <200% FPL.",
+      "apply_notes": "Apply / Notes: atriumhealth.org \u2014 charity care for income < 200% FPL. Level 1 trauma center Charlotte.",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Charlotte",
+      "state": "NC",
+      "address": "1000 Blythe Blvd, Charlotte, NC 28203",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_nc_community_health_center_association_f",
+      "program_name": "NC Community Health Center Association (FQHCs)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "NC Community Health Center Association",
+      "phone": "919-469-5701",
+      "website": "https://ncchca.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: ncchca.org / findahealthcenter.hrsa.gov \u2014 Key: Community Care of Wake County (Raleigh: 919-233-4055), Charlotte Community Health Clinic (704-358-8850), NC Farmworker Health Program (919-857-4330 \u2014 farmworker-specific).",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Raleigh",
+      "state": "NC",
+      "address": "4917 Waters Edge Dr Ste 165, Raleigh, NC 27606",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_nc_housing_finance_agency_nchfa",
+      "program_name": "NC Housing Finance Agency (NCHFA)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "NC Housing Finance Agency",
+      "phone": "919-877-5700",
+      "website": "https://nchfa.com",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: nchfa.com \u2014 state-level coordination. Charlotte Housing Authority: 704-336-5183. Raleigh Housing Authority: 919-832-4345. Waiting lists long \u2014 apply to all simultaneously.",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Raleigh",
+      "state": "NC",
+      "address": "3508 Bush St, Raleigh, NC 27609",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_legal_aid_of_north_carolina_statewide",
+      "program_name": "Legal Aid of North Carolina (Statewide)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "Legal Aid of North Carolina",
+      "phone": "919-856-2564",
+      "website": "https://legalaidnc.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: legalaidnc.org \u2014 statewide primary legal aid. Emergency housing triage. Farmworker Unit (919-856-2180) is a separate specialized program. Charlotte office: 704-376-1600. Greensboro: 336-272-0148.",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "Raleigh",
+      "state": "NC",
+      "address": "224 S Dawson St, Raleigh, NC 27601",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_charlotte_center_for_legal_advocacy",
+      "program_name": "Charlotte Center for Legal Advocacy",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Charlotte Center for Legal Advocacy",
+      "phone": "704-376-1600",
+      "website": "https://charlotteadvocacy.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: charlotteadvocacy.org \u2014 Charlotte primary legal aid, separate from Legal Aid of NC. Also NC Justice Center (Raleigh: 919-856-2570) for policy and systemic advocacy.",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "legal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Charlotte",
+      "state": "NC",
+      "address": "1431 Elizabeth Ave, Charlotte, NC 28204",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_nc_coalition_against_domestic_violence_n",
+      "program_name": "NC Coalition Against Domestic Violence (NCCADV)",
+      "layer": "state",
+      "benefit_category": "general",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "NC Coalition Against Domestic Violence",
+      "phone": "919-956-9124",
+      "website": "https://nccadv.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: nccadv.org \u2014 NC DV hotline. Also NC Coalition Against Sexual Assault (NCCASA): 919-871-1015.",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "general"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "general"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "general",
+      "city": "Durham",
+      "state": "NC",
+      "address": "3710 University Dr Ste 140, Durham, NC 27707",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_nc_tanf_work_first_dss",
+      "program_name": "NC TANF / Work First (DSS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "child_welfare",
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "NC TANF / Work First",
+      "phone": "919-527-6800",
+      "website": "https://epass.nc.gov",
+      "eligibility": "Up to $272/month (family of 3) \u2014 among lowest in registry. Federal 60-month limit.",
+      "apply_notes": "Apply / Notes: epass.nc.gov \u2014 NC TANF called Work First. Work requirement enforced. Pair aggressively with SNAP, Medicaid, child care, LIHEAP.",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Raleigh",
+      "state": "NC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_nc_ui_des_division_of_employment_securit",
+      "program_name": "NC UI / DES (Division of Employment Security)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial",
+        "employment_dispute"
+      ],
+      "agency": "NC UI / DES",
+      "phone": "888-737-0259",
+      "website": "https://des.nc.gov",
+      "eligibility": "Up to $350/week, 12-20 weeks. 10-DAY appeal \u2014 FATAL.",
+      "apply_notes": "Apply / Notes: des.nc.gov \u2014 file online. CRITICAL: 10-day appeal deadline from mailing \u2014 contact legal aid within 5 days of any denial. Document all DES contacts in writing.",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Raleigh",
+      "state": "NC",
+      "address": "700 Wade Ave, Raleigh, NC 27605",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_nc_lieap_energy_assistance_dhhs",
+      "program_name": "NC LIEAP / Energy Assistance (DHHS)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "NC LIEAP / Energy Assistance",
+      "phone": "919-527-6513",
+      "website": "https://ncdhhs.gov/divisions/social-services/energy-assistance",
+      "eligibility": "Income <130% FPL. Apply through county DSS (opens October).",
+      "apply_notes": "Apply / Notes: ncdhhs.gov \u2014 apply through county DSS. Opens in October. No statutory winter shutoff moratorium in NC. Duke Energy and Dominion Energy have limited payment assistance programs \u2014 contact utility separately.",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "Raleigh",
+      "state": "NC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_legal_aid_of_nc_farmworker_unit",
+      "program_name": "Legal Aid of NC Farmworker Unit",
+      "layer": "state",
+      "benefit_category": "employment",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "employment_dispute"
+      ],
+      "agency": "Legal Aid of NC Farmworker Unit",
+      "phone": "919-856-2180",
+      "website": "https://legalaidnc.org/farmworker",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: legalaidnc.org \u2014 specialized capacity for agricultural labor. Coastal plain office coverage (Dunn, Benson area) for highest-concentration counties.",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "employment"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "employment"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "employment",
+      "city": "Raleigh",
+      "state": "NC",
+      "address": "224 S Dawson St, Raleigh, NC 27601",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_nc_farmworker_health_program_fqhc",
+      "program_name": "NC Farmworker Health Program (FQHC)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "NC Farmworker Health Program",
+      "phone": "919-857-4330",
+      "website": "https://ncfhp.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: ncfhp.org \u2014 specialized FQHC for farmworkers. Also Vecinos (Hendersonville: 828-697-8821) for western NC farmworkers. Student Action with Farmworkers (919-660-3652) for advocacy.",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Raleigh",
+      "state": "NC",
+      "address": "PO Box 27167, Raleigh, NC 27611",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_eastern_band_of_cherokee_indians_tribal_",
+      "program_name": "Eastern Band of Cherokee Indians \u2014 Tribal Social Services",
+      "layer": "state",
+      "benefit_category": "tribal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Eastern Band of Cherokee Indians \u2014 Tribal Social Services",
+      "phone": "828-497-7000",
+      "website": "https://ebci.com",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: ebci.com \u2014 comprehensive tribal social services. Cherokee Indian Hospital (IHS compact): 828-497-9163. Tribal members outside Qualla Boundary: tribal programs still available with tribal enrollment documentation.",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "tribal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "tribal",
+      "city": "Cherokee",
+      "state": "NC",
+      "address": "88 Council House Loop, Cherokee, NC 28719",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_cherokee_indian_hospital_ihs_compact_ebc",
+      "program_name": "Cherokee Indian Hospital (IHS Compact \u2014 EBCI)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "Cherokee Indian Hospital",
+      "phone": "828-497-9163",
+      "website": "https://cherokeehospital.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: cherokeehospital.org \u2014 one of the most advanced tribal health systems in the Southeast due to casino funding. Level of care comparable to county hospital.",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Cherokee",
+      "state": "NC",
+      "address": "1 Hospital Rd, Cherokee, NC 28719",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_nc_dhhs_nc_medicaid_managed_care",
+      "program_name": "NC DHHS \u2014 NC Medicaid Managed Care",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial",
+        "insurance_claim_denial"
+      ],
+      "agency": "NC DHHS \u2014 NC Medicaid Managed Care",
+      "phone": "888-245-0179",
+      "website": "https://medicaid.ncdhhs.gov",
+      "eligibility": "",
+      "apply_notes": "Escalation: NC OAH \u2192 NC Court of Appeals",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "Raleigh",
+      "state": "NC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_second_harvest_metrolina",
+      "program_name": "Second Harvest Food Bank of Metrolina (Charlotte)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Second Harvest Food Bank of Metrolina",
+      "phone": "704-376-1785",
+      "website": "",
+      "address": "500-B Spratt St, Charlotte, NC 28206",
+      "eligibility": "",
+      "apply_notes": "Charlotte metro food bank.",
+      "source": "luminari-nc-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "Charlotte metro",
+      "category": "food",
+      "city": "Charlotte",
+      "state": "NC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_second_harvest_nw",
+      "program_name": "Second Harvest Food Bank of Northwest NC (Winston-Salem)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Second Harvest Food Bank of Northwest NC",
+      "phone": "336-784-5770",
+      "website": "",
+      "address": "3330 Shorefair Dr, Winston-Salem, NC 27105",
+      "eligibility": "",
+      "apply_notes": "Northwest NC food bank.",
+      "source": "luminari-nc-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "Northwest NC",
+      "category": "food",
+      "city": "Winston-Salem",
+      "state": "NC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_community_care_wake",
+      "program_name": "Community Care of Wake County (Raleigh)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Community Care of Wake County",
+      "phone": "919-233-4055",
+      "website": "https://communitycarenc.org",
+      "address": "4201 Lake Boone Trail #2, Raleigh, NC 27607",
+      "eligibility": "",
+      "apply_notes": "Wake County community health.",
+      "source": "luminari-nc-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "Wake County",
+      "category": "healthcare",
+      "city": "Raleigh",
+      "state": "NC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_charlotte_community_health",
+      "program_name": "Charlotte Community Health Clinic",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Charlotte Community Health Clinic",
+      "phone": "704-358-8850",
+      "website": "",
+      "address": "2845 Beatties Ford Rd, Charlotte, NC 28216",
+      "eligibility": "",
+      "apply_notes": "Charlotte safety net clinic.",
+      "source": "luminari-nc-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "Charlotte",
+      "category": "healthcare",
+      "city": "Charlotte",
+      "state": "NC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_charlotte_housing_authority",
+      "program_name": "Charlotte Housing Authority",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Charlotte Housing Authority",
+      "phone": "704-336-5183",
+      "website": "https://cha-nc.org",
+      "address": "1301 S Tryon St, Charlotte, NC 28203",
+      "eligibility": "",
+      "apply_notes": "Public housing and Section 8.",
+      "source": "luminari-nc-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "Charlotte",
+      "category": "housing",
+      "city": "Charlotte",
+      "state": "NC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_raleigh_housing_authority",
+      "program_name": "Raleigh Housing Authority",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Raleigh Housing Authority",
+      "phone": "919-832-4345",
+      "website": "https://rhaonline.com",
+      "address": "505 W Jones St, Raleigh, NC 27603",
+      "eligibility": "",
+      "apply_notes": "Public housing and Section 8.",
+      "source": "luminari-nc-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "Raleigh",
+      "category": "housing",
+      "city": "Raleigh",
+      "state": "NC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_nccasa",
+      "program_name": "NC Coalition Against Sexual Assault (NCCASA)",
+      "layer": "state",
+      "benefit_category": "safety",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "NC Coalition Against Sexual Assault",
+      "phone": "919-871-1015",
+      "website": "https://nccasa.org",
+      "address": "4917 Waters Edge Dr Ste 204, Raleigh, NC 27606",
+      "eligibility": "",
+      "apply_notes": "Sexual assault victim services.",
+      "source": "luminari-nc-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "safety",
+        "dv"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "safety"
+      ],
+      "urgency": "urgent",
+      "region": "statewide",
+      "category": "safety",
+      "city": "Raleigh",
+      "state": "NC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_vecinos",
+      "program_name": "Vecinos (Western NC Farmworker Services)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Vecinos Inc.",
+      "phone": "828-697-8821",
+      "website": "https://vecinosinc.org",
+      "address": "800 4th Ave W, Hendersonville, NC 28739",
+      "eligibility": "Farmworkers and families in western NC.",
+      "apply_notes": "Farmworker health and social services.",
+      "source": "luminari-nc-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "healthcare",
+        "farmworker"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "Western NC",
+      "category": "healthcare",
+      "city": "Hendersonville",
+      "state": "NC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_student_action_farmworkers",
+      "program_name": "Student Action with Farmworkers (Durham)",
+      "layer": "state",
+      "benefit_category": "legal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Student Action with Farmworkers",
+      "phone": "919-660-3652",
+      "website": "https://saf-unc.org",
+      "address": "1317 W Pettigrew St, Durham, NC 27705",
+      "eligibility": "Farmworkers.",
+      "apply_notes": "Farmworker advocacy and education.",
+      "source": "luminari-nc-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "legal",
+        "farmworker"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "legal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "legal",
+      "city": "Durham",
+      "state": "NC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_duke_health",
+      "program_name": "Duke Health (Durham Safety Net)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Duke Health",
+      "phone": "919-684-8111",
+      "website": "https://dukemedicine.org",
+      "address": "2301 Erwin Rd, Durham, NC 27710",
+      "eligibility": "Triangle region safety net.",
+      "apply_notes": "Charity care available.",
+      "source": "luminari-nc-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "Triangle",
+      "category": "healthcare",
+      "city": "Durham",
+      "state": "NC",
+      "federal_interface": false
+    },
+    {
+      "program_id": "nc_ebci_housing",
+      "program_name": "EBCI Housing Authority (Cherokee)",
+      "layer": "tribal",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "EBCI Housing Authority",
+      "phone": "828-497-7115",
+      "website": "",
+      "address": "88 Council House Loop, Cherokee, NC 28719",
+      "eligibility": "Enrolled EBCI members.",
+      "apply_notes": "Tribal housing.",
+      "source": "luminari-nc-registry",
+      "date_verified": "2026-03-09",
+      "tags": [
+        "housing",
+        "tribal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "Qualla Boundary",
+      "category": "housing",
+      "city": "Cherokee",
+      "state": "NC",
+      "federal_interface": false
+    }
+  ]
+}

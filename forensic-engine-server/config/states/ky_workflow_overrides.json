@@ -1,0 +1,172 @@
+{
+  "meta": {
+    "state": "KY",
+    "version": "3.0"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "housing_violation",
+      "state": "KY",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document All Violations",
+          "deadline": "",
+          "documents": [
+            "Dated photos, texts/emails, records, lease copy if written",
+            "Written repair notice, certified mail receipt",
+            "Written complaint with photos",
+            "All documentation",
+            "Timeline, dated records, evidence of discrimination"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Send Written Repair Notice",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File Code Enforcement",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Contact Legal Aid - Within 3 Days of Any Eviction Notice",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 5,
+          "action": "Assert Fair Housing Protection",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft",
+      "state": "KY",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document Wages Owed - Maximize to 5-Year Window",
+          "deadline": "",
+          "documents": [
+            "Pay stubs, time records, offer letter, any written employment contract",
+            "Written demand with full 5-year calculation",
+            "Demand + documentation",
+            "Same documentation"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Send Written Wage Demand",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File Kentucky DOL Wage Claim",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "File Federal WHD Simultaneously",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial",
+      "state": "KY",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Review Notice of Action",
+          "deadline": "",
+          "documents": [
+            "Notice, case number, documentation",
+            "Written hearing request",
+            "All documentation",
+            "Denial notice, employment records"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Request State Hearing + Aid-Continuing",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "Contact Legal Aid",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Kentucky UI Appeals (KEWES)",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_medicaid_denial",
+      "state": "KY",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document Denial",
+          "deadline": "",
+          "documents": [
+            "Denial letter, policy, medical records",
+            "Written appeal with medical necessity",
+            "Internal denial + records",
+            "All documentation"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Internal Appeal",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "Kentucky DOI External Review",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Medicaid MCO Fair Hearing",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    }
+  ]
+}

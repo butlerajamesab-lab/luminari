@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "state": "MN",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "African Development Center",
+      "role": "Language-competent intake for East African communities",
+      "phone": "612-333-4772",
+      "email": null,
+      "hours": null,
+      "specialty": "East African communities"
+    },
+    {
+      "contact_name": "Hmong Cultural Center",
+      "role": "Language-competent intake for Hmong community",
+      "phone": "651-917-9937",
+      "email": null,
+      "hours": null,
+      "specialty": "Hmong community"
+    },
+    {
+      "contact_name": "International Institute of MN",
+      "role": "Language-competent intake",
+      "phone": "651-647-0191",
+      "email": null,
+      "hours": null,
+      "specialty": "General immigrant and refugee communities"
+    },
+    {
+      "contact_name": "Brian Coyle Center",
+      "role": "Language-competent intake for Somali community",
+      "phone": "612-374-5095",
+      "email": null,
+      "hours": null,
+      "specialty": "Somali community"
+    },
+    {
+      "contact_name": "HOME Line",
+      "role": "Tenant hotline for immediate triage",
+      "phone": "651-728-5770",
+      "email": null,
+      "hours": null,
+      "specialty": "Tenant rights and rent control"
+    }
+  ],
+  "regions": [],
+  "missing_sections": []
+}

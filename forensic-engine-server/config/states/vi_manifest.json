@@ -1,0 +1,64 @@
+{
+  "state": "VI",
+  "state_name": "US Virgin Islands",
+  "version": "3.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-09",
+  "source": "luminari-vi-registry.docx",
+  "datasets": [
+    "healthcare",
+    "food",
+    "cash_assistance",
+    "housing",
+    "employment",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "consumer_protection",
+    "disability_claim",
+    "employment_dispute",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "utility_dispute",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "utility"
+  ],
+  "policy_flags": [
+    "vi_block_granted_medicaid",
+    "vi_hovensa_closure",
+    "vi_hurricanes_irma_maria",
+    "vi_st_croix_vs_st_thomas",
+    "vi_no_recognized_tribes"
+  ],
+  "statistics": {
+    "total_programs": 12,
+    "total_oversight_chains": 2,
+    "total_oversight_bodies": 4,
+    "total_flags": 5
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "employment",
+    "food"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ],
+  "portability_score": "41%"
+}

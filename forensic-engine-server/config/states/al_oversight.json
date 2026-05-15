@@ -1,0 +1,293 @@
+{
+  "meta": {
+    "state": "AL",
+    "version": "3.0",
+    "chain_count": 4
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "insurer",
+      "state": "AL",
+      "bodies": [
+        {
+          "oversight_body": "Alabama Department of Insurance (ALDOI)",
+          "jurisdiction": "primary",
+          "phone": "334-269-3550",
+          "complaint_portal": "aldoi.gov",
+          "what_to_report": "Private health, life, property \u2014 claim denial, external review",
+          "legal_threshold": "File complaint; external review program. SOL: 180 days from internal denial.",
+          "pattern_threshold": 3,
+          "city": "Montgomery",
+          "state": "AL",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Alabama Medicaid Agency \u2014 Managed Care Grievances",
+          "jurisdiction": "primary",
+          "phone": "334-242-5000",
+          "complaint_portal": "medicaid.alabama.gov",
+          "what_to_report": "Medicaid managed care grievances (categorical enrollees only)",
+          "legal_threshold": "File complaint; fair hearing. SOL: 90 days from denial.",
+          "pattern_threshold": 3,
+          "city": "Montgomery",
+          "state": "AL",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "employer",
+      "state": "AL",
+      "bodies": [
+        {
+          "oversight_body": "EEOC \u2014 Birmingham District Office",
+          "jurisdiction": "federal",
+          "phone": "800-669-4000",
+          "complaint_portal": "eeoc.gov",
+          "what_to_report": "Federal employment discrimination \u2014 LGBTQ+ EEOC only; 300-day deadline",
+          "legal_threshold": "eeoc.gov \u2014 workshares with ACRC. SOL: 300 days \u2014 FATAL.",
+          "pattern_threshold": 3,
+          "city": "Birmingham",
+          "state": "AL",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "DOL Wage and Hour Division \u2014 Birmingham",
+          "jurisdiction": "federal",
+          "phone": "205-801-5000",
+          "complaint_portal": "dol.gov/whd",
+          "what_to_report": "FLSA \u2014 primary wage enforcement",
+          "legal_threshold": "SOL: 2 years (3 if willful) \u2014 FATAL.",
+          "pattern_threshold": 3,
+          "city": "Birmingham",
+          "state": "AL",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Alabama Civil Rights Commission (ACRC)",
+          "jurisdiction": "primary",
+          "phone": "334-242-2301",
+          "complaint_portal": "",
+          "what_to_report": "State employment and housing discrimination \u2014 180-day SOL",
+          "legal_threshold": "180-day SOL. No LGBTQ+ protection. File EEOC simultaneously.",
+          "pattern_threshold": 3,
+          "city": "Montgomery",
+          "state": "AL",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "landlord",
+      "state": "AL",
+      "bodies": [
+        {
+          "oversight_body": "HUD Fair Housing \u2014 Southeast Region",
+          "jurisdiction": "federal",
+          "phone": "800-669-9777",
+          "complaint_portal": "hud.gov/fairhousing",
+          "what_to_report": "FHA housing discrimination",
+          "legal_threshold": "hud.gov/online-complaint. SOL: 1 year.",
+          "pattern_threshold": 3,
+          "city": "Atlanta",
+          "state": "GA",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "benefits_agency",
+      "state": "AL",
+      "bodies": [
+        {
+          "oversight_body": "Alabama DHR Fair Hearings",
+          "jurisdiction": "primary",
+          "phone": "334-242-1773",
+          "complaint_portal": "dhr.alabama.gov",
+          "what_to_report": "SNAP, Medicaid, TANF fair hearings",
+          "legal_threshold": "File within 30 days \u2014 FATAL.",
+          "pattern_threshold": 3,
+          "city": "Montgomery",
+          "state": "AL",
+          "complaint_pathway": "Contact oversight body"
+        },
+        {
+          "oversight_body": "Alabama ADOL \u2014 UI Appeals",
+          "jurisdiction": "primary",
+          "phone": "800-361-4524",
+          "complaint_portal": "labor.alabama.gov",
+          "what_to_report": "UI denial \u2014 12-day appeal deadline",
+          "legal_threshold": "12 days \u2014 FATAL. Contact legal aid within 6 days.",
+          "pattern_threshold": 3,
+          "city": "Montgomery",
+          "state": "AL",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ]
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "al_health_dept",
+          "name": "Alabama Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Alabama Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AL"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "al_pharm_board",
+          "name": "Alabama Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Alabama Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AL"
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "al_med_board",
+          "name": "Alabama Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Alabama Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AL"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AL"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "al_pa",
+          "name": "Alabama Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Alabama Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AL"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "al_mha",
+          "name": "Alabama Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Alabama Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AL"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "al_patient_adv",
+          "name": "Alabama Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Alabama Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AL"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AL"
+    }
+  ]
+}

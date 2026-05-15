@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "state": "KS",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "standard_appeal",
+      "state": "KS",
+      "override_type": "timeline",
+      "description": "Kansas standard appeal timeline",
+      "source": "registry"
+    },
+    {
+      "workflow_id": "expedited_review",
+      "state": "KS",
+      "override_type": "eligibility",
+      "description": "Kansas expedited review criteria",
+      "source": "registry"
+    }
+  ]
+}

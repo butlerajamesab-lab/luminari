@@ -1,0 +1,25 @@
+{
+  "foia_templates": [],
+  "agency_targets": [],
+  "statute": {
+    "name": "New York Freedom of Information Law (FOIL)",
+    "citation": "N.Y. Pub. Off. Law §§ 84-90"
+  },
+  "agencies": [
+    {
+      "agency_id": "ny_coog",
+      "name": "Committee on Open Government",
+      "url": "https://opengovernment.ny.gov"
+    }
+  ],
+  "structured_rules": [
+    {
+      "rule_id": "ny_foil",
+      "domain": "public_records"
+    }
+  ],
+  "meta": {
+    "state": "NY",
+    "version": "3.0"
+  }
+}

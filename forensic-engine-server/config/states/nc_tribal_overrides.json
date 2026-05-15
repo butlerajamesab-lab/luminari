@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "state": "NC",
+    "version": "3.0",
+    "date": "2026-03-08"
+  },
+  "tribal_context": "Eastern Band of Cherokee Indians — major sovereignty infrastructure in western NC. Qualla Boundary (56,000+ acres). Harrah's Cherokee Casino revenue funds comprehensive services. ICWA mandatory for enrolled members.",
+  "icwa_activation_rules": [],
+  "tribal_entities": [
+    {
+      "tribe_name": "Eastern Band of Cherokee Indians (EBCI)",
+      "phone": "828-497-7000",
+      "website": "https://ebci.com",
+      "address": "88 Council House Loop, Cherokee, NC 28719",
+      "services": "Tribal TANF, housing, health, education, elder services, child welfare",
+      "population": "~14,000 enrolled members",
+      "land": "Qualla Boundary — 56,000+ acres in Great Smoky Mountains",
+      "economic_base": "Harrah's Cherokee Casino",
+      "icwa": true,
+      "hospital": {
+        "name": "Cherokee Indian Hospital",
+        "phone": "828-497-9163",
+        "website": "https://cherokeehospital.org",
+        "address": "1 Hospital Rd, Cherokee, NC 28719"
+      },
+      "housing_authority": {
+        "phone": "828-497-7115",
+        "address": "88 Council House Loop, Cherokee, NC 28719"
+      },
+      "note": "Distinct political and cultural identity from Cherokee Nation of Oklahoma. Programs available to enrolled members outside Qualla Boundary with enrollment documentation."
+    }
+  ],
+  "urban_indian_programs": [
+    {
+      "program_id": "nc_eastern_band_of_cherokee_indians_tribal_",
+      "program_name": "Eastern Band of Cherokee Indians — Tribal Social Services",
+      "layer": "state",
+      "benefit_category": "tribal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Eastern Band of Cherokee Indians — Tribal Social Services",
+      "phone": "828-497-7000",
+      "website": "https://ebci.com",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: ebci.com — comprehensive tribal social services. Cherokee Indian Hospital (IHS compact): 828-497-9163. Tribal members outside Qualla Boundary: tribal programs still available with tribal enrollment documentation.",
+      "source": "luminari-north-carolina-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "tribal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "tribal",
+      "city": "Cherokee",
+      "state": "NC"
+    }
+  ],
+  "tribal_courts": []
+}

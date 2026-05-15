@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "state": "MP",
+    "state_name": "CNMI",
+    "layer": "workflow_overrides",
+    "version": "3.0",
+    "date_created": "2026-03-09",
+    "date_verified": "2026-03-09",
+    "source": "luminari-mp-registry"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "wage_theft_workflow",
+      "state": "MP",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document wages owed.",
+          "documents_needed": "Personal records",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately",
+          "statute": null,
+          "notes": "2-year SOL.",
+          "source": "luminari-mp-registry"
+        },
+        {
+          "step_number": 2,
+          "action": "File with CNMI DOLI.",
+          "documents_needed": "Wage documentation",
+          "state_agency": "CNMI DOLI",
+          "phone": "670-664-2023",
+          "complaint_portal": "https://doli.gov.mp",
+          "deadline": "2-year SOL",
+          "statute": null,
+          "notes": "Primary labor standards enforcement.",
+          "source": "luminari-mp-registry"
+        },
+        {
+          "step_number": 3,
+          "action": "File federal WHD.",
+          "documents_needed": "Same documentation",
+          "state_agency": "WHD Saipan",
+          "phone": "670-233-0222",
+          "complaint_portal": "https://dol.gov/whd",
+          "deadline": "FLSA: 2 years (3 if willful)",
+          "statute": "FLSA 29 USC §201",
+          "notes": "Dual-file with CNMI DOLI.",
+          "source": "luminari-mp-registry"
+        },
+        {
+          "step_number": 4,
+          "action": "CW-1 workers: contact Legal Services.",
+          "documents_needed": "Immigration documents",
+          "state_agency": "CNMI LSC",
+          "phone": "670-234-7223",
+          "complaint_portal": "https://cnmilsc.org",
+          "deadline": "As soon as possible",
+          "statute": null,
+          "notes": "CW-1 workers face unique vulnerability — employer-tied status.",
+          "source": "luminari-mp-registry"
+        }
+      ]
+    },
+    {
+      "workflow_id": "immigration_cw1_workflow",
+      "state": "MP",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Gather all immigration documents.",
+          "documents_needed": "All immigration documents",
+          "state_agency": null,
+          "phone": null,
+          "complaint_portal": null,
+          "deadline": "Immediately",
+          "statute": null,
+          "notes": "CW-1 transitional worker visa unique to CNMI.",
+          "source": "luminari-mp-registry"
+        },
+        {
+          "step_number": 2,
+          "action": "Contact CNMI Legal Services.",
+          "documents_needed": "Immigration documents",
+          "state_agency": "CNMI LSC",
+          "phone": "670-234-7223",
+          "complaint_portal": "https://cnmilsc.org",
+          "deadline": "Before any status expires",
+          "statute": null,
+          "notes": "Critical for CW-1 population.",
+          "source": "luminari-mp-registry"
+        },
+        {
+          "step_number": 3,
+          "action": "USCIS Saipan Field Office.",
+          "documents_needed": "As directed by legal services",
+          "state_agency": "USCIS",
+          "phone": null,
+          "complaint_portal": "https://uscis.gov/contactcenter",
+          "deadline": "Varies by case",
+          "statute": null,
+          "notes": "CW-1 program phasing down annually.",
+          "source": "luminari-mp-registry"
+        }
+      ]
+    }
+  ]
+}

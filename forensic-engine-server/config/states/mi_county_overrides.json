@@ -1,0 +1,48 @@
+{
+  "meta": {
+    "state": "MI",
+    "version": "3.0"
+  },
+  "regions": [],
+  "county_overrides": [
+    {
+      "county_id": "wayne_county",
+      "county_name": "Wayne County",
+      "fips_code": "",
+      "region": "statewide",
+      "population_estimate": "",
+      "courts": [],
+      "prosecutor": "",
+      "housing_authority": "",
+      "legal_aid": "",
+      "child_welfare": "",
+      "law_enforcement": "",
+      "utilities": "",
+      "override_details": "Detroit-specific programs and agencies",
+      "affected_programs": [
+        "mi_detroit_human_services",
+        "mi_wayne_metro_caa",
+        "mi_detroit_housing_commission"
+      ]
+    },
+    {
+      "county_id": "upper_peninsula",
+      "county_name": "Upper Peninsula",
+      "fips_code": "",
+      "region": "statewide",
+      "population_estimate": "",
+      "courts": [],
+      "prosecutor": "",
+      "housing_authority": "",
+      "legal_aid": "",
+      "child_welfare": "",
+      "law_enforcement": "",
+      "utilities": "",
+      "override_details": "Remote access considerations, limited urban services",
+      "affected_programs": [
+        "mi_upper_peninsula_caa"
+      ]
+    }
+  ],
+  "resolution_chain": []
+}

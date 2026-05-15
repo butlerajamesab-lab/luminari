@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "state": "AK",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "myALASKA.gov (SNAP/Medicaid)",
+      "role": "Benefits portal",
+      "phone": "800-780-9972",
+      "website": "https://myalaska.gov"
+    },
+    {
+      "contact_name": "Alaska Legal Services (Statewide)",
+      "role": "Civil legal aid — statewide including Bush",
+      "phone": "800-478-9431",
+      "website": "https://alsc-law.org"
+    },
+    {
+      "contact_name": "ASCHR (Civil Rights — 300 days)",
+      "role": "Employment/housing discrimination",
+      "phone": "800-478-4692",
+      "website": "https://humanrights.alaska.gov"
+    },
+    {
+      "contact_name": "Alaska DOLWD (UI + Wage)",
+      "role": "UI appeals + wage claims",
+      "phone": "907-269-4700",
+      "website": "https://jobs.alaska.gov"
+    },
+    {
+      "contact_name": "Alaska PFD",
+      "role": "Permanent Fund Dividend",
+      "phone": "907-465-2326",
+      "website": "https://pfd.alaska.gov"
+    },
+    {
+      "contact_name": "ANTHC (Alaska Native Health)",
+      "role": "Tribal health consortium — 229 tribes",
+      "phone": "907-729-1900",
+      "website": "https://anthc.org"
+    },
+    {
+      "contact_name": "IHS Alaska Area",
+      "role": "Indian Health Service",
+      "phone": "907-729-3686",
+      "website": "https://ihs.gov/alaska"
+    },
+    {
+      "contact_name": "ANWRC (Alaska Native DV)",
+      "role": "DV services for Alaska Native women",
+      "phone": "907-745-4728",
+      "website": "https://anwrc.org"
+    },
+    {
+      "contact_name": "STAR (Anchorage Sexual Assault)",
+      "role": "Sexual assault services",
+      "phone": "907-276-7279",
+      "website": "https://staralaska.com"
+    },
+    {
+      "contact_name": "WHD Anchorage",
+      "role": "Federal wage enforcement",
+      "phone": "907-271-5515",
+      "website": "https://dol.gov/whd"
+    },
+    {
+      "contact_name": "211 Alaska",
+      "role": "Social services referral",
+      "phone": "211",
+      "website": "https://211.alaska.org"
+    },
+    {
+      "contact_name": "Alaska Division of Insurance",
+      "role": "Insurance complaints",
+      "phone": "907-269-7900",
+      "website": "https://commerce.alaska.gov/insurance"
+    },
+    {
+      "contact_name": "RCA (Utilities)",
+      "role": "Utility regulation",
+      "phone": "907-276-6222",
+      "website": "https://rca.alaska.gov"
+    }
+  ]
+}

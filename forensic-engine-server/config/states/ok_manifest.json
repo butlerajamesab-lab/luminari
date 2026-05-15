@@ -1,0 +1,64 @@
+{
+  "state": "OK",
+  "state_name": "Oklahoma",
+  "version": "3.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-09",
+  "source": "luminari-ok-registry.docx",
+  "datasets": [
+    "food",
+    "cash_assistance",
+    "housing",
+    "healthcare",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "disability_claim",
+    "employment_dispute",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "utility_dispute",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "utility",
+    "insurer",
+    "consumer"
+  ],
+  "policy_flags": [
+    "ok_mcgirt_decision",
+    "ok_39_tribes",
+    "ok_tulsa_greenwood",
+    "ok_soonercare_expansion",
+    "ok_3yr_wage_sol"
+  ],
+  "statistics": {
+    "total_programs": 15,
+    "total_oversight_chains": 4,
+    "total_oversight_bodies": 7,
+    "total_flags": 5
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "food",
+    "healthcare"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ],
+  "portability_score": "54%"
+}

@@ -1,0 +1,261 @@
+{
+  "meta": {
+    "state": "AS",
+    "version": "3.0",
+    "date": "2026-03-09"
+  },
+  "oversight_chains": [
+    {
+      "chain": "discrimination",
+      "bodies": [
+        {
+          "body_id": "eeoc_honolulu_contested",
+          "oversight_body": "eeoc_honolulu_contested",
+          "name": "eeoc_honolulu_contested",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "body_id": "as_attorney_general",
+          "oversight_body": "as_attorney_general",
+          "name": "as_attorney_general",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AS"
+    },
+    {
+      "chain": "labor",
+      "bodies": [
+        {
+          "body_id": "as_commerce_labor",
+          "oversight_body": "as_commerce_labor",
+          "name": "as_commerce_labor",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "body_id": "whd_honolulu",
+          "oversight_body": "whd_honolulu",
+          "name": "whd_honolulu",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AS"
+    },
+    {
+      "chain": "benefits",
+      "bodies": [
+        {
+          "body_id": "as_dhss",
+          "oversight_body": "as_dhss",
+          "name": "as_dhss",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AS"
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "as_med_board",
+          "name": "American Samoa Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "American Samoa Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AS"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "as_patient_adv",
+          "name": "American Samoa Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "American Samoa Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AS"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "as_health_dept",
+          "name": "American Samoa Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "American Samoa Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AS"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AS"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "as_pharm_board",
+          "name": "American Samoa Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "American Samoa Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AS"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "as_pa",
+          "name": "American Samoa Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "American Samoa Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AS"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "as_mha",
+          "name": "American Samoa Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "American Samoa Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AS"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "AS"
+    }
+  ],
+  "bodies": [
+    {
+      "body_id": "eeoc_honolulu_contested",
+      "name": "EEOC Honolulu District Office",
+      "jurisdiction": "Federal hook \u2014 CONTESTED",
+      "phone": "808-541-3118",
+      "website": "eeoc.gov",
+      "reports": "Discrimination \u2014 verify jurisdiction first",
+      "sol": "Contact EEOC to confirm",
+      "notes": "Title VII does not explicitly name American Samoa. Jurisdiction contested."
+    },
+    {
+      "body_id": "as_attorney_general",
+      "name": "American Samoa Attorney General",
+      "jurisdiction": "Primary \u2014 civil rights",
+      "phone": "684-633-4163",
+      "website": "as.gov",
+      "reports": "Civil rights enforcement",
+      "sol": "Verify with AG office"
+    },
+    {
+      "body_id": "as_commerce_labor",
+      "name": "AS Department of Commerce - Labor Division",
+      "jurisdiction": "Primary \u2014 labor",
+      "phone": "684-633-5497",
+      "website": "as.gov",
+      "reports": "Wage claims, labor standards",
+      "sol": "~2 years (verify)"
+    }
+  ]
+}

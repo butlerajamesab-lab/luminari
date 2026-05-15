@@ -1,0 +1,366 @@
+{
+  "meta": {
+    "state": "OR",
+    "layer": "pipeline_mappings",
+    "version": "1.0.0",
+    "last_updated": "2026-03-06"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "tenant_rights",
+      "workflow_id": "tenant_rights_workflow",
+      "oversight_entity_types": [
+        "landlord"
+      ],
+      "layer0_flag_ids": [
+        "or_eprr_eviction_prevention",
+        "or_sb599_immigration_housing",
+        "or_7day_repair_timeline",
+        "or_retaliation_90day"
+      ],
+      "layer1_cluster_ids": [
+        "or_housing",
+        "or_utilities"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "housing_authority",
+        "courts",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "tenant_rights"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "wage_theft",
+      "workflow_id": "wage_theft_workflow",
+      "oversight_entity_types": [
+        "employer"
+      ],
+      "layer0_flag_ids": [
+        "or_boli_6yr_wage_sol",
+        "or_paid_family_leave",
+        "or_retaliation_90day"
+      ],
+      "layer1_cluster_ids": [
+        "or_legal_aid",
+        "or_cash_assistance"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "courts",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "wage_theft"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "benefits_denial",
+      "workflow_id": "benefits_denial_workflow",
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "or_snap_work_requirement_2026",
+        "or_healthier_oregon"
+      ],
+      "layer1_cluster_ids": [
+        "or_food",
+        "or_cash_assistance",
+        "or_healthcare"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "benefits_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "snap_denial",
+      "workflow_id": "benefits_denial_workflow",
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "or_snap_work_requirement_2026"
+      ],
+      "layer1_cluster_ids": [
+        "or_food"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": "food",
+        "pipeline_ids_include": [
+          "snap_denial",
+          "benefits_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "workflow_id": "insurance_claim_denial_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [
+        "or_healthier_oregon"
+      ],
+      "layer1_cluster_ids": [
+        "or_healthcare"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "insurance_claim_denial"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "domestic_violence",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "family_court"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "or_dv_safety",
+        "or_legal_aid"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "courts",
+        "law_enforcement",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "domestic_violence"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "family_court",
+        "government_agency"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "or_tribal",
+        "or_legal_aid"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "child_welfare",
+        "courts",
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "child_welfare"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "immigration_case",
+      "workflow_id": null,
+      "oversight_entity_types": [
+        "government_agency"
+      ],
+      "layer0_flag_ids": [
+        "or_sb599_immigration_housing",
+        "or_healthier_oregon"
+      ],
+      "layer1_cluster_ids": [
+        "or_legal_aid",
+        "or_healthcare"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "legal_aid"
+      ],
+      "program_filter": {
+        "category": null,
+        "pipeline_ids_include": [
+          "immigration_case"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "or_involuntary_hold_law",
+        "or_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "or_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "or_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "or_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "or_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "or_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "or_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "or_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "or_restraint_seclusion_limits",
+        "or_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "or_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "or_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "or_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

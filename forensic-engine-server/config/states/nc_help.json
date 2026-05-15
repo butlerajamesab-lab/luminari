@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "state": "NC",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "NC ePass (SNAP/Medicaid/TANF)",
+      "role": "Benefits portal",
+      "phone": "888-245-0179",
+      "website": "https://epass.nc.gov",
+      "address": "820 S Boylan Ave, Raleigh, NC 27603"
+    },
+    {
+      "contact_name": "211 NC",
+      "role": "Social services referral",
+      "phone": "211",
+      "website": "https://nc211.org"
+    },
+    {
+      "contact_name": "Legal Aid of NC",
+      "role": "Statewide legal aid",
+      "phone": "919-856-2564",
+      "website": "https://legalaidnc.org",
+      "address": "224 S Dawson St, Raleigh, NC 27601"
+    },
+    {
+      "contact_name": "Legal Aid NC — Farmworker Unit",
+      "role": "Specialized agricultural labor",
+      "phone": "919-856-2180",
+      "website": "https://legalaidnc.org"
+    },
+    {
+      "contact_name": "Charlotte Center for Legal Advocacy",
+      "role": "Charlotte area legal aid",
+      "phone": "704-376-1600",
+      "website": "https://charlotteadvocacy.org",
+      "address": "1431 Elizabeth Ave, Charlotte, NC 28204"
+    },
+    {
+      "contact_name": "NC OAH (Benefits/UI Hearings)",
+      "role": "Fair hearings — 30d benefits / 10d UI",
+      "phone": "919-431-3000",
+      "website": "https://oah.nc.gov"
+    },
+    {
+      "contact_name": "NC DES (UI Appeals)",
+      "role": "UI appeals — 10 days FATAL",
+      "phone": "919-629-3000",
+      "website": "https://des.nc.gov"
+    },
+    {
+      "contact_name": "NC DOL (Wage Claims)",
+      "role": "State wage claims (secondary)",
+      "phone": "919-707-7970",
+      "website": "https://labor.nc.gov"
+    },
+    {
+      "contact_name": "NC DOI (Insurance)",
+      "role": "Insurance complaints",
+      "phone": "855-408-1212",
+      "website": "https://ncdoi.gov"
+    },
+    {
+      "contact_name": "NC LIEAP (Energy)",
+      "role": "Heating assistance",
+      "phone": "919-527-6513",
+      "website": "https://ncdhhs.gov"
+    },
+    {
+      "contact_name": "NC DV Hotline (NCCADV)",
+      "role": "Domestic violence",
+      "phone": "919-956-9124",
+      "website": "https://nccadv.org"
+    },
+    {
+      "contact_name": "EBCI Tribal Government",
+      "role": "Eastern Band of Cherokee",
+      "phone": "828-497-7000",
+      "website": "https://ebci.com",
+      "address": "88 Council House Loop, Cherokee, NC 28719"
+    },
+    {
+      "contact_name": "Cherokee Indian Hospital",
+      "role": "IHS compact hospital",
+      "phone": "828-497-9163",
+      "website": "https://cherokeehospital.org"
+    },
+    {
+      "contact_name": "NC Farmworker Health Program",
+      "role": "Migrant/seasonal farmworker health",
+      "phone": "919-857-4330",
+      "website": "https://ncfhp.org"
+    },
+    {
+      "contact_name": "WHD Raleigh",
+      "role": "Federal wage enforcement (PRIMARY)",
+      "phone": "919-790-2741",
+      "website": "https://dol.gov/whd"
+    },
+    {
+      "contact_name": "WHD Charlotte",
+      "role": "Federal wage enforcement",
+      "phone": "704-749-3360",
+      "website": "https://dol.gov/whd"
+    },
+    {
+      "contact_name": "NC AG Consumer Protection",
+      "role": "Consumer fraud",
+      "phone": "877-566-7226",
+      "website": "https://ncdoj.gov"
+    },
+    {
+      "contact_name": "NC NCCASA (Sexual Assault)",
+      "role": "Sexual assault victim services",
+      "phone": "919-871-1015",
+      "website": "https://nccasa.org",
+      "address": "4917 Waters Edge Dr Ste 204, Raleigh, NC 27606"
+    },
+    {
+      "contact_name": "Duke Health (Durham)",
+      "role": "Triangle safety net — charity care",
+      "phone": "919-684-8111",
+      "website": "https://dukemedicine.org",
+      "address": "2301 Erwin Rd, Durham, NC 27710"
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "state": "MT",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "mt_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "mt_montana_tanf_dphhs",
+        "mt_montana_ui_dli",
+        "mt_montana_liheap_dphhs_community_action"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "mt_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "mt_providence_st_patrick_hospital_western_m",
+        "mt_veterans_services_montana_vso_network"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "mt_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "mt_montana_medicaid_help_act_dphhs",
+        "mt_billings_clinic_eastern_mt_safety_net",
+        "mt_montana_primary_care_association_fqhcs",
+        "mt_ihs_billings_area_office_all_7_mt_tribes",
+        "mt_montana_urban_indian_health_billings"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "mt_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "mt_montana_snap_food_assistance_dphhs",
+        "mt_montana_food_bank_network_statewide",
+        "mt_wic_montana"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "mt_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "mt_montana_housing_mboh_board_of_housing",
+        "mt_montana_legal_services_association_mlsa",
+        "mt_montana_dv_services_mcadsv"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ]
+    }
+  ]
+}

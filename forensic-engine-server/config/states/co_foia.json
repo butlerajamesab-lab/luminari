@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "state": "CO",
+    "version": "3.0"
+  },
+  "statute": {
+    "name": "Colorado Open Records Act (CORA)",
+    "citation": "C.R.S. § 24-72-200.1 et seq."
+  },
+  "structured_rules": [
+    {
+      "rule_id": "co_open_records",
+      "domain": "public_records"
+    }
+  ],
+  "agencies": [
+    {
+      "agency_id": "co_records_custodian",
+      "name": "Agency Records Custodian",
+      "url": ""
+    }
+  ],
+  "appeals_workflow": []
+}

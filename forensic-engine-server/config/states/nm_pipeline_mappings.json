@@ -1,0 +1,279 @@
+{
+  "meta": {
+    "state": "NM",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "nm_roadrunner_food_bank_albuquerque_high_de",
+        "nm_unm_hospital_albuquerque_safety_net",
+        "nm_ihs_albuquerque_area_office_all_nm_tribe",
+        "nm_dna_legal_services_navajo_nation_legal_a",
+        "nm_new_mexico_legal_aid_statewide",
+        "nm_nm_ui_dws",
+        "nm_nm_veterans_services_nmvsd"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ],
+      "flags": [
+        "nm_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "nm_wic_new_mexico"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ],
+      "flags": [
+        "nm_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "nm_new_mexico_snap_yesnm_hsd",
+        "nm_wic_new_mexico",
+        "nm_nm_mortgage_finance_authority_mfa_housin",
+        "nm_nm_tanf_new_mexico_works_hsd",
+        "nm_nm_liheap_low_income_energy_assistance_h"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ],
+      "flags": [
+        "nm_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "nm_dna_legal_services_navajo_nation_legal_a",
+        "nm_new_mexico_legal_aid_statewide",
+        "nm_nm_mortgage_finance_authority_mfa_housin",
+        "nm_nm_dv_crisis_line_nm_cadsv"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ],
+      "flags": [
+        "nm_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "nm_nm_medicaid_centennial_care_hsd",
+        "nm_nm_primary_care_association_fqhcs",
+        "nm_la_clinica_de_familia_colonias_border_co"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ],
+      "flags": [
+        "nm_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "nm_nm_liheap_low_income_energy_assistance_h"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "landlord",
+        "consumer",
+        "utility"
+      ],
+      "flags": [
+        "nm_minimum_wage_above_federal"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nm_involuntary_hold_law",
+        "nm_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nm_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nm_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nm_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nm_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nm_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "nm_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nm_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "nm_restraint_seclusion_limits",
+        "nm_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nm_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "nm_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "nm_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

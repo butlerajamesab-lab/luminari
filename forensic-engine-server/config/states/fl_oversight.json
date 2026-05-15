@@ -1,0 +1,302 @@
+{
+  "meta": {
+    "state": "FL",
+    "source": "address_audit"
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "family_services",
+      "state": "FL",
+      "bodies": [
+        {
+          "oversight_body": "FL Dept of Children and Families (DCF)",
+          "jurisdiction": "state",
+          "phone": "850-487-1111",
+          "complaint_portal": "https://myflfamilies.com",
+          "what_to_report": "Contact for family_services complaints",
+          "street_address": "1317 Winewood Blvd Bldg 1",
+          "city": "Tallahassee",
+          "state_code": "FL",
+          "zip": "32399",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "healthcare",
+      "state": "FL",
+      "bodies": [
+        {
+          "oversight_body": "Florida Health Insurance Marketplace (ACCESS)",
+          "jurisdiction": "state",
+          "phone": "850-300-4323",
+          "complaint_portal": "https://myflorida.com/accessflorida",
+          "what_to_report": "Contact for healthcare complaints",
+          "street_address": "1317 Winewood Blvd",
+          "city": "Tallahassee",
+          "state_code": "FL",
+          "zip": "32399",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "general_assistance",
+      "state": "FL",
+      "bodies": [
+        {
+          "oversight_body": "FL Dept of Economic Opportunity (DEO/UI)",
+          "jurisdiction": "state",
+          "phone": "800-204-2418",
+          "complaint_portal": "https://connect.myflorida.com",
+          "what_to_report": "Contact for general_assistance complaints",
+          "street_address": "107 E Madison St",
+          "city": "Tallahassee",
+          "state_code": "FL",
+          "zip": "32399",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "general_assistance",
+      "state": "FL",
+      "bodies": [
+        {
+          "oversight_body": "FL Commission on Human Relations (FCHR)",
+          "jurisdiction": "state",
+          "phone": "850-488-7082",
+          "complaint_portal": "https://fchr.state.fl.us",
+          "what_to_report": "Contact for general_assistance complaints",
+          "street_address": "4075 Esplanade Way Rm 110",
+          "city": "Tallahassee",
+          "state_code": "FL",
+          "zip": "32399",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "insurance",
+      "state": "FL",
+      "bodies": [
+        {
+          "oversight_body": "FL Dept of Financial Services (Insurance)",
+          "jurisdiction": "state",
+          "phone": "877-693-5236",
+          "complaint_portal": "https://myfloridacfo.com",
+          "what_to_report": "Contact for insurance complaints",
+          "street_address": "200 E Gaines St",
+          "city": "Tallahassee",
+          "state_code": "FL",
+          "zip": "32399",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "consumer",
+      "state": "FL",
+      "bodies": [
+        {
+          "oversight_body": "FL AG Consumer Protection",
+          "jurisdiction": "state",
+          "phone": "866-966-7226",
+          "complaint_portal": "https://myfloridalegal.com",
+          "what_to_report": "Contact for consumer_protection complaints",
+          "street_address": "PL-01 The Capitol",
+          "city": "Tallahassee",
+          "state_code": "FL",
+          "zip": "32399",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "chain_id": "fl_insurance_oversight",
+      "entity_type": "insurer",
+      "bodies": [
+        {
+          "body_id": "fl_doi",
+          "oversight_body": "FL Department of Insurance",
+          "jurisdiction": "state",
+          "pattern_threshold": 3,
+          "entity_type": "insurer",
+          "city": "Tallahassee",
+          "complaint_pathway": "Contact oversight body"
+        }
+      ],
+      "state": "FL"
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "fl_med_board",
+          "name": "Florida Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Florida Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "FL"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "fl_patient_adv",
+          "name": "Florida Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Florida Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "FL"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "fl_health_dept",
+          "name": "Florida Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Florida Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "FL"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "FL"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "fl_pharm_board",
+          "name": "Florida Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Florida Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "FL"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "fl_pa",
+          "name": "Florida Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Florida Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "FL"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "fl_mha",
+          "name": "Florida Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Florida Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "FL"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "FL"
+    }
+  ]
+}

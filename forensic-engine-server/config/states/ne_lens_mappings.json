@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "state": "NE",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "ne_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "ne_nebraska_snap_food_assistance_dhhs",
+        "ne_food_bank_of_lincoln_omaha_food_bank",
+        "ne_wic_nebraska"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ne_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "ne_nebraska_medicaid_heritage_health_dhhs",
+        "ne_nebraska_medicine_unmc_omaha_safety_net",
+        "ne_nebraska_primary_care_association_fqhcs",
+        "ne_ihs_carl_t_curtis_health_education_cente",
+        "ne_nebraska_behavioral_health_crisis_dhhs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ne_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "ne_nebraska_investment_finance_authority_ni",
+        "ne_legal_aid_of_nebraska",
+        "ne_nebraska_dv_hotline_nncadsv"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ne_lens_legal",
+      "lens_type": "legal",
+      "programs": [
+        "ne_immigrant_and_refugee_community_services"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ne_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "ne_nebraska_tanf_employment_first_dhhs",
+        "ne_nebraska_ui_ndol",
+        "ne_nebraska_liheap_energy_assistance_dhhs",
+        "ne_nebraska_veterans_services_ndva"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "utility",
+        "landlord",
+        "consumer"
+      ]
+    }
+  ]
+}

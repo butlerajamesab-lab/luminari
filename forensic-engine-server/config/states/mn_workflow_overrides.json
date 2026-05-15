@@ -1,0 +1,172 @@
+{
+  "meta": {
+    "state": "MN",
+    "version": "3.0"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "housing_violation",
+      "state": "MN",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document All Violations",
+          "deadline": "",
+          "documents": [
+            "Dated photos, texts/emails, lease copy, rent increase notices",
+            "Written repair notice, certified mail receipt",
+            "Written complaint with photos",
+            "All documentation",
+            "Timeline, dated complaint records"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Send Written Repair Notice",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File Code Enforcement Complaint",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Contact HOME Line and Legal Aid",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 5,
+          "action": "Assert Retaliation and MDHR Discrimination",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft",
+      "state": "MN",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document Wages Owed",
+          "deadline": "",
+          "documents": [
+            "Pay stubs, time records, offer letter",
+            "Written demand with calculation",
+            "Demand + documentation",
+            "Same documentation"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Send Written Wage Demand",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "File Minnesota DLI Wage Complaint",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "File Federal WHD Simultaneously",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial",
+      "state": "MN",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Review Notice of Action",
+          "deadline": "",
+          "documents": [
+            "Notice, case number, documentation",
+            "Written hearing request",
+            "All documentation",
+            "Denial notice, employment records"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Request State Hearing + Aid-Continuing",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "Contact Legal Aid",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Minnesota UI Appeals (DEED)",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_denial",
+      "state": "MN",
+      "steps": [
+        {
+          "step_number": 1,
+          "action": "Document Denial",
+          "deadline": "",
+          "documents": [
+            "Denial letter/EOB, plan documents, medical records, physician letter of medical necessity",
+            "Written appeal with medical necessity",
+            "Internal appeal denial + records",
+            "All documentation"
+          ],
+          "escalation": ""
+        },
+        {
+          "step_number": 2,
+          "action": "Internal Appeal",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 3,
+          "action": "Minnesota Commerce Department External Review",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        },
+        {
+          "step_number": 4,
+          "action": "Medical Assistance State Fair Hearing",
+          "deadline": "",
+          "documents": [],
+          "escalation": ""
+        }
+      ]
+    }
+  ]
+}

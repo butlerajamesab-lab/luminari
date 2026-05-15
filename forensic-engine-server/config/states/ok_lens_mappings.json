@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "state": "OK",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "ok_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "ok_oklahoma_snap"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ok_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "ok_oklahoma_tanf_oklahoma_works",
+        "ok_oklahoma_child_care_assistance_ccap",
+        "ok_energy_assistance_program_liheap_oklahom",
+        "ok_oklahoma_s_promise_higher_ed_scholarship"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ok_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "ok_oklahoma_housing_finance_agency_ohfa",
+        "ok_legal_aid_services_of_oklahoma"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "ok_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "ok_soonercare_oklahoma_medicaid",
+        "ok_soonercare_chip",
+        "ok_oklahoma_unemployment_insurance",
+        "ok_wic_oklahoma",
+        "ok_oklahoma_tribal_nations_programs",
+        "ok_oklahoma_department_of_human_services_ad",
+        "ok_oklahoma_department_of_mental_health_and",
+        "ok_2_1_1_oklahoma"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer",
+        "consumer"
+      ]
+    }
+  ]
+}

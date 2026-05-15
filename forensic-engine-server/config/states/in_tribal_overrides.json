@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "state": "IN",
+    "version": "3.0"
+  },
+  "tribal_context": "Indiana tribal nations and urban Indian programs",
+  "tribal_entities": [
+    {
+      "tribal_entity_id": "pokagon_band_of_potawatomi_indians",
+      "tribal_entity_name": "Pokagon Band of Potawatomi Indians",
+      "tribal_role": "tribal_government",
+      "tribe": "Pokagon Band of Potawatomi Indians",
+      "address": "",
+      "phone": "",
+      "portal": "",
+      "region": "Northern Indiana",
+      "federal_interface": "BIA",
+      "services": "Comprehensive tribal services",
+      "jurisdiction_notes": "Federally recognized tribe with a service area in northern Indiana counties. Provides a range of services to enrolled members, including TANF and housing.",
+      "icwa_authority": true,
+      "city": "South Bend",
+      "state": "IN"
+    },
+    {
+      "tribal_entity_id": "miami_tribe_of_oklahoma",
+      "tribal_entity_name": "Miami Tribe of Oklahoma",
+      "tribal_role": "tribal_government",
+      "tribe": "Miami Tribe of Oklahoma",
+      "address": "",
+      "phone": "",
+      "portal": "",
+      "region": "Indiana (for enrolled members)",
+      "federal_interface": "BIA",
+      "services": "Comprehensive tribal services",
+      "jurisdiction_notes": "Federally recognized tribe with enrolled members residing in Indiana. Provides social services, elder care, and cultural support. Important contact for ICWA matters in Indiana courts.",
+      "icwa_authority": true,
+      "city": "Indianapolis",
+      "state": "IN"
+    }
+  ],
+  "icwa_activation_rules": [
+    {
+      "rule_id": "in_icwa_child_welfare",
+      "trigger_pipeline": "child_welfare",
+      "activation_condition": "tribal_affiliation_declared",
+      "activation_steps": [
+        "Apply federal ICWA standards per 25 U.S.C. §§ 1901-1963",
+        "Verify tribal enrollment or eligibility",
+        "Notify relevant tribe(s) of proceedings"
+      ]
+    }
+  ],
+  "urban_indian_programs": [
+    {
+      "program_id": "ihs_nashville_area_office",
+      "program_name": "IHS Nashville Area Office",
+      "services": "Covers AI/AN Indiana residents for IHS services and provides referrals for urban Indian health programs.",
+      "region": "Nashville",
+      "status": "active",
+      "notes": "",
+      "city": "Nashville",
+      "state": "TN"
+    }
+  ],
+  "tribal_courts": []
+}

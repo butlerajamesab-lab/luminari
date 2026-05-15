@@ -1,0 +1,364 @@
+{
+  "meta": {
+    "state": "VI",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "programs": [
+    {
+      "program_id": "vi_usvi_medicaid_vidoh",
+      "program_name": "USVI Medicaid (VIDOH)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "USVI Medicaid",
+      "phone": "340-774-0117",
+      "website": "https://doh.vi.gov",
+      "eligibility": "Income \u2264138% FPL; US citizens and lawful immigrants",
+      "apply_notes": "Block-capped Medicaid. Federal match significantly lower than states. Covers low-income residents.",
+      "source": "luminari-us-virgin-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "VI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vi_usvi_snap_food_assistance_program",
+      "program_name": "USVI SNAP (Food Assistance Program)",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "disability_claim"
+      ],
+      "agency": "USVI SNAP",
+      "phone": "340-774-0930",
+      "website": "https://dhs.vi.gov",
+      "eligibility": "Income \u2264130% FPL; US citizens and eligible residents",
+      "apply_notes": "SNAP equivalent. Block-grant funded. Administered through VIDOH.",
+      "source": "luminari-us-virgin-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "VI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vi_usvi_tanf_cash_assistance",
+      "program_name": "USVI TANF (Cash Assistance)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "USVI TANF",
+      "phone": "340-774-0930",
+      "website": "https://dhs.vi.gov",
+      "eligibility": "Families with minor children; income and asset limits",
+      "apply_notes": "Temporary cash aid for families with children. Apply through VIDHS.",
+      "source": "luminari-us-virgin-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "VI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vi_usvi_unemployment_insurance_dlca",
+      "program_name": "USVI Unemployment Insurance (DLCA)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial",
+        "employment_dispute"
+      ],
+      "agency": "USVI Unemployment Insurance",
+      "phone": "340-773-1994",
+      "website": "https://vidol.gov",
+      "eligibility": "Involuntary separation; base period earnings required",
+      "apply_notes": "UI: max ~$425/week. Duration 26 weeks. Administered by VI Dept. of Labor. St. Croix economy severely weakened by Hovensa closure.",
+      "source": "luminari-us-virgin-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "VI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vi_usvi_housing_finance_authority_vihfa",
+      "program_name": "USVI Housing Finance Authority (VIHFA)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "housing_dispute"
+      ],
+      "agency": "USVI Housing Finance Authority",
+      "phone": "340-777-4432",
+      "website": "https://vihfa.gov",
+      "eligibility": "Income-based; waitlists typically long",
+      "apply_notes": "Public housing, Section 8 vouchers, post-hurricane recovery housing. Severe housing shortage post-Irma/Maria on St. Thomas.",
+      "source": "luminari-us-virgin-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "VI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vi_usvi_wic",
+      "program_name": "USVI WIC",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "child_welfare"
+      ],
+      "agency": "USVI WIC",
+      "phone": "340-774-9000",
+      "website": "https://doh.vi.gov",
+      "eligibility": "Pregnant/postpartum women, infants, children under 5; income \u2264185% FPL",
+      "apply_notes": "Women, Infants and Children nutrition support through VIDOH.",
+      "source": "luminari-us-virgin-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "VI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vi_usvi_vocational_rehabilitation_vidvr",
+      "program_name": "USVI Vocational Rehabilitation (VIDVR)",
+      "layer": "state",
+      "benefit_category": "employment",
+      "pipeline_ids": [
+        "employment_dispute",
+        "disability_claim"
+      ],
+      "agency": "USVI Vocational Rehabilitation",
+      "phone": "340-774-0930",
+      "website": "https://dhs.vi.gov",
+      "eligibility": "Documented disability; employment goal",
+      "apply_notes": "Employment services for people with disabilities on St. Thomas and St. Croix.",
+      "source": "luminari-us-virgin-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "employment"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "employment"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "employment",
+      "city": "",
+      "state": "VI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vi_usvi_child_care_assistance",
+      "program_name": "USVI Child Care Assistance",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "child_welfare",
+        "disability_claim"
+      ],
+      "agency": "USVI Child Care Assistance",
+      "phone": "340-774-0930",
+      "website": "https://dhs.vi.gov",
+      "eligibility": "Working families; income limits apply",
+      "apply_notes": "Subsidized childcare for working families through VIDHS.",
+      "source": "luminari-us-virgin-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "VI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vi_usvi_senior_citizen_center",
+      "program_name": "USVI Senior Citizen Center",
+      "layer": "state",
+      "benefit_category": "food",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "USVI Senior Citizen Center",
+      "phone": "340-774-5884",
+      "website": "https://dhs.vi.gov",
+      "eligibility": "Adults 60+",
+      "apply_notes": "Services for adults 60+. Nutrition programs, transportation, senior center activities on St. Thomas and St. Croix.",
+      "source": "luminari-us-virgin-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "food"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "food"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "food",
+      "city": "",
+      "state": "VI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vi_virgin_islands_legal_services_vils",
+      "program_name": "Virgin Islands Legal Services (VILS)",
+      "layer": "state",
+      "benefit_category": "housing",
+      "pipeline_ids": [
+        "benefits_denial",
+        "housing_dispute",
+        "consumer_protection"
+      ],
+      "agency": "Virgin Islands Legal Services",
+      "phone": "340-774-6449",
+      "website": "https://vilegalservices.org",
+      "eligibility": "Income \u2264125% FPL",
+      "apply_notes": "Free civil legal aid. CRITICAL: St. Croix office has limited capacity\u2014call ahead. Family, housing, benefits, consumer.",
+      "source": "luminari-us-virgin-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "housing"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "housing"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "housing",
+      "city": "",
+      "state": "VI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vi_usvi_behavioral_health_dbhs",
+      "program_name": "USVI Behavioral Health (DBHS)",
+      "layer": "state",
+      "benefit_category": "healthcare",
+      "pipeline_ids": [
+        "insurance_claim_denial"
+      ],
+      "agency": "USVI Behavioral Health",
+      "phone": "340-774-4888",
+      "website": "https://doh.vi.gov",
+      "eligibility": "All residents; sliding scale",
+      "apply_notes": "Mental health and substance use services. Limited inpatient capacity; most residents referred to mainland for psychiatric care.",
+      "source": "luminari-us-virgin-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "healthcare"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "healthcare"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "healthcare",
+      "city": "",
+      "state": "VI",
+      "federal_interface": false
+    },
+    {
+      "program_id": "vi_usvi_energy_office_liheap",
+      "program_name": "USVI Energy Office (LIHEAP)",
+      "layer": "state",
+      "benefit_category": "cash_assistance",
+      "pipeline_ids": [
+        "disability_claim",
+        "utility_dispute"
+      ],
+      "agency": "USVI Energy Office",
+      "phone": "340-773-1082",
+      "website": "https://energy.vi.gov",
+      "eligibility": "Income \u2264150% FPL",
+      "apply_notes": "Energy assistance. Very limited due to high cost of electricity in USVI (among highest in US).",
+      "source": "luminari-us-virgin-islands-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "cash_assistance"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "cash_assistance"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "cash_assistance",
+      "city": "",
+      "state": "VI",
+      "federal_interface": false
+    }
+  ]
+}

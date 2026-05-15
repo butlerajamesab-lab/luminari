@@ -1,0 +1,69 @@
+{
+  "state": "DE",
+  "state_name": "Delaware",
+  "version": "3.0",
+  "schema": "luminari-registry-v2",
+  "date_created": "2026-03-08",
+  "date_verified": "2026-03-09",
+  "source": "luminari-de-registry.docx",
+  "datasets": [
+    "healthcare",
+    "food",
+    "cash_assistance",
+    "housing",
+    "employment",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "child_welfare",
+    "disability_claim",
+    "employment_dispute",
+    "housing_dispute",
+    "insurance_claim_denial",
+    "utility_dispute",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "employer",
+    "general",
+    "insurer",
+    "landlord",
+    "consumer",
+    "utility"
+  ],
+  "policy_flags": [
+    "de_120_day_civil_rights_sol",
+    "de_sussex_poultry_corridor",
+    "de_ui_10_day_appeal",
+    "de_wage_payment_3_year",
+    "de_paid_family_leave_2026"
+  ],
+  "statistics": {
+    "total_flags": 5,
+    "total_programs": 15,
+    "total_oversight_bodies": 7,
+    "total_workflows": 3,
+    "total_help_contacts": 8
+  },
+  "status": "active",
+  "validation_status": "verified",
+  "pending_domains": [],
+  "missing_sections": [],
+  "completed_domains": [
+    "cash_assistance",
+    "employment",
+    "food"
+  ],
+  "date_activated": "2026-03-08",
+  "regions": [
+    "statewide"
+  ],
+  "portability_score": "56%",
+  "notes": "120-day DDOL civil rights SOL \u2014 shortest in registry. Sussex County poultry corridor (Haitian Creole essential). 10-day UI appeal. 3-year wage SOL (stronger than FLSA). Paid Family Leave effective Jan 2026. No federally recognized tribes."
+}

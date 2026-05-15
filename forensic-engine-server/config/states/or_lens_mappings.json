@@ -1,0 +1,174 @@
+{
+  "meta": {
+    "state": "OR",
+    "layer": "lens_mappings",
+    "version": "1.0.0",
+    "last_updated": "2026-03-06"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "housing",
+      "activation_pipelines": [
+        "tenant_rights",
+        "eviction_defense",
+        "housing_discrimination"
+      ],
+      "state_specific_rules": [
+        "ORS Ch 90 (Landlord-Tenant)",
+        "SB 608 just-cause eviction",
+        "SB 599 immigration protection",
+        "7-day urgent repair"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "consumer",
+      "activation_pipelines": [
+        "debt_collection_abuse",
+        "consumer_fraud",
+        "predatory_lending"
+      ],
+      "state_specific_rules": [
+        "ORS 646.605 (Unlawful Trade Practices)",
+        "AG Consumer Protection Division"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "workplace",
+      "activation_pipelines": [
+        "wage_theft",
+        "workplace_discrimination",
+        "wrongful_termination"
+      ],
+      "state_specific_rules": [
+        "ORS 652/653 (Wage Claims)",
+        "6-year SOL",
+        "BOLI jurisdiction",
+        "Oregon Paid Leave (ORS 657B)"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "domestic_violence",
+      "activation_pipelines": [
+        "domestic_violence",
+        "domestic_violence_emergency"
+      ],
+      "state_specific_rules": [
+        "ORS 107.700 (FAPA)",
+        "TA-DVS",
+        "Address Confidentiality Program"
+      ],
+      "priority_boost": 10
+    },
+    {
+      "lens_id": "insurance",
+      "activation_pipelines": [
+        "insurance_claim_denial",
+        "health_insurance_denial"
+      ],
+      "state_specific_rules": [
+        "ORS 743B.015 (external review)",
+        "DFR/OID jurisdiction",
+        "Healthier Oregon for undocumented"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "vulnerable_population",
+      "activation_pipelines": [
+        "elder_abuse",
+        "disability_rights",
+        "vulnerable_adult_protection"
+      ],
+      "state_specific_rules": [
+        "ORS 124 (Elder Abuse)",
+        "APD 855-503-7233",
+        "LTC Ombudsman"
+      ],
+      "priority_boost": 5
+    },
+    {
+      "lens_id": "custody",
+      "activation_pipelines": [
+        "custody",
+        "custody_dispute",
+        "parental_rights_termination"
+      ],
+      "state_specific_rules": [
+        "ORS 107.137 (best interests)",
+        "CJFD oversight",
+        "DHS Child Welfare"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "elder_abuse",
+      "activation_pipelines": [
+        "elder_abuse",
+        "nursing_home_abuse",
+        "long_term_care_neglect"
+      ],
+      "state_specific_rules": [
+        "APD licensing",
+        "APS mandatory reporting",
+        "LTC Ombudsman",
+        "DHS SDSD"
+      ],
+      "priority_boost": 5
+    },
+    {
+      "lens_id": "medical",
+      "activation_pipelines": [
+        "medical_malpractice",
+        "hospital_billing_abuse"
+      ],
+      "state_specific_rules": [
+        "OHP managed care",
+        "DFR external review",
+        "ORS 743B.015"
+      ],
+      "priority_boost": 0
+    },
+    {
+      "lens_id": "safety_risk",
+      "activation_pipelines": [
+        "immediate_threat",
+        "domestic_violence_emergency",
+        "child_endangerment"
+      ],
+      "state_specific_rules": [
+        "911 + APS 855-503-7233",
+        "DHS Child Welfare hotline 855-503-SAFE"
+      ],
+      "priority_boost": 20
+    },
+    {
+      "lens_id": "trauma_informed",
+      "activation_pipelines": [
+        "domestic_violence",
+        "child_abuse",
+        "human_trafficking"
+      ],
+      "state_specific_rules": [
+        "TA-DVS trauma-informed services",
+        "Lines for Life 988"
+      ],
+      "priority_boost": 5
+    },
+    {
+      "lens_id": "public_records_escalation",
+      "activation_pipelines": [
+        "government_accountability",
+        "public_corruption"
+      ],
+      "state_specific_rules": [
+        "ORS 192.311 (Public Records Law)",
+        "AG enforcement",
+        "Multnomah County DA"
+      ],
+      "priority_boost": 0
+    }
+  ]
+}

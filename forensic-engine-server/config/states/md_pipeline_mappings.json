@@ -1,0 +1,259 @@
+{
+  "meta": {
+    "state": "MD",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "md_maryland_food_bank_capital_area_food_ban",
+        "md_university_of_maryland_medical_system_ba",
+        "md_maryland_legal_aid_statewide",
+        "md_maryland_ui_dllr",
+        "md_casa_immigrant_services_pg_montgomery",
+        "md_maryland_veterans_services_mdva"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "md_wic_maryland"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "md_maryland_snap_food_supplement_program_ld",
+        "md_wic_maryland",
+        "md_maryland_dhcd_housing_and_community_deve",
+        "md_maryland_tca_tanf_dhr",
+        "md_maryland_eusp_meap_liheap_energy_assista"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "md_maryland_dhcd_housing_and_community_deve",
+        "md_maryland_legal_aid_statewide",
+        "md_maryland_dv_program_mnadv"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "md_maryland_healthchoice_medicaid_dhmh",
+        "md_maryland_community_health_centers_fqhcs",
+        "md_baltimore_city_health_department_social_"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "md_maryland_eusp_meap_liheap_energy_assista"
+      ],
+      "oversight_chains": [
+        "employer",
+        "insurer",
+        "general",
+        "landlord",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "md_involuntary_hold_law",
+        "md_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "md_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "md_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "md_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "md_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "md_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "md_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "md_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "md_restraint_seclusion_limits",
+        "md_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "md_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "md_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "md_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

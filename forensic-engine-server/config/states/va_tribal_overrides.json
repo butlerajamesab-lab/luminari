@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "state": "VA",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "tribal_context": "Virginia tribal context",
+  "icwa_activation_rules": [],
+  "tribal_entities": [],
+  "urban_indian_programs": [
+    {
+      "program_id": "va_virginia_council_on_indians",
+      "program_name": "Virginia Council on Indians",
+      "layer": "state",
+      "benefit_category": "tribal",
+      "pipeline_ids": [
+        "benefits_denial"
+      ],
+      "agency": "Virginia Council on Indians",
+      "phone": "804-225-2084",
+      "website": "https://indians.vipnet.org",
+      "eligibility": "",
+      "apply_notes": "Apply / Notes: indians.vipnet.org \u2014 primary state resource for Virginia's six state-recognized tribes. Routes to individual tribal cultural programs. No access to federal programs for state-recognized members.",
+      "source": "luminari-virginia-registry.docx",
+      "date_verified": "2026-03-08",
+      "tags": [
+        "tribal"
+      ],
+      "documents_needed": [],
+      "pipeline_categories": [
+        "tribal"
+      ],
+      "urgency": "standard",
+      "region": "statewide",
+      "category": "tribal",
+      "city": "Richmond",
+      "state": "VA"
+    }
+  ],
+  "tribal_courts": []
+}

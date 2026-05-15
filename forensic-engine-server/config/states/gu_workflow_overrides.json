@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "state": "GU",
+    "version": "3.0",
+    "date": "2026-03-09"
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "gu_wage_theft",
+      "title": "Wage Theft / Labor Violations",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Document wages owed",
+          "contact": "Personal records",
+          "deadline": "2-year SOL (Guam Labor Code)"
+        },
+        {
+          "step": 2,
+          "action": "File with Guam DOL",
+          "contact": "Guam DOL: 671-475-7044 · dol.guam.gov",
+          "deadline": "2-year SOL"
+        },
+        {
+          "step": 3,
+          "action": "File federal WHD if applicable",
+          "contact": "WHD Honolulu (covers Guam): 808-541-1361",
+          "deadline": "FLSA: 2 years (3 if willful)"
+        }
+      ],
+      "statutes": "Guam Labor Code; FLSA 29 USC §201"
+    },
+    {
+      "workflow_id": "gu_benefits_denial",
+      "title": "Benefits Denial",
+      "steps": [
+        {
+          "step": 1,
+          "action": "Review notice from DPHSS",
+          "contact": "Personal records",
+          "deadline": "Varies by program"
+        },
+        {
+          "step": 2,
+          "action": "Request fair hearing",
+          "contact": "DPHSS: 671-735-7200",
+          "deadline": "30 days typical"
+        },
+        {
+          "step": 3,
+          "action": "Contact Guam Legal Services",
+          "contact": "Guam Legal Services: 671-477-9811",
+          "deadline": "As soon as possible"
+        }
+      ]
+    }
+  ]
+}

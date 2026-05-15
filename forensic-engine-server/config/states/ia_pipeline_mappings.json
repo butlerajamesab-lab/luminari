@@ -1,0 +1,306 @@
+{
+  "meta": {
+    "state": "IA",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "ia_iowa_snap_family_investment_program",
+        "ia_iowa_legal_aid"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "ia_medicaid_expansion",
+        "ia_minimum_wage_above_federal",
+        "ia_portability"
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "ia_hawkeye_chip_hawk_i",
+        "ia_wic_iowa",
+        "ia_child_care_assistance_cca",
+        "ia_iowa_head_start_early_access"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "ia_medicaid_expansion",
+        "ia_minimum_wage_above_federal",
+        "ia_portability"
+      ]
+    },
+    {
+      "pipeline_id": "consumer_protection",
+      "programs": [
+        "ia_iowa_legal_aid"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "ia_medicaid_expansion",
+        "ia_minimum_wage_above_federal",
+        "ia_portability"
+      ]
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "ia_fip_family_investment_program_tanf",
+        "ia_iowa_finance_authority_ifa_housing",
+        "ia_child_care_assistance_cca",
+        "ia_iowa_vocational_rehabilitation_services",
+        "ia_liheap_iowa_liheap_ecip"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "ia_medicaid_expansion",
+        "ia_minimum_wage_above_federal",
+        "ia_portability"
+      ]
+    },
+    {
+      "pipeline_id": "employment_dispute",
+      "programs": [
+        "ia_iowa_unemployment_insurance",
+        "ia_iowa_vocational_rehabilitation_services"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "ia_medicaid_expansion",
+        "ia_minimum_wage_above_federal",
+        "ia_portability"
+      ]
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "ia_iowa_finance_authority_ifa_housing",
+        "ia_iowa_food_bank_network_211",
+        "ia_iowa_legal_aid"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "ia_medicaid_expansion",
+        "ia_minimum_wage_above_federal",
+        "ia_portability"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "ia_iowa_medicaid",
+        "ia_hawkeye_chip_hawk_i",
+        "ia_iowa_unemployment_insurance",
+        "ia_wic_iowa",
+        "ia_iowa_food_bank_network_211",
+        "ia_behavioral_health_iowa_bhi"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "ia_medicaid_expansion",
+        "ia_minimum_wage_above_federal",
+        "ia_portability"
+      ]
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "ia_liheap_iowa_liheap_ecip"
+      ],
+      "oversight_chains": [
+        "employer",
+        "utility",
+        "insurer"
+      ],
+      "flags": [
+        "ia_medicaid_expansion",
+        "ia_minimum_wage_above_federal",
+        "ia_portability"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ia_involuntary_hold_law",
+        "ia_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ia_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ia_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ia_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ia_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ia_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "ia_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ia_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "ia_restraint_seclusion_limits",
+        "ia_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ia_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "ia_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "ia_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "state": "MP",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "mp_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "mp_cnmi_snap",
+        "mp_cnmi_wic"
+      ],
+      "oversight_chains": [
+        "employer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "mp_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "mp_cnmi_tanf_cash_assistance",
+        "mp_cnmi_liheap_energy_assistance",
+        "mp_cnmi_head_start"
+      ],
+      "oversight_chains": [
+        "employer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "mp_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "mp_cnmi_housing_authority",
+        "mp_cnmi_legal_services_corporation"
+      ],
+      "oversight_chains": [
+        "employer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "mp_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "mp_cnmi_medicaid_micare",
+        "mp_cnmi_unemployment_insurance_doli",
+        "mp_commonwealth_health_care_corporation_chc",
+        "mp_cnmi_division_of_cultural_affairs",
+        "mp_cnmi_division_of_vocational_rehabilitati"
+      ],
+      "oversight_chains": [
+        "employer",
+        "consumer"
+      ]
+    }
+  ]
+}

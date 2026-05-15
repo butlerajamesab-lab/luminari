@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "state": "NH",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "lens_mappings": [
+    {
+      "lens_id": "nh_lens_cash_assistance",
+      "lens_type": "cash_assistance",
+      "programs": [
+        "nh_legal_aid_nh_legal_assistance_nhla",
+        "nh_nh_tanf_family_assistance_program_dhhs",
+        "nh_nh_liheap_home_energy_assistance_dhhs",
+        "nh_nh_veterans_services_nhvac"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "nh_lens_general",
+      "lens_type": "general",
+      "programs": [
+        "nh_nh_rapid_response_emergency_services_211",
+        "nh_nh_refugee_and_immigrant_support_service",
+        "nh_granite_united_way_statewide_benefits_na"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "nh_lens_healthcare",
+      "lens_type": "healthcare",
+      "programs": [
+        "nh_nh_granite_advantage_medicaid_dhhs",
+        "nh_concord_hospital_dartmouth_health_safety",
+        "nh_nh_community_health_centers_fqhcs",
+        "nh_nh_unemployment_insurance_nhes",
+        "nh_riverbend_community_mental_health_concor"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "nh_lens_food",
+      "lens_type": "food",
+      "programs": [
+        "nh_nh_snap_food_assistance_dhhs",
+        "nh_nh_food_bank_manchester_statewide",
+        "nh_wic_new_hampshire"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ]
+    },
+    {
+      "lens_id": "nh_lens_housing",
+      "lens_type": "housing",
+      "programs": [
+        "nh_nh_housing_finance_authority_nhhfa",
+        "nh_nh_dv_hotline_crisis_line"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ]
+    }
+  ]
+}

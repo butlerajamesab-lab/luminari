@@ -1,0 +1,95 @@
+{
+  "state": "GA",
+  "state_name": "Georgia",
+  "version": "1.0.0",
+  "schema": "luminari-registry-v1",
+  "date_created": "2026-03-08",
+  "layers": {
+    "layer0": "ga_layer0_flags.json",
+    "layer1_programs": "ga_programs.json",
+    "layer1_cards": "ga_layer1_cards.json",
+    "layer2_workflows": "ga_workflow_overrides.json",
+    "layer3_oversight": "ga_oversight.json",
+    "help": "ga_help.json",
+    "foia": "ga_foia.json",
+    "tribal": "ga_tribal_overrides.json",
+    "county": "ga_county_overrides.json",
+    "pipeline_mappings": "ga_pipeline_mappings.json",
+    "lens_mappings": "ga_lens_mappings.json",
+    "workflow_mappings": "ga_workflow_mappings.json"
+  },
+  "status": "active",
+  "validation_status": "complete",
+  "datasets": [
+    "programs",
+    "workflows",
+    "oversight",
+    "layer0_flags",
+    "layer1_cards",
+    "county_overrides",
+    "tribal_overrides",
+    "pipeline_mappings",
+    "lens_mappings",
+    "workflow_mappings",
+    "foia",
+    "help",
+    "mental_health"
+  ],
+  "pipelines_supported": [
+    "benefits_denial",
+    "civil_rights_violation",
+    "domestic_violence",
+    "health_insurance_denial",
+    "immigration_case",
+    "medicaid_denial",
+    "snap_denial",
+    "tenant_rights",
+    "utility_shutoff_abuse",
+    "wage_theft",
+    "workplace_discrimination",
+    "involuntary_hold",
+    "polypharmacy_harm",
+    "discharge_failure",
+    "family_exclusion",
+    "restraint_seclusion",
+    "record_correction"
+  ],
+  "oversight_entities": [
+    "benefits_agency",
+    "employer",
+    "insurer",
+    "law_enforcement"
+  ],
+  "policy_flags": [
+    "ga_no_medicaid_expansion",
+    "ga_lowest_tanf",
+    "ga_short_ui",
+    "ga_federal_minimum_wage",
+    "ga_weak_tenant_protections",
+    "ga_refugee_hub",
+    "ga_non_expansion_routing",
+    "ga_no_state_civil_rights"
+  ],
+  "statistics": {
+    "programs": {
+      "total_programs": 20,
+      "categories": {
+        "food": 2,
+        "healthcare": 4,
+        "community_navigation": 5,
+        "housing": 2,
+        "utilities": 1,
+        "legal_aid": 2,
+        "dv_safety": 1,
+        "immigration": 3
+      }
+    },
+    "workflows": {
+      "total_workflows": 4
+    },
+    "oversight": {
+      "total_oversight_bodies": 12,
+      "total_oversight_chains": 4
+    }
+  }
+}

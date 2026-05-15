@@ -1,0 +1,347 @@
+{
+  "meta": {
+    "state": "WI",
+    "version": "3.0",
+    "chain_count": 3
+  },
+  "oversight_chains": [
+    {
+      "entity_type": "insurer",
+      "state": "WI",
+      "bodies": [
+        {
+          "oversight_body": "Wisconsin Office of the Commissioner of Insurance (OCI)",
+          "jurisdiction": "primary",
+          "phone": "800-236-8517",
+          "complaint_portal": "oci.wi.gov",
+          "what_to_report": "Private health, life, property insurance",
+          "legal_threshold": "Claim denial, bad faith, coverage disputes, external review.",
+          "city": "Madison",
+          "state": "WI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Wisconsin DHS - BadgerCare+ Managed Care Complaints",
+          "jurisdiction": "primary",
+          "phone": "800-362-3002",
+          "complaint_portal": "dhs.wisconsin.gov",
+          "what_to_report": "Medicaid managed care grievances, access failures, prior auth denials",
+          "legal_threshold": "File complaint; request state fair hearing through DHA.",
+          "city": "Madison",
+          "state": "WI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Wisconsin Department of Civil Rights (WDCR) - Fair Housing",
+          "jurisdiction": "primary",
+          "phone": "608-266-0946",
+          "complaint_portal": "dwd.wisconsin.gov/er",
+          "what_to_report": "Housing discrimination under Wisconsin Fair Housing Law",
+          "legal_threshold": "Investigates housing discrimination complaints.",
+          "city": "Madison",
+          "state": "WI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Wisconsin DWD - Equal Rights Division (ERD)",
+          "jurisdiction": "primary",
+          "phone": "608-266-6860",
+          "complaint_portal": "dwd.wisconsin.gov/er",
+          "what_to_report": "Employment discrimination under Wisconsin Fair Employment Law",
+          "legal_threshold": "Investigates employment discrimination complaints.",
+          "city": "Madison",
+          "state": "WI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Wisconsin DWD - Wage Claims",
+          "jurisdiction": "primary",
+          "phone": "608-266-6860",
+          "complaint_portal": "dwd.wisconsin.gov",
+          "what_to_report": "Wisconsin minimum wage, Wage Payment Act violations, child labor",
+          "legal_threshold": "Investigates wage claims.",
+          "city": "Madison",
+          "state": "WI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "benefits_agency",
+      "state": "WI",
+      "bodies": [
+        {
+          "oversight_body": "Milwaukee Fair Housing Council",
+          "jurisdiction": "primary",
+          "phone": "414-278-1240",
+          "complaint_portal": "fairhousingwisconsin.com",
+          "what_to_report": "Housing discrimination in Milwaukee metro",
+          "legal_threshold": "Testing, investigation, advocacy; workshares with WDCR.",
+          "city": "Milwaukee",
+          "state": "WI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "HUD Fair Housing - Chicago Regional Office",
+          "jurisdiction": "primary",
+          "phone": "800-669-9777",
+          "complaint_portal": "hud.gov/fairhousing",
+          "what_to_report": "Federal Fair Housing Act",
+          "legal_threshold": "Investigates housing discrimination complaints under federal law.",
+          "city": "Chicago",
+          "state": "IL",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "EEOC - Milwaukee Area Office",
+          "jurisdiction": "primary",
+          "phone": "800-669-4000",
+          "complaint_portal": "eeoc.gov",
+          "what_to_report": "Federal employment discrimination",
+          "legal_threshold": "Investigates employment discrimination complaints under federal law.",
+          "city": "Milwaukee",
+          "state": "WI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "DOL Wage and Hour Division - Milwaukee",
+          "jurisdiction": "primary",
+          "phone": "414-297-5926",
+          "complaint_portal": "dol.gov/whd",
+          "what_to_report": "FLSA minimum wage, overtime, FMLA",
+          "legal_threshold": "Investigates federal wage and hour violations.",
+          "city": "Milwaukee",
+          "state": "WI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Wisconsin DWD - UI Appeals Board",
+          "jurisdiction": "primary",
+          "phone": "608-266-8100",
+          "complaint_portal": "dwd.wisconsin.gov/ui",
+          "what_to_report": "UI denial/overpayment",
+          "legal_threshold": "Hears appeals of UI decisions.",
+          "city": "Madison",
+          "state": "WI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "Great Lakes Indian Fish and Wildlife Commission (GLIFWC)",
+          "jurisdiction": "primary",
+          "phone": "715-682-6619",
+          "complaint_portal": "glifwc.org",
+          "what_to_report": "Treaty rights enforcement and administration, natural resources, conservation.",
+          "legal_threshold": "Intergovernmental agency covering 11 Ojibwe tribes in WI, MN, and MI. Critical for any matter involving hunting, fishing, gathering rights, or natural resource regulation affecting tribal members.",
+          "city": "Odanah",
+          "state": "WI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        },
+        {
+          "oversight_body": "IHS Bemidji Area Office",
+          "jurisdiction": "primary",
+          "phone": "218-444-0464",
+          "complaint_portal": "ihs.gov/bemidji",
+          "what_to_report": "AI/AN Wisconsin tribal members - IHS health services coordination.",
+          "legal_threshold": "Coordinates health services for Wisconsin tribes.",
+          "city": "Bemidji",
+          "state": "MN",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "family_court",
+      "state": "WI",
+      "bodies": [
+        {
+          "oversight_body": "Wisconsin Division of Hearings and Appeals (DHA)",
+          "jurisdiction": "primary",
+          "phone": "608-266-3523",
+          "complaint_portal": "dha.wi.gov",
+          "what_to_report": "FoodShare, BadgerCare+, W-2 fair hearings - all state benefit appeals",
+          "legal_threshold": "Conducts fair hearings for state benefit appeals.",
+          "city": "Madison",
+          "state": "WI",
+          "complaint_pathway": "Contact oversight body",
+          "pattern_threshold": 3
+        }
+      ]
+    },
+    {
+      "entity_type": "state_medical_board",
+      "bodies": [
+        {
+          "body_id": "wi_med_board",
+          "name": "Wisconsin Medical Board",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state medical board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Wisconsin Medical Board",
+          "what_to_report": "Prescribing violations, polypharmacy harm, medication mismanagement, physician misconduct",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WI"
+    },
+    {
+      "entity_type": "patient_advocate",
+      "bodies": [
+        {
+          "body_id": "wi_patient_adv",
+          "name": "Wisconsin Patient Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact through hospital patient relations",
+          "website": "",
+          "applicable_pipelines": [
+            "family_exclusion",
+            "record_correction",
+            "involuntary_hold"
+          ],
+          "oversight_body": "Wisconsin Patient Advocacy",
+          "what_to_report": "Patient rights violations, family exclusion from care decisions, informed consent issues",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WI"
+    },
+    {
+      "entity_type": "state_health_department",
+      "bodies": [
+        {
+          "body_id": "wi_health_dept",
+          "name": "Wisconsin Department of Health",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state health department",
+          "website": "",
+          "applicable_pipelines": [
+            "record_correction",
+            "discharge_failure",
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Wisconsin Department of Health",
+          "what_to_report": "Healthcare facility complaints, public health violations, licensing concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WI"
+    },
+    {
+      "entity_type": "hhs_ocr",
+      "bodies": [
+        {
+          "body_id": "hhs_ocr",
+          "name": "HHS Office for Civil Rights",
+          "jurisdiction": "federal",
+          "complaint_pathway": "File HIPAA complaint at hhs.gov/ocr/complaints",
+          "website": "https://www.hhs.gov/ocr",
+          "applicable_pipelines": [
+            "record_correction"
+          ],
+          "oversight_body": "HHS Office for Civil Rights",
+          "what_to_report": "HIPAA violations, medical records access denial, privacy breaches, discrimination in healthcare",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WI"
+    },
+    {
+      "entity_type": "state_pharmacy_board",
+      "bodies": [
+        {
+          "body_id": "wi_pharm_board",
+          "name": "Wisconsin Board of Pharmacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "File complaint with state pharmacy board",
+          "website": "",
+          "applicable_pipelines": [
+            "polypharmacy_harm"
+          ],
+          "oversight_body": "Wisconsin Board of Pharmacy",
+          "what_to_report": "Medication dispensing errors, drug interaction failures, pharmacy practice violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WI"
+    },
+    {
+      "entity_type": "protection_advocacy",
+      "bodies": [
+        {
+          "body_id": "wi_pa",
+          "name": "Wisconsin Protection & Advocacy",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state P&A organization",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Wisconsin Protection & Advocacy",
+          "what_to_report": "Rights violations during psychiatric holds, restraint/seclusion abuse, denial of legal rights",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WI"
+    },
+    {
+      "entity_type": "state_mental_health_authority",
+      "bodies": [
+        {
+          "body_id": "wi_mha",
+          "name": "Wisconsin Mental Health Authority",
+          "jurisdiction": "state",
+          "complaint_pathway": "Contact state mental health authority",
+          "website": "",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "polypharmacy_harm",
+            "discharge_failure",
+            "family_exclusion",
+            "restraint_seclusion",
+            "record_correction"
+          ],
+          "oversight_body": "Wisconsin Mental Health Authority",
+          "what_to_report": "Involuntary commitment violations, patient rights violations, facility conditions, treatment concerns",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WI"
+    },
+    {
+      "entity_type": "joint_commission",
+      "bodies": [
+        {
+          "body_id": "joint_commission",
+          "name": "The Joint Commission",
+          "jurisdiction": "federal",
+          "complaint_pathway": "Online complaint at jointcommission.org",
+          "website": "https://www.jointcommission.org",
+          "applicable_pipelines": [
+            "involuntary_hold",
+            "restraint_seclusion"
+          ],
+          "oversight_body": "The Joint Commission",
+          "what_to_report": "Hospital accreditation violations, patient safety concerns, restraint/seclusion policy violations",
+          "pattern_threshold": 3
+        }
+      ],
+      "state": "WI"
+    }
+  ]
+}

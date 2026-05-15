@@ -1,0 +1,322 @@
+{
+  "meta": {
+    "state": "VA",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "va_feeding_america_southwest_virginia_roano",
+        "va_wic_virginia",
+        "va_southwest_virginia_legal_aid_society_svl",
+        "va_safeplace_richmond_area_dv",
+        "va_blue_ridge_legal_services_brls_shenandoa",
+        "va_legal_services_of_northern_virginia_lsnv",
+        "va_virginia_ui_vec_virginia_employment_comm",
+        "va_pamunkey_indian_tribe_tribal_government",
+        "va_virginia_council_on_indians",
+        "va_virginia_dmas_medicaid_managed_care_appe",
+        "va_virginia_dss_office_of_hearing_and_appea",
+        "va_virginia_employment_commission_vec_appea",
+        "va_richmond_office_of_community_wealth_buil"
+      ],
+      "oversight_chains": [
+        "landlord",
+        "employer",
+        "general"
+      ],
+      "flags": [
+        "va_minimum_wage_above_federal",
+        "va_portability"
+      ]
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "va_virginia_tanf_view_virginia_initiative_f"
+      ],
+      "oversight_chains": [
+        "landlord",
+        "employer",
+        "general"
+      ],
+      "flags": [
+        "va_minimum_wage_above_federal",
+        "va_portability"
+      ]
+    },
+    {
+      "pipeline_id": "consumer_protection",
+      "programs": [
+        "va_state_corporation_commission_scc_utility",
+        "va_virginia_bureau_of_insurance_boi_scc"
+      ],
+      "oversight_chains": [
+        "landlord",
+        "employer",
+        "general"
+      ],
+      "flags": [
+        "va_minimum_wage_above_federal",
+        "va_portability"
+      ]
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "va_virginia_snap_food_assistance_dss",
+        "va_capital_area_food_bank_richmond_central_",
+        "va_virginia_tanf_view_virginia_initiative_f",
+        "va_virginia_ui_vec_virginia_employment_comm",
+        "va_virginia_liheap_fuel_assistance_dss",
+        "va_state_corporation_commission_scc_utility",
+        "va_virginia_employment_commission_vec_appea"
+      ],
+      "oversight_chains": [
+        "landlord",
+        "employer",
+        "general"
+      ],
+      "flags": [
+        "va_minimum_wage_above_federal",
+        "va_portability"
+      ]
+    },
+    {
+      "pipeline_id": "employment_dispute",
+      "programs": [
+        "va_virginia_tanf_view_virginia_initiative_f",
+        "va_virginia_ui_vec_virginia_employment_comm",
+        "va_virginia_doli_labor_and_employment_law_d",
+        "va_virginia_council_on_human_rights_vchr_em",
+        "va_virginia_employment_commission_vec_appea"
+      ],
+      "oversight_chains": [
+        "landlord",
+        "employer",
+        "general"
+      ],
+      "flags": [
+        "va_minimum_wage_above_federal",
+        "va_portability"
+      ]
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "va_virginia_housing_vhda_virginia_housing_d",
+        "va_central_virginia_legal_aid_society_cvlas",
+        "va_legal_aid_justice_center_lajc",
+        "va_virginia_sexual_and_domestic_violence_ac",
+        "va_central_virginia_legal_aid_society_cvlas",
+        "va_virginia_tanf_view_virginia_initiative_f",
+        "va_virginia_council_on_human_rights_vchr_ho"
+      ],
+      "oversight_chains": [
+        "landlord",
+        "employer",
+        "general"
+      ],
+      "flags": [
+        "va_minimum_wage_above_federal",
+        "va_portability"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "va_virginia_medicaid_famis_ccc_plus_dmas",
+        "va_vcu_health_medical_college_of_virginia_r",
+        "va_inova_health_system_northern_virginia_sa",
+        "va_virginia_community_healthcare_associatio",
+        "va_virginia_tanf_view_virginia_initiative_f",
+        "va_pamunkey_indian_tribe_tribal_government",
+        "va_ihs_nashville_area_office_covers_pamunke",
+        "va_virginia_bureau_of_insurance_boi_scc",
+        "va_virginia_dmas_medicaid_managed_care_appe"
+      ],
+      "oversight_chains": [
+        "landlord",
+        "employer",
+        "general"
+      ],
+      "flags": [
+        "va_minimum_wage_above_federal",
+        "va_portability"
+      ]
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "va_virginia_legal_aid_society_vlas_hampton_",
+        "va_virginia_tanf_view_virginia_initiative_f",
+        "va_virginia_liheap_fuel_assistance_dss",
+        "va_state_corporation_commission_scc_utility"
+      ],
+      "oversight_chains": [
+        "landlord",
+        "employer",
+        "general"
+      ],
+      "flags": [
+        "va_minimum_wage_above_federal",
+        "va_portability"
+      ]
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "va_involuntary_hold_law",
+        "va_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "va_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "va_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "va_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "va_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "va_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "va_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "va_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "va_restraint_seclusion_limits",
+        "va_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "va_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "va_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "va_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

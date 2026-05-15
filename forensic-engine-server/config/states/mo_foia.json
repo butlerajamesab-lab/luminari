@@ -1,0 +1,234 @@
+{
+  "meta": {
+    "state": "MO",
+    "state_name": "Missouri",
+    "schema_version": "2.0.0",
+    "last_updated": "2026-03-06",
+    "status": "active",
+    "description": "Missouri Sunshine Law (RSMo Chapter 610) FOIA layer — structured rules, agency targets, exemptions, and appeals workflow"
+  },
+  "statute": {
+    "name": "Missouri Sunshine Law",
+    "citation": "RSMo §610.010–610.035",
+    "chapter": "RSMo Chapter 610",
+    "response_deadline_days": 3,
+    "response_deadline_unit": "business_days",
+    "response_deadline_notes": "Custodian must respond within 3 business days. If records cannot be produced immediately, custodian must provide a detailed explanation of the cause for delay and the place and earliest time/date the record will be available.",
+    "fee_structure": "Actual cost of document search, duplication, and staff time. Fees must not exceed actual cost. Some agencies waive fees for first 4 pages. No search fee for electronic records already in electronic format.",
+    "fee_waiver_provisions": "No statutory fee waiver for public interest. Some agencies have discretionary waiver policies.",
+    "appeal_path": "Circuit court action under RSMo §610.027. Attorney General may issue advisory opinions but cannot compel disclosure.",
+    "penalty_provisions": "Knowing violation: $1,000–$5,000 civil penalty per violation. Purposeful violation: up to $5,000 plus attorney fees. Court may void any action taken in violation.",
+    "exemptions_summary": "Closed records include: personnel records (partial), welfare records, law enforcement investigative reports (with exceptions), trade secrets, sealed court records, medical records (HIPAA), juvenile records, adoption records."
+  },
+  "structured_rules": [
+    {
+      "rule_id": "mo_foia_rule_child_welfare",
+      "domain": "child_welfare",
+      "rule_name": "Child Welfare Records — Children's Division",
+      "access_level": "restricted",
+      "foia_enabled": false,
+      "authorized_requesters": ["parent", "attorney", "guardian_ad_litem", "tribe", "court_order"],
+      "statute_reference": "RSMo §210.150",
+      "description": "Child abuse/neglect investigation records maintained by the Children's Division are confidential. Access limited to parents of the child, the child's attorney or GAL, tribal representatives under ICWA, and persons authorized by court order.",
+      "pipeline_trigger": "child_welfare",
+      "notes": "Tribal access under ICWA requires verification of tribal membership or enrollment eligibility."
+    },
+    {
+      "rule_id": "mo_foia_rule_juvenile",
+      "domain": "juvenile_court",
+      "rule_name": "Juvenile Court Records",
+      "access_level": "sealed",
+      "foia_enabled": false,
+      "authorized_requesters": ["court_order"],
+      "statute_reference": "RSMo §211.321",
+      "description": "Juvenile court records are sealed by statute. Access requires court order. Juvenile officer records, social histories, and psychological evaluations are not subject to Sunshine Law requests.",
+      "pipeline_trigger": null,
+      "notes": "Expungement available under RSMo §211.151 for certain juvenile offenses."
+    },
+    {
+      "rule_id": "mo_foia_rule_law_enforcement",
+      "domain": "law_enforcement",
+      "rule_name": "Active Law Enforcement Investigations",
+      "access_level": "temporarily_exempt",
+      "foia_enabled": false,
+      "authorized_requesters": ["court_order", "subject_of_investigation"],
+      "statute_reference": "RSMo §610.100",
+      "description": "Records of ongoing law enforcement investigations are temporarily exempt from disclosure. Once investigation is closed, incident reports and arrest records become open. Investigative reports may remain closed if disclosure would endanger life or impede prosecution.",
+      "pipeline_trigger": null,
+      "notes": "Arrest records and incident reports are open records once investigation closes. Booking photographs are open records."
+    },
+    {
+      "rule_id": "mo_foia_rule_personnel",
+      "domain": "personnel",
+      "rule_name": "Personnel Records — Public Employees",
+      "access_level": "partial",
+      "foia_enabled": true,
+      "authorized_requesters": ["any"],
+      "statute_reference": "RSMo §610.021(13)",
+      "description": "Personnel records of public employees are partially accessible. Name, position, salary, and dates of employment are open. Performance evaluations, disciplinary records, and medical information are closed unless the employee consents or a court orders disclosure.",
+      "pipeline_trigger": null,
+      "notes": "Salary and compensation data for all public employees is an open record under Missouri law."
+    },
+    {
+      "rule_id": "mo_foia_rule_medical",
+      "domain": "medical",
+      "rule_name": "Medical Records — HIPAA Restricted",
+      "access_level": "restricted",
+      "foia_enabled": false,
+      "authorized_requesters": ["patient", "authorized_representative", "court_order"],
+      "statute_reference": "45 CFR Parts 160, 164 (HIPAA); RSMo §191.227",
+      "description": "Medical records held by covered entities are protected under HIPAA. State agencies holding medical information (e.g., DHSS disease surveillance data) are also restricted. Patient or authorized representative may request own records.",
+      "pipeline_trigger": "healthcare",
+      "notes": "HIPAA preempts state law where state law provides less protection. Missouri RSMo §191.227 provides additional state-level medical records protections."
+    }
+  ],
+  "agencies": [
+    {
+      "agency_id": "mo_dss",
+      "agency_name": "Missouri Department of Social Services",
+      "abbreviation": "DSS",
+      "custodian_title": "Records Custodian",
+      "address": "615 Howerton Court, Jefferson City, MO 65109",
+      "phone": "573-751-4815",
+      "email": null,
+      "portal": "https://dss.mo.gov",
+      "domains": ["food", "cash_assistance", "child_welfare", "healthcare"],
+      "notes": "Oversees FSD (Family Support Division), Children's Division, MO HealthNet Division. Child welfare records subject to RSMo §210.150 restrictions.",
+      "response_history": "Generally responsive within statutory deadline. Complex requests may require follow-up."
+    },
+    {
+      "agency_id": "mo_psc",
+      "agency_name": "Missouri Public Service Commission",
+      "abbreviation": "PSC",
+      "custodian_title": "Secretary of the Commission",
+      "address": "200 Madison Street, Jefferson City, MO 65101",
+      "phone": "573-751-3234",
+      "email": "pscinfo@psc.mo.gov",
+      "portal": "https://psc.mo.gov",
+      "domains": ["utilities"],
+      "notes": "Regulates electric, gas, water, and telephone utilities. Rate case filings and commission orders are public records. Utility customer complaint records available.",
+      "response_history": "Electronic records generally available promptly. Rate case documents available on EFIS system."
+    },
+    {
+      "agency_id": "mo_dhss",
+      "agency_name": "Missouri Department of Health & Senior Services",
+      "abbreviation": "DHSS",
+      "custodian_title": "Records Custodian",
+      "address": "930 Wildwood Drive, Jefferson City, MO 65109",
+      "phone": "573-751-6400",
+      "email": null,
+      "portal": "https://health.mo.gov",
+      "domains": ["healthcare", "elder_care"],
+      "notes": "Maintains nursing home inspection reports, disease surveillance data, vital records. Nursing home inspection reports are open records. Individual medical records restricted under HIPAA.",
+      "response_history": "Nursing home inspection reports generally available. Vital records require authorized requester status."
+    },
+    {
+      "agency_id": "mo_dolir",
+      "agency_name": "Missouri Department of Labor & Industrial Relations",
+      "abbreviation": "DOLIR",
+      "custodian_title": "Records Custodian",
+      "address": "421 East Dunklin Street, Jefferson City, MO 65101",
+      "phone": "573-751-4091",
+      "email": null,
+      "portal": "https://labor.mo.gov",
+      "domains": ["employment", "workers_compensation", "wage_theft"],
+      "notes": "Oversees Division of Labor Standards, Division of Workers' Compensation, Missouri Commission on Human Rights. Wage complaint records and OSHA inspection reports available.",
+      "response_history": "Generally responsive. Workers' compensation records may require party authorization."
+    },
+    {
+      "agency_id": "mo_local_police",
+      "agency_name": "Local Police Department Custodians",
+      "abbreviation": null,
+      "custodian_title": "Records Custodian (varies by department)",
+      "address": null,
+      "phone": null,
+      "email": null,
+      "portal": null,
+      "domains": ["law_enforcement"],
+      "notes": "Each municipal police department has its own records custodian. Incident reports and arrest records are open once investigation closes. Booking photographs are open records. Request must be directed to the specific department holding the records.",
+      "response_history": "Varies widely by department. Larger departments (KCPD, SLMPD) have established processes. Smaller departments may require in-person requests."
+    },
+    {
+      "agency_id": "mo_circuit_clerks",
+      "agency_name": "County Circuit Clerks",
+      "abbreviation": null,
+      "custodian_title": "Circuit Clerk",
+      "address": null,
+      "phone": null,
+      "email": null,
+      "portal": "https://courts.mo.gov/casenet",
+      "domains": ["court_records"],
+      "notes": "Circuit clerks maintain court records for each county. Case.net provides electronic access to most court records. Sealed records, juvenile records, and adoption records are not available through Case.net or Sunshine Law requests.",
+      "response_history": "Case.net provides immediate electronic access for most records. Physical records may require in-person visit or written request to specific county clerk."
+    }
+  ],
+  "appeals_workflow": {
+    "workflow_id": "mo_foia_appeal",
+    "total_steps": 4,
+    "steps": [
+      {
+        "step": 1,
+        "action": "Administrative Appeal",
+        "description": "Submit written appeal to the custodian's supervisor or the head of the public governmental body. Cite specific records requested and the statutory basis for access under RSMo Chapter 610.",
+        "deadline": "No statutory deadline for administrative appeal. Recommended within 30 days of denial.",
+        "statute_reference": "RSMo §610.023",
+        "cost": "None",
+        "success_rate_notes": "Low success rate for administrative appeals alone. Primarily establishes record for subsequent steps."
+      },
+      {
+        "step": 2,
+        "action": "Attorney General Complaint",
+        "description": "File complaint with the Missouri Attorney General's Office, Government Affairs Division. AG may issue advisory opinion on whether records should be disclosed. AG opinions are non-binding but carry persuasive authority.",
+        "deadline": "No statutory deadline. File promptly after administrative appeal fails.",
+        "statute_reference": "RSMo §610.027(6)",
+        "contact": "Missouri Attorney General, Government Affairs Division, 207 W. High Street, Jefferson City, MO 65101",
+        "phone": "573-751-3321",
+        "cost": "None",
+        "success_rate_notes": "AG opinions are advisory only. Some agencies comply voluntarily after AG opinion. Others require court action."
+      },
+      {
+        "step": 3,
+        "action": "State Auditor Complaint",
+        "description": "File complaint with the Missouri State Auditor's Office. Auditor has authority to investigate Sunshine Law violations and issue findings. Auditor can refer violations for prosecution.",
+        "deadline": "No statutory deadline.",
+        "statute_reference": "RSMo §610.027",
+        "contact": "Missouri State Auditor, 301 W. High Street, Jefferson City, MO 65101",
+        "phone": "800-347-8597",
+        "cost": "None",
+        "success_rate_notes": "Auditor investigations can be effective for systemic violations. Individual record requests may be better served by court action."
+      },
+      {
+        "step": 4,
+        "action": "Circuit Court Petition",
+        "description": "File civil action in circuit court under RSMo §610.027. Court may order disclosure, award actual damages, assess civil penalties ($1,000–$5,000 per violation for knowing violations), and award attorney fees to prevailing requester.",
+        "deadline": "No specific statute of limitations for Sunshine Law actions. General 5-year statute of limitations for statutory violations may apply.",
+        "statute_reference": "RSMo §610.027",
+        "cost": "Court filing fees (varies by county, typically $50–$150). Attorney fees recoverable if requester prevails.",
+        "success_rate_notes": "Court action is the only mechanism that can compel disclosure. Prevailing requesters may recover attorney fees, making this viable for significant records disputes."
+      }
+    ]
+  },
+  "request_templates": [
+    {
+      "template_id": "mo_foia_general",
+      "template_name": "General Sunshine Law Request",
+      "target_type": "any",
+      "body": "Dear Records Custodian,\n\nPursuant to the Missouri Sunshine Law, RSMo Chapter 610, I am requesting access to and copies of the following records:\n\n[DESCRIBE RECORDS REQUESTED]\n\nPlease provide these records in [electronic/paper] format. If any records are withheld, please cite the specific statutory exemption for each withheld record.\n\nAs required by RSMo §610.023, please respond within three (3) business days.\n\nThank you for your prompt attention to this request.",
+      "notes": "Customize the bracketed sections. Be as specific as possible about records sought."
+    },
+    {
+      "template_id": "mo_foia_utility",
+      "template_name": "Utility Complaint Records Request",
+      "target_type": "mo_psc",
+      "body": "Dear Secretary of the Commission,\n\nPursuant to the Missouri Sunshine Law, RSMo Chapter 610, I am requesting copies of all consumer complaints filed against [UTILITY COMPANY NAME] for the period [START DATE] through [END DATE], including complaint summaries, investigation reports, and commission orders.\n\nPlease also provide any rate case filings and commission orders related to [UTILITY COMPANY NAME] for the same period.\n\nPlease respond within three (3) business days as required by statute.",
+      "notes": "PSC records are also available through the EFIS electronic filing system."
+    },
+    {
+      "template_id": "mo_foia_police",
+      "template_name": "Police Incident Report Request",
+      "target_type": "mo_local_police",
+      "body": "Dear Records Custodian,\n\nPursuant to the Missouri Sunshine Law, RSMo §610.100, I am requesting a copy of the incident report(s) for the following:\n\nCase Number: [CASE NUMBER]\nDate of Incident: [DATE]\nLocation: [LOCATION]\n\nAs incident reports are open records under RSMo §610.100 once the investigation is closed, please provide these records within three (3) business days.\n\nIf the investigation is ongoing, please provide the expected date of closure.",
+      "notes": "Incident reports are open records. Investigative reports may remain closed."
+    }
+  ]
+}

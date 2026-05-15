@@ -1,0 +1,301 @@
+{
+  "meta": {
+    "state": "AL",
+    "version": "3.0"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "workflow_id": "al_benefits_workflow",
+      "oversight_entity_types": [
+        "benefits_agency"
+      ],
+      "layer0_flag_ids": [
+        "al_tanf_215",
+        "al_ui_275_lowest"
+      ],
+      "layer1_cluster_ids": [
+        "al_benefits"
+      ]
+    },
+    {
+      "pipeline_id": "snap_denial",
+      "workflow_id": "al_benefits_workflow",
+      "oversight_entity_types": [
+        "benefits_agency"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "al_food"
+      ]
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "workflow_id": "al_insurance_workflow",
+      "oversight_entity_types": [
+        "insurer"
+      ],
+      "layer0_flag_ids": [
+        "al_medicaid_not_expanded"
+      ],
+      "layer1_cluster_ids": [
+        "al_healthcare"
+      ]
+    },
+    {
+      "pipeline_id": "tenant_rights",
+      "workflow_id": "al_housing_workflow",
+      "oversight_entity_types": [
+        "landlord"
+      ],
+      "layer0_flag_ids": [
+        "al_eviction_7day",
+        "al_black_belt_underserved"
+      ],
+      "layer1_cluster_ids": [
+        "al_housing"
+      ]
+    },
+    {
+      "pipeline_id": "eviction_defense",
+      "workflow_id": "al_housing_workflow",
+      "oversight_entity_types": [
+        "landlord"
+      ],
+      "layer0_flag_ids": [
+        "al_eviction_7day"
+      ],
+      "layer1_cluster_ids": [
+        "al_housing"
+      ]
+    },
+    {
+      "pipeline_id": "domestic_violence",
+      "workflow_id": "al_dv_workflow",
+      "oversight_entity_types": [
+        "employer"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": [
+        "al_crisis"
+      ]
+    },
+    {
+      "pipeline_id": "wage_theft",
+      "workflow_id": "al_wage_workflow",
+      "oversight_entity_types": [
+        "employer"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": []
+    },
+    {
+      "pipeline_id": "workplace_discrimination",
+      "workflow_id": "al_wage_workflow",
+      "oversight_entity_types": [
+        "employer"
+      ],
+      "layer0_flag_ids": [
+        "al_civil_rights_weak"
+      ],
+      "layer1_cluster_ids": []
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "workflow_id": "al_benefits_workflow",
+      "oversight_entity_types": [
+        "benefits_agency"
+      ],
+      "layer0_flag_ids": [
+        "al_poarch_creek_only_tribe"
+      ],
+      "layer1_cluster_ids": [
+        "al_tribal"
+      ]
+    },
+    {
+      "pipeline_id": "unemployment_benefits",
+      "workflow_id": "al_benefits_workflow",
+      "oversight_entity_types": [
+        "benefits_agency"
+      ],
+      "layer0_flag_ids": [
+        "al_ui_275_lowest"
+      ],
+      "layer1_cluster_ids": [
+        "al_benefits"
+      ]
+    },
+    {
+      "pipeline_id": "consumer_fraud",
+      "workflow_id": "al_benefits_workflow",
+      "oversight_entity_types": [
+        "benefits_agency"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": []
+    },
+    {
+      "pipeline_id": "disability_rights",
+      "workflow_id": "al_benefits_workflow",
+      "oversight_entity_types": [
+        "benefits_agency"
+      ],
+      "layer0_flag_ids": [],
+      "layer1_cluster_ids": []
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "al_involuntary_hold_law",
+        "al_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "al_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "al_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "al_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "al_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "al_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "al_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "al_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "al_restraint_seclusion_limits",
+        "al_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "al_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "al_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "al_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

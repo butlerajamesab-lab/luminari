@@ -1,0 +1,255 @@
+{
+  "meta": {
+    "state": "MT",
+    "version": "2.0",
+    "date": "2026-03-08"
+  },
+  "pipeline_mappings": [
+    {
+      "pipeline_id": "benefits_denial",
+      "programs": [
+        "mt_montana_food_bank_network_statewide",
+        "mt_billings_clinic_eastern_mt_safety_net",
+        "mt_providence_st_patrick_hospital_western_m",
+        "mt_montana_legal_services_association_mlsa",
+        "mt_montana_ui_dli",
+        "mt_veterans_services_montana_vso_network"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "child_welfare",
+      "programs": [
+        "mt_wic_montana",
+        "mt_montana_tanf_dphhs"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "disability_claim",
+      "programs": [
+        "mt_montana_snap_food_assistance_dphhs",
+        "mt_wic_montana",
+        "mt_montana_housing_mboh_board_of_housing",
+        "mt_montana_tanf_dphhs",
+        "mt_montana_liheap_dphhs_community_action"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "housing_dispute",
+      "programs": [
+        "mt_montana_housing_mboh_board_of_housing",
+        "mt_montana_legal_services_association_mlsa",
+        "mt_montana_dv_services_mcadsv"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "insurance_claim_denial",
+      "programs": [
+        "mt_montana_medicaid_help_act_dphhs",
+        "mt_montana_primary_care_association_fqhcs",
+        "mt_ihs_billings_area_office_all_7_mt_tribes",
+        "mt_montana_urban_indian_health_billings"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "utility_dispute",
+      "programs": [
+        "mt_montana_liheap_dphhs_community_action"
+      ],
+      "oversight_chains": [
+        "employer",
+        "general",
+        "insurer",
+        "consumer"
+      ],
+      "flags": []
+    },
+    {
+      "pipeline_id": "involuntary_hold",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "protection_advocacy",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "mt_involuntary_hold_law",
+        "mt_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "mt_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "involuntary_hold"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "polypharmacy_harm",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_medical_board",
+        "state_pharmacy_board",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "mt_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "mt_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "polypharmacy_harm"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "discharge_failure",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "mt_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "mt_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "community_mental_health",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "discharge_failure"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "family_exclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "patient_advocate",
+        "state_mental_health_authority"
+      ],
+      "layer0_flag_ids": [
+        "mt_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "mt_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "patient_advocacy"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "family_exclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "restraint_seclusion",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "protection_advocacy",
+        "state_mental_health_authority",
+        "joint_commission"
+      ],
+      "layer0_flag_ids": [
+        "mt_restraint_seclusion_limits",
+        "mt_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "mt_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "mental_health_court",
+        "crisis_services"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "restraint_seclusion"
+        ]
+      }
+    },
+    {
+      "pipeline_id": "record_correction",
+      "workflow_id": "wf_mental_health",
+      "oversight_entity_types": [
+        "hhs_ocr",
+        "patient_advocate",
+        "state_health_department"
+      ],
+      "layer0_flag_ids": [
+        "mt_patient_rights_psych"
+      ],
+      "layer1_cluster_ids": [
+        "mt_mental_health"
+      ],
+      "foia_rule_ids": [],
+      "county_override_sections": [
+        "health_information_management"
+      ],
+      "program_filter": {
+        "category": "mental_health",
+        "pipeline_ids_include": [
+          "record_correction"
+        ]
+      }
+    }
+  ]
+}

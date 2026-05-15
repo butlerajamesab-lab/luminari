@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "state": "NM",
+    "version": "3.0"
+  },
+  "routing_index": [
+    {
+      "contact_name": "NM HSD",
+      "role": "SNAP/TANF/Medicaid",
+      "phone": "800-283-4465",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "211 NM",
+      "role": "Social services referral",
+      "phone": "211",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "NM Legal Aid",
+      "role": "Statewide legal aid",
+      "phone": "866-416-1922",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "NM DWS",
+      "role": "UI Appeals",
+      "phone": "877-664-6984",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "OSI",
+      "role": "Insurance complaints",
+      "phone": "855-427-5674",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "NM HRB",
+      "role": "Civil rights",
+      "phone": "505-827-6838",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "NM DV Hotline",
+      "role": "Domestic violence crisis",
+      "phone": "800-773-3645",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "Navajo Nation",
+      "role": "Tribal services (NM)",
+      "phone": "928-871-6466",
+      "email": null,
+      "hours": null
+    },
+    {
+      "contact_name": "All Pueblo Council",
+      "role": "19 Pueblos coordination",
+      "phone": "505-881-1992",
+      "email": null,
+      "hours": null
+    }
+  ],
+  "regions": [],
+  "missing_sections": []
+}

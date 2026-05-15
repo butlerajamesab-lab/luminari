@@ -1,0 +1,231 @@
+{
+  "meta": {
+    "state": "IN",
+    "version": "3.0",
+    "flag_count": 8
+  },
+  "flags": [
+    {
+      "flag_id": "in_hip_2_0_power_account",
+      "severity": "alert",
+      "title": "HIP 2.0 POWER Account \u2014 Monthly Contribution Required or Lockout Risk",
+      "summary": "Indiana's Medicaid expansion, HIP 2.0, requires monthly POWER Account contributions. Failure to pay for 60 days results in a 6-month lockout from HIP Plus, the full benefits tier. Enrollees are dropped to HIP Basic, which has no vision or dental and requires copays. At intake, it is crucial to assess the client's HIP status, contribution currency, and any imminent lockout risk. Contributions are waived for incomes below 100% FPL.",
+      "affected_programs": [
+        "hip_2_0"
+      ],
+      "effective_date": null
+    },
+    {
+      "flag_id": "in_snap_abawd_work_requirements",
+      "severity": "alert",
+      "title": "Indiana SNAP ABAWD Work Requirements \u2014 Active Statewide",
+      "summary": "Statewide, Able-Bodied Adults Without Dependents (ABAWDs) aged 18\u201354 must document 80 hours/month of qualifying work activity to receive SNAP benefits. It is important to immediately surface any exemptions, such as disability, caregiving, pregnancy, or enrollment in education or job training. For rural clients, the SNAP Employment and Training (E&T) program is the primary pathway to a waiver.",
+      "affected_programs": [
+        "snap_in_dfr"
+      ],
+      "effective_date": null
+    },
+    {
+      "flag_id": "in_minimum_wage_7_25",
+      "severity": "warning",
+      "title": "Indiana Minimum Wage \u2014 $7.25/hr Federal Floor Only",
+      "summary": "Indiana's minimum wage is the federal minimum of $7.25/hr, with no state or local increases. This is the lowest in the region. Wage theft is a significant issue, and back wages should be calculated against the federal minimum and FLSA overtime rules. It is recommended to file wage theft claims with both the Indiana Department of Labor and the federal Wage and Hour Division (WHD).",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "in_tanf_24_month_limit",
+      "severity": "alert",
+      "title": "Indiana TANF (TANF Cash Assistance) \u2014 $288/mo Max, 24-Month Limit",
+      "summary": "Indiana's TANF program provides a maximum of $288/month for a family of three and has a 24-month lifetime limit, which is shorter than the federal 60-month limit. It is critical to verify the remaining months for any client with a prior Indiana TANF history. The program also has a 20-hour/week work requirement.",
+      "affected_programs": [
+        "tanf_in_dfr"
+      ],
+      "effective_date": null
+    },
+    {
+      "flag_id": "in_eviction_process_10_day_notice",
+      "severity": "warning",
+      "title": "Indiana Eviction Process \u2014 10-Day Notice, Fast Timeline",
+      "summary": "Indiana law allows for a 10-day notice for nonpayment of rent, with a total eviction timeline of approximately 3\u20134 weeks. There is no statewide just-cause eviction requirement. It is recommended to contact legal aid within 5 days of receiving any eviction notice.",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "in_civil_rights_180_day_sol",
+      "severity": "warning",
+      "title": "Indiana Civil Rights \u2014 ICRC 180-Day SOL",
+      "summary": "The Indiana Civil Rights Commission (ICRC) has a 180-day statute of limitations for filing complaints, which is shorter than the EEOC's 300-day deadline. It is recommended to file with the EEOC simultaneously to preserve federal rights. The Indiana Human Rights Law does not include sexual orientation or gender identity as protected classes, so LGBTQ+ workplace discrimination claims should be filed only with the EEOC.",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "in_ui_390_max_benefit",
+      "severity": "warning",
+      "title": "Indiana UI \u2014 $390/Week Maximum, Lowest in Region",
+      "summary": "Indiana's maximum unemployment insurance (UI) benefit is $390/week, and the appeal deadline is a very tight 10 days from the determination mailing date. It is recommended to contact legal aid within 5 days of any denial.",
+      "affected_programs": [
+        "indiana_ui"
+      ],
+      "effective_date": null
+    },
+    {
+      "flag_id": "in_lake_county_cross_state_complexity",
+      "severity": "info",
+      "title": "Lake County / Gary \u2014 Chicago Proximity Creates Cross-State Resource Complexity",
+      "summary": "Lake County, Indiana, is part of the Chicago metro area, which can create complex legal and resource situations for residents who work or have employers in Illinois. It is important to check for the applicability of Illinois and Chicago laws and to connect with resources in both states.",
+      "affected_programs": [],
+      "effective_date": null
+    },
+    {
+      "flag_id": "in_involuntary_hold_law",
+      "title": "Involuntary Hold: Indiana Emergency Detention",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "IN involuntary psychiatric hold law: Indiana Emergency Detention. Statutory authority: IC 12-26-4. Maximum initial hold duration: 72 hours. Legal standard: danger to self/others or gravely disabled. A hearing must be held before the hold can be extended. The person has the right to counsel at the hearing.",
+      "action_items": [
+        "Verify hold did not exceed 72 hours without court order",
+        "Confirm hearing was held within statutory timeframe",
+        "Check that patient rights notice was provided at admission",
+        "Verify physician certification was completed",
+        "Request complete hold documentation from facility"
+      ],
+      "legal_references": [
+        "IC 12-26-4"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "in_patient_rights_psych",
+      "title": "Psychiatric Patient Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "discharge_failure",
+          "family_exclusion",
+          "restraint_seclusion",
+          "record_correction"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Psychiatric patients in IN retain fundamental rights during hospitalization: right to communicate with persons outside the facility, right to receive and send mail, right to access legal counsel, right to refuse treatment (with limited exceptions), right to informed consent, right to access medical records, and right to file grievances. These rights cannot be restricted as a condition of treatment.",
+      "action_items": [
+        "Verify patient rights notice was provided and signed",
+        "Check whether any rights were restricted and if proper procedures were followed",
+        "Document any communication restrictions imposed",
+        "Confirm access to legal counsel was not impeded"
+      ],
+      "legal_references": [
+        "CMS Conditions of Participation 42 CFR \u00a7 482.13",
+        "State patient rights statute"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "in_restraint_seclusion_limits",
+      "title": "Federal Restraint & Seclusion Limits",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "Federal law (42 CFR \u00a7 482.13) sets strict limits on restraint and seclusion in IN: physician order required within 1 hour, face-to-face evaluation within 1 hour, continuous monitoring required, maximum 4 hours per order for adults (2 hours for ages 9-17, 1 hour for under 9), and restraint may only be used to protect the patient from harm \u2014 never as punishment, convenience, or retaliation.",
+      "action_items": [
+        "Request restraint/seclusion logs for all episodes",
+        "Verify physician order was obtained within 1 hour",
+        "Check that face-to-face evaluation occurred within 1 hour",
+        "Confirm continuous monitoring was documented",
+        "Verify restraint was not used as punishment or convenience",
+        "Check for injuries during restraint episodes"
+      ],
+      "legal_references": [
+        "42 CFR \u00a7 482.13(e)-(f)",
+        "CMS State Operations Manual Appendix A"
+      ],
+      "category": "mental_health"
+    },
+    {
+      "flag_id": "in_mh_involuntary_hold_law",
+      "title": "Involuntary Psychiatric Hold Statute",
+      "severity": "alert",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold"
+        ],
+        "benefit_categories": [
+          "mental_health"
+        ],
+        "conditions": []
+      },
+      "message": "This state has specific statutes governing involuntary psychiatric holds. Know the time limits, hearing rights, and appeal procedures before they expire.",
+      "statute": "Indiana Involuntary Commitment Act",
+      "bundle_pairings": [
+        "mental_health",
+        "patient_advocacy"
+      ]
+    },
+    {
+      "flag_id": "in_mh_patient_rights",
+      "title": "Mental Health Patient Bill of Rights",
+      "severity": "warning",
+      "trigger": {
+        "pipelines": [
+          "involuntary_hold",
+          "polypharmacy_harm",
+          "restraint_seclusion"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "patient_advocacy"
+        ],
+        "conditions": []
+      },
+      "message": "This state has a Patient Bill of Rights for mental health facilities. Facilities must inform patients of these rights upon admission.",
+      "statute": "Indiana Mental Health Patient Rights Act",
+      "bundle_pairings": [
+        "mental_health",
+        "legal_aid"
+      ]
+    },
+    {
+      "flag_id": "in_mh_discharge_planning",
+      "title": "Discharge Planning Requirements",
+      "severity": "info",
+      "trigger": {
+        "pipelines": [
+          "discharge_failure"
+        ],
+        "benefit_categories": [
+          "mental_health",
+          "case_management"
+        ],
+        "conditions": []
+      },
+      "message": "This state requires facilities to create discharge plans with follow-up appointments, medication management, and community resource referrals.",
+      "statute": "Indiana Mental Health Discharge Planning Standards",
+      "bundle_pairings": [
+        "mental_health",
+        "housing"
+      ]
+    }
+  ]
+}

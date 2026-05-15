@@ -1,0 +1,263 @@
+{
+  "meta": {
+    "state": "CA",
+    "state_name": "California",
+    "layer": "workflow_overrides",
+    "version": "1.0.0",
+    "date_created": "2026-03-06",
+    "date_verified": "2026-03-06",
+    "source": "Luminari CA Registry v1.0 \u2014 Northwest Hope Foundation",
+    "workflow_count": 4,
+    "disclaimer": "General guidance \u2014 not legal advice. Deadlines are statutory and must be respected. Californians facing legal deadlines should contact LAFLA (800-399-4529) or local legal aid immediately."
+  },
+  "workflow_overrides": [
+    {
+      "workflow_id": "tenant_rights_workflow",
+      "pipeline_id": "tenant_rights",
+      "also_covers": [
+        "housing_violation"
+      ],
+      "situation": "Landlord fails to make repairs, shuts off utilities, or retaliates against tenant",
+      "ca_statute": "CA Civil Code \u00a71941\u20131942.5; CCP \u00a71161 (unlawful detainer)",
+      "lenses": [
+        "safety_risk",
+        "regulatory_compliance"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "action": "Document",
+          "description": "Photograph all violations with timestamps. Keep all landlord communications in writing. Note health impacts, dates discovered, temperatures if heat issue.",
+          "documents_needed": "Photos, texts/emails, notes with dates \u2014 keep copies off-site",
+          "agency_contact": "Your own records",
+          "deadline": "Immediately \u2014 creates evidence base"
+        },
+        {
+          "step": 2,
+          "action": "Notify landlord",
+          "description": "Send written notice (certified mail + keep copy) citing Civil Code \u00a71941. Give reasonable time to repair \u2014 30 days for non-urgent, less for urgent habitability.",
+          "documents_needed": "Written notice citing Civil Code \u00a71941",
+          "agency_contact": "Landlord via certified mail + text/email \u2014 document delivery",
+          "deadline": "Required step before most legal remedies"
+        },
+        {
+          "step": 3,
+          "action": "Contact local agency",
+          "description": "File complaint with local code enforcement or housing inspection. LA City: 213-808-8808 (LAHD). SF: 415-558-6220. Other cities: call 211 for local building dept.",
+          "documents_needed": "Photos + written complaint",
+          "agency_contact": "LA: 213-808-8808; SF: 415-558-6220; Other: 211",
+          "deadline": "Within days \u2014 urgent health/safety prioritized"
+        },
+        {
+          "step": 4,
+          "action": "Seek legal help",
+          "description": "Contact local legal aid. LA: LAFLA (800-399-4529) or Bet Tzedek (323-939-0506). Bay Area: Bay Area Legal Aid (415-982-1300). Under CC \u00a71942: rent withholding or repair-and-deduct after written notice.",
+          "documents_needed": "All documentation from steps 1\u20133",
+          "agency_contact": "LA: LAFLA 800-399-4529; Bay Area: BALA 415-982-1300; Statewide: lawhelpca.org",
+          "deadline": "If landlord does not repair after notice + reasonable time"
+        },
+        {
+          "step": 5,
+          "action": "Retaliation protection",
+          "description": "If landlord retaliates (raises rent, serves eviction notice) within 180 days of complaint, retaliation is presumed illegal under Civil Code \u00a71942.5. Document timeline carefully.",
+          "documents_needed": "All documentation + timeline of retaliation",
+          "agency_contact": "Legal aid + LAHD or local housing authority",
+          "deadline": "Retaliation presumed unlawful within 180 days of protected activity \u2014 CC \u00a71942.5"
+        },
+        {
+          "step": 6,
+          "action": "Escalate if unresolved",
+          "description": "File complaint with CA Attorney General (800-952-5225). If rent control jurisdiction (LA, SF, Oakland), file with local rent board. HUD Fair Housing if discrimination involved.",
+          "documents_needed": "Full documentation package",
+          "agency_contact": "CA AG: 800-952-5225; LA Rent Board: 213-808-8888; SF Rent Board: 415-252-4600",
+          "deadline": "If code enforcement or local agency does not respond within 30 days"
+        }
+      ]
+    },
+    {
+      "workflow_id": "wage_theft_workflow",
+      "pipeline_id": "wage_theft",
+      "also_covers": [],
+      "situation": "Employer fails to pay wages, overtime, minimum wage, final paycheck, or illegally deducts wages",
+      "ca_statute": "CA Labor Code \u00a7200\u2013244 (wages); \u00a7510 (overtime); \u00a71194 (minimum wage private right of action)",
+      "lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "action": "Document wages owed",
+          "description": "Gather pay stubs, time records, offer letter, schedules. Calculate all unpaid amounts: regular wages, overtime (1.5x after 8 hrs/day or 40 hrs/wk in CA), missed meal/rest break premiums, final paycheck delays.",
+          "documents_needed": "Pay stubs, time records, offer letter, schedule",
+          "agency_contact": "Personal records",
+          "deadline": "CA SOL: 3 years for unpaid wages (LC \u00a7338); 4 years for UCL claim \u2014 start immediately"
+        },
+        {
+          "step": 2,
+          "action": "Demand in writing",
+          "description": "Send written demand to employer. Keep copy. Final paycheck: CA requires same-day for termination, within 72 hours for resignation \u2014 every day late triggers 1 day waiting time penalty.",
+          "documents_needed": "Written demand letter with specific amounts",
+          "agency_contact": "Employer / HR",
+          "deadline": "Final pay waiting time penalty accrues daily \u2014 document demand immediately"
+        },
+        {
+          "step": 3,
+          "action": "File with DLSE (CA Labor Commissioner)",
+          "description": "File wage claim with CA Division of Labor Standards Enforcement (DLSE) / Labor Commissioner. Free. Claims conference usually within 30 days. DLSE can award wages + penalties + attorney's fees.",
+          "documents_needed": "Documentation from steps 1\u20132",
+          "agency_contact": "DLSE: 844-522-6734 / dir.ca.gov/dlse \u2014 file online or at local office",
+          "deadline": "3-year SOL for wages; 1-year for waiting time penalty \u2014 file promptly"
+        },
+        {
+          "step": 4,
+          "action": "File with federal DOL",
+          "description": "If federal FLSA applies, also file with Wage and Hour Division (WHD). CA overtime law is more generous than federal \u2014 pursue both when applicable.",
+          "documents_needed": "Same documentation",
+          "agency_contact": "WHD: 866-487-9243 / dol.gov/whd",
+          "deadline": "FLSA: 2-year SOL (3 if willful) \u2014 file simultaneously with DLSE"
+        },
+        {
+          "step": 5,
+          "action": "Small Claims Court option",
+          "description": "For claims up to $12,500, may file in Small Claims Court without attorney. DLSE process is usually preferable because DLSE has enforcement power.",
+          "documents_needed": "Documentation + demand letter",
+          "agency_contact": "Local Small Claims Court \u2014 courts.ca.gov/smallclaims",
+          "deadline": "Alternative to DLSE \u2014 simpler but limited remedies"
+        },
+        {
+          "step": 6,
+          "action": "Retaliation / private right of action",
+          "description": "If retaliated against for filing, contact legal aid. CA Labor Code \u00a71102.5 (whistleblower), \u00a798.6 (wage claim retaliation) \u2014 strong CA protections. CRLA for farmworkers (415-777-2752).",
+          "documents_needed": "Evidence of adverse action post-complaint",
+          "agency_contact": "DLSE: 844-522-6734; CRLA (farmworkers): 415-777-2752; LAFLA: 800-399-4529",
+          "deadline": "File retaliation complaint within 6 months of retaliatory act"
+        }
+      ]
+    },
+    {
+      "workflow_id": "benefits_denial_workflow",
+      "pipeline_id": "benefits_denial",
+      "also_covers": [
+        "snap_denial"
+      ],
+      "situation": "CalFresh, Medi-Cal, CalWORKs, or other DPSS/CDSS benefit denied, reduced, terminated, or changed",
+      "ca_statute": "Welfare and Institutions Code \u00a710950 (hearing rights); 22 CCR \u00a722-071 (Medi-Cal hearings)",
+      "lenses": [
+        "regulatory_compliance",
+        "procedural_timeliness"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "action": "Get denial in writing",
+          "description": "Obtain written notice of action (NOA) from county DPSS. NOA must state specific reason and appeal deadline. Do not miss deadline \u2014 it is statutory and strict.",
+          "documents_needed": "Notice of Action (NOA)",
+          "agency_contact": "County DPSS or benefitscal.com account",
+          "deadline": "Immediately \u2014 deadlines in NOA are strict"
+        },
+        {
+          "step": 2,
+          "action": "Request State Hearing",
+          "description": "Request State Hearing with CA Department of Social Services (CDSS) within 90 days of NOA date. Can request orally, in writing, or online. Request continued benefits simultaneously.",
+          "documents_needed": "Written or verbal request \u2014 reference NOA date",
+          "agency_contact": "CDSS: 800-952-5253 / benefitscal.com; or county DPSS office",
+          "deadline": "90 days from NOA \u2014 benefits continue during appeal if timely requested"
+        },
+        {
+          "step": 3,
+          "action": "Gather evidence",
+          "description": "Collect documents supporting eligibility: income records, medical documentation, housing records \u2014 anything refuting the denial reason.",
+          "documents_needed": "Documents specific to denial reason + provider documentation",
+          "agency_contact": "Personal records \u2014 request hearing date from CDSS",
+          "deadline": "Before hearing date"
+        },
+        {
+          "step": 4,
+          "action": "Seek legal help",
+          "description": "Contact local legal aid before hearing. LA: LAFLA (800-399-4529). Bay Area: BALA (415-982-1300). IHSS denials: Disability Rights CA (800-776-5746). Free representation available.",
+          "documents_needed": "NOA + your documentation",
+          "agency_contact": "LAFLA: 800-399-4529; BALA: 415-982-1300; DRC: 800-776-5746",
+          "deadline": "As soon as possible \u2014 legal aid calendars fill up quickly"
+        },
+        {
+          "step": 5,
+          "action": "State Hearing",
+          "description": "Hearing conducted by CDSS hearing officer. Present evidence. Bring advocate or attorney if possible. Decision binding on county.",
+          "documents_needed": "All documentation",
+          "agency_contact": "CDSS hearing \u2014 location or phone per hearing notice",
+          "deadline": "Attend all scheduled hearings or request continuance in advance"
+        },
+        {
+          "step": 6,
+          "action": "Escalate if adverse",
+          "description": "If hearing decision adverse, petition for writ of mandate in Superior Court within 30 days. File complaint with CDSS Director or Governor's Office for systemic errors.",
+          "documents_needed": "Hearing decision",
+          "agency_contact": "(with legal help); CA AG: 800-952-5225; Governor: 916-445-2841",
+          "deadline": "30 days from hearing decision for court appeal"
+        }
+      ]
+    },
+    {
+      "workflow_id": "insurance_claim_denial_workflow",
+      "pipeline_id": "insurance_claim_denial",
+      "also_covers": [],
+      "situation": "Health insurance claim denied in California \u2014 Medi-Cal managed care or private insurer",
+      "ca_statute": "CA Insurance Code \u00a710169; Health & Safety Code \u00a71368 (IMR); Insurance Code \u00a7790.03 (bad faith)",
+      "lenses": [
+        "regulatory_compliance",
+        "contract_analysis"
+      ],
+      "steps": [
+        {
+          "step": 1,
+          "action": "Document the denial",
+          "description": "Collect denial letter, EOB, original claim, all correspondence. Note exact denial language and reason code.",
+          "documents_needed": "Denial letter, EOB, original claim",
+          "agency_contact": "Personal records",
+          "deadline": "Immediately \u2014 appeal deadlines are strict"
+        },
+        {
+          "step": 2,
+          "action": "Internal appeal",
+          "description": "File internal appeal with plan/insurer. ACA plans: 180 days from denial. Medi-Cal managed care: file grievance with plan within 60 days.",
+          "documents_needed": "Appeal letter, medical records, physician letter of medical necessity",
+          "agency_contact": "Insurer internal appeal per denial notice; Medi-Cal: plan grievance line",
+          "deadline": "ACA: 180 days. Medi-Cal managed care plan: 60 days."
+        },
+        {
+          "step": 3,
+          "action": "Independent Medical Review (IMR)",
+          "description": "California-specific: request Independent Medical Review through CA Dept of Managed Health Care (DMHC). Free, binding, fast (within 30 days). Available for medical necessity denials. IMR is CA's strongest tool.",
+          "documents_needed": "Internal appeal denial + all medical records",
+          "agency_contact": "DMHC Help Center: 888-466-2219 / HealthHelp.ca.gov",
+          "deadline": "Within 6 months of internal denial"
+        },
+        {
+          "step": 4,
+          "action": "File DMHC complaint",
+          "description": "File complaint with CA Dept of Managed Health Care (for HMOs/managed care) or CA Dept of Insurance (for PPO/indemnity plans). Documents pattern.",
+          "documents_needed": "All denial + appeal documentation",
+          "agency_contact": "DMHC: 888-466-2219 / HealthHelp.ca.gov; CDI: 800-927-4357 / insurance.ca.gov",
+          "deadline": "Any time \u2014 does not affect IMR rights"
+        },
+        {
+          "step": 5,
+          "action": "Medi-Cal-specific escalation",
+          "description": "Medi-Cal managed care members: request State Hearing with CDSS (800-952-5253) if plan grievance fails. CDSS State Hearing independent of managed care plan.",
+          "documents_needed": "All documentation",
+          "agency_contact": "CDSS: 800-952-5253 / benefitscal.com",
+          "deadline": "If plan grievance process fails \u2014 request within 90 days of denial"
+        },
+        {
+          "step": 6,
+          "action": "Legal help / bad faith",
+          "description": "Contact Disability Rights CA (800-776-5746) for disability-related denials. Bad faith insurance: private attorney. CA has strong bad faith laws (CC \u00a7790.03).",
+          "documents_needed": "Complete documentation package",
+          "agency_contact": "DRC: 800-776-5746; LAFLA: 800-399-4529; CA AG: 800-952-5225",
+          "deadline": "If IMR denied or pattern of denials \u2014 consult legal aid or private attorney"
+        }
+      ]
+    }
+  ]
+}
