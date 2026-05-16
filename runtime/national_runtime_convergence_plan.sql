@@ -6,7 +6,7 @@ select
   jurisdiction,
   count(*) as total_records,
   count(distinct statutory_authority) as authority_count,
-  max(created_at) as latest_record
+  max("createdAt") as latest_record
 from public.legal_enforcement_records
 group by jurisdiction;
 
@@ -24,9 +24,20 @@ from public.v_civic_map_runtime;
 
 create or replace view public.v_runtime_signal_scroll as
 select
-  row_number() over (order by created_at desc nulls last) as runtime_index,
+  row_number() over (order by coalesce("createdAt", now()) desc nulls last) as runtime_index,
   *
 from public.detected_signals;
+
+create or replace view public.v_case_law_display_runtime as
+select
+  id,
+  coalesce(case_name, citation) as display_title,
+  citation,
+  court,
+  summary,
+  source_url,
+  created_at
+from public.v_runtime_case_law;
 
 -- Renderer convergence standard:
 -- All major runtime surfaces should consume *_scroll_runtime
