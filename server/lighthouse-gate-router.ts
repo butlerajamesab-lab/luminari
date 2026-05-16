@@ -178,9 +178,9 @@ const worldRouter = router({
     ]);
     const nodes: any[] = [];
     for (const p of programs.items) nodes.push({ id: p.id?.toString() || `prog-${nodes.length}`, type: "program", jurisdiction: p.state_code || p.jurisdiction || "", domain: p.category || p.program_type || "", source_table: "registry_programs", source_id: p.id?.toString() || "", metadata: p });
-    for (const r of resources.items) nodes.push({ id: r.id?.toString() || `res-${nodes.length}`, type: "agency", jurisdiction: r.state_code || r.jurisdiction || "", domain: r.category || r.resource_type || "", source_table: "unified_resources", source_id: r.id?.toString() || "", metadata: r });
+    for (const r of resources.items) nodes.push({ id: r.id?.toString() || `res-${nodes.length}`, type: "agency", jurisdiction: r.stateCode || r.state_code || r.jurisdiction || "", domain: r.category || r.resourceType || r.resource_type || "", source_table: "unified_resources", source_id: r.id?.toString() || "", metadata: r });
     for (const j of jurisdictions.items) nodes.push({ id: j.id?.toString() || `jur-${nodes.length}`, type: "jurisdiction", jurisdiction: j.abbreviation || j.state_code || "", domain: "jurisdiction", source_table: "registry_jurisdictions", source_id: j.id?.toString() || "", metadata: j });
-    for (const s of signals.items) nodes.push({ id: s.id?.toString() || `sig-${nodes.length}`, type: "signal", jurisdiction: s.jurisdiction || "", domain: s.signal_type || "", source_table: "detected_signals", source_id: s.id?.toString() || "", metadata: s });
+    for (const s of signals.items) nodes.push({ id: s.id?.toString() || `sig-${nodes.length}`, type: "signal", jurisdiction: s.jurisdiction || "", domain: s.signalType || s.signal_type || "", source_table: "detected_signals", source_id: s.id?.toString() || "", metadata: s });
     for (const w of workflows.items) nodes.push({ id: w.id?.toString() || `wf-${nodes.length}`, type: "workflow", jurisdiction: "", domain: w.workflow_type || "", source_table: "registry_workflows", source_id: w.id?.toString() || "", metadata: w });
     return { nodes, edges: [] };
   }),
@@ -264,7 +264,7 @@ const adminDashboardRouter = router({
     for (const s of items) {
       const sev = s.severity || s.signal_strength || "moderate";
       sevMap[sev] = (sevMap[sev] || 0) + 1;
-      const cat = s.category || s.signal_type || "general";
+      const cat = s.category || s.signalType || s.signal_type || "general";
       catMap[cat] = (catMap[cat] || 0) + 1;
     }
     for (const [severity, count] of Object.entries(sevMap)) bySeverity.push({ severity, count });
@@ -514,14 +514,14 @@ const docketRouter = router({
 
 // ─── Civic Map Proof Endpoints ───
 async function buildCivicMapResourceProof() {
-  const r = await restSelect("unified_resources", { limit: 200, filters: [{ column: "resource_type", operator: "eq", value: "food_bank" }] });
+  const r = await restSelect("unified_resources", { limit: 200, filters: [{ column: "resourceType", operator: "eq", value: "food_bank" }] });
   const resources = r.items;
   const mapped = resources.filter((x: any) => x.lat != null && x.lon != null).length;
   return { ok: true, source: "atlas_lighthouse_resource_bridge_v1", resource_type: "food_bank", total: resources.length, mapped, unmapped: resources.length - mapped, resources };
 }
 
 async function buildDshsOfficeProof() {
-  const r = await restSelect("unified_resources", { limit: 200, filters: [{ column: "resource_type", operator: "eq", value: "benefits_office" }] });
+  const r = await restSelect("unified_resources", { limit: 200, filters: [{ column: "resourceType", operator: "eq", value: "benefits_office" }] });
   const offices = r.items;
   const mapped = offices.filter((x: any) => x.latitude != null || x.lat != null).length;
   return { ok: true, source: "normalized_civic_resource", total: offices.length, mapped, unmapped: offices.length - mapped, offices };
