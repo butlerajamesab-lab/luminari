@@ -453,7 +453,7 @@
       updateStatus('Loading unified civic infrastructure...');
       const { data: rows, error } = await supabaseClient
         .from('v_unified_civic_infrastructure')
-        .select('node_id,name,node_type,jurisdiction,domains,description,source_table');
+        .select('node_id,name,node_type,jurisdiction,phone,email,website,address,domains,description,filing_deadline,filing_url,source_table');
 
       if (error) throw error;
 
@@ -461,6 +461,8 @@
       const NODE_COLORS = {
         enforcement: '#a855f7',
         legal_aid: '#06b6d4',
+        court: '#ef4444',
+        advocacy: '#f97316',
         Federal: '#f59e0b',
         State: '#10b981',
         'Multi-state': '#3b82f6'
@@ -477,8 +479,14 @@
           city: row.jurisdiction,
           latitude: coords[0] + jitter.lat,
           longitude: coords[1] + jitter.lng,
+          phone: row.phone,
+          email: row.email,
+          website_url: row.website || row.filing_url,
+          address_line1: row.address,
           description: row.description,
-          complaint_types: row.domains
+          complaint_types: row.domains,
+          filing_deadline: row.filing_deadline,
+          filing_url: row.filing_url
         };
       });
 
@@ -669,8 +677,9 @@
         meta.textContent = `ENFORCEMENT • ${item.city || 'Federal'} • ${item.complaint_types || 'General'}`;
         body.innerHTML = renderEnforcementDetails(item);
       } else {
+        const nodeLabel = item.resource_type ? item.resource_type.replace(/_/g, ' ').toUpperCase() : 'RESOURCE';
         title.textContent = item.name || item.organization_name || 'Unnamed Resource';
-        meta.textContent = `RESOURCE • ${item.city || 'Unknown'} • ID: ${shortId(item.id)}`;
+        meta.textContent = `${nodeLabel} • ${item.city || 'Unknown'} • ${item.source_table || ''}`;
         body.innerHTML = renderResourceDetails(item);
       }
     }
@@ -678,8 +687,8 @@
     function renderEnforcementDetails(item) {
       const desc = item.description || '';
       const lines = desc.split('\n').filter(l => l.trim());
-      const phoneMatch = desc.match(/(\d{3}[-.]\d{3}[-.]\d{4})/);
-      const urlMatch = desc.match(/(https?:\/\/[^\s]+|[a-z]+\.gov\/[^\s]*)/);
+      const phoneMatch = item.phone ? [null, item.phone] : desc.match(/(\d{3}[-.]\d{3}[-.]\d{4})/);
+      const urlMatch = item.website_url ? [item.website_url] : (item.filing_url ? [item.filing_url] : desc.match(/(https?:\/\/[^\s]+|[a-z]+\.gov\/[^\s]*)/));
       return `
         <div class="section">
           <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
@@ -713,33 +722,37 @@
     }
 
     function renderResourceDetails(item) {
-      const categories = toArray(item.service_categories);
-      const website = item.website_url || '';
+      const categories = toArray(item.service_categories || item.complaint_types);
+      const website = item.website_url || item.filing_url || '';
+      const nodeTypeLabel = (item.resource_type || 'resource').replace(/_/g, ' ');
       return `
         <div class="section">
           <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
-            <span class="tag resource">Benefits Office</span>
-            <span class="tag medium">${escapeHtml(item.city || 'Unknown City')}</span>
-            ${item.hours ? '<span class="tag national">Hours Listed</span>' : ''}
-            ${!item.phone ? '<span class="tag signal">Phone Missing</span>' : ''}
+            <span class="tag resource">${escapeHtml(nodeTypeLabel)}</span>
+            <span class="tag medium">${escapeHtml(item.city || 'Unknown')}</span>
+            ${item.phone ? '<span class="tag national">Phone Available</span>' : '<span class="tag signal">Phone Missing</span>'}
+            ${item.email ? '<span class="tag national">Email Available</span>' : ''}
           </div>
         </div>
         <div class="section">
           <div class="section-title"><i class="fas fa-info-circle"></i> Details</div>
           <div class="info-row"><span class="info-label">Organization</span><span>${escapeHtml(item.organization_name || item.name || 'Not listed')}</span></div>
-          <div class="info-row"><span class="info-label">Address</span><span>${escapeHtml(item.address_line1 || 'Not listed')}${item.city ? ', ' + escapeHtml(item.city) : ''}</span></div>
+          <div class="info-row"><span class="info-label">Jurisdiction</span><span>${escapeHtml(item.city || 'Not listed')}</span></div>
+          ${item.address_line1 ? `<div class="info-row"><span class="info-label">Address</span><span>${escapeHtml(item.address_line1)}</span></div>` : ''}
           <div class="info-row"><span class="info-label">Phone</span><span>${escapeHtml(item.phone || 'Not listed')}</span></div>
-          ${item.hours ? `<div class="info-row"><span class="info-label">Hours</span><span>${escapeHtml(item.hours)}</span></div>` : ''}
-          <div class="info-row"><span class="info-label">Resource Type</span><span>${escapeHtml(item.resource_type || 'benefits_office')}</span></div>
-          <div class="info-row"><span class="info-label">Coordinates</span><span>${Number(item.latitude).toFixed(4)}, ${Number(item.longitude).toFixed(4)}</span></div>
-          ${categories.length ? `<div class="info-row"><span class="info-label">Services</span><span>${categories.map(escapeHtml).join(', ')}</span></div>` : ''}
-          ${item.eligibility_summary ? `<div class="info-row"><span class="info-label">Eligibility</span><span>${escapeHtml(item.eligibility_summary)}</span></div>` : ''}
+          ${item.email ? `<div class="info-row"><span class="info-label">Email</span><span>${escapeHtml(item.email)}</span></div>` : ''}
+          ${website ? `<div class="info-row"><span class="info-label">Website</span><span><a href="${escapeAttribute(website)}" target="_blank" style="color: var(--accent);">${escapeHtml(website)}</a></span></div>` : ''}
+          ${item.filing_deadline ? `<div class="info-row"><span class="info-label">Filing Deadline</span><span style="color: var(--danger); font-weight: 600;">${escapeHtml(item.filing_deadline)}</span></div>` : ''}
+          <div class="info-row"><span class="info-label">Type</span><span>${escapeHtml(nodeTypeLabel)}</span></div>
+          <div class="info-row"><span class="info-label">Source</span><span>${escapeHtml(item.source_table || 'unknown')}</span></div>
+          ${categories.length ? `<div class="info-row"><span class="info-label">Domains</span><span>${categories.map(escapeHtml).join(', ')}</span></div>` : ''}
+          ${item.description ? `<div class="info-row"><span class="info-label">Notes</span><span style="font-size: 12px; line-height: 1.5;">${escapeHtml(item.description).substring(0, 300)}${item.description.length > 300 ? '...' : ''}</span></div>` : ''}
         </div>
         <div class="section">
           <div class="section-title"><i class="fas fa-bolt"></i> Actions</div>
           <div class="action-grid">
-            <a class="action-btn primary" href="tel:${encodeURIComponent(item.phone || '')}" onclick="return ${item.phone ? 'true' : 'false'}"><i class="fas fa-phone"></i> Call</a>
-            <a class="action-btn" href="https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}" target="_blank" rel="noopener"><i class="fas fa-directions"></i> Directions</a>
+            ${item.phone ? `<a class="action-btn primary" href="tel:${encodeURIComponent(item.phone)}"><i class="fas fa-phone"></i> Call</a>` : `<button class="action-btn" onclick="updateStatus('No phone listed')"><i class="fas fa-phone"></i> Call</button>`}
+            ${item.email ? `<a class="action-btn" href="mailto:${encodeURIComponent(item.email)}"><i class="fas fa-envelope"></i> Email</a>` : ''}
             ${website ? `<a class="action-btn" href="${escapeAttribute(website)}" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Website</a>` : `<button class="action-btn" onclick="updateStatus('No website listed')"><i class="fas fa-globe"></i> Website</button>`}
             <button class="action-btn" onclick="showRelated('${escapeAttribute(item.id)}', 'resources')"><i class="fas fa-link"></i> Related</button>
           </div>
