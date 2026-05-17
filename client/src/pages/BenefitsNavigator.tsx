@@ -822,7 +822,7 @@ export default function BenefitsNavigator() {
 
   // Augment with DB registry programs when browsing a category
   const { data: registryPrograms } = trpc.canonicalRegistry.searchPrograms.useQuery(
-    { query: browseCategoryKeyword ?? "", state: selectedState ?? undefined, limit: 20 },
+    { query: browseCategoryKeyword ?? "", state: selectedState ?? undefined },
     { enabled: !!browseCategoryKeyword && browseCategoryKeyword.length > 0 },
   );
 

@@ -99,7 +99,6 @@ export default function LegalLibrary() {
       query: searchQuery || undefined,
       domain: selectedDomain || undefined,
       jurisdiction: selectedJurisdiction || undefined,
-      limit: 20,
     },
     { enabled: activeTab === "statutes" }
   );
@@ -110,14 +109,13 @@ export default function LegalLibrary() {
       query: searchQuery || undefined,
       domain: selectedDomain || undefined,
       jurisdiction: selectedJurisdiction || undefined,
-      limit: 20,
     },
     { enabled: activeTab === "case_law" }
   );
 
   // List contradictions
   const contradictions = trpc.legalLibrary.listContradictions.useQuery(
-    { domain: selectedDomain || undefined, limit: 20 },
+    { domain: selectedDomain || undefined },
     { enabled: activeTab === "contradictions" }
   );
 
@@ -126,7 +124,6 @@ export default function LegalLibrary() {
     {
       domain: selectedDomain || undefined,
       jurisdiction: selectedJurisdiction || undefined,
-      limit: 20,
     },
     { enabled: activeTab === "enforcement" }
   );

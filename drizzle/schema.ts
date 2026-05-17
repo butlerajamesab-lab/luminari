@@ -2026,17 +2026,23 @@ export type LegalDefinitions = typeof legalDefinitions.$inferSelect;
 export type InsertLegalDefinitions = typeof legalDefinitions.$inferInsert;
 
 export const legalEnforcementRecords = pgTable("legal_enforcement_records", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  agencyName: text("agency_name"),
+  id: serial("id").primaryKey(),
   jurisdiction: text("jurisdiction"),
-  state: text("state"),
-  programArea: text("program_area"),
-  statutoryAuthority: text("statutory_authority"),
-  responseDeadline: text("response_deadline"),
-  patternDescription: text("pattern_description"),
-  metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
-  sourceUrl: text("source_url"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  agencyName: text("agencyName"),
+  complaintType: text("complaintType"),
+  domains: text("domains"),
+  statutoryRequirement: text("statutoryRequirement"),
+  statuteCitation: text("statuteCitation"),
+  outcome: text("outcome"),
+  requiredResponseDays: text("requiredResponseDays"),
+  observedResponseDays: text("observedResponseDays"),
+  patternDescription: text("patternDescription"),
+  dataSource: text("dataSource"),
+  periodStart: text("periodStart"),
+  periodEnd: text("periodEnd"),
+  addedBy: text("addedBy"),
+  createdAt: bigint("createdAt", { mode: "number" }),
+  updatedAt: bigint("updatedAt", { mode: "number" }),
 });
 
 export type LegalEnforcementRecord = typeof legalEnforcementRecords.$inferSelect;
