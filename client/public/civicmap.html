@@ -442,7 +442,7 @@
         await Promise.all([loadSignals(), loadNationalResources(), loadEnforcementAgencies()]);
         updateLayerLabels();
         fitVisibleBounds();
-        updateStatus(`Lighthouse Active — ${data.resources.length} resources, ${data.enforcement.length} enforcement agencies, ${data.signals.length} signals, ${data.national.length} national references`);
+        updateStatus(`Lighthouse Active — ${data.resources.length} civic nodes, ${data.enforcement.length} enforcement agencies, ${data.signals.length} signals, ${data.national.length} national references`);
       } catch (error) {
         console.error('Lighthouse load error:', error);
         updateStatus('Lighthouse Active — some data failed to load');
@@ -450,18 +450,48 @@
     }
 
     async function loadResources() {
-      updateStatus('Loading Lighthouse resources...');
+      updateStatus('Loading unified civic infrastructure...');
       const { data: rows, error } = await supabaseClient
-        .from('normalized_civic_resource')
-        .select('id,name,resource_type,latitude,longitude,city,address_line1,phone,hours,service_categories,eligibility_summary,organization_name,website_url')
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null)
-        .order('name', { ascending: true });
+        .from('v_unified_civic_infrastructure')
+        .select('node_id,name,node_type,jurisdiction,domains,description,source_table');
 
       if (error) throw error;
-      data.resources = (rows || []).map(row => ({ ...row, latitude: Number(row.latitude), longitude: Number(row.longitude) }));
-      buildCityCoordinateIndex();
-      renderPins(data.resources, 'resources', '#22c55e', 14);
+
+      // Color map by node_type
+      const NODE_COLORS = {
+        enforcement: '#a855f7',
+        legal_aid: '#06b6d4',
+        Federal: '#f59e0b',
+        State: '#10b981',
+        'Multi-state': '#3b82f6'
+      };
+
+      data.resources = (rows || []).map((row, i) => {
+        const coords = STATE_CENTROIDS[row.jurisdiction] || [39.8283, -98.5795];
+        const jitter = deterministicJitter(row.node_id + (row.name || ''), 0.5);
+        return {
+          ...row,
+          id: row.node_id,
+          organization_name: row.name,
+          resource_type: row.node_type,
+          city: row.jurisdiction,
+          latitude: coords[0] + jitter.lat,
+          longitude: coords[1] + jitter.lng,
+          description: row.description,
+          complaint_types: row.domains
+        };
+      });
+
+      // Render by node_type with distinct colors
+      const byType = {};
+      data.resources.forEach(r => {
+        if (!byType[r.resource_type]) byType[r.resource_type] = [];
+        byType[r.resource_type].push(r);
+      });
+      Object.entries(byType).forEach(([type, items]) => {
+        const color = NODE_COLORS[type] || '#22c55e';
+        renderPins(items, 'resources', color, 12);
+      });
     }
 
     async function loadSignals() {
