@@ -3,8 +3,12 @@ import express from "express";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { lighthouseGateRouter } from "../lighthouse-gate-router";
+import { appRouter } from "../routers";
+import { createContext } from "./context";
+import { sessionMiddleware } from "./session-middleware";
 import aiInspectRouter from "../routes/ai-inspect-router";
+import { loadPipelineRegistry } from "../pipeline-resolver";
+import { loadLensRegistry } from "../lens-engine";
 import { serveStatic, setupVite } from "./vite";
 
 const SUPABASE_PROJECT = "wepxlinwbjrkqdzkqpar";
@@ -44,7 +48,7 @@ function registerOptionalIntegrationStubs(app: express.Express) {
     return res.status(503).json({
       ok: false,
       disabled: true,
-      message: "Stripe webhook handler is not enabled for the current Lighthouse backend-lock gate",
+      message: "Stripe webhook handler not enabled",
     });
   });
 
@@ -59,7 +63,7 @@ function registerOptionalIntegrationStubs(app: express.Express) {
     return res.status(503).json({
       ok: false,
       disabled: true,
-      message: "Stripe routes are outside the current Lighthouse backend-lock gate",
+      message: "Stripe routes not enabled",
     });
   });
 
@@ -67,7 +71,7 @@ function registerOptionalIntegrationStubs(app: express.Express) {
     return res.status(503).json({
       ok: false,
       disabled: true,
-      message: "OAuth routes are outside the current Lighthouse backend-lock gate",
+      message: "OAuth routes not enabled in this deployment",
     });
   });
 }
@@ -81,18 +85,15 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-  const createGateContext = ({ req, res }: { req: express.Request; res: express.Response }) => ({
-    req,
-    res,
-    user: null,
-    isSystem: false,
-  });
+  // Session middleware for auth — MUST run before tRPC
+  app.use(sessionMiddleware);
 
+  // tRPC API — full appRouter with all real endpoints
   app.use(
     "/api/trpc",
     createExpressMiddleware({
-      router: lighthouseGateRouter,
-      createContext: createGateContext,
+      router: appRouter,
+      createContext,
     })
   );
 
@@ -117,9 +118,11 @@ async function startServer() {
   }
 
   server.listen(port, () => {
-    console.log(`Lighthouse gate server running on http://localhost:${port}/`);
-    console.log(`[Startup] Lighthouse Supabase project: ${SUPABASE_PROJECT}`);
-    console.log("[Startup] Legacy MySQL/TiDB routers and background jobs are not loaded for this gate");
+    console.log(`Luminari server running on http://localhost:${port}/`);
+    console.log(`[Startup] Supabase project: ${SUPABASE_PROJECT}`);
+    // Load pipeline and lens registries (non-blocking)
+    try { loadPipelineRegistry(); console.log("[Startup] Pipeline registry loaded"); } catch (e) { console.error("[Startup] Pipeline registry error:", e); }
+    try { loadLensRegistry(); console.log("[Startup] Lens registry loaded"); } catch (e) { console.error("[Startup] Lens registry error:", e); }
   });
 
   process.on("SIGTERM", () => {
@@ -132,6 +135,6 @@ async function startServer() {
 }
 
 startServer().catch(error => {
-  console.error("[Startup] Lighthouse gate server failed:", error);
+  console.error("[Startup] Server failed:", error);
   process.exit(1);
 });
