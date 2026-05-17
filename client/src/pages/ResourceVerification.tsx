@@ -448,7 +448,7 @@ function ResourceList() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Domains</SelectItem>
-                {filterOptions?.domains.map((d: string) => (
+                {(filterOptions?.domains || []).map((d: string) => (
                   <SelectItem key={d} value={d}>
                     {d}
                   </SelectItem>

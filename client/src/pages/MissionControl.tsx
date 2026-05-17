@@ -4920,7 +4920,7 @@ function CoalitionIntelPanel() {
                   <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><Gauge className="h-3 w-3" /> {e.influenceScore}</span>
                     {e.state && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {e.state}</span>}
-                    {e.domains?.length > 0 && <span>{e.domains.slice(0, 2).join(", ")}</span>}
+                    {Array.isArray(e.domains) && e.domains.length > 0 && <span>{e.domains.slice(0, 2).join(", ")}</span>}
                   </div>
                 </div>
               ))}
@@ -4995,7 +4995,7 @@ function CoalitionIntelPanel() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-lg font-bold">Coalition Readiness Score</h3>
-                      <p className="text-sm text-muted-foreground">For {readinessQ.data.jurisdiction} / {readinessQ.data.domains.join(", ")}</p>
+                      <p className="text-sm text-muted-foreground">For {readinessQ.data.jurisdiction} / {(Array.isArray(readinessQ.data.domains) ? readinessQ.data.domains : []).join(", ")}</p>
                     </div>
                     <div className={`text-4xl font-bold font-mono ${
                       readinessQ.data.overallReadinessScore >= 70 ? "text-emerald-400" :

@@ -451,7 +451,7 @@ function EmptyState({ title, description, icon: Icon, extra }: { title: string; 
 
 function StatuteCard({ statute, navigate }: { statute: any; navigate: (path: string) => void }) {
   const [expanded, setExpanded] = useState(false);
-  const domains = statute.domains || [];
+  const domains = Array.isArray(statute.domains) ? statute.domains : (typeof statute.domains === "string" ? (() => { try { const p = JSON.parse(statute.domains); return Array.isArray(p) ? p : []; } catch { return []; } })() : []);
   return (
     <div style={{
       background: ll.cardBg, border: `1px solid ${ll.cardBorder}`,

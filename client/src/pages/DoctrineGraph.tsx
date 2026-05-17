@@ -588,7 +588,7 @@ export default function DoctrineGraph() {
                   <div style={{ marginTop: 8 }}>
                     <span style={{ color: c.muted, fontSize: 11 }}>Domains:</span>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
-                      {(selectedDetails.doctrine.domains as string[]).map((d, i) => (
+                      {(Array.isArray(selectedDetails.doctrine.domains) ? selectedDetails.doctrine.domains : []).map((d, i) => (
                         <span key={i} style={{
                           background: c.goldBg, border: `1px solid ${c.goldBorder}`,
                           borderRadius: 4, padding: "2px 6px", fontSize: 10, color: c.gold,
@@ -689,7 +689,7 @@ export default function DoctrineGraph() {
                   {d.description.length > 150 ? d.description.slice(0, 147) + "..." : d.description}
                 </p>
                 <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                  {(d.domains as string[]).map((dom, i) => (
+                  {(Array.isArray(d.domains) ? d.domains : (typeof d.domains === "string" ? (() => { try { return JSON.parse(d.domains); } catch { return []; } })() : [])).map((dom, i) => (
                     <span key={i} style={{
                       background: c.goldBg, border: `1px solid ${c.goldBorder}`,
                       borderRadius: 4, padding: "1px 6px", fontSize: 10, color: c.gold,

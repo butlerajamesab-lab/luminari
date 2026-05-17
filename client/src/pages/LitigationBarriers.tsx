@@ -355,7 +355,7 @@ export default function LitigationBarriers() {
                             Affected Domains
                           </span>
                           <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}>
-                            {(b.domains as string[]).map((d, i) => (
+                            {(Array.isArray(b.domains) ? b.domains : (typeof b.domains === "string" ? (() => { try { const p = JSON.parse(b.domains); return Array.isArray(p) ? p : []; } catch { return []; } })() : [])).map((d, i) => (
                               <span key={i} style={{
                                 background: c.goldBg, border: `1px solid ${c.goldBorder}`,
                                 borderRadius: 4, padding: "2px 8px", fontSize: 11, color: c.gold,
