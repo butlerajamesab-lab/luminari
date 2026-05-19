@@ -1430,11 +1430,17 @@ export type InsertCivilGideonDirectory = typeof civilGideonDirectory.$inferInser
 
 export const claimElementMatrix = pgTable("claim_element_matrix", {
   id: uuid("id").defaultRandom().primaryKey(),
-  claimType: text("claim_type").notNull(),
-  elementName: text("element_name").notNull(),
-  burdenStandard: text("burden_standard"),
-  metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  claimType: text("claimType").notNull(),
+  domain: text("domain"),
+  elementName: text("elementName").notNull(),
+  elementDescription: text("elementDescription"),
+  elementOrder: integer("elementOrder"),
+  evidenceTypes: jsonb("evidenceTypes"),
+  strengthIndicators: jsonb("strengthIndicators"),
+  commonWeaknesses: jsonb("commonWeaknesses"),
+  relatedAgency: text("relatedAgency"),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }),
 });
 
 export type ClaimElement = typeof claimElementMatrix.$inferSelect;
@@ -1676,11 +1682,13 @@ export type InsertDeterminismChecks = typeof determinismChecks.$inferInsert;
 
 export const doctrineRegistry = pgTable("doctrine_registry", {
   id: uuid("id").defaultRandom().primaryKey(),
-  doctrineName: text("doctrine_name").notNull(),
-  jurisdiction: text("jurisdiction"),
-  doctrineText: text("doctrine_text"),
-  metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  primaryCases: jsonb("primaryCases"),
+  domains: jsonb("domains"),
+  addedBy: text("addedBy"),
+  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true }),
 });
 
 export type DoctrineRegistryEntry = typeof doctrineRegistry.$inferSelect;
@@ -2002,7 +2010,15 @@ export type InsertInvestigativeJobs = typeof investigativeJobs.$inferInsert;
 export const legalCaseLaw = pgTable("legal_case_law", {
   id: uuid("id").defaultRandom().primaryKey(),
   citation: text("citation").notNull(),
+  caseName: text("case_name"),
   jurisdiction: text("jurisdiction"),
+  domains: jsonb("domains"),
+  yearDecided: text("year_decided"),
+  court: text("court"),
+  summary: text("summary"),
+  keyQuotes: jsonb("key_quotes"),
+  sourceUrl: text("source_url"),
+  verificationStatus: text("verification_status"),
   title: text("title"),
   opinionText: text("opinion_text"),
   metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
@@ -2065,7 +2081,17 @@ export type InsertLegalStatuteKeyText = typeof legalStatuteKeyText.$inferInsert;
 export const legalStatutes = pgTable("legal_statutes", {
   id: uuid("id").defaultRandom().primaryKey(),
   citation: text("citation").notNull(),
+  shortTitle: text("short_title"),
   jurisdiction: text("jurisdiction"),
+  domains: jsonb("domains"),
+  effectiveDate: text("effective_date"),
+  lastAmended: text("last_amended"),
+  summary: text("summary"),
+  verbatimKeyText: text("verbatim_key_text"),
+  sourceUrl: text("source_url"),
+  enforcementAgency: text("enforcement_agency"),
+  statuteOfLimitations: text("statute_of_limitations"),
+  verificationStatus: text("verification_status"),
   title: text("title"),
   statuteText: text("statute_text"),
   metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),

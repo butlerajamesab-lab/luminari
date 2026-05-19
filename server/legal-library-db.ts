@@ -58,9 +58,8 @@ export async function searchStatutes(opts: {
   const conditions = [];
   if (opts.jurisdiction) conditions.push(eq(legalStatutes.jurisdiction, opts.jurisdiction));
   if (opts.sourceType) conditions.push(sql`${legalStatutes.metadata}->>'source_type' = ${opts.sourceType} OR ${legalStatutes.metadata}->>'connector' = ${opts.sourceType}`);
-  if (opts.query) conditions.push(textSearch(opts.query, legalStatutes.citation, legalStatutes.title, legalStatutes.statuteText, legalStatutes.metadata));
-  if (opts.domain) conditions.push(metadataContainsDomain(legalStatutes.metadata, opts.domain));
-
+  if (opts.query) conditions.push(textSearch(opts.query, legalStatutes.citation, legalStatutes.shortTitle, legalStatutes.title, legalStatutes.summary, legalStatutes.statuteText, legalStatutes.verbatimKeyText, legalStatutes.metadata));
+  if (opts.domain) conditions.push(sql`(${legalStatutes.domains}::text ILIKE ${"%" + opts.domain + "%"} OR COALESCE(${legalStatutes.metadata}::text, '') ILIKE ${"%" + opts.domain + "%"})`);
   const query = db.select().from(legalStatutes)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(legalStatutes.createdAt));
@@ -92,7 +91,13 @@ export async function deleteStatute(id: LegalRecordId) {
 export async function createCaseLaw(data: Omit<InsertLegalCaseLaw, "id" | "createdAt"> & Record<string, unknown>) {
   const [row] = await db.insert(legalCaseLaw).values({
     citation: String(data.citation ?? data.caseName ?? "Untitled case"),
+    caseName: (data.caseName as string | undefined) ?? (data.title as string | undefined) ?? null,
     jurisdiction: (data.jurisdiction as string | undefined) ?? (data.court as string | undefined) ?? null,
+    court: (data.court as string | undefined) ?? null,
+    yearDecided: (data.yearDecided as string | undefined) ?? null,
+    domains: data.domains ?? null,
+    summary: (data.holding as string | undefined) ?? (data.summary as string | undefined) ?? null,
+    keyQuotes: data.keyQuotes ?? null,
     title: (data.title as string | undefined) ?? (data.caseName as string | undefined) ?? null,
     opinionText: (data.opinionText as string | undefined) ?? (data.holding as string | undefined) ?? null,
     metadata: { ...data, court: data.court, created_via: "legal_library_router" },
@@ -116,8 +121,8 @@ export async function searchCaseLaw(opts: {
   const conditions = [];
   if (opts.jurisdiction) conditions.push(eq(legalCaseLaw.jurisdiction, opts.jurisdiction));
   if (opts.court) conditions.push(sql`(${legalCaseLaw.jurisdiction} ILIKE ${`%${opts.court}%`} OR ${legalCaseLaw.metadata}->>'court' ILIKE ${`%${opts.court}%`})`);
-  if (opts.query) conditions.push(textSearch(opts.query, legalCaseLaw.citation, legalCaseLaw.title, legalCaseLaw.opinionText, legalCaseLaw.metadata));
-  if (opts.domain) conditions.push(metadataContainsDomain(legalCaseLaw.metadata, opts.domain));
+  if (opts.query) conditions.push(textSearch(opts.query, legalCaseLaw.citation, legalCaseLaw.caseName, legalCaseLaw.title, legalCaseLaw.summary, legalCaseLaw.opinionText, legalCaseLaw.metadata));
+  if (opts.domain) conditions.push(sql`(${legalCaseLaw.domains}::text ILIKE ${"%" + opts.domain + "%"} OR COALESCE(${legalCaseLaw.metadata}::text, '') ILIKE ${"%" + opts.domain + "%"})`);
 
   return db.select().from(legalCaseLaw)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
@@ -238,7 +243,7 @@ export async function listContradictions(opts: {
 }) {
   const conditions = [];
   if (opts.jurisdiction) conditions.push(eq(legalContradictions.jurisdiction, opts.jurisdiction));
-  if (opts.domain) conditions.push(sql`${legalContradictions.domains} @> ${JSON.stringify([opts.domain])}::jsonb`);
+  if (opts.domain) conditions.push(sql`${legalContradictions.domains}::text ILIKE ${"%" + opts.domain + "%"}`);
   return db.select().from(legalContradictions)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(legalContradictions.updatedAt));
