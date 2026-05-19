@@ -557,6 +557,22 @@ function StatuteCard({ statute, navigate }: { statute: any; navigate: (path: str
             </div>
           )}
           <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+            {statute.sourceUrl && (
+              <a
+                href={statute.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  background: "rgba(96,165,250,0.1)", border: `1px solid rgba(96,165,250,0.3)`,
+                  borderRadius: 4, padding: "6px 12px", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 6,
+                  fontFamily: fontMono, fontSize: 10, color: "#60a5fa",
+                  textDecoration: "none",
+                }}
+              >
+                <ExternalLink size={10} /> View Source
+              </a>
+            )}
             <button
               onClick={() => navigate(`/lumensend?type=appeal&context=${encodeURIComponent(statute.citation)}`)}
               style={{

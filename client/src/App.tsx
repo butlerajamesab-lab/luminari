@@ -248,6 +248,7 @@ function App() {
                 <Route path="/category/:categoryId" component={CategoryLanding} />
                 <Route path="/doctrine-graph" component={DoctrineGraph} />
                 <Route path="/barriers" component={LitigationBarriers} />
+                <Route path="/litigation-barriers" component={LitigationBarriers} />
                 <Route path="/signal-registry" component={SignalRegistry} />
                 <Route path="/enforcement-intel" component={EnforcementIntel} />
                 <Route path="/deadline-calculator" component={DeadlineCalculator} />

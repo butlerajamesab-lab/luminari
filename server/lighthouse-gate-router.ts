@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { router, publicProcedure } from "./_core/trpc";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 
 const SUPABASE_PROJECT = "wepxlinwbjrkqdzkqpar";
 const DEFAULT_SUPABASE_URL = `https://${SUPABASE_PROJECT}.supabase.co`;
@@ -495,7 +497,18 @@ const analyticsRouter = router({
 // ─── Lighthouse Sub-Router ───
 const lighthouseSubRouter = router({
   suggestions: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), myVotes: publicProcedure.query(async () => []), create: publicProcedure.input(z.any()).mutation(async () => ({ id: "stub" })), vote: publicProcedure.input(z.any()).mutation(async () => ({ success: true })), unvote: publicProcedure.input(z.any()).mutation(async () => ({ success: true })) }),
-  categories: router({ list: publicProcedure.input(z.any().optional()).query(async () => []) }),
+  categories: router({ list: publicProcedure.input(z.any().optional()).query(async () => {
+    const rows = await db.execute(sql`SELECT harm_id, canonical_name, description FROM universal_harm_categories ORDER BY id`);
+    const routingRows = await db.execute(sql`SELECT routing_id, routing_name, domain FROM intake_routing_logic`);
+    return (rows.rows as any[]).map(r => ({
+      category: r.harm_id,
+      label: r.canonical_name,
+      description: r.description,
+      pipeline_count: routingRows.rows.length,
+      situation_count: 12,
+      pipelines: (routingRows.rows as any[]).map(p => ({ pipeline_id: p.routing_id, description: p.routing_name }))
+    }));
+  }) }),
   spotlight: router({ list: publicProcedure.input(z.any().optional()).query(async () => []) }),
   jobs: router({ list: publicProcedure.input(z.any().optional()).query(async () => []) }),
   posts: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), create: publicProcedure.input(z.any()).mutation(async () => ({ id: "stub" })) }),

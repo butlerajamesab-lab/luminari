@@ -30,6 +30,7 @@ export default function DeadlineCalculator() {
   const { isAuthenticated } = useAuth();
   const [incidentDate, setIncidentDate] = useState("");
   const [selectedAgency, setSelectedAgency] = useState<string>("");
+  const agencies = trpc.enforcementIntel.listAgencies.useQuery();
 
   const { data: deadlines, isLoading } = trpc.enforcementIntel.calculateDeadline.useQuery(
     { incidentDate, agencyShort: selectedAgency || undefined },
@@ -99,10 +100,15 @@ export default function DeadlineCalculator() {
                 }}
               >
                 <option value="">All Agencies</option>
-                <option value="EEOC">EEOC — Employment Discrimination</option>
-                <option value="HUD">HUD — Housing Discrimination</option>
-                <option value="OSHA">OSHA — Workplace Safety</option>
-                <option value="FTC">FTC — Consumer Protection</option>
+                {agencies.data && agencies.data.map((a: any) => (
+                  <option key={a.id} value={a.agencyName}>{a.agencyName}</option>
+                ))}
+                {!agencies.data && <>
+                  <option value="EEOC">EEOC</option>
+                  <option value="HUD">HUD</option>
+                  <option value="OSHA">OSHA</option>
+                  <option value="FTC">FTC</option>
+                </>}
               </select>
             </div>
           </div>

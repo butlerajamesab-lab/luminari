@@ -48,6 +48,7 @@ export default function InvestigationWorkflow() {
   const [hasDocuments, setHasDocuments] = useState(false);
   const [hasWitnesses, setHasWitnesses] = useState(false);
   const [generated, setGenerated] = useState(false);
+  const agencies = trpc.enforcementIntel.listAgencies.useQuery();
 
   const queryInput = useMemo(() => ({
     domain,
@@ -111,10 +112,15 @@ export default function InvestigationWorkflow() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Not specified</SelectItem>
-                  <SelectItem value="EEOC">EEOC</SelectItem>
-                  <SelectItem value="HUD">HUD</SelectItem>
-                  <SelectItem value="OSHA">OSHA</SelectItem>
-                  <SelectItem value="FTC">FTC</SelectItem>
+                  {agencies.data && (agencies.data as any[]).map((a: any) => (
+                    <SelectItem key={a.id} value={a.agencyName}>{a.agencyName}</SelectItem>
+                  ))}
+                  {!agencies.data && <>
+                    <SelectItem value="EEOC">EEOC</SelectItem>
+                    <SelectItem value="HUD">HUD</SelectItem>
+                    <SelectItem value="OSHA">OSHA</SelectItem>
+                    <SelectItem value="FTC">FTC</SelectItem>
+                  </>}
                 </SelectContent>
               </Select>
             </div>

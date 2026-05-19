@@ -43,6 +43,7 @@ export default function EnforcementPathway() {
       : { pipelineCategory: selectedPipeline };
 
   const pathway = trpc.enforcementIntel.getEnforcementPathway.useQuery(queryInput);
+  const allPathways = trpc.enforcementIntel.listAllPathways.useQuery();
 
   const [, navigate] = useLocation();
   return (
@@ -60,7 +61,7 @@ export default function EnforcementPathway() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Enforcement Pathway Models</h1>
         <p className="text-muted-foreground mt-1">
-          Four enforcement models: EEOC Charge, HUD Adjudication, OSHA Inspection, FTC Oversight. Select by agency, claim type, or pipeline category.
+          {allPathways.data ? allPathways.data.length : 4} enforcement pathway models across federal and state agencies. Select by agency, claim type, or pipeline category.
         </p>
       </div>
 
@@ -111,6 +112,31 @@ export default function EnforcementPathway() {
 
       {/* Pathway Results */}
       {pathway.isLoading && <p className="text-muted-foreground">Loading enforcement pathway...</p>}
+      {/* All Pathways from Database */}
+      {allPathways.data && allPathways.data.length > 0 && (
+        <Card className="border-0 bg-card/50">
+          <CardHeader>
+            <CardTitle className="text-lg">All Enforcement Pathways ({allPathways.data.length})</CardTitle>
+            <CardDescription>Complete database of enforcement pathway models including state labor boards</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-2 max-h-[500px] overflow-y-auto">
+              {allPathways.data.map((p: any) => (
+                <div key={p.id} className="p-3 rounded-lg border border-border/30 bg-muted/20 hover:bg-muted/40 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm truncate">{p.agencyName}</h4>
+                      <p className="text-xs text-muted-foreground mt-0.5">{p.pathwayType} · {p.jurisdiction} · {p.filingDeadline || 'No deadline'}</p>
+                    </div>
+                    <CommitToCase type="proceduralPath" pathLabel={p.agencyName} pathId={p.id} label="Use" size="sm" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {pathway.data && (
         <div className="space-y-6">
           {pathway.data.matchedBy !== "all" && (

@@ -334,7 +334,7 @@ export const caseStateRouter = router({
     .input(z.object({
       caseId: z.number(),
       signalId: z.number(),
-      signalType: z.enum(["structural", "evidentiary", "pattern", "resource"]).optional(),
+      signalType: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await verifyCaseOwnership(input.caseId, ctx.user.id);

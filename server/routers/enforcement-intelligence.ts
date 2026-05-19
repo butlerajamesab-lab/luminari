@@ -12,6 +12,7 @@ import {
   legalWeakJoints, legalContradictions, agencyAuthorityMap,
   agencyPerformanceMetrics, legalCaseLaw, checklistItems,
   detectedSignals, registrySignals, liveSignals, registryWorkflows,
+  enforcementPathwayModels,
 } from "../../drizzle/schema";
 import { eq, desc, sql, like, inArray, or, and } from "drizzle-orm";
 import { missingRecords } from "../../drizzle/schema";
@@ -122,7 +123,9 @@ export const enforcementIntelligenceRouter = router({
 
   // ═══ Signal Registry ═══
   listSignals: publicProcedure.query(async () => {
-    return db.select().from(signalRegistry).orderBy(signalRegistry.signalType);
+    return db.select().from(signalRegistry)
+      .where(sql`"signalType" NOT LIKE 'contradiction_%' AND "signalType" NOT LIKE 'missing_evidence_%' AND "signalType" NOT LIKE 'inconsistency_%'`)
+      .orderBy(signalRegistry.signalType);
   }),
 
   getSignal: publicProcedure
@@ -686,6 +689,27 @@ export const enforcementIntelligenceRouter = router({
           .filter(a => pathwayModels[a])
           .map(a => ({ agencyShort: a, ...pathwayModels[a] })),
       };
+    }),
+
+  // ═══ List ALL enforcement pathway models from DB ═══
+  listAllPathways: publicProcedure
+    .input(z.object({
+      jurisdiction: z.string().optional(),
+      domain: z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      const conditions: any[] = [];
+      if (input?.jurisdiction) conditions.push(sql`jurisdiction ILIKE ${'%' + input.jurisdiction + '%'}`);
+      if (input?.domain) conditions.push(sql`domain ILIKE ${'%' + input.domain + '%'}`);
+      const where = conditions.length > 0 ? (conditions.length === 1 ? conditions[0] : and(...conditions)) : undefined;
+      return db.select().from(enforcementPathwayModels).where(where).orderBy(enforcementPathwayModels.pathwayName);
+    }),
+
+  // ═══ List all agencies from agencies_registry (dynamic) ═══
+  listAgencies: publicProcedure
+    .query(async () => {
+      const results = await db.execute(sql`SELECT * FROM agencies_registry ORDER BY "agencyName"`);
+      return results.rows;
     }),
 
   // ═══════════════════════════════════════════════════════════════
