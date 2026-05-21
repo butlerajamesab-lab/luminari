@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-const aiInspectRouter = Router();
+export const aiInspectRouter = Router();
 
 const INSPECTION_MODE_ENABLED =
   process.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true" ||

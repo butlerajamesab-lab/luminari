@@ -6,7 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { sessionMiddleware } from "./session-middleware";
-import aiInspectRouter from "../routes/ai-inspect-router";
+import { aiInspectRouter } from "../routes/ai-inspect-router";
 import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";
 import { serveStatic, setupVite } from "./vite";
