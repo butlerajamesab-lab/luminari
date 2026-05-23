@@ -3,7 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch, useLocation } from "wouter";
 import { useEffect, useState } from "react";
-import { useAuth } from "./_core/hooks/useAuth";
+import { useAuth } from "@/core/hooks/useAuth";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { CaseProvider, useCase } from "./contexts/CaseContext";

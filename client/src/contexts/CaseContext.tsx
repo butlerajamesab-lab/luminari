@@ -1,5 +1,5 @@
 import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth } from "@/core/hooks/useAuth";
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 
 type CaseContextType = {

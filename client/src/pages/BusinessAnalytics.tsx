@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/_core/hooks/useAuth';
+import { useAuth } from '@/core/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 
 export default function BusinessAnalytics() {

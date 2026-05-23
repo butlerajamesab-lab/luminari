@@ -7,7 +7,7 @@
 
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth } from "@/core/hooks/useAuth";
 import {
   FileSearch,
   Download,

@@ -8,7 +8,7 @@
 
 import { trpc } from "@/lib/trpc";
 import { useRoute, useLocation } from "wouter";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth } from "@/core/hooks/useAuth";
 import {
   ArrowLeft,
   Download,

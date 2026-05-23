@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth } from "@/core/hooks/useAuth";
 import { useLocation } from "wouter";
 import { useWorldIndex, type WorldObject } from "@/hooks/useWorldIndex";
 import { Button } from "@/components/ui/button";

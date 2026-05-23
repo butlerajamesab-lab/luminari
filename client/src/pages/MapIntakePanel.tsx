@@ -11,7 +11,7 @@
  * 4. Action to initialize a full intake session
  */
 import { useState, useMemo } from "react";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth } from "@/core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import {

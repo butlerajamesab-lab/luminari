@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth } from "@/core/hooks/useAuth";
 import { CommitToCase } from "@/components/CommitToCase";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";

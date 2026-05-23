@@ -1,7 +1,7 @@
 // @ts-nocheck — pre-existing type drift, to be resolved in UI type alignment pass
 import { useState } from "react";
 import { useCase } from "@/contexts/CaseContext";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth } from "@/core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";

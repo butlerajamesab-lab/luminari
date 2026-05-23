@@ -1,4 +1,4 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth } from "@/core/hooks/useAuth";
 import { useCase } from "@/contexts/CaseContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {

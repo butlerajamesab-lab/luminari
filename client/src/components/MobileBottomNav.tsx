@@ -1,6 +1,6 @@
 import { useLocation } from "wouter";
 import { useCase } from "@/contexts/CaseContext";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useAuth } from "@/core/hooks/useAuth";
 import {
   Sheet,
   SheetContent,
