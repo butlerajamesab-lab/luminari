@@ -92,6 +92,7 @@ import KnowledgePopulation from "./pages/KnowledgePopulation";
 import CaseResolutionLens from "./pages/CaseResolutionLens";
 import StructuralDiagnosticsLens from "./pages/StructuralDiagnosticsLens";
 import Mudroom from "./pages/Mudroom";
+import Login from "./pages/Login";
 import WorkshopFloor from "./pages/WorkshopFloor";
 import WorkbenchDashboard from "./pages/WorkbenchDashboard";
 import EvidenceLab from "./pages/EvidenceLab";
@@ -134,7 +135,7 @@ function HomeOrWelcome() {
 
     if (!isAuthenticated) {
       // Not logged in → Mudroom (calm entry)
-      navigate("/mudroom", { replace: true });
+      navigate("/login", { replace: true });
       setChecked(true);
       return;
     }
@@ -267,6 +268,7 @@ function App() {
                 <Route path="/resolve" component={CaseResolutionLens} />
                 <Route path="/diagnostics" component={StructuralDiagnosticsLens} />
                 <Route path="/mudroom" component={Mudroom} />
+                <Route path="/login" component={Login} />
                 <Route path="/workshop" component={WorkshopFloor} />
                 <Route path="/workbench/:caseId" component={WorkbenchDashboard} />
                 <Route path="/workbench" component={WorkbenchDashboard} />
