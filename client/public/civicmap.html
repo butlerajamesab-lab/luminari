@@ -370,7 +370,7 @@
 
   <script>
     const SUPABASE_URL = 'https://wepxlinwbjrkqdzkqpar.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlcHhsaW53Ympya3FkemtxcGFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzM0OTUsImV4cCI6MjA5MDc0OTQ5NX0.TDEswS4JskimfZjpN-Rrph2Y6WiDUEwEcJXWKhlEWZk';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlcHhsaW53Ympya3FkemtxcGFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzM0OTUsImV4cCI6MjA5MDc0OTQ5NX0.bxpL_Rk1RVy0rHVj8hFNLXMDTBTgzIXECJ2fI9-aOhs';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const US_CENTER = [39.8283, -98.5795];
 
@@ -530,26 +530,26 @@
       updateStatus('Loading enforcement agencies...');
       const { data: rows, error } = await supabaseClient
         .from('legal_enforcement_records')
-        .select('id,jurisdiction,agencyName,complaintType,domains,statutoryRequirement,statuteCitation,outcome,patternDescription,dataSource,createdAt');
+        .select('id,jurisdiction,agency_name,complaint_type,domains,statutory_requirement,statute_citation,outcome,pattern_description,data_source,created_at');
 
       if (error) { console.error('Enforcement load error:', error); return; }
 
       data.enforcement = (rows || []).map((row, i) => {
         const coords = STATE_CENTROIDS[row.jurisdiction] || [39.8283, -98.5795];
-        const jitter = deterministicJitter(String(row.id) + (row.agencyName || ''), 0.6);
+        const jitter = deterministicJitter(String(row.id) + (row.agency_name || ''), 0.6);
         return {
           ...row,
           id: String(row.id),
-          name: row.agencyName || 'Unknown Agency',
-          organization_name: row.agencyName,
+          name: row.agency_name || 'Unknown Agency',
+          organization_name: row.agency_name,
           resource_type: 'enforcement_agency',
           city: row.jurisdiction,
           latitude: coords[0] + jitter.lat,
           longitude: coords[1] + jitter.lng,
-          description: row.patternDescription,
-          filing_deadline: row.statutoryRequirement,
-          complaint_types: row.complaintType,
-          source_url: row.dataSource,
+          description: row.pattern_description,
+          filing_deadline: row.statutory_requirement,
+          complaint_types: row.complaint_type,
+          source_url: row.data_source,
           escalation: row.outcome
         };
       });
@@ -688,7 +688,7 @@
     function renderEnforcementDetails(item) {
       const desc = item.description || '';
       const lines = desc.split('\n').filter(l => l.trim());
-      const phoneMatch = item.phone ? [null, item.phone] : desc.match(/(\d{3}[-.]\d{3}[-.]\d{4})/);
+      const phoneMatch = item.phone ? [null, item.phone] : desc.match(/(\d{3}[-.])\d{3}[-.])\d{4})/);
       const urlMatch = item.website_url ? [item.website_url] : (item.filing_url ? [item.filing_url] : desc.match(/(https?:\/\/[^\s]+|[a-z]+\.gov\/[^\s]*)/));
       return `
         <div class="section">
@@ -715,7 +715,7 @@
           <div class="section-title"><i class="fas fa-bolt"></i> Actions</div>
           <div class="action-grid">
             ${phoneMatch ? `<a class="action-btn primary" href="tel:${phoneMatch[1]}"><i class="fas fa-phone"></i> Call</a>` : `<button class="action-btn" onclick="updateStatus('No phone listed')"><i class="fas fa-phone"></i> Call</button>`}
-            ${urlMatch ? `<a class="action-btn" href="${urlMatch[0].startsWith('http') ? escapeAttribute(urlMatch[0]) : 'https://' + escapeAttribute(urlMatch[0])}" target="_blank" rel="noopener"><i class="fas fa-globe"></i> File Online</a>` : `<button class="action-btn" onclick="updateStatus('No URL listed')"><i class="fas fa-globe"></i> Website</button>`}
+            ${urlMatch ? `<a class="action-btn" href="${urlMatch[0].startsWith('http') ? escapeAttribute(urlMatch[0]) : 'https://' + escapeAttribute(urlMatch[0])}" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Website</a>` : `<button class="action-btn" onclick="updateStatus('No website listed')"><i class="fas fa-globe"></i> Website</button>`}
             <button class="action-btn" onclick="showRelated('${escapeAttribute(item.id)}', 'enforcement')"><i class="fas fa-link"></i> Related</button>
             <button class="action-btn danger" onclick="updateStatus('Deadline: ${escapeAttribute(item.filing_deadline || 'Unknown')}')"><i class="fas fa-clock"></i> SOL Alert</button>
           </div>
@@ -742,7 +742,7 @@
           ${item.address_line1 ? `<div class="info-row"><span class="info-label">Address</span><span>${escapeHtml(item.address_line1)}</span></div>` : ''}
           <div class="info-row"><span class="info-label">Phone</span><span>${escapeHtml(item.phone || 'Not listed')}</span></div>
           ${item.email ? `<div class="info-row"><span class="info-label">Email</span><span>${escapeHtml(item.email)}</span></div>` : ''}
-          ${website ? `<div class="info-row"><span class="info-label">Website</span><span><a href="${escapeAttribute(website)}" target="_blank" style="color: var(--accent);">${escapeHtml(website)}</a></span></div>` : ''}
+          ${website ? `<div class="info-row"><span class="info-label">Website</span><span><a href="${escapeAttribute(website)}" target="_blank" style="color: var(--accent);">${escapeHtml(website).substring(0, 50)}</a></span></div>` : ''}
           ${item.filing_deadline ? `<div class="info-row"><span class="info-label">Filing Deadline</span><span style="color: var(--danger); font-weight: 600;">${escapeHtml(item.filing_deadline)}</span></div>` : ''}
           <div class="info-row"><span class="info-label">Type</span><span>${escapeHtml(nodeTypeLabel)}</span></div>
           <div class="info-row"><span class="info-label">Source</span><span>${escapeHtml(item.source_table || 'unknown')}</span></div>
@@ -752,9 +752,9 @@
         <div class="section">
           <div class="section-title"><i class="fas fa-bolt"></i> Actions</div>
           <div class="action-grid">
-            ${item.phone ? `<a class="action-btn primary" href="tel:${encodeURIComponent(item.phone)}"><i class="fas fa-phone"></i> Call</a>` : `<button class="action-btn" onclick="updateStatus('No phone listed')"><i class="fas fa-phone"></i> Call</button>`}
+            ${item.phone ? `<a class="action-btn primary" href="tel:${encodeURIComponent(item.phone)}"><i class="fas fa-phone"></i> Call</a>` : `<button class="action-btn" onclick="updateStatus('No phone available')"><i class="fas fa-phone"></i> Call</button>`}
             ${item.email ? `<a class="action-btn" href="mailto:${encodeURIComponent(item.email)}"><i class="fas fa-envelope"></i> Email</a>` : ''}
-            ${website ? `<a class="action-btn" href="${escapeAttribute(website)}" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Website</a>` : `<button class="action-btn" onclick="updateStatus('No website listed')"><i class="fas fa-globe"></i> Website</button>`}
+            ${website ? `<a class="action-btn" href="${escapeAttribute(website)}" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Website</a>` : `<button class="action-btn" onclick="updateStatus('No website available')"><i class="fas fa-globe"></i> Website</button>`}
             <button class="action-btn" onclick="showRelated('${escapeAttribute(item.id)}', 'resources')"><i class="fas fa-link"></i> Related</button>
           </div>
         </div>
@@ -791,7 +791,7 @@
         </div>
         <div class="section">
           <div class="section-title"><i class="fas fa-info-circle"></i> What This Means</div>
-          <p style="font-size: 13px; line-height: 1.6; color: var(--muted);">This signal represents a detected civic-service condition from Lighthouse. Signals are placed by extracting the city from the signal description and matching it to known benefits office coordinates when possible; otherwise, they are deterministically jittered around the Washington state center.</p>
+          <p style="font-size: 13px; line-height: 1.6; color: var(--muted);">This signal represents a detected civic-service condition from Lighthouse. Signals are placed by extracting the city from the signal description and jittering slightly for privacy. Severity indicates confidence level.</p>
         </div>
         <div class="section">
           <div class="section-title"><i class="fas fa-bolt"></i> Actions</div>
@@ -858,7 +858,7 @@
       const q = queryText || '';
       return data.national
         .map(resource => {
-          const text = [resource.resource_name, resource.resource_type, resource.service_category, resource.jurisdiction, resource.metadata].map(value => typeof value === 'object' ? JSON.stringify(value) : value).filter(Boolean).join(' ').toLowerCase();
+          const text = [resource.resource_name, resource.resource_type, resource.service_category, resource.jurisdiction, resource.metadata].map(value => typeof value === 'object' ? JSON.stringify(value) : String(value || '')).join(' ').toLowerCase();
           const score = q.split(/\s+/).filter(token => token.length > 3 && text.includes(token)).length;
           return { ...resource, _score: score };
         })
@@ -889,8 +889,8 @@
           <div class="section-title"><i class="fas fa-bolt"></i> Actions</div>
           <div class="action-grid">
             <a class="action-btn primary" href="tel:${encodeURIComponent(resource.phone || '')}" onclick="return ${resource.phone ? 'true' : 'false'}"><i class="fas fa-phone"></i> Call</a>
-            ${resource.website ? `<a class="action-btn" href="${escapeAttribute(resource.website)}" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Website</a>` : `<button class="action-btn" onclick="updateStatus('No website listed')"><i class="fas fa-globe"></i> Website</button>`}
-            ${resource.source_url ? `<a class="action-btn" href="${escapeAttribute(resource.source_url)}" target="_blank" rel="noopener"><i class="fas fa-link"></i> Source</a>` : `<button class="action-btn" onclick="updateStatus('No source URL listed')"><i class="fas fa-link"></i> Source</button>`}
+            ${resource.website ? `<a class="action-btn" href="${escapeAttribute(resource.website)}" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Website</a>` : `<button class="action-btn" onclick="updateStatus('No website available')"><i class="fas fa-globe"></i> Website</button>`}
+            ${resource.source_url ? `<a class="action-btn" href="${escapeAttribute(resource.source_url)}" target="_blank" rel="noopener"><i class="fas fa-link"></i> Source</a>` : `<button class="action-btn" onclick="updateStatus('No source URL available')"><i class="fas fa-link"></i> Source</button>`}
             <button class="action-btn" onclick="loadSystemView()"><i class="fas fa-project-diagram"></i> System</button>
           </div>
         </div>`;
@@ -919,7 +919,7 @@
       document.getElementById('sbBody').innerHTML = `
         <div class="section">
           <div class="section-title"><i class="fas fa-sitemap"></i> Case Chain Overview</div>
-          <p style="font-size: 14px; line-height: 1.6; margin-bottom: 16px;">This Lighthouse view contains <strong>${signals.length} signals</strong>, <strong>${data.resources.length} local benefits-office resources</strong>, and <strong>${data.national.length} national reference resources</strong>.</p>
+          <p style="font-size: 14px; line-height: 1.6; margin-bottom: 16px;">This Lighthouse view contains <strong>${signals.length} signals</strong>, <strong>${data.resources.length} local benefit programs</strong>, and <strong>${data.national.length} national reference resources</strong>. Use this to plan intervention paths.</p>
           <div class="info-row"><span class="info-label">Resources</span><span>${data.resources.length}</span></div>
           <div class="info-row"><span class="info-label">Signals</span><span>${signals.length}</span></div>
           <div class="info-row"><span class="info-label">National References</span><span>${data.national.length}</span></div>
@@ -927,7 +927,7 @@
         </div>
         <div class="section">
           <div class="section-title"><i class="fas fa-list"></i> Signal Types</div>
-          ${Object.entries(counts).map(([type, count]) => `<div class="related-item"><div style="display: flex; justify-content: space-between;"><span>${escapeHtml(type)}</span><span>${count}</span></div></div>`).join('') || '<div style="color: var(--muted);">No active signals.</div>'}
+          ${Object.entries(counts).map(([type, count]) => `<div class="related-item"><div style="display: flex; justify-content: space-between;"><span>${escapeHtml(type)}</span><span>${count}</span></div></div>`).join('')}
         </div>
         <div class="section">
           <div class="section-title"><i class="fas fa-database"></i> Active Signals</div>
@@ -985,7 +985,7 @@
     }
 
     function searchableText(item) {
-      return [item.name, item.organization_name, item.resource_type, item.city, item.address_line1, item.phone, item.hours, item.service_categories, item.eligibility_summary, item.signal_type, item.signal_description, item.description, item.severity, item.complaint_types, item.filing_deadline, item.escalation, item.domains, item.jurisdiction]
+      return [item.name, item.organization_name, item.resource_type, item.city, item.address_line1, item.phone, item.hours, item.service_categories, item.eligibility_summary, item.signal_type, item.description]
         .map(value => Array.isArray(value) ? value.join(' ') : value)
         .filter(Boolean)
         .join(' ')
@@ -1001,98 +1001,78 @@
       recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = 'en-US';
-      recognition.onresult = event => {
-        const command = event.results[0][0].transcript.toLowerCase();
-        document.getElementById('voiceText').textContent = `"${command}"`;
-        setTimeout(() => {
-          document.getElementById('voiceOverlay').classList.remove('active');
-          processVoiceCommand(command);
-        }, 1000);
+      recognition.onstart = () => {
+        document.getElementById('btnVoice').classList.add('listening');
+        document.getElementById('voiceOverlay').classList.add('active');
       };
-      recognition.onerror = () => {
-        document.getElementById('voiceText').textContent = 'Error. Try again.';
-        setTimeout(() => document.getElementById('voiceOverlay').classList.remove('active'), 1500);
+      recognition.onend = () => {
+        document.getElementById('btnVoice').classList.remove('listening');
+        document.getElementById('voiceOverlay').classList.remove('active');
       };
-      recognition.onend = () => document.getElementById('btnVoice').classList.remove('listening');
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event.results).map(result => result[0].transcript).join('');
+        const cmd = transcript.toLowerCase();
+        if (cmd.includes('explain')) loadSystemView();
+        else if (cmd.includes('show related')) showRelated(currentSelection?.item?.id, currentSelection?.type);
+        else if (cmd.includes('show location')) showLocation(currentSelection?.item?.id);
+        else if (cmd.includes('show blockers') && currentSelection?.type === 'resources') document.getElementById('blockersSection')?.scrollIntoView({ behavior: 'smooth' });
+        else updateStatus(`Voice: "${transcript}"`);
+      };
     }
 
     function toggleVoice() {
-      if (!recognition) return;
-      const overlay = document.getElementById('voiceOverlay');
-      const btn = document.getElementById('btnVoice');
-      if (overlay.classList.contains('active')) {
-        recognition.stop();
-        overlay.classList.remove('active');
-        btn.classList.remove('listening');
-      } else {
-        overlay.classList.add('active');
-        btn.classList.add('listening');
-        recognition.start();
-      }
+      if (recognition) recognition.start();
     }
 
-    function processVoiceCommand(command) {
-      if (command.includes('explain') || command.includes('case')) {
-        loadSystemView();
-        updateStatus('Voice: Explain Case executed');
-      } else if (command.includes('related') || command.includes('correlation')) {
-        if (currentSelection) {
-          showRelated(currentSelection.item.id, currentSelection.type);
-          updateStatus('Voice: Show Related executed');
-        } else {
-          updateStatus('Voice: Select an item first');
-        }
-      } else if (command.includes('location') || command.includes('where') || command.includes('map')) {
-        if (currentSelection && currentSelection.item.latitude) {
-          map.setView([currentSelection.item.latitude, currentSelection.item.longitude], 15);
-          updateStatus('Voice: Show Location executed');
-        } else {
-          updateStatus('Voice: No location data');
-        }
-      } else if (command.includes('blocker') || command.includes('problem') || command.includes('issue')) {
-        const blockersSection = document.getElementById('blockersSection');
-        if (blockersSection) {
-          blockersSection.scrollIntoView({ behavior: 'smooth' });
-          blockersSection.style.border = '1px solid var(--danger)';
-          setTimeout(() => blockersSection.style.border = 'none', 2000);
-          updateStatus('Voice: Show Blockers executed');
-        } else {
-          updateStatus('Voice: Select a resource first');
-        }
-      } else {
-        updateStatus('Voice: Command not recognized');
-      }
+    function fitVisibleBounds() {
+      const visibleMarkers = [...layers.resources.getLayers(), ...layers.signals.getLayers(), ...layers.enforcement.getLayers()];
+      if (visibleMarkers.length > 0) map.fitBounds(new L.featureGroup(visibleMarkers).getBounds());
     }
 
     function updateLayerLabels() {
       document.getElementById('resourcesLayerLabel').textContent = `Resources (${data.resources.length})`;
       document.getElementById('signalsLayerLabel').textContent = `Signals (${data.signals.length})`;
-      document.getElementById('enforcementLayerLabel').textContent = `Enforcement Agencies (${data.enforcement.length})`;
-      document.getElementById('nationalLayerLabel').textContent = `National Resources (${data.national.length})`;
+      document.getElementById('enforcementLayerLabel').textContent = `Enforcement (${data.enforcement.length})`;
+      document.getElementById('nationalLayerLabel').textContent = `National (${data.national.length})`;
     }
 
-    function fitVisibleBounds() {
-      const markers = [...layers.resources.getLayers(), ...layers.signals.getLayers(), ...layers.enforcement.getLayers()];
-      if (markers.length > 0) map.fitBounds(new L.featureGroup(markers).getBounds().pad(0.1));
+    function updateStatus(message) {
+      document.getElementById('statusText').textContent = message;
     }
 
-    function updateStatus(text) { document.getElementById('statusText').textContent = text; }
-    function shortId(id) { return id ? String(id).slice(0, 8) : ''; }
-    function formatScore(score) { return isFinite(score) && Number(score) > 0 ? Number(score).toFixed(2) : 'N/A'; }
-    function severityColor(severity) { return String(severity || '').toLowerCase().includes('high') ? 'var(--danger)' : 'var(--warning)'; }
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+      return (text || '').replace(/[&<>"']/g, m => map[m]);
+    }
+
+    function escapeAttribute(text) {
+      return (text || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+    }
+
+    function formatScore(score) {
+      const s = Number(score || 0);
+      if (s >= 0.8) return '🟢 High';
+      if (s >= 0.5) return '🟡 Medium';
+      return '🔴 Low';
+    }
+
+    function severityColor(severity) {
+      const sev = String(severity || '').toLowerCase();
+      if (sev.includes('high') || sev.includes('critical')) return '#ef4444';
+      if (sev.includes('medium')) return '#f59e0b';
+      return '#22c55e';
+    }
+
+    function shortId(id) {
+      if (!id) return '';
+      return String(id).substring(0, 8).toUpperCase();
+    }
+
     function toArray(value) {
-      if (!value) return [];
       if (Array.isArray(value)) return value;
-      if (typeof value === 'string') {
-        try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : [value]; } catch { return value.split(',').map(item => item.trim()).filter(Boolean); }
-      }
-      return [String(value)];
+      if (typeof value === 'string') return value.split(',').map(s => s.trim()).filter(Boolean);
+      return [];
     }
-    function escapeHtml(value) {
-      return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
-    }
-    function escapeAttribute(value) { return escapeHtml(value).replace(/`/g, '&#96;'); }
 
     window.addEventListener('DOMContentLoaded', init);
   </script>
