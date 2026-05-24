@@ -205,7 +205,7 @@ const canonicalCoreRouter = router({
     const canonicalTables = [
       { table: "legal_statutes", category: "Legal" },
       { table: "legal_case_law", category: "Legal" },
-      { table: "legal_enforcement", category: "Legal" },
+      { table: "legal_enforcement_records", category: "Legal" },
       { table: "legal_workflow_deadlines", category: "Legal" },
       { table: "registry_programs", category: "Registry" },
       { table: "registry_jurisdictions", category: "Registry" },
@@ -231,8 +231,8 @@ const canonicalCoreRouter = router({
     return { ok: true, tables, totalRecords, populatedTables, emptyTables: canonicalTables.length - populatedTables, supabaseProject: SUPABASE_PROJECT };
   }),
   summary: publicProcedure.query(async () => {
-    const [cases, entities, claims, documents, statutes, programs] = await Promise.all([countTable("cases"), countTable("entities"), countTable("claims"), countTable("documents"), countTable("legal_statutes"), countTable("registry_programs")]);
-    return { cases, entities, claims, documents, statutes, programs };
+    const [cases, entities, claims, documents, statutes, programs, jurisdictions, oversightBodies, liveSignals] = await Promise.all([countTable("cases"), countTable("entities"), countTable("claims"), countTable("documents"), countTable("legal_statutes"), countTable("registry_programs"), countTable("registry_jurisdictions"), countTable("registry_oversight_bodies"), countTable("detected_signals")]);
+    return { cases, entities, claims, documents, statutes, programs, jurisdictions, oversightBodies, liveSignals };
   }),
   pipelineState: publicProcedure.query(async () => ({ status: "idle", lastRun: null, nextRun: null, ingestRunSummary: [] })),
 });
@@ -304,11 +304,14 @@ const knowledgeIngestionRouter = router({
       { name: "registry_programs", label: "Programs" },
       { name: "registry_jurisdictions", label: "Jurisdictions" },
       { name: "unified_resources", label: "Resources" },
-      { name: "cases", label: "Cases" },
+      { name: "normalized_civic_resource", label: "Civic Resources" },
       { name: "entities", label: "Entities" },
-      { name: "documents", label: "Documents" },
       { name: "detected_signals", label: "Signals" },
-      { name: "findings", label: "Findings" },
+      { name: "registry_oversight_bodies", label: "Oversight Bodies" },
+      { name: "legal_aid_organizations", label: "Legal Aid Orgs" },
+      { name: "advocacy_organizations", label: "Advocacy Orgs" },
+      { name: "ingested_records", label: "Ingested Records" },
+      { name: "data_stream_registry", label: "Data Streams" },
     ];
     const counts = await Promise.all(tableDefs.map(t => countTable(t.name)));
     const maxCount = Math.max(...counts, 1);
@@ -618,7 +621,7 @@ export const lighthouseGateRouter = router({
   assemblyEngine: stubList,
   patternEngine: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), getEntityClusters: publicProcedure.input(z.any().optional()).query(async () => []), getConductClusters: publicProcedure.input(z.any().optional()).query(async () => []), getOutcomeAnalytics: publicProcedure.input(z.any().optional()).query(async () => []) }),
   pipeline: stubList,
-  knowledgeBackbone: stubList,
+  knowledgeBackbone: router({ list: publicProcedure.input(z.any().optional()).query(async () => { const r = await restSelect("unified_resources", { limit: 200, order: "id.desc" }); return r.items; }) }),
   signalGovernance: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), escalationSummary: publicProcedure.query(async () => ({ total: 0, escalated: 0, resolved: 0 })), escalationThresholds: publicProcedure.query(async () => []), auditTrail: publicProcedure.input(z.any().optional()).query(async () => []) }),
   meaningLayer: stubList,
   unifiedOutput: stubList,
@@ -638,22 +641,22 @@ export const lighthouseGateRouter = router({
   operationalWorkflow: stubList,
   memoryOverlay: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), missionControlMetrics: publicProcedure.query(async () => ({ total: 0, active: 0 })) }),
   reformPackage: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), dashboard: publicProcedure.query(async () => ({ packages: [] })), generate: publicProcedure.input(z.any()).mutation(async () => ({ success: true })), updateStatus: publicProcedure.input(z.any()).mutation(async () => ({ success: true })) }),
-  coalitionAdvocacy: stubList,
-  evidenceConfidence: stubList,
-  claimValidation: stubList,
-  remedyFeasibility: stubList,
-  proceduralPathEngine: stubList,
+  coalitionAdvocacy: router({ list: publicProcedure.input(z.any().optional()).query(async () => { const r = await restSelect("advocacy_organizations", { limit: 100, order: "id.desc" }); return r.items; }) }),
+  evidenceConfidence: router({ list: publicProcedure.input(z.any().optional()).query(async () => { const r = await restSelect("evidence_confidence_rules", { limit: 100, order: "id.desc" }); return r.items; }) }),
+  claimValidation: router({ list: publicProcedure.input(z.any().optional()).query(async () => { const r = await restSelect("claim_validation_rules_v2", { limit: 100, order: "id.desc" }); return r.items; }) }),
+  remedyFeasibility: router({ list: publicProcedure.input(z.any().optional()).query(async () => { const r = await restSelect("remedy_feasibility_rules_v2", { limit: 100, order: "id.desc" }); return r.items; }) }),
+  proceduralPathEngine: router({ list: publicProcedure.input(z.any().optional()).query(async () => { const r = await restSelect("procedural_paths", { limit: 100, order: "id.desc" }); return r.items; }) }),
   systemHardeningPipeline: stubList,
   coalitionIntelligence: stubList,
   campaignEngine: stubList,
   knowledgeHealth: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), freshnessRecords: publicProcedure.query(async () => []), freshnessSummary: publicProcedure.query(async () => ({ totalTables: 15, healthyCount: 10, warningCount: 3, errorCount: 2, avgScore: 75 })), runFreshnessCheck: publicProcedure.mutation(async () => ({ success: true })), initializeFreshness: publicProcedure.mutation(async () => ({ success: true })) }),
-  engines: stubList,
+  engines: router({ list: publicProcedure.input(z.any().optional()).query(async () => { const r = await restSelect("engine_registry", { limit: 100, order: "id.desc" }); return r.items; }) }),
   casePatternBridge: stubList,
-  streams: stubList,
+  streams: router({ list: publicProcedure.input(z.any().optional()).query(async () => { const r = await restSelect("ingested_records", { limit: 200, order: "id.desc" }); return r.items; }) }),
   timeTravel: stubList,
   signalExtraction: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), stats: publicProcedure.input(z.any().optional()).query(async () => ({ total: 0, extracted: 0 })) }),
   sunam: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), getStatus: publicProcedure.query(async () => ({ status: "idle", lastRun: null })) }),
-  governance: stubList,
+  governance: router({ list: publicProcedure.input(z.any().optional()).query(async () => { const r = await restSelect("signal_registry", { limit: 200, order: "id.desc" }); return r.items; }) }),
   session: stubList,
   business: stubList,
   conduit: stubList,
@@ -661,7 +664,7 @@ export const lighthouseGateRouter = router({
   supportMatcher: stubList,
   resourceVerification: stubList,
   caseState: stubGet,
-  canonicalSpine: router({ list: publicProcedure.input(z.any().optional()).query(async () => []), status: publicProcedure.query(async () => ({ ok: true, tables: [], totalRecords: 0, populatedTables: 0, emptyTables: 0 })), auditDeadEnds: publicProcedure.query(async () => []), flowLogs: publicProcedure.input(z.any().optional()).query(async () => []), worldNodes: router({ list: publicProcedure.input(z.any().optional()).query(async () => { const r = await restSelect("registry_programs", { limit: 20, order: "id.desc" }); return r.items; }), create: publicProcedure.input(z.any()).mutation(async () => ({ id: "stub", success: true })) }) }),
+  canonicalSpine: router({ list: publicProcedure.input(z.any().optional()).query(async () => { const r = await restSelect("ingested_records", { limit: 50, order: "id.desc" }); return r.items; }), status: publicProcedure.query(async () => { const tables = ["ingested_records","detected_signals","registry_programs","unified_resources","entities"]; const counts = await Promise.all(tables.map(t => countTable(t))); const totalRecords = counts.reduce((a,b) => a+b, 0); const populatedTables = counts.filter(c => c > 0).length; return { ok: true, tables: tables.map((t,i) => ({ table: t, count: counts[i] })), totalRecords, populatedTables, emptyTables: tables.length - populatedTables }; }), auditDeadEnds: publicProcedure.query(async () => []), flowLogs: publicProcedure.input(z.any().optional()).query(async () => []), worldNodes: router({ list: publicProcedure.input(z.any().optional()).query(async () => { const r = await restSelect("registry_programs", { limit: 20, order: "id.desc" }); return r.items; }), create: publicProcedure.input(z.any()).mutation(async () => ({ id: "stub", success: true })) }) }),
   issueReports: stubList,
   analyze: router({ run: publicProcedure.input(z.any()).mutation(async () => ({ success: true })) }),
   phoenix: stubList,
