@@ -688,7 +688,7 @@
     function renderEnforcementDetails(item) {
       const desc = item.description || '';
       const lines = desc.split('\n').filter(l => l.trim());
-      const phoneMatch = item.phone ? [null, item.phone] : desc.match(/(\d{3}[-.])\d{3}[-.])\d{4})/);
+      const phoneMatch = item.phone ? [null, item.phone] : desc.match(/(\d{3}[-.]?\d{3}[-.]?\d{4})/);
       const urlMatch = item.website_url ? [item.website_url] : (item.filing_url ? [item.filing_url] : desc.match(/(https?:\/\/[^\s]+|[a-z]+\.gov\/[^\s]*)/));
       return `
         <div class="section">
