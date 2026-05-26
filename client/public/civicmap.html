@@ -316,12 +316,47 @@
     </div>
   </div>
 
-  <div class="layer-panel">
+  <div class="layer-panel" id="layerPanel">
     <div class="layer-title">Lighthouse Layers</div>
     <label class="layer-item">
-      <input type="checkbox" id="layerResources" checked onchange="toggleLayer('resources')">
-      <div class="dot resource"></div>
-      <span id="resourcesLayerLabel">Resources</span>
+      <input type="checkbox" id="layerHousing" checked onchange="toggleCategory('housing')">
+      <div class="dot" style="background: #f97316;"></div>
+      <span id="housingLayerLabel">Housing &amp; Shelter</span>
+    </label>
+    <label class="layer-item">
+      <input type="checkbox" id="layerFood" checked onchange="toggleCategory('food')">
+      <div class="dot" style="background: #84cc16;"></div>
+      <span id="foodLayerLabel">Food &amp; Nutrition</span>
+    </label>
+    <label class="layer-item">
+      <input type="checkbox" id="layerLegal" checked onchange="toggleCategory('legal')">
+      <div class="dot" style="background: #06b6d4;"></div>
+      <span id="legalLayerLabel">Legal Aid</span>
+    </label>
+    <label class="layer-item">
+      <input type="checkbox" id="layerHealth" checked onchange="toggleCategory('health')">
+      <div class="dot" style="background: #ec4899;"></div>
+      <span id="healthLayerLabel">Healthcare &amp; Mental Health</span>
+    </label>
+    <label class="layer-item">
+      <input type="checkbox" id="layerEmployment" checked onchange="toggleCategory('employment')">
+      <div class="dot" style="background: #eab308;"></div>
+      <span id="employmentLayerLabel">Employment &amp; Benefits</span>
+    </label>
+    <label class="layer-item">
+      <input type="checkbox" id="layerGovernment" checked onchange="toggleCategory('government')">
+      <div class="dot" style="background: #10b981;"></div>
+      <span id="governmentLayerLabel">Government Programs</span>
+    </label>
+    <label class="layer-item">
+      <input type="checkbox" id="layerCivil" checked onchange="toggleCategory('civil')">
+      <div class="dot" style="background: #8b5cf6;"></div>
+      <span id="civilLayerLabel">Civil Rights &amp; Advocacy</span>
+    </label>
+    <label class="layer-item">
+      <input type="checkbox" id="layerEnforcement" checked onchange="toggleCategory('enforcement')">
+      <div class="dot" style="background: #a855f7;"></div>
+      <span id="enforcementLayerLabel">Enforcement</span>
     </label>
     <label class="layer-item">
       <input type="checkbox" id="layerSignals" checked onchange="toggleLayer('signals')">
@@ -329,13 +364,13 @@
       <span id="signalsLayerLabel">Signals</span>
     </label>
     <label class="layer-item">
-      <input type="checkbox" id="layerEnforcement" checked onchange="toggleLayer('enforcement')">
-      <div class="dot" style="background: var(--purple);"></div>
-      <span id="enforcementLayerLabel">Enforcement Agencies</span>
+      <input type="checkbox" id="layerOther" checked onchange="toggleCategory('other')">
+      <div class="dot" style="background: #64748b;"></div>
+      <span id="otherLayerLabel">Other Resources</span>
     </label>
     <div class="layer-item layer-note">
       <div class="dot national"></div>
-      <span id="nationalLayerLabel">National Resources</span>
+      <span id="nationalLayerLabel">National (${0})</span>
     </div>
   </div>
 
@@ -375,8 +410,42 @@
     const US_CENTER = [39.8283, -98.5795];
 
     let map;
-    let layers = { resources: null, signals: null, enforcement: null };
+    let layers = { signals: null };
+    let categoryLayers = {};
     let data = { resources: [], signals: [], national: [], enforcement: [] };
+
+    // Category classification for node_types
+    const CATEGORY_MAP = {
+      housing: ['housing', 'shelter', 'housing_provider', 'housing_assistance', 'housing_advocacy', 'supportive_housing', 'housing_counseling', 'housing_legal_advocacy', 'housing_resource', 'tenant_advocacy', 'homelessness_advocacy', 'youth_homelessness'],
+      food: ['food', 'nutrition', 'food_bank', 'food_nutrition', 'food_support', 'food_benefit', 'food_security', 'nutrition_assistance'],
+      legal: ['legal_aid', 'legal_aid_organization', 'court', 'litigation_barrier', 'preclusion_rule', 'tolling_rule', 'proof_framework', 'legal_resource', 'legal_self_help', 'wrongful_conviction', 'criminal_defense', 'immigration_legal', 'record_clearing'],
+      health: ['healthcare', 'hospital', 'clinic', 'mental_health', 'mental_behavioral_health', 'community_health', 'patient_navigation', 'patient_financial', 'crisis_hotline', 'domestic_violence', 'sexual_assault', 'tribal_health', 'tribal_dv', 'state_domestic_violence', 'regional_domestic_violence', 'national_domestic_violence', 'lgbtq_crisis'],
+      employment: ['employment', 'unemployment', 'unemployment_benefit', 'wage_claim', 'employment_rights', 'employment_service', 'entrepreneurship', 'microenterprise', 'business_assistance'],
+      government: ['government_benefit', 'government_benefit_program', 'federal_program', 'cash_assistance', 'benefits', 'benefits_cascade', 'benefit_signal', 'grants', 'utilities', 'utility_assistance', 'childcare', 'senior_services', 'veterans_service', 'disability', 'tribal_program', 'tribal_service', 'tribal_coordination'],
+      civil: ['civil_rights', 'advocacy', 'consumer_protection', 'voter', 'democracy_reform', 'human_rights', 'digital_rights', 'digital_civil_liberties', 'transparency', 'government_watchdog', 'government_accountability', 'investigative', 'public_records'],
+      enforcement: ['enforcement', 'oversight', 'agency_authority', 'fraud_reporting']
+    };
+
+    const CATEGORY_COLORS = {
+      housing: '#f97316',
+      food: '#84cc16',
+      legal: '#06b6d4',
+      health: '#ec4899',
+      employment: '#eab308',
+      government: '#10b981',
+      civil: '#8b5cf6',
+      enforcement: '#a855f7',
+      other: '#64748b'
+    };
+
+    function classifyNodeType(nodeType) {
+      if (!nodeType) return 'other';
+      const nt = nodeType.toLowerCase();
+      for (const [category, keywords] of Object.entries(CATEGORY_MAP)) {
+        if (keywords.some(kw => nt.includes(kw))) return category;
+      }
+      return 'other';
+    }
 
     const STATE_CENTROIDS = {
       'Alabama (AL)': [32.806671, -86.791130], 'Alaska (AK)': [61.370716, -152.404419],
@@ -428,9 +497,11 @@
         maxZoom: 20
       }).addTo(map);
 
-      layers.resources = L.layerGroup().addTo(map);
+      // Create a layer group for each category
+      ['housing', 'food', 'legal', 'health', 'employment', 'government', 'civil', 'enforcement', 'other'].forEach(cat => {
+        categoryLayers[cat] = L.layerGroup().addTo(map);
+      });
       layers.signals = L.layerGroup().addTo(map);
-      layers.enforcement = L.layerGroup().addTo(map);
 
       await loadAllData();
       setupSearch();
@@ -440,10 +511,11 @@
     async function loadAllData() {
       try {
         await loadResources();
-        await Promise.all([loadSignals(), loadNationalResources(), loadEnforcementAgencies()]);
+        await Promise.all([loadSignals(), loadNationalResources()]);
         updateLayerLabels();
         fitVisibleBounds();
-        updateStatus(`Lighthouse Active — ${data.resources.length} civic nodes, ${data.enforcement.length} enforcement agencies, ${data.signals.length} signals, ${data.national.length} national references`);
+        const totalResources = data.resources.length + data.enforcement.length;
+        updateStatus(`Lighthouse Active — ${totalResources} civic nodes, ${data.enforcement.length} enforcement, ${data.signals.length} signals, ${data.national.length} national references`);
       } catch (error) {
         console.error('Lighthouse load error:', error);
         updateStatus('Lighthouse Active — some data failed to load');
@@ -451,32 +523,25 @@
     }
 
     async function loadResources() {
-      updateStatus('Loading unified civic infrastructure...');
+      updateStatus('Loading all civic infrastructure (no caps)...');
+      // Load ALL rows — no limit, no cap
       const { data: rows, error } = await supabaseClient
         .from('v_unified_civic_infrastructure')
-        .select('node_id,name,node_type,jurisdiction,phone,email,website,address,domains,description,filing_deadline,filing_url,source_table');
+        .select('node_id,name,node_type,jurisdiction,phone,email,website,address,domains,description,filing_deadline,filing_url,source_table')
+        .limit(50000);
 
       if (error) throw error;
 
-      // Color map by node_type
-      const NODE_COLORS = {
-        enforcement: '#a855f7',
-        legal_aid: '#06b6d4',
-        court: '#ef4444',
-        advocacy: '#f97316',
-        Federal: '#f59e0b',
-        State: '#10b981',
-        'Multi-state': '#3b82f6'
-      };
-
-      data.resources = (rows || []).map((row, i) => {
+      const allRows = (rows || []).map((row) => {
         const coords = STATE_CENTROIDS[row.jurisdiction] || [39.8283, -98.5795];
         const jitter = deterministicJitter(row.node_id + (row.name || ''), 0.5);
+        const category = classifyNodeType(row.node_type);
         return {
           ...row,
           id: row.node_id,
           organization_name: row.name,
           resource_type: row.node_type,
+          category: category,
           city: row.jurisdiction,
           latitude: coords[0] + jitter.lat,
           longitude: coords[1] + jitter.lng,
@@ -491,15 +556,34 @@
         };
       });
 
-      // Render by node_type with distinct colors
-      const byType = {};
-      data.resources.forEach(r => {
-        if (!byType[r.resource_type]) byType[r.resource_type] = [];
-        byType[r.resource_type].push(r);
+      // Split enforcement from resources
+      data.enforcement = allRows.filter(r => r.category === 'enforcement');
+      data.resources = allRows.filter(r => r.category !== 'enforcement');
+
+      // Render each category into its own layer group
+      const byCategory = {};
+      allRows.forEach(r => {
+        if (!byCategory[r.category]) byCategory[r.category] = [];
+        byCategory[r.category].push(r);
       });
-      Object.entries(byType).forEach(([type, items]) => {
-        const color = NODE_COLORS[type] || '#22c55e';
-        renderPins(items, 'resources', color, 12);
+
+      Object.entries(byCategory).forEach(([cat, items]) => {
+        const color = CATEGORY_COLORS[cat] || '#64748b';
+        const layerGroup = categoryLayers[cat];
+        if (!layerGroup) return;
+        const size = cat === 'enforcement' ? 14 : 12;
+        const icon = L.divIcon({
+          className: 'custom-marker',
+          html: `<div style="background: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2]
+        });
+        items.forEach(item => {
+          if (!isFinite(item.latitude) || !isFinite(item.longitude)) return;
+          const marker = L.marker([item.latitude, item.longitude], { icon });
+          marker.on('click', () => selectItem(item, cat === 'enforcement' ? 'enforcement' : 'resources'));
+          layerGroup.addLayer(marker);
+        });
       });
     }
 
@@ -526,36 +610,7 @@
       data.national = rows || [];
     }
 
-    async function loadEnforcementAgencies() {
-      updateStatus('Loading enforcement agencies...');
-      const { data: rows, error } = await supabaseClient
-        .from('legal_enforcement_records')
-        .select('id,jurisdiction,agency_name,complaint_type,domains,statutory_requirement,statute_citation,outcome,pattern_description,data_source,created_at');
-
-      if (error) { console.error('Enforcement load error:', error); return; }
-
-      data.enforcement = (rows || []).map((row, i) => {
-        const coords = STATE_CENTROIDS[row.jurisdiction] || [39.8283, -98.5795];
-        const jitter = deterministicJitter(String(row.id) + (row.agency_name || ''), 0.6);
-        return {
-          ...row,
-          id: String(row.id),
-          name: row.agency_name || 'Unknown Agency',
-          organization_name: row.agency_name,
-          resource_type: 'enforcement_agency',
-          city: row.jurisdiction,
-          latitude: coords[0] + jitter.lat,
-          longitude: coords[1] + jitter.lng,
-          description: row.pattern_description,
-          filing_deadline: row.statutory_requirement,
-          complaint_types: row.complaint_type,
-          source_url: row.data_source,
-          escalation: row.outcome
-        };
-      });
-
-      renderPins(data.enforcement, 'enforcement', '#a855f7', 16);
-    }
+    // Enforcement is now loaded as part of loadResources() — no separate function needed
 
     function buildCityCoordinateIndex() {
       const grouped = new Map();
@@ -955,6 +1010,12 @@
       checkbox.checked ? map.addLayer(layers[type]) : map.removeLayer(layers[type]);
     }
 
+    function toggleCategory(cat) {
+      const checkbox = document.getElementById(`layer${cat.charAt(0).toUpperCase() + cat.slice(1)}`);
+      if (!categoryLayers[cat] || !checkbox) return;
+      checkbox.checked ? map.addLayer(categoryLayers[cat]) : map.removeLayer(categoryLayers[cat]);
+    }
+
     function setupSearch() {
       const input = document.getElementById('searchInput');
       let debounce;
@@ -967,21 +1028,52 @@
     function performSearch(query) {
       const q = (query || '').trim().toLowerCase();
       if (!q) {
-        renderPins(data.resources, 'resources', '#22c55e', 14);
+        // Reload all pins by re-rendering categories
+        reRenderAllCategories([...data.resources, ...data.enforcement]);
         renderSignals(data.signals);
-        renderPins(data.enforcement, 'enforcement', '#a855f7', 16);
-        updateStatus(`Lighthouse Active — ${data.resources.length} resources, ${data.enforcement.length} enforcement, ${data.signals.length} signals, ${data.national.length} national references`);
+        const total = data.resources.length + data.enforcement.length;
+        updateStatus(`Lighthouse Active — ${total} resources, ${data.enforcement.length} enforcement, ${data.signals.length} signals, ${data.national.length} national references`);
         return;
       }
-      const resourceMatches = data.resources.filter(item => searchableText(item).includes(q));
+      const allItems = [...data.resources, ...data.enforcement];
+      const matches = allItems.filter(item => searchableText(item).includes(q));
       const signalMatches = data.signals.filter(item => searchableText(item).includes(q));
-      const enforcementMatches = data.enforcement.filter(item => searchableText(item).includes(q));
-      renderPins(resourceMatches, 'resources', '#22c55e', 14);
+      reRenderAllCategories(matches);
       renderSignals(signalMatches);
-      renderPins(enforcementMatches, 'enforcement', '#a855f7', 16);
-      const visibleMarkers = [...layers.resources.getLayers(), ...layers.signals.getLayers(), ...layers.enforcement.getLayers()];
-      if (visibleMarkers.length > 0) map.fitBounds(new L.featureGroup(visibleMarkers).getBounds().pad(0.1));
-      updateStatus(`Search: ${resourceMatches.length + signalMatches.length + enforcementMatches.length} map results for "${query}"`);
+      const allMarkers = [];
+      Object.values(categoryLayers).forEach(lg => allMarkers.push(...lg.getLayers()));
+      allMarkers.push(...layers.signals.getLayers());
+      if (allMarkers.length > 0) map.fitBounds(new L.featureGroup(allMarkers).getBounds().pad(0.1));
+      updateStatus(`Search: ${matches.length + signalMatches.length} map results for "${query}"`);
+    }
+
+    function reRenderAllCategories(items) {
+      // Clear all category layers and re-render with given items
+      Object.values(categoryLayers).forEach(lg => lg.clearLayers());
+      const byCategory = {};
+      items.forEach(r => {
+        const cat = r.category || 'other';
+        if (!byCategory[cat]) byCategory[cat] = [];
+        byCategory[cat].push(r);
+      });
+      Object.entries(byCategory).forEach(([cat, catItems]) => {
+        const color = CATEGORY_COLORS[cat] || '#64748b';
+        const layerGroup = categoryLayers[cat];
+        if (!layerGroup) return;
+        const size = cat === 'enforcement' ? 14 : 12;
+        const icon = L.divIcon({
+          className: 'custom-marker',
+          html: `<div style="background: ${color}; width: ${size}px; height: ${size}px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2]
+        });
+        catItems.forEach(item => {
+          if (!isFinite(item.latitude) || !isFinite(item.longitude)) return;
+          const marker = L.marker([item.latitude, item.longitude], { icon });
+          marker.on('click', () => selectItem(item, cat === 'enforcement' ? 'enforcement' : 'resources'));
+          layerGroup.addLayer(marker);
+        });
+      });
     }
 
     function searchableText(item) {
@@ -1025,14 +1117,46 @@
     }
 
     function fitVisibleBounds() {
-      const visibleMarkers = [...layers.resources.getLayers(), ...layers.signals.getLayers(), ...layers.enforcement.getLayers()];
-      if (visibleMarkers.length > 0) map.fitBounds(new L.featureGroup(visibleMarkers).getBounds());
+      const allMarkers = [];
+      Object.values(categoryLayers).forEach(lg => { if (lg && map.hasLayer(lg)) allMarkers.push(...lg.getLayers()); });
+      if (layers.signals && map.hasLayer(layers.signals)) allMarkers.push(...layers.signals.getLayers());
+      if (allMarkers.length > 0) map.fitBounds(new L.featureGroup(allMarkers).getBounds());
     }
 
     function updateLayerLabels() {
-      document.getElementById('resourcesLayerLabel').textContent = `Resources (${data.resources.length})`;
+      // Count items per category
+      const counts = {};
+      [...data.resources, ...data.enforcement].forEach(r => {
+        const cat = r.category || 'other';
+        counts[cat] = (counts[cat] || 0) + 1;
+      });
+      const labelMap = {
+        housing: 'housingLayerLabel',
+        food: 'foodLayerLabel',
+        legal: 'legalLayerLabel',
+        health: 'healthLayerLabel',
+        employment: 'employmentLayerLabel',
+        government: 'governmentLayerLabel',
+        civil: 'civilLayerLabel',
+        enforcement: 'enforcementLayerLabel',
+        other: 'otherLayerLabel'
+      };
+      const nameMap = {
+        housing: 'Housing & Shelter',
+        food: 'Food & Nutrition',
+        legal: 'Legal Aid',
+        health: 'Healthcare & Mental Health',
+        employment: 'Employment & Benefits',
+        government: 'Government Programs',
+        civil: 'Civil Rights & Advocacy',
+        enforcement: 'Enforcement',
+        other: 'Other Resources'
+      };
+      Object.entries(labelMap).forEach(([cat, elId]) => {
+        const el = document.getElementById(elId);
+        if (el) el.textContent = `${nameMap[cat]} (${counts[cat] || 0})`;
+      });
       document.getElementById('signalsLayerLabel').textContent = `Signals (${data.signals.length})`;
-      document.getElementById('enforcementLayerLabel').textContent = `Enforcement (${data.enforcement.length})`;
       document.getElementById('nationalLayerLabel').textContent = `National (${data.national.length})`;
     }
 
