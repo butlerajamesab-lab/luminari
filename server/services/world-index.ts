@@ -325,27 +325,26 @@ async function loadPrograms(): Promise<WorldObject[]> {
 
   // --- legal_aid_organizations (60 rows) ---
   const [legalAidRows] = await pool.query(`
-    select uuid, entity_type, full_entity_name, jurisdiction, contact, domains, eligibility_requirements
+    select id, organization, jurisdiction_code, phone, email, website, claim_types, notes
     from legal_aid_organizations
   `) as any;
   for (const r of legalAidRows) {
-    const contactObj = typeof r.contact === 'object' && r.contact ? r.contact : {};
     nodes.push({
-      id: `legal_aid_${r.uuid}`,
+      id: `legal_aid_${r.id}`,
       type: 'program',
-      jurisdiction: safeText(r.jurisdiction, 'unknown'),
+      jurisdiction: safeText(r.jurisdiction_code, 'unknown'),
       domain: 'legal_aid',
       source_table: 'legal_aid_organizations',
-      source_id: String(r.uuid),
+      source_id: String(r.id),
       metadata: {
-        name: r.full_entity_name,
+        name: r.organization,
         category: 'legal_aid',
-        domains: r.domains,
-        phone: contactObj.phone || null,
-        email: contactObj.email || null,
-        website: contactObj.website || null,
-        contact: contactObj.phone || contactObj.email || contactObj.website || null,
-        eligibility: r.eligibility_requirements,
+        domains: r.claim_types,
+        phone: r.phone || null,
+        email: r.email || null,
+        website: r.website || null,
+        contact: r.phone || r.email || r.website || null,
+        eligibility: r.notes,
       },
     });
   }
@@ -376,24 +375,24 @@ async function loadPrograms(): Promise<WorldObject[]> {
 
   // --- registry_oversight_bodies (222 rows) ---
   const [oversightRows] = await pool.query(`
-    select id, jurisdiction_id, name, function, contact, website, scope
+    select id, jurisdiction_id_rob, agency_name_rob, function_rob, contact_rob, pathway_rob
     from registry_oversight_bodies
   `) as any;
   for (const r of oversightRows) {
     nodes.push({
       id: `oversight_${r.id}`,
       type: 'agency',
-      jurisdiction: safeText(r.jurisdiction_id, 'unknown'),
-      domain: safeText(r.function, 'oversight'),
+      jurisdiction: safeText(r.jurisdiction_id_rob, 'unknown'),
+      domain: safeText(r.function_rob, 'oversight'),
       source_table: 'registry_oversight_bodies',
       source_id: String(r.id),
       metadata: {
-        name: r.name,
-        agency_name: r.name,
-        function: r.function,
-        contact: r.contact,
-        website: r.website,
-        scope: r.scope,
+        name: r.agency_name_rob,
+        agency_name: r.agency_name_rob,
+        function: r.function_rob,
+        contact: r.contact_rob,
+        website: null,
+        scope: r.pathway_rob,
       },
     });
   }
