@@ -243,6 +243,161 @@ async function loadPrograms(): Promise<WorldObject[]> {
     });
   }
 
+  // --- registry_programs (3,405 rows) ---
+  const [regProgRows] = await pool.query(`
+    select id, jurisdiction_id_rp, category_rp, name_rp, agency_rp, eligibility_rp, contact_rp, website_rp, apply_notes_rp
+    from registry_programs
+  `) as any;
+  for (const r of regProgRows) {
+    nodes.push({
+      id: `reg_program_${r.id}`,
+      type: 'program',
+      jurisdiction: safeText(r.jurisdiction_id_rp, 'unknown'),
+      domain: safeText(r.category_rp, 'general'),
+      source_table: 'registry_programs',
+      source_id: String(r.id),
+      metadata: {
+        name: r.name_rp,
+        category: r.category_rp,
+        agency_name: r.agency_rp,
+        eligibility: r.eligibility_rp,
+        contact: r.contact_rp,
+        website: r.website_rp,
+        apply_notes: r.apply_notes_rp,
+        phone: r.contact_rp,
+      },
+    });
+  }
+
+  // --- nonprofit_registry (2,561 rows) ---
+  const [nonprofitRows] = await pool.query(`
+    select uuid, entity_type, full_entity_name, jurisdiction, contact, domains, eligibility_requirements, application_methods
+    from nonprofit_registry
+  `) as any;
+  for (const r of nonprofitRows) {
+    const contactObj = typeof r.contact === 'object' && r.contact ? r.contact : {};
+    nodes.push({
+      id: `nonprofit_${r.uuid}`,
+      type: 'program',
+      jurisdiction: safeText(r.jurisdiction, 'unknown'),
+      domain: safeText(r.entity_type, 'nonprofit'),
+      source_table: 'nonprofit_registry',
+      source_id: String(r.uuid),
+      metadata: {
+        name: r.full_entity_name,
+        category: r.entity_type,
+        domains: r.domains,
+        phone: contactObj.phone || null,
+        email: contactObj.email || null,
+        website: contactObj.website || null,
+        contact: contactObj.phone || contactObj.email || contactObj.website || null,
+        eligibility: r.eligibility_requirements,
+        application_methods: r.application_methods,
+      },
+    });
+  }
+
+  // --- government_benefits_registry (516 rows) ---
+  const [govBenRows] = await pool.query(`
+    select uuid, entity_type, full_entity_name, jurisdiction, administering_agency, website, contact_phone, eligibility_requirements, benefit_categories
+    from government_benefits_registry
+  `) as any;
+  for (const r of govBenRows) {
+    nodes.push({
+      id: `gov_benefit_${r.uuid}`,
+      type: 'program',
+      jurisdiction: safeText(r.jurisdiction, 'unknown'),
+      domain: safeText(r.entity_type || 'government_benefits', 'government_benefits'),
+      source_table: 'government_benefits_registry',
+      source_id: String(r.uuid),
+      metadata: {
+        name: r.full_entity_name,
+        category: r.entity_type,
+        agency_name: r.administering_agency,
+        website: r.website,
+        phone: r.contact_phone,
+        contact: r.contact_phone || r.website,
+        eligibility: r.eligibility_requirements,
+        benefit_categories: r.benefit_categories,
+      },
+    });
+  }
+
+  // --- legal_aid_organizations (60 rows) ---
+  const [legalAidRows] = await pool.query(`
+    select uuid, entity_type, full_entity_name, jurisdiction, contact, domains, eligibility_requirements
+    from legal_aid_organizations
+  `) as any;
+  for (const r of legalAidRows) {
+    const contactObj = typeof r.contact === 'object' && r.contact ? r.contact : {};
+    nodes.push({
+      id: `legal_aid_${r.uuid}`,
+      type: 'program',
+      jurisdiction: safeText(r.jurisdiction, 'unknown'),
+      domain: 'legal_aid',
+      source_table: 'legal_aid_organizations',
+      source_id: String(r.uuid),
+      metadata: {
+        name: r.full_entity_name,
+        category: 'legal_aid',
+        domains: r.domains,
+        phone: contactObj.phone || null,
+        email: contactObj.email || null,
+        website: contactObj.website || null,
+        contact: contactObj.phone || contactObj.email || contactObj.website || null,
+        eligibility: r.eligibility_requirements,
+      },
+    });
+  }
+
+  // --- legal_enforcement_records (245 rows) ---
+  const [enfRows] = await pool.query(`
+    select id, jurisdiction, agency_name, complaint_type, domains, statutory_requirement, statute_citation
+    from legal_enforcement_records
+  `) as any;
+  for (const r of enfRows) {
+    nodes.push({
+      id: `enforcement_${r.id}`,
+      type: 'agency',
+      jurisdiction: safeText(r.jurisdiction, 'unknown'),
+      domain: 'enforcement',
+      source_table: 'legal_enforcement_records',
+      source_id: String(r.id),
+      metadata: {
+        name: r.agency_name,
+        agency_name: r.agency_name,
+        complaint_type: r.complaint_type,
+        domains: r.domains,
+        statutory_requirement: r.statutory_requirement,
+        statute_citation: r.statute_citation,
+      },
+    });
+  }
+
+  // --- registry_oversight_bodies (222 rows) ---
+  const [oversightRows] = await pool.query(`
+    select id, jurisdiction_id, name, function, contact, website, scope
+    from registry_oversight_bodies
+  `) as any;
+  for (const r of oversightRows) {
+    nodes.push({
+      id: `oversight_${r.id}`,
+      type: 'agency',
+      jurisdiction: safeText(r.jurisdiction_id, 'unknown'),
+      domain: safeText(r.function, 'oversight'),
+      source_table: 'registry_oversight_bodies',
+      source_id: String(r.id),
+      metadata: {
+        name: r.name,
+        agency_name: r.name,
+        function: r.function,
+        contact: r.contact,
+        website: r.website,
+        scope: r.scope,
+      },
+    });
+  }
+
   return nodes;
 }
 
