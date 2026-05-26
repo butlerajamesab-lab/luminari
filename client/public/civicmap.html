@@ -485,6 +485,47 @@
       'Washington / Federal': [47.400902, -121.490494], 'Washington / Federal / Tribal': [47.400902, -121.490494],
       'Washington / State / Tribal': [47.400902, -121.490494]
     };
+    // Build reverse lookup: 2-letter code -> centroid key
+    const STATE_CODE_MAP = {};
+    Object.keys(STATE_CENTROIDS).forEach(key => {
+      const m = key.match(/\(([A-Z]{2})\)/);
+      if (m) STATE_CODE_MAP[m[1]] = key;
+    });
+    // Also map full state names (lowercase) to centroid keys
+    const STATE_NAME_MAP = {};
+    Object.keys(STATE_CENTROIDS).forEach(key => {
+      const name = key.replace(/\s*\([A-Z]{2}\)/, '').toLowerCase().trim();
+      STATE_NAME_MAP[name] = key;
+    });
+
+    function resolveJurisdiction(jurisdiction) {
+      if (!jurisdiction) return null;
+      const j = jurisdiction.trim();
+      // Direct match
+      if (STATE_CENTROIDS[j]) return STATE_CENTROIDS[j];
+      // 2-letter code match
+      const upper = j.toUpperCase();
+      if (STATE_CODE_MAP[upper]) return STATE_CENTROIDS[STATE_CODE_MAP[upper]];
+      // j_ prefix: j_fl -> FL, j_washington -> washington
+      if (j.startsWith('j_')) {
+        const stripped = j.slice(2);
+        const upperStripped = stripped.toUpperCase();
+        if (STATE_CODE_MAP[upperStripped]) return STATE_CENTROIDS[STATE_CODE_MAP[upperStripped]];
+        if (STATE_NAME_MAP[stripped.toLowerCase()]) return STATE_CENTROIDS[STATE_NAME_MAP[stripped.toLowerCase()]];
+        // Handle j_new_hampshire -> new hampshire
+        const spaced = stripped.replace(/_/g, ' ');
+        if (STATE_NAME_MAP[spaced]) return STATE_CENTROIDS[STATE_NAME_MAP[spaced]];
+      }
+      // Try lowercase name match
+      if (STATE_NAME_MAP[j.toLowerCase()]) return STATE_CENTROIDS[STATE_NAME_MAP[j.toLowerCase()]];
+      // Try extracting code from parentheses: "Washington (WA)"
+      const pm = j.match(/\(([A-Z]{2})\)/);
+      if (pm && STATE_CODE_MAP[pm[1]]) return STATE_CENTROIDS[STATE_CODE_MAP[pm[1]]];
+      // Federal/National -> DC
+      if (/^(federal|national)$/i.test(j)) return [38.897438, -77.026817];
+      return null;
+    }
+
     let cityCoordinateIndex = new Map();
     let currentSelection = null;
     let recognition = null;
@@ -533,8 +574,8 @@
       if (error) throw error;
 
       const allRows = (rows || []).map((row) => {
-        const coords = STATE_CENTROIDS[row.jurisdiction] || [39.8283, -98.5795];
-        const jitter = deterministicJitter(row.node_id + (row.name || ''), 0.5);
+        const coords = resolveJurisdiction(row.jurisdiction) || [39.8283, -98.5795];
+        const jitter = deterministicJitter(row.node_id + (row.name || ''), 0.8);
         const category = classifyNodeType(row.node_type);
         return {
           ...row,
