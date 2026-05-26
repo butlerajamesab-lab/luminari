@@ -65,20 +65,26 @@ router.get("/health", async (_req: Request, res: Response) => {
   let dbVersion = "";
   let tableCount = 0;
 
+  let dbError = "";
   try {
-    const versionResult = await getPool().query("SELECT version()");
+    const pool = getPool();
+    const versionResult = await pool.query("SELECT version()");
     dbVersion = versionResult.rows[0]?.version?.split(" ").slice(0, 2).join(" ") ?? "unknown";
     dbConnected = true;
 
-    const countResult = await getPool().query(
+    const countResult = await pool.query(
       `SELECT COUNT(*)::int AS cnt FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`
     );
     tableCount = Number(countResult.rows[0]?.cnt ?? 0);
-  } catch {}
+  } catch (err: any) {
+    dbError = err?.message?.replace(/password=[^\s&]+/g, 'password=***') ?? "unknown error";
+  }
 
   res.json({
     status: dbConnected ? "healthy" : "degraded",
     database: dbConnected ? "connected" : "unreachable",
+    ...(dbError ? { dbDiagnostic: dbError } : {}),
+    databaseUrl: process.env.DATABASE_URL ? "configured" : "missing",
     databaseVersion: dbVersion,
     supabase: "wepxlinwbjrkqdzkqpar",
     publicTables: tableCount,
