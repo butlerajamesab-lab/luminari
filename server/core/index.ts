@@ -30,6 +30,7 @@ import { runIntegrityLockdown } from "../services/integrity-lockdown";
 import { createContext } from "./context";
 import { sessionMiddleware } from "./session-middleware";
 import { serveStatic, setupVite } from "./vite";
+import { systemVisibilityRouter } from "../routes/system-visibility-router";
 
 let pipelineRunnerInterval: NodeJS.Timer | null = null;
 
@@ -84,6 +85,8 @@ async function startServer() {
   registerUIEditorRoutes(app);
   // Autonomous healer REST routes
   registerHealerRoutes(app);
+  // Builder Visibility Layer — deterministic readonly introspection
+  app.use("/api/system", systemVisibilityRouter);
   // tRPC API
   app.use(
     "/api/trpc",
