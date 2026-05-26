@@ -31,6 +31,7 @@ import { createContext } from "./context";
 import { sessionMiddleware } from "./session-middleware";
 import { serveStatic, setupVite } from "./vite";
 import { systemVisibilityRouter } from "../routes/system-visibility-router";
+import { conveyorRouter } from "../routes/conveyor-router";
 
 let pipelineRunnerInterval: NodeJS.Timer | null = null;
 
@@ -87,6 +88,8 @@ async function startServer() {
   registerHealerRoutes(app);
   // Builder Visibility Layer — deterministic readonly introspection
   app.use("/api/system", systemVisibilityRouter);
+  // Conveyor Belt API — validate → promote → bridge → report
+  app.use("/api/conveyor", conveyorRouter);
   // tRPC API
   app.use(
     "/api/trpc",

@@ -566,15 +566,24 @@
 
     async function loadResources() {
       updateStatus('Loading all civic infrastructure (no caps)...');
-      // Load ALL rows — no limit, no cap
-      const { data: rows, error } = await supabaseClient
-        .from('v_unified_civic_infrastructure')
-        .select('node_id,name,node_type,jurisdiction,phone,email,website,address,domains,description,filing_deadline,filing_url,source_table')
-        .limit(50000);
-
-      if (error) throw error;
-
-      const allRows = (rows || []).map((row) => {
+      // Paginated fetch — Supabase REST API caps at 1000 rows per request
+      const PAGE_SIZE = 1000;
+      let allFetched = [];
+      let from = 0;
+      let keepGoing = true;
+      while (keepGoing) {
+        const { data: page, error: pageError } = await supabaseClient
+          .from('v_unified_civic_infrastructure')
+          .select('node_id,name,node_type,jurisdiction,phone,email,website,address,domains,description,filing_deadline,filing_url,source_table')
+          .range(from, from + PAGE_SIZE - 1);
+        if (pageError) throw pageError;
+        if (!page || page.length === 0) { keepGoing = false; break; }
+        allFetched = allFetched.concat(page);
+        updateStatus(`Loading civic infrastructure... ${allFetched.length} rows`);
+        if (page.length < PAGE_SIZE) { keepGoing = false; }
+        from += PAGE_SIZE;
+      }
+      const allRows = allFetched.map((row) => {
         const coords = resolveJurisdiction(row.jurisdiction) || [39.8283, -98.5795];
         const jitter = deterministicJitter(row.node_id + (row.name || ''), 0.8);
         const category = classifyNodeType(row.node_type);

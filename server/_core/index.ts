@@ -8,6 +8,7 @@ import { createContext } from "./context";
 import { sessionMiddleware } from "./session-middleware";
 import { aiInspectRouter } from "../routes/ai-inspect-router";
 import { systemVisibilityRouter } from "../routes/system-visibility-router";
+import { conveyorRouter } from "../routes/conveyor-router";
 import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";
 import { serveStatic, setupVite } from "./vite";
@@ -106,6 +107,8 @@ async function startServer() {
   app.use("/api/ai", aiInspectRouter);
   // Builder Visibility Layer — deterministic readonly introspection
   app.use("/api/system", systemVisibilityRouter);
+  // Conveyor Belt API — validate → promote → bridge → report
+  app.use("/api/conveyor", conveyorRouter);
 
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
