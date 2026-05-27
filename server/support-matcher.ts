@@ -161,42 +161,59 @@ interface Phase1Result {
 
 async function phase1HardFilter(input: MatchInput): Promise<Phase1Result[]> {
   const { pipelineType, jurisdiction } = input;
+  const selectedColumns = `
+    id,
+    name,
+    description,
+    resource_type as "resourceType",
+    domain,
+    need_types as "needTypes",
+    urgency_level as "urgencyLevel",
+    state_code as "stateCode",
+    jurisdiction_type as "jurisdictionType",
+    phone,
+    website,
+    email,
+    agency,
+    category,
+    eligibility_notes as "eligibilityNotes",
+    apply_notes as "applyNotes",
+    source_table as "sourceTable",
+    source_id as "sourceId",
+    matching_pipeline_types as "matchingPipelineTypes",
+    last_verified_at as "lastVerifiedAt",
+    soft_signals as "softSignals",
+    match_explanation_template as "matchExplanationTemplate",
+    verification_status as "verificationStatus"
+  `;
   
   // Build the query — filter by active + pipeline type match
-  // We use JSON_CONTAINS to check if the pipelineType is in matchingPipelineTypes array
+  // The database contract is snake_case. Aliases keep the TypeScript return shape stable.
   let query: string;
   let params: any[];
   
   if (jurisdiction) {
     // If jurisdiction provided: return resources that match the state OR are federal
     query = `
-      SELECT id, name, description, resourceType, domain, needTypes, urgencyLevel,
-             stateCode, jurisdictionType, phone, website, email, agency, category,
-             eligibilityNotes, applyNotes, sourceTable, sourceId,
-             matchingPipelineTypes, lastVerifiedAt, softSignals, matchExplanationTemplate,
-             verificationStatus
+      SELECT ${selectedColumns}
       FROM unified_resources
-      WHERE isActive = true
-        AND verificationStatus != 'flagged'
-        AND JSON_CONTAINS(matchingPipelineTypes, ?)
-        AND (stateCode = ? OR stateCode IS NULL OR jurisdictionType = 'federal')
-      ORDER BY urgencyLevel DESC
+      WHERE is_active = true
+        AND verification_status != 'flagged'
+        AND JSON_CONTAINS(matching_pipeline_types, ?)
+        AND (state_code = ? OR state_code IS NULL OR jurisdiction_type = 'federal')
+      ORDER BY urgency_level DESC
       LIMIT 100
     `;
     params = [JSON.stringify(pipelineType), jurisdiction];
   } else {
     // No jurisdiction: return all matching resources (federal + all states)
     query = `
-      SELECT id, name, description, resourceType, domain, needTypes, urgencyLevel,
-             stateCode, jurisdictionType, phone, website, email, agency, category,
-             eligibilityNotes, applyNotes, sourceTable, sourceId,
-             matchingPipelineTypes, lastVerifiedAt, softSignals, matchExplanationTemplate,
-             verificationStatus
+      SELECT ${selectedColumns}
       FROM unified_resources
-      WHERE isActive = true
-        AND verificationStatus != 'flagged'
-        AND JSON_CONTAINS(matchingPipelineTypes, ?)
-      ORDER BY urgencyLevel DESC
+      WHERE is_active = true
+        AND verification_status != 'flagged'
+        AND JSON_CONTAINS(matching_pipeline_types, ?)
+      ORDER BY urgency_level DESC
       LIMIT 100
     `;
     params = [JSON.stringify(pipelineType)];
