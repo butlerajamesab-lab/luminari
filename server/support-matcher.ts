@@ -1,60 +1,57 @@
 /**
  * Unified Support Matching Engine
- * 
+ *
  * Two-phase pipeline:
  *   Phase 1: Hard Filter — jurisdiction, active status, pipeline type match
  *   Phase 2: Weighted Scoring — urgency alignment, domain match, need overlap, freshness decay, diversity
- * 
+ *
  * Output: Top 5 scored resources with "why this matched" explanations
  * Constraint: At least 2 different resource types in the top 5
  */
 
-import { db, pool } from "./db";
-import { sql } from "drizzle-orm";
+import { pool } from "./db";
 import { getActiveSignalsByEffect } from "./live-signal-emitter";
 
 // ─── Types ───
 
 export interface MatchInput {
-  pipelineType: string;        // from intake autodetect
-  jurisdiction?: string;       // state code (e.g., "WA") or null for federal
+  pipeline_type: string;        // from intake autodetect
+  jurisdiction?: string;        // state code (e.g., "WA") or null for federal
   urgency?: "crisis" | "urgent" | "standard" | "informational";
-  needKeywords?: string[];     // free-text need signals from intake
-  domain?: string;             // domain hint from pipeline
-  limit?: number;              // max results (default 5)
+  need_keywords?: string[];     // free-text need signals from intake
+  domain?: string;              // domain hint from pipeline
+  limit?: number;               // max results (default 5)
 }
 
 export interface ScoredResource {
   id: number;
   name: string;
   description: string | null;
-  resourceType: string;
+  resource_type: string;
   domain: string;
-  needTypes: string[];
-  urgencyLevel: string;
-  stateCode: string | null;
-  jurisdictionType: string;
+  need_types: string[];
+  urgency_level: string;
+  state_code: string | null;
+  jurisdiction_type: string;
   phone: string | null;
   website: string | null;
   email: string | null;
   agency: string | null;
   category: string | null;
-  eligibilityNotes: string | null;
-  applyNotes: string | null;
-  sourceTable: string;
-  sourceId: string;
-  // Verification
-  verificationStatus: string;
-  // Scoring
+  eligibility_notes: string | null;
+  apply_notes: string | null;
+  source_table: string;
+  source_id: string;
+  verification_status: string;
   score: number;
-  matchReasons: string[];
-  scoreBreakdown: {
-    urgencyScore: number;
-    locationScore: number;
-    pipelineScore: number;
-    domainScore: number;
-    freshnessScore: number;
-    needOverlapScore: number;
+  match_reasons: string[];
+  score_breakdown: {
+    urgency_score: number;
+    location_score: number;
+    pipeline_score: number;
+    domain_score: number;
+    freshness_score: number;
+    need_overlap_score: number;
   };
 }
 
@@ -137,65 +134,65 @@ interface Phase1Result {
   id: number;
   name: string;
   description: string | null;
-  resourceType: string;
+  resource_type: string;
   domain: string;
-  needTypes: string;      // JSON string
-  urgencyLevel: string;
-  stateCode: string | null;
-  jurisdictionType: string;
+  need_types: string;      // JSON string
+  urgency_level: string;
+  state_code: string | null;
+  jurisdiction_type: string;
   phone: string | null;
   website: string | null;
   email: string | null;
   agency: string | null;
   category: string | null;
-  eligibilityNotes: string | null;
-  applyNotes: string | null;
-  sourceTable: string;
-  sourceId: string;
-  matchingPipelineTypes: string; // JSON string
-  lastVerifiedAt: number | null;
-  softSignals: string | null;    // JSON string
-  matchExplanationTemplate: string | null;
-  verificationStatus: string;    // verified | unverified | flagged
+  eligibility_notes: string | null;
+  apply_notes: string | null;
+  source_table: string;
+  source_id: string;
+  matching_pipeline_types: string; // JSON string
+  last_verified_at: number | null;
+  soft_signals: string | null;    // JSON string
+  match_explanation_template: string | null;
+  verification_status: string;    // verified | unverified | flagged
 }
 
-async function phase1HardFilter(input: MatchInput): Promise<Phase1Result[]> {
-  const { pipelineType, jurisdiction } = input;
-  const selectedColumns = `
+async function phase1_hard_filter(input: MatchInput): Promise<Phase1Result[]> {
+  const { pipeline_type, jurisdiction } = input;
+  const selected_columns = `
     id,
     name,
     description,
-    resource_type as "resourceType",
+    resource_type,
     domain,
-    need_types as "needTypes",
-    urgency_level as "urgencyLevel",
-    state_code as "stateCode",
-    jurisdiction_type as "jurisdictionType",
+    need_types,
+    urgency_level,
+    state_code,
+    jurisdiction_type,
     phone,
     website,
     email,
     agency,
     category,
-    eligibility_notes as "eligibilityNotes",
-    apply_notes as "applyNotes",
-    source_table as "sourceTable",
-    source_id as "sourceId",
-    matching_pipeline_types as "matchingPipelineTypes",
-    last_verified_at as "lastVerifiedAt",
-    soft_signals as "softSignals",
-    match_explanation_template as "matchExplanationTemplate",
-    verification_status as "verificationStatus"
+    eligibility_notes,
+    apply_notes,
+    source_table,
+    source_id,
+    matching_pipeline_types,
+    last_verified_at,
+    soft_signals,
+    match_explanation_template,
+    verification_status
   `;
-  
-  // Build the query — filter by active + pipeline type match
-  // The database contract is snake_case. Aliases keep the TypeScript return shape stable.
+
+  // Build the query — filter by active + pipeline type match.
+  // The database contract and runtime payload are snake_case.
   let query: string;
   let params: any[];
-  
+
   if (jurisdiction) {
     // If jurisdiction provided: return resources that match the state OR are federal
     query = `
-      SELECT ${selectedColumns}
+      SELECT ${selected_columns}
       FROM unified_resources
       WHERE is_active = true
         AND verification_status != 'flagged'
@@ -204,11 +201,11 @@ async function phase1HardFilter(input: MatchInput): Promise<Phase1Result[]> {
       ORDER BY urgency_level DESC
       LIMIT 100
     `;
-    params = [JSON.stringify(pipelineType), jurisdiction];
+    params = [JSON.stringify(pipeline_type), jurisdiction];
   } else {
     // No jurisdiction: return all matching resources (federal + all states)
     query = `
-      SELECT ${selectedColumns}
+      SELECT ${selected_columns}
       FROM unified_resources
       WHERE is_active = true
         AND verification_status != 'flagged'
@@ -216,152 +213,152 @@ async function phase1HardFilter(input: MatchInput): Promise<Phase1Result[]> {
       ORDER BY urgency_level DESC
       LIMIT 100
     `;
-    params = [JSON.stringify(pipelineType)];
+    params = [JSON.stringify(pipeline_type)];
   }
-  
+
   const [rows] = await pool.query(query, params);
   return rows as Phase1Result[];
 }
 
 // ─── Phase 2: Weighted Scoring ───
 
-function phase2Score(resources: Phase1Result[], input: MatchInput): ScoredResource[] {
-  const inputDomain = input.domain || PIPELINE_DOMAIN_MAP[input.pipelineType] || "general";
-  const inputUrgency = URGENCY_RANK[input.urgency || "standard"] || 2;
+function phase2_score(resources: Phase1Result[], input: MatchInput): ScoredResource[] {
+  const input_domain = input.domain || PIPELINE_DOMAIN_MAP[input.pipeline_type] || "general";
+  const input_urgency = URGENCY_RANK[input.urgency || "standard"] || 2;
   const now = Date.now();
-  const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
-  const SIX_MONTHS = 180 * 24 * 60 * 60 * 1000;
-  
+  const thirty_days = 30 * 24 * 60 * 60 * 1000;
+  const six_months = 180 * 24 * 60 * 60 * 1000;
+
   return resources.map(r => {
-    const needTypes = safeParseJson<string[]>(r.needTypes, []);
-    const matchReasons: string[] = [];
-    
+    const need_types = safe_parse_json<string[]>(r.need_types, []);
+    const match_reasons: string[] = [];
+
     // ─── Score Components (each 0.0 - 1.0) ───
-    
+
     // 1. Urgency alignment (weight: 0.25)
-    const resourceUrgency = URGENCY_RANK[r.urgencyLevel] || 2;
-    let urgencyScore = 0;
-    if (resourceUrgency >= inputUrgency) {
-      urgencyScore = 1.0; // Resource meets or exceeds urgency need
-      if (resourceUrgency === 4) matchReasons.push("Crisis-level support available");
-      else if (resourceUrgency >= inputUrgency) matchReasons.push("Urgency level matches your need");
+    const resource_urgency = URGENCY_RANK[r.urgency_level] || 2;
+    let urgency_score = 0;
+    if (resource_urgency >= input_urgency) {
+      urgency_score = 1.0; // Resource meets or exceeds urgency need
+      if (resource_urgency === 4) match_reasons.push("Crisis-level support available");
+      else if (resource_urgency >= input_urgency) match_reasons.push("Urgency level matches your need");
     } else {
-      urgencyScore = resourceUrgency / inputUrgency; // Partial credit
+      urgency_score = resource_urgency / input_urgency; // Partial credit
     }
-    
+
     // 2. Location match (weight: 0.20)
-    let locationScore = 0;
-    if (input.jurisdiction && r.stateCode === input.jurisdiction) {
-      locationScore = 1.0;
-      matchReasons.push(`Located in your state (${r.stateCode})`);
-    } else if (!r.stateCode || r.jurisdictionType === "federal") {
-      locationScore = 0.7; // Federal resources are broadly available
-      matchReasons.push("Federal program — available nationwide");
+    let location_score = 0;
+    if (input.jurisdiction && r.state_code === input.jurisdiction) {
+      location_score = 1.0;
+      match_reasons.push(`Located in your state (${r.state_code})`);
+    } else if (!r.state_code || r.jurisdiction_type === "federal") {
+      location_score = 0.7; // Federal resources are broadly available
+      match_reasons.push("Federal program — available nationwide");
     } else {
-      locationScore = 0.1; // Wrong state
+      location_score = 0.1; // Wrong state
     }
-    
+
     // 3. Pipeline type match (weight: 0.20)
-    const matchingPipelines = safeParseJson<string[]>(r.matchingPipelineTypes, []);
-    let pipelineScore = 0;
-    if (matchingPipelines.includes(input.pipelineType)) {
-      pipelineScore = 1.0;
-      matchReasons.push(`Directly handles ${input.pipelineType.replace(/_/g, " ")} cases`);
+    const matching_pipelines = safe_parse_json<string[]>(r.matching_pipeline_types, []);
+    let pipeline_score = 0;
+    if (matching_pipelines.includes(input.pipeline_type)) {
+      pipeline_score = 1.0;
+      match_reasons.push(`Directly handles ${input.pipeline_type.replace(/_/g, " ")} cases`);
     }
-    
+
     // 4. Domain match (weight: 0.15)
-    let domainScore = 0;
-    if (r.domain === inputDomain) {
-      domainScore = 1.0;
-      matchReasons.push(`${r.domain} domain match`);
+    let domain_score = 0;
+    if (r.domain === input_domain) {
+      domain_score = 1.0;
+      match_reasons.push(`${r.domain} domain match`);
     } else if (r.domain === "legal") {
-      domainScore = 0.6; // Legal aid is broadly useful
-      matchReasons.push("Legal aid — applicable across domains");
+      domain_score = 0.6; // Legal aid is broadly useful
+      match_reasons.push("Legal aid — applicable across domains");
     } else {
-      domainScore = 0.1;
+      domain_score = 0.1;
     }
-    
+
     // 5. Freshness decay (weight: 0.10)
-    let freshnessScore = 0.5; // Default for unknown
-    if (r.lastVerifiedAt) {
-      const age = now - r.lastVerifiedAt;
-      if (age < THIRTY_DAYS) {
-        freshnessScore = 1.0;
-      } else if (age < SIX_MONTHS) {
-        freshnessScore = 0.7;
+    let freshness_score = 0.5; // Default for unknown
+    if (r.last_verified_at) {
+      const age = now - r.last_verified_at;
+      if (age < thirty_days) {
+        freshness_score = 1.0;
+      } else if (age < six_months) {
+        freshness_score = 0.7;
       } else {
-        freshnessScore = 0.3;
-        matchReasons.push("Note: resource data may be outdated — verify before acting");
+        freshness_score = 0.3;
+        match_reasons.push("Note: resource data may be outdated — verify before acting");
       }
     }
-    
+
     // 5b. Verification bonus/penalty
-    let verificationModifier = 0;
-    if (r.verificationStatus === "verified") {
-      verificationModifier = 0.05; // Small boost for verified resources
-      matchReasons.push("✓ Verified resource");
-    } else if (r.verificationStatus === "unverified") {
-      verificationModifier = 0; // Neutral
+    let verification_modifier = 0;
+    if (r.verification_status === "verified") {
+      verification_modifier = 0.05; // Small boost for verified resources
+      match_reasons.push("✓ Verified resource");
+    } else if (r.verification_status === "unverified") {
+      verification_modifier = 0; // Neutral
     }
     // flagged resources are already excluded in Phase 1
-    
+
     // 6. Need keyword overlap (weight: 0.10)
-    let needOverlapScore = 0;
-    if (input.needKeywords && input.needKeywords.length > 0) {
-      const overlap = input.needKeywords.filter(k => 
-        needTypes.some(n => n.includes(k) || k.includes(n))
+    let need_overlap_score = 0;
+    if (input.need_keywords && input.need_keywords.length > 0) {
+      const overlap = input.need_keywords.filter(k =>
+        need_types.some(n => n.includes(k) || k.includes(n))
       );
-      needOverlapScore = Math.min(overlap.length / input.needKeywords.length, 1.0);
-      if (overlap.length > 0) matchReasons.push(`Covers: ${overlap.join(", ")}`);
+      need_overlap_score = Math.min(overlap.length / input.need_keywords.length, 1.0);
+      if (overlap.length > 0) match_reasons.push(`Covers: ${overlap.join(", ")}`);
     } else {
-      needOverlapScore = 0.5; // No keywords to match against
+      need_overlap_score = 0.5; // No keywords to match against
     }
-    
+
     // ─── Weighted Total ───
     const score = (
-      urgencyScore * 0.25 +
-      locationScore * 0.20 +
-      pipelineScore * 0.20 +
-      domainScore * 0.15 +
-      freshnessScore * 0.10 +
-      needOverlapScore * 0.10
+      urgency_score * 0.25 +
+      location_score * 0.20 +
+      pipeline_score * 0.20 +
+      domain_score * 0.15 +
+      freshness_score * 0.10 +
+      need_overlap_score * 0.10
     );
-    
+
     // ─── Bonus: enforcement paths get a boost (they're directly actionable) ───
-    const actionBonus = r.resourceType === "enforcement_path" ? 0.10 : 0;
-    
+    const action_bonus = r.resource_type === "enforcement_path" ? 0.10 : 0;
+
     // ─── Verification modifier ───
-    const totalScore = Math.min(score + actionBonus + verificationModifier, 1.0);
-    
+    const total_score = Math.min(score + action_bonus + verification_modifier, 1.0);
+
     return {
       id: r.id,
       name: r.name,
       description: r.description,
-      resourceType: r.resourceType,
+      resource_type: r.resource_type,
       domain: r.domain,
-      needTypes,
-      urgencyLevel: r.urgencyLevel,
-      stateCode: r.stateCode,
-      jurisdictionType: r.jurisdictionType,
+      need_types,
+      urgency_level: r.urgency_level,
+      state_code: r.state_code,
+      jurisdiction_type: r.jurisdiction_type,
       phone: r.phone,
       website: r.website,
       email: r.email,
       agency: r.agency,
       category: r.category,
-      eligibilityNotes: r.eligibilityNotes,
-      applyNotes: r.applyNotes,
-      sourceTable: r.sourceTable,
-      sourceId: r.sourceId,
-      score: totalScore,
-      verificationStatus: r.verificationStatus,
-      matchReasons,
-      scoreBreakdown: {
-        urgencyScore,
-        locationScore,
-        pipelineScore,
-        domainScore,
-        freshnessScore,
-        needOverlapScore,
+      eligibility_notes: r.eligibility_notes,
+      apply_notes: r.apply_notes,
+      source_table: r.source_table,
+      source_id: r.source_id,
+      score: total_score,
+      verification_status: r.verification_status,
+      match_reasons,
+      score_breakdown: {
+        urgency_score,
+        location_score,
+        pipeline_score,
+        domain_score,
+        freshness_score,
+        need_overlap_score,
       },
     };
   });
@@ -369,118 +366,116 @@ function phase2Score(resources: Phase1Result[], input: MatchInput): ScoredResour
 
 // ─── Diversity Constraint ───
 
-function enforceDiversity(scored: ScoredResource[], limit: number): ScoredResource[] {
+function enforce_diversity(scored: ScoredResource[], limit: number): ScoredResource[] {
   if (scored.length <= limit) return scored;
-  
+
   // Sort by score descending
   const sorted = [...scored].sort((a, b) => b.score - a.score);
-  
+
   const result: ScoredResource[] = [];
-  const typeCounts: Record<string, number> = {};
-  const MAX_PER_TYPE = Math.ceil(limit * 0.6); // No more than 60% from one type
-  
+  const type_counts: Record<string, number> = {};
+  const max_per_type = Math.ceil(limit * 0.6); // No more than 60% from one type
+
   // First pass: pick top items respecting diversity
   for (const item of sorted) {
     if (result.length >= limit) break;
-    const count = typeCounts[item.resourceType] || 0;
-    if (count < MAX_PER_TYPE) {
+    const count = type_counts[item.resource_type] || 0;
+    if (count < max_per_type) {
       result.push(item);
-      typeCounts[item.resourceType] = count + 1;
+      type_counts[item.resource_type] = count + 1;
     }
   }
-  
+
   // Second pass: if we don't have enough, fill from remaining
   if (result.length < limit) {
-    const usedIds = new Set(result.map(r => r.id));
+    const used_ids = new Set(result.map(r => r.id));
     for (const item of sorted) {
       if (result.length >= limit) break;
-      if (!usedIds.has(item.id)) {
+      if (!used_ids.has(item.id)) {
         result.push(item);
       }
     }
   }
-  
+
   // Check diversity: ensure at least 2 different resource types if possible
-  const uniqueTypes = new Set(result.map(r => r.resourceType));
-  if (uniqueTypes.size < 2 && scored.length > limit) {
+  const unique_types = new Set(result.map(r => r.resource_type));
+  if (unique_types.size < 2 && scored.length > limit) {
     // Find the lowest-scored item in result and swap with highest-scored different-type item
-    const resultTypes = result.map(r => r.resourceType);
-    const dominantType = resultTypes.sort((a, b) => 
-      resultTypes.filter(t => t === b).length - resultTypes.filter(t => t === a).length
+    const result_types = result.map(r => r.resource_type);
+    const dominant_type = result_types.sort((a, b) =>
+      result_types.filter(t => t === b).length - result_types.filter(t => t === a).length
     )[0];
-    
-    const differentTypeItem = sorted.find(s => 
-      s.resourceType !== dominantType && !result.some(r => r.id === s.id)
+
+    const different_type_item = sorted.find(s =>
+      s.resource_type !== dominant_type && !result.some(r => r.id === s.id)
     );
-    
-    if (differentTypeItem) {
+
+    if (different_type_item) {
       // Replace the lowest-scored item of the dominant type
-      const lowestIdx = result.reduce((minIdx, item, idx) => 
-        item.resourceType === dominantType && item.score < result[minIdx].score ? idx : minIdx
+      const lowest_idx = result.reduce((min_idx, item, idx) =>
+        item.resource_type === dominant_type && item.score < result[min_idx].score ? idx : min_idx
       , 0);
-      result[lowestIdx] = differentTypeItem;
+      result[lowest_idx] = different_type_item;
     }
   }
-  
+
   // Re-sort by score
   return result.sort((a, b) => b.score - a.score);
 }
 
 // ─── Main Entry Point ───
 
-export async function matchResources(input: MatchInput): Promise<ScoredResource[]> {
+export async function match_resources(input: MatchInput): Promise<ScoredResource[]> {
   const limit = input.limit || 5;
-  
+
   // Phase 1: Hard filter
-  const filtered = await phase1HardFilter(input);
-  
+  const filtered = await phase1_hard_filter(input);
+
   if (filtered.length === 0) {
     // Fallback: try without pipeline type restriction, just domain
     return [];
   }
-  
+
   // Phase 2: Score
-  const scored = phase2Score(filtered, input);
+  const scored = phase2_score(filtered, input);
 
   // Phase 2b: Signal-aware score adjustment
   // RESOURCE_STALE signals apply a 0.30 penalty to affected resources
   // POLICY_CHANGE signals apply a 0.10 boost (resource is newly relevant)
   try {
-    const [staleSignals, policySignals] = await Promise.all([
+    const [stale_signals, policy_signals] = await Promise.all([
       getActiveSignalsByEffect("RESOURCE_STALE", 200),
       getActiveSignalsByEffect("POLICY_CHANGE", 200),
     ]);
-    const staleIds = new Set(
-      staleSignals
+    const stale_ids = new Set(
+      stale_signals
         .filter(s => s.targetTable === "unified_resources" && s.targetId !== null)
         .map(s => s.targetId as number)
     );
-    const policyIds = new Set(
-      policySignals
+    const policy_ids = new Set(
+      policy_signals
         .filter(s => s.targetTable === "unified_resources" && s.targetId !== null)
         .map(s => s.targetId as number)
     );
     for (const r of scored) {
-      if (staleIds.has(r.id)) {
+      if (stale_ids.has(r.id)) {
         r.score = Math.max(0, r.score - 0.30);
-        r.matchReasons.push("⚠ Resource flagged as stale — verify before acting");
+        r.match_reasons.push("⚠ Resource flagged as stale — verify before acting");
       }
-      if (policyIds.has(r.id)) {
+      if (policy_ids.has(r.id)) {
         r.score = Math.min(1.0, r.score + 0.10);
-        r.matchReasons.push("↑ Policy change detected — resource may have new eligibility");
+        r.match_reasons.push("↑ Policy change detected — resource may have new eligibility");
       }
     }
   } catch { /* non-fatal: signal lookup failure should not block matching */ }
-  
+
   // Phase 3: Diversity constraint + limit
-  const diversified = enforceDiversity(scored, limit);
-  
-  return diversified;
+  return enforce_diversity(scored, limit);
 }
 
 // ─── Helpers ───
 
-function safeParseJson<T>(val: any, fallback: T): T {
+function safe_parse_json<T>(val: any, fallback: T): T {
   if (!val) return fallback;
   if (typeof val === "object") return val as T;
   try {
@@ -491,4 +486,12 @@ function safeParseJson<T>(val: any, fallback: T): T {
 }
 
 // ─── Exported for testing ───
-export { phase1HardFilter, phase2Score, enforceDiversity, PIPELINE_DOMAIN_MAP, URGENCY_RANK };
+export {
+  phase1_hard_filter,
+  phase2_score,
+  enforce_diversity,
+  PIPELINE_DOMAIN_MAP,
+  URGENCY_RANK,
+};
+
+// Legacy named exports are intentionally not kept. Snake_case is the runtime contract.
