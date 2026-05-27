@@ -32,6 +32,7 @@ import { sessionMiddleware } from "./session-middleware";
 import { serveStatic, setupVite } from "./vite";
 import { systemVisibilityRouter } from "../routes/system-visibility-router";
 import { conveyorRouter } from "../routes/conveyor-router";
+import { civicMapRouter } from "../routes/civic-map-router";
 
 let pipelineRunnerInterval: NodeJS.Timer | null = null;
 
@@ -90,6 +91,8 @@ async function startServer() {
   app.use("/api/system", systemVisibilityRouter);
   // Conveyor Belt API — validate → promote → bridge → report
   app.use("/api/conveyor", conveyorRouter);
+  // CivicMap rendering API — preview/detail/bounds, snake_case contracts
+  app.use("/api/civic-map", civicMapRouter);
   // tRPC API
   app.use(
     "/api/trpc",
