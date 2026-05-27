@@ -32,37 +32,37 @@ export type ModuleType =
 
 export interface KnowledgeModule {
   id: number;
-  moduleType: string;
-  moduleName: string;
+  module_type: string;
+  module_name: string;
   description: string;
-  sourceFile: string | null;
-  totalEntries: number;
+  source_file: string | null;
+  total_entries: number;
   version: string;
-  loadedAt: number;
-  isActive: boolean;
+  loaded_at: number;
+  is_active: boolean;
 }
 
 export interface KnowledgeEntry {
   id: number;
-  moduleId: number;
-  entryId: string;
-  entryName: string;
+  module_id: number;
+  entry_id: string;
+  entry_name: string;
   category: string | null;
   severity: string | null;
   domain: string | null;
   payload: Record<string, unknown>;
   tags: string[] | null;
-  crossRefModules: string[] | null;
-  createdAt: number;
+  cross_ref_modules: string[] | null;
+  created_at: number;
 }
 
 export interface CrossRef {
   id: number;
-  sourceModuleId: number;
-  sourceEntryId: string;
-  targetModuleId: number;
-  targetEntryId: string | null;
-  targetTable: string | null;
+  source_module_id: number;
+  source_entry_id: string;
+  target_module_id: number;
+  target_entry_id: string | null;
+  target_table: string | null;
   relationship: string;
   notes: string | null;
 }
@@ -71,16 +71,16 @@ export interface CrossRef {
 
 export async function listModules(): Promise<KnowledgeModule[]> {
   const rows = await db.execute(
-    sql`SELECT id, moduleType, moduleName, description, sourceFile, totalEntries, version, loadedAt, isActive
-        FROM knowledge_modules WHERE isActive = 1 ORDER BY id`
+    sql`SELECT id, module_type, module_name, description, source_file, total_entries, version, loaded_at, is_active
+        FROM knowledge_modules WHERE is_active = 1 ORDER BY id`
   );
   return (rows as any)[0].map(parseModuleRow);
 }
 
 export async function getModule(moduleType: ModuleType): Promise<KnowledgeModule | null> {
   const rows = await db.execute(
-    sql`SELECT id, moduleType, moduleName, description, sourceFile, totalEntries, version, loadedAt, isActive
-        FROM knowledge_modules WHERE moduleType = ${moduleType} AND isActive = 1 LIMIT 1`
+    sql`SELECT id, module_type, module_name, description, source_file, total_entries, version, loaded_at, is_active
+        FROM knowledge_modules WHERE module_type = ${moduleType} AND is_active = 1 LIMIT 1`
   );
   const arr = (rows as any)[0];
   return arr.length > 0 ? parseModuleRow(arr[0]) : null;
@@ -95,7 +95,7 @@ export async function getEntriesByModule(
   const module = await getModule(moduleType);
   if (!module) return { entries: [], total: 0 };
 
-  let whereClause = sql`WHERE ke.moduleId = ${module.id}`;
+  let whereClause = sql`WHERE ke.module_id = ${module.id}`;
   if (opts?.category) whereClause = sql`${whereClause} AND ke.category = ${opts.category}`;
   if (opts?.severity) whereClause = sql`${whereClause} AND ke.severity = ${opts.severity}`;
   if (opts?.domain) whereClause = sql`${whereClause} AND ke.domain = ${opts.domain}`;
@@ -115,7 +115,7 @@ export async function getEntriesByModule(
 
 export async function getEntryById(entryId: string): Promise<KnowledgeEntry | null> {
   const rows = await db.execute(
-    sql`SELECT * FROM knowledge_entries WHERE entryId = ${entryId} LIMIT 1`
+    sql`SELECT * FROM knowledge_entries WHERE entry_id = ${entryId} LIMIT 1`
   );
   const arr = (rows as any)[0];
   return arr.length > 0 ? parseEntryRow(arr[0]) : null;
@@ -131,17 +131,17 @@ export async function searchEntries(
   let moduleFilter = sql``;
   if (opts?.moduleTypes && opts.moduleTypes.length > 0) {
     const moduleRows = await db.execute(
-      sql`SELECT id FROM knowledge_modules WHERE moduleType IN (${sql.join(opts.moduleTypes.map(t => sql`${t}`), sql`, `)})`
+      sql`SELECT id FROM knowledge_modules WHERE module_type IN (${sql.join(opts.moduleTypes.map(t => sql`${t}`), sql`, `)})`
     );
     const moduleIds = (moduleRows as any)[0].map((r: any) => r.id);
     if (moduleIds.length > 0) {
-      moduleFilter = sql`AND ke.moduleId IN (${sql.join(moduleIds.map((id: number) => sql`${id}`), sql`, `)})`;
+      moduleFilter = sql`AND ke.module_id IN (${sql.join(moduleIds.map((id: number) => sql`${id}`), sql`, `)})`;
     }
   }
 
   const rows = await db.execute(
     sql`SELECT ke.* FROM knowledge_entries ke
-        WHERE (ke.entryName LIKE ${searchPattern} OR ke.entryId LIKE ${searchPattern} OR ke.category LIKE ${searchPattern})
+        WHERE (ke.entry_name LIKE ${searchPattern} OR ke.entry_id LIKE ${searchPattern} OR ke.category LIKE ${searchPattern})
         ${moduleFilter}
         ORDER BY ke.id LIMIT ${limit}`
   );
@@ -155,11 +155,11 @@ export async function getCrossRefs(moduleType: ModuleType): Promise<CrossRef[]> 
   if (!module) return [];
 
   const rows = await db.execute(
-    sql`SELECT kcr.*, km_src.moduleType as srcType, km_tgt.moduleType as tgtType
+    sql`SELECT kcr.*, km_src.module_type as src_type, km_tgt.module_type as tgt_type
         FROM knowledge_cross_refs kcr
-        JOIN knowledge_modules km_src ON kcr.sourceModuleId = km_src.id
-        JOIN knowledge_modules km_tgt ON kcr.targetModuleId = km_tgt.id
-        WHERE kcr.sourceModuleId = ${module.id} OR kcr.targetModuleId = ${module.id}
+        JOIN knowledge_modules km_src ON kcr.source_module_id = km_src.id
+        JOIN knowledge_modules km_tgt ON kcr.target_module_id = km_tgt.id
+        WHERE kcr.source_module_id = ${module.id} OR kcr.target_module_id = ${module.id}
         ORDER BY kcr.id`
   );
   return (rows as any)[0].map(parseCrossRefRow);
@@ -170,17 +170,17 @@ export async function getRelatedEntries(
   relationship?: string
 ): Promise<{ entry: KnowledgeEntry; relationship: string }[]> {
   const entry = await getEntryById(entryId);
-  if (!entry || !entry.crossRefModules || entry.crossRefModules.length === 0) return [];
+  if (!entry || !entry.cross_ref_modules || entry.cross_ref_modules.length === 0) return [];
 
   // Find entries in the cross-referenced modules that share category/domain
   const results: { entry: KnowledgeEntry; relationship: string }[] = [];
-  for (const refModuleType of entry.crossRefModules) {
+  for (const refModuleType of entry.cross_ref_modules) {
     const refModule = await getModule(refModuleType as ModuleType);
     if (!refModule) continue;
 
     const rows = await db.execute(
       sql`SELECT * FROM knowledge_entries
-          WHERE moduleId = ${refModule.id}
+          WHERE module_id = ${refModule.id}
           AND (category = ${entry.category} OR domain = ${entry.domain})
           LIMIT 5`
     );
@@ -216,18 +216,18 @@ export async function routeToAgency(claimType: string): Promise<{
   const routing = await getEntriesByModule("federal_reference", { category: "routing_matrix" });
 
   const matchedRouting = routing.entries.filter(
-    (e) => e.entryName.toLowerCase().includes(claimType.toLowerCase())
+    (e) => e.entry_name.toLowerCase().includes(claimType.toLowerCase())
   );
 
   // Find the primary agency from the routing match
   const matchedAgencies: KnowledgeEntry[] = [];
   for (const route of matchedRouting) {
     const payload = route.payload as any;
-    const primaryAgency = payload?.primary_agency;
-    if (primaryAgency) {
+    const primary_agency = payload?.primary_agency;
+    if (primary_agency) {
       const match = agencies.entries.find(
-        (a) => a.entryName.toLowerCase().includes(primaryAgency.toLowerCase()) ||
-               (a.payload as any)?.agency_name?.toLowerCase().includes(primaryAgency.toLowerCase())
+        (a) => a.entry_name.toLowerCase().includes(primary_agency.toLowerCase()) ||
+               (a.payload as any)?.agency_name?.toLowerCase().includes(primary_agency.toLowerCase())
       );
       if (match) matchedAgencies.push(match);
     }
@@ -243,7 +243,7 @@ export async function checkSOLCollision(category: string): Promise<KnowledgeEntr
   const { entries } = await getEntriesByModule("sol_collision");
   return entries.filter(
     (e) => e.category?.toLowerCase().includes(category.toLowerCase()) ||
-           e.entryName.toLowerCase().includes(category.toLowerCase())
+           e.entry_name.toLowerCase().includes(category.toLowerCase())
   );
 }
 
@@ -255,7 +255,7 @@ export async function getCascadePathways(trigger?: string): Promise<KnowledgeEnt
   if (!trigger) return entries;
   return entries.filter(
     (e) => e.domain?.toLowerCase().includes(trigger.toLowerCase()) ||
-           e.entryName.toLowerCase().includes(trigger.toLowerCase())
+           e.entry_name.toLowerCase().includes(trigger.toLowerCase())
   );
 }
 
@@ -301,14 +301,14 @@ export async function getPolicyEvents(opts?: {
 
 export async function getBackboneSummary(): Promise<{
   modules: KnowledgeModule[];
-  totalEntries: number;
-  totalCrossRefs: number;
+  total_entries: number;
+  total_cross_refs: number;
 }> {
   const modules = await listModules();
-  const totalEntries = modules.reduce((sum, m) => sum + m.totalEntries, 0);
+  const total_entries = modules.reduce((sum, m) => sum + m.total_entries, 0);
   const refRows = await db.execute(sql`SELECT COUNT(*) as cnt FROM knowledge_cross_refs`);
-  const totalCrossRefs = (refRows as any)[0][0].cnt;
-  return { modules, totalEntries, totalCrossRefs };
+  const total_cross_refs = (refRows as any)[0][0].cnt;
+  return { modules, total_entries, total_cross_refs };
 }
 
 // ─── Row Parsers ────────────────────────────────────────────────
@@ -316,14 +316,14 @@ export async function getBackboneSummary(): Promise<{
 function parseModuleRow(row: any): KnowledgeModule {
   return {
     id: row.id,
-    moduleType: row.moduleType,
-    moduleName: row.moduleName,
+    module_type: row.module_type,
+    module_name: row.module_name,
     description: row.description,
-    sourceFile: row.sourceFile,
-    totalEntries: row.totalEntries,
+    source_file: row.source_file,
+    total_entries: row.total_entries,
     version: row.version,
-    loadedAt: Number(row.loadedAt),
-    isActive: Boolean(row.isActive),
+    loaded_at: Number(row.loaded_at),
+    is_active: Boolean(row.is_active),
   };
 }
 
@@ -336,33 +336,33 @@ function parseEntryRow(row: any): KnowledgeEntry {
   if (typeof tags === "string") {
     try { tags = JSON.parse(tags); } catch { tags = null; }
   }
-  let crossRefModules = row.crossRefModules;
-  if (typeof crossRefModules === "string") {
-    try { crossRefModules = JSON.parse(crossRefModules); } catch { crossRefModules = null; }
+  let cross_ref_modules = row.cross_ref_modules;
+  if (typeof cross_ref_modules === "string") {
+    try { cross_ref_modules = JSON.parse(cross_ref_modules); } catch { cross_ref_modules = null; }
   }
   return {
     id: row.id,
-    moduleId: row.moduleId,
-    entryId: row.entryId,
-    entryName: row.entryName,
+    module_id: row.module_id,
+    entry_id: row.entry_id,
+    entry_name: row.entry_name,
     category: row.category,
     severity: row.severity,
     domain: row.domain,
     payload,
     tags,
-    crossRefModules,
-    createdAt: Number(row.createdAt),
+    cross_ref_modules,
+    created_at: Number(row.created_at),
   };
 }
 
 function parseCrossRefRow(row: any): CrossRef {
   return {
     id: row.id,
-    sourceModuleId: row.sourceModuleId,
-    sourceEntryId: row.sourceEntryId,
-    targetModuleId: row.targetModuleId,
-    targetEntryId: row.targetEntryId,
-    targetTable: row.targetTable,
+    source_module_id: row.source_module_id,
+    source_entry_id: row.source_entry_id,
+    target_module_id: row.target_module_id,
+    target_entry_id: row.target_entry_id,
+    target_table: row.target_table,
     relationship: row.relationship,
     notes: row.notes,
   };
