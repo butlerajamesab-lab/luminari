@@ -71,8 +71,14 @@ jobs:
       - name: Lint public runtime schema identifiers
         run: node scripts/check-public-runtime-camelcase.mjs
 
-      - name: Build
-        run: npm run build
+      - name: TypeScript check
+        run: npm run check
+
+      - name: Vite client build
+        run: npx vite build
+
+      - name: Server bundle build
+        run: npx esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && ([ ! -d server/config ] || cp -r server/config dist/config)
 
       - name: Start server
         run: |
