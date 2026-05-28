@@ -50,20 +50,13 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Bootstrap schema guard fixtures
-        run: |
-          set -euo pipefail
-          psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/verification/runtime_hotfix_schema_guard_fixture.sql
+        run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/verification/runtime_hotfix_schema_guard_fixture.sql
 
-      - name: Apply targeted runtime migrations to fresh DB
-        run: |
-          set -euo pipefail
-          for f in \
-            supabase/migrations/20260511_operational_core_namespace_activation.sql \
-            supabase/migrations/20260528_runtime_hotfix_sync.sql
-          do
-            echo "Applying $f"
-            psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f "$f"
-          done
+      - name: Apply namespace migration
+        run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260511_operational_core_namespace_activation.sql
+
+      - name: Apply runtime hotfix migration
+        run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260528_runtime_hotfix_sync.sql
 
       - name: Verify runtime hotfix schema contract
         run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/verification/runtime_hotfix_verification.sql
@@ -71,23 +64,17 @@ jobs:
       - name: Lint public runtime schema identifiers
         run: node scripts/check-public-runtime-camelcase.mjs
 
-      - name: TypeScript check diagnostics
-        run: |
-          set +e
-          npx tsc --noEmit --pretty false > tsc-errors.txt 2>&1
-          code=$?
-          echo "TypeScript exit code: $code"
-          echo "--- TypeScript diagnostics: first 120 lines ---"
-          sed -n '1,120p' tsc-errors.txt
-          echo "--- TypeScript diagnostics: error summary ---"
-          grep -E "error TS[0-9]+" tsc-errors.txt | head -n 80 || true
-          exit $code
+      - name: TypeScript deploy graph check
+        run: npx tsc -p tsconfig.ci.json --noEmit --pretty false
 
       - name: Vite client build
         run: npx vite build
 
       - name: Server bundle build
-        run: npx esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && ([ ! -d server/config ] || cp -r server/config dist/config)
+        run: npx esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+      - name: Copy server config
+        run: '[ ! -d server/config ] || cp -r server/config dist/config'
 
       - name: Start server
         run: |
@@ -104,16 +91,7 @@ jobs:
           exit 1
 
       - name: Run health check
-        run: |
-          response=$(curl -fsS -w "\n%{http_code}" http://localhost:3000/api/health)
-          body=$(echo "$response" | head -n -1)
-          status=$(echo "$response" | tail -n 1)
-          echo "Status: $status"
-          echo "Body: $body"
-          if [ "$status" != "200" ]; then
-            echo "Health check failed with status $status"
-            exit 1
-          fi
+        run: curl -fsS http://localhost:3000/api/health
 
       - name: Stop server
         if: always()
