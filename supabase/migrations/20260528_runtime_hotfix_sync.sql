@@ -1,5 +1,5 @@
 -- Sync repository schema state with production hotfixes (2026-05-28)
--- Non-destructive, idempotent where possible.
+-- Non-destructive and fresh-DB safe.
 
 -- 1) Runtime tally view in public schema
 create or replace view public.v_enforcement_record_tallies as
@@ -16,46 +16,20 @@ create schema if not exists compat;
 create or replace view compat.v_enforcement_record_tallies as
 select * from public.v_enforcement_record_tallies;
 
--- 3) Add compatibility columns to existing views while preserving behavior/order
---    by wrapping current definitions only when missing.
-do $$
-declare
-  entities_def text;
-  detected_def text;
-begin
-  -- public.entities -> append nullable legacy_relation_id if missing
-  if exists (
-    select 1 from pg_views where schemaname = 'public' and viewname = 'entities'
-  ) and not exists (
-    select 1
-    from information_schema.columns
-    where table_schema = 'public' and table_name = 'entities' and column_name = 'legacy_relation_id'
-  ) then
-    select definition into entities_def
-    from pg_views
-    where schemaname = 'public' and viewname = 'entities';
+-- 3) Compatibility projections.
+-- Do not rewrite public.entities or public.detected_signals_base here.
+-- PostgreSQL cannot safely change an existing view's column list with
+-- CREATE OR REPLACE VIEW when adding/removing/reordering columns, and
+-- wrapping arbitrary pg_views.definition text is brittle.
+-- These compat views provide stable aliases without mutating the source views.
 
-    execute format(
-      'create or replace view public.entities as select v.*, null::text as legacy_relation_id from (%s) v',
-      entities_def
-    );
+do $$
+begin
+  if to_regclass('public.entities') is not null then
+    execute 'create or replace view compat.entities as select e.*, null::text as legacy_relation_id from public.entities e';
   end if;
 
-  -- public.detected_signals_base -> append "createdAt" alias if missing
-  if exists (
-    select 1 from pg_views where schemaname = 'public' and viewname = 'detected_signals_base'
-  ) and not exists (
-    select 1
-    from information_schema.columns
-    where table_schema = 'public' and table_name = 'detected_signals_base' and column_name = 'createdAt'
-  ) then
-    select definition into detected_def
-    from pg_views
-    where schemaname = 'public' and viewname = 'detected_signals_base';
-
-    execute format(
-      'create or replace view public.detected_signals_base as select v.*, v.created_at as "createdAt" from (%s) v',
-      detected_def
-    );
+  if to_regclass('public.detected_signals_base') is not null then
+    execute 'create or replace view compat.detected_signals_base as select d.*, d.created_at as "createdAt" from public.detected_signals_base d';
   end if;
 end $$;
