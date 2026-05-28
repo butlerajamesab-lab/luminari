@@ -374,16 +374,14 @@ async function logGateDecision(
        sunam_score, threshold_used, score_breakdown,
        decision, decision_reason,
        promoted_signal_id, staging_id, actor,
-       decided_at, created_at,
-       liveSignalId, timestamp)
+       decided_at, created_at)
     VALUES
       (${signal.id}, ${signal.signalFingerprint || null}, ${signal.signalType || 'unknown'}, ${signal.datasetId || 'unclassified'},
        ${decision.score}, ${decision.threshold},
        ${JSON.stringify(decision.breakdown)},
        ${outcome}, ${decision.reason},
        ${promotedSignalId}, ${stagingId}, ${actor},
-       ${now}, ${now},
-       ${signal.id}, ${now})
+       ${now}, ${now})
   `);
   // Return the auto-increment ID of the gate log entry
   const [rows] = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
