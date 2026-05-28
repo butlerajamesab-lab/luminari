@@ -22,6 +22,10 @@ function sendError(res: Response, error: unknown) {
   return res.status(500).json({ ok: false, error: message });
 }
 
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 civicMapRouter.get("/health", async (_req: Request, res: Response) => {
   try {
     const pool = getPool();
@@ -41,28 +45,24 @@ civicMapRouter.get("/health", async (_req: Request, res: Response) => {
 
 civicMapRouter.get("/preview", async (req: Request, res: Response) => {
   try {
-    const limit = parsePositiveInteger(req.query.limit as QueryParam, 5000, 10000);
-    const offset = parsePositiveInteger(req.query.offset as QueryParam, 1, 1000000) - 1;
+    const limit = parsePositiveInteger(req.query.limit as QueryParam, 500, 1500);
     const pool = getPool();
 
     const { rows } = await pool.query(
       `
         select
           id::text as node_id,
-          coalesce(nullif(name, ''), nullif(organization_name, ''), nullif(agency_name, ''), 'Unnamed civic resource') as name,
+          title as name,
           resource_type as node_type,
-          coalesce(nullif(state, ''), nullif(county, ''), nullif(city, ''), 'UNKNOWN') as jurisdiction,
+          coalesce(nullif(city, ''), nullif(county, ''), nullif(state, ''), 'UNKNOWN') as jurisdiction,
           latitude::float8 as latitude,
           longitude::float8 as longitude,
-          'normalized_civic_resource'::text as source_table,
-          geocode_precision as geocode_precision
-        from public.normalized_civic_resource
-        where latitude is not null
-          and longitude is not null
-        order by updated_at desc nulls last, created_at desc nulls last
-        limit $1 offset $2
+          'map_layer1_points'::text as source_table,
+          normalization_confidence::float8 as normalization_confidence,
+          source_key
+        from public.map_layer1_points(-90, 90, -180, 180, $1)
       `,
-      [limit, offset]
+      [limit]
     );
 
     return res.json({ ok: true, count: rows.length, nodes: rows });
@@ -77,27 +77,25 @@ civicMapRouter.get("/bounds", async (req: Request, res: Response) => {
     const south = parseNumber(req.query.south as QueryParam, -90);
     const east = parseNumber(req.query.east as QueryParam, 180);
     const west = parseNumber(req.query.west as QueryParam, -180);
-    const limit = parsePositiveInteger(req.query.limit as QueryParam, 2500, 10000);
+    const limit = parsePositiveInteger(req.query.limit as QueryParam, 1200, 2000);
     const pool = getPool();
 
     const { rows } = await pool.query(
       `
         select
           id::text as node_id,
-          coalesce(nullif(name, ''), nullif(organization_name, ''), nullif(agency_name, ''), 'Unnamed civic resource') as name,
+          title as name,
           resource_type as node_type,
-          coalesce(nullif(state, ''), nullif(county, ''), nullif(city, ''), 'UNKNOWN') as jurisdiction,
+          coalesce(nullif(city, ''), nullif(county, ''), nullif(state, ''), 'UNKNOWN') as jurisdiction,
           latitude::float8 as latitude,
           longitude::float8 as longitude,
-          'normalized_civic_resource'::text as source_table,
-          geocode_precision as geocode_precision
-        from public.normalized_civic_resource
-        where latitude is not null
-          and longitude is not null
-          and latitude between $1 and $2
-          and longitude between $3 and $4
-        order by updated_at desc nulls last, created_at desc nulls last
-        limit $5
+          'map_layer1_points'::text as source_table,
+          normalization_confidence::float8 as normalization_confidence,
+          source_key,
+          city,
+          county,
+          state
+        from public.map_layer1_points($1, $2, $3, $4, $5)
       `,
       [south, north, west, east, limit]
     );
@@ -111,13 +109,19 @@ civicMapRouter.get("/bounds", async (req: Request, res: Response) => {
 civicMapRouter.get("/detail/:node_id", async (req: Request, res: Response) => {
   try {
     const { node_id } = req.params;
-    const pool = getPool();
+    if (!isUuid(node_id)) {
+      return res.status(400).json({ ok: false, error: "invalid_uuid", node_id });
+    }
 
+    const pool = getPool();
     const { rows } = await pool.query(
       `
         select
           id::text as node_id,
           resource_type as node_type,
+          id,
+          source_key,
+          resource_type,
           name,
           description,
           organization_name,
@@ -137,16 +141,13 @@ civicMapRouter.get("/detail/:node_id", async (req: Request, res: Response) => {
           website_url,
           service_categories,
           eligibility_summary,
+          hours,
           languages,
           accessibility_features,
-          normalization_confidence,
-          normalization_notes,
-          source_key,
-          'normalized_civic_resource'::text as source_table,
-          created_at,
+          normalization_confidence::float8 as normalization_confidence,
+          program_owner_final,
           updated_at
-        from public.normalized_civic_resource
-        where id::text = $1
+        from public.map_layer2_detail($1::uuid)
         limit 1
       `,
       [node_id]
