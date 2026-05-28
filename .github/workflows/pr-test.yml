@@ -13,9 +13,26 @@ jobs:
   test:
     name: Build & health check (Supabase staging)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
 
     env:
+      SCHEMA_GUARD_DB_URL: postgresql://postgres:postgres@localhost:5432/app
+
       NODE_ENV: test
       # Supabase staging project: wepxlinwbjrkqdzkqpar
       DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
@@ -35,6 +52,22 @@ jobs:
 
       - name: Install dependencies
         run: npm install --legacy-peer-deps
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Apply Supabase migrations to fresh DB
+        run: |
+          for f in $(ls supabase/migrations/*.sql | sort); do
+            echo "Applying $f"
+            psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f "$f"
+          done
+
+      - name: Verify runtime hotfix schema contract
+        run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/verification/runtime_hotfix_verification.sql
+
+      - name: Lint public runtime schema identifiers (camelCase guard)
+        run: node scripts/check-public-runtime-camelcase.mjs
 
       - name: Build
         run: npm run build
