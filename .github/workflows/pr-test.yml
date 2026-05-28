@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   test:
-    name: Build & health check (Supabase staging)
+    name: Build and health check
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -32,13 +32,7 @@ jobs:
 
     env:
       SCHEMA_GUARD_DB_URL: postgresql://postgres:postgres@localhost:5432/app
-
       NODE_ENV: test
-      # Supabase staging project: wepxlinwbjrkqdzkqpar
-      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-      SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
-      SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
       - name: Checkout
@@ -63,10 +57,8 @@ jobs:
       - name: Apply targeted runtime migrations to fresh DB
         run: |
           set -euo pipefail
-          # Pinned subset on purpose: avoids Supabase-managed objects in unrelated migrations
           for f in \
             supabase/migrations/20260511_operational_core_namespace_activation.sql \
-            supabase/migrations/20260511_operational_core_runtime_views.sql \
             supabase/migrations/20260528_runtime_hotfix_sync.sql
           do
             echo "Applying $f"
@@ -76,7 +68,7 @@ jobs:
       - name: Verify runtime hotfix schema contract
         run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/verification/runtime_hotfix_verification.sql
 
-      - name: Lint public runtime schema identifiers (camelCase guard)
+      - name: Lint public runtime schema identifiers
         run: node scripts/check-public-runtime-camelcase.mjs
 
       - name: Build
@@ -86,9 +78,8 @@ jobs:
         run: |
           npm start &
           echo $! > server.pid
-          # Wait for server to be ready (max 60s)
           for i in {1..30}; do
-            if curl -fsS http://localhost:3000/api/trpc/health > /dev/null 2>&1; then
+            if curl -fsS http://localhost:3000/api/health > /dev/null 2>&1; then
               echo "Server ready after ${i}x2s"
               exit 0
             fi
@@ -97,9 +88,9 @@ jobs:
           echo "Server failed to start within 60s"
           exit 1
 
-      - name: Run /api/trpc/health check
+      - name: Run health check
         run: |
-          response=$(curl -fsS -w "\n%{http_code}" http://localhost:3000/api/trpc/health)
+          response=$(curl -fsS -w "\n%{http_code}" http://localhost:3000/api/health)
           body=$(echo "$response" | head -n -1)
           status=$(echo "$response" | tail -n 1)
           echo "Status: $status"
