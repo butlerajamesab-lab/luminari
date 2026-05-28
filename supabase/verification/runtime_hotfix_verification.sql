@@ -16,26 +16,32 @@ begin
   if to_regclass('compat.v_enforcement_record_tallies') is null then
     raise exception 'Missing required object: compat.v_enforcement_record_tallies';
   end if;
+  if to_regclass('compat.entities') is null then
+    raise exception 'Missing required object: compat.entities';
+  end if;
+  if to_regclass('compat.detected_signals_base') is null then
+    raise exception 'Missing required object: compat.detected_signals_base';
+  end if;
 
-  -- compat.sunam_gate_log is optional in fresh DB unless explicitly provisioned by upstream migration.
-
-  -- Required columns
+  -- Source columns preserved
   if not exists (
     select 1 from information_schema.columns
     where table_schema='public' and table_name='detected_signals_base' and column_name='created_at'
   ) then
-    raise exception 'Missing required column: public.detected_signals_base.created_at';
+    raise exception 'Missing required source column: public.detected_signals_base.created_at';
+  end if;
+
+  -- Compatibility aliases now live in compat projections, not by mutating public views.
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema='compat' and table_name='detected_signals_base' and column_name='createdAt'
+  ) then
+    raise exception 'Missing compatibility column: compat.detected_signals_base."createdAt"';
   end if;
   if not exists (
     select 1 from information_schema.columns
-    where table_schema='public' and table_name='detected_signals_base' and column_name='createdAt'
+    where table_schema='compat' and table_name='entities' and column_name='legacy_relation_id'
   ) then
-    raise exception 'Missing required column: public.detected_signals_base."createdAt"';
-  end if;
-  if not exists (
-    select 1 from information_schema.columns
-    where table_schema='public' and table_name='entities' and column_name='legacy_relation_id'
-  ) then
-    raise exception 'Missing required column: public.entities.legacy_relation_id';
+    raise exception 'Missing compatibility column: compat.entities.legacy_relation_id';
   end if;
 end $$;
