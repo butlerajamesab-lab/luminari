@@ -71,8 +71,17 @@ jobs:
       - name: Lint public runtime schema identifiers
         run: node scripts/check-public-runtime-camelcase.mjs
 
-      - name: TypeScript check
-        run: npm run check
+      - name: TypeScript check diagnostics
+        run: |
+          set +e
+          npx tsc --noEmit --pretty false > tsc-errors.txt 2>&1
+          code=$?
+          echo "TypeScript exit code: $code"
+          echo "--- TypeScript diagnostics: first 120 lines ---"
+          sed -n '1,120p' tsc-errors.txt
+          echo "--- TypeScript diagnostics: error summary ---"
+          grep -E "error TS[0-9]+" tsc-errors.txt | head -n 80 || true
+          exit $code
 
       - name: Vite client build
         run: npx vite build
