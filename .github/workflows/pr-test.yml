@@ -56,9 +56,11 @@ jobs:
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-      - name: Apply Supabase migrations to fresh DB
+      - name: Apply targeted runtime migrations to fresh DB
         run: |
-          for f in $(ls supabase/migrations/*.sql | sort); do
+          set -euo pipefail
+          for f in             supabase/migrations/20260511_operational_core_namespace_activation.sql             supabase/migrations/20260511_operational_core_runtime_views.sql             supabase/migrations/20260528_runtime_hotfix_sync.sql
+          do
             echo "Applying $f"
             psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f "$f"
           done
