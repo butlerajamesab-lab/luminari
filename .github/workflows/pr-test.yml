@@ -48,13 +48,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # cache: 'npm' intentionally omitted — no package-lock.json in repo
 
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Bootstrap schema guard fixtures
+        run: |
+          set -euo pipefail
+          psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/verification/runtime_hotfix_schema_guard_fixture.sql
 
       - name: Apply targeted runtime migrations to fresh DB
         run: |
