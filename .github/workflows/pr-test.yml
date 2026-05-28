@@ -11,17 +11,28 @@ concurrency:
 
 jobs:
   test:
-    name: Build & health check (Supabase staging)
+    name: Build and health check
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
 
     env:
+      SCHEMA_GUARD_DB_URL: postgresql://postgres:postgres@localhost:5432/app
       NODE_ENV: test
-      # Supabase staging project: wepxlinwbjrkqdzkqpar
-      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-      SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
-      SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
       - name: Checkout
@@ -31,21 +42,61 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # cache: 'npm' intentionally omitted — no package-lock.json in repo
 
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Build
-        run: npm run build
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Bootstrap schema guard fixtures
+        run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/verification/runtime_hotfix_schema_guard_fixture.sql
+
+      - name: Apply namespace migration
+        run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260511_operational_core_namespace_activation.sql
+
+      - name: Apply runtime hotfix migration
+        run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260528_runtime_hotfix_sync.sql
+
+      - name: Verify runtime hotfix schema contract
+        run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/verification/runtime_hotfix_verification.sql
+
+      - name: Lint public runtime schema identifiers
+        run: node scripts/check-public-runtime-camelcase.mjs
+
+      - name: TypeScript legacy debt scan
+        continue-on-error: true
+        run: npx tsc -p tsconfig.ci.json --noEmit --pretty false
+
+      - name: Vite client build
+        run: npx vite build
+
+      - name: Server bundle build
+        run: |
+          set +e
+          npx esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --log-level=debug --log-limit=200 > esbuild.log 2>&1
+          code=$?
+          echo "esbuild exit code: $code"
+          echo "--- esbuild diagnostics ---"
+          cat esbuild.log
+          exit $code
+
+      - name: Upload esbuild diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: esbuild-diagnostics
+          path: esbuild.log
+
+      - name: Copy server config
+        run: '[ ! -d server/config ] || cp -r server/config dist/config'
 
       - name: Start server
         run: |
           npm start &
           echo $! > server.pid
-          # Wait for server to be ready (max 60s)
           for i in {1..30}; do
-            if curl -fsS http://localhost:3000/api/trpc/health > /dev/null 2>&1; then
+            if curl -fsS http://localhost:3000/api/health > /dev/null 2>&1; then
               echo "Server ready after ${i}x2s"
               exit 0
             fi
@@ -54,17 +105,8 @@ jobs:
           echo "Server failed to start within 60s"
           exit 1
 
-      - name: Run /api/trpc/health check
-        run: |
-          response=$(curl -fsS -w "\n%{http_code}" http://localhost:3000/api/trpc/health)
-          body=$(echo "$response" | head -n -1)
-          status=$(echo "$response" | tail -n 1)
-          echo "Status: $status"
-          echo "Body: $body"
-          if [ "$status" != "200" ]; then
-            echo "Health check failed with status $status"
-            exit 1
-          fi
+      - name: Run health check
+        run: curl -fsS http://localhost:3000/api/health
 
       - name: Stop server
         if: always()

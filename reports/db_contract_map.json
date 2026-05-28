@@ -1,0 +1,52 @@
+{
+  "generated_at": "2026-05-27",
+  "scope": "runtime_db_identifier_audit",
+  "legacy_to_snake_case": {
+    "canonicalEntityName": "canonical_entity_name",
+    "entityRole": "entity_role",
+    "liveSignalId": "live_signal_id",
+    "scoreBreakdown": "score_breakdown",
+    "sunamScore": "sunam_score",
+    "createdAt": "created_at",
+    "updatedAt": "updated_at",
+    "workflowId": "workflow_id"
+  },
+  "runtime_mismatches": [
+    {
+      "file": "server/sunam-gate.ts",
+      "line": 378,
+      "symbol": "liveSignalId",
+      "context": "INSERT INTO sunam_gate_log column list",
+      "severity": "high"
+    },
+    {
+      "file": "server/sunam-gate.ts",
+      "line": 378,
+      "symbol": "timestamp",
+      "context": "INSERT INTO sunam_gate_log legacy alias column",
+      "severity": "high"
+    },
+    {
+      "file": "runtime/national_runtime_convergence_plan.sql",
+      "line": 9,
+      "symbol": "createdAt",
+      "context": "view definition identifier",
+      "severity": "high"
+    },
+    {
+      "file": "runtime/national_runtime_convergence_plan.sql",
+      "line": 27,
+      "symbol": "createdAt",
+      "context": "view definition identifier",
+      "severity": "high"
+    }
+  ],
+  "open_schema_migration_questions": [
+    {
+      "file": "drizzle/schema.ts",
+      "symbols": ["workflowId"],
+      "severity": "medium",
+      "note": "physical columns declared as camelCase in several tables; needs migration plan before code-only rename"
+    }
+  ]
+}
