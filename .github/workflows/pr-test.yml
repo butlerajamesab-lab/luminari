@@ -71,29 +71,6 @@ jobs:
       - name: Vite client build
         run: npx vite build
 
-      - name: Add support matcher compatibility alias
-        run: |
-          cat >> server/support-matcher.ts <<'EOF'
-
-          export async function matchResources(input: {
-            pipelineType: string;
-            jurisdiction?: string;
-            urgency?: "crisis" | "urgent" | "standard" | "informational";
-            needKeywords?: string[];
-            domain?: string;
-            limit?: number;
-          }) {
-            return match_resources({
-              pipeline_type: input.pipelineType,
-              jurisdiction: input.jurisdiction,
-              urgency: input.urgency,
-              need_keywords: input.needKeywords,
-              domain: input.domain,
-              limit: input.limit,
-            });
-          }
-          EOF
-
       - name: Server bundle build
         run: |
           set +e
