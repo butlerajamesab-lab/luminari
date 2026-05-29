@@ -1,5 +1,57 @@
--- Source-controlled CivicMap map RPC contracts.
+-- Source-controlled CivicMap map view and RPC contracts.
 -- Required by server/routes/civic-map-router.ts.
+-- The dependent views are defined before the SQL functions because PostgreSQL
+-- validates SQL-function bodies at create time.
+
+create or replace view public.v_map_layer1_light as
+select
+  ncr.id,
+  coalesce(nullif(ncr.name, ''), nullif(ncr.organization_name, ''), nullif(ncr.agency_name, ''), 'Unnamed civic resource')::text as title,
+  ncr.resource_type,
+  ncr.state,
+  ncr.county,
+  ncr.city,
+  ncr.latitude,
+  ncr.longitude,
+  ncr.normalization_confidence,
+  asr.source_key
+from public.normalized_civic_resource ncr
+left join public.api_source_registry asr on asr.id = ncr.source_id
+where ncr.latitude is not null
+  and ncr.longitude is not null;
+
+create or replace view public.v_map_layer2_detail as
+select
+  ncr.id,
+  asr.source_key,
+  ncr.resource_type,
+  ncr.name,
+  ncr.description,
+  ncr.organization_name,
+  ncr.agency_name,
+  ncr.address_line1,
+  ncr.address_line2,
+  ncr.city,
+  ncr.county,
+  ncr.state,
+  ncr.postal_code,
+  ncr.country,
+  ncr.latitude,
+  ncr.longitude,
+  ncr.geocode_precision,
+  ncr.phone,
+  ncr.email,
+  ncr.website_url,
+  ncr.service_categories,
+  ncr.eligibility_summary,
+  ncr.hours,
+  ncr.languages,
+  ncr.accessibility_features,
+  ncr.normalization_confidence,
+  null::text as program_owner_final,
+  ncr.updated_at
+from public.normalized_civic_resource ncr
+left join public.api_source_registry asr on asr.id = ncr.source_id;
 
 create or replace function public.map_layer1_points(
   p_min_lat double precision,
@@ -110,5 +162,5 @@ as $$
   where d.id = p_id;
 $$;
 
-grant execute on function public.map_layer1_points(double precision, double precision, double precision, double precision, integer) to anon, authenticated, service_role;
-grant execute on function public.map_layer2_detail(uuid) to anon, authenticated, service_role;
+grant execute on function public.map_layer1_points(double precision, double precision, double precision, double precision, integer) to anon, authenticated;
+grant execute on function public.map_layer2_detail(uuid) to anon, authenticated;
