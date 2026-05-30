@@ -1,7 +1,27 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
 
+const DEFAULT_POST_LOGIN_PATH = "/sovereign-control";
+
+function getSafeRedirectPath(): string {
+  if (typeof window === "undefined") return DEFAULT_POST_LOGIN_PATH;
+
+  const params = new URLSearchParams(window.location.search);
+  const redirect = params.get("redirect");
+
+  if (!redirect) return DEFAULT_POST_LOGIN_PATH;
+
+  // Keep redirects internal-only so login cannot become an open redirect.
+  if (!redirect.startsWith("/") || redirect.startsWith("//")) {
+    return DEFAULT_POST_LOGIN_PATH;
+  }
+
+  return redirect;
+}
+
 export default function Login() {
+  const [, navigate] = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -11,9 +31,16 @@ export default function Login() {
     e.preventDefault();
     setBusy(true);
     setError(null);
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setError(error.message);
-    setBusy(false);
+
+    if (error) {
+      setError(error.message);
+      setBusy(false);
+      return;
+    }
+
+    navigate(getSafeRedirectPath(), { replace: true });
   };
 
   return (
