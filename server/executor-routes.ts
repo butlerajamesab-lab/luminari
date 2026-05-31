@@ -17,28 +17,34 @@ import {
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 
-type ExecutorResult = {
-  recordsProcessed?: number;
-  records_processed?: number;
-  signalsGenerated?: number;
-  signals_generated?: number;
-  [key: string]: unknown;
-};
+type WirePayload = Record<string, unknown>;
 
-function normalizeExecutorResult(result: ExecutorResult = {}) {
-  const {
-    recordsProcessed,
-    records_processed,
-    signalsGenerated,
-    signals_generated,
-    ...rest
-  } = result;
+function to_snake_key(key: string): string {
+  return key.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
+}
 
-  return {
-    ...rest,
-    records_processed: records_processed ?? recordsProcessed,
-    signals_generated: signals_generated ?? signalsGenerated,
-  };
+function to_snake_payload(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(to_snake_payload);
+  }
+
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  const output: WirePayload = {};
+  for (const [key, entry] of Object.entries(value as WirePayload)) {
+    output[to_snake_key(key)] = to_snake_payload(entry);
+  }
+  return output;
+}
+
+function get_stream_id(req: Request): string | undefined {
+  return req.body?.stream_id;
+}
+
+function send_json(res: Response, payload: WirePayload, status = 200) {
+  return res.status(status).json(to_snake_payload(payload));
 }
 
 export function registerExecutorRoutes(app: Express) {
@@ -46,20 +52,20 @@ export function registerExecutorRoutes(app: Express) {
   // Run a single stream immediately
   app.post("/api/executor/run_stream", async (req: Request, res: Response) => {
     try {
-      const { stream_id } = req.body;
-      if (!stream_id) return res.status(400).json({ success: false, error: "stream_id required" });
+      const stream_id = get_stream_id(req);
+      if (!stream_id) return send_json(res, { success: false, error: "stream_id required" }, 400);
 
       console.log(`[Executor] run_stream: ${stream_id}`);
-      const result = normalizeExecutorResult(await triggerManualIngestion(stream_id));
-      res.json({
+      const result = await triggerManualIngestion(stream_id);
+      return send_json(res, {
         success: true,
         stream_id,
         message: `Stream ${stream_id} ingestion triggered`,
-        ...result,
+        result,
       });
     } catch (e: any) {
       console.error(`[Executor] run_stream error:`, e);
-      res.status(500).json({ success: false, error: e.message });
+      return send_json(res, { success: false, error: e.message }, 500);
     }
   });
 
@@ -74,15 +80,15 @@ export function registerExecutorRoutes(app: Express) {
         ORDER BY signal_weight_dsr DESC
       `);
       const streams = (rows as any).rows || rows;
-      const results: Array<{ stream_id: string; success: boolean; message: string; records_processed?: number; signals_generated?: number }> = [];
+      const results: Array<WirePayload> = [];
       let succeeded = 0;
       let failed = 0;
 
       for (const row of streams) {
         const stream_id = (row as any).stream_id;
         try {
-          const result = normalizeExecutorResult(await triggerManualIngestion(stream_id));
-          results.push({ stream_id, success: true, message: "OK", ...result });
+          const result = await triggerManualIngestion(stream_id);
+          results.push({ stream_id, success: true, message: "OK", result });
           succeeded++;
         } catch (e: any) {
           results.push({ stream_id, success: false, message: e.message });
@@ -90,7 +96,7 @@ export function registerExecutorRoutes(app: Express) {
         }
       }
 
-      res.json({
+      return send_json(res, {
         success: true,
         total_streams: streams.length,
         succeeded,
@@ -99,7 +105,7 @@ export function registerExecutorRoutes(app: Express) {
       });
     } catch (e: any) {
       console.error(`[Executor] run_all_streams error:`, e);
-      res.status(500).json({ success: false, error: e.message });
+      return send_json(res, { success: false, error: e.message }, 500);
     }
   });
 
@@ -107,22 +113,22 @@ export function registerExecutorRoutes(app: Express) {
   // Retry a specific failed stream (reset counters + run)
   app.post("/api/executor/retry_stream", async (req: Request, res: Response) => {
     try {
-      const { stream_id } = req.body;
-      if (!stream_id) return res.status(400).json({ success: false, error: "stream_id required" });
+      const stream_id = get_stream_id(req);
+      if (!stream_id) return send_json(res, { success: false, error: "stream_id required" }, 400);
 
       console.log(`[Executor] retry_stream: ${stream_id}`);
       await resetFailureCounters(stream_id);
       await reenableStream(stream_id);
-      const result = normalizeExecutorResult(await triggerManualIngestion(stream_id));
-      res.json({
+      const result = await triggerManualIngestion(stream_id);
+      return send_json(res, {
         success: true,
         stream_id,
         message: `Stream ${stream_id} retried (counters reset, re-enabled)`,
-        ...result,
+        result,
       });
     } catch (e: any) {
       console.error(`[Executor] retry_stream error:`, e);
-      res.status(500).json({ success: false, error: e.message });
+      return send_json(res, { success: false, error: e.message }, 500);
     }
   });
 
@@ -130,23 +136,23 @@ export function registerExecutorRoutes(app: Express) {
   // Reset checkpoint + run (forces full re-ingestion from scratch)
   app.post("/api/executor/backfill_stream", async (req: Request, res: Response) => {
     try {
-      const { stream_id } = req.body;
-      if (!stream_id) return res.status(400).json({ success: false, error: "stream_id required" });
+      const stream_id = get_stream_id(req);
+      if (!stream_id) return send_json(res, { success: false, error: "stream_id required" }, 400);
 
       console.log(`[Executor] backfill_stream: ${stream_id}`);
       await resetStreamCheckpoint(stream_id, "executor-api", "Executor API");
       await resetFailureCounters(stream_id);
       await reenableStream(stream_id);
-      const result = normalizeExecutorResult(await triggerManualIngestion(stream_id));
-      res.json({
+      const result = await triggerManualIngestion(stream_id);
+      return send_json(res, {
         success: true,
         stream_id,
         message: `Stream ${stream_id} backfill complete (checkpoint reset, full re-ingestion)`,
-        ...result,
+        result,
       });
     } catch (e: any) {
       console.error(`[Executor] backfill_stream error:`, e);
-      res.status(500).json({ success: false, error: e.message });
+      return send_json(res, { success: false, error: e.message }, 500);
     }
   });
 
@@ -154,19 +160,19 @@ export function registerExecutorRoutes(app: Express) {
   // Reset checkpoint only (no run)
   app.post("/api/executor/reset_checkpoint", async (req: Request, res: Response) => {
     try {
-      const { stream_id } = req.body;
-      if (!stream_id) return res.status(400).json({ success: false, error: "stream_id required" });
+      const stream_id = get_stream_id(req);
+      if (!stream_id) return send_json(res, { success: false, error: "stream_id required" }, 400);
 
       console.log(`[Executor] reset_checkpoint: ${stream_id}`);
       const result = await resetStreamCheckpoint(stream_id, "executor-api", "Executor API");
-      res.json({
+      return send_json(res, {
         success: true,
         stream_id,
         message: result.summary || `Checkpoint reset for ${stream_id}`,
       });
     } catch (e: any) {
       console.error(`[Executor] reset_checkpoint error:`, e);
-      res.status(500).json({ success: false, error: e.message });
+      return send_json(res, { success: false, error: e.message }, 500);
     }
   });
 
@@ -174,14 +180,14 @@ export function registerExecutorRoutes(app: Express) {
   // Reset failure counters only (no run)
   app.post("/api/executor/reset_counters", async (req: Request, res: Response) => {
     try {
-      const { stream_id } = req.body;
-      if (!stream_id) return res.status(400).json({ success: false, error: "stream_id required" });
+      const stream_id = get_stream_id(req);
+      if (!stream_id) return send_json(res, { success: false, error: "stream_id required" }, 400);
       console.log(`[Executor] reset_counters: ${stream_id}`);
       await resetFailureCounters(stream_id);
-      res.json({ success: true, stream_id, message: `Failure counters reset for ${stream_id}` });
+      return send_json(res, { success: true, stream_id, message: `Failure counters reset for ${stream_id}` });
     } catch (e: any) {
       console.error(`[Executor] reset_counters error:`, e);
-      res.status(500).json({ success: false, error: e.message });
+      return send_json(res, { success: false, error: e.message }, 500);
     }
   });
 
@@ -189,14 +195,14 @@ export function registerExecutorRoutes(app: Express) {
   // Re-enable an auto-disabled stream
   app.post("/api/executor/reenable_stream", async (req: Request, res: Response) => {
     try {
-      const { stream_id } = req.body;
-      if (!stream_id) return res.status(400).json({ success: false, error: "stream_id required" });
+      const stream_id = get_stream_id(req);
+      if (!stream_id) return send_json(res, { success: false, error: "stream_id required" }, 400);
       console.log(`[Executor] reenable_stream: ${stream_id}`);
       await reenableStream(stream_id);
-      res.json({ success: true, stream_id, message: `Stream ${stream_id} re-enabled` });
+      return send_json(res, { success: true, stream_id, message: `Stream ${stream_id} re-enabled` });
     } catch (e: any) {
       console.error(`[Executor] reenable_stream error:`, e);
-      res.status(500).json({ success: false, error: e.message });
+      return send_json(res, { success: false, error: e.message }, 500);
     }
   });
 
