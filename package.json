@@ -12,7 +12,8 @@
     "test": "vitest run",
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
     "seed": "tsx server/db/seed/master-seed.ts",
-    "seed:normalize": "tsx server/db/seed/normalize-seed.ts"
+    "seed:normalize": "tsx server/db/seed/normalize-seed.ts",
+    "check:wire-contracts": "node scripts/check-wire-contracts.cjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",

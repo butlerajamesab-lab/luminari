@@ -796,16 +796,16 @@ function DataStreamPanel() {
     setRunningStreams(prev => new Set(prev).add(streamId));
     setStreamAction(prev => ({ ...prev, [streamId]: "run" }));
     setStreamResults(prev => ({ ...prev, [streamId]: { success: true, message: "Running..." } }));
-    console.log("[Executor] runStream:", streamId);
+    console.log("[Executor] run_stream:", streamId);
     try {
-      const result = await execFetch("runStream", { streamId });
+      const result = await execFetch("run_stream", { stream_id: streamId });
       setStreamResults(prev => ({
         ...prev,
         [streamId]: {
           success: result.success,
           message: result.message,
-          recordsProcessed: result.recordsProcessed,
-          signalsGenerated: result.signalsGenerated,
+          recordsProcessed: result.records_processed,
+          signalsGenerated: result.signals_generated,
         },
       }));
       toast[result.success ? "success" : "error"](`▶ ${streamId}: ${result.message}`);
@@ -823,16 +823,16 @@ function DataStreamPanel() {
     setRunningStreams(prev => new Set(prev).add(streamId));
     setStreamAction(prev => ({ ...prev, [streamId]: "retry" }));
     setStreamResults(prev => ({ ...prev, [streamId]: { success: true, message: "Retrying..." } }));
-    console.log("[Executor] retryStream:", streamId);
+    console.log("[Executor] retry_stream:", streamId);
     try {
-      const result = await execFetch("retryStream", { streamId });
+      const result = await execFetch("retry_stream", { stream_id: streamId });
       setStreamResults(prev => ({
         ...prev,
         [streamId]: {
           success: result.success,
           message: result.message,
-          recordsProcessed: result.recordsProcessed,
-          signalsGenerated: result.signalsGenerated,
+          recordsProcessed: result.records_processed,
+          signalsGenerated: result.signals_generated,
         },
       }));
       toast[result.success ? "success" : "error"](`↻ ${streamId}: ${result.message}`);
@@ -850,16 +850,16 @@ function DataStreamPanel() {
     setRunningStreams(prev => new Set(prev).add(streamId));
     setStreamAction(prev => ({ ...prev, [streamId]: "backfill" }));
     setStreamResults(prev => ({ ...prev, [streamId]: { success: true, message: "Backfilling..." } }));
-    console.log("[Executor] backfillStream:", streamId);
+    console.log("[Executor] backfill_stream:", streamId);
     try {
-      const result = await execFetch("backfillStream", { streamId });
+      const result = await execFetch("backfill_stream", { stream_id: streamId });
       setStreamResults(prev => ({
         ...prev,
         [streamId]: {
           success: result.success,
           message: result.message,
-          recordsProcessed: result.recordsProcessed,
-          signalsGenerated: result.signalsGenerated,
+          recordsProcessed: result.records_processed,
+          signalsGenerated: result.signals_generated,
         },
       }));
       toast[result.success ? "success" : "error"](`⏪ ${streamId}: ${result.message}`);
@@ -875,9 +875,9 @@ function DataStreamPanel() {
 
   const handleResetCheckpoint = async (streamId: string) => {
     setStreamAction(prev => ({ ...prev, [streamId]: "reset" }));
-    console.log("[Executor] resetCheckpoint:", streamId);
+    console.log("[Executor] reset_checkpoint:", streamId);
     try {
-      const result = await execFetch("resetCheckpoint", { streamId });
+      const result = await execFetch("reset_checkpoint", { stream_id: streamId });
       toast.success(`♻ ${streamId}: ${result.message}`);
       refetch(); refetchDiagnostics();
     } catch (e: any) {
@@ -890,14 +890,14 @@ function DataStreamPanel() {
   const handleRunAll = async () => {
     setRunAllPending(true);
     toast.info("▶ Running all enabled streams...");
-    console.log("[Executor] runAllStreams");
+    console.log("[Executor] run_all_streams");
     try {
-      const result = await execFetch("runAllStreams", {});
-      toast.success(`▶ Completed: ${result.succeeded}/${result.totalStreams} succeeded, ${result.failed} failed`);
+      const result = await execFetch("run_all_streams", {});
+      toast.success(`▶ Completed: ${result.succeeded}/${result.total_streams} succeeded, ${result.failed} failed`);
       for (const r of (result.results || [])) {
         setStreamResults(prev => ({
           ...prev,
-          [r.streamId]: { success: r.success, message: r.message, recordsProcessed: r.recordsProcessed, signalsGenerated: r.signalsGenerated },
+          [r.stream_id]: { success: r.success, message: r.message, recordsProcessed: r.records_processed, signalsGenerated: r.signals_generated },
         }));
       }
       refetch(); refetchStats(); refetchScheduler();
@@ -1169,9 +1169,9 @@ function DataStreamPanel() {
                             onClick={async () => {
                               setStreamAction(p => ({ ...p, [stream.streamId]: "resetCounters" }));
                               try {
-                                const res = await fetch("/api/executor/resetCounters", {
+                                const res = await fetch("/api/executor/reset_counters", {
                                   method: "POST", headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ streamId: stream.streamId })
+                                  body: JSON.stringify({ stream_id: stream.streamId })
                                 });
                                 const data = await res.json();
                                 if (data.success) { toast.success(data.message); refetch(); refetchDiagnostics(); }
@@ -1201,9 +1201,9 @@ function DataStreamPanel() {
                               onClick={async () => {
                                 setStreamAction(p => ({ ...p, [stream.streamId]: "reenable" }));
                                 try {
-                                  const res = await fetch("/api/executor/reenableStream", {
+                                  const res = await fetch("/api/executor/reenable_stream", {
                                     method: "POST", headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ streamId: stream.streamId })
+                                    body: JSON.stringify({ stream_id: stream.streamId })
                                   });
                                   const data = await res.json();
                                   if (data.success) { toast.success(data.message); refetch(); refetchDiagnostics(); refetchScheduler(); }

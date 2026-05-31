@@ -10,6 +10,7 @@ import { aiInspectRouter } from "../routes/ai-inspect-router";
 import { systemVisibilityRouter } from "../routes/system-visibility-router";
 import { conveyorRouter } from "../routes/conveyor-router";
 import { civicMapRouter } from "../routes/civic-map-router";
+import { registerExecutorRoutes } from "../executor-routes";
 import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";
 import { serveStatic, setupVite } from "./vite";
@@ -112,6 +113,8 @@ async function startServer() {
   app.use("/api/conveyor", conveyorRouter);
   // CivicMap rendering API — preview/detail/bounds, snake_case contracts
   app.use("/api/civic-map", civicMapRouter);
+  // Sovereign Control executor API — must be mounted before Vite/static fallback
+  registerExecutorRoutes(app);
 
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
