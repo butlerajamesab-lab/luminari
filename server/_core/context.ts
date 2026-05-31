@@ -1,8 +1,8 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { User } from "../../drizzle/schema";
-import { sdk } from "./sdk";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import * as db from "../db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { users } from "../../drizzle/schema";
 
 export type TrpcContext = {
@@ -12,6 +12,32 @@ export type TrpcContext = {
   isSystem?: boolean; // System context for internal processing (ingestion, extraction, pattern detection)
   isInspectionMode?: boolean; // Temporary read/inspection surface for Render preview
 };
+
+let supabaseAuthClient: SupabaseClient | null = null;
+
+function getSupabaseAuthClient(): SupabaseClient | null {
+  if (supabaseAuthClient) return supabaseAuthClient;
+
+  const url =
+    process.env.LIGHTHOUSE_SUPABASE_URL ||
+    process.env.SUPABASE_URL ||
+    process.env.VITE_SUPABASE_URL;
+  const key =
+    process.env.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.VITE_SUPABASE_ANON_KEY;
+
+  if (!url || !key) return null;
+
+  supabaseAuthClient = createClient(url, key, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+
+  return supabaseAuthClient;
+}
 
 function isLighthouseInspectionMode(req?: CreateExpressContextOptions["req"]): boolean {
   const headerFlag = req?.headers?.["x-lighthouse-inspection-mode"];
@@ -39,6 +65,56 @@ function createInspectionUser(): User {
   };
 }
 
+function getBearerToken(req?: CreateExpressContextOptions["req"]): string | null {
+  const header = req?.headers?.authorization;
+  const value = Array.isArray(header) ? header[0] : header;
+  if (!value) return null;
+
+  const match = value.match(/^Bearer\s+(.+)$/i);
+  return match?.[1]?.trim() || null;
+}
+
+async function resolveUserFromSupabaseBearer(
+  req?: CreateExpressContextOptions["req"]
+): Promise<User | null> {
+  const token = getBearerToken(req);
+  if (!token) return null;
+
+  const supabase = getSupabaseAuthClient();
+  if (!supabase) {
+    console.warn("[CONTEXT] Supabase auth client unavailable; missing URL or key env vars");
+    return null;
+  }
+
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data.user) {
+    console.warn("[CONTEXT] Supabase bearer token rejected", error?.message ?? "unknown_error");
+    return null;
+  }
+
+  const authUser = data.user;
+  const authEmail = authUser.email?.trim().toLowerCase();
+  let dbUser: User | null = null;
+
+  if (authEmail) {
+    const [row] = await db.db
+      .select()
+      .from(users)
+      .where(sql`lower(${users.email}) = ${authEmail}`);
+    dbUser = row ?? null;
+  }
+
+  if (!dbUser && authUser.id) {
+    const [row] = await db.db
+      .select()
+      .from(users)
+      .where(eq(users.openId, authUser.id));
+    dbUser = row ?? null;
+  }
+
+  return dbUser;
+}
+
 export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
@@ -58,22 +134,30 @@ export async function createContext(
   // Get session from request (populated by sessionMiddleware)
   const session = (opts.req as any).session;
 
-  // Try to resolve user from session
+  // Try to resolve user from session or Supabase bearer token.
   try {
     let dbUser: User | null = null;
 
-    // Strategy 1: Look up by openId from session (primary path)
+    // Strategy 1: Look up by openId from Express session (legacy/admin path)
     if (session?.openId) {
       dbUser = await db.getUserByOpenId(session.openId);
     }
 
-    // Strategy 2: Look up by email if available
+    // Strategy 2: Look up by email from Express session
     if (!dbUser && session?.user?.email) {
-      const [row] = await db.db.select().from(users).where(eq(users.email, session.user.email));
+      const sessionEmail = String(session.user.email).trim().toLowerCase();
+      const [row] = await db.db
+        .select()
+        .from(users)
+        .where(sql`lower(${users.email}) = ${sessionEmail}`);
       dbUser = row ?? null;
     }
 
-    // No fallback — if no session, user stays null (unauthenticated)
+    // Strategy 3: Supabase frontend auth token forwarded by tRPC client
+    if (!dbUser) {
+      dbUser = await resolveUserFromSupabaseBearer(opts.req);
+    }
+
     user = dbUser;
   } catch (error) {
     console.error("[CONTEXT] Error during user lookup:", String(error));
