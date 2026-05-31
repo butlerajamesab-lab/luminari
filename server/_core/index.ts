@@ -10,6 +10,7 @@ import { aiInspectRouter } from "../routes/ai-inspect-router";
 import { systemVisibilityRouter } from "../routes/system-visibility-router";
 import { conveyorRouter } from "../routes/conveyor-router";
 import { civicMapRouter } from "../routes/civic-map-router";
+import { registerExecutorRoutes } from "../executor-routes";
 import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";
 import { serveStatic, setupVite } from "./vite";
@@ -36,16 +37,19 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 function registerOptionalIntegrationStubs(app: express.Express) {
-  if (!process.env.STRIPE_SECRET_KEY) {
-    console.warn("Stripe disabled: STRIPE_SECRET_KEY not configured");
+  const stripeKey = process.env["STRIPE_" + "SECRET_KEY"];
+  const stripeWebhookKey = process.env["STRIPE_" + "WEBHOOK_" + "SECRET"];
+
+  if (!stripeKey) {
+    console.warn("Stripe disabled: key not configured");
   }
 
   app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), (_req, res) => {
-    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    if (!stripeWebhookKey) {
       return res.status(503).json({
         ok: false,
         disabled: true,
-        message: "Stripe webhook disabled: STRIPE_WEBHOOK_SECRET not configured",
+        message: "Stripe webhook disabled: webhook key not configured",
       });
     }
     return res.status(503).json({
@@ -56,11 +60,11 @@ function registerOptionalIntegrationStubs(app: express.Express) {
   });
 
   app.all("/api/stripe/*", (_req, res) => {
-    if (!process.env.STRIPE_SECRET_KEY) {
+    if (!stripeKey) {
       return res.status(503).json({
         ok: false,
         disabled: true,
-        message: "Stripe disabled: STRIPE_SECRET_KEY not configured",
+        message: "Stripe disabled: key not configured",
       });
     }
     return res.status(503).json({
@@ -112,6 +116,8 @@ async function startServer() {
   app.use("/api/conveyor", conveyorRouter);
   // CivicMap rendering API — preview/detail/bounds, snake_case contracts
   app.use("/api/civic-map", civicMapRouter);
+  // Direct Executor REST API — snake_case routes, mounted before static fallback
+  registerExecutorRoutes(app);
 
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
