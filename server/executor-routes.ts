@@ -1,9 +1,9 @@
 /**
  * Direct Executor REST Routes — /api/executor/*
  *
- * No tRPC, no copilot artifacts, no approval system, no abstraction.
- * Direct fetch() from the UI hits these endpoints, which call the
- * scheduler and executor-service functions directly.
+ * Canonical contract is snake_case. A temporary Sovereign Control bridge accepts
+ * existing camelCase direct-fetch calls until the large frontend page is safely
+ * converted.
  */
 import type { Express, Request, Response } from "express";
 import {
@@ -24,13 +24,8 @@ function to_snake_key(key: string): string {
 }
 
 function to_snake_payload(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map(to_snake_payload);
-  }
-
-  if (!value || typeof value !== "object") {
-    return value;
-  }
+  if (Array.isArray(value)) return value.map(to_snake_payload);
+  if (!value || typeof value !== "object") return value;
 
   const output: WirePayload = {};
   for (const [key, entry] of Object.entries(value as WirePayload)) {
@@ -40,28 +35,50 @@ function to_snake_payload(value: unknown): unknown {
 }
 
 function get_stream_id(req: Request): string | undefined {
-  return req.body?.stream_id;
+  return req.body?.stream_id ?? req.body?.streamId;
+}
+
+function add_frontend_bridge(payload: WirePayload): WirePayload {
+  const bridged: WirePayload = { ...payload };
+
+  if (typeof bridged.stream_id === "string") bridged.streamId = bridged.stream_id;
+  if (typeof bridged.total_streams === "number") bridged.totalStreams = bridged.total_streams;
+  if (typeof bridged.records_processed === "number") bridged.recordsProcessed = bridged.records_processed;
+  if (typeof bridged.signals_generated === "number") bridged.signalsGenerated = bridged.signals_generated;
+
+  if (Array.isArray(bridged.results)) {
+    bridged.results = bridged.results.map((item) => add_frontend_bridge(item as WirePayload));
+  }
+
+  return bridged;
 }
 
 function send_json(res: Response, payload: WirePayload, status = 200) {
-  return res.status(status).json(to_snake_payload(payload));
+  const snake_payload = to_snake_payload(payload) as WirePayload;
+  return res.status(status).json(add_frontend_bridge(snake_payload));
+}
+
+function register_post(app: Express, paths: string[], handler: (req: Request, res: Response) => Promise<void>) {
+  for (const path of paths) app.post(path, handler);
 }
 
 export function registerExecutorRoutes(app: Express) {
   // ─── POST /api/executor/run_stream ───
-  // Run a single stream immediately
-  app.post("/api/executor/run_stream", async (req: Request, res: Response) => {
+  register_post(app, ["/api/executor/run_stream", "/api/executor/runStream"], async (req: Request, res: Response) => {
     try {
       const stream_id = get_stream_id(req);
       if (!stream_id) return send_json(res, { success: false, error: "stream_id required" }, 400);
 
       console.log(`[Executor] run_stream: ${stream_id}`);
       const result = await triggerManualIngestion(stream_id);
+      const normalized_result = to_snake_payload(result) as WirePayload;
       return send_json(res, {
         success: true,
         stream_id,
         message: `Stream ${stream_id} ingestion triggered`,
-        result,
+        records_processed: normalized_result.records_processed,
+        signals_generated: normalized_result.signals_generated,
+        result: normalized_result,
       });
     } catch (e: any) {
       console.error(`[Executor] run_stream error:`, e);
@@ -70,8 +87,7 @@ export function registerExecutorRoutes(app: Express) {
   });
 
   // ─── POST /api/executor/run_all_streams ───
-  // Run all enabled streams sequentially
-  app.post("/api/executor/run_all_streams", async (_req: Request, res: Response) => {
+  register_post(app, ["/api/executor/run_all_streams", "/api/executor/runAllStreams"], async (_req: Request, res: Response) => {
     try {
       console.log(`[Executor] run_all_streams`);
       const rows = await db.execute(sql`
@@ -88,7 +104,15 @@ export function registerExecutorRoutes(app: Express) {
         const stream_id = (row as any).stream_id;
         try {
           const result = await triggerManualIngestion(stream_id);
-          results.push({ stream_id, success: true, message: "OK", result });
+          const normalized_result = to_snake_payload(result) as WirePayload;
+          results.push({
+            stream_id,
+            success: true,
+            message: "OK",
+            records_processed: normalized_result.records_processed,
+            signals_generated: normalized_result.signals_generated,
+            result: normalized_result,
+          });
           succeeded++;
         } catch (e: any) {
           results.push({ stream_id, success: false, message: e.message });
@@ -110,8 +134,7 @@ export function registerExecutorRoutes(app: Express) {
   });
 
   // ─── POST /api/executor/retry_stream ───
-  // Retry a specific failed stream (reset counters + run)
-  app.post("/api/executor/retry_stream", async (req: Request, res: Response) => {
+  register_post(app, ["/api/executor/retry_stream", "/api/executor/retryStream"], async (req: Request, res: Response) => {
     try {
       const stream_id = get_stream_id(req);
       if (!stream_id) return send_json(res, { success: false, error: "stream_id required" }, 400);
@@ -120,11 +143,14 @@ export function registerExecutorRoutes(app: Express) {
       await resetFailureCounters(stream_id);
       await reenableStream(stream_id);
       const result = await triggerManualIngestion(stream_id);
+      const normalized_result = to_snake_payload(result) as WirePayload;
       return send_json(res, {
         success: true,
         stream_id,
         message: `Stream ${stream_id} retried (counters reset, re-enabled)`,
-        result,
+        records_processed: normalized_result.records_processed,
+        signals_generated: normalized_result.signals_generated,
+        result: normalized_result,
       });
     } catch (e: any) {
       console.error(`[Executor] retry_stream error:`, e);
@@ -133,8 +159,7 @@ export function registerExecutorRoutes(app: Express) {
   });
 
   // ─── POST /api/executor/backfill_stream ───
-  // Reset checkpoint + run (forces full re-ingestion from scratch)
-  app.post("/api/executor/backfill_stream", async (req: Request, res: Response) => {
+  register_post(app, ["/api/executor/backfill_stream", "/api/executor/backfillStream"], async (req: Request, res: Response) => {
     try {
       const stream_id = get_stream_id(req);
       if (!stream_id) return send_json(res, { success: false, error: "stream_id required" }, 400);
@@ -144,11 +169,14 @@ export function registerExecutorRoutes(app: Express) {
       await resetFailureCounters(stream_id);
       await reenableStream(stream_id);
       const result = await triggerManualIngestion(stream_id);
+      const normalized_result = to_snake_payload(result) as WirePayload;
       return send_json(res, {
         success: true,
         stream_id,
         message: `Stream ${stream_id} backfill complete (checkpoint reset, full re-ingestion)`,
-        result,
+        records_processed: normalized_result.records_processed,
+        signals_generated: normalized_result.signals_generated,
+        result: normalized_result,
       });
     } catch (e: any) {
       console.error(`[Executor] backfill_stream error:`, e);
@@ -157,8 +185,7 @@ export function registerExecutorRoutes(app: Express) {
   });
 
   // ─── POST /api/executor/reset_checkpoint ───
-  // Reset checkpoint only (no run)
-  app.post("/api/executor/reset_checkpoint", async (req: Request, res: Response) => {
+  register_post(app, ["/api/executor/reset_checkpoint", "/api/executor/resetCheckpoint"], async (req: Request, res: Response) => {
     try {
       const stream_id = get_stream_id(req);
       if (!stream_id) return send_json(res, { success: false, error: "stream_id required" }, 400);
@@ -177,8 +204,7 @@ export function registerExecutorRoutes(app: Express) {
   });
 
   // ─── POST /api/executor/reset_counters ───
-  // Reset failure counters only (no run)
-  app.post("/api/executor/reset_counters", async (req: Request, res: Response) => {
+  register_post(app, ["/api/executor/reset_counters", "/api/executor/resetCounters"], async (req: Request, res: Response) => {
     try {
       const stream_id = get_stream_id(req);
       if (!stream_id) return send_json(res, { success: false, error: "stream_id required" }, 400);
@@ -192,8 +218,7 @@ export function registerExecutorRoutes(app: Express) {
   });
 
   // ─── POST /api/executor/reenable_stream ───
-  // Re-enable an auto-disabled stream
-  app.post("/api/executor/reenable_stream", async (req: Request, res: Response) => {
+  register_post(app, ["/api/executor/reenable_stream", "/api/executor/reenableStream"], async (req: Request, res: Response) => {
     try {
       const stream_id = get_stream_id(req);
       if (!stream_id) return send_json(res, { success: false, error: "stream_id required" }, 400);
@@ -206,5 +231,5 @@ export function registerExecutorRoutes(app: Express) {
     }
   });
 
-  console.log("[Executor] REST routes registered at /api/executor/* with snake_case contracts");
+  console.log("[Executor] REST routes registered at /api/executor/* with canonical snake_case and temporary Sovereign Control bridge");
 }
