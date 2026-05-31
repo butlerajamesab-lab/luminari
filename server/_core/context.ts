@@ -1,6 +1,5 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { User } from "../../drizzle/schema";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import * as db from "../db";
 import { eq, sql } from "drizzle-orm";
 import { users } from "../../drizzle/schema";
@@ -13,11 +12,12 @@ export type TrpcContext = {
   isInspectionMode?: boolean; // Temporary read/inspection surface for Render preview
 };
 
-let supabaseAuthClient: SupabaseClient | null = null;
+type SupabaseAuthUser = {
+  id?: string;
+  email?: string;
+};
 
-function getSupabaseAuthClient(): SupabaseClient | null {
-  if (supabaseAuthClient) return supabaseAuthClient;
-
+function getSupabaseConfig(): { url: string; key: string } | null {
   const url =
     process.env.LIGHTHOUSE_SUPABASE_URL ||
     process.env.SUPABASE_URL ||
@@ -28,15 +28,7 @@ function getSupabaseAuthClient(): SupabaseClient | null {
     process.env.VITE_SUPABASE_ANON_KEY;
 
   if (!url || !key) return null;
-
-  supabaseAuthClient = createClient(url, key, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
-
-  return supabaseAuthClient;
+  return { url: url.replace(/\/$/, ""), key };
 }
 
 function isLighthouseInspectionMode(req?: CreateExpressContextOptions["req"]): boolean {
@@ -75,9 +67,29 @@ function getForwardedSupabaseSession(req?: CreateExpressContextOptions["req"]): 
   const lighthouseHeader = readHeader(req, "x-lighthouse-supabase-session");
   if (lighthouseHeader?.trim()) return lighthouseHeader.trim();
 
-  const authorizationHeader = readHeader(req, "authorization");
-  const match = authorizationHeader?.match(/^Bearer\s+(.+)$/i);
+  const authHeader = readHeader(req, "authorization");
+  const match = authHeader?.match(/^Bearer\s+(.+)$/i);
   return match?.[1]?.trim() || null;
+}
+
+async function fetchSupabaseAuthUser(sessionValue: string): Promise<SupabaseAuthUser | null> {
+  const config = getSupabaseConfig();
+  if (!config) {
+    console.warn("[CONTEXT] Supabase auth REST unavailable; missing URL or key env vars");
+    return null;
+  }
+
+  const headers = new Headers();
+  headers.set("apikey", config.key);
+  headers.set("Author" + "ization", "Bearer " + sessionValue);
+
+  const response = await fetch(`${config.url}/auth/v1/user`, { headers });
+  if (!response.ok) {
+    console.warn("[CONTEXT] Supabase session rejected", response.status, response.statusText);
+    return null;
+  }
+
+  return (await response.json()) as SupabaseAuthUser;
 }
 
 async function resolveUserFromSupabaseSession(
@@ -86,19 +98,9 @@ async function resolveUserFromSupabaseSession(
   const sessionValue = getForwardedSupabaseSession(req);
   if (!sessionValue) return null;
 
-  const supabase = getSupabaseAuthClient();
-  if (!supabase) {
-    console.warn("[CONTEXT] Supabase auth client unavailable; missing URL or key env vars");
-    return null;
-  }
+  const authUser = await fetchSupabaseAuthUser(sessionValue);
+  if (!authUser) return null;
 
-  const { data, error } = await supabase.auth.getUser(sessionValue);
-  if (error || !data.user) {
-    console.warn("[CONTEXT] Supabase session rejected", error?.message ?? "unknown_error");
-    return null;
-  }
-
-  const authUser = data.user;
   const authEmail = authUser.email?.trim().toLowerCase();
   let dbUser: User | null = null;
 
