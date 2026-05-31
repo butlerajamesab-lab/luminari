@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import { supabase } from "@/lib/supabase";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpLink, TRPCClientError } from "@trpc/client";
@@ -83,9 +84,18 @@ const trpcClient = trpc.createClient({
     httpLink({
       url: "/api/trpc",
       transformer: superjson,
-      fetch(input, init) {
+      async fetch(input, init) {
+        const headers = new Headers(init?.headers);
+        const { data } = await supabase.auth.getSession();
+        const sessionToken = data.session?.access_token;
+
+        if (sessionToken) {
+          headers.set("x-lighthouse-supabase-session", sessionToken);
+        }
+
         return globalThis.fetch(input, {
           ...(init ?? {}),
+          headers,
           credentials: "include",
         });
       },
