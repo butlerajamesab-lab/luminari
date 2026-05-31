@@ -8,6 +8,7 @@
     "build": "vite build && esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && ([ ! -d server/config ] || cp -r server/config dist/config)",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc --noEmit",
+    "check:wire-contracts": "node -e \"const fs=require('fs'); const checks=[['server/executor-routes.ts',['runStream','runAllStreams','retryStream','backfillStream','resetCheckpoint','resetCounters','reenableStream','streamId','recordsProcessed','signalsGenerated','totalStreams']],['client/src/pages/SovereignControl.tsx',['runStream','runAllStreams','retryStream','backfillStream','resetCheckpoint','resetCounters','reenableStream','streamId','recordsProcessed','signalsGenerated','totalStreams']]]; let bad=[]; for (const [file,terms] of checks){ const s=fs.readFileSync(file,'utf8'); for (const t of terms) if (s.includes(t)) bad.push(file+': '+t); } if (bad.length){ console.error('CamelCase wire contract drift found:\\n'+bad.join('\\n')); process.exit(1); } console.log('Snake-case wire contract check passed.');\"",
     "format": "prettier --write .",
     "test": "vitest run",
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
