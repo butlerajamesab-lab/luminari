@@ -65,20 +65,26 @@ function createInspectionUser(): User {
   };
 }
 
-function getBearerToken(req?: CreateExpressContextOptions["req"]): string | null {
-  const header = req?.headers?.authorization;
-  const value = Array.isArray(header) ? header[0] : header;
-  if (!value) return null;
+function readHeader(req: CreateExpressContextOptions["req"] | undefined, name: string): string | null {
+  const value = req?.headers?.[name.toLowerCase()];
+  const first = Array.isArray(value) ? value[0] : value;
+  return first ? String(first) : null;
+}
 
-  const match = value.match(/^Bearer\s+(.+)$/i);
+function getForwardedSupabaseSession(req?: CreateExpressContextOptions["req"]): string | null {
+  const lighthouseHeader = readHeader(req, "x-lighthouse-supabase-session");
+  if (lighthouseHeader?.trim()) return lighthouseHeader.trim();
+
+  const authorizationHeader = readHeader(req, "authorization");
+  const match = authorizationHeader?.match(/^Bearer\s+(.+)$/i);
   return match?.[1]?.trim() || null;
 }
 
-async function resolveUserFromSupabaseBearer(
+async function resolveUserFromSupabaseSession(
   req?: CreateExpressContextOptions["req"]
 ): Promise<User | null> {
-  const token = getBearerToken(req);
-  if (!token) return null;
+  const sessionValue = getForwardedSupabaseSession(req);
+  if (!sessionValue) return null;
 
   const supabase = getSupabaseAuthClient();
   if (!supabase) {
@@ -86,9 +92,9 @@ async function resolveUserFromSupabaseBearer(
     return null;
   }
 
-  const { data, error } = await supabase.auth.getUser(token);
+  const { data, error } = await supabase.auth.getUser(sessionValue);
   if (error || !data.user) {
-    console.warn("[CONTEXT] Supabase bearer token rejected", error?.message ?? "unknown_error");
+    console.warn("[CONTEXT] Supabase session rejected", error?.message ?? "unknown_error");
     return null;
   }
 
@@ -134,7 +140,7 @@ export async function createContext(
   // Get session from request (populated by sessionMiddleware)
   const session = (opts.req as any).session;
 
-  // Try to resolve user from session or Supabase bearer token.
+  // Try to resolve user from session or Supabase frontend session.
   try {
     let dbUser: User | null = null;
 
@@ -153,9 +159,9 @@ export async function createContext(
       dbUser = row ?? null;
     }
 
-    // Strategy 3: Supabase frontend auth token forwarded by tRPC client
+    // Strategy 3: Supabase frontend auth session forwarded by tRPC client
     if (!dbUser) {
-      dbUser = await resolveUserFromSupabaseBearer(opts.req);
+      dbUser = await resolveUserFromSupabaseSession(opts.req);
     }
 
     user = dbUser;
