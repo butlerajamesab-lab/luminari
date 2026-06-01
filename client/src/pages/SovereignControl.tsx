@@ -30,6 +30,7 @@ import {
   Loader2, Copy, RotateCcw, ArrowLeft, CalendarClock,
 } from "lucide-react";
 import { Link } from "wouter";
+import AtlasCommandPanel from "@/components/sovereign/AtlasCommandPanel";
 
 // ─── Export Spine Panel ───
 function ExportSpinePanel() {
@@ -1713,6 +1714,7 @@ export default function SovereignControl() {
           <TabsTrigger value="restore" className="gap-1"><Upload className="h-3 w-3" /> Restore Spine</TabsTrigger>
           <TabsTrigger value="admin" className="gap-1"><Shield className="h-3 w-3" /> Admin Control</TabsTrigger>
           <TabsTrigger value="streams" className="gap-1"><Activity className="h-3 w-3" /> Data Streams</TabsTrigger>
+          <TabsTrigger value="atlas" className="gap-1"><Database className="h-3 w-3" /> Atlas</TabsTrigger>
           <TabsTrigger value="timeline" className="gap-1"><GitBranch className="h-3 w-3" /> Timeline</TabsTrigger>
           <TabsTrigger value="copilot" className="gap-1"><Bot className="h-3 w-3" /> Sunam</TabsTrigger>
         </TabsList>
@@ -1721,6 +1723,7 @@ export default function SovereignControl() {
         <TabsContent value="restore"><RestoreSpinePanel /></TabsContent>
         <TabsContent value="admin"><AdminControlPanel /></TabsContent>
         <TabsContent value="streams"><DataStreamPanel /></TabsContent>
+        <TabsContent value="atlas"><AtlasCommandPanel /></TabsContent>
         <TabsContent value="timeline"><InterventionTimelinePanel /></TabsContent>
         <TabsContent value="copilot"><CopilotPanel /></TabsContent>
       </Tabs>
