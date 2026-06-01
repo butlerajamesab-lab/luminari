@@ -79,6 +79,37 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
+// Helper: get a fresh Supabase session token, refreshing if expiring soon
+async function getFreshSessionToken(): Promise<string | null> {
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token ?? null;
+
+    if (!token) {
+      console.warn('[AUTH] No active Supabase session — user may need to log in again');
+      return null;
+    }
+
+    // Proactively refresh if token expires within 60 seconds
+    const expiresAt = sessionData.session?.expires_at;
+    const nowSecs = Math.floor(Date.now() / 1000);
+    if (expiresAt && expiresAt - nowSecs < 60) {
+      console.log('[AUTH] Token expiring soon, refreshing...');
+      const { data: refreshData, error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.warn('[AUTH] Session refresh failed:', error.message);
+        return token; // Fall back to existing token
+      }
+      return refreshData.session?.access_token ?? token;
+    }
+
+    return token;
+  } catch (err) {
+    console.warn('[AUTH] Error getting session token:', err);
+    return null;
+  }
+}
+
 const trpcClient = trpc.createClient({
   links: [
     httpLink({
@@ -86,11 +117,12 @@ const trpcClient = trpc.createClient({
       transformer: superjson,
       async fetch(input, init) {
         const headers = new Headers(init?.headers);
-        const { data } = await supabase.auth.getSession();
-        const sessionToken = data.session?.access_token;
+        const sessionToken = await getFreshSessionToken();
 
         if (sessionToken) {
           headers.set("x-lighthouse-supabase-session", sessionToken);
+        } else {
+          console.warn('[AUTH] tRPC call proceeding without auth token — expect 10001 if route is protected');
         }
 
         return globalThis.fetch(input, {
