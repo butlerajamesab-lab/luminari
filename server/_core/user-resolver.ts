@@ -1,6 +1,5 @@
-import { sql } from "drizzle-orm";
 import type { User } from "../../drizzle/schema";
-import { db } from "../db";
+import { getPool } from "../db";
 
 function mapUser(row: any): User | null {
   if (!row) return null;
@@ -18,52 +17,14 @@ function mapUser(row: any): User | null {
   } as User;
 }
 
-function rowsFromResult(result: unknown): any[] {
-  const maybeRows = (result as any)?.rows;
-  if (Array.isArray(maybeRows)) return maybeRows;
-  if (Array.isArray(result)) return result;
-  return [];
-}
+const USER_SELECT = `select id, open_id as "openId", name, email, login_method as "loginMethod", role, plan, created_at as "createdAt", updated_at as "updatedAt", last_signed_in as "lastSignedIn" from public.users`;
 
 export async function getUserByEmailSnake(email: string): Promise<User | null> {
-  const normalized = email.trim().toLowerCase();
-  const result = await db.execute(sql`
-    select
-      id,
-      open_id as "openId",
-      name,
-      email,
-      login_method as "loginMethod",
-      role,
-      plan,
-      created_at as "createdAt",
-      updated_at as "updatedAt",
-      last_signed_in as "lastSignedIn"
-    from public.users
-    where lower(email) = ${normalized}
-    limit 1
-  `);
-
-  return mapUser(rowsFromResult(result)[0]);
+  const result = await getPool().query(`${USER_SELECT} where lower(email) = $1 limit 1`, [email.trim().toLowerCase()]);
+  return mapUser(result.rows[0]);
 }
 
 export async function getUserByOpenIdSnake(openId: string): Promise<User | null> {
-  const result = await db.execute(sql`
-    select
-      id,
-      open_id as "openId",
-      name,
-      email,
-      login_method as "loginMethod",
-      role,
-      plan,
-      created_at as "createdAt",
-      updated_at as "updatedAt",
-      last_signed_in as "lastSignedIn"
-    from public.users
-    where open_id = ${openId}
-    limit 1
-  `);
-
-  return mapUser(rowsFromResult(result)[0]);
+  const result = await getPool().query(`${USER_SELECT} where open_id = $1 limit 1`, [openId]);
+  return mapUser(result.rows[0]);
 }
