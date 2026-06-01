@@ -1,7 +1,7 @@
 // @ts-nocheck — pre-existing type drift, to be resolved in UI type alignment pass
 import { useState } from "react";
 import { useCase } from "@/contexts/CaseContext";
-import { useAuth } from "@/core/hooks/useAuth";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -936,6 +936,15 @@ function IngestionPanel() {
   const signals = trpc.ingestion.listLiveSignals.useQuery({ limit: 20 });
   const signalStats = trpc.ingestion.getLiveSignalStats.useQuery();
   const schedulerStatus = trpc.ingestion.getSchedulerStatus.useQuery();
+  const atlasCatalog = trpc.ingestion.get_atlas_public_stream_catalog.useQuery();
+
+  const seedAtlasMutation = trpc.ingestion.seed_atlas_population_streams.useMutation({
+    onSuccess: () => {
+      datasets.refetch();
+      schedulerStatus.refetch();
+      atlasCatalog.refetch();
+    },
+  });
 
   const seedMutation = trpc.ingestion.seedDefaultDatasets.useMutation({
     onSuccess: () => {
@@ -976,10 +985,20 @@ function IngestionPanel() {
                 <Radio className="h-5 w-5 text-cyan-400" />
                 Ingestion Scheduler
               </h3>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap justify-end">
+                <Button
+                  size="sm"
+                  onClick={() => seedAtlasMutation.mutate({})}
+                  disabled={seedAtlasMutation.isPending}
+                  title="Register the curated Atlas public stream catalog"
+                >
+                  {seedAtlasMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Globe className="h-3.5 w-3.5" />}
+                  Populate Atlas Streams
+                </Button>
                 {(!datasets.data || datasets.data.length === 0) && (
                   <Button
                     size="sm"
+                    variant="outline"
                     onClick={() => seedMutation.mutate()}
                     disabled={seedMutation.isPending}
                   >
@@ -989,18 +1008,30 @@ function IngestionPanel() {
                 )}
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
               <div className="rounded-lg border border-border/50 p-3">
-                <div className="text-xs text-muted-foreground flex items-center gap-1"><Database className="h-3 w-3" /> Datasets</div>
-                <div className="text-xl font-bold text-cyan-400">{schedulerStatus.data?.activeJobs ?? 0}</div>
+                <div className="text-xs text-muted-foreground flex items-center gap-1"><Database className="h-3 w-3" /> Registered</div>
+                <div className="text-xl font-bold text-cyan-400">{datasets.data?.length ?? 0}</div>
+              </div>
+              <div className="rounded-lg border border-border/50 p-3">
+                <div className="text-xs text-muted-foreground flex items-center gap-1"><Radio className="h-3 w-3" /> Scheduled</div>
+                <div className="text-xl font-bold text-emerald-400">{schedulerStatus.data?.activeJobs?.length ?? 0}</div>
               </div>
               <div className="rounded-lg border border-border/50 p-3">
                 <div className="text-xs text-muted-foreground flex items-center gap-1"><Activity className="h-3 w-3" /> Running</div>
-                <div className="text-xl font-bold text-amber-400">{schedulerStatus.data?.runningIngestions ?? 0}</div>
+                <div className="text-xl font-bold text-amber-400">{schedulerStatus.data?.runningIngestions?.length ?? 0}</div>
               </div>
               <div className="rounded-lg border border-border/50 p-3">
-                <div className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Status</div>
-                <div className="text-xl font-bold text-emerald-400">{schedulerStatus.data?.initialized ? "Active" : "Idle"}</div>
+                <div className="text-xs text-muted-foreground flex items-center gap-1"><Globe className="h-3 w-3" /> Atlas Catalog</div>
+                <div className="text-xl font-bold text-blue-400">{atlasCatalog.data?.total_streams ?? 0}</div>
+              </div>
+              <div className="rounded-lg border border-border/50 p-3 md:col-span-2">
+                <div className="text-xs text-muted-foreground flex items-center gap-1"><Layers className="h-3 w-3" /> Public Stream Domains</div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {atlasCatalog.data?.by_domain && Object.entries(atlasCatalog.data.by_domain).slice(0, 5).map(([domain, count]) => (
+                    <Badge key={domain} variant="outline" className="text-xs">{domain}: {String(count)}</Badge>
+                  ))}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -1046,7 +1077,7 @@ function IngestionPanel() {
             <div className="text-center py-8 text-muted-foreground">
               <Database className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>No datasets registered yet.</p>
-              <p className="text-sm mt-1">Click "Seed WA Datasets" to add the preconfigured Washington State datasets.</p>
+              <p className="text-sm mt-1">Click "Populate Atlas Streams" to add the curated federal, state, and municipal public stream catalog.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -4920,7 +4951,7 @@ function CoalitionIntelPanel() {
                   <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><Gauge className="h-3 w-3" /> {e.influenceScore}</span>
                     {e.state && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {e.state}</span>}
-                    {Array.isArray(e.domains) && e.domains.length > 0 && <span>{e.domains.slice(0, 2).join(", ")}</span>}
+                    {e.domains?.length > 0 && <span>{e.domains.slice(0, 2).join(", ")}</span>}
                   </div>
                 </div>
               ))}
@@ -4995,7 +5026,7 @@ function CoalitionIntelPanel() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-lg font-bold">Coalition Readiness Score</h3>
-                      <p className="text-sm text-muted-foreground">For {readinessQ.data.jurisdiction} / {(Array.isArray(readinessQ.data.domains) ? readinessQ.data.domains : []).join(", ")}</p>
+                      <p className="text-sm text-muted-foreground">For {readinessQ.data.jurisdiction} / {readinessQ.data.domains.join(", ")}</p>
                     </div>
                     <div className={`text-4xl font-bold font-mono ${
                       readinessQ.data.overallReadinessScore >= 70 ? "text-emerald-400" :

@@ -12,6 +12,7 @@ import { dataStreamRegistry, ingestRuns, ingestedRecords, liveSignals, detectedS
 import { eq, desc, and, sql, count, gte } from "drizzle-orm";
 import { triggerManualIngestion, getSchedulerStatus, refreshSchedules, isDatasetRunning, isDatasetQueued } from "../ingestion/scheduler";
 import { WA_CONSUMER_COMPLAINTS, WA_IMAGED_DOCUMENTS } from "../ingestion/socrata-adapter";
+import { populateAtlasPublicStreams, summarizeAtlasCatalog } from "../ingestion/atlas-population-engine";
 import { classifyEntity, batchClassifyEntities, shouldGenerateSignal } from "../ingestion/entity-classifier";
 import { findMergeCandidates, applyMerge, backfillEntityClassifications } from "../ingestion/entity-deduplicator";
 import { entityAliases } from "../../drizzle/schema";
@@ -24,7 +25,7 @@ export const ingestionRouter = router({
 
   listDatasets: publicProcedure.query(async () => {
     const rows = await db.select().from(dataStreamRegistry).orderBy(desc(dataStreamRegistry.createdAt));
-    return rows.map(r => ({
+    return rows.map((r: typeof dataStreamRegistry.$inferSelect) => ({
       datasetId: r.streamId,
       datasetName: r.streamName,
       enabled: r.enabled,
@@ -70,8 +71,7 @@ export const ingestionRouter = router({
       // GOVERNED: Data stream creation
       await governedDataStreamCreate({
         streamData: {
-        // @ts-ignore - stream_id_dsr is valid at runtime
-          stream_id_dsr: input.datasetId,
+          streamId: input.datasetId,
           streamName: input.datasetName,
           streamType: 'public_records',
           source: input.source,
@@ -131,6 +131,25 @@ export const ingestionRouter = router({
       return { success: true };
     }),
 
+  // ─── Atlas Population Engine ───
+
+  get_atlas_public_stream_catalog: publicProcedure.query(() => summarizeAtlasCatalog()),
+
+  seed_atlas_population_streams: adminProcedure
+    .input(z.object({
+      stream_ids: z.array(z.string()).optional(),
+    }).optional())
+    .mutation(async ({ ctx, input }) => {
+      const result = await populateAtlasPublicStreams({
+        streamIds: input?.stream_ids,
+        actorId: ctx.user?.openId ?? SYSTEM_ACTOR,
+        actorRole: "admin",
+      });
+
+      await refreshSchedules();
+      return result;
+    }),
+
   // ─── Seed Preconfigured Datasets ───
 
   seedDefaultDatasets: adminProcedure.mutation(async () => {
@@ -168,18 +187,19 @@ export const ingestionRouter = router({
       if (!existing) {
         // GOVERNED: Data stream creation via seed
         await governedDataStreamCreate({
-        // @ts-ignore - stream_id_dsr is valid at runtime
-          stream_id_dsr: ds.datasetId,
-          streamName: ds.datasetName,
-          streamType: ds.domain === 'consumer_protection' ? 'government_complaints' : 'public_records',
-          source: ds.source,
-          sourceUrl: ds.apiUrl,
-          apiUrl: ds.apiUrl,
-          updateFrequency: ds.updateFrequency,
-          jurisdiction: ds.jurisdiction,
-          domain: ds.domain,
-          description: ds.description,
-          fieldMapping: ds.fieldMapping,
+          streamData: {
+            streamId: ds.datasetId,
+            streamName: ds.datasetName,
+            streamType: ds.domain === 'consumer_protection' ? 'government_complaints' : 'public_records',
+            source: ds.source,
+            sourceUrl: ds.apiUrl,
+            apiUrl: ds.apiUrl,
+            updateFrequency: ds.updateFrequency,
+            jurisdiction: ds.jurisdiction,
+            domain: ds.domain,
+            description: ds.description,
+            fieldMapping: ds.fieldMapping,
+          },
           rationale: `Seeding preconfigured data stream: ${ds.datasetName} — standard system initialization`,
           actorId: SYSTEM_ACTOR,
           actorRole: "system",
