@@ -1,8 +1,3 @@
-const ATLAS_API_BASE_URL =
-  import.meta.env.VITE_ATLAS_API_BASE_URL ||
-  import.meta.env.VITE_ATLAS_BASE_URL ||
-  "https://atlas-streaming-engine.onrender.com";
-
 export interface AtlasHealth {
   status?: string;
   service?: string;
@@ -79,7 +74,7 @@ async function readAtlasResponse<T>(response: Response): Promise<T> {
 }
 
 async function atlasFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${ATLAS_API_BASE_URL}${path}`, {
+  const response = await fetch(`/api/atlas${path}`, {
     ...init,
     headers: {
       Accept: "application/json",
@@ -96,20 +91,20 @@ export function getAtlasHealth(): Promise<AtlasHealth> {
 }
 
 export function getAtlasCatalog(): Promise<AtlasCatalog> {
-  return atlasFetch<AtlasCatalog>("/v1/population/catalog");
+  return atlasFetch<AtlasCatalog>("/catalog");
 }
 
 export function populateAtlasStreams(streamIds?: string[]): Promise<AtlasPopulationResult> {
   const body = streamIds && streamIds.length > 0 ? { stream_ids: streamIds } : {};
 
-  return atlasFetch<AtlasPopulationResult>("/v1/population/streams", {
+  return atlasFetch<AtlasPopulationResult>("/populate", {
     method: "POST",
     body: JSON.stringify(body),
   });
 }
 
 export function triggerAtlasBridgeDrain(): Promise<AtlasPopulationResult> {
-  return atlasFetch<AtlasPopulationResult>("/scheduler/bridge-drain", {
+  return atlasFetch<AtlasPopulationResult>("/bridge-drain", {
     method: "POST",
   });
 }
