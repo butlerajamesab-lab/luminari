@@ -12,7 +12,12 @@ import { dataStreamRegistry, ingestRuns, ingestedRecords, liveSignals, detectedS
 import { eq, desc, and, sql, count, gte } from "drizzle-orm";
 import { triggerManualIngestion, getSchedulerStatus, refreshSchedules, isDatasetRunning, isDatasetQueued } from "../ingestion/scheduler";
 import { WA_CONSUMER_COMPLAINTS, WA_IMAGED_DOCUMENTS } from "../ingestion/socrata-adapter";
-import { populateAtlasPublicStreams, summarizeAtlasCatalog } from "../ingestion/atlas-population-engine";
+import {
+  get_atlas_signal_intelligence_cards,
+  get_atlas_signal_intelligence_summary,
+  populateAtlasPublicStreams,
+  summarizeAtlasCatalog,
+} from "../ingestion/atlas-population-engine";
 import { classifyEntity, batchClassifyEntities, shouldGenerateSignal } from "../ingestion/entity-classifier";
 import { findMergeCandidates, applyMerge, backfillEntityClassifications } from "../ingestion/entity-deduplicator";
 import { entityAliases } from "../../drizzle/schema";
@@ -134,6 +139,22 @@ export const ingestionRouter = router({
   // ─── Atlas Population Engine ───
 
   get_atlas_public_stream_catalog: publicProcedure.query(() => summarizeAtlasCatalog()),
+
+  list_signal_intelligence_cards: publicProcedure
+    .input(z.object({
+      limit: z.number().int().min(1).max(100).default(25),
+      canonical_signal_code: z.string().optional(),
+      signal_family: z.string().optional(),
+      include_excluded: z.boolean().default(false),
+    }).optional())
+    .query(({ input }) => get_atlas_signal_intelligence_cards({
+      limit: input?.limit,
+      canonical_signal_code: input?.canonical_signal_code,
+      signal_family: input?.signal_family,
+      include_excluded: input?.include_excluded,
+    })),
+
+  get_signal_intelligence_summary: publicProcedure.query(() => get_atlas_signal_intelligence_summary()),
 
   seed_atlas_population_streams: adminProcedure
     .input(z.object({
