@@ -935,6 +935,11 @@ function IngestionPanel() {
   const runs = trpc.ingestion.listRuns.useQuery({ limit: 10 });
   const signals = trpc.ingestion.listLiveSignals.useQuery({ limit: 20 });
   const signalStats = trpc.ingestion.getLiveSignalStats.useQuery();
+  const signal_cards = trpc.ingestion.list_signal_intelligence_cards.useQuery({
+    limit: 25,
+    include_excluded: false,
+  });
+  const signal_card_summary = trpc.ingestion.get_signal_intelligence_summary.useQuery();
   const schedulerStatus = trpc.ingestion.getSchedulerStatus.useQuery();
   const atlasCatalog = trpc.ingestion.get_atlas_public_stream_catalog.useQuery();
 
@@ -957,6 +962,8 @@ function IngestionPanel() {
       runs.refetch();
       signals.refetch();
       signalStats.refetch();
+      signal_cards.refetch();
+      signal_card_summary.refetch();
       datasets.refetch();
     },
   });
@@ -1043,23 +1050,77 @@ function IngestionPanel() {
               <Zap className="h-5 w-5 text-amber-400" />
               Live Signal Summary
             </h3>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="rounded-lg border border-border/50 p-3">
-                <div className="text-xs text-muted-foreground">Active Signals</div>
-                <div className="text-xl font-bold text-amber-400">{signalStats.data?.totalActive ?? 0}</div>
-              </div>
-              <div className="rounded-lg border border-border/50 p-3">
-                <div className="text-xs text-muted-foreground">By Severity</div>
-                <div className="flex gap-2 mt-1 flex-wrap">
-                  {signalStats.data?.bySeverity && Object.entries(signalStats.data.bySeverity).map(([sev, cnt]) => (
-                    <Badge key={sev} variant="outline" className={severityColor[sev] ?? ""}>{sev}: {String(cnt)}</Badge>
-                  ))}
-                  {(!signalStats.data?.bySeverity || Object.keys(signalStats.data.bySeverity).length === 0) && (
-                    <span className="text-xs text-muted-foreground">No signals yet</span>
-                  )}
+            {signal_card_summary.data?.configured === true && signal_card_summary.data.source_status === "ok" ? (
+              <div className="space-y-3 mb-4">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="rounded-lg border border-border/50 p-3">
+                    <div className="text-xs text-muted-foreground">Production Cards</div>
+                    <div className="text-xl font-bold text-amber-400">{signal_card_summary.data.production_cards ?? 0}</div>
+                  </div>
+                  <div className="rounded-lg border border-border/50 p-3">
+                    <div className="text-xs text-muted-foreground">Total Cards</div>
+                    <div className="text-xl font-bold text-cyan-400">{signal_card_summary.data.total_cards ?? 0}</div>
+                  </div>
+                  <div className="rounded-lg border border-border/50 p-3">
+                    <div className="text-xs text-muted-foreground">Excluded</div>
+                    <div className="text-xl font-bold text-muted-foreground">{signal_card_summary.data.excluded_cards ?? 0}</div>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/50 p-3">
+                  <div className="text-xs text-muted-foreground">By Severity</div>
+                  <div className="flex gap-2 mt-1 flex-wrap">
+                    {Object.entries(signal_card_summary.data.by_severity ?? {}).map(([severity, count]) => (
+                      <Badge key={severity} variant="outline" className={severityColor[severity] ?? ""}>{severity}: {String(count)}</Badge>
+                    ))}
+                    {Object.keys(signal_card_summary.data.by_severity ?? {}).length === 0 && (
+                      <span className="text-xs text-muted-foreground">No Atlas cards yet</span>
+                    )}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/50 p-3">
+                  <div className="text-xs text-muted-foreground">Signal Families</div>
+                  <div className="flex gap-2 mt-1 flex-wrap">
+                    {Object.entries(signal_card_summary.data.by_signal_family ?? {}).slice(0, 8).map(([signal_family, count]) => (
+                      <Badge key={signal_family} variant="outline" className="text-cyan-400 border-cyan-400/30">{signal_family}: {String(count)}</Badge>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/50 p-3">
+                  <div className="text-xs text-muted-foreground">Canonical Codes</div>
+                  <div className="flex gap-2 mt-1 flex-wrap">
+                    {Object.entries(signal_card_summary.data.by_canonical_signal_code ?? {}).slice(0, 8).map(([canonical_signal_code, count]) => (
+                      <Badge key={canonical_signal_code} variant="outline" className="text-blue-400 border-blue-400/30">{canonical_signal_code}: {String(count)}</Badge>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border/50 p-3">
+                  <div className="text-xs text-muted-foreground">Verification Status</div>
+                  <div className="flex gap-2 mt-1 flex-wrap">
+                    {Object.entries(signal_card_summary.data.by_verification_status ?? {}).map(([verification_status, count]) => (
+                      <Badge key={verification_status} variant="outline" className="text-emerald-400 border-emerald-400/30">{verification_status}: {String(count)}</Badge>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="rounded-lg border border-border/50 p-3">
+                  <div className="text-xs text-muted-foreground">Active Signals</div>
+                  <div className="text-xl font-bold text-amber-400">{signalStats.data?.totalActive ?? 0}</div>
+                </div>
+                <div className="rounded-lg border border-border/50 p-3">
+                  <div className="text-xs text-muted-foreground">By Severity</div>
+                  <div className="flex gap-2 mt-1 flex-wrap">
+                    {signalStats.data?.bySeverity && Object.entries(signalStats.data.bySeverity).map(([sev, cnt]) => (
+                      <Badge key={sev} variant="outline" className={severityColor[sev] ?? ""}>{sev}: {String(cnt)}</Badge>
+                    ))}
+                    {(!signalStats.data?.bySeverity || Object.keys(signalStats.data.bySeverity).length === 0) && (
+                      <span className="text-xs text-muted-foreground">No signals yet</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -1145,7 +1206,60 @@ function IngestionPanel() {
               <AlertTriangle className="h-5 w-5 text-amber-400" />
               Live Signals Detected
             </h3>
-            {signals.isLoading ? (
+            {signal_cards.data?.cards && signal_cards.data.cards.length > 0 ? (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {signal_cards.data.cards.map((card) => (
+                  <div
+                    key={card.signal_id ?? `${card.source_table}:${card.source_record_id}`}
+                    className={`rounded-lg border p-3 ${card.exclude_from_production ? "border-orange-400/40 bg-orange-400/10 opacity-75" : severityColor[card.severity ?? ""] ?? "border-border/50"}`}
+                  >
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {card.severity && (
+                        <Badge variant="outline" className={severityColor[card.severity] ?? ""}>{card.severity}</Badge>
+                      )}
+                      {card.canonical_signal_code && (
+                        <Badge variant="outline" className="text-blue-400 border-blue-400/30">{card.canonical_signal_code}</Badge>
+                      )}
+                      {card.signal_family && (
+                        <Badge variant="outline" className="text-cyan-400 border-cyan-400/30">{card.signal_family}</Badge>
+                      )}
+                      {card.verification_status && (
+                        <Badge variant="outline" className="text-emerald-400 border-emerald-400/30">{card.verification_status}</Badge>
+                      )}
+                      {card.record_origin && (
+                        <Badge variant="outline" className="text-violet-400 border-violet-400/30">{card.record_origin}</Badge>
+                      )}
+                      {card.exclude_from_production && (
+                        <Badge variant="outline" className="text-orange-400 border-orange-400/30">excluded</Badge>
+                      )}
+                      <span className="text-sm font-medium truncate">
+                        {card.display_title ?? card.canonical_signal_name ?? card.raw_signal_type ?? card.signal_id}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      {card.display_summary ?? "No Atlas summary available."}
+                    </p>
+                    <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
+                      {card.jurisdiction_raw_value && <span>{card.jurisdiction_raw_value}</span>}
+                      {card.geography_key && <span>{card.geography_key}</span>}
+                      {card.confidence_score !== null && card.confidence_score !== undefined && (
+                        <span>Confidence: {(Number(card.confidence_score) * 100).toFixed(0)}%</span>
+                      )}
+                      {card.severity_score !== null && card.severity_score !== undefined && (
+                        <span>Severity score: {Number(card.severity_score).toFixed(2)}</span>
+                      )}
+                      {card.detected_at && <span>{new Date(card.detected_at).toLocaleDateString()}</span>}
+                      {card.quarantine_reason && <span>Quarantine: {card.quarantine_reason}</span>}
+                    </div>
+                    {card.source_url && (
+                      <a href={card.source_url} target="_blank" rel="noreferrer" className="text-xs text-primary inline-flex items-center gap-1 mt-2">
+                        Source <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : signals.isLoading || signal_cards.isLoading ? (
               <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
             ) : !signals.data || signals.data.length === 0 ? (
               <div className="text-center py-6 text-muted-foreground">

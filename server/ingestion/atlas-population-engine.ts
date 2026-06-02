@@ -6,10 +6,257 @@
  * scheduler/adapters remain responsible for live ingestion and signal detection.
  */
 
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { eq } from "drizzle-orm";
 import { dataStreamRegistry } from "../../drizzle/schema";
 import { db } from "../db";
 import { governedDataStreamCreate } from "../governance-hooks";
+
+
+const ATLAS_SIGNAL_INTELLIGENCE_CARD_COLUMNS = [
+  "signal_id",
+  "source_signal_table",
+  "raw_signal_type",
+  "canonical_signal_code",
+  "canonical_signal_name",
+  "signal_family",
+  "signal_category",
+  "display_title",
+  "display_summary",
+  "geography_key",
+  "jurisdiction_raw_value",
+  "jurisdiction_id",
+  "entity_ids",
+  "source_table",
+  "source_record_id",
+  "source_connector_id",
+  "raw_record_id",
+  "statute_id",
+  "source_url",
+  "confidence_score",
+  "severity",
+  "severity_score",
+  "signal_status",
+  "verification_status",
+  "record_origin",
+  "exclude_from_production",
+  "quarantine_reason",
+  "evidence_payload",
+  "metadata_json",
+  "provenance_metadata",
+  "detected_at",
+  "created_at",
+].join(",");
+
+const ATLAS_SIGNAL_INTELLIGENCE_SUMMARY_COLUMNS = [
+  "canonical_signal_code",
+  "signal_family",
+  "verification_status",
+  "severity",
+  "exclude_from_production",
+].join(",");
+
+export type atlas_signal_intelligence_card = {
+  signal_id: string | number | null;
+  source_signal_table: string | null;
+  raw_signal_type: string | null;
+  canonical_signal_code: string | null;
+  canonical_signal_name: string | null;
+  signal_family: string | null;
+  signal_category: string | null;
+  display_title: string | null;
+  display_summary: string | null;
+  geography_key: string | null;
+  jurisdiction_raw_value: string | null;
+  jurisdiction_id: string | number | null;
+  entity_ids: unknown;
+  source_table: string | null;
+  source_record_id: string | null;
+  source_connector_id: string | null;
+  raw_record_id: string | null;
+  statute_id: string | number | null;
+  source_url: string | null;
+  confidence_score: number | string | null;
+  severity: string | null;
+  severity_score: number | string | null;
+  signal_status: string | null;
+  verification_status: string | null;
+  record_origin: string | null;
+  exclude_from_production: boolean | null;
+  quarantine_reason: string | null;
+  evidence_payload: unknown;
+  metadata_json: unknown;
+  provenance_metadata: unknown;
+  detected_at: string | null;
+  created_at: string | null;
+};
+
+export type atlas_signal_intelligence_cards_input = {
+  limit?: number;
+  canonical_signal_code?: string;
+  signal_family?: string;
+  include_excluded?: boolean;
+};
+
+type atlas_signal_intelligence_summary_row = {
+  canonical_signal_code: string | null;
+  signal_family: string | null;
+  verification_status: string | null;
+  severity: string | null;
+  exclude_from_production: boolean | null;
+};
+
+function get_atlas_client(): { configured: true; atlas_client: SupabaseClient } | { configured: false; atlas_client: null } {
+  const atlas_supabase_url = process.env.ATLAS_SUPABASE_URL;
+  const atlas_supabase_key = process.env.ATLAS_SUPABASE_SERVICE_ROLE_KEY ?? process.env.ATLAS_SUPABASE_ANON_KEY;
+
+  if (!atlas_supabase_url || !atlas_supabase_key) {
+    return { configured: false, atlas_client: null };
+  }
+
+  return {
+    configured: true,
+    atlas_client: createClient(atlas_supabase_url, atlas_supabase_key, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    }),
+  };
+}
+
+function increment_group_count(grouped_counts: Record<string, number>, raw_key: string | null | undefined) {
+  const key = raw_key && raw_key.trim().length > 0 ? raw_key : "unknown";
+  grouped_counts[key] = (grouped_counts[key] ?? 0) + 1;
+}
+
+export async function get_atlas_signal_intelligence_cards(input: atlas_signal_intelligence_cards_input = {}) {
+  const atlas_client_result = get_atlas_client();
+
+  if (!atlas_client_result.configured) {
+    return {
+      configured: false,
+      source_status: "not_configured",
+      cards: [] as atlas_signal_intelligence_card[],
+      count: 0,
+    };
+  }
+
+  const limit = Math.min(Math.max(input.limit ?? 25, 1), 100);
+  let query = atlas_client_result.atlas_client
+    .schema("atlas")
+    .from("v_signal_intelligence_cards")
+    .select(ATLAS_SIGNAL_INTELLIGENCE_CARD_COLUMNS, { count: "exact" });
+
+  if (!input.include_excluded) {
+    query = query.or("exclude_from_production.is.false,exclude_from_production.is.null");
+  }
+
+  if (input.canonical_signal_code) {
+    query = query.eq("canonical_signal_code", input.canonical_signal_code);
+  }
+
+  if (input.signal_family) {
+    query = query.eq("signal_family", input.signal_family);
+  }
+
+  const { data, error, count } = await query
+    .order("severity_score", { ascending: false, nullsFirst: false })
+    .order("confidence_score", { ascending: false, nullsFirst: false })
+    .order("detected_at", { ascending: false, nullsFirst: false })
+    .limit(limit);
+
+  if (error) {
+    return {
+      configured: true,
+      source_status: "error",
+      cards: [] as atlas_signal_intelligence_card[],
+      count: 0,
+      error_message: error.message,
+    };
+  }
+
+  const cards = (data ?? []) as unknown as atlas_signal_intelligence_card[];
+
+  return {
+    configured: true,
+    source_status: "ok",
+    cards,
+    count: count ?? cards.length,
+  };
+}
+
+export async function get_atlas_signal_intelligence_summary() {
+  const atlas_client_result = get_atlas_client();
+
+  if (!atlas_client_result.configured) {
+    return {
+      configured: false,
+      source_status: "not_configured",
+      total_cards: 0,
+      production_cards: 0,
+      excluded_cards: 0,
+      by_canonical_signal_code: {} as Record<string, number>,
+      by_signal_family: {} as Record<string, number>,
+      by_verification_status: {} as Record<string, number>,
+      by_severity: {} as Record<string, number>,
+    };
+  }
+
+  const { data, error } = await atlas_client_result.atlas_client
+    .schema("atlas")
+    .from("v_signal_intelligence_cards")
+    .select(ATLAS_SIGNAL_INTELLIGENCE_SUMMARY_COLUMNS)
+    .limit(10000);
+
+  if (error) {
+    return {
+      configured: true,
+      source_status: "error",
+      total_cards: 0,
+      production_cards: 0,
+      excluded_cards: 0,
+      by_canonical_signal_code: {} as Record<string, number>,
+      by_signal_family: {} as Record<string, number>,
+      by_verification_status: {} as Record<string, number>,
+      by_severity: {} as Record<string, number>,
+      error_message: error.message,
+    };
+  }
+
+  const rows = (data ?? []) as unknown as atlas_signal_intelligence_summary_row[];
+  const by_canonical_signal_code: Record<string, number> = {};
+  const by_signal_family: Record<string, number> = {};
+  const by_verification_status: Record<string, number> = {};
+  const by_severity: Record<string, number> = {};
+  let production_cards = 0;
+  let excluded_cards = 0;
+
+  for (const row of rows) {
+    if (row.exclude_from_production) {
+      excluded_cards++;
+    } else {
+      production_cards++;
+    }
+
+    increment_group_count(by_canonical_signal_code, row.canonical_signal_code);
+    increment_group_count(by_signal_family, row.signal_family);
+    increment_group_count(by_verification_status, row.verification_status);
+    increment_group_count(by_severity, row.severity);
+  }
+
+  return {
+    configured: true,
+    source_status: "ok",
+    total_cards: rows.length,
+    production_cards,
+    excluded_cards,
+    by_canonical_signal_code,
+    by_signal_family,
+    by_verification_status,
+    by_severity,
+  };
+}
 
 export type AtlasPublicStreamDefinition = {
   streamId: string;
