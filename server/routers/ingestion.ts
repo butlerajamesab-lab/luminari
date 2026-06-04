@@ -22,6 +22,7 @@ import { classifyEntity, batchClassifyEntities, shouldGenerateSignal } from "../
 import { findMergeCandidates, applyMerge, backfillEntityClassifications } from "../ingestion/entity-deduplicator";
 import { entityAliases } from "../../drizzle/schema";
 import { governedDataStreamCreate, governedDataStreamToggle, governedDataStreamDelete } from "../governance-hooks";
+import { get_unified_ingestion_metrics, get_unified_signal_summary, get_unified_signals } from "../unified-queries";
 
 const SYSTEM_ACTOR = "SYSTEM:ingestion-pipeline";
 
@@ -29,23 +30,7 @@ export const ingestionRouter = router({
   // ─── Dataset Registry ───
 
   listDatasets: publicProcedure.query(async () => {
-    const rows = await db.select().from(dataStreamRegistry).orderBy(desc(dataStreamRegistry.createdAt));
-    return rows.map((r: typeof dataStreamRegistry.$inferSelect) => ({
-      datasetId: r.streamId,
-      datasetName: r.streamName,
-      enabled: r.enabled,
-      updateFrequency: r.updateFrequency,
-      jurisdiction: r.jurisdiction ?? "",
-      domain: r.domain ?? "",
-      totalRecordsIngested: r.recordsIngested ?? 0,
-      lastIngestedAt: r.lastIngestedAt ?? null,
-      lastRunStatus: r.lastRunStatus ?? null,
-      consecutiveFailures: r.consecutiveFailures ?? 0,
-      signalsGenerated: r.signalsGenerated ?? 0,
-      source: r.source ?? "",
-      apiUrl: r.apiUrl ?? "",
-      description: r.description ?? "",
-    }));
+    return get_unified_ingestion_metrics();
   }),
 
   getDataset: protectedProcedure
@@ -307,56 +292,16 @@ export const ingestionRouter = router({
       limit: z.number().default(50),
     }))
     .query(async ({ input }) => {
-      // CANONICAL: Read from detected_signals (single source of truth)
-      const conditions: string[] = [];
-      if (input.datasetId) conditions.push(`dataset_id = '${input.datasetId}'`);
-      if (input.jurisdiction) conditions.push(`jurisdiction_scope = '${input.jurisdiction}'`);
-      if (input.severity) conditions.push(`severity_level = '${input.severity}'`);
-      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-      const rows = await db.execute(
-        sql.raw(`SELECT signal_id, signal_type, dataset_id, jurisdiction_scope, severity_level,
-                        plain_language_explanation, confidence_score, extraction_timestamp,
-                        escalation_status, affected_entities, entity_id
-                 FROM detected_signals ${whereClause}
-                 ORDER BY extraction_timestamp DESC LIMIT ${input.limit}`)
-      );
-      return ((rows as any)[0] || []).map((r: any) => ({
-        id: r.signal_id,
-        signalType: r.signal_type,
-        datasetId: r.dataset_id,
-        jurisdiction: r.jurisdiction_scope,
-        severity: r.severity_level,
-        title: r.signal_type,
-        explanation: r.plain_language_explanation,
-        confidenceScore: r.confidence_score,
-        detectedAt: r.extraction_timestamp ? Number(r.extraction_timestamp) : null,
-        active: true,
-        escalationTier: r.escalation_status,
-        entityId: r.entity_id,
-        affectedEntities: r.affected_entities,
-      }));
+      const signals = await get_unified_signals({
+        stream_id: input.datasetId,
+        severity: input.severity,
+        limit: input.limit,
+      });
+      return input.activeOnly ? signals.filter((signal) => signal.active) : signals;
     }),
 
   getLiveSignalStats: publicProcedure.query(async () => {
-    // CANONICAL: Read from detected_signals (single source of truth)
-    const totalRows = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM detected_signals`));
-    const totalActive = (totalRows as any)[0][0]?.cnt ?? 0;
-
-    const sevRows = await db.execute(sql.raw(
-      `SELECT severity_level as severity, COUNT(*) as cnt FROM detected_signals GROUP BY severity_level`
-    ));
-    const bySeverity = Object.fromEntries(
-      ((sevRows as any)[0] || []).map((r: any) => [r.severity, Number(r.cnt)])
-    );
-
-    const dsRows = await db.execute(sql.raw(
-      `SELECT dataset_id as datasetId, COUNT(*) as cnt FROM detected_signals GROUP BY dataset_id`
-    ));
-    const byDataset = Object.fromEntries(
-      ((dsRows as any)[0] || []).map((r: any) => [r.datasetId, Number(r.cnt)])
-    );
-
-    return { totalActive: Number(totalActive), bySeverity, byDataset };
+    return get_unified_signal_summary();
   }),
 
   // ─── Ingested Records Stats ───

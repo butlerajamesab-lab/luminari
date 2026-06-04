@@ -24,6 +24,7 @@ import { sunamGateRouter } from "./routers/sunam-gate-router";
 import { sunamBackfillRouter } from "./routers/sunam-backfill-router";
 import { meaningLayerRouter } from "./routers/meaning-layer";
 import { unifiedOutputRouter } from "./routers/unified-output";
+import { unifiedRouter } from "./routers/unified-router";
 import { governanceRouter } from "./routers/governance";
 import { formExtractionRouter } from "./form-extraction-router";
 import { phoenixRouter } from "./routers/phoenix";
@@ -4663,20 +4664,20 @@ import { caseStateRouter } from "./routers/case-state";
 const supportMatcherRouter = router({
   match: publicProcedure
     .input(z.object({
-      pipelineType: z.string(),
+      pipeline_type: z.string(),
       jurisdiction: z.string().optional(),
       urgency: z.enum(["crisis", "urgent", "standard", "informational"]).optional(),
-      needKeywords: z.array(z.string()).optional(),
+      need_keywords: z.array(z.string()).optional(),
       domain: z.string().optional(),
       limit: z.number().min(1).max(20).optional(),
     }))
     .query(async ({ input }) => {
       const results = await matchResources({
-        pipelineType: input.pipelineType,
+        pipeline_type: input.pipeline_type,
         jurisdiction: input.jurisdiction || undefined,
         urgency: input.urgency || undefined,
-        needKeywords: input.needKeywords || undefined,
-        domain: input.domain || PIPELINE_DOMAIN_MAP[input.pipelineType] || undefined,
+        need_keywords: input.need_keywords || undefined,
+        domain: input.domain || PIPELINE_DOMAIN_MAP[input.pipeline_type] || undefined,
         limit: input.limit || 5,
       });
       return results;
@@ -4687,10 +4688,10 @@ const supportMatcherRouter = router({
     .query(async ({ input, ctx }) => {
       // Get case details to extract pipeline type and jurisdiction
       const { cases } = await import("../drizzle/schema");
-      const [caseData] = await db.select().from(cases).where(eq(cases.id, input.caseId)).limit(1);
+      const [caseData] = await db.select().from(cases).where(eq((cases as any).id, input.caseId as any)).limit(1);
       if (!caseData) throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
 
-      const pipelineType = (caseData as any).pipelineType || "general_investigation";
+      const pipeline_type = (caseData as any).pipeline_type || (caseData as any).pipelineType || "general_investigation";
       const jurisdiction = (caseData as any).jurisdiction || undefined;
 
       // Determine urgency from case signals if available
@@ -4706,16 +4707,16 @@ const supportMatcherRouter = router({
       }
 
       const results = await matchResources({
-        pipelineType,
+        pipeline_type,
         jurisdiction: jurisdiction || undefined,
         urgency,
-        domain: PIPELINE_DOMAIN_MAP[pipelineType] || undefined,
+        domain: PIPELINE_DOMAIN_MAP[pipeline_type] || undefined,
         limit: 5,
       });
 
       return {
         caseId: input.caseId,
-        pipelineType,
+        pipeline_type,
         jurisdiction: jurisdiction || null,
         urgency,
         resources: results,
@@ -4965,6 +4966,7 @@ export const appRouter = router({
   signalGovernance: signalGovernanceRouter,
   meaningLayer: meaningLayerRouter,
   unifiedOutput: unifiedOutputRouter,
+  unified: unifiedRouter,
   workbench: workbenchRouter,
   remedy: remedyRouter,
   paperwork: paperworkRouter,

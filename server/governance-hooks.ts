@@ -473,7 +473,7 @@ export async function governedDataStreamDelete(input: GovernedDataStreamDeleteIn
 // ─── 10. Data Stream Config Change ───
 
 interface GovernedDataStreamConfigInput extends GovernedWriteBase {
-  streamId: string;
+  stream_id: string;
   changes: Record<string, unknown>;
 }
 
@@ -488,24 +488,24 @@ export async function governedDataStreamConfigChange(input: GovernedDataStreamCo
   return await db.transaction(async (tx) => {
     // T1. Read current state
     const [currentState] = await tx.select().from(dataStreamRegistry)
-      .where(eq(dataStreamRegistry.streamId, input.streamId));
-    if (!currentState) throw new Error(`Data stream ${input.streamId} not found`);
+      .where(eq(dataStreamRegistry.streamId, input.stream_id));
+    if (!currentState) throw new Error(`Data stream ${input.stream_id} not found`);
 
     // T2. Apply update
     const setValues: any = { ...input.changes, updatedAt: Date.now() };
     await tx.update(dataStreamRegistry)
       .set(setValues)
-      .where(eq(dataStreamRegistry.streamId, input.streamId));
+      .where(eq(dataStreamRegistry.streamId, input.stream_id));
 
     // T3. Read new state
     const [newState] = await tx.select().from(dataStreamRegistry)
-      .where(eq(dataStreamRegistry.streamId, input.streamId));
+      .where(eq(dataStreamRegistry.streamId, input.stream_id));
 
     // T4. Write governance log
     const result = await writeGovernanceLog(tx, {
       eventType: "data_stream_config_changed",
       component: "data_stream_registry",
-      scope: `stream_id:${input.streamId}`,
+      scope: `stream_id:${input.stream_id}`,
       previousState: {
         apiUrl: currentState.apiUrl,
         cronExpression: currentState.cronExpression,
