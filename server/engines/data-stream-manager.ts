@@ -37,31 +37,31 @@ export const UPDATE_FREQUENCIES = [
 
 type StreamRow = {
   id: number;
-  streamId: string;
-  streamName: string;
-  streamType: string | null;
-  sourceUrl: string | null;
-  apiUrl: string | null;
-  updateFrequency: string | null;
-  cronExpression: string | null;
-  signalWeight: number | null;
-  confidenceMultiplier: number | null;
+  stream_id: string;
+  stream_name: string;
+  stream_type: string | null;
+  source_url: string | null;
+  api_url: string | null;
+  update_frequency: string | null;
+  cron_expression: string | null;
+  signal_weight: number | null;
+  confidence_multiplier: number | null;
   enabled: number | boolean | null;
-  fieldMapping: string | null;
-  postProcessingEngineName: string | null;
-  parserMode: string | null;
-  recordsIngested: number | null;
-  signalsGenerated: number | null;
+  field_mapping: string | null;
+  post_processing_engine_name: string | null;
+  parser_mode: string | null;
+  records_ingested: number | null;
+  signals_generated: number | null;
   lastIngestedAt: string | number | null;
   lastRunStatus: string | null;
   lastSuccessAt: string | number | null;
   lastFailureAt: string | number | null;
-  lastErrorType: string | null;
-  lastErrorMessage: string | null;
+  last_errorType: string | null;
+  last_errorMessage: string | null;
   lastHttpStatus: string | null;
   failureCount: number | null;
-  consecutiveFailures: number | null;
-  autoDisabled: number | boolean | null;
+  consecutive_failures: number | null;
+  auto_disabled: number | boolean | null;
   disabledReason: string | null;
 };
 
@@ -85,44 +85,44 @@ function toTimestamp(value: string | number | null | undefined): number | null {
 function normalizeStream(row: StreamRow) {
   const lastIngestedAt = toTimestamp(row.lastIngestedAt);
   const enabled = toBool(row.enabled);
-  const autoDisabled = toBool(row.autoDisabled);
-  const recordsIngested = toNumber(row.recordsIngested);
-  const signalsGenerated = toNumber(row.signalsGenerated);
+  const auto_disabled = toBool(row.auto_disabled);
+  const records_ingested = toNumber(row.records_ingested);
+  const signals_generated = toNumber(row.signals_generated);
   const failureCount = toNumber(row.failureCount);
-  const consecutiveFailures = toNumber(row.consecutiveFailures);
-  const signalWeight = toNumber(row.signalWeight) || 100;
-  const confidenceMultiplier = toNumber(row.confidenceMultiplier) || 100;
+  const consecutive_failures = toNumber(row.consecutive_failures);
+  const signal_weight = toNumber(row.signal_weight) || 100;
+  const confidence_multiplier = toNumber(row.confidence_multiplier) || 100;
 
   return {
     id: row.id,
-    streamId: row.streamId,
-    streamName: row.streamName,
-    streamType: row.streamType ?? "unknown",
-    sourceUrl: row.sourceUrl,
-    apiUrl: row.apiUrl,
-    updateFrequency: row.updateFrequency ?? "manual",
-    cronExpression: row.cronExpression,
-    signalWeight,
-    confidenceMultiplier,
+    stream_id: row.stream_id,
+    stream_name: row.stream_name,
+    stream_type: row.stream_type ?? "unknown",
+    source_url: row.source_url,
+    api_url: row.api_url,
+    update_frequency: row.update_frequency ?? "manual",
+    cron_expression: row.cron_expression,
+    signal_weight,
+    confidence_multiplier,
     enabled,
-    fieldMapping: row.fieldMapping,
-    postProcessingEngineName: row.postProcessingEngineName,
-    parserMode: row.parserMode,
-    recordsIngested,
-    signalsGenerated,
+    field_mapping: row.field_mapping,
+    post_processing_engine_name: row.post_processing_engine_name,
+    parser_mode: row.parser_mode,
+    records_ingested,
+    signals_generated,
     lastIngestedAt,
     lastRunStatus: row.lastRunStatus,
     lastSuccessAt: toTimestamp(row.lastSuccessAt),
     lastFailureAt: toTimestamp(row.lastFailureAt),
-    lastErrorType: row.lastErrorType,
-    lastErrorMessage: row.lastErrorMessage,
+    last_errorType: row.last_errorType,
+    last_errorMessage: row.last_errorMessage,
     lastHttpStatus: row.lastHttpStatus,
     failureCount,
-    consecutiveFailures,
-    autoDisabled,
+    consecutive_failures,
+    auto_disabled,
     disabledReason: row.disabledReason,
     linkedDatasetCount: 1,
-    healthStatus: autoDisabled
+    healthStatus: auto_disabled
       ? "auto_disabled"
       : enabled
         ? (lastIngestedAt && Date.now() - lastIngestedAt < 7 * 24 * 60 * 60 * 1000
@@ -136,31 +136,31 @@ async function listCanonicalStreams() {
   const [rows]: any = await db.execute(sql.raw(`
     SELECT
       id,
-      stream_id_dsr as "streamId",
-      stream_name_dsr as "streamName",
-      stream_type_dsr as "streamType",
-      source_url_dsr as "sourceUrl",
-      api_url_dsr as "apiUrl",
-      update_freq_dsr as "updateFrequency",
-      cron_expression_dsr as "cronExpression",
-      signal_weight_dsr as "signalWeight",
-      confidence_multiplier_dsr as "confidenceMultiplier",
+      stream_id_dsr as "stream_id",
+      stream_name_dsr as "stream_name",
+      stream_type_dsr as "stream_type",
+      source_url_dsr as "source_url",
+      api_url_dsr as "api_url",
+      update_freq_dsr as "update_frequency",
+      cron_expression_dsr as "cron_expression",
+      signal_weight_dsr as "signal_weight",
+      confidence_multiplier_dsr as "confidence_multiplier",
       enabled_dsr as "enabled",
-      field_mapping_dsr as "fieldMapping",
-      post_processing_engine_name_dsr as "postProcessingEngineName",
-      parser_mode_dsr as "parserMode",
-      records_ingested_dsr as "recordsIngested",
-      signals_generated_dsr as "signalsGenerated",
+      field_mapping_dsr as "field_mapping",
+      post_processing_engine_name_dsr as "post_processing_engine_name",
+      parser_mode_dsr as "parser_mode",
+      records_ingested_dsr as "records_ingested",
+      signals_generated_dsr as "signals_generated",
       last_ingested_at_dsr as "lastIngestedAt",
       last_run_status_dsr as "lastRunStatus",
       last_success_at_dsr as "lastSuccessAt",
       last_failure_at_dsr as "lastFailureAt",
-      last_error_type_dsr as "lastErrorType",
-      last_error_message_dsr as "lastErrorMessage",
+      last_error_type_dsr as "last_errorType",
+      last_error_message_dsr as "last_errorMessage",
       last_http_status_dsr as "lastHttpStatus",
       failure_count_dsr as "failureCount",
-      consecutive_failures_dsr as "consecutiveFailures",
-      auto_disabled_dsr as "autoDisabled",
+      consecutive_failures_dsr as "consecutive_failures",
+      auto_disabled_dsr as "auto_disabled",
       disabled_reason_dsr as "disabledReason"
     FROM data_stream_registry
     ORDER BY stream_name_dsr
@@ -175,36 +175,36 @@ export async function getStreamsWithHealth() {
 }
 
 /** Get stream detail with recent activity */
-export async function getStreamDetail(streamId: string) {
-  const escapedStreamId = streamId.replace(/'/g, "''");
+export async function getStreamDetail(stream_id: string) {
+  const escapedStreamId = stream_id.replace(/'/g, "''");
   const [rows]: any = await db.execute(sql.raw(`
     SELECT
       id,
-      stream_id_dsr as "streamId",
-      stream_name_dsr as "streamName",
-      stream_type_dsr as "streamType",
-      source_url_dsr as "sourceUrl",
-      api_url_dsr as "apiUrl",
-      update_freq_dsr as "updateFrequency",
-      cron_expression_dsr as "cronExpression",
-      signal_weight_dsr as "signalWeight",
-      confidence_multiplier_dsr as "confidenceMultiplier",
+      stream_id_dsr as "stream_id",
+      stream_name_dsr as "stream_name",
+      stream_type_dsr as "stream_type",
+      source_url_dsr as "source_url",
+      api_url_dsr as "api_url",
+      update_freq_dsr as "update_frequency",
+      cron_expression_dsr as "cron_expression",
+      signal_weight_dsr as "signal_weight",
+      confidence_multiplier_dsr as "confidence_multiplier",
       enabled_dsr as "enabled",
-      field_mapping_dsr as "fieldMapping",
-      post_processing_engine_name_dsr as "postProcessingEngineName",
-      parser_mode_dsr as "parserMode",
-      records_ingested_dsr as "recordsIngested",
-      signals_generated_dsr as "signalsGenerated",
+      field_mapping_dsr as "field_mapping",
+      post_processing_engine_name_dsr as "post_processing_engine_name",
+      parser_mode_dsr as "parser_mode",
+      records_ingested_dsr as "records_ingested",
+      signals_generated_dsr as "signals_generated",
       last_ingested_at_dsr as "lastIngestedAt",
       last_run_status_dsr as "lastRunStatus",
       last_success_at_dsr as "lastSuccessAt",
       last_failure_at_dsr as "lastFailureAt",
-      last_error_type_dsr as "lastErrorType",
-      last_error_message_dsr as "lastErrorMessage",
+      last_error_type_dsr as "last_errorType",
+      last_error_message_dsr as "last_errorMessage",
       last_http_status_dsr as "lastHttpStatus",
       failure_count_dsr as "failureCount",
-      consecutive_failures_dsr as "consecutiveFailures",
-      auto_disabled_dsr as "autoDisabled",
+      consecutive_failures_dsr as "consecutive_failures",
+      auto_disabled_dsr as "auto_disabled",
       disabled_reason_dsr as "disabledReason"
     FROM data_stream_registry
     WHERE stream_id_dsr = '${escapedStreamId}'
@@ -218,11 +218,11 @@ export async function getStreamDetail(streamId: string) {
   return {
     ...stream,
     linkedDatasets: [{
-      datasetId: stream.streamId,
-      datasetName: stream.streamName,
-      source: stream.sourceUrl ?? stream.apiUrl ?? "unknown",
+      datasetId: stream.stream_id,
+      datasetName: stream.stream_name,
+      source: stream.source_url ?? stream.api_url ?? "unknown",
       enabled: stream.enabled,
-      totalRecordsIngested: stream.recordsIngested ?? 0,
+      totalRecordsIngested: stream.records_ingested ?? 0,
       lastIngestedAt: stream.lastIngestedAt,
     }],
   };
@@ -230,24 +230,24 @@ export async function getStreamDetail(streamId: string) {
 
 /** Create a new stream */
 export async function createStream(input: {
-  streamId: string;
-  streamName: string;
-  streamType: string;
-  sourceUrl?: string;
-  updateFrequency?: string;
-  signalWeight?: number;
-  confidenceMultiplier?: number;
+  stream_id: string;
+  stream_name: string;
+  stream_type: string;
+  source_url?: string;
+  update_frequency?: string;
+  signal_weight?: number;
+  confidence_multiplier?: number;
   description?: string;
-  fieldMapping?: Record<string, string>;
+  field_mapping?: Record<string, string>;
 }) {
-  const streamId = input.streamId.replace(/'/g, "''");
-  const streamName = input.streamName.replace(/'/g, "''");
-  const streamType = input.streamType.replace(/'/g, "''");
-  const sourceUrl = input.sourceUrl ? `'${input.sourceUrl.replace(/'/g, "''")}'` : "NULL";
-  const updateFrequency = (input.updateFrequency ?? "daily").replace(/'/g, "''");
-  const signalWeight = input.signalWeight ?? 100;
-  const confidenceMultiplier = input.confidenceMultiplier ?? 100;
-  const fieldMapping = input.fieldMapping ? `'${JSON.stringify(input.fieldMapping).replace(/'/g, "''")}'` : "NULL";
+  const stream_id = input.stream_id.replace(/'/g, "''");
+  const stream_name = input.stream_name.replace(/'/g, "''");
+  const stream_type = input.stream_type.replace(/'/g, "''");
+  const source_url = input.source_url ? `'${input.source_url.replace(/'/g, "''")}'` : "NULL";
+  const update_frequency = (input.update_frequency ?? "daily").replace(/'/g, "''");
+  const signal_weight = input.signal_weight ?? 100;
+  const confidence_multiplier = input.confidence_multiplier ?? 100;
+  const field_mapping = input.field_mapping ? `'${JSON.stringify(input.field_mapping).replace(/'/g, "''")}'` : "NULL";
 
   const [rows]: any = await db.execute(sql.raw(`
     INSERT INTO data_stream_registry (
@@ -263,49 +263,49 @@ export async function createStream(input: {
       records_ingested_dsr,
       signals_generated_dsr
     ) VALUES (
-      '${streamId}',
-      '${streamName}',
-      '${streamType}',
-      ${sourceUrl},
-      '${updateFrequency}',
-      ${signalWeight},
-      ${confidenceMultiplier},
+      '${stream_id}',
+      '${stream_name}',
+      '${stream_type}',
+      ${source_url},
+      '${update_frequency}',
+      ${signal_weight},
+      ${confidence_multiplier},
       1,
-      ${fieldMapping},
+      ${field_mapping},
       0,
       0
     )
-    RETURNING id, stream_id_dsr as "streamId"
+    RETURNING id, stream_id_dsr as "stream_id"
   `));
 
   const inserted = (rows as any[])[0];
-  return { id: inserted?.id, streamId: inserted?.streamId ?? input.streamId };
+  return { id: inserted?.id, stream_id: inserted?.stream_id ?? input.stream_id };
 }
 
 /** Update a stream */
-export async function updateStream(streamId: string, updates: {
-  streamName?: string;
-  signalWeight?: number;
-  confidenceMultiplier?: number;
+export async function updateStream(stream_id: string, updates: {
+  stream_name?: string;
+  signal_weight?: number;
+  confidence_multiplier?: number;
   enabled?: boolean;
   description?: string;
-  sourceUrl?: string;
-  updateFrequency?: string;
-  fieldMapping?: Record<string, string>;
+  source_url?: string;
+  update_frequency?: string;
+  field_mapping?: Record<string, string>;
 }) {
   const setValues: string[] = [];
-  if (updates.streamName !== undefined) setValues.push(`stream_name_dsr = '${updates.streamName.replace(/'/g, "''")}'`);
-  if (updates.signalWeight !== undefined) setValues.push(`signal_weight_dsr = ${updates.signalWeight}`);
-  if (updates.confidenceMultiplier !== undefined) setValues.push(`confidence_multiplier_dsr = ${updates.confidenceMultiplier}`);
+  if (updates.stream_name !== undefined) setValues.push(`stream_name_dsr = '${updates.stream_name.replace(/'/g, "''")}'`);
+  if (updates.signal_weight !== undefined) setValues.push(`signal_weight_dsr = ${updates.signal_weight}`);
+  if (updates.confidence_multiplier !== undefined) setValues.push(`confidence_multiplier_dsr = ${updates.confidence_multiplier}`);
   if (updates.enabled !== undefined) setValues.push(`enabled_dsr = ${updates.enabled ? 1 : 0}`);
   if (updates.description !== undefined) setValues.push(`description_dsr = '${updates.description.replace(/'/g, "''")}'`);
-  if (updates.sourceUrl !== undefined) setValues.push(`source_url_dsr = '${updates.sourceUrl.replace(/'/g, "''")}'`);
-  if (updates.updateFrequency !== undefined) setValues.push(`update_freq_dsr = '${updates.updateFrequency.replace(/'/g, "''")}'`);
-  if (updates.fieldMapping !== undefined) setValues.push(`field_mapping_dsr = '${JSON.stringify(updates.fieldMapping).replace(/'/g, "''")}'`);
+  if (updates.source_url !== undefined) setValues.push(`source_url_dsr = '${updates.source_url.replace(/'/g, "''")}'`);
+  if (updates.update_frequency !== undefined) setValues.push(`update_freq_dsr = '${updates.update_frequency.replace(/'/g, "''")}'`);
+  if (updates.field_mapping !== undefined) setValues.push(`field_mapping_dsr = '${JSON.stringify(updates.field_mapping).replace(/'/g, "''")}'`);
 
   if (setValues.length === 0) return { success: true, skipped: true };
 
-  const escapedStreamId = streamId.replace(/'/g, "''");
+  const escapedStreamId = stream_id.replace(/'/g, "''");
   await db.execute(sql.raw(`
     UPDATE data_stream_registry
     SET ${setValues.join(", ")}
@@ -315,8 +315,8 @@ export async function updateStream(streamId: string, updates: {
 }
 
 /** Delete a stream */
-export async function deleteStream(streamId: string) {
-  const escapedStreamId = streamId.replace(/'/g, "''");
+export async function deleteStream(stream_id: string) {
+  const escapedStreamId = stream_id.replace(/'/g, "''");
   await db.execute(sql.raw(`DELETE FROM data_stream_registry WHERE stream_id_dsr = '${escapedStreamId}'`));
   return { success: true };
 }
@@ -324,21 +324,21 @@ export async function deleteStream(streamId: string) {
 /** Get stream statistics */
 export async function getStreamStats() {
   const streams = await listCanonicalStreams();
-  const totalRecords = streams.reduce((sum, s) => sum + s.recordsIngested, 0);
-  const totalSignals = streams.reduce((sum, s) => sum + s.signalsGenerated, 0);
+  const totalRecords = streams.reduce((sum, s) => sum + s.records_ingested, 0);
+  const totalSignals = streams.reduce((sum, s) => sum + s.signals_generated, 0);
 
   return {
     totalStreams: streams.length,
     enabledStreams: streams.filter(s => s.enabled).length,
     disabledStreams: streams.filter(s => !s.enabled).length,
-    autoDisabledStreams: streams.filter(s => s.autoDisabled).length,
+    auto_disabledStreams: streams.filter(s => s.auto_disabled).length,
     totalRecordsIngested: totalRecords,
     totalSignalsGenerated: totalSignals,
     totalFailures: streams.reduce((sum, s) => sum + s.failureCount, 0),
     byType: STREAM_TYPES.map(t => ({
       type: t.id,
       label: t.label,
-      count: streams.filter(s => s.streamType === t.id).length,
+      count: streams.filter(s => s.stream_type === t.id).length,
     })),
   };
 }
