@@ -576,7 +576,15 @@ export async function createDocument(doc: {
 }
 
 export async function listDocuments(caseId: number) {
+<<<<<<< codex/complete-snake_case-migration-in-runtime-code-dmxds3
   return db.select().from(documents).where(eq(documents.caseId, caseId)).orderBy(desc(documents.createdAt));
+=======
+  console.log("[listDocuments] caseId:", caseId);
+  // TEMPORARY: Remove WHERE filter to unblock UI and debug auth context
+  const result = await db.select().from(documents).orderBy(desc(documents.createdAt));
+  console.log("[listDocuments] result count:", result.length);
+  return result;
+>>>>>>> main
 }
 
 export async function getDocument(id: number) {
