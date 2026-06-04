@@ -104,6 +104,57 @@ function parse_json(value: unknown): unknown {
   }
 }
 
+
+async function get_detected_signal_columns(): Promise<Set<string>> {
+  const result = await pool.query(
+    `SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'detected_signals'`,
+  );
+  return new Set(rows_from_result<{ column_name: string }>(result).map((row) => row.column_name));
+}
+
+function first_existing_column(columns: Set<string>, candidates: string[]): string | null {
+  return candidates.find((candidate) => columns.has(candidate)) ?? null;
+}
+
+async function query_unified_signal_rows(input: UnifiedSignalsInput = {}, include_paging = true): Promise<Record<string, unknown>[]> {
+  const columns = await get_detected_signal_columns();
+  const where: string[] = [];
+  const params: unknown[] = [];
+
+  const add_filter = (value: string | undefined, candidates: string[]) => {
+    if (!value) return true;
+    const column = first_existing_column(columns, candidates);
+    if (!column) return false;
+    params.push(value);
+    where.push(`${column} = $${params.length}`);
+    return true;
+  };
+
+  if (!add_filter(input.stream_id, ["stream_id", "dataset_id"])) return [];
+  if (!add_filter(input.severity, ["severity_level", "severity"])) return [];
+  if (!add_filter(input.status, ["status", "signal_status", "verification_status"])) return [];
+
+  const order_column = first_existing_column(columns, ["extraction_timestamp", "detected_at", "created_at", "updated_at"]);
+  const where_sql = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
+  const order_sql = order_column ? `ORDER BY ${order_column} DESC` : "";
+  let paging_sql = "";
+
+  if (include_paging) {
+    const limit = Math.min(Math.max(input.limit ?? DEFAULT_LIMIT, 1), 1000);
+    const offset = Math.max(input.offset ?? 0, 0);
+    params.push(limit);
+    const limit_param = params.length;
+    params.push(offset);
+    paging_sql = `LIMIT $${limit_param} OFFSET $${params.length}`;
+  }
+
+  const result = await pool.query(
+    `SELECT * FROM detected_signals ${where_sql} ${order_sql} ${paging_sql}`,
+    params,
+  );
+  return rows_from_result<Record<string, unknown>>(result);
+}
+
 function normalize_signal(row: Record<string, unknown>): UnifiedSignal {
   const signal_id = String(row.signal_id ?? row.id ?? row.source_id ?? `signal-${Date.now()}`);
   const signal_type = String(row.signal_type ?? row.signalType ?? row.type ?? "unknown");
@@ -269,21 +320,11 @@ export async function get_unified_ingestion_summary() {
 }
 
 export async function get_unified_signals(input: UnifiedSignalsInput = {}): Promise<UnifiedSignal[]> {
-  const limit = Math.min(Math.max(input.limit ?? DEFAULT_LIMIT, 1), 1000);
-  const offset = Math.max(input.offset ?? 0, 0);
-  const result = await pool.query(`SELECT * FROM detected_signals LIMIT $1 OFFSET $2`, [Math.max(limit * 5, limit), offset]);
-  let signals = rows_from_result<Record<string, unknown>>(result).map(normalize_signal);
-
-  if (input.stream_id) signals = signals.filter((signal) => signal.stream_id === input.stream_id);
-  if (input.status) signals = signals.filter((signal) => signal.status === input.status);
-  if (input.severity) signals = signals.filter((signal) => signal.severity_level === input.severity);
-
-  signals.sort((left, right) => (right.detected_at ?? 0) - (left.detected_at ?? 0));
-  return signals.slice(0, limit);
+  return (await query_unified_signal_rows(input, true)).map(normalize_signal);
 }
 
 export async function get_unified_signal_summary(input: Omit<UnifiedSignalsInput, "limit" | "offset"> = {}) {
-  const signals = await get_unified_signals({ ...input, limit: 1000, offset: 0 });
+  const signals = (await query_unified_signal_rows(input, false)).map(normalize_signal);
   const by_status: Record<string, number> = {};
   const by_severity: Record<string, number> = {};
   const by_stream: Record<string, number> = {};
