@@ -202,7 +202,7 @@ export async function toggleEngine(engineId: string, enabled: boolean, adminId: 
 
 export async function reorderEngines(orderedIds: string[], adminId: string, adminName?: string) {
   const currentEngines = await listEngines();
-  const previousOrder = currentEngines.map(e => ({ engineId: e.engineId, sortOrder: e.sortOrder }));
+  const previousOrder = currentEngines.map((e: any) => ({ engineId: e.engineId, sortOrder: e.sortOrder }));
 
   for (let i = 0; i < orderedIds.length; i++) {
     await db.update(engineRegistry)
@@ -473,7 +473,7 @@ export async function getSystemStats() {
     tableCount: tables.length,
     totalRows,
     engineCount: engines.length,
-    enabledEngines: engines.filter(e => e.enabled).length,
+    enabledEngines: engines.filter((e: any) => e.enabled).length,
     streamCount: streams.length,
     enabledStreams: streams.filter(s => s.enabled).length,
     recentChangeCount: recentChanges.length,

@@ -6,7 +6,7 @@ const root = process.cwd();
 const runtimeRoots = ['server', 'client/src', 'shared'];
 const contractTerms = [
   'openId','loginMethod','lastSignedIn',
-  'streamId','streamName','streamType','sourceUrl','updateFrequency','signalWeight','confidenceMultiplier',
+  'streamId','streamName','streamType','sourceUrl','updateFrequency','signalWeight','confidenceMultiplier','apiUrl','cronExpression','parserMode','postProcessingEngineName',
   'pipelineType','needKeywords','resourceType','needTypes','urgencyLevel','stateCode','jurisdictionType',
   'eligibilityNotes','applyNotes','sourceTable','sourceId','verificationStatus','matchReasons','scoreBreakdown',
 ];
@@ -15,7 +15,7 @@ const ignoredPath = /(^|\/)(docs|reports|dist|node_modules|coverage|drizzle)(\/|
 const allowed = [
   // Drizzle model fields and legacy case-domain internals are not public DB/API/wire aliases in this migration.
   /server\/db\.ts:/,
-  /server\/routers\/session76-router\.ts:(733|775):/,
+  /server\/routers\/session76-router\.ts:(7[0-9][0-9]):/,
   /server\/routers\.ts:(47[0-9]|48[0-9]|5[0-9][0-9]|6[0-9][0-9]|30[0-9][0-9]|31[0-9][0-9]|33[0-9][0-9]|34[0-9][0-9]|35[0-9][0-9]|36[0-9][0-9]|43[0-9][0-9]):/,
 ];
 

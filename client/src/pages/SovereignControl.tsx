@@ -1273,11 +1273,11 @@ function DataStreamPanel() {
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="text-[10px] text-muted-foreground">API URL</label>
-                          <Input className="text-[10px] h-7" defaultValue={stream.apiUrl || ""}
+                          <Input className="text-[10px] h-7" defaultValue={stream.api_url || ""}
                             onBlur={async (e) => {
-                              if (e.target.value !== (stream.apiUrl || "")) {
+                              if (e.target.value !== (stream.api_url || "")) {
                                 try {
-                                  await updateStreamConfig.mutateAsync({ stream_id: stream.stream_id, apiUrl: e.target.value });
+                                  await updateStreamConfig.mutateAsync({ stream_id: stream.stream_id, api_url: e.target.value });
                                   toast.success("API URL updated"); refetch();
                                 } catch (err: any) { toast.error(err.message); }
                               }
@@ -1285,11 +1285,11 @@ function DataStreamPanel() {
                         </div>
                         <div>
                           <label className="text-[10px] text-muted-foreground">Cron Expression</label>
-                          <Input className="text-[10px] h-7" defaultValue={stream.cronExpression || ""}
+                          <Input className="text-[10px] h-7" defaultValue={stream.cron_expression || ""}
                             onBlur={async (e) => {
-                              if (e.target.value !== (stream.cronExpression || "")) {
+                              if (e.target.value !== (stream.cron_expression || "")) {
                                 try {
-                                  await updateStreamConfig.mutateAsync({ stream_id: stream.stream_id, cronExpression: e.target.value });
+                                  await updateStreamConfig.mutateAsync({ stream_id: stream.stream_id, cron_expression: e.target.value });
                                   toast.success("Cron updated"); refetch(); refetchScheduler();
                                 } catch (err: any) { toast.error(err.message); }
                               }

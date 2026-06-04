@@ -41,15 +41,15 @@ type StreamRow = {
   stream_name: string;
   stream_type: string | null;
   source_url: string | null;
-  apiUrl: string | null;
+  api_url: string | null;
   update_frequency: string | null;
-  cronExpression: string | null;
+  cron_expression: string | null;
   signal_weight: number | null;
   confidence_multiplier: number | null;
   enabled: number | boolean | null;
   field_mapping: string | null;
-  postProcessingEngineName: string | null;
-  parserMode: string | null;
+  post_processing_engine_name: string | null;
+  parser_mode: string | null;
   records_ingested: number | null;
   signals_generated: number | null;
   lastIngestedAt: string | number | null;
@@ -99,15 +99,15 @@ function normalizeStream(row: StreamRow) {
     stream_name: row.stream_name,
     stream_type: row.stream_type ?? "unknown",
     source_url: row.source_url,
-    apiUrl: row.apiUrl,
+    api_url: row.api_url,
     update_frequency: row.update_frequency ?? "manual",
-    cronExpression: row.cronExpression,
+    cron_expression: row.cron_expression,
     signal_weight,
     confidence_multiplier,
     enabled,
     field_mapping: row.field_mapping,
-    postProcessingEngineName: row.postProcessingEngineName,
-    parserMode: row.parserMode,
+    post_processing_engine_name: row.post_processing_engine_name,
+    parser_mode: row.parser_mode,
     records_ingested,
     signals_generated,
     lastIngestedAt,
@@ -140,15 +140,15 @@ async function listCanonicalStreams() {
       stream_name_dsr as "stream_name",
       stream_type_dsr as "stream_type",
       source_url_dsr as "source_url",
-      api_url_dsr as "apiUrl",
+      api_url_dsr as "api_url",
       update_freq_dsr as "update_frequency",
-      cron_expression_dsr as "cronExpression",
+      cron_expression_dsr as "cron_expression",
       signal_weight_dsr as "signal_weight",
       confidence_multiplier_dsr as "confidence_multiplier",
       enabled_dsr as "enabled",
       field_mapping_dsr as "field_mapping",
-      post_processing_engine_name_dsr as "postProcessingEngineName",
-      parser_mode_dsr as "parserMode",
+      post_processing_engine_name_dsr as "post_processing_engine_name",
+      parser_mode_dsr as "parser_mode",
       records_ingested_dsr as "records_ingested",
       signals_generated_dsr as "signals_generated",
       last_ingested_at_dsr as "lastIngestedAt",
@@ -184,15 +184,15 @@ export async function getStreamDetail(stream_id: string) {
       stream_name_dsr as "stream_name",
       stream_type_dsr as "stream_type",
       source_url_dsr as "source_url",
-      api_url_dsr as "apiUrl",
+      api_url_dsr as "api_url",
       update_freq_dsr as "update_frequency",
-      cron_expression_dsr as "cronExpression",
+      cron_expression_dsr as "cron_expression",
       signal_weight_dsr as "signal_weight",
       confidence_multiplier_dsr as "confidence_multiplier",
       enabled_dsr as "enabled",
       field_mapping_dsr as "field_mapping",
-      post_processing_engine_name_dsr as "postProcessingEngineName",
-      parser_mode_dsr as "parserMode",
+      post_processing_engine_name_dsr as "post_processing_engine_name",
+      parser_mode_dsr as "parser_mode",
       records_ingested_dsr as "records_ingested",
       signals_generated_dsr as "signals_generated",
       last_ingested_at_dsr as "lastIngestedAt",
@@ -220,7 +220,7 @@ export async function getStreamDetail(stream_id: string) {
     linkedDatasets: [{
       datasetId: stream.stream_id,
       datasetName: stream.stream_name,
-      source: stream.source_url ?? stream.apiUrl ?? "unknown",
+      source: stream.source_url ?? stream.api_url ?? "unknown",
       enabled: stream.enabled,
       totalRecordsIngested: stream.records_ingested ?? 0,
       lastIngestedAt: stream.lastIngestedAt,
