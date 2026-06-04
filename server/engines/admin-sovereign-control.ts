@@ -239,7 +239,8 @@ export interface CanonicalStream {
   signals_generated: number;
   auto_disabled: boolean;
   consecutive_failures: number;
-  last_error: string | null;
+  last_error_type: string | null;
+  last_error_message: string | null;
   created_at: number | null;
   updated_at: number | null;
 }
@@ -265,7 +266,8 @@ export async function listStreams(): Promise<CanonicalStream[]> {
       signals_generated_dsr AS signals_generated,
       auto_disabled_dsr AS auto_disabled,
       consecutive_failures_dsr AS consecutive_failures,
-      last_error_dsr AS last_error,
+      last_error_type_dsr AS last_error_type,
+      last_error_message_dsr AS last_error_message,
       created_at_dsr AS created_at,
       updated_at_dsr AS updated_at
     FROM data_stream_registry
