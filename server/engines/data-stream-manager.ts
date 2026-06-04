@@ -8,13 +8,12 @@
  * - View stream health and statistics
  *
  * Runtime note:
- * The live Lighthouse database stores data_stream_registry columns with the
- * canonical *_dsr snake_case/suffixed names. Read paths use explicit SQL aliases
- * so Sovereign Control receives the existing UI shape without requiring
- * destructive database changes or frontend rewrites.
+ * The unified query layer owns data_stream_registry reads and emits one
+ * canonical snake_case shape for Sovereign Control, Mission Control, and Sunam.
  */
 import { db } from "../db";
 import { sql } from "drizzle-orm";
+import { get_unified_ingestion_metrics, get_unified_ingestion_summary } from "../unified-queries";
 
 export const STREAM_TYPES = [
   { id: "government_complaints", label: "Government Complaints", description: "Consumer complaints filed with government agencies" },
@@ -35,6 +34,12 @@ export const UPDATE_FREQUENCIES = [
   { id: "manual", label: "Manual Only" },
 ] as const;
 
+<<<<<<< codex/complete-snake_case-migration-in-runtime-code-dmxds3
+type CanonicalStream = Awaited<ReturnType<typeof get_unified_ingestion_metrics>>[number];
+
+async function listCanonicalStreams(): Promise<CanonicalStream[]> {
+  return get_unified_ingestion_metrics();
+=======
 type StreamRow = {
   id: number;
   stream_id: string;
@@ -167,6 +172,7 @@ async function listCanonicalStreams() {
   `));
 
   return (rows as StreamRow[]).map(normalizeStream);
+>>>>>>> main
 }
 
 /** Get all streams with health stats — includes self-healing columns */
@@ -176,6 +182,10 @@ export async function getStreamsWithHealth() {
 
 /** Get stream detail with recent activity */
 export async function getStreamDetail(stream_id: string) {
+<<<<<<< codex/complete-snake_case-migration-in-runtime-code-dmxds3
+  const [stream] = await get_unified_ingestion_metrics({ stream_id });
+  if (!stream) return null;
+=======
   const escapedStreamId = stream_id.replace(/'/g, "''");
   const [rows]: any = await db.execute(sql.raw(`
     SELECT
@@ -210,13 +220,19 @@ export async function getStreamDetail(stream_id: string) {
     WHERE stream_id_dsr = '${escapedStreamId}'
     LIMIT 1
   `));
+>>>>>>> main
 
-  if (!(rows as StreamRow[]).length) return null;
-  const stream = normalizeStream((rows as StreamRow[])[0]);
-
-  // Stream IS the dataset — no separate linked datasets
   return {
     ...stream,
+<<<<<<< codex/complete-snake_case-migration-in-runtime-code-dmxds3
+    linked_datasets: [{
+      dataset_id: stream.stream_id,
+      dataset_name: stream.stream_name,
+      source: stream.source_url ?? stream.api_url ?? "unknown",
+      enabled: stream.enabled,
+      total_records_ingested: stream.records_ingested,
+      last_ingested_at: stream.last_ingested_at,
+=======
     linkedDatasets: [{
       datasetId: stream.stream_id,
       datasetName: stream.stream_name,
@@ -224,6 +240,7 @@ export async function getStreamDetail(stream_id: string) {
       enabled: stream.enabled,
       totalRecordsIngested: stream.records_ingested ?? 0,
       lastIngestedAt: stream.lastIngestedAt,
+>>>>>>> main
     }],
   };
 }
@@ -323,6 +340,15 @@ export async function deleteStream(stream_id: string) {
 
 /** Get stream statistics */
 export async function getStreamStats() {
+<<<<<<< codex/complete-snake_case-migration-in-runtime-code-dmxds3
+  const summary = await get_unified_ingestion_summary();
+  return {
+    ...summary,
+    by_type: STREAM_TYPES.map((type) => ({
+      type: type.id,
+      label: type.label,
+      count: summary.by_type[type.id] ?? 0,
+=======
   const streams = await listCanonicalStreams();
   const totalRecords = streams.reduce((sum, s) => sum + s.records_ingested, 0);
   const totalSignals = streams.reduce((sum, s) => sum + s.signals_generated, 0);
@@ -339,6 +365,7 @@ export async function getStreamStats() {
       type: t.id,
       label: t.label,
       count: streams.filter(s => s.stream_type === t.id).length,
+>>>>>>> main
     })),
   };
 }

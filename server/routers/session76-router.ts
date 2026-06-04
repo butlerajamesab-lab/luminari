@@ -638,44 +638,36 @@ const executionBridgeRouter = router({
       };
     }),
 
-  // Get stream execution status — pulls from ingestion_runs table (same data as Mission Control)
+  // Get stream execution status — stream identity/metrics come from the unified query layer
   getStreamStatus: adminProcedure
     .input(z.object({ stream_id: z.string() }))
     .query(async ({ input }) => {
       const { ingestRuns } = await import("../../drizzle/schema");
-      const { db, pool } = await import("../db");
+      const { db } = await import("../db");
       const { eq, sql, desc } = await import("drizzle-orm");
       const { isDatasetRunning, isDatasetQueued } = await import("../ingestion/scheduler");
-      // Get stream info
-      const streamResult = await pool.query(`
-        SELECT stream_id_dsr AS stream_id, stream_name_dsr AS stream_name
-        FROM data_stream_registry
-        WHERE stream_id_dsr = $1
-        LIMIT 1
-      `, [input.stream_id]);
-      const [stream] = (Array.isArray(streamResult) ? streamResult[0] : streamResult.rows) as Array<{ stream_id: string; stream_name: string | null }>;
-      // Get recent runs
-      const recentRuns = await db.select()
+      const { get_unified_ingestion_metrics } = await import("../unified-queries");
+      const [stream] = await get_unified_ingestion_metrics({ stream_id: input.stream_id });
+      const recent_runs = await db.select()
         .from(ingestRuns)
         .where(eq(ingestRuns.datasetId, input.stream_id))
         .orderBy(desc(ingestRuns.startTime))
         .limit(10);
-      // Get aggregate stats
       const [stats] = await db.select({
-        totalRuns: sql<number>`COUNT(*)`,
-        successfulRuns: sql<number>`SUM(CASE WHEN ${ingestRuns.status} = 'completed' THEN 1 ELSE 0 END)`,
-        failedRuns: sql<number>`SUM(CASE WHEN ${ingestRuns.status} = 'failed' THEN 1 ELSE 0 END)`,
-        totalRecords: sql<number>`SUM(${ingestRuns.recordsProcessed})`,
-        totalSignals: sql<number>`SUM(${ingestRuns.signalsGenerated})`,
+        total_runs: sql<number>`COUNT(*)`,
+        successful_runs: sql<number>`SUM(CASE WHEN ${ingestRuns.status} = 'completed' THEN 1 ELSE 0 END)`,
+        failed_runs: sql<number>`SUM(CASE WHEN ${ingestRuns.status} = 'failed' THEN 1 ELSE 0 END)`,
+        total_records: sql<number>`SUM(${ingestRuns.recordsProcessed})`,
+        total_signals: sql<number>`SUM(${ingestRuns.signalsGenerated})`,
       })
         .from(ingestRuns)
         .where(eq(ingestRuns.datasetId, input.stream_id));
       return {
         stream: stream ?? null,
-        isRunning: isDatasetRunning(input.stream_id),
-        isQueued: isDatasetQueued(input.stream_id),
-        recentRuns,
-        stats: stats ?? { totalRuns: 0, successfulRuns: 0, failedRuns: 0, totalRecords: 0, totalSignals: 0 },
+        is_running: isDatasetRunning(input.stream_id),
+        is_queued: isDatasetQueued(input.stream_id),
+        recent_runs,
+        stats: stats ?? { total_runs: 0, successful_runs: 0, failed_runs: 0, total_records: 0, total_signals: 0 },
       };
     }),
 
@@ -786,69 +778,37 @@ const executionBridgeRouter = router({
       return { success: true };
     }),
 
-  // Get stream diagnostics (last run details with full diagnostics)
+  // Get stream diagnostics (last run details with unified stream metrics)
   getStreamDiagnostics: adminProcedure
     .input(z.object({ stream_id: z.string() }))
     .query(async ({ input }) => {
       const { ingestRuns } = await import("../../drizzle/schema");
-      const { db, pool } = await import("../db");
+      const { db } = await import("../db");
       const { eq, desc } = await import("drizzle-orm");
-      const streamResult = await pool.query(`
-        SELECT
-          stream_id_dsr AS stream_id,
-          stream_name_dsr AS stream_name,
-          last_run_status_dsr AS "lastRunStatus",
-          last_success_at_dsr AS "lastSuccessAt",
-          last_failure_at_dsr AS "lastFailureAt",
-          last_error_type_dsr AS "last_errorType",
-          last_error_message_dsr AS "last_errorMessage",
-          last_http_status_dsr AS "lastHttpStatus",
-          failure_count_dsr AS "failureCount",
-          consecutive_failures_dsr AS consecutive_failures,
-          retry_after_at_dsr AS "retryAfterAt",
-          auto_disabled_dsr AS auto_disabled,
-          disabled_reason_dsr AS "disabledReason"
-        FROM data_stream_registry
-        WHERE stream_id_dsr = $1
-        LIMIT 1
-      `, [input.stream_id]);
-      const [stream] = (Array.isArray(streamResult) ? streamResult[0] : streamResult.rows) as any[];
-      const [lastRun] = await db.select().from(ingestRuns).where(eq(ingestRuns.datasetId, input.stream_id)).orderBy(desc(ingestRuns.startTime)).limit(1);
+      const { get_unified_ingestion_metrics } = await import("../unified-queries");
+      const [stream] = await get_unified_ingestion_metrics({ stream_id: input.stream_id });
+      const [last_run] = await db.select().from(ingestRuns).where(eq(ingestRuns.datasetId, input.stream_id)).orderBy(desc(ingestRuns.startTime)).limit(1);
       return {
-        stream: stream ? {
-          stream_id: stream.stream_id,
-          stream_name: stream.stream_name,
-          lastRunStatus: stream.lastRunStatus,
-          lastSuccessAt: stream.lastSuccessAt ? Number(stream.lastSuccessAt) : null,
-          lastFailureAt: stream.lastFailureAt ? Number(stream.lastFailureAt) : null,
-          last_errorType: stream.last_errorType,
-          last_errorMessage: stream.last_errorMessage,
-          lastHttpStatus: stream.lastHttpStatus,
-          failureCount: stream.failureCount,
-          consecutive_failures: stream.consecutive_failures,
-          retryAfterAt: stream.retryAfterAt ? Number(stream.retryAfterAt) : null,
-          auto_disabled: stream.auto_disabled,
-          disabledReason: stream.disabledReason,
-        } : null,
-        lastRun: lastRun ? {
-          id: lastRun.id,
-          status: lastRun.status,
-          startTime: Number(lastRun.startTime),
-          endTime: lastRun.endTime ? Number(lastRun.endTime) : null,
-          recordsProcessed: lastRun.recordsProcessed,
-          signals_generated: lastRun.signalsGenerated,
-          errorClassification: lastRun.errorClassification,
-          httpStatus: lastRun.httpStatus,
-          contentType: lastRun.contentType,
-          endpointAttempted: lastRun.endpointAttempted,
-          adapterUsed: lastRun.adapterUsed,
-          bodyPreview: lastRun.bodyPreview,
-          retryCount: lastRun.retryCount,
-          failureClassification: lastRun.failureClassification,
-          suggestedRemediation: lastRun.suggestedRemediation,
-          outcomeClassification: lastRun.outcomeClassification,
-          errors: lastRun.errors,
-          summary: lastRun.summary,
+        stream: stream ?? null,
+        last_run: last_run ? {
+          id: last_run.id,
+          status: last_run.status,
+          start_time: Number(last_run.startTime),
+          end_time: last_run.endTime ? Number(last_run.endTime) : null,
+          records_processed: last_run.recordsProcessed,
+          signals_generated: last_run.signalsGenerated,
+          error_classification: last_run.errorClassification,
+          http_status: last_run.httpStatus,
+          content_type: last_run.contentType,
+          endpoint_attempted: last_run.endpointAttempted,
+          adapter_used: last_run.adapterUsed,
+          body_preview: last_run.bodyPreview,
+          retry_count: last_run.retryCount,
+          failure_classification: last_run.failureClassification,
+          suggested_remediation: last_run.suggestedRemediation,
+          outcome_classification: last_run.outcomeClassification,
+          errors: last_run.errors,
+          summary: last_run.summary,
         } : null,
       };
     }),

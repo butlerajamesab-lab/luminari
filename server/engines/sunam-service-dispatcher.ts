@@ -9,6 +9,7 @@ import * as registryService from "../services/registryService";
 import * as caseService from "../services/caseService";
 import * as matchingService from "../services/matchingService";
 import * as luminariContextService from "../services/luminariContextService";
+import { get_unified_signals } from "../unified-queries";
 
 export interface DispatchResult {
   success: boolean;
@@ -90,8 +91,13 @@ export async function dispatchServiceTool(
       }
 
       case "get_signals": {
-        const signals = await registryService.getSignals(args.jurisdiction_id);
-        return { success: true, result: signals };
+        const signals = await get_unified_signals({
+          stream_id: args.stream_id,
+          status: args.status,
+          severity: args.severity,
+          limit: args.limit ?? 50,
+        });
+        return { success: true, result: { signals, total: signals.length } };
       }
 
       // ── Validation (Write) ──

@@ -375,11 +375,7 @@ export async function updateCaseDomainContainer(id: number, userId: number, data
 }
 
 export async function listCases(userId: number) {
-  console.log("[listCases] userId:", userId);
-  // TEMPORARY: Remove WHERE filter to unblock UI and debug auth context
-  const result = await db.select().from(cases).orderBy(desc(cases.updatedAt));
-  console.log("[listCases] result count:", result.length);
-  return result;
+  return db.select().from(cases).where(eq(cases.userId, userId)).orderBy(desc(cases.updatedAt));
 }
 
 export async function getCase(id: number, userId: number) {
@@ -580,11 +576,15 @@ export async function createDocument(doc: {
 }
 
 export async function listDocuments(caseId: number) {
+<<<<<<< codex/complete-snake_case-migration-in-runtime-code-dmxds3
+  return db.select().from(documents).where(eq(documents.caseId, caseId)).orderBy(desc(documents.createdAt));
+=======
   console.log("[listDocuments] caseId:", caseId);
   // TEMPORARY: Remove WHERE filter to unblock UI and debug auth context
   const result = await db.select().from(documents).orderBy(desc(documents.createdAt));
   console.log("[listDocuments] result count:", result.length);
   return result;
+>>>>>>> main
 }
 
 export async function getDocument(id: number) {

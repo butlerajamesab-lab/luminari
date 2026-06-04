@@ -24,6 +24,7 @@ import {
 } from "../signal-governance";
 import { db } from "../db";
 import { sql } from "drizzle-orm";
+import { get_unified_signal_summary, get_unified_signals } from "../unified-queries";
 
 export const signalGovernanceRouter = router({
   /**
@@ -40,7 +41,22 @@ export const signalGovernanceRouter = router({
       offset: z.number().min(0).optional(),
     }).optional())
     .query(async ({ input }) => {
-      return getSignalDashboard(input || {});
+      const signals = await get_unified_signals({
+        stream_id: input?.datasetId,
+        severity: input?.severityLevel,
+        limit: input?.limit,
+        offset: input?.offset,
+      });
+      const summary = await get_unified_signal_summary({
+        stream_id: input?.datasetId,
+        severity: input?.severityLevel,
+      });
+      return {
+        signals,
+        summary,
+        total: summary.total_signals,
+        total_active: summary.total_active,
+      };
     }),
 
   /**

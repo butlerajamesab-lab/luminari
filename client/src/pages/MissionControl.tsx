@@ -867,12 +867,12 @@ function LegacyRegistryView() {
 /* ── Panel: Live Data Ingestion ── */
 /** Per-dataset row with run status polling to disable Ingest button */
 function DatasetRow({ ds, triggerMutation, toggleMutation }: {
-  ds: { datasetId: string; datasetName: string; enabled: boolean; update_frequency: string; jurisdiction: string; domain: string; totalRecordsIngested: number; lastIngestedAt: number | null };
+  ds: { stream_id: string; stream_name: string; enabled: boolean; update_frequency: string; jurisdiction: string | null; domain: string | null; records_ingested: number; last_ingested_at: number | null };
   triggerMutation: { mutate: (input: { datasetId: string; maxRecords?: number }) => void; isPending: boolean };
   toggleMutation: { mutate: (input: { datasetId: string; enabled: boolean }) => void };
 }) {
   const runStatus = trpc.ingestion.datasetRunStatus.useQuery(
-    { datasetId: ds.datasetId },
+    { datasetId: ds.stream_id },
     { refetchInterval: 3000 } // Poll every 3s while visible
   );
 
@@ -884,7 +884,7 @@ function DatasetRow({ ds, triggerMutation, toggleMutation }: {
     <div className="rounded-lg border border-border/50 p-4 flex items-center justify-between">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-medium truncate">{ds.datasetName}</span>
+          <span className="font-medium truncate">{ds.stream_name}</span>
           <Badge variant="outline" className={ds.enabled ? "text-emerald-400 border-emerald-400/30" : "text-muted-foreground border-border"}>
             {ds.enabled ? "Active" : "Paused"}
           </Badge>
@@ -901,17 +901,17 @@ function DatasetRow({ ds, triggerMutation, toggleMutation }: {
           )}
         </div>
         <div className="text-xs text-muted-foreground mt-1 flex items-center gap-3">
-          <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {ds.jurisdiction}</span>
-          <span>{ds.domain}</span>
-          <span>{(ds.totalRecordsIngested ?? 0).toLocaleString()} records</span>
-          {ds.lastIngestedAt && <span>Last: {formatTimeAgo(ds.lastIngestedAt)}</span>}
+          <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {ds.jurisdiction ?? "—"}</span>
+          <span>{ds.domain ?? "—"}</span>
+          <span>{(ds.records_ingested ?? 0).toLocaleString()} records</span>
+          {ds.last_ingested_at && <span>Last: {formatTimeAgo(ds.last_ingested_at)}</span>}
         </div>
       </div>
       <div className="flex items-center gap-2 ml-4">
         <Button
           size="sm"
           variant="outline"
-          onClick={() => triggerMutation.mutate({ datasetId: ds.datasetId, maxRecords: 5000 })}
+          onClick={() => triggerMutation.mutate({ datasetId: ds.stream_id, maxRecords: 5000 })}
           disabled={isBusy}
           title={isRunning ? "Ingestion is running" : isQueued ? "Ingestion is queued" : "Start ingestion"}
         >
@@ -921,7 +921,7 @@ function DatasetRow({ ds, triggerMutation, toggleMutation }: {
         <Button
           size="sm"
           variant="outline"
-          onClick={() => toggleMutation.mutate({ datasetId: ds.datasetId, enabled: !ds.enabled })}
+          onClick={() => toggleMutation.mutate({ datasetId: ds.stream_id, enabled: !ds.enabled })}
         >
           {ds.enabled ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
         </Button>
@@ -931,10 +931,10 @@ function DatasetRow({ ds, triggerMutation, toggleMutation }: {
 }
 
 function IngestionPanel() {
-  const datasets = trpc.ingestion.listDatasets.useQuery();
+  const datasets = trpc.unified.get_unified_ingestion_metrics.useQuery({});
   const runs = trpc.ingestion.listRuns.useQuery({ limit: 10 });
-  const signals = trpc.ingestion.listLiveSignals.useQuery({ limit: 20 });
-  const signalStats = trpc.ingestion.getLiveSignalStats.useQuery();
+  const signals = trpc.unified.get_unified_signals.useQuery({ limit: 20 });
+  const signalStats = trpc.unified.get_unified_signal_summary.useQuery({});
   const signal_cards = trpc.ingestion.list_signal_intelligence_cards.useQuery({
     limit: 25,
     include_excluded: false,
@@ -1106,15 +1106,15 @@ function IngestionPanel() {
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="rounded-lg border border-border/50 p-3">
                   <div className="text-xs text-muted-foreground">Active Signals</div>
-                  <div className="text-xl font-bold text-amber-400">{signalStats.data?.totalActive ?? 0}</div>
+                  <div className="text-xl font-bold text-amber-400">{signalStats.data?.total_active ?? 0}</div>
                 </div>
                 <div className="rounded-lg border border-border/50 p-3">
                   <div className="text-xs text-muted-foreground">By Severity</div>
                   <div className="flex gap-2 mt-1 flex-wrap">
-                    {signalStats.data?.bySeverity && Object.entries(signalStats.data.bySeverity).map(([sev, cnt]) => (
+                    {signalStats.data?.by_severity && Object.entries(signalStats.data.by_severity).map(([sev, cnt]) => (
                       <Badge key={sev} variant="outline" className={severityColor[sev] ?? ""}>{sev}: {String(cnt)}</Badge>
                     ))}
-                    {(!signalStats.data?.bySeverity || Object.keys(signalStats.data.bySeverity).length === 0) && (
+                    {(!signalStats.data?.by_severity || Object.keys(signalStats.data.by_severity).length === 0) && (
                       <span className="text-xs text-muted-foreground">No signals yet</span>
                     )}
                   </div>
@@ -1144,7 +1144,7 @@ function IngestionPanel() {
             <div className="space-y-3">
               {datasets.data.map((ds) => (
                 <DatasetRow
-                  key={ds.datasetId}
+                  key={ds.stream_id}
                   ds={ds}
                   triggerMutation={triggerMutation}
                   toggleMutation={toggleMutation}
@@ -1303,8 +1303,8 @@ function IngestionPanel() {
                     status_delay: { label: "Status", icon: "\u23F3", color: "text-orange-400" },
                     trend_anomaly: { label: "Trend", icon: "\u{1F4C8}", color: "text-purple-400" },
                   };
-                  const isRepeatEntity = sig.signalType === "repeat_entity";
-                  const isFrequencySpike = sig.signalType === "frequency_spike";
+                  const isRepeatEntity = sig.signal_type === "repeat_entity";
+                  const isFrequencySpike = sig.signal_type === "frequency_spike";
                   const displayName = isRepeatEntity
                     ? ((sig as any).canonicalEntityName || sig.title.replace(/^Repeat (Company|Agency|Entity):\s*/, "").replace(/^Repeat Entity:\s*/, ""))
                     : sig.title;
@@ -1314,12 +1314,12 @@ function IngestionPanel() {
                   const roleConf = (sig as any).roleConfidence;
                   const aliases = (sig as any).entityAliasesJson as string[] | null;
                   const roleLabel = entRole === "business" || entRole === "respondent" ? "Company" : entRole === "agency" ? "Agency" : entRole === "organization" ? "Organization" : null;
-                  const stConfig = signalTypeConfig[sig.signalType] ?? { label: sig.signalType, icon: "\u26A0\uFE0F", color: "text-gray-400" };
+                  const stConfig = signalTypeConfig[sig.signal_type] ?? { label: sig.signal_type, icon: "\u26A0\uFE0F", color: "text-gray-400" };
 
                   return (
-                    <div key={sig.id} className={`rounded-lg border p-3 ${severityColor[sig.severity] ?? "border-border/50"}`}>
+                    <div key={sig.id} className={`rounded-lg border p-3 ${severityColor[sig.severity_level] ?? "border-border/50"}`}>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className={severityColor[sig.severity] ?? ""}>{sig.severity}</Badge>
+                        <Badge variant="outline" className={severityColor[sig.severity_level] ?? ""}>{sig.severity}</Badge>
                         {/* Signal type badge — always shown */}
                         <Badge variant="outline" className={`text-[10px] ${stConfig.color} border-current/30`}>
                           {stConfig.label}
@@ -1345,7 +1345,7 @@ function IngestionPanel() {
                       <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
                         <span>{sig.jurisdiction}</span>
                         <span>\u00B7</span>
-                        <span>Confidence: {(Number(sig.confidenceScore) * 100).toFixed(0)}%</span>
+                        <span>Confidence: {(Number(sig.confidence_score) * 100).toFixed(0)}%</span>
                         {isRepeatEntity && entConfidence && (
                           <>
                             <span>\u00B7</span>
@@ -1359,7 +1359,7 @@ function IngestionPanel() {
                           </>
                         )}
                         <span>\u00B7</span>
-                        <span>{sig.detectedAt ? new Date(sig.detectedAt).toLocaleDateString() : "—"}</span>
+                        <span>{sig.detected_at ? new Date(sig.detected_at).toLocaleDateString() : "—"}</span>
                       </div>
                     </div>
                   );
@@ -1887,43 +1887,43 @@ function SignalGovernancePanel() {
           ) : (
             <div className="space-y-2">
               {(dashboard.signals || []).map((sig: any) => (
-                <div key={sig.signalId}
+                <div key={sig.signal_id}
                   className={`p-3 rounded-lg border transition-all cursor-pointer hover:bg-accent/30 ${
-                    selectedSignalId === sig.signalId ? "ring-1 ring-primary bg-accent/20" : "bg-card/50"
+                    selectedSignalId === sig.signal_id ? "ring-1 ring-primary bg-accent/20" : "bg-card/50"
                   }`}
-                  onClick={() => setSelectedSignalId(selectedSignalId === sig.signalId ? null : sig.signalId)}>
+                  onClick={() => setSelectedSignalId(selectedSignalId === sig.signal_id ? null : sig.signal_id)}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium text-sm truncate">{sig.title}</span>
-                        <Badge className={`text-[10px] ${severityColors[sig.severityLevel] || ""}`}>
-                          {sig.severityLevel}
+                        <Badge className={`text-[10px] ${severityColors[sig.severity_level] || ""}`}>
+                          {sig.severity_level}
                         </Badge>
-                        <Badge variant="outline" className={`text-[10px] ${tierColors[sig.escalationTier] || ""}`}>
-                          {(sig.escalationTier || "").replace(/_/g, " ")}
+                        <Badge variant="outline" className={`text-[10px] ${tierColors[sig.escalation_tier] || ""}`}>
+                          {(sig.escalation_tier || "").replace(/_/g, " ")}
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground line-clamp-2">{sig.explanation}</p>
                       <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
-                        <span className="flex items-center gap-1"><Globe className="h-3 w-3" />{sig.datasetId}</span>
-                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{sig.jurisdictionScope}</span>
-                        <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{sig.extractionTimestamp ? new Date(sig.extractionTimestamp).toLocaleString() : ""}</span>
+                        <span className="flex items-center gap-1"><Globe className="h-3 w-3" />{sig.stream_id}</span>
+                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{sig.jurisdiction}</span>
+                        <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{sig.detected_at ? new Date(sig.detected_at).toLocaleString() : ""}</span>
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <div className={`text-lg font-bold ${
-                        sig.confidenceScore >= 85 ? "text-red-400" :
-                        sig.confidenceScore >= 70 ? "text-orange-400" :
-                        sig.confidenceScore >= 51 ? "text-yellow-400" : "text-slate-400"
+                        sig.confidence_score >= 85 ? "text-red-400" :
+                        sig.confidence_score >= 70 ? "text-orange-400" :
+                        sig.confidence_score >= 51 ? "text-yellow-400" : "text-slate-400"
                       }`}>
-                        {sig.confidenceScore}
+                        {sig.confidence_score}
                       </div>
                       <div className="text-[10px] text-muted-foreground">confidence</div>
                     </div>
                   </div>
 
                   {/* Expanded Audit Trail */}
-                  {selectedSignalId === sig.signalId && auditTrail && (
+                  {selectedSignalId === sig.signal_id && auditTrail && (
                     <div className="mt-3 pt-3 border-t border-border/50">
                       <h4 className="text-xs font-semibold mb-2 flex items-center gap-1">
                         <Eye className="h-3 w-3" /> Generation Audit Trail

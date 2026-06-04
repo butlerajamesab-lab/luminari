@@ -22,6 +22,8 @@ const allowed = [
 const files = [
   'server/db.ts',
   'server/support-matcher.ts',
+  'server/routers/unified-router.ts',
+  'server/unified-queries.ts',
   'server/engines/admin-sovereign-control.ts',
   'server/engines/data-stream-manager.ts',
   'server/routers/session76-router.ts',

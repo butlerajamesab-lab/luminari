@@ -11,6 +11,7 @@
  * All changes require confirmation + logging + rollback support.
  */
 import { db, pool } from "../db";
+import { get_unified_ingestion_metrics } from "../unified-queries";
 import { eq, desc, sql, and, asc } from "drizzle-orm";
 import {
   adminChangeLog,
@@ -250,30 +251,27 @@ function rowsFromResult<T>(result: any): T[] {
 }
 
 export async function listStreams(): Promise<CanonicalStream[]> {
-  const result = await pool.query(`
-    SELECT
-      stream_id_dsr AS stream_id,
-      stream_name_dsr AS stream_name,
-      stream_type_dsr AS stream_type,
-      source_url_dsr AS source_url,
-      update_freq_dsr AS update_frequency,
-      signal_weight_dsr AS signal_weight,
-      confidence_multiplier_dsr AS confidence_multiplier,
-      description_dsr AS description,
-      field_mapping_dsr AS field_mapping,
-      enabled_dsr AS enabled,
-      records_ingested_dsr AS records_ingested,
-      signals_generated_dsr AS signals_generated,
-      auto_disabled_dsr AS auto_disabled,
-      consecutive_failures_dsr AS consecutive_failures,
-      last_error_type_dsr AS last_error_type,
-      last_error_message_dsr AS last_error_message,
-      created_at_dsr AS created_at,
-      updated_at_dsr AS updated_at
-    FROM data_stream_registry
-    ORDER BY stream_id_dsr ASC
-  `);
-  return rowsFromResult<CanonicalStream>(result);
+  const streams = await get_unified_ingestion_metrics();
+  return streams.map((stream) => ({
+    stream_id: stream.stream_id,
+    stream_name: stream.stream_name,
+    stream_type: stream.stream_type,
+    source_url: stream.source_url,
+    update_frequency: stream.update_frequency,
+    signal_weight: stream.signal_weight,
+    confidence_multiplier: stream.confidence_multiplier,
+    description: stream.description,
+    field_mapping: stream.field_mapping as Record<string, string> | null,
+    enabled: stream.enabled,
+    records_ingested: stream.records_ingested,
+    signals_generated: stream.signals_generated,
+    auto_disabled: stream.auto_disabled,
+    consecutive_failures: stream.consecutive_failures,
+    last_error_type: stream.last_error_type,
+    last_error_message: stream.last_error_message,
+    created_at: stream.created_at,
+    updated_at: stream.updated_at,
+  }));
 }
 
 export async function addStream(

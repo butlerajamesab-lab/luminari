@@ -939,24 +939,24 @@ function DataStreamPanel() {
 
       {/* Stats + Scheduler Status */}
       {(() => {
-        const safeStats = stats ?? { totalStreams: 0, enabledStreams: 0, totalRecordsIngested: 0, totalSignalsGenerated: 0 };
+        const safeStats = stats ?? { total_streams: 0, enabled_streams: 0, total_records_ingested: 0, total_signals_generated: 0 };
         return (
           <div className="grid grid-cols-5 gap-3">
             <Card className="bg-card/50"><CardContent className="p-3">
               <div className="text-xs text-muted-foreground">Total Streams</div>
-              <div className="text-xl font-bold text-foreground">{safeStats.totalStreams}</div>
+              <div className="text-xl font-bold text-foreground">{safeStats.total_streams}</div>
             </CardContent></Card>
             <Card className="bg-card/50"><CardContent className="p-3">
               <div className="text-xs text-muted-foreground">Active</div>
-              <div className="text-xl font-bold text-green-400">{safeStats.enabledStreams}</div>
+              <div className="text-xl font-bold text-green-400">{safeStats.enabled_streams}</div>
             </CardContent></Card>
             <Card className="bg-card/50"><CardContent className="p-3">
               <div className="text-xs text-muted-foreground">Records Ingested</div>
-              <div className="text-xl font-bold text-foreground">{(safeStats.totalRecordsIngested ?? 0).toLocaleString()}</div>
+              <div className="text-xl font-bold text-foreground">{(safeStats.total_records_ingested ?? 0).toLocaleString()}</div>
             </CardContent></Card>
             <Card className="bg-card/50"><CardContent className="p-3">
               <div className="text-xs text-muted-foreground">Signals Generated</div>
-              <div className="text-xl font-bold text-foreground">{(safeStats.totalSignalsGenerated ?? 0).toLocaleString()}</div>
+              <div className="text-xl font-bold text-foreground">{(safeStats.total_signals_generated ?? 0).toLocaleString()}</div>
             </CardContent></Card>
             <Card className="bg-card/50"><CardContent className="p-3">
               <div className="text-xs text-muted-foreground">Scheduler</div>
@@ -1057,7 +1057,7 @@ function DataStreamPanel() {
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 cursor-pointer" onClick={() => setExpandedStream(isExpanded ? null : stream.stream_id)}>
-                    <div className={`h-2.5 w-2.5 rounded-full ${isRunning ? "bg-amber-400 animate-pulse" : (stream as any).auto_disabled ? "bg-red-600 animate-pulse" : stream.healthStatus === "healthy" ? "bg-green-400" : stream.healthStatus === "stale" ? "bg-yellow-400" : "bg-red-400"}`} />
+                    <div className={`h-2.5 w-2.5 rounded-full ${isRunning ? "bg-amber-400 animate-pulse" : (stream as any).auto_disabled ? "bg-red-600 animate-pulse" : stream.health_status === "healthy" ? "bg-green-400" : stream.health_status === "stale" ? "bg-yellow-400" : "bg-red-400"}`} />
                     <div>
                       <div className="text-sm font-medium text-foreground">{stream.stream_name}</div>
                       <div className="text-xs text-muted-foreground">
@@ -1143,25 +1143,25 @@ function DataStreamPanel() {
                           <Shield className="h-3 w-3" /> Self-Healing Status
                         </div>
                         <div className="grid grid-cols-4 gap-2 text-[10px]">
-                          <div><span className="text-muted-foreground">Last Run:</span> <span className={diagnostics.stream.lastRunStatus === "completed" ? "text-green-400" : diagnostics.stream.lastRunStatus === "failed" ? "text-red-400" : "text-foreground"}>{diagnostics.stream.lastRunStatus || "Never"}</span></div>
-                          <div><span className="text-muted-foreground">Failures:</span> <span className="text-foreground">{diagnostics.stream.consecutive_failures ?? 0} consecutive / {diagnostics.stream.failureCount ?? 0} total</span></div>
-                          <div><span className="text-muted-foreground">Last Success:</span> <span className="text-foreground">{diagnostics.stream.lastSuccessAt ? new Date(diagnostics.stream.lastSuccessAt).toLocaleString() : "Never"}</span></div>
+                          <div><span className="text-muted-foreground">Last Run:</span> <span className={diagnostics.stream.last_run_status === "completed" ? "text-green-400" : diagnostics.stream.last_run_status === "failed" ? "text-red-400" : "text-foreground"}>{diagnostics.stream.last_run_status || "Never"}</span></div>
+                          <div><span className="text-muted-foreground">Failures:</span> <span className="text-foreground">{diagnostics.stream.consecutive_failures ?? 0} consecutive / {diagnostics.stream.failure_count ?? 0} total</span></div>
+                          <div><span className="text-muted-foreground">Last Success:</span> <span className="text-foreground">{diagnostics.stream.last_success_at ? new Date(diagnostics.stream.last_success_at).toLocaleString() : "Never"}</span></div>
                           <div><span className="text-muted-foreground">Auto-Disabled:</span> <span className={diagnostics.stream.auto_disabled ? "text-red-400 font-bold" : "text-green-400"}>{diagnostics.stream.auto_disabled ? "YES" : "No"}</span></div>
                         </div>
-                        {diagnostics.stream.last_errorType && (
+                        {diagnostics.stream.last_error_type && (
                           <div className="text-[10px] text-red-400 mt-1">
-                            <span className="font-medium">Last Error:</span> [{diagnostics.stream.last_errorType}] {diagnostics.stream.last_errorMessage}
-                            {diagnostics.stream.lastHttpStatus && ` (HTTP ${diagnostics.stream.lastHttpStatus})`}
+                            <span className="font-medium">Last Error:</span> [{diagnostics.stream.last_error_type}] {diagnostics.stream.last_error_message}
+                            {diagnostics.stream.last_http_status && ` (HTTP ${diagnostics.stream.last_http_status})`}
                           </div>
                         )}
-                        {diagnostics.stream.disabledReason && (
+                        {diagnostics.stream.disabled_reason && (
                           <div className="text-[10px] text-amber-400">
-                            <span className="font-medium">Disabled Reason:</span> {diagnostics.stream.disabledReason}
+                            <span className="font-medium">Disabled Reason:</span> {diagnostics.stream.disabled_reason}
                           </div>
                         )}
-                        {diagnostics.stream.retryAfterAt && diagnostics.stream.retryAfterAt > Date.now() && (
+                        {diagnostics.stream.retry_after_at && diagnostics.stream.retry_after_at > Date.now() && (
                           <div className="text-[10px] text-amber-400">
-                            <span className="font-medium">Backoff Until:</span> {new Date(diagnostics.stream.retryAfterAt).toLocaleString()}
+                            <span className="font-medium">Backoff Until:</span> {new Date(diagnostics.stream.retry_after_at).toLocaleString()}
                           </div>
                         )}
                         <div className="flex gap-1 mt-1 flex-wrap">

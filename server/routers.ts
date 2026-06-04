@@ -24,6 +24,7 @@ import { sunamGateRouter } from "./routers/sunam-gate-router";
 import { sunamBackfillRouter } from "./routers/sunam-backfill-router";
 import { meaningLayerRouter } from "./routers/meaning-layer";
 import { unifiedOutputRouter } from "./routers/unified-output";
+import { unifiedRouter } from "./routers/unified-router";
 import { governanceRouter } from "./routers/governance";
 import { formExtractionRouter } from "./form-extraction-router";
 import { phoenixRouter } from "./routers/phoenix";
@@ -4965,6 +4966,7 @@ export const appRouter = router({
   signalGovernance: signalGovernanceRouter,
   meaningLayer: meaningLayerRouter,
   unifiedOutput: unifiedOutputRouter,
+  unified: unifiedRouter,
   workbench: workbenchRouter,
   remedy: remedyRouter,
   paperwork: paperworkRouter,
