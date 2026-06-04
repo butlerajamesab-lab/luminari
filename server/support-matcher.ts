@@ -10,15 +10,6 @@ export interface MatchInput {
   limit?: number;
 }
 
-export interface LegacyMatchInput {
-  pipelineType: string;
-  jurisdiction?: string;
-  urgency?: "crisis" | "urgent" | "standard" | "informational";
-  needKeywords?: string[];
-  domain?: string;
-  limit?: number;
-}
-
 export interface ScoredResource {
   id: number;
   name: string;
@@ -141,7 +132,7 @@ function parseJsonArray(value: unknown): string[] {
 }
 
 function scoreResource(row: ResourceRow, input: MatchInput): ScoredResource {
-  const needTypes = parseJsonArray(row.need_types);
+  const need_types = parseJsonArray(row.need_types);
   const pipelines = parseJsonArray(row.matching_pipeline_types);
   const inputDomain = input.domain || PIPELINE_DOMAIN_MAP[input.pipeline_type] || "general";
   const inputUrgency = URGENCY_RANK[input.urgency || "standard"] || 2;
@@ -165,7 +156,7 @@ function scoreResource(row: ResourceRow, input: MatchInput): ScoredResource {
 
   const freshness_score = row.last_verified_at ? 0.7 : 0.5;
   const keywords = input.need_keywords || [];
-  const overlap = keywords.filter((keyword) => needTypes.some((need) => need.includes(keyword) || keyword.includes(need)));
+  const overlap = keywords.filter((keyword) => need_types.some((need) => need.includes(keyword) || keyword.includes(need)));
   const need_overlap_score = keywords.length ? Math.min(overlap.length / keywords.length, 1) : 0.5;
   if (overlap.length) match_reasons.push(`Covers: ${overlap.join(", ")}`);
 
@@ -185,7 +176,7 @@ function scoreResource(row: ResourceRow, input: MatchInput): ScoredResource {
     description: row.description,
     resource_type: row.resource_type,
     domain: row.domain,
-    need_types: needTypes,
+    need_types: need_types,
     urgency_level: row.urgency_level,
     state_code: row.state_code,
     jurisdiction_type: row.jurisdiction_type,
@@ -240,11 +231,11 @@ export async function match_resources(input: MatchInput): Promise<ScoredResource
     .slice(0, limit);
 
   try {
-    const staleSignals = await getActiveSignalsByEffect("RESOURCE_STALE", 200);
+    const staleSignals = (await getActiveSignalsByEffect("RESOURCE_STALE", 200)) as Array<{ target_table?: string; targetTable?: string; target_id?: number | null; targetId?: number | null }>;
     const staleIds = new Set(
       staleSignals
-        .filter((signal) => signal.targetTable === "unified_resources" && signal.targetId !== null)
-        .map((signal) => signal.targetId as number),
+        .filter((signal) => (signal.target_table ?? signal.targetTable) === "unified_resources" && (signal.target_id ?? signal.targetId) !== null)
+        .map((signal) => (signal.target_id ?? signal.targetId) as number),
     );
     for (const resource of scored) {
       if (staleIds.has(resource.id)) {
@@ -259,13 +250,6 @@ export async function match_resources(input: MatchInput): Promise<ScoredResource
   return scored.sort((a, b) => b.score - a.score);
 }
 
-export async function matchResources(input: LegacyMatchInput): Promise<ScoredResource[]> {
-  return match_resources({
-    pipeline_type: input.pipelineType,
-    jurisdiction: input.jurisdiction,
-    urgency: input.urgency,
-    need_keywords: input.needKeywords,
-    domain: input.domain,
-    limit: input.limit,
-  });
+export async function matchResources(input: MatchInput): Promise<ScoredResource[]> {
+  return match_resources(input);
 }

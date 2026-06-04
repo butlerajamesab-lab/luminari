@@ -867,7 +867,7 @@ function LegacyRegistryView() {
 /* ── Panel: Live Data Ingestion ── */
 /** Per-dataset row with run status polling to disable Ingest button */
 function DatasetRow({ ds, triggerMutation, toggleMutation }: {
-  ds: { datasetId: string; datasetName: string; enabled: boolean; updateFrequency: string; jurisdiction: string; domain: string; totalRecordsIngested: number; lastIngestedAt: number | null };
+  ds: { datasetId: string; datasetName: string; enabled: boolean; update_frequency: string; jurisdiction: string; domain: string; totalRecordsIngested: number; lastIngestedAt: number | null };
   triggerMutation: { mutate: (input: { datasetId: string; maxRecords?: number }) => void; isPending: boolean };
   toggleMutation: { mutate: (input: { datasetId: string; enabled: boolean }) => void };
 }) {
@@ -888,7 +888,7 @@ function DatasetRow({ ds, triggerMutation, toggleMutation }: {
           <Badge variant="outline" className={ds.enabled ? "text-emerald-400 border-emerald-400/30" : "text-muted-foreground border-border"}>
             {ds.enabled ? "Active" : "Paused"}
           </Badge>
-          <Badge variant="outline" className="text-cyan-400 border-cyan-400/30">{ds.updateFrequency}</Badge>
+          <Badge variant="outline" className="text-cyan-400 border-cyan-400/30">{ds.update_frequency}</Badge>
           {isRunning && (
             <Badge variant="outline" className="text-amber-400 border-amber-400/30 animate-pulse">
               <Loader2 className="h-3 w-3 animate-spin mr-1" /> Running
@@ -1190,7 +1190,7 @@ function IngestionPanel() {
                         </Badge>
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        {run.startTime ? new Date(run.startTime).toLocaleString() : "—"} · {run.recordsProcessed ?? 0} processed · {run.signalsGenerated ?? 0} signals
+                        {run.startTime ? new Date(run.startTime).toLocaleString() : "—"} · {run.recordsProcessed ?? 0} processed · {run.signals_generated ?? 0} signals
                       </div>
                     </div>
                   </div>
@@ -1493,8 +1493,8 @@ function KnowledgeExplorerPanel() {
                           <div className="mt-3 pt-3 border-t border-border/50 space-y-2" onClick={e => e.stopPropagation()}>
                             {r.summary && <p className="text-xs text-foreground/80 leading-relaxed">{r.summary}</p>}
                             {r.effectiveDate && <div className="text-xs text-muted-foreground">Effective: {r.effectiveDate}</div>}
-                            {r.sourceUrl && (
-                              <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer"
+                            {r.source_url && (
+                              <a href={r.source_url} target="_blank" rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:underline">
                                 <ExternalLink className="h-3 w-3" /> View Full Statute
                               </a>
@@ -1552,8 +1552,8 @@ function KnowledgeExplorerPanel() {
                                 <p className="text-xs text-muted-foreground leading-relaxed">{r.subsequentHistory}</p>
                               </div>
                             )}
-                            {r.sourceUrl && (
-                              <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer"
+                            {r.source_url && (
+                              <a href={r.source_url} target="_blank" rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:underline">
                                 <ExternalLink className="h-3 w-3" /> Full Opinion
                               </a>
@@ -1744,8 +1744,8 @@ function KnowledgeExplorerPanel() {
                               {r.maxMultiplier != null && <div><span className="text-muted-foreground">Max: </span><span>{r.maxMultiplier}x</span></div>}
                               {r.confidenceThreshold != null && <div><span className="text-muted-foreground">Confidence: </span><span>{r.confidenceThreshold}%</span></div>}
                             </div>
-                            {r.sourceUrl && (
-                              <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer"
+                            {r.source_url && (
+                              <a href={r.source_url} target="_blank" rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:underline">
                                 <ExternalLink className="h-3 w-3" /> Source
                               </a>
@@ -6701,7 +6701,7 @@ function LobbyingPanel() {
           { name: "reportingPeriod", type: "string" },
           { name: "jurisdiction", type: "string" },
           { name: "legislatorsContacted", type: "string" },
-          { name: "sourceUrl", type: "string" },
+          { name: "source_url", type: "string" },
         ]}
         onIngest={(records) => ingestMut.mutateAsync({ records })}
         onSuccess={() => utils.streams.lobbyingStats.invalidate()}
@@ -6797,7 +6797,7 @@ function LitigationPanel() {
           { name: "judge", type: "string" },
           { name: "industry", type: "string" },
           { name: "caseStatus", type: "string" },
-          { name: "sourceUrl", type: "string" },
+          { name: "source_url", type: "string" },
         ]}
         onIngest={(records) => ingestMut.mutateAsync({ records })}
         onSuccess={() => utils.streams.litigationStats.invalidate()}
@@ -6889,7 +6889,7 @@ function AdminDecisionsPanel() {
           { name: "hearingRequested", type: "boolean" },
           { name: "reversal", type: "boolean" },
           { name: "entityOrAgency", type: "string" },
-          { name: "sourceUrl", type: "string" },
+          { name: "source_url", type: "string" },
         ]}
         onIngest={(records) => ingestMut.mutateAsync({ records })}
         onSuccess={() => utils.streams.adminDecisionsStats.invalidate()}
@@ -6957,7 +6957,7 @@ function VerifiedReportsPanel() {
                   <span className="text-muted-foreground">{r.entityNamed || 'Anonymous'}</span>
                   {r.claimType && <span className="text-xs text-muted-foreground/60 ml-1">({r.claimType})</span>}
                 </div>
-                <Badge variant="outline" className="text-xs capitalize">{(r.verificationStatus || 'unverified').replace(/_/g, ' ')}</Badge>
+                <Badge variant="outline" className="text-xs capitalize">{(r.verification_status || 'unverified').replace(/_/g, ' ')}</Badge>
               </div>
             ))}
             {(!recent || recent.length === 0) && <p className="text-xs text-muted-foreground">No reports yet. Users can submit harm reports through the platform.</p>}
@@ -7153,7 +7153,7 @@ function AdvocacyPanel() {
           { name: "estimatedAffectedCount", type: "number" },
           { name: "keyFindings", type: "string" },
           { name: "recommendedActions", type: "string" },
-          { name: "sourceUrl", type: "string" },
+          { name: "source_url", type: "string" },
           { name: "publishDate", type: "string" },
         ]}
         onIngest={(records) => ingestMut.mutateAsync({ records })}
@@ -8663,8 +8663,8 @@ function ExtCollabPanel() {
                       {p.organization ?? '—'} • {p.partnerType} • {p.email ?? 'No email'}
                     </p>
                   </div>
-                  <Badge variant={p.verificationStatus === 'verified' ? 'default' : 'outline'} className="text-xs">
-                    {p.verificationStatus}
+                  <Badge variant={p.verification_status === 'verified' ? 'default' : 'outline'} className="text-xs">
+                    {p.verification_status}
                   </Badge>
                 </div>
               ))}

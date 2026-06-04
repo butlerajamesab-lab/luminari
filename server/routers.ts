@@ -664,7 +664,7 @@ const casesRouter = router({
       await dbHelpers.logAudit({ caseId: id, userId: ctx.user.id, action: "create_case", targetType: "case", targetId: id, details: { domain: input.domain, container: input.container, pipelineType: input.pipelineType } });
       // Log pipeline analytics event
       if (input.pipelineType) {
-        await dbHelpers.logPipelineEvent(ctx.user.id, input.pipelineType, "direct_create");
+        await dbHelpers.logPipelineEvent(ctx.user.id, input.pipeline_type, "direct_create");
       }
       // Auto-generate document checklist if pipeline type is set
       if (input.pipelineType) {
@@ -3154,7 +3154,7 @@ const analyticsRouter = router({
   logEvent: protectedProcedure
     .input(z.object({ pipelineType: z.string(), eventType: z.enum(["intake_start", "intake_complete", "direct_create", "document_uploaded", "extraction_complete", "analysis_started", "analysis_complete", "findings_generated", "export_created", "case_completed", "guided_intake_complete", "guided_to_conversation"]) }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.logPipelineEvent(ctx.user.id, input.pipelineType, input.eventType);
+      await dbHelpers.logPipelineEvent(ctx.user.id, input.pipeline_type, input.eventType);
       return { success: true };
     }),
 });
@@ -3380,7 +3380,7 @@ const missingRecordsRouter = router({
       // Get missing records and resolve agencies
       const missing = await getMissingRecordsForCase(input.caseId, ["detected", "acknowledged"]);
       const withAgencies = await resolveAgenciesForMissingRecords(
-        pipelineType,
+        pipeline_type,
         missing.map(m => ({ recordType: m.recordType, description: m.description, severity: m.severity })),
       );
       return { hasCoverage: true, records: withAgencies };
@@ -3441,7 +3441,7 @@ const caseTemplatesRouter = router({
         await dbHelpers.createChecklistItems(caseId, items);
       }
       // Log pipeline event
-      await dbHelpers.logPipelineEvent(ctx.user.id, template.pipelineType, "direct_create");
+      await dbHelpers.logPipelineEvent(ctx.user.id, template.pipeline_type, "direct_create");
       return { id: caseId, name: caseName };
     }),
 });
@@ -3505,7 +3505,7 @@ const testScenariosRouter = router({
     .query(async () => {
       return (testBundlesData as TestBundle[]).map(b => ({
         bundleId: b.bundleId,
-        pipelineType: b.pipelineType,
+        pipelineType: b.pipeline_type,
         scenarioName: b.scenarioName,
         description: b.description,
         documentCount: b.documents.length,
@@ -3532,9 +3532,9 @@ const testScenariosRouter = router({
         ctx.user.id,
         caseName,
         `Test scenario: ${bundle.description}`,
-        bundle.pipelineType,
+        bundle.pipeline_type,
         undefined,
-        bundle.pipelineType,
+        bundle.pipeline_type,
       );
 
       // 2. Auto-generate document checklist
@@ -3620,12 +3620,12 @@ const testScenariosRouter = router({
       if (uploadedDocs.length === 0) {
         console.warn(`[TestLoader] WARNING: No documents were successfully uploaded for bundle ${bundle.bundleId}`);
       }
-      await dbHelpers.logPipelineEvent(ctx.user.id, bundle.pipelineType, "direct_create");
+      await dbHelpers.logPipelineEvent(ctx.user.id, bundle.pipeline_type, "direct_create");
 
       return {
         caseId,
         caseName,
-        pipelineType: bundle.pipelineType,
+        pipelineType: bundle.pipeline_type,
         documentsUploaded: uploadedDocs.length,
         documentsTotal: bundle.documents.length,
         documents: uploadedDocs,
@@ -3920,7 +3920,7 @@ const caseNarrativeRouter = router({
 const lensesRouter = router({
   /**
    * Get active lenses for a case.
-   * T1. Load case metadata (pipelineType, manualLensOverrides)
+   * T1. Load case metadata (pipeline_type, manualLensOverrides)
    * T2. Load signal flags for the case
    * T3. Map signal flags to lens signals
    * T4. Run activation engine with pipeline resolution
@@ -3957,7 +3957,7 @@ const lensesRouter = router({
       const lensContext = activateLensesWithResolution(
         {
           caseId: input.caseId,
-          primaryDomain: caseRow.pipelineType,
+          primaryDomain: caseRow.pipeline_type,
           manualLensIds: (caseRow.manualLensOverrides as string[] | null) || undefined,
         },
         evidenceSignals,
@@ -4070,7 +4070,7 @@ const lensesRouter = router({
       const trace = activateLensesWithResolutionAndTrace(
         {
           caseId: input.caseId,
-          primaryDomain: caseRow.pipelineType,
+          primaryDomain: caseRow.pipeline_type,
           manualLensIds: (caseRow.manualLensOverrides as string[] | null) || undefined,
         },
         evidenceSignals,
@@ -4303,7 +4303,7 @@ const actionPathsRouter = router({
       jurisdiction: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      return dbHelpers.getActionPathsByPipeline(input.pipelineType, input.jurisdiction);
+      return dbHelpers.getActionPathsByPipeline(input.pipeline_type, input.jurisdiction);
     }),
 
   /** Get structured filing paths for multiple pipeline types */
@@ -4663,20 +4663,20 @@ import { caseStateRouter } from "./routers/case-state";
 const supportMatcherRouter = router({
   match: publicProcedure
     .input(z.object({
-      pipelineType: z.string(),
+      pipeline_type: z.string(),
       jurisdiction: z.string().optional(),
       urgency: z.enum(["crisis", "urgent", "standard", "informational"]).optional(),
-      needKeywords: z.array(z.string()).optional(),
+      need_keywords: z.array(z.string()).optional(),
       domain: z.string().optional(),
       limit: z.number().min(1).max(20).optional(),
     }))
     .query(async ({ input }) => {
       const results = await matchResources({
-        pipelineType: input.pipelineType,
+        pipeline_type: input.pipeline_type,
         jurisdiction: input.jurisdiction || undefined,
         urgency: input.urgency || undefined,
-        needKeywords: input.needKeywords || undefined,
-        domain: input.domain || PIPELINE_DOMAIN_MAP[input.pipelineType] || undefined,
+        need_keywords: input.need_keywords || undefined,
+        domain: input.domain || PIPELINE_DOMAIN_MAP[input.pipeline_type] || undefined,
         limit: input.limit || 5,
       });
       return results;
@@ -4690,7 +4690,7 @@ const supportMatcherRouter = router({
       const [caseData] = await db.select().from(cases).where(eq(cases.id, input.caseId)).limit(1);
       if (!caseData) throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
 
-      const pipelineType = (caseData as any).pipelineType || "general_investigation";
+      const pipeline_type = (caseData as any).pipeline_type || (caseData as any).pipelineType || "general_investigation";
       const jurisdiction = (caseData as any).jurisdiction || undefined;
 
       // Determine urgency from case signals if available
@@ -4706,16 +4706,16 @@ const supportMatcherRouter = router({
       }
 
       const results = await matchResources({
-        pipelineType,
+        pipeline_type,
         jurisdiction: jurisdiction || undefined,
         urgency,
-        domain: PIPELINE_DOMAIN_MAP[pipelineType] || undefined,
+        domain: PIPELINE_DOMAIN_MAP[pipeline_type] || undefined,
         limit: 5,
       });
 
       return {
         caseId: input.caseId,
-        pipelineType,
+        pipeline_type,
         jurisdiction: jurisdiction || null,
         urgency,
         resources: results,

@@ -572,12 +572,12 @@ function AdminControlPanel() {
                 <div className="flex items-center gap-3">
                   <div className={`h-2 w-2 rounded-full ${stream.enabled ? "bg-green-400" : "bg-red-400"}`} />
                   <div>
-                    <div className="text-sm font-medium text-foreground">{stream.streamName}</div>
-                    <div className="text-xs text-muted-foreground">{stream.streamId} · {stream.streamType} · weight: {stream.signalWeight}</div>
+                    <div className="text-sm font-medium text-foreground">{stream.stream_name}</div>
+                    <div className="text-xs text-muted-foreground">{stream.stream_id} · {stream.stream_type} · weight: {stream.signal_weight}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline">{stream.updateFrequency}</Badge>
+                  <Badge variant="outline">{stream.update_frequency}</Badge>
                   <Badge variant={stream.enabled ? "default" : "secondary"}>{stream.enabled ? "Active" : "Disabled"}</Badge>
                 </div>
               </CardContent>
@@ -750,11 +750,11 @@ function DataStreamPanel() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [expandedStream, setExpandedStream] = useState<string | null>(null);
   const [runningStreams, setRunningStreams] = useState<Set<string>>(new Set());
-  const [streamResults, setStreamResults] = useState<Record<string, { success: boolean; message: string; recordsProcessed?: number; signalsGenerated?: number }>>({});
+  const [streamResults, setStreamResults] = useState<Record<string, { success: boolean; message: string; recordsProcessed?: number; signals_generated?: number }>>({});
   const [newStream, setNewStream] = useState({
-    streamId: "", streamName: "", streamType: "government_complaints",
-    sourceUrl: "", updateFrequency: "daily", signalWeight: 100,
-    confidenceMultiplier: 100, description: "",
+    stream_id: "", stream_name: "", stream_type: "government_complaints",
+    source_url: "", update_frequency: "daily", signal_weight: 100,
+    confidence_multiplier: 100, description: "",
   });
 
   const { data: streams, refetch } = trpc.s76.dataStream.getStreamsWithHealth.useQuery();
@@ -770,7 +770,7 @@ function DataStreamPanel() {
   const refreshSchedules = trpc.s76.execution.refreshSchedules.useMutation();
   const updateStreamConfig = trpc.s76.execution.updateStreamConfig.useMutation();
   const { data: diagnostics, refetch: refetchDiagnostics } = trpc.s76.execution.getStreamDiagnostics.useQuery(
-    { streamId: expandedStream! },
+    { stream_id: expandedStream! },
     { enabled: !!expandedStream }
   );
   const { data: executionLog, refetch: refetchLog } = trpc.s76.execution.getExecutionLog.useQuery({ limit: 20 });
@@ -778,7 +778,7 @@ function DataStreamPanel() {
 
   // ─── Direct fetch() execution layer — NO tRPC, NO abstraction ───
   const [runAllPending, setRunAllPending] = useState(false);
-  // Per-stream action loading state: { [streamId]: "run" | "retry" | "backfill" | "reset" | null }
+  // Per-stream action loading state: { [stream_id]: "run" | "retry" | "backfill" | "reset" | null }
   const [streamAction, setStreamAction] = useState<Record<string, string | null>>({});
 
   const execFetch = async (endpoint: string, body: Record<string, any>) => {
@@ -793,98 +793,98 @@ function DataStreamPanel() {
   };
 
   // ─── Direct fetch() handlers ───
-  const handleRunStream = async (streamId: string) => {
-    setRunningStreams(prev => new Set(prev).add(streamId));
-    setStreamAction(prev => ({ ...prev, [streamId]: "run" }));
-    setStreamResults(prev => ({ ...prev, [streamId]: { success: true, message: "Running..." } }));
-    console.log("[Executor] run_stream:", streamId);
+  const handleRunStream = async (stream_id: string) => {
+    setRunningStreams(prev => new Set(prev).add(stream_id));
+    setStreamAction(prev => ({ ...prev, [stream_id]: "run" }));
+    setStreamResults(prev => ({ ...prev, [stream_id]: { success: true, message: "Running..." } }));
+    console.log("[Executor] run_stream:", stream_id);
     try {
-      const result = await execFetch("run_stream", { stream_id: streamId });
+      const result = await execFetch("run_stream", { stream_id: stream_id });
       setStreamResults(prev => ({
         ...prev,
-        [streamId]: {
+        [stream_id]: {
           success: result.success,
           message: result.message,
           recordsProcessed: result.records_processed,
-          signalsGenerated: result.signals_generated,
+          signals_generated: result.signals_generated,
         },
       }));
-      toast[result.success ? "success" : "error"](`▶ ${streamId}: ${result.message}`);
+      toast[result.success ? "success" : "error"](`▶ ${stream_id}: ${result.message}`);
       refetch(); refetchStats(); refetchScheduler();
     } catch (e: any) {
-      setStreamResults(prev => ({ ...prev, [streamId]: { success: false, message: e.message } }));
-      toast.error(`▶ ${streamId}: ${e.message}`);
+      setStreamResults(prev => ({ ...prev, [stream_id]: { success: false, message: e.message } }));
+      toast.error(`▶ ${stream_id}: ${e.message}`);
     } finally {
-      setRunningStreams(prev => { const n = new Set(prev); n.delete(streamId); return n; });
-      setStreamAction(prev => ({ ...prev, [streamId]: null }));
+      setRunningStreams(prev => { const n = new Set(prev); n.delete(stream_id); return n; });
+      setStreamAction(prev => ({ ...prev, [stream_id]: null }));
     }
   };
 
-  const handleRetryStream = async (streamId: string) => {
-    setRunningStreams(prev => new Set(prev).add(streamId));
-    setStreamAction(prev => ({ ...prev, [streamId]: "retry" }));
-    setStreamResults(prev => ({ ...prev, [streamId]: { success: true, message: "Retrying..." } }));
-    console.log("[Executor] retry_stream:", streamId);
+  const handleRetryStream = async (stream_id: string) => {
+    setRunningStreams(prev => new Set(prev).add(stream_id));
+    setStreamAction(prev => ({ ...prev, [stream_id]: "retry" }));
+    setStreamResults(prev => ({ ...prev, [stream_id]: { success: true, message: "Retrying..." } }));
+    console.log("[Executor] retry_stream:", stream_id);
     try {
-      const result = await execFetch("retry_stream", { stream_id: streamId });
+      const result = await execFetch("retry_stream", { stream_id: stream_id });
       setStreamResults(prev => ({
         ...prev,
-        [streamId]: {
+        [stream_id]: {
           success: result.success,
           message: result.message,
           recordsProcessed: result.records_processed,
-          signalsGenerated: result.signals_generated,
+          signals_generated: result.signals_generated,
         },
       }));
-      toast[result.success ? "success" : "error"](`↻ ${streamId}: ${result.message}`);
+      toast[result.success ? "success" : "error"](`↻ ${stream_id}: ${result.message}`);
       refetch(); refetchStats(); refetchScheduler();
     } catch (e: any) {
-      setStreamResults(prev => ({ ...prev, [streamId]: { success: false, message: e.message } }));
-      toast.error(`↻ ${streamId}: ${e.message}`);
+      setStreamResults(prev => ({ ...prev, [stream_id]: { success: false, message: e.message } }));
+      toast.error(`↻ ${stream_id}: ${e.message}`);
     } finally {
-      setRunningStreams(prev => { const n = new Set(prev); n.delete(streamId); return n; });
-      setStreamAction(prev => ({ ...prev, [streamId]: null }));
+      setRunningStreams(prev => { const n = new Set(prev); n.delete(stream_id); return n; });
+      setStreamAction(prev => ({ ...prev, [stream_id]: null }));
     }
   };
 
-  const handleBackfillStream = async (streamId: string) => {
-    setRunningStreams(prev => new Set(prev).add(streamId));
-    setStreamAction(prev => ({ ...prev, [streamId]: "backfill" }));
-    setStreamResults(prev => ({ ...prev, [streamId]: { success: true, message: "Backfilling..." } }));
-    console.log("[Executor] backfill_stream:", streamId);
+  const handleBackfillStream = async (stream_id: string) => {
+    setRunningStreams(prev => new Set(prev).add(stream_id));
+    setStreamAction(prev => ({ ...prev, [stream_id]: "backfill" }));
+    setStreamResults(prev => ({ ...prev, [stream_id]: { success: true, message: "Backfilling..." } }));
+    console.log("[Executor] backfill_stream:", stream_id);
     try {
-      const result = await execFetch("backfill_stream", { stream_id: streamId });
+      const result = await execFetch("backfill_stream", { stream_id: stream_id });
       setStreamResults(prev => ({
         ...prev,
-        [streamId]: {
+        [stream_id]: {
           success: result.success,
           message: result.message,
           recordsProcessed: result.records_processed,
-          signalsGenerated: result.signals_generated,
+          signals_generated: result.signals_generated,
         },
       }));
-      toast[result.success ? "success" : "error"](`⏪ ${streamId}: ${result.message}`);
+      toast[result.success ? "success" : "error"](`⏪ ${stream_id}: ${result.message}`);
       refetch(); refetchStats(); refetchScheduler(); refetchDiagnostics();
     } catch (e: any) {
-      setStreamResults(prev => ({ ...prev, [streamId]: { success: false, message: e.message } }));
-      toast.error(`⏪ ${streamId}: ${e.message}`);
+      setStreamResults(prev => ({ ...prev, [stream_id]: { success: false, message: e.message } }));
+      toast.error(`⏪ ${stream_id}: ${e.message}`);
     } finally {
-      setRunningStreams(prev => { const n = new Set(prev); n.delete(streamId); return n; });
-      setStreamAction(prev => ({ ...prev, [streamId]: null }));
+      setRunningStreams(prev => { const n = new Set(prev); n.delete(stream_id); return n; });
+      setStreamAction(prev => ({ ...prev, [stream_id]: null }));
     }
   };
 
-  const handleResetCheckpoint = async (streamId: string) => {
-    setStreamAction(prev => ({ ...prev, [streamId]: "reset" }));
-    console.log("[Executor] reset_checkpoint:", streamId);
+  const handleResetCheckpoint = async (stream_id: string) => {
+    setStreamAction(prev => ({ ...prev, [stream_id]: "reset" }));
+    console.log("[Executor] reset_checkpoint:", stream_id);
     try {
-      const result = await execFetch("reset_checkpoint", { stream_id: streamId });
-      toast.success(`♻ ${streamId}: ${result.message}`);
+      const result = await execFetch("reset_checkpoint", { stream_id: stream_id });
+      toast.success(`♻ ${stream_id}: ${result.message}`);
       refetch(); refetchDiagnostics();
     } catch (e: any) {
-      toast.error(`♻ ${streamId}: ${e.message}`);
+      toast.error(`♻ ${stream_id}: ${e.message}`);
     } finally {
-      setStreamAction(prev => ({ ...prev, [streamId]: null }));
+      setStreamAction(prev => ({ ...prev, [stream_id]: null }));
     }
   };
 
@@ -898,7 +898,7 @@ function DataStreamPanel() {
       for (const r of (result.results || [])) {
         setStreamResults(prev => ({
           ...prev,
-          [r.stream_id]: { success: r.success, message: r.message, recordsProcessed: r.records_processed, signalsGenerated: r.signals_generated },
+          [r.stream_id]: { success: r.success, message: r.message, recordsProcessed: r.records_processed, signals_generated: r.signals_generated },
         }));
       }
       refetch(); refetchStats(); refetchScheduler();
@@ -974,31 +974,31 @@ function DataStreamPanel() {
           <CardContent className="p-4 space-y-3">
             <div className="text-sm font-medium text-foreground">New Data Stream</div>
             <div className="grid grid-cols-2 gap-3">
-              <Input placeholder="Stream ID (e.g., wa-complaints)" value={newStream.streamId} onChange={e => setNewStream(p => ({ ...p, streamId: e.target.value }))} className="text-xs" />
-              <Input placeholder="Stream Name" value={newStream.streamName} onChange={e => setNewStream(p => ({ ...p, streamName: e.target.value }))} className="text-xs" />
-              <Select value={newStream.streamType} onValueChange={v => setNewStream(p => ({ ...p, streamType: v }))}>
+              <Input placeholder="Stream ID (e.g., wa-complaints)" value={newStream.stream_id} onChange={e => setNewStream(p => ({ ...p, stream_id: e.target.value }))} className="text-xs" />
+              <Input placeholder="Stream Name" value={newStream.stream_name} onChange={e => setNewStream(p => ({ ...p, stream_name: e.target.value }))} className="text-xs" />
+              <Select value={newStream.stream_type} onValueChange={v => setNewStream(p => ({ ...p, stream_type: v }))}>
                 <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {types?.streamTypes.map(t => <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>)}
+                  {types?.stream_types.map(t => <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Select value={newStream.updateFrequency} onValueChange={v => setNewStream(p => ({ ...p, updateFrequency: v }))}>
+              <Select value={newStream.update_frequency} onValueChange={v => setNewStream(p => ({ ...p, update_frequency: v }))}>
                 <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {types?.updateFrequencies.map(f => <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Input placeholder="Source URL (optional)" value={newStream.sourceUrl} onChange={e => setNewStream(p => ({ ...p, sourceUrl: e.target.value }))} className="text-xs" />
-              <Input type="number" placeholder="Signal Weight (100)" value={newStream.signalWeight} onChange={e => setNewStream(p => ({ ...p, signalWeight: parseInt(e.target.value) || 100 }))} className="text-xs" />
+              <Input placeholder="Source URL (optional)" value={newStream.source_url} onChange={e => setNewStream(p => ({ ...p, source_url: e.target.value }))} className="text-xs" />
+              <Input type="number" placeholder="Signal Weight (100)" value={newStream.signal_weight} onChange={e => setNewStream(p => ({ ...p, signal_weight: parseInt(e.target.value) || 100 }))} className="text-xs" />
             </div>
             <Textarea placeholder="Description" value={newStream.description} onChange={e => setNewStream(p => ({ ...p, description: e.target.value }))} rows={2} className="text-xs" />
             <div className="flex gap-2">
-              <Button size="sm" disabled={!newStream.streamId || !newStream.streamName || createStream.isPending} onClick={async () => {
+              <Button size="sm" disabled={!newStream.stream_id || !newStream.stream_name || createStream.isPending} onClick={async () => {
                 try {
                   await createStream.mutateAsync(newStream);
                   toast.success("Stream created — scheduler refreshed");
                   setShowAddForm(false);
-                  setNewStream({ streamId: "", streamName: "", streamType: "government_complaints", sourceUrl: "", updateFrequency: "daily", signalWeight: 100, confidenceMultiplier: 100, description: "" });
+                  setNewStream({ stream_id: "", stream_name: "", stream_type: "government_complaints", source_url: "", update_frequency: "daily", signal_weight: 100, confidence_multiplier: 100, description: "" });
                   refetch();
                   refetchStats();
                   refetchScheduler();
@@ -1049,23 +1049,23 @@ function DataStreamPanel() {
       {/* Stream List with Execution Controls */}
       <div className="space-y-2">
         {streams?.map(stream => {
-          const isRunning = runningStreams.has(stream.streamId);
-          const result = streamResults[stream.streamId];
-          const isExpanded = expandedStream === stream.streamId;
+          const isRunning = runningStreams.has(stream.stream_id);
+          const result = streamResults[stream.stream_id];
+          const isExpanded = expandedStream === stream.stream_id;
           return (
             <Card key={stream.id} className={`bg-card/50 ${isRunning ? "border-amber-500/50" : result ? (result.success ? "border-green-500/30" : "border-red-500/30") : ""}`}>
               <CardContent className="p-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 cursor-pointer" onClick={() => setExpandedStream(isExpanded ? null : stream.streamId)}>
-                    <div className={`h-2.5 w-2.5 rounded-full ${isRunning ? "bg-amber-400 animate-pulse" : (stream as any).autoDisabled ? "bg-red-600 animate-pulse" : stream.healthStatus === "healthy" ? "bg-green-400" : stream.healthStatus === "stale" ? "bg-yellow-400" : "bg-red-400"}`} />
+                  <div className="flex items-center gap-3 cursor-pointer" onClick={() => setExpandedStream(isExpanded ? null : stream.stream_id)}>
+                    <div className={`h-2.5 w-2.5 rounded-full ${isRunning ? "bg-amber-400 animate-pulse" : (stream as any).auto_disabled ? "bg-red-600 animate-pulse" : stream.healthStatus === "healthy" ? "bg-green-400" : stream.healthStatus === "stale" ? "bg-yellow-400" : "bg-red-400"}`} />
                     <div>
-                      <div className="text-sm font-medium text-foreground">{stream.streamName}</div>
+                      <div className="text-sm font-medium text-foreground">{stream.stream_name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {stream.streamId} · {stream.streamType} · {stream.updateFrequency}
-                        {(stream.recordsIngested ?? 0) > 0 && ` · ${(stream.recordsIngested ?? 0).toLocaleString()} records`}
-                        {(stream.signalsGenerated ?? 0) > 0 && ` · ${(stream.signalsGenerated ?? 0).toLocaleString()} signals`}
-                        {(stream as any).autoDisabled && " · AUTO-DISABLED"}
-                        {((stream as any).consecutiveFailures ?? 0) > 0 && ` · ${(stream as any).consecutiveFailures} consecutive failures`}
+                        {stream.stream_id} · {stream.stream_type} · {stream.update_frequency}
+                        {(stream.records_ingested ?? 0) > 0 && ` · ${(stream.records_ingested ?? 0).toLocaleString()} records`}
+                        {(stream.signals_generated ?? 0) > 0 && ` · ${(stream.signals_generated ?? 0).toLocaleString()} signals`}
+                        {(stream as any).auto_disabled && " · AUTO-DISABLED"}
+                        {((stream as any).consecutive_failures ?? 0) > 0 && ` · ${(stream as any).consecutive_failures} consecutive failures`}
                       </div>
                     </div>
                   </div>
@@ -1075,40 +1075,40 @@ function DataStreamPanel() {
                     {!isRunning && result && (
                       <Badge variant={result.success ? "default" : "destructive"} className="text-[10px]">
                         {result.success ? <CheckCircle className="h-2.5 w-2.5 mr-1" /> : <XCircle className="h-2.5 w-2.5 mr-1" />}
-                        {result.recordsProcessed !== undefined ? `${result.recordsProcessed} rec / ${result.signalsGenerated} sig` : (result.success ? "Done" : "Failed")}
+                        {result.recordsProcessed !== undefined ? `${result.recordsProcessed} rec / ${result.signals_generated} sig` : (result.success ? "Done" : "Failed")}
                       </Badge>
                     )}
-                    <Badge variant="outline">wt: {stream.signalWeight}</Badge>
+                    <Badge variant="outline">wt: {stream.signal_weight}</Badge>
                     {/* ▶ Run */}
                     <Button size="sm" variant="outline" className="text-green-400 border-green-500/30 hover:bg-green-500/10"
                       disabled={isRunning}
-                      onClick={() => handleRunStream(stream.streamId)}
+                      onClick={() => handleRunStream(stream.stream_id)}
                       title="Run stream">
-                      {streamAction[stream.streamId] === "run" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+                      {streamAction[stream.stream_id] === "run" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
                     </Button>
                     {/* ↻ Retry */}
                     <Button size="sm" variant="outline" className="text-amber-400 border-amber-500/30 hover:bg-amber-500/10"
                       disabled={isRunning}
-                      onClick={() => handleRetryStream(stream.streamId)}
+                      onClick={() => handleRetryStream(stream.stream_id)}
                       title="Retry (reset counters + re-enable + run)">
-                      {streamAction[stream.streamId] === "retry" ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />}
+                      {streamAction[stream.stream_id] === "retry" ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />}
                     </Button>
                     {/* ⏪ Backfill */}
                     <Button size="sm" variant="outline" className="text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/10"
                       disabled={isRunning}
-                      onClick={() => handleBackfillStream(stream.streamId)}
+                      onClick={() => handleBackfillStream(stream.stream_id)}
                       title="Backfill (reset checkpoint + full re-ingestion)">
-                      {streamAction[stream.streamId] === "backfill" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Archive className="h-3 w-3" />}
+                      {streamAction[stream.stream_id] === "backfill" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Archive className="h-3 w-3" />}
                     </Button>
                     {/* ♻ Reset */}
                     <Button size="sm" variant="outline" className="text-purple-400 border-purple-500/30 hover:bg-purple-500/10"
-                      disabled={isRunning || streamAction[stream.streamId] === "reset"}
-                      onClick={() => handleResetCheckpoint(stream.streamId)}
+                      disabled={isRunning || streamAction[stream.stream_id] === "reset"}
+                      onClick={() => handleResetCheckpoint(stream.stream_id)}
                       title="Reset checkpoint (no run)">
-                      {streamAction[stream.streamId] === "reset" ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                      {streamAction[stream.stream_id] === "reset" ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
                     </Button>
                     <Button size="sm" variant="ghost" onClick={async () => {
-                      await updateStream.mutateAsync({ streamId: stream.streamId, updates: { enabled: !stream.enabled } });
+                      await updateStream.mutateAsync({ stream_id: stream.stream_id, updates: { enabled: !stream.enabled } });
                       refetch();
                       refetchScheduler();
                       toast.success(`Stream ${!stream.enabled ? "enabled" : "disabled"}`);
@@ -1116,8 +1116,8 @@ function DataStreamPanel() {
                       <ToggleLeft className={`h-3 w-3 ${stream.enabled ? "text-green-400" : "text-muted-foreground"}`} />
                     </Button>
                     <Button size="sm" variant="ghost" className="text-red-400" onClick={async () => {
-                      if (confirm(`Delete stream ${stream.streamName}?`)) {
-                        await deleteStream.mutateAsync({ streamId: stream.streamId });
+                      if (confirm(`Delete stream ${stream.stream_name}?`)) {
+                        await deleteStream.mutateAsync({ stream_id: stream.stream_id });
                         refetch();
                       }
                     }}>
@@ -1130,9 +1130,9 @@ function DataStreamPanel() {
                   <div className="mt-3 pt-3 border-t border-border space-y-3">
                     {/* Basic Info */}
                     <div className="grid grid-cols-4 gap-3 text-xs">
-                      <div><span className="text-muted-foreground">Source:</span> <span className="text-foreground">{stream.sourceUrl || "N/A"}</span></div>
-                      <div><span className="text-muted-foreground">Weight:</span> <span className="text-foreground">{stream.signalWeight}</span></div>
-                      <div><span className="text-muted-foreground">Confidence:</span> <span className="text-foreground">{stream.confidenceMultiplier}%</span></div>
+                      <div><span className="text-muted-foreground">Source:</span> <span className="text-foreground">{stream.source_url || "N/A"}</span></div>
+                      <div><span className="text-muted-foreground">Weight:</span> <span className="text-foreground">{stream.signal_weight}</span></div>
+                      <div><span className="text-muted-foreground">Confidence:</span> <span className="text-foreground">{stream.confidence_multiplier}%</span></div>
                       <div><span className="text-muted-foreground">Enabled:</span> <span className={stream.enabled ? "text-green-400" : "text-red-400"}>{stream.enabled ? "Yes" : "No"}</span></div>
                     </div>
 
@@ -1144,13 +1144,13 @@ function DataStreamPanel() {
                         </div>
                         <div className="grid grid-cols-4 gap-2 text-[10px]">
                           <div><span className="text-muted-foreground">Last Run:</span> <span className={diagnostics.stream.lastRunStatus === "completed" ? "text-green-400" : diagnostics.stream.lastRunStatus === "failed" ? "text-red-400" : "text-foreground"}>{diagnostics.stream.lastRunStatus || "Never"}</span></div>
-                          <div><span className="text-muted-foreground">Failures:</span> <span className="text-foreground">{diagnostics.stream.consecutiveFailures ?? 0} consecutive / {diagnostics.stream.failureCount ?? 0} total</span></div>
+                          <div><span className="text-muted-foreground">Failures:</span> <span className="text-foreground">{diagnostics.stream.consecutive_failures ?? 0} consecutive / {diagnostics.stream.failureCount ?? 0} total</span></div>
                           <div><span className="text-muted-foreground">Last Success:</span> <span className="text-foreground">{diagnostics.stream.lastSuccessAt ? new Date(diagnostics.stream.lastSuccessAt).toLocaleString() : "Never"}</span></div>
-                          <div><span className="text-muted-foreground">Auto-Disabled:</span> <span className={diagnostics.stream.autoDisabled ? "text-red-400 font-bold" : "text-green-400"}>{diagnostics.stream.autoDisabled ? "YES" : "No"}</span></div>
+                          <div><span className="text-muted-foreground">Auto-Disabled:</span> <span className={diagnostics.stream.auto_disabled ? "text-red-400 font-bold" : "text-green-400"}>{diagnostics.stream.auto_disabled ? "YES" : "No"}</span></div>
                         </div>
-                        {diagnostics.stream.lastErrorType && (
+                        {diagnostics.stream.last_errorType && (
                           <div className="text-[10px] text-red-400 mt-1">
-                            <span className="font-medium">Last Error:</span> [{diagnostics.stream.lastErrorType}] {diagnostics.stream.lastErrorMessage}
+                            <span className="font-medium">Last Error:</span> [{diagnostics.stream.last_errorType}] {diagnostics.stream.last_errorMessage}
                             {diagnostics.stream.lastHttpStatus && ` (HTTP ${diagnostics.stream.lastHttpStatus})`}
                           </div>
                         )}
@@ -1166,54 +1166,54 @@ function DataStreamPanel() {
                         )}
                         <div className="flex gap-1 mt-1 flex-wrap">
                           <Button size="sm" variant="outline" className="h-6 text-[10px]"
-                            disabled={streamAction[stream.streamId] === "resetCounters"}
+                            disabled={streamAction[stream.stream_id] === "resetCounters"}
                             onClick={async () => {
-                              setStreamAction(p => ({ ...p, [stream.streamId]: "resetCounters" }));
+                              setStreamAction(p => ({ ...p, [stream.stream_id]: "resetCounters" }));
                               try {
                                 const res = await fetch("/api/executor/reset_counters", {
                                   method: "POST", headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ stream_id: stream.streamId })
+                                  body: JSON.stringify({ stream_id: stream.stream_id })
                                 });
                                 const data = await res.json();
                                 if (data.success) { toast.success(data.message); refetch(); refetchDiagnostics(); }
                                 else toast.error(data.error);
                               } catch (e: any) { toast.error(e.message); }
                               // @ts-expect-error pre-existing type mismatch
-                              finally { setStreamAction(p => ({ ...p, [stream.streamId]: undefined })); }
+                              finally { setStreamAction(p => ({ ...p, [stream.stream_id]: undefined })); }
                             }}>
-                            {streamAction[stream.streamId] === "resetCounters" ? <Loader2 className="h-2.5 w-2.5 animate-spin mr-1" /> : null}
+                            {streamAction[stream.stream_id] === "resetCounters" ? <Loader2 className="h-2.5 w-2.5 animate-spin mr-1" /> : null}
                             Reset Counters
                           </Button>
                           <Button size="sm" variant="outline" className="h-6 text-[10px] text-cyan-400"
-                            disabled={streamAction[stream.streamId] === "reset"}
-                            onClick={() => handleResetCheckpoint(stream.streamId)}>
-                            {streamAction[stream.streamId] === "reset" ? <Loader2 className="h-2.5 w-2.5 animate-spin mr-1" /> : <RefreshCw className="h-2.5 w-2.5 mr-1" />}
+                            disabled={streamAction[stream.stream_id] === "reset"}
+                            onClick={() => handleResetCheckpoint(stream.stream_id)}>
+                            {streamAction[stream.stream_id] === "reset" ? <Loader2 className="h-2.5 w-2.5 animate-spin mr-1" /> : <RefreshCw className="h-2.5 w-2.5 mr-1" />}
                             Reset Checkpoint
                           </Button>
                           <Button size="sm" variant="outline" className="h-6 text-[10px] text-amber-400"
                             disabled={isRunning}
-                            onClick={() => handleBackfillStream(stream.streamId)}>
-                            {streamAction[stream.streamId] === "backfill" ? <Loader2 className="h-2.5 w-2.5 animate-spin mr-1" /> : <Zap className="h-2.5 w-2.5 mr-1" />}
+                            onClick={() => handleBackfillStream(stream.stream_id)}>
+                            {streamAction[stream.stream_id] === "backfill" ? <Loader2 className="h-2.5 w-2.5 animate-spin mr-1" /> : <Zap className="h-2.5 w-2.5 mr-1" />}
                             Backfill (Full Re-ingest)
                           </Button>
-                          {diagnostics.stream.autoDisabled && (
+                          {diagnostics.stream.auto_disabled && (
                             <Button size="sm" variant="outline" className="h-6 text-[10px] text-amber-400"
-                              disabled={streamAction[stream.streamId] === "reenable"}
+                              disabled={streamAction[stream.stream_id] === "reenable"}
                               onClick={async () => {
-                                setStreamAction(p => ({ ...p, [stream.streamId]: "reenable" }));
+                                setStreamAction(p => ({ ...p, [stream.stream_id]: "reenable" }));
                                 try {
                                   const res = await fetch("/api/executor/reenable_stream", {
                                     method: "POST", headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ stream_id: stream.streamId })
+                                    body: JSON.stringify({ stream_id: stream.stream_id })
                                   });
                                   const data = await res.json();
                                   if (data.success) { toast.success(data.message); refetch(); refetchDiagnostics(); refetchScheduler(); }
                                   else toast.error(data.error);
                                 } catch (e: any) { toast.error(e.message); }
                                 // @ts-expect-error pre-existing type mismatch
-                                finally { setStreamAction(p => ({ ...p, [stream.streamId]: undefined })); }
+                                finally { setStreamAction(p => ({ ...p, [stream.stream_id]: undefined })); }
                               }}>
-                              {streamAction[stream.streamId] === "reenable" ? <Loader2 className="h-2.5 w-2.5 animate-spin mr-1" /> : null}
+                              {streamAction[stream.stream_id] === "reenable" ? <Loader2 className="h-2.5 w-2.5 animate-spin mr-1" /> : null}
                               Re-enable Stream
                             </Button>
                           )}
@@ -1230,7 +1230,7 @@ function DataStreamPanel() {
                         <div className="grid grid-cols-3 gap-2 text-[10px]">
                           <div><span className="text-muted-foreground">Status:</span> <span className={diagnostics.lastRun.status === "completed" ? "text-green-400" : "text-red-400"}>{diagnostics.lastRun.status}</span></div>
                           <div><span className="text-muted-foreground">Records:</span> <span className="text-foreground">{diagnostics.lastRun.recordsProcessed}</span></div>
-                          <div><span className="text-muted-foreground">Signals:</span> <span className="text-foreground">{diagnostics.lastRun.signalsGenerated}</span></div>
+                          <div><span className="text-muted-foreground">Signals:</span> <span className="text-foreground">{diagnostics.lastRun.signals_generated}</span></div>
                           {diagnostics.lastRun.errorClassification && <div><span className="text-muted-foreground">Error Class:</span> <span className="text-red-400">{diagnostics.lastRun.errorClassification}</span></div>}
                           {diagnostics.lastRun.httpStatus && <div><span className="text-muted-foreground">HTTP:</span> <span className="text-foreground">{diagnostics.lastRun.httpStatus}</span></div>}
                           {diagnostics.lastRun.adapterUsed && <div><span className="text-muted-foreground">Adapter:</span> <span className="text-foreground">{diagnostics.lastRun.adapterUsed}</span></div>}
@@ -1258,7 +1258,7 @@ function DataStreamPanel() {
                       <div className={`text-xs p-2 rounded ${result.success ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"}`}>
                         <span className="font-medium">Session execution:</span> {result.message}
                         {result.recordsProcessed !== undefined && (
-                          <span> — {result.recordsProcessed} records processed, {result.signalsGenerated} signals generated</span>
+                          <span> — {result.recordsProcessed} records processed, {result.signals_generated} signals generated</span>
                         )}
                       </div>
                     )}
@@ -1277,7 +1277,7 @@ function DataStreamPanel() {
                             onBlur={async (e) => {
                               if (e.target.value !== (stream.apiUrl || "")) {
                                 try {
-                                  await updateStreamConfig.mutateAsync({ streamId: stream.streamId, apiUrl: e.target.value });
+                                  await updateStreamConfig.mutateAsync({ stream_id: stream.stream_id, apiUrl: e.target.value });
                                   toast.success("API URL updated"); refetch();
                                 } catch (err: any) { toast.error(err.message); }
                               }
@@ -1289,7 +1289,7 @@ function DataStreamPanel() {
                             onBlur={async (e) => {
                               if (e.target.value !== (stream.cronExpression || "")) {
                                 try {
-                                  await updateStreamConfig.mutateAsync({ streamId: stream.streamId, cronExpression: e.target.value });
+                                  await updateStreamConfig.mutateAsync({ stream_id: stream.stream_id, cronExpression: e.target.value });
                                   toast.success("Cron updated"); refetch(); refetchScheduler();
                                 } catch (err: any) { toast.error(err.message); }
                               }
@@ -1298,11 +1298,11 @@ function DataStreamPanel() {
                         <div className="col-span-2">
                           <label className="text-[10px] text-muted-foreground">Field Mapping (JSON)</label>
                           <Textarea className="text-[10px] font-mono" rows={2}
-                            defaultValue={stream.fieldMapping ? JSON.stringify(stream.fieldMapping, null, 2) : "{}"}
+                            defaultValue={stream.field_mapping ? JSON.stringify(stream.field_mapping, null, 2) : "{}"}
                             onBlur={async (e) => {
                               try {
                                 const parsed = JSON.parse(e.target.value);
-                                await updateStreamConfig.mutateAsync({ streamId: stream.streamId, fieldMapping: parsed });
+                                await updateStreamConfig.mutateAsync({ stream_id: stream.stream_id, field_mapping: parsed });
                                 toast.success("Field mapping updated"); refetch();
                               } catch (err: any) {
                                 if (err instanceof SyntaxError) toast.error("Invalid JSON");

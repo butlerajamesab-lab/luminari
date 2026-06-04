@@ -144,15 +144,15 @@ const adminControlRouter = router({
 
   addStream: adminProcedure
     .input(z.object({
-      streamId: z.string(),
-      streamName: z.string(),
-      streamType: z.string(),
-      sourceUrl: z.string().optional(),
-      updateFrequency: z.string().optional(),
-      signalWeight: z.number().optional(),
-      confidenceMultiplier: z.number().optional(),
+      stream_id: z.string(),
+      stream_name: z.string(),
+      stream_type: z.string(),
+      source_url: z.string().optional(),
+      update_frequency: z.string().optional(),
+      signal_weight: z.number().optional(),
+      confidence_multiplier: z.number().optional(),
       description: z.string().optional(),
-      fieldMapping: z.record(z.string(), z.string()).optional(),
+      field_mapping: z.record(z.string(), z.string()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const { addStream } = await import("../engines/admin-sovereign-control");
@@ -164,29 +164,29 @@ const adminControlRouter = router({
 
   editStream: adminProcedure
     .input(z.object({
-      streamId: z.string(),
+      stream_id: z.string(),
       updates: z.object({
-        streamName: z.string().optional(),
-        signalWeight: z.number().optional(),
-        confidenceMultiplier: z.number().optional(),
+        stream_name: z.string().optional(),
+        signal_weight: z.number().optional(),
+        confidence_multiplier: z.number().optional(),
         enabled: z.boolean().optional(),
         description: z.string().optional(),
-        sourceUrl: z.string().optional(),
-        updateFrequency: z.string().optional(),
+        source_url: z.string().optional(),
+        update_frequency: z.string().optional(),
       }),
     }))
     .mutation(async ({ ctx, input }) => {
       const { editStream } = await import("../engines/admin-sovereign-control");
-      const result = await editStream(input.streamId, input.updates, ctx.user.id.toString(), ctx.user.name ?? undefined);
+      const result = await editStream(input.stream_id, input.updates, ctx.user.id.toString(), ctx.user.name ?? undefined);
       try { const { refreshSchedules } = await import("../ingestion/scheduler"); await refreshSchedules(); } catch {}
       return result;
     }),
 
   disableStream: adminProcedure
-    .input(z.object({ streamId: z.string() }))
+    .input(z.object({ stream_id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const { disableStream } = await import("../engines/admin-sovereign-control");
-      const result = await disableStream(input.streamId, ctx.user.id.toString(), ctx.user.name ?? undefined);
+      const result = await disableStream(input.stream_id, ctx.user.id.toString(), ctx.user.name ?? undefined);
       try { const { refreshSchedules } = await import("../ingestion/scheduler"); await refreshSchedules(); } catch {}
       return result;
     }),
@@ -249,23 +249,23 @@ const dataStreamRouter = router({
   }),
 
   getStreamDetail: adminProcedure
-    .input(z.object({ streamId: z.string() }))
+    .input(z.object({ stream_id: z.string() }))
     .query(async ({ input }) => {
       const { getStreamDetail } = await import("../engines/data-stream-manager");
-      return getStreamDetail(input.streamId);
+      return getStreamDetail(input.stream_id);
     }),
 
   createStream: adminProcedure
     .input(z.object({
-      streamId: z.string(),
-      streamName: z.string(),
-      streamType: z.string(),
-      sourceUrl: z.string().optional(),
-      updateFrequency: z.string().optional(),
-      signalWeight: z.number().optional(),
-      confidenceMultiplier: z.number().optional(),
+      stream_id: z.string(),
+      stream_name: z.string(),
+      stream_type: z.string(),
+      source_url: z.string().optional(),
+      update_frequency: z.string().optional(),
+      signal_weight: z.number().optional(),
+      confidence_multiplier: z.number().optional(),
       description: z.string().optional(),
-      fieldMapping: z.record(z.string(), z.string()).optional(),
+      field_mapping: z.record(z.string(), z.string()).optional(),
     }))
     .mutation(async ({ input }) => {
       const { createStream } = await import("../engines/data-stream-manager");
@@ -276,30 +276,30 @@ const dataStreamRouter = router({
 
   updateStream: adminProcedure
     .input(z.object({
-      streamId: z.string(),
+      stream_id: z.string(),
       updates: z.object({
-        streamName: z.string().optional(),
-        signalWeight: z.number().optional(),
-        confidenceMultiplier: z.number().optional(),
+        stream_name: z.string().optional(),
+        signal_weight: z.number().optional(),
+        confidence_multiplier: z.number().optional(),
         enabled: z.boolean().optional(),
         description: z.string().optional(),
-        sourceUrl: z.string().optional(),
-        updateFrequency: z.string().optional(),
-        fieldMapping: z.record(z.string(), z.string()).optional(),
+        source_url: z.string().optional(),
+        update_frequency: z.string().optional(),
+        field_mapping: z.record(z.string(), z.string()).optional(),
       }),
     }))
     .mutation(async ({ input }) => {
       const { updateStream } = await import("../engines/data-stream-manager");
-      const result = await updateStream(input.streamId, input.updates);
+      const result = await updateStream(input.stream_id, input.updates);
       try { const { refreshSchedules } = await import("../ingestion/scheduler"); await refreshSchedules(); } catch {}
       return result;
     }),
 
   deleteStream: adminProcedure
-    .input(z.object({ streamId: z.string() }))
+    .input(z.object({ stream_id: z.string() }))
     .mutation(async ({ input }) => {
       const { deleteStream } = await import("../engines/data-stream-manager");
-      const result = await deleteStream(input.streamId);
+      const result = await deleteStream(input.stream_id);
       try { const { refreshSchedules } = await import("../ingestion/scheduler"); await refreshSchedules(); } catch {}
       return result;
     }),
@@ -311,7 +311,7 @@ const dataStreamRouter = router({
 
   getStreamTypes: adminProcedure.query(async () => {
     const { STREAM_TYPES, UPDATE_FREQUENCIES } = await import("../engines/data-stream-manager");
-    return { streamTypes: STREAM_TYPES, updateFrequencies: UPDATE_FREQUENCIES };
+    return { stream_types: STREAM_TYPES, updateFrequencies: UPDATE_FREQUENCIES };
   }),
 });
 
@@ -518,28 +518,28 @@ const executionBridgeRouter = router({
   // Run a single stream — calls triggerManualIngestion (same as ingestion.triggerIngestion)
   runStream: adminProcedure
     .input(z.object({
-      streamId: z.string(),
+      stream_id: z.string(),
       maxRecords: z.number().optional(),
     }))
     .mutation(async ({ input }) => {
       const { triggerManualIngestion } = await import("../ingestion/scheduler");
       const result = await Promise.race([
-        triggerManualIngestion(input.streamId, input.maxRecords),
+        triggerManualIngestion(input.stream_id, input.maxRecords),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), 120_000)),
       ]);
       if (!result) {
-        return { success: true, message: "Ingestion started (running in background)", status: "running" as const, recordsProcessed: 0, signalsGenerated: 0, errors: [] as string[] };
+        return { success: true, message: "Ingestion started (running in background)", status: "running" as const, recordsProcessed: 0, signals_generated: 0, errors: [] as string[] };
       }
       return {
         success: result.success,
         message: result.success
-          ? `Processed ${result.recordsProcessed} records, ${result.signalsGenerated} signals generated`
+          ? `Processed ${result.recordsProcessed} records, ${result.signals_generated} signals generated`
           : `Failed: ${result.errors.join(", ")}`,
         status: (result.success ? "completed" : "failed") as "completed" | "failed",
         recordsProcessed: result.recordsProcessed,
         recordsInserted: result.recordsInserted,
         recordsUpdated: result.recordsUpdated,
-        signalsGenerated: result.signalsGenerated,
+        signals_generated: result.signals_generated,
         errors: result.errors,
         runId: result.runId,
       };
@@ -551,28 +551,28 @@ const executionBridgeRouter = router({
     const { db } = await import("../db");
     const { eq } = await import("drizzle-orm");
     const { triggerManualIngestion } = await import("../ingestion/scheduler");
-    const streams = await db.select({ streamId: dataStreamRegistry.streamId, streamName: dataStreamRegistry.streamName })
+    const streams = await db.select({ stream_id: dataStreamRegistry.stream_id, stream_name: dataStreamRegistry.stream_name })
       .from(dataStreamRegistry)
       .where(eq(dataStreamRegistry.enabled, true));
-    const results: Array<{ streamId: string; streamName: string; success: boolean; message: string }> = [];
+    const results: Array<{ stream_id: string; stream_name: string; success: boolean; message: string }> = [];
     for (const stream of streams) {
       try {
         const result = await Promise.race([
-          triggerManualIngestion(stream.streamId),
+          triggerManualIngestion(stream.stream_id),
           new Promise<null>((resolve) => setTimeout(() => resolve(null), 120_000)),
         ]);
         results.push({
-          streamId: stream.streamId,
-          streamName: stream.streamName ?? stream.streamId,
+          stream_id: stream.stream_id,
+          stream_name: stream.stream_name ?? stream.stream_id,
           success: result?.success ?? true,
           message: result
-            ? (result.success ? `${result.recordsProcessed} records, ${result.signalsGenerated} signals` : result.errors.join(", "))
+            ? (result.success ? `${result.recordsProcessed} records, ${result.signals_generated} signals` : result.errors.join(", "))
             : "Running in background",
         });
       } catch (err) {
         results.push({
-          streamId: stream.streamId,
-          streamName: stream.streamName ?? stream.streamId,
+          stream_id: stream.stream_id,
+          stream_name: stream.stream_name ?? stream.stream_id,
           success: false,
           message: err instanceof Error ? err.message : String(err),
         });
@@ -605,15 +605,15 @@ const executionBridgeRouter = router({
         .groupBy(ingestRuns.datasetId, ingestRuns.id);
       // Deduplicate by datasetId (retry each stream once)
       const uniqueStreams = [...new Set(failedRuns.map(r => r.datasetId))];
-      const results: Array<{ streamId: string; success: boolean; message: string }> = [];
-      for (const streamId of uniqueStreams) {
+      const results: Array<{ stream_id: string; success: boolean; message: string }> = [];
+      for (const stream_id of uniqueStreams) {
         try {
           const result = await Promise.race([
-            triggerManualIngestion(streamId),
+            triggerManualIngestion(stream_id),
             new Promise<null>((resolve) => setTimeout(() => resolve(null), 120_000)),
           ]);
           results.push({
-            streamId,
+            stream_id,
             success: result?.success ?? true,
             message: result
               ? (result.success ? `Retried: ${result.recordsProcessed} records` : result.errors.join(", "))
@@ -621,7 +621,7 @@ const executionBridgeRouter = router({
           });
         } catch (err) {
           results.push({
-            streamId,
+            stream_id,
             success: false,
             message: err instanceof Error ? err.message : String(err),
           });
@@ -638,18 +638,18 @@ const executionBridgeRouter = router({
 
   // Get stream execution status — pulls from ingestion_runs table (same data as Mission Control)
   getStreamStatus: adminProcedure
-    .input(z.object({ streamId: z.string() }))
+    .input(z.object({ stream_id: z.string() }))
     .query(async ({ input }) => {
       const { ingestRuns, dataStreamRegistry } = await import("../../drizzle/schema");
       const { db } = await import("../db");
       const { eq, sql, desc } = await import("drizzle-orm");
       const { isDatasetRunning, isDatasetQueued } = await import("../ingestion/scheduler");
       // Get stream info
-      const [stream] = await db.select().from(dataStreamRegistry).where(eq(dataStreamRegistry.streamId, input.streamId)).limit(1);
+      const [stream] = await db.select().from(dataStreamRegistry).where(eq(dataStreamRegistry.stream_id, input.stream_id)).limit(1);
       // Get recent runs
       const recentRuns = await db.select()
         .from(ingestRuns)
-        .where(eq(ingestRuns.datasetId, input.streamId))
+        .where(eq(ingestRuns.datasetId, input.stream_id))
         .orderBy(desc(ingestRuns.startTime))
         .limit(10);
       // Get aggregate stats
@@ -658,14 +658,14 @@ const executionBridgeRouter = router({
         successfulRuns: sql<number>`SUM(CASE WHEN ${ingestRuns.status} = 'completed' THEN 1 ELSE 0 END)`,
         failedRuns: sql<number>`SUM(CASE WHEN ${ingestRuns.status} = 'failed' THEN 1 ELSE 0 END)`,
         totalRecords: sql<number>`SUM(${ingestRuns.recordsProcessed})`,
-        totalSignals: sql<number>`SUM(${ingestRuns.signalsGenerated})`,
+        totalSignals: sql<number>`SUM(${ingestRuns.signals_generated})`,
       })
         .from(ingestRuns)
-        .where(eq(ingestRuns.datasetId, input.streamId));
+        .where(eq(ingestRuns.datasetId, input.stream_id));
       return {
         stream: stream ?? null,
-        isRunning: isDatasetRunning(input.streamId),
-        isQueued: isDatasetQueued(input.streamId),
+        isRunning: isDatasetRunning(input.stream_id),
+        isQueued: isDatasetQueued(input.stream_id),
         recentRuns,
         stats: stats ?? { totalRuns: 0, successfulRuns: 0, failedRuns: 0, totalRecords: 0, totalSignals: 0 },
       };
@@ -681,18 +681,18 @@ const executionBridgeRouter = router({
 
   // Re-enable an auto-disabled stream
   reenableStream: adminProcedure
-    .input(z.object({ streamId: z.string() }))
+    .input(z.object({ stream_id: z.string() }))
     .mutation(async ({ input }) => {
       const { reenableStream } = await import("../ingestion/scheduler");
-      return reenableStream(input.streamId);
+      return reenableStream(input.stream_id);
     }),
 
   // Reset failure counters for a stream
   resetFailureCounters: adminProcedure
-    .input(z.object({ streamId: z.string() }))
+    .input(z.object({ stream_id: z.string() }))
     .mutation(async ({ input }) => {
       const { resetFailureCounters } = await import("../ingestion/scheduler");
-      return resetFailureCounters(input.streamId);
+      return resetFailureCounters(input.stream_id);
     }),
 
   // Refresh all schedules (re-reads registry, reschedules all)
@@ -703,31 +703,31 @@ const executionBridgeRouter = router({
     return { success: true, ...getSchedulerStatus() };
   }),
 
-  // Update stream configuration (apiUrl, cronExpression, fieldMapping, etc.)
+  // Update stream configuration (apiUrl, cronExpression, field_mapping, etc.)
   updateStreamConfig: adminProcedure
     .input(z.object({
-      streamId: z.string(),
+      stream_id: z.string(),
       apiUrl: z.string().optional(),
       cronExpression: z.string().optional(),
-      fieldMapping: z.record(z.string(), z.string()).optional(),
-      sourceUrl: z.string().optional(),
+      field_mapping: z.record(z.string(), z.string()).optional(),
+      source_url: z.string().optional(),
       parserMode: z.string().optional(),
       postProcessingEngineName: z.string().optional(),
       rationale: z.string().min(10).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const { governedDataStreamConfigChange } = await import("../governance-hooks");
-      const { streamId, rationale, ...updates } = input;
+      const { stream_id, rationale, ...updates } = input;
       const changes: Record<string, unknown> = {};
       if (updates.apiUrl !== undefined) changes.apiUrl = updates.apiUrl;
       if (updates.cronExpression !== undefined) changes.cronExpression = updates.cronExpression;
-      if (updates.fieldMapping !== undefined) changes.fieldMapping = updates.fieldMapping;
-      if (updates.sourceUrl !== undefined) changes.sourceUrl = updates.sourceUrl;
+      if (updates.field_mapping !== undefined) changes.field_mapping = updates.field_mapping;
+      if (updates.source_url !== undefined) changes.source_url = updates.source_url;
       if (updates.parserMode !== undefined) changes.parserMode = updates.parserMode;
       if (updates.postProcessingEngineName !== undefined) changes.postProcessingEngineName = updates.postProcessingEngineName;
       // GOVERNED: Data stream config change
       await governedDataStreamConfigChange({
-        streamId,
+        stream_id,
         changes,
         rationale: rationale ?? `Stream configuration updated via sovereign control: ${Object.keys(changes).join(", ")}`,
         actorId: ctx.user.openId,
@@ -780,27 +780,27 @@ const executionBridgeRouter = router({
 
   // Get stream diagnostics (last run details with full diagnostics)
   getStreamDiagnostics: adminProcedure
-    .input(z.object({ streamId: z.string() }))
+    .input(z.object({ stream_id: z.string() }))
     .query(async ({ input }) => {
       const { ingestRuns, dataStreamRegistry } = await import("../../drizzle/schema");
       const { db } = await import("../db");
       const { eq, desc } = await import("drizzle-orm");
-      const [stream] = await db.select().from(dataStreamRegistry).where(eq(dataStreamRegistry.streamId, input.streamId)).limit(1);
-      const [lastRun] = await db.select().from(ingestRuns).where(eq(ingestRuns.datasetId, input.streamId)).orderBy(desc(ingestRuns.startTime)).limit(1);
+      const [stream] = await db.select().from(dataStreamRegistry).where(eq(dataStreamRegistry.stream_id, input.stream_id)).limit(1);
+      const [lastRun] = await db.select().from(ingestRuns).where(eq(ingestRuns.datasetId, input.stream_id)).orderBy(desc(ingestRuns.startTime)).limit(1);
       return {
         stream: stream ? {
-          streamId: stream.streamId,
-          streamName: stream.streamName,
+          stream_id: stream.stream_id,
+          stream_name: stream.stream_name,
           lastRunStatus: stream.lastRunStatus,
           lastSuccessAt: stream.lastSuccessAt ? Number(stream.lastSuccessAt) : null,
           lastFailureAt: stream.lastFailureAt ? Number(stream.lastFailureAt) : null,
-          lastErrorType: stream.lastErrorType,
-          lastErrorMessage: stream.lastErrorMessage,
+          last_errorType: stream.last_errorType,
+          last_errorMessage: stream.last_errorMessage,
           lastHttpStatus: stream.lastHttpStatus,
           failureCount: stream.failureCount,
-          consecutiveFailures: stream.consecutiveFailures,
+          consecutive_failures: stream.consecutive_failures,
           retryAfterAt: stream.retryAfterAt ? Number(stream.retryAfterAt) : null,
-          autoDisabled: stream.autoDisabled,
+          auto_disabled: stream.auto_disabled,
           disabledReason: stream.disabledReason,
         } : null,
         lastRun: lastRun ? {
@@ -809,7 +809,7 @@ const executionBridgeRouter = router({
           startTime: Number(lastRun.startTime),
           endTime: lastRun.endTime ? Number(lastRun.endTime) : null,
           recordsProcessed: lastRun.recordsProcessed,
-          signalsGenerated: lastRun.signalsGenerated,
+          signals_generated: lastRun.signals_generated,
           errorClassification: lastRun.errorClassification,
           httpStatus: lastRun.httpStatus,
           contentType: lastRun.contentType,
@@ -830,31 +830,31 @@ const executionBridgeRouter = router({
 
   // Reset stream checkpoint — clears lastIngestedAt for force re-ingestion
   resetCheckpoint: adminProcedure
-    .input(z.object({ streamId: z.string() }))
+    .input(z.object({ stream_id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const { resetStreamCheckpoint } = await import("../engines/executor-service");
-      return resetStreamCheckpoint(input.streamId, ctx.user.id.toString(), ctx.user.name ?? undefined);
+      return resetStreamCheckpoint(input.stream_id, ctx.user.id.toString(), ctx.user.name ?? undefined);
     }),
 
   // Force re-ingestion — reset checkpoint + immediately run
   forceReingestion: adminProcedure
-    .input(z.object({ streamId: z.string(), maxRecords: z.number().optional() }))
+    .input(z.object({ stream_id: z.string(), maxRecords: z.number().optional() }))
     .mutation(async ({ ctx, input }) => {
       const { resetStreamCheckpoint } = await import("../engines/executor-service");
-      const resetResult = await resetStreamCheckpoint(input.streamId, ctx.user.id.toString(), ctx.user.name ?? undefined);
-      if (!resetResult.success) return { ...resetResult, recordsProcessed: 0, signalsGenerated: 0 };
+      const resetResult = await resetStreamCheckpoint(input.stream_id, ctx.user.id.toString(), ctx.user.name ?? undefined);
+      if (!resetResult.success) return { ...resetResult, recordsProcessed: 0, signals_generated: 0 };
       // Now run the stream
       const { triggerManualIngestion } = await import("../ingestion/scheduler");
       const result = await Promise.race([
-        triggerManualIngestion(input.streamId, input.maxRecords),
+        triggerManualIngestion(input.stream_id, input.maxRecords),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), 120_000)),
       ]);
-      if (!result) return { success: true, summary: "Checkpoint reset + ingestion started (running in background)", recordsProcessed: 0, signalsGenerated: 0 };
+      if (!result) return { success: true, summary: "Checkpoint reset + ingestion started (running in background)", recordsProcessed: 0, signals_generated: 0 };
       return {
         success: result.success,
-        summary: `Checkpoint reset + ${result.success ? `ingested ${result.recordsProcessed} records, ${result.signalsGenerated} signals` : `failed: ${result.errors.join(", ")}`}`,
+        summary: `Checkpoint reset + ${result.success ? `ingested ${result.recordsProcessed} records, ${result.signals_generated} signals` : `failed: ${result.errors.join(", ")}`}`,
         recordsProcessed: result.recordsProcessed,
-        signalsGenerated: result.signalsGenerated,
+        signals_generated: result.signals_generated,
         errors: result.errors,
       };
     }),
@@ -881,15 +881,15 @@ const executionBridgeRouter = router({
   // Apply stream patch via executor service (with diff, impact analysis, rollback)
   applyStreamPatch: adminProcedure
     .input(z.object({
-      streamId: z.string(),
+      stream_id: z.string(),
       updates: z.object({
-        streamName: z.string().optional(),
+        stream_name: z.string().optional(),
         apiUrl: z.string().optional(),
-        sourceUrl: z.string().optional(),
-        fieldMapping: z.record(z.string(), z.string()).optional(),
+        source_url: z.string().optional(),
+        field_mapping: z.record(z.string(), z.string()).optional(),
         cronExpression: z.string().optional(),
-        signalWeight: z.number().optional(),
-        confidenceMultiplier: z.number().optional(),
+        signal_weight: z.number().optional(),
+        confidence_multiplier: z.number().optional(),
         enabled: z.boolean().optional(),
         postProcessingEngineName: z.string().optional(),
         parserMode: z.string().optional(),
@@ -897,7 +897,7 @@ const executionBridgeRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       const { applyStreamPatch } = await import("../engines/executor-service");
-      const result = await applyStreamPatch(input.streamId, input.updates, ctx.user.id.toString(), ctx.user.name ?? undefined);
+      const result = await applyStreamPatch(input.stream_id, input.updates, ctx.user.id.toString(), ctx.user.name ?? undefined);
       // Refresh schedules if cron changed
       if (result.success && input.updates.cronExpression) {
         try { const { refreshSchedules } = await import("../ingestion/scheduler"); await refreshSchedules(); } catch {}
@@ -936,7 +936,7 @@ const executionBridgeRouter = router({
   // List ingestion runs — same data as Mission Control's listRuns
   listRuns: adminProcedure
     .input(z.object({
-      streamId: z.string().optional(),
+      stream_id: z.string().optional(),
       status: z.enum(["running", "completed", "failed"]).optional(),
       limit: z.number().default(50),
     }).optional())
@@ -945,7 +945,7 @@ const executionBridgeRouter = router({
       const { db } = await import("../db");
       const { eq, sql, desc, and } = await import("drizzle-orm");
       const conditions: any[] = [];
-      if (input?.streamId) conditions.push(eq(ingestRuns.datasetId, input.streamId));
+      if (input?.stream_id) conditions.push(eq(ingestRuns.datasetId, input.stream_id));
       if (input?.status) conditions.push(eq(ingestRuns.status, input.status));
       const runs = await db.select()
         .from(ingestRuns)
