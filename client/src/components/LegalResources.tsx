@@ -234,13 +234,13 @@ function CaseLawCard({ caseItem }: { caseItem: any }) {
             <p className="text-xs font-mono text-muted-foreground leading-tight">
               {caseItem.citation}
             </p>
-            <p className="text-sm font-medium mt-0.5">{caseItem.caseName}</p>
+            <p className="text-sm font-medium mt-0.5">{caseItem.case_name}</p>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-[10px] text-muted-foreground">{caseItem.court}</span>
-              {caseItem.yearDecided && (
+              {caseItem.year_decided && (
                 <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
                   <Clock className="h-2.5 w-2.5" />
-                  {caseItem.yearDecided}
+                  {caseItem.year_decided}
                 </span>
               )}
             </div>
@@ -264,11 +264,11 @@ function CaseLawCard({ caseItem }: { caseItem: any }) {
           )}
 
           {/* Key Quotes */}
-          {caseItem.keyQuotes && caseItem.keyQuotes.length > 0 && (
+          {caseItem.key_quotes && caseItem.key_quotes.length > 0 && (
             <div>
               <p className="text-[10px] uppercase tracking-wider text-amber-400/70 font-semibold mb-1.5">Key Quotes</p>
               <div className="space-y-2">
-                {caseItem.keyQuotes.map((q: any, i: number) => (
+                {caseItem.key_quotes.map((q: any, i: number) => (
                   <div key={i} className="pl-2.5 border-l-2 border-amber-500/30">
                     <div className="flex items-start gap-1.5">
                       <Quote className="h-3 w-3 text-amber-400/50 mt-0.5 shrink-0" />
@@ -285,11 +285,11 @@ function CaseLawCard({ caseItem }: { caseItem: any }) {
           )}
 
           {/* Statutes Interpreted */}
-          {caseItem.statutesInterpreted && caseItem.statutesInterpreted.length > 0 && (
+          {caseItem.statutes_interpreted && caseItem.statutes_interpreted.length > 0 && (
             <div>
               <p className="text-[10px] uppercase tracking-wider text-amber-400/70 font-semibold mb-1">Statutes Interpreted</p>
               <div className="flex flex-wrap gap-1">
-                {caseItem.statutesInterpreted.map((s: string, i: number) => (
+                {caseItem.statutes_interpreted.map((s: string, i: number) => (
                   <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/40 text-muted-foreground font-mono">
                     {s}
                   </span>
@@ -299,17 +299,17 @@ function CaseLawCard({ caseItem }: { caseItem: any }) {
           )}
 
           {/* Subsequent History */}
-          {caseItem.subsequentHistory && (
+          {caseItem.subsequent_history && (
             <div>
               <p className="text-[10px] uppercase tracking-wider text-amber-400/70 font-semibold mb-1">Subsequent History</p>
-              <p className="text-xs text-muted-foreground">{caseItem.subsequentHistory}</p>
+              <p className="text-xs text-muted-foreground">{caseItem.subsequent_history}</p>
             </div>
           )}
 
           {/* Source Link */}
-          {caseItem.sourceUrl && (
+          {caseItem.source_url && (
             <a
-              href={caseItem.sourceUrl}
+              href={caseItem.source_url}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
@@ -349,9 +349,9 @@ function EnforcementCard({ record }: { record: any }) {
     <div className="flex items-start gap-2 p-2.5 rounded-md hover:bg-muted/20 transition-colors">
       <Shield className="h-3.5 w-3.5 text-red-400 mt-0.5 shrink-0" />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium">{record.agencyName}</p>
-        {record.complaintType && (
-          <p className="text-xs text-muted-foreground mt-0.5">{record.complaintType}</p>
+        <p className="text-sm font-medium">{record.agency_name}</p>
+        {record.complaint_type && (
+          <p className="text-xs text-muted-foreground mt-0.5">{record.complaint_type}</p>
         )}
         <div className="flex items-center gap-2 mt-1">
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/30 text-muted-foreground">
