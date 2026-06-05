@@ -462,10 +462,10 @@ function StatuteCard({ statute, navigate }: { statute: any; navigate: (path: str
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
             <span style={{ fontFamily: fontMono, fontSize: 12, fontWeight: 600, color: ll.purple }}>{statute.citation}</span>
             <span style={{ fontFamily: fontMono, fontSize: 10, color: ll.muted }}>{statute.jurisdiction}</span>
-            {statute.effectiveDate && (
+            {statute.effective_date && (
               <span style={{ fontFamily: fontMono, fontSize: 10, color: ll.muted }}>
                 <Clock size={10} style={{ display: "inline", verticalAlign: "middle", marginRight: 3 }} />
-                {new Date(statute.effectiveDate).toLocaleDateString()}
+                {new Date(statute.effective_date).toLocaleDateString()}
               </span>
             )}
           </div>
@@ -530,10 +530,10 @@ function StatuteCard({ statute, navigate }: { statute: any; navigate: (path: str
               </div>
             ) : null;
           })()}
-          {statute.keyRequirements && (
+          {statute.key_requirements && (
             <div style={{ marginBottom: 8 }}>
               <span style={{ fontFamily: fontMono, fontSize: 9, color: ll.gold, textTransform: "uppercase", letterSpacing: "0.1em" }}>Key Requirements</span>
-              <p style={{ fontFamily: fontSans, fontSize: 13, color: ll.paper, lineHeight: 1.6, marginTop: 4 }}>{statute.keyRequirements}</p>
+              <p style={{ fontFamily: fontSans, fontSize: 13, color: ll.paper, lineHeight: 1.6, marginTop: 4 }}>{statute.key_requirements}</p>
             </div>
           )}
           {statute.deadlines && (
@@ -542,7 +542,7 @@ function StatuteCard({ statute, navigate }: { statute: any; navigate: (path: str
               <p style={{ fontFamily: fontSans, fontSize: 13, color: "#fca5a5", lineHeight: 1.6, marginTop: 4 }}>{statute.deadlines}</p>
             </div>
           )}
-          {statute.fullText && (
+          {statute.statute_text && (
             <div style={{ marginTop: 8, marginBottom: 8 }}>
               <span style={{ fontFamily: fontMono, fontSize: 9, color: ll.muted, textTransform: "uppercase", letterSpacing: "0.1em" }}>Statutory Text</span>
               <div style={{
@@ -552,14 +552,14 @@ function StatuteCard({ statute, navigate }: { statute: any; navigate: (path: str
                 maxHeight: 300, overflow: "auto",
                 whiteSpace: "pre-wrap",
               }}>
-                {statute.fullText}
+                {statute.statute_text}
               </div>
             </div>
           )}
           <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-            {statute.sourceUrl && (
+            {statute.source_url && (
               <a
-                href={statute.sourceUrl}
+                href={statute.source_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -597,9 +597,9 @@ function CaseLawCard({ caseLaw, navigate }: { caseLaw: any; navigate: (path: str
 
   // Parse statutesInterpreted
   const statutes: string[] = (() => {
-    if (!caseLaw.statutesInterpreted) return [];
+    if (!caseLaw.statutes_interpreted) return [];
     try {
-      const parsed = typeof caseLaw.statutesInterpreted === "string" ? JSON.parse(caseLaw.statutesInterpreted) : caseLaw.statutesInterpreted;
+      const parsed = typeof caseLaw.statutes_interpreted === "string" ? JSON.parse(caseLaw.statutes_interpreted) : caseLaw.statutes_interpreted;
       return Array.isArray(parsed) ? parsed : [];
     } catch { return []; }
   })();
@@ -613,11 +613,11 @@ function CaseLawCard({ caseLaw, navigate }: { caseLaw: any; navigate: (path: str
     } catch { return []; }
   })();
 
-  // Parse keyQuotes (may be JSON array of objects or a plain string)
+  // Parse key_quotes (may be JSON array of objects or a plain string)
   const quotes: Array<{ quote: string; page?: string; significance?: string; context?: string }> = (() => {
-    if (!caseLaw.keyQuotes) return [];
+    if (!caseLaw.key_quotes) return [];
     try {
-      const parsed = typeof caseLaw.keyQuotes === "string" ? JSON.parse(caseLaw.keyQuotes) : caseLaw.keyQuotes;
+      const parsed = typeof caseLaw.key_quotes === "string" ? JSON.parse(caseLaw.key_quotes) : caseLaw.key_quotes;
       if (Array.isArray(parsed)) return parsed;
       return [];
     } catch { return []; }
@@ -663,9 +663,9 @@ function CaseLawCard({ caseLaw, navigate }: { caseLaw: any; navigate: (path: str
                 background: "rgba(14,116,144,0.1)", border: "1px solid rgba(14,116,144,0.25)", color: ll.teal,
               }}>{caseLaw.jurisdiction}</span>
             )}
-            {caseLaw.yearDecided && <span style={{ fontFamily: fontMono, fontSize: 10, color: ll.muted }}>({caseLaw.yearDecided})</span>}
+            {caseLaw.year_decided && <span style={{ fontFamily: fontMono, fontSize: 10, color: ll.muted }}>({caseLaw.year_decided})</span>}
           </div>
-          <h4 style={{ fontFamily: fontSans, fontSize: 14, fontWeight: 600, color: ll.paper, marginBottom: 4 }}>{caseLaw.caseName}</h4>
+          <h4 style={{ fontFamily: fontSans, fontSize: 14, fontWeight: 600, color: ll.paper, marginBottom: 4 }}>{caseLaw.case_name}</h4>
           {/* Domain badges */}
           {domains.length > 0 && (
             <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
@@ -726,7 +726,7 @@ function CaseLawCard({ caseLaw, navigate }: { caseLaw: any; navigate: (path: str
                 ))}
               </div>
             </div>
-          ) : caseLaw.keyQuotes ? (
+          ) : caseLaw.key_quotes ? (
             <div style={{ marginBottom: 10 }}>
               <span style={{ fontFamily: fontMono, fontSize: 9, color: ll.purple, textTransform: "uppercase", letterSpacing: "0.1em" }}>Key Quotes</span>
               <div style={{
@@ -734,14 +734,14 @@ function CaseLawCard({ caseLaw, navigate }: { caseLaw: any; navigate: (path: str
                 lineHeight: 1.7, marginTop: 4, padding: "12px 16px",
                 borderLeft: `3px solid ${ll.gold}`, background: "rgba(212,160,23,0.04)",
               }}>
-                {caseLaw.keyQuotes}
+                {caseLaw.key_quotes}
               </div>
             </div>
           ) : null}
-          {caseLaw.subsequentHistory && (
+          {caseLaw.subsequent_history && (
             <div style={{ marginBottom: 8 }}>
               <span style={{ fontFamily: fontMono, fontSize: 9, color: ll.muted, textTransform: "uppercase", letterSpacing: "0.1em" }}>Subsequent History</span>
-              <p style={{ fontFamily: fontSans, fontSize: 12, color: ll.muted, lineHeight: 1.5, marginTop: 4 }}>{caseLaw.subsequentHistory}</p>
+              <p style={{ fontFamily: fontSans, fontSize: 12, color: ll.muted, lineHeight: 1.5, marginTop: 4 }}>{caseLaw.subsequent_history}</p>
             </div>
           )}
           {/* Statutes interpreted - detailed view */}
@@ -780,7 +780,7 @@ function CaseLawCard({ caseLaw, navigate }: { caseLaw: any; navigate: (path: str
           {/* Action paths */}
           <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
             <button
-              onClick={() => navigate(`/lumensend?type=appeal&context=${encodeURIComponent(caseLaw.citation + " — " + caseLaw.caseName)}`)}
+              onClick={() => navigate(`/lumensend?type=appeal&context=${encodeURIComponent(caseLaw.citation + " — " + caseLaw.case_name)}`)}
               style={{
                 background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.3)",
                 borderRadius: 4, padding: "6px 12px", cursor: "pointer",
@@ -791,9 +791,9 @@ function CaseLawCard({ caseLaw, navigate }: { caseLaw: any; navigate: (path: str
               <Send size={10} /> Cite in LumenSend
             </button>
             <CommitToCase type="statute" itemId={caseLaw.id} label="Attach to Case" size="sm" />
-            {caseLaw.sourceUrl && (
+            {caseLaw.source_url && (
               <a
-                href={caseLaw.sourceUrl}
+                href={caseLaw.source_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={e => e.stopPropagation()}
@@ -827,7 +827,7 @@ function EnforcementCard({ record }: { record: any }) {
     "SSA": { url: "https://www.ssa.gov/agency/contact/", phone: "1-800-772-1213", address: "6401 Security Blvd, Baltimore, MD 21235" },
     "CMS": { url: "https://www.cms.gov/about-cms/contact-cms", phone: "1-800-633-4227", address: "7500 Security Blvd, Baltimore, MD 21244" },
   };
-  const agencyKey = Object.keys(AGENCY_CONTACT).find(k => record.agency?.includes(k));
+  const agencyKey = Object.keys(AGENCY_CONTACT).find(k => record.agency_name?.includes(k));
   const agencyInfo = agencyKey ? AGENCY_CONTACT[agencyKey] : null;
 
   return (
@@ -844,7 +844,7 @@ function EnforcementCard({ record }: { record: any }) {
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
         <Shield size={14} color={ll.teal} />
-        <span style={{ fontFamily: fontSans, fontSize: 14, fontWeight: 600, color: ll.paper }}>{record.agency}</span>
+        <span style={{ fontFamily: fontSans, fontSize: 14, fontWeight: 600, color: ll.paper }}>{record.agency_name}</span>
         {record.jurisdiction && (
           <span style={{
             fontFamily: fontMono, fontSize: 9, padding: "1px 7px", borderRadius: 4,
@@ -855,19 +855,19 @@ function EnforcementCard({ record }: { record: any }) {
       </div>
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 6 }}>
         <span style={{ fontFamily: fontMono, fontSize: 11, color: ll.muted }}>
-          Type: <span style={{ color: ll.paper }}>{record.complaintType}</span>
+          Type: <span style={{ color: ll.paper }}>{record.complaint_type}</span>
         </span>
         <span style={{ fontFamily: fontMono, fontSize: 11, color: ll.muted }}>
           Outcome: <span style={{ color: record.outcome === "resolved" ? "#34d399" : record.outcome === "dismissed" ? ll.red : ll.amber }}>{record.outcome}</span>
         </span>
-        {record.requiredResponseDays && (
+        {record.required_response_days && (
           <span style={{ fontFamily: fontMono, fontSize: 11, color: ll.muted }}>
-            Required: <span style={{ color: ll.paper }}>{record.requiredResponseDays}d</span>
+            Required: <span style={{ color: ll.paper }}>{record.required_response_days}d</span>
           </span>
         )}
-        {record.observedResponseDays && (
+        {record.observed_response_days && (
           <span style={{ fontFamily: fontMono, fontSize: 11, color: ll.muted }}>
-            Actual: <span style={{ color: record.observedResponseDays > (record.requiredResponseDays || 999) ? ll.red : "#34d399" }}>{record.observedResponseDays}d</span>
+            Actual: <span style={{ color: record.observed_response_days > (record.required_response_days || 999) ? ll.red : "#34d399" }}>{record.observed_response_days}d</span>
           </span>
         )}
       </div>
@@ -895,16 +895,16 @@ function EnforcementCard({ record }: { record: any }) {
               </div>
             </div>
           )}
-          {record.statutoryRequirement && (
+          {record.statutory_requirement && (
             <div style={{ marginBottom: 8 }}>
               <span style={{ fontFamily: fontMono, fontSize: 9, color: ll.gold, textTransform: "uppercase", letterSpacing: "0.1em" }}>Statutory Requirement</span>
-              <p style={{ fontFamily: fontSans, fontSize: 12, color: ll.paper, lineHeight: 1.5, marginTop: 4 }}>{record.statutoryRequirement}</p>
+              <p style={{ fontFamily: fontSans, fontSize: 12, color: ll.paper, lineHeight: 1.5, marginTop: 4 }}>{record.statutory_requirement}</p>
             </div>
           )}
-          {record.patternDescription && (
+          {record.pattern_description && (
             <div style={{ marginBottom: 8 }}>
               <span style={{ fontFamily: fontMono, fontSize: 9, color: ll.red, textTransform: "uppercase", letterSpacing: "0.1em" }}>Documented Pattern</span>
-              <p style={{ fontFamily: fontSans, fontSize: 12, color: "#fca5a5", lineHeight: 1.5, marginTop: 4 }}>{record.patternDescription}</p>
+              <p style={{ fontFamily: fontSans, fontSize: 12, color: "#fca5a5", lineHeight: 1.5, marginTop: 4 }}>{record.pattern_description}</p>
             </div>
           )}
           <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
@@ -943,37 +943,37 @@ function ContradictionCard({ contradiction }: { contradiction: any }) {
         <span style={{ fontFamily: fontMono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: ll.red }}>
           Systemic Contradiction
         </span>
-        {contradiction.reformStatus && (
+        {contradiction.reform_status && (
           <span style={{
             fontFamily: fontMono, fontSize: 9, padding: "2px 8px", borderRadius: 4,
-            background: contradiction.reformStatus === "active" ? "rgba(52,211,153,0.15)" : "rgba(245,158,11,0.15)",
-            color: contradiction.reformStatus === "active" ? "#34d399" : "#fcd34d",
+            background: contradiction.reform_status === "active" ? "rgba(52,211,153,0.15)" : "rgba(245,158,11,0.15)",
+            color: contradiction.reform_status === "active" ? "#34d399" : "#fcd34d",
           }}>
-            {contradiction.reformStatus}
+            {contradiction.reform_status}
           </span>
         )}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 12, marginBottom: 12 }}>
         <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderRadius: 6 }}>
           <span style={{ fontFamily: fontMono, fontSize: 9, color: ll.muted, textTransform: "uppercase", letterSpacing: "0.1em" }}>Doctrine A</span>
-          <p style={{ fontFamily: fontSans, fontSize: 13, color: ll.paper, lineHeight: 1.5, marginTop: 4 }}>{contradiction.doctrineA}</p>
-          {contradiction.citationA && <p style={{ fontFamily: fontMono, fontSize: 10, color: ll.purple, marginTop: 4 }}>{contradiction.citationA}</p>}
+          <p style={{ fontFamily: fontSans, fontSize: 13, color: ll.paper, lineHeight: 1.5, marginTop: 4 }}>{contradiction.doctrine_a}</p>
+          {contradiction.doctrine_a_citation && <p style={{ fontFamily: fontMono, fontSize: 10, color: ll.purple, marginTop: 4 }}>{contradiction.doctrine_a_citation}</p>}
         </div>
         <div style={{ display: "flex", alignItems: "center", color: ll.red, fontFamily: fontMono, fontSize: 18 }}>vs</div>
         <div style={{ padding: "10px 14px", background: "rgba(255,255,255,0.03)", borderRadius: 6 }}>
           <span style={{ fontFamily: fontMono, fontSize: 9, color: ll.muted, textTransform: "uppercase", letterSpacing: "0.1em" }}>Doctrine B</span>
-          <p style={{ fontFamily: fontSans, fontSize: 13, color: ll.paper, lineHeight: 1.5, marginTop: 4 }}>{contradiction.doctrineB}</p>
-          {contradiction.citationB && <p style={{ fontFamily: fontMono, fontSize: 10, color: ll.purple, marginTop: 4 }}>{contradiction.citationB}</p>}
+          <p style={{ fontFamily: fontSans, fontSize: 13, color: ll.paper, lineHeight: 1.5, marginTop: 4 }}>{contradiction.doctrine_b}</p>
+          {contradiction.doctrine_b_citation && <p style={{ fontFamily: fontMono, fontSize: 10, color: ll.purple, marginTop: 4 }}>{contradiction.doctrine_b_citation}</p>}
         </div>
       </div>
       <div style={{ marginBottom: 8 }}>
         <span style={{ fontFamily: fontMono, fontSize: 9, color: ll.amber, textTransform: "uppercase", letterSpacing: "0.1em" }}>The Contradiction</span>
-        <p style={{ fontFamily: fontSans, fontSize: 13, color: ll.paper, lineHeight: 1.6, marginTop: 4 }}>{contradiction.contradictionDescription}</p>
+        <p style={{ fontFamily: fontSans, fontSize: 13, color: ll.paper, lineHeight: 1.6, marginTop: 4 }}>{contradiction.contradiction_description}</p>
       </div>
-      {contradiction.harm && (
+      {contradiction.harm_description && (
         <div>
           <span style={{ fontFamily: fontMono, fontSize: 9, color: ll.red, textTransform: "uppercase", letterSpacing: "0.1em" }}>Who This Harms</span>
-          <p style={{ fontFamily: fontSans, fontSize: 13, color: "#fca5a5", lineHeight: 1.6, marginTop: 4 }}>{contradiction.harm}</p>
+          <p style={{ fontFamily: fontSans, fontSize: 13, color: "#fca5a5", lineHeight: 1.6, marginTop: 4 }}>{contradiction.harm_description}</p>
         </div>
       )}
     </div>

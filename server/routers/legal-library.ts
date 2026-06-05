@@ -1,14 +1,21 @@
 import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
 import {
-  createStatute, getStatuteById, searchStatutes, countStatutes, updateStatute, deleteStatute,
-  createCaseLaw, getCaseLawById, searchCaseLaw, countCaseLaw,
-  createEnforcementRecord, getEnforcementRecordById, searchEnforcementRecords,
-  createWeakJoint, getWeakJointById, searchWeakJoints,
-  createContradiction, getContradictionById, listContradictions,
+  createStatute, getStatuteById, countStatutes, updateStatute, deleteStatute,
+  createCaseLaw, getCaseLawById, countCaseLaw,
+  createEnforcementRecord, getEnforcementRecordById,
+  createWeakJoint, getWeakJointById,
+  createContradiction, getContradictionById,
   getLegalLibraryStats,
   getClausesByStatuteId, getStatuteWithClauses, searchEnrichedStatutes,
 } from "../legal-library-db";
+import {
+  searchRuntimeStatutes,
+  searchRuntimeCaseLaw,
+  searchRuntimeEnforcement,
+  searchRuntimeWeakJoints,
+  listRuntimeContradictions,
+} from "../legal-library-runtime-db";
 import { LEGAL_DOMAINS, type LegalDomain } from "../../drizzle/schema";
 
 const domainEnum = z.enum(LEGAL_DOMAINS as unknown as [string, ...string[]]);
@@ -29,12 +36,12 @@ export const legalLibraryRouter = router({
       jurisdiction: z.string().optional(),
       domain: domainEnum.optional(),
       query: z.string().optional(),
-      sourceType: z.string().optional(),
+      source_type: z.string().optional(),
       limit: z.number().min(1).max(200).optional(),
       offset: z.number().min(0).optional(),
     }))
     .query(async ({ input }) => {
-      return searchStatutes({ ...input, domain: input.domain as LegalDomain | undefined });
+      return searchRuntimeStatutes({ ...input, domain: input.domain as LegalDomain | undefined });
     }),
 
   getStatute: publicProcedure
@@ -55,7 +62,7 @@ export const legalLibraryRouter = router({
       keyRequirements: z.array(z.string()).optional(),
       deadlines: z.array(z.object({ description: z.string(), days: z.number(), from: z.string() })).optional(),
       effectiveDate: z.number().optional(),
-      sourceUrl: z.string().optional(),
+      source_url: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       const id = await createStatute({ ...input, domains: castDomains(input.domains), addedBy: ctx.user.name ?? ctx.user.openId });
@@ -72,7 +79,7 @@ export const legalLibraryRouter = router({
       domains: z.array(z.string()).optional(),
       keyRequirements: z.array(z.string()).optional(),
       deadlines: z.array(z.object({ description: z.string(), days: z.number(), from: z.string() })).optional(),
-      sourceUrl: z.string().optional(),
+      source_url: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
@@ -98,7 +105,7 @@ export const legalLibraryRouter = router({
       offset: z.number().min(0).optional(),
     }))
     .query(async ({ input }) => {
-      return searchCaseLaw({ ...input, domain: input.domain as LegalDomain | undefined });
+      return searchRuntimeCaseLaw({ ...input, domain: input.domain as LegalDomain | undefined });
     }),
 
   getCaseLaw: publicProcedure
@@ -111,15 +118,15 @@ export const legalLibraryRouter = router({
     .input(z.object({
       jurisdiction: z.string(),
       citation: z.string(),
-      caseName: z.string(),
+      case_name: z.string(),
       court: z.string(),
-      yearDecided: z.number().optional(),
+      year_decided: z.number().optional(),
       holding: z.string().optional(),
-      keyQuotes: z.array(z.object({ quote: z.string(), page: z.string().optional(), context: z.string().optional() })).optional(),
+      key_quotes: z.array(z.object({ quote: z.string(), page: z.string().optional(), context: z.string().optional() })).optional(),
       statutesInterpreted: z.array(z.string()).optional(),
       domains: z.array(domainEnum),
       subsequentHistory: z.string().optional(),
-      sourceUrl: z.string().optional(),
+      source_url: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       const id = await createCaseLaw({ ...input, domains: castDomains(input.domains), addedBy: ctx.user.name ?? ctx.user.openId });
@@ -136,7 +143,7 @@ export const legalLibraryRouter = router({
       offset: z.number().min(0).optional(),
     }))
     .query(async ({ input }) => {
-      return searchEnforcementRecords({ ...input, domain: input.domain as LegalDomain | undefined });
+      return searchRuntimeEnforcement({ ...input, domain: input.domain as LegalDomain | undefined });
     }),
 
   getEnforcement: publicProcedure
@@ -148,16 +155,16 @@ export const legalLibraryRouter = router({
   createEnforcement: protectedProcedure
     .input(z.object({
       jurisdiction: z.string(),
-      agencyName: z.string(),
-      complaintType: z.string().optional(),
+      agency_name: z.string(),
+      complaint_type: z.string().optional(),
       domains: z.array(domainEnum),
       statutoryRequirement: z.string().optional(),
-      statuteCitation: z.string().optional(),
+      statute_citation: z.string().optional(),
       outcome: z.string().optional(),
-      requiredResponseDays: z.number().optional(),
-      observedResponseDays: z.number().optional(),
+      required_response_days: z.number().optional(),
+      observed_response_days: z.number().optional(),
       patternDescription: z.string().optional(),
-      dataSource: z.string().optional(),
+      data_source: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       const id = await createEnforcementRecord({ ...input, domains: castDomains(input.domains), addedBy: ctx.user.name ?? ctx.user.openId });
@@ -174,7 +181,7 @@ export const legalLibraryRouter = router({
       offset: z.number().min(0).optional(),
     }))
     .query(async ({ input }) => {
-      return searchWeakJoints({ ...input, domain: input.domain as LegalDomain | undefined });
+      return searchRuntimeWeakJoints({ ...input, domain: input.domain as LegalDomain | undefined });
     }),
 
   getWeakJoint: publicProcedure
@@ -186,7 +193,7 @@ export const legalLibraryRouter = router({
   createWeakJoint: protectedProcedure
     .input(z.object({
       jurisdiction: z.string(),
-      statuteCitation: z.string(),
+      statute_citation: z.string(),
       statuteId: z.number().optional(),
       whatLawRequires: z.string(),
       whatActuallyHappens: z.string(),
@@ -210,7 +217,7 @@ export const legalLibraryRouter = router({
       offset: z.number().min(0).optional(),
     }))
     .query(async ({ input }) => {
-      return listContradictions({ ...input, domain: input.domain as LegalDomain | undefined });
+      return listRuntimeContradictions({ ...input, domain: input.domain as LegalDomain | undefined });
     }),
 
   getContradiction: publicProcedure
