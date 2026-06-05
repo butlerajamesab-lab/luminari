@@ -114,21 +114,21 @@ function logRuntimeRowShape(scope: string, row: Record<string, any> | undefined)
 
 function normalizeEnforcementRow(rawRow: any) {
   const row = jsonDomains(rawRow ?? {});
-  const sourceValue = firstValue(row, ["data_source", key(["data", "Source"]), "source", "source_ref", "source_reference", "url", "filing_url", "complaint_url"]);
-  const urlValue = firstValue(row, ["source_url", key(["source", "Url"]), "url", "filing_url", "complaint_url", "portal_url"]) ?? (typeof sourceValue === "string" && /^https?:\/\//i.test(sourceValue) ? sourceValue : null);
+  const sourceValue = firstValue(row, ["data_source", key(["data", "Source"]), "source", "source_name", "source_ref", "source_reference", "source_table", "dataset", "source_url", key(["source", "Url"]), "url", "filing_url", "complaint_url", "portal_url"]);
+  const urlValue = firstValue(row, ["source_url", key(["source", "Url"]), "url", "website", "website_url", "agency_url", "filing_url", "complaint_url", "portal_url"]) ?? (typeof sourceValue === "string" && /^https?:\/\//i.test(sourceValue) ? sourceValue : null);
 
   return {
     id: firstValue(row, ["id", "enforcement_id", "record_id"]),
     jurisdiction: firstValue(row, ["jurisdiction", "state", "state_code", "jurisdiction_code"]),
     agency_name: firstValue(row, ["agency_name", "agency", "agency_short", "agency_abbreviation", "normalized_entity", key(["agency", "Name"]), key(["agency", "Short"])]),
-    complaint_type: firstValue(row, ["complaint_type", "type", "complaint", "category", "program_area", "normalized_category", key(["complaint", "Type"])]),
+    complaint_type: firstValue(row, ["complaint_type", key(["complaint", "Type"]), "complaint_category", "complaint_types", "complaint", "type", "category", "program_area", "normalized_category", "action_type", "record_type", "domains"]),
     domains: normalizeDomainsValue(firstValue(row, ["domains", "domain", "legal_domains", "tags"])),
-    statutory_requirement: firstValue(row, ["statutory_requirement", "statutory_authority", "authority", "requirement", "statute", key(["statutory", "Requirement"])]),
-    statute_citation: firstValue(row, ["statute_citation", "citation", "statute", "statutory_authority", key(["statute", "Citation"])]),
-    outcome: firstValue(row, ["outcome", "status", "result", "disposition"]),
-    required_response_days: firstValue(row, ["required_response_days", "required_days", "deadline_days", "response_timeline_days", "response_days", key(["required", "Response", "Days"])]),
-    observed_response_days: firstValue(row, ["observed_response_days", "observed_days", "actual_response_days", "actual_days", key(["observed", "Response", "Days"])]),
-    pattern_description: firstValue(row, ["pattern_description", "description", "details", "notes", "summary", "pattern", key(["pattern", "Description"])]),
+    statutory_requirement: firstValue(row, ["statutory_requirement", key(["statutory", "Requirement"]), "statutory_authority", "authority", "requirement", "statute", "legal_authority", "authority_text", "statutory_basis"]),
+    statute_citation: firstValue(row, ["statute_citation", key(["statute", "Citation"]), "citation", "statute", "statutory_authority", "legal_authority", "authority_citation"]),
+    outcome: firstValue(row, ["outcome", "outcomes", "case_outcome", "enforcement_outcome", "enforcement_result", "resolution", "resolution_status", "status", "result", "disposition", "action_status"]),
+    required_response_days: firstValue(row, ["required_response_days", key(["required", "Response", "Days"]), "required_days", "deadline_days", "response_timeline_days", key(["response", "Timeline", "Days"]), "timeline_days", "response_days", "statutory_response_days", "required_response_time_days"]),
+    observed_response_days: firstValue(row, ["observed_response_days", key(["observed", "Response", "Days"]), "observed_days", "actual_response_days", "actual_days", "measured_response_days", "average_response_days"]),
+    pattern_description: firstValue(row, ["pattern_description", key(["pattern", "Description"]), "description", "details", "notes", "summary", "pattern", "pattern_summary", "documented_pattern", "issue_description"]),
     data_source: sourceValue,
     source_url: urlValue,
     created_at: normalizeTimestamp(firstValue(row, ["created_at", key(["created", "At"]), "inserted_at"])),
