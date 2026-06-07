@@ -2,8 +2,6 @@ FROM node:22-bookworm-slim
 
 WORKDIR /app
 
-ENV NODE_ENV=production
-
 COPY package.json tsconfig.json ./
 
 RUN npm install
@@ -13,6 +11,8 @@ COPY src ./src
 
 RUN npm run build
 RUN npm prune --omit=dev
+
+ENV NODE_ENV=production
 
 EXPOSE 8787
 
