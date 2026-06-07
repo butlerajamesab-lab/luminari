@@ -1,1 +1,9 @@
--- placeholder
+-- Luminari corpus import queue handoff placeholder
+-- The full generated SQL file is too large to push through this chat's GitHub text API safely.
+-- Use the generated artifact from this chat instead: /mnt/data/luminari_import_queue_full.sql
+-- Purpose of that file:
+-- 1. create public.corpus_import_queue
+-- 2. insert uploaded corpus payloads as staging rows
+-- 3. run queue + canonical count audit queries
+-- 4. let Codex/Supabase read corpus payloads from SQL instead of file uploads
+-- Do not treat this placeholder as the corpus payload.
