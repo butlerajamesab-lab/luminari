@@ -975,21 +975,44 @@ function buildOpenApiDocument(): Record<string, unknown> {
   };
 }
 
+function getErrorStatusCode(error: unknown): number {
+  if (error instanceof PublicError) {
+    return error.statusCode;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "statusCode" in error &&
+    typeof (error as { statusCode: unknown }).statusCode === "number"
+  ) {
+    return (error as { statusCode: number }).statusCode;
+  }
+
+  return 500;
+}
+
+function getErrorMessage(error: unknown, statusCode: number): string {
+  if (statusCode >= 500) {
+    return "Internal server error";
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Request failed";
+}
+
 function buildServer(): FastifyInstance {
   const app = Fastify({
     logger: true,
     bodyLimit: config.bodyLimitBytes
   });
 
-  app.setErrorHandler((error, request, reply) => {
-    const statusCode =
-      error instanceof PublicError
-        ? error.statusCode
-        : typeof error.statusCode === "number"
-          ? error.statusCode
-          : 500;
-
-    const message = statusCode >= 500 ? "Internal server error" : error.message;
+  app.setErrorHandler((error: unknown, request, reply) => {
+    const statusCode = getErrorStatusCode(error);
+    const message = getErrorMessage(error, statusCode);
 
     if (statusCode >= 500) {
       request.log.error({ err: error }, "Unhandled renderer error");
