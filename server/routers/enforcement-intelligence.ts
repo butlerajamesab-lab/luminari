@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { router, publicProcedure } from "../_core/trpc";
-import { db } from "../db";
+import { db, getPool } from "../db";
 import {
   agencyForms, regulatoryGuidance, enforcementPenalties,
   enforcementViabilityRules,
@@ -79,26 +79,102 @@ export const enforcementIntelligenceRouter = router({
 
   // ═══ Doctrine Graph ═══
   listDoctrines: publicProcedure.query(async () => {
-    return db.select().from(doctrineRegistry).orderBy(doctrineRegistry.name);
+    const { rows } = await getPool().query(`
+      select
+        id,
+        name,
+        description,
+        primary_cases as "primaryCases",
+        domains,
+        added_by as "addedBy",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      from public.doctrine_registry
+      order by name
+    `);
+    return rows ?? [];
   }),
 
   getDoctrine: publicProcedure
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: z.string().uuid() }))
     .query(async ({ input }) => {
-      const [row] = await db.select().from(doctrineRegistry).where(eq(doctrineRegistry.id, input.id));
-      return row ?? null;
+      const { rows } = await getPool().query(`
+        select
+          id,
+          name,
+          description,
+          primary_cases as "primaryCases",
+          domains,
+          added_by as "addedBy",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        from public.doctrine_registry
+        where id = $1
+        limit 1
+      `, [input.id]);
+      return rows[0] ?? null;
     }),
 
   listDoctrineEdges: publicProcedure
     .input(z.object({ edgeType: z.string().optional() }).optional())
     .query(async ({ input }) => {
-      const where = input?.edgeType ? eq(doctrineGraphEdges.edgeType, input.edgeType as any) : undefined;
-      return db.select().from(doctrineGraphEdges).where(where).orderBy(doctrineGraphEdges.fromType, doctrineGraphEdges.edgeType);
+      const params: unknown[] = [];
+      const where = input?.edgeType ? `where edge_type = $1` : "";
+      if (input?.edgeType) params.push(input.edgeType);
+      const { rows } = await getPool().query(`
+        select
+          id,
+          from_type as "fromType",
+          from_id as "fromId",
+          edge_type as "edgeType",
+          to_type as "toType",
+          to_id as "toId",
+          strength,
+          notes,
+          added_by as "addedBy",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        from public.doctrine_graph_edges
+        ${where}
+        order by from_type, edge_type
+      `, params);
+      return rows ?? [];
     }),
 
   getDoctrineGraph: publicProcedure.query(async () => {
-    const doctrines = await db.select().from(doctrineRegistry).orderBy(doctrineRegistry.name);
-    const edges = await db.select().from(doctrineGraphEdges).orderBy(doctrineGraphEdges.fromType, doctrineGraphEdges.edgeType);
+    const [doctrineResult, edgeResult] = await Promise.all([
+      getPool().query(`
+        select
+          id,
+          name,
+          description,
+          primary_cases as "primaryCases",
+          domains,
+          added_by as "addedBy",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        from public.doctrine_registry
+        order by name
+      `),
+      getPool().query(`
+        select
+          id,
+          from_type as "fromType",
+          from_id as "fromId",
+          edge_type as "edgeType",
+          to_type as "toType",
+          to_id as "toId",
+          strength,
+          notes,
+          added_by as "addedBy",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        from public.doctrine_graph_edges
+        order by from_type, edge_type
+      `),
+    ]);
+    const doctrines = doctrineResult.rows ?? [];
+    const edges = edgeResult.rows ?? [];
     // Group edges by fromType for visualization
     const byFromType: Record<string, typeof edges> = {};
     for (const e of edges) {
