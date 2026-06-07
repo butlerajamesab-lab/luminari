@@ -9,6 +9,8 @@ import {
   findDataDirectories,
   findFilesByBasename,
   getTableColumns,
+  inferDomainTags,
+  inferPipelineContext,
   parseArgs,
   repoRoot,
   safeCount,
@@ -108,6 +110,82 @@ function estimateQueueRecordCount(row) {
   return null;
 }
 
+function canonicalQueueSourceName(sourceName) {
+  const match = normalizeSourceName(sourceName).match(/^cream:(.+):(\d+)$/);
+  return match ? match[1] : sourceName;
+}
+
+function normalizeSourceName(sourceName) {
+  return String(sourceName ?? "").trim();
+}
+
+function addCount(map, key, count) {
+  if (!key || typeof count !== "number" || Number.isNaN(count)) return;
+  map.set(key, (map.get(key) ?? 0) + count);
+}
+
+function transformDisposition(row) {
+  const sourceName = normalizeSourceName(row.source_name);
+  const payload = row.payload ?? {};
+  const targetHint = String(row.target_hint ?? "").toLowerCase();
+  const sourceType = String(row.source_type ?? "").toLowerCase();
+  const domains = payload.domains ?? payload.domain_tags ?? [];
+  const contexts = inferPipelineContext(payload.title, payload.description, payload.summary, domains, targetHint);
+  const domainTags = Array.isArray(domains) && domains.length ? domains : inferDomainTags(payload.title, payload.description, payload.summary, targetHint);
+
+  if (!sourceName.startsWith("cream:") && !targetHint.includes("cream of crop")) {
+    return { readyForCanonicalImport: false, requiresTransformation: true, reason: "not_cream_starter_row", pipeline_context: contexts, domain_tags: domainTags };
+  }
+
+  if (sourceType !== "curated_json_record" || !payload || typeof payload !== "object") {
+    return { readyForCanonicalImport: false, requiresTransformation: true, reason: "not_a_single_curated_json_payload", pipeline_context: contexts, domain_tags: domainTags };
+  }
+
+  if (/legal_weak_joints_priority4\.json/.test(sourceName)) {
+    return { readyForCanonicalImport: Boolean(payload.weakJointId && payload.title), requiresTransformation: true, transformProfile: "weak_joint_payload_to_public_legal_weak_joints", reason: "canonical field names must be mapped from curated weak-joint payload", pipeline_context: contexts, domain_tags: domainTags };
+  }
+  if (/legal_statutes_priority2\.json/.test(sourceName)) {
+    return { readyForCanonicalImport: Boolean(payload.citation && (payload.shortTitle || payload.short_title)), requiresTransformation: true, transformProfile: "statute_payload_to_public_legal_statutes", reason: "shortTitle/effectiveDate/sourceUrl camelCase payload must be normalized before canonical insert", pipeline_context: contexts, domain_tags: domainTags };
+  }
+  if (/enforcement|agency/.test(sourceName)) {
+    return { readyForCanonicalImport: Boolean(payload.agency_name || payload.agencyName), requiresTransformation: true, transformProfile: "enforcement_payload_to_legal_enforcement_or_agency_authority", reason: "enforcement records still require target-table fit review", pipeline_context: contexts, domain_tags: domainTags };
+  }
+
+  return { readyForCanonicalImport: false, requiresTransformation: true, reason: "no_transform_profile_for_source", pipeline_context: contexts, domain_tags: domainTags };
+}
+
+async function readStagedCandidateEdges(pool) {
+  const exists = pool ? await tableExists(pool, "corpus_graph_candidate_edges") : false;
+  if (!exists) return { exists, rows: [], grouped: [], safeToPromote: [], requiresReview: [] };
+  const result = await pool.query(`select * from public.corpus_graph_candidate_edges order by id`);
+  const grouped = [...result.rows.reduce((acc, row) => {
+    const key = [row.from_type, row.edge_type, row.to_type, row.strength].join("|");
+    const current = acc.get(key) ?? { from_type: row.from_type, edge_type: row.edge_type, to_type: row.to_type, strength: row.strength, count: 0 };
+    current.count += 1;
+    acc.set(key, current);
+    return acc;
+  }, new Map()).values()].sort((a, b) => b.count - a.count || a.from_type.localeCompare(b.from_type));
+
+  const classify = (row) => {
+    const confidence = Number(row.confidence ?? 0);
+    const approved = ["approved", "ready_for_promotion", "promote"].includes(String(row.review_status ?? "").toLowerCase());
+    const strong = String(row.strength ?? "").toLowerCase() === "strong";
+    return { ...row, promotion_blockers: [
+      approved ? null : "review_status_not_approved",
+      strong ? null : "strength_not_strong",
+      confidence >= 0.85 ? null : "confidence_below_0_85",
+    ].filter(Boolean) };
+  };
+  const classified = result.rows.map(classify);
+  return {
+    exists,
+    rows: result.rows,
+    grouped,
+    safeToPromote: classified.filter((row) => row.promotion_blockers.length === 0),
+    requiresReview: classified.filter((row) => row.promotion_blockers.length > 0),
+  };
+}
+
 async function main() {
   const dataDirs = findDataDirectories(args.dataDir);
   const sourceNames = [...new Set([...sourceMappings.map((mapping) => mapping.sourceName), ...batchSourceNames])];
@@ -117,11 +195,15 @@ async function main() {
   const queue = await readQueueRows(pool);
   const rows = [];
   const targetTablesInspected = new Set();
+  const stagedEdges = await readStagedCandidateEdges(pool);
   const queueCountsBySource = new Map();
+  const queueCountsByCanonicalSource = new Map();
   for (const queueRow of queue.rows) {
     const sourceName = queueRow.source_name ?? queueRow.sourceName;
     if (!sourceName) continue;
-    queueCountsBySource.set(sourceName, estimateQueueRecordCount(queueRow));
+    const count = estimateQueueRecordCount(queueRow);
+    addCount(queueCountsBySource, sourceName, count);
+    addCount(queueCountsByCanonicalSource, canonicalQueueSourceName(sourceName), count);
   }
 
   for (const mapping of sourceMappings) {
@@ -138,8 +220,8 @@ async function main() {
       }
     }
 
-    if (sourceCount === null && queueCountsBySource.has(mapping.sourceName)) {
-      sourceCount = queueCountsBySource.get(mapping.sourceName);
+    if (sourceCount === null && queueCountsByCanonicalSource.has(mapping.sourceName)) {
+      sourceCount = queueCountsByCanonicalSource.get(mapping.sourceName);
     }
 
     const targetReports = [];
@@ -188,6 +270,27 @@ async function main() {
       rowCount: queue.rows.length,
       rows: queue.displayRows ?? [],
       payloadRecordCounts: Object.fromEntries(queueCountsBySource),
+      canonicalPayloadRecordCounts: Object.fromEntries(queueCountsByCanonicalSource),
+    },
+    creamSubstrate: {
+      stagedRecordCount: queue.rows.filter((row) => normalizeSourceName(row.source_name).startsWith("cream:")).reduce((sum, row) => sum + (estimateQueueRecordCount(row) ?? 0), 0),
+      stagedRows: queue.rows.filter((row) => normalizeSourceName(row.source_name).startsWith("cream:")).map((row) => ({
+        source_name: row.source_name,
+        source_type: row.source_type,
+        import_status: row.import_status,
+        target_hint: row.target_hint,
+        disposition: transformDisposition(row),
+      })),
+      readyForCanonicalImport: queue.rows.filter((row) => transformDisposition(row).readyForCanonicalImport).map((row) => row.source_name),
+      requiresTransformation: queue.rows.filter((row) => transformDisposition(row).requiresTransformation).map((row) => ({ source_name: row.source_name, ...transformDisposition(row) })),
+    },
+    stagedCandidateEdges: {
+      exists: stagedEdges.exists,
+      count: stagedEdges.rows.length,
+      groupedByFromEdgeToStrength: stagedEdges.grouped,
+      safeEnoughToPromote: stagedEdges.safeToPromote,
+      requiresReview: stagedEdges.requiresReview,
+      promotionPolicy: "Only approved/ready_for_promotion rows with strength='strong' and confidence >= 0.85 are considered safe enough; pending_review rows remain review-only.",
     },
     dataDirectoriesSearched: dataDirs.map((dir) => path.relative(repoRoot, dir) || "."),
     targetTablesInspected: [...targetTablesInspected].sort(),
@@ -214,6 +317,8 @@ async function main() {
   }));
   console.table(tableRows);
   console.log(`\nQueue rows: ${queue.exists ? queue.rows.length : "corpus_import_queue missing"}`);
+  console.log(`Cream staged records: ${output.creamSubstrate.stagedRecordCount}`);
+  console.table(output.stagedCandidateEdges.groupedByFromEdgeToStrength);
   console.log(JSON.stringify(output, null, 2));
 
   if (pool) await pool.end();

@@ -106,6 +106,26 @@ export function normalizeName(value) {
   return normalizeText(value).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
 }
 
+
+export function asArray(value) {
+  if (value === null || value === undefined) return [];
+  if (Array.isArray(value)) return value;
+  return [value];
+}
+
+export function normalizeIdentifier(value) {
+  return normalizeText(value)
+    .toLowerCase()
+    .replace(/[§–—-]/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+export function tableDisplayName(tableName) {
+  return tableName.includes(".") ? tableName : `public.${tableName}`;
+}
+
 export function uniqueBy(items, keyFn) {
   const seen = new Set();
   const out = [];
@@ -216,15 +236,19 @@ export function inferDomainTags(...values) {
 }
 
 export function extractCitations(...values) {
-  const text = values.map(normalizeText).join(" \n ");
+  const text = values.flatMap(asArray).map(normalizeText).join(" \n ");
+  const section = "(?:§|§§|sections?|secs?\\.)?";
+  const sectionBody = "[\\w.:()–—-]+(?:\\s*(?:,|and|or|–|—|-)\\s*[\\w.:()–—-]+)*[a-z]?";
   const patterns = [
-    /\b\d+\s+U\.S\.C\.\s*§?\s*[\w.-]+(?:\([^)]+\))*/gi,
-    /\b\d+\s+C\.F\.R\.\s*§?\s*[\w.-]+(?:\([^)]+\))*/gi,
-    /\b[A-Z][a-z]+\s+Rev\.\s+Code\s*§?\s*[\w.-]+/g,
-    /\b[A-Z]{2,}\s+Code\s*§?\s*[\w.-]+/g,
+    new RegExp(`\\b\\d+\\s+U\\.S\\.C\\.\\s*${section}\\s*${sectionBody}`, "gi"),
+    new RegExp(`\\b\\d+\\s+C\\.F\\.R\\.\\s*${section}\\s*${sectionBody}`, "gi"),
+    /\b[A-Z][a-z]+\.?\s+Stat\.?\s*§{1,2}\s*[\w.:()–—-]+/g,
+    /\b[A-Z][a-z]+\s+Rev\.\s+Code\s*§{0,2}\s*[\w.:()–—-]+/g,
+    /\b[A-Z]\.[A-Z]\.\s+Stat\.\s*§{0,2}\s*[\w.:()–—-]+/g,
+    /\b[A-Z]{2,}\s+Code\s*§{0,2}\s*[\w.:()–—-]+/g,
   ];
   const citations = [];
-  for (const pattern of patterns) citations.push(...text.matchAll(pattern).map((match) => match[0].replace(/\s+/g, " ").trim()));
+  for (const pattern of patterns) citations.push(...text.matchAll(pattern).map((match) => match[0].replace(/\s+/g, " ").trim().replace(/[.;:,]+$/, "")));
   return [...new Set(citations)];
 }
 

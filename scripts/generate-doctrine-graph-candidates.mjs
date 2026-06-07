@@ -2,10 +2,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
+  asArray,
   createPool,
   extractCitations,
   inferDomainTags,
   inferPipelineContext,
+  normalizeIdentifier,
   normalizeName,
   normalizeText,
   parseArgs,
@@ -45,6 +47,46 @@ function getAny(row, names) {
 
 function idOf(row, preferred = []) {
   return normalizeText(getAny(row, [...preferred, "id", "citation", "weak_joint_id", "weakJointId", "name", "title"]));
+}
+
+function numericConfidence(value) {
+  if (typeof value === "number") return value;
+  const text = String(value ?? "").toLowerCase();
+  if (text === "high") return 0.9;
+  if (text === "medium") return 0.65;
+  if (text === "low") return 0.35;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeArrayField(value) {
+  if (Array.isArray(value)) return value.map(normalizeText).filter(Boolean);
+  if (value === null || value === undefined || value === "") return [];
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      try {
+        return normalizeArrayField(JSON.parse(trimmed));
+      } catch {
+        // Fall through to comma splitting.
+      }
+    }
+    return trimmed.split(",").map((item) => item.trim()).filter(Boolean);
+  }
+  return asArray(value).map(normalizeText).filter(Boolean);
+}
+
+function citationKeys(...values) {
+  return extractCitations(...values).map(normalizeIdentifier).filter(Boolean);
+}
+
+function statuteForCitation(statutesByCitation, citation) {
+  const key = normalizeIdentifier(citation);
+  if (statutesByCitation.has(key)) return statutesByCitation.get(key);
+  for (const [statuteKey, statute] of statutesByCitation.entries()) {
+    if (statuteKey && key && (statuteKey.includes(key) || key.includes(statuteKey))) return statute;
+  }
+  return null;
 }
 
 function makeCandidate(fields) {
@@ -103,6 +145,8 @@ async function generate() {
       candidateCount: 0,
       reviewBucketCount: 0,
       countsByFromToEdgeStrength: {},
+      stagedCandidateEdgeCount: 0,
+      stagedCountsByFromToEdgeStrength: {},
       candidates: [],
       reviewBucket: [],
     };
@@ -113,7 +157,7 @@ async function generate() {
     return { pool, output };
   }
 
-  const [doctrines, weakJoints, statutes, agencyAuthority, enforcement, claimElements, agencies, oversightBodies, escalationRegistry, escalationRoutes] = await Promise.all([
+  const [doctrines, weakJoints, statutes, agencyAuthority, enforcement, claimElements, agencies, oversightBodies, escalationRegistry, escalationRoutes, stagedCandidateEdges] = await Promise.all([
     readRows(pool, "doctrine_registry"),
     readRows(pool, "legal_weak_joints"),
     readRows(pool, "legal_statutes"),
@@ -124,10 +168,38 @@ async function generate() {
     readRows(pool, "registry_oversight_bodies"),
     readRows(pool, "escalation_registry"),
     readRows(pool, "escalation_routes"),
+    readRows(pool, "corpus_graph_candidate_edges"),
   ]);
 
   const candidates = [];
   const reviewBucket = [];
+
+  for (const edge of stagedCandidateEdges.rows) {
+    const candidate = makeCandidate({
+      fromType: edge.from_type,
+      fromId: edge.from_id,
+      edgeType: edge.edge_type,
+      toType: edge.to_type,
+      toId: edge.to_id,
+      strength: edge.strength,
+      notes: `Staged manual curated edge from corpus_graph_candidate_edges with review_status=${edge.review_status ?? "pending_review"}.`,
+      sourceRule: "staged_manual_curated_candidate_edge",
+      sourceTable: "public.corpus_graph_candidate_edges",
+      sourceId: edge.id ?? edge.source_id,
+      evidenceText: edge.evidence_basis,
+      evidenceBasis: edge.evidence_basis,
+      pipelineContext: normalizeArrayField(edge.pipeline_context),
+      userLens: normalizeArrayField(edge.user_lens),
+      domainTags: normalizeArrayField(edge.domain_tags),
+      jurisdiction: edge.jurisdiction,
+      confidence: edge.confidence ?? "low",
+      reviewBucket: !["approved", "ready_for_promotion", "promote"].includes(String(edge.review_status ?? "pending_review").toLowerCase())
+        || String(edge.strength ?? "").toLowerCase() !== "strong"
+        || numericConfidence(edge.confidence) < 0.85,
+    });
+    if (candidate.reviewBucket) reviewBucket.push(candidate);
+    else candidates.push(candidate);
+  }
 
   for (const weakJoint of weakJoints.rows) {
     const evidence = [weakJoint.title, weakJoint.description, weakJoint.metadata].map(normalizeText).join("\n");
@@ -173,21 +245,25 @@ async function generate() {
   const statutesByCitation = new Map();
   const statutesByShortTitle = new Map();
   for (const statute of statutes.rows) {
-    const citation = normalizeName(statute.citation);
+    for (const citationKey of citationKeys(statute.citation, statute.statutory_authority, statute.authority)) {
+      statutesByCitation.set(citationKey, statute);
+    }
+    const directCitation = normalizeIdentifier(statute.citation);
     const shortTitle = normalizeName(statute.short_title ?? statute.shortTitle ?? statute.title);
-    if (citation) statutesByCitation.set(citation, statute);
+    if (directCitation) statutesByCitation.set(directCitation, statute);
     if (shortTitle) statutesByShortTitle.set(shortTitle, statute);
   }
 
   for (const row of agencyAuthority.rows) {
-    const authorities = Array.isArray(row.statutoryAuthority) ? row.statutoryAuthority : [row.statutoryAuthority, row.statute].filter(Boolean);
-    const citations = extractCitations(...authorities, row.statute);
+    const authorityValue = getAny(row, ["statutoryAuthority", "statutory_authority", "statutory_authorities", "statute", "authority"]);
+    const authorities = [...asArray(authorityValue), row.statute].filter(Boolean);
+    const citations = extractCitations(...authorities);
     for (const citation of citations) {
-      const statute = statutesByCitation.get(normalizeName(citation));
+      const statute = statuteForCitation(statutesByCitation, citation);
       if (!statute) continue;
       candidates.push(makeCandidate({
         fromType: "agency",
-        fromId: normalizeText(row.agencyShort ?? row.agency),
+        fromId: normalizeText(getAny(row, ["agencyShort", "agency_short", "agency", "agency_name", "agencyName"])),
         edgeType: "enforced_by",
         toType: "statute",
         toId: idOf(statute, ["id", "citation"]),
@@ -198,21 +274,22 @@ async function generate() {
         sourceId: idOf(row),
         evidenceText: authorities.join("; "),
         jurisdiction: row.jurisdiction ?? null,
-        pipelineContext: inferPipelineContext(row.domain, row.complaintTypes, authorities),
-        domainTags: inferDomainTags(row.domain, row.complaintTypes, authorities),
+        pipelineContext: inferPipelineContext(row.domain, row.domains, row.complaintTypes, row.complaint_types, authorities),
+        domainTags: inferDomainTags(row.domain, row.domains, row.complaintTypes, row.complaint_types, authorities),
         confidence: "high",
       }));
     }
   }
 
   for (const row of enforcement.rows) {
-    const citations = extractCitations(row.statuteCitation, row.statutoryRequirement);
+    const citations = extractCitations(row.statuteCitation, row.statute_citation, row.statutoryRequirement, row.statutory_requirement, row.statutory_authority);
     for (const citation of citations) {
-      const statute = statutesByCitation.get(normalizeName(citation));
-      if (!statute || !row.agencyName) continue;
+      const statute = statuteForCitation(statutesByCitation, citation);
+      const agencyName = getAny(row, ["agencyName", "agency_name", "agency"]);
+      if (!statute || !agencyName) continue;
       candidates.push(makeCandidate({
         fromType: "agency",
-        fromId: row.agencyName,
+        fromId: agencyName,
         edgeType: "enforced_by",
         toType: "statute",
         toId: idOf(statute, ["id", "citation"]),
@@ -221,10 +298,10 @@ async function generate() {
         sourceRule: "agency_to_statute_enforcement_exact_citation",
         sourceTable: "public.legal_enforcement_records",
         sourceId: idOf(row),
-        evidenceText: [row.statuteCitation, row.statutoryRequirement, row.patternDescription].filter(Boolean).join("; "),
+        evidenceText: [row.statuteCitation, row.statute_citation, row.statutoryRequirement, row.statutory_requirement, row.statutory_authority, row.patternDescription, row.pattern_description].filter(Boolean).join("; "),
         jurisdiction: row.jurisdiction ?? null,
-        pipelineContext: inferPipelineContext(row.domains, row.complaintType, row.patternDescription),
-        domainTags: inferDomainTags(row.domains, row.complaintType, row.patternDescription),
+        pipelineContext: inferPipelineContext(row.domains, row.complaintType, row.complaint_type, row.patternDescription, row.pattern_description),
+        domainTags: inferDomainTags(row.domains, row.complaintType, row.complaint_type, row.patternDescription, row.pattern_description),
         confidence: "high",
       }));
     }
@@ -234,7 +311,7 @@ async function generate() {
     const evidence = [weakJoint.title, weakJoint.description, weakJoint.metadata].map(normalizeText).join("\n");
     const citations = extractCitations(evidence);
     for (const citation of citations) {
-      const statute = statutesByCitation.get(normalizeName(citation));
+      const statute = statuteForCitation(statutesByCitation, citation);
       if (!statute) continue;
       candidates.push(makeCandidate({
         fromType: "weak_joint",
@@ -277,7 +354,7 @@ async function generate() {
     const evidence = Object.fromEntries(Object.entries(claim).filter(([key]) => /statute|citation|authority|metadata|description|claim|domain/i.test(key)));
     const citations = extractCitations(evidence);
     for (const citation of citations) {
-      const statute = statutesByCitation.get(normalizeName(citation));
+      const statute = statuteForCitation(statutesByCitation, citation);
       if (!statute) continue;
       candidates.push(makeCandidate({
         fromType: "claim_type",
@@ -300,9 +377,9 @@ async function generate() {
   }
 
   const agencyNames = new Map();
-  for (const agency of agencies.rows) agencyNames.set(normalizeName(agency.agency_name ?? agency.agencyName), agency);
-  for (const agency of agencyAuthority.rows) agencyNames.set(normalizeName(agency.agency), agency);
-  for (const agency of enforcement.rows) agencyNames.set(normalizeName(agency.agencyName), agency);
+  for (const agency of agencies.rows) agencyNames.set(normalizeName(getAny(agency, ["agency_name", "agencyName", "agency", "name"])), agency);
+  for (const agency of agencyAuthority.rows) agencyNames.set(normalizeName(getAny(agency, ["agency", "agency_name", "agencyName", "agencyShort", "agency_short"])), agency);
+  for (const agency of enforcement.rows) agencyNames.set(normalizeName(getAny(agency, ["agencyName", "agency_name", "agency"])), agency);
 
   const routeSources = [
     ["public.registry_oversight_bodies", oversightBodies.rows],
@@ -373,7 +450,13 @@ async function generate() {
     return acc;
   }, {});
 
-  const targetTablesRead = [doctrines, weakJoints, statutes, agencyAuthority, enforcement, claimElements, agencies, oversightBodies, escalationRegistry, escalationRoutes]
+  const stagedPromotionGroups = stagedCandidateEdges.rows.reduce((acc, edge) => {
+    const key = `${edge.from_type}->${edge.to_type}/${edge.edge_type}/${edge.strength}`;
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const targetTablesRead = [doctrines, weakJoints, statutes, agencyAuthority, enforcement, claimElements, agencies, oversightBodies, escalationRegistry, escalationRoutes, stagedCandidateEdges]
     .map((result, index) => [
       "public.doctrine_registry",
       "public.legal_weak_joints",
@@ -385,6 +468,7 @@ async function generate() {
       "public.registry_oversight_bodies",
       "public.escalation_registry",
       "public.escalation_routes",
+      "public.corpus_graph_candidate_edges",
     ][index] + `:${result.exists ? result.rows.length : "missing"}`);
 
   const output = {
@@ -395,6 +479,8 @@ async function generate() {
     candidateCount: dedupedCandidates.length,
     reviewBucketCount: dedupedReview.length,
     countsByFromToEdgeStrength: counts,
+    stagedCandidateEdgeCount: stagedCandidateEdges.rows.length,
+    stagedCountsByFromToEdgeStrength: stagedPromotionGroups,
     candidates: dedupedCandidates,
     reviewBucket: dedupedReview,
   };
@@ -415,6 +501,8 @@ console.log(JSON.stringify({
   candidateCount: output.candidateCount,
   reviewBucketCount: output.reviewBucketCount,
   countsByFromToEdgeStrength: output.countsByFromToEdgeStrength,
+  stagedCandidateEdgeCount: output.stagedCandidateEdgeCount,
+  stagedCountsByFromToEdgeStrength: output.stagedCountsByFromToEdgeStrength,
   outputDir: path.relative(repoRoot, args.outDir),
 }, null, 2));
 if (pool) await pool.end();

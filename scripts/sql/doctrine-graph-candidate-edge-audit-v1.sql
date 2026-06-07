@@ -39,7 +39,8 @@ with target_tables(table_name) as (
     ('barrier_decision_tree'),
     ('legal_statute_key_text'),
     ('accountability_routes'),
-    ('registry_oversight_bodies')
+    ('registry_oversight_bodies'),
+    ('corpus_graph_candidate_edges')
 ), existing_tables as (
   select t.table_name
   from target_tables t
@@ -68,6 +69,20 @@ select
 from public.doctrine_graph_edges
 group by "fromType", "toType", "edgeType", strength
 order by edge_count desc, from_type, to_type, edge_type, strength;
+
+
+-- 3a) Staged cream-of-crop candidate edges, if luminari_cream_of_crop_substrate.sql has been run.
+select
+  from_type,
+  edge_type,
+  to_type,
+  strength,
+  count(*) as candidate_count,
+  count(*) filter (where review_status in ('approved', 'ready_for_promotion', 'promote') and strength = 'strong' and confidence >= 0.85) as safe_enough_after_review_count,
+  count(*) filter (where not (review_status in ('approved', 'ready_for_promotion', 'promote') and strength = 'strong' and confidence >= 0.85)) as requires_review_count
+from public.corpus_graph_candidate_edges
+group by from_type, edge_type, to_type, strength
+order by candidate_count desc, from_type, edge_type, to_type, strength;
 
 -- 4) Candidate edge audit: doctrine -> weak_joint high-confidence phrase rules.
 -- These are candidate rows only; review before inserting into doctrine_graph_edges.
