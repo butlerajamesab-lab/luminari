@@ -240,9 +240,10 @@ export function extractCitations(...values) {
   const section = "(?:§|§§|sections?|secs?\\.)?";
   const sectionBody = "[\\w.:()–—-]+(?:\\s*(?:,|and|or|–|—|-)\\s*[\\w.:()–—-]+)*[a-z]?";
   const patterns = [
-    new RegExp(`\\b\\d+\\s+U\\.S\\.C\\.\\s*${section}\\s*${sectionBody}`, "gi"),
-    new RegExp(`\\b\\d+\\s+C\\.F\\.R\\.\\s*${section}\\s*${sectionBody}`, "gi"),
+    new RegExp(`\\b\\d+\\s+U\\.?S\\.?C\\.?\\s*${section}\\s*${sectionBody}`, "gi"),
+    new RegExp(`\\b\\d+\\s+C\\.?F\\.?R\\.?\\s*(?:Part\\s+\\d+|${section}\\s*${sectionBody})`, "gi"),
     /\b[A-Z][a-z]+\.?\s+Stat\.?\s*§{1,2}\s*[\w.:()–—-]+/g,
+    /\b[A-Z][a-z]+\.\s+[A-Z][A-Za-z.'’ &]+Code\s*§{1,2}\s*[\w.:()–—-]+/g,
     /\b[A-Z][a-z]+\s+Rev\.\s+Code\s*§{0,2}\s*[\w.:()–—-]+/g,
     /\b[A-Z]\.[A-Z]\.\s+Stat\.\s*§{0,2}\s*[\w.:()–—-]+/g,
     /\b[A-Z]{2,}\s+Code\s*§{0,2}\s*[\w.:()–—-]+/g,
@@ -250,6 +251,142 @@ export function extractCitations(...values) {
   const citations = [];
   for (const pattern of patterns) citations.push(...text.matchAll(pattern).map((match) => match[0].replace(/\s+/g, " ").trim().replace(/[.;:,]+$/, "")));
   return [...new Set(citations)];
+}
+
+
+export function extractCorpusImportQueueRowsFromSql(text, sourcePath = null) {
+  const rows = [];
+  const pattern = /insert\s+into\s+public\.corpus_import_queue\s*\(([^)]*)\)\s*values\s*\((.*?)\)\s*;/gis;
+  for (const match of text.matchAll(pattern)) {
+    const columns = splitSqlCsv(match[1]).map((column) => column.replace(/["\s]/g, "").toLowerCase());
+    const values = parseSqlValues(match[2]);
+    if (!columns.length || columns.length !== values.length) {
+      rows.push({
+        source_name: `unparsed:${sourcePath ?? "sql"}:${rows.length + 1}`,
+        source_type: "unparsed_sql_insert",
+        target_hint: "Unable to parse corpus_import_queue insert values safely.",
+        payload: null,
+        raw_text: match[0],
+        record_count_estimate: null,
+        import_status: "parse_error",
+        _local_sql_source: sourcePath,
+      });
+      continue;
+    }
+    const row = { _local_sql_source: sourcePath, import_status: "local_sql_staged" };
+    columns.forEach((column, index) => {
+      row[column] = coerceSqlLiteral(values[index]);
+    });
+    rows.push(row);
+  }
+  return rows;
+}
+
+function splitSqlCsv(text) {
+  const out = [];
+  let current = "";
+  let depth = 0;
+  let quote = null;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (quote) {
+      current += char;
+      if (char === quote && text[index - 1] !== "\\") quote = null;
+      continue;
+    }
+    if (char === "'" || char === '"') {
+      quote = char;
+      current += char;
+      continue;
+    }
+    if (char === "(") depth += 1;
+    if (char === ")") depth -= 1;
+    if (char === "," && depth === 0) {
+      out.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  if (current.trim()) out.push(current.trim());
+  return out;
+}
+
+function parseSqlValues(text) {
+  const out = [];
+  let current = "";
+  let depth = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    if (text.startsWith("$lq$", index)) {
+      const end = text.indexOf("$lq$", index + 4);
+      if (end === -1) {
+        current += text.slice(index);
+        break;
+      }
+      current += text.slice(index, end + 4);
+      index = end + 3;
+      const cast = text.slice(index + 1).match(/^::jsonb?/i);
+      if (cast) {
+        current += cast[0];
+        index += cast[0].length;
+      }
+      continue;
+    }
+    const char = text[index];
+    if (char === "'") {
+      const end = findSqlSingleQuoteEnd(text, index + 1);
+      current += text.slice(index, end + 1);
+      index = end;
+      continue;
+    }
+    if (char === "(") depth += 1;
+    if (char === ")") depth -= 1;
+    if (char === "," && depth === 0) {
+      out.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  if (current.trim()) out.push(current.trim());
+  return out;
+}
+
+function findSqlSingleQuoteEnd(text, start) {
+  for (let index = start; index < text.length; index += 1) {
+    if (text[index] !== "'") continue;
+    if (text[index + 1] === "'") {
+      index += 1;
+      continue;
+    }
+    return index;
+  }
+  return text.length - 1;
+}
+
+function coerceSqlLiteral(value) {
+  const trimmed = value.trim();
+  if (/^null$/i.test(trimmed)) return null;
+  const dollar = trimmed.match(/^\$lq\$(.*)\$lq\$(?:::jsonb?)?$/is);
+  if (dollar) return parseMaybeJson(dollar[1]);
+  const single = trimmed.match(/^'(.*)'(?:::jsonb?)?$/is);
+  if (single) return parseMaybeJson(single[1].replace(/''/g, "'"));
+  const numeric = Number(trimmed);
+  if (Number.isFinite(numeric)) return numeric;
+  return trimmed;
+}
+
+function parseMaybeJson(value) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return value;
+    }
+  }
+  return value;
 }
 
 export function stringifyCsv(rows) {

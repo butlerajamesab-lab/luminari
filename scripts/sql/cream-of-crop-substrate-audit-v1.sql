@@ -43,9 +43,25 @@ select
       and payload ? 'citation'
       and (payload ? 'shortTitle' or payload ? 'short_title')
       then 'ready_for_statute_transform_review'
+    when source_name like 'cream:legal_statute_key_text.json:%'
+      and payload ? 'citation'
+      and (payload ? 'keyProvisions' or payload ? 'key_provisions')
+      then 'ready_for_statute_key_text_transform_review'
+    when source_name like 'cream:legal_enforcement_state_combined.json:%'
+      and (payload ? 'agencyName' or payload ? 'agency_name')
+      and (payload ? 'statutoryAuthority' or payload ? 'statutory_authority')
+      then 'ready_for_enforcement_transform_review'
+    when source_name like 'cream:claim_elements_matrix_complete-2.json:%'
+      and payload ? 'claim_type'
+      and payload ? 'elements_to_prove'
+      then 'ready_for_claim_element_transform_review'
+    when source_name like 'cream:barrier_decision_tree_complete-1.json:%'
+      and payload ? 'barrier_category'
+      and payload ? 'barrier_tree'
+      then 'ready_for_barrier_tree_transform_review'
     else 'requires_transform_mapping_or_payload_review'
   end as import_readiness,
-  coalesce(payload->>'weakJointId', payload->>'citation', payload->>'agency_name', payload->>'agencyName') as source_record_key,
+  coalesce(payload->>'weakJointId', payload->>'citation', payload->>'agency_name', payload->>'agencyName', payload->>'claim_type', payload->>'barrier_category') as source_record_key,
   coalesce(payload->'domains', '[]'::jsonb) as domain_tags,
   coalesce(payload->>'jurisdiction', payload->>'state', 'unspecified') as jurisdiction
 from public.corpus_import_queue

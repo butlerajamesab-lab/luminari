@@ -5,6 +5,7 @@ import {
   countCsvRecords,
   countJsonlRecords,
   createPool,
+  extractCorpusImportQueueRowsFromSql,
   extractJsonRecordCount,
   findDataDirectories,
   findFilesByBasename,
@@ -63,6 +64,56 @@ function readSourceCount(filePath, selector) {
   if (ext === ".sql") return (text.match(/\binsert\s+into\b/gi) ?? []).length;
   if (basename.endsWith(".zip")) return null;
   return null;
+}
+
+function findLocalStagingSqlFiles(dataDirs) {
+  const matches = [];
+  const seen = new Set();
+  for (const dir of dataDirs) scan(dir, 4);
+  return matches;
+
+  function scan(dir, depth) {
+    if (depth < 0) return;
+    let entries = [];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (["node_modules", ".git", "dist"].includes(entry.name)) continue;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        scan(full, depth - 1);
+        continue;
+      }
+      if (!entry.name.endsWith(".sql")) continue;
+      if (!/(cream|substrate|import_queue|corpus)/i.test(entry.name) && !/data\/import_queue|scripts\/sql/.test(full)) continue;
+      if (seen.has(full)) continue;
+      seen.add(full);
+      matches.push(full);
+    }
+  }
+}
+
+function readLocalStagingSqlRows(dataDirs) {
+  const files = findLocalStagingSqlFiles(dataDirs);
+  const reports = [];
+  const rows = [];
+  for (const file of files) {
+    const relativePath = path.relative(repoRoot, file);
+    try {
+      const text = fs.readFileSync(file, "utf8");
+      const parsedRows = extractCorpusImportQueueRowsFromSql(text, relativePath);
+      if (parsedRows.length) {
+        rows.push(...parsedRows);
+        reports.push({ path: relativePath, queueRowsParsed: parsedRows.length });
+      }
+    } catch (error) {
+      reports.push({ path: relativePath, queueRowsParsed: 0, error: error.message });
+    }
+  }
+  return { rows, reports };
 }
 
 function deriveStatus(sourceCount, targetReports, mapping) {
@@ -130,8 +181,8 @@ function transformDisposition(row) {
   const targetHint = String(row.target_hint ?? "").toLowerCase();
   const sourceType = String(row.source_type ?? "").toLowerCase();
   const domains = payload.domains ?? payload.domain_tags ?? [];
-  const contexts = inferPipelineContext(payload.title, payload.description, payload.summary, domains, targetHint);
-  const domainTags = Array.isArray(domains) && domains.length ? domains : inferDomainTags(payload.title, payload.description, payload.summary, targetHint);
+  const contexts = inferPipelineContext(payload.title, payload.description, payload.summary, payload.practicalNote, payload.programArea, payload.claim_type, payload.barrier_category, domains, targetHint);
+  const domainTags = Array.isArray(domains) && domains.length ? domains : inferDomainTags(payload.title, payload.description, payload.summary, payload.practicalNote, payload.programArea, payload.claim_type, payload.barrier_category, targetHint);
 
   if (!sourceName.startsWith("cream:") && !targetHint.includes("cream of crop")) {
     return { readyForCanonicalImport: false, requiresTransformation: true, reason: "not_cream_starter_row", pipeline_context: contexts, domain_tags: domainTags };
@@ -147,8 +198,17 @@ function transformDisposition(row) {
   if (/legal_statutes_priority2\.json/.test(sourceName)) {
     return { readyForCanonicalImport: Boolean(payload.citation && (payload.shortTitle || payload.short_title)), requiresTransformation: true, transformProfile: "statute_payload_to_public_legal_statutes", reason: "shortTitle/effectiveDate/sourceUrl camelCase payload must be normalized before canonical insert", pipeline_context: contexts, domain_tags: domainTags };
   }
-  if (/enforcement|agency/.test(sourceName)) {
-    return { readyForCanonicalImport: Boolean(payload.agency_name || payload.agencyName), requiresTransformation: true, transformProfile: "enforcement_payload_to_legal_enforcement_or_agency_authority", reason: "enforcement records still require target-table fit review", pipeline_context: contexts, domain_tags: domainTags };
+  if (/legal_statute_key_text\.json/.test(sourceName)) {
+    return { readyForCanonicalImport: Boolean(payload.citation && (payload.keyProvisions || payload.key_provisions)), requiresTransformation: true, transformProfile: "statute_key_text_payload_to_public_legal_statute_key_text", reason: "keyProvisions camelCase payload must be normalized and linked to canonical statute citation", pipeline_context: contexts, domain_tags: domainTags };
+  }
+  if (/legal_enforcement_state_combined\.json/.test(sourceName) || /enforcement|agency/.test(sourceName)) {
+    return { readyForCanonicalImport: Boolean((payload.agency_name || payload.agencyName) && (payload.statutoryAuthority || payload.statutory_authority)), requiresTransformation: true, transformProfile: "enforcement_payload_to_legal_enforcement_or_agency_authority", reason: "enforcement records still require target-table fit review between legal_enforcement_records and agency_authority_map", pipeline_context: contexts, domain_tags: domainTags };
+  }
+  if (/claim_elements_matrix_complete-2\.json/.test(sourceName)) {
+    return { readyForCanonicalImport: Boolean(payload.claim_type && payload.elements_to_prove), requiresTransformation: true, transformProfile: "claim_elements_payload_to_public_claim_element_matrix", reason: "grouped claim payload must be exploded or mapped into canonical claim-element rows", pipeline_context: contexts, domain_tags: domainTags };
+  }
+  if (/barrier_decision_tree_complete-1\.json/.test(sourceName)) {
+    return { readyForCanonicalImport: Boolean(payload.barrier_category && payload.barrier_tree), requiresTransformation: true, transformProfile: "barrier_tree_payload_to_public_barrier_decision_tree", reason: "nested barrier tree must be transformed to canonical barrier decision tree shape", pipeline_context: contexts, domain_tags: domainTags };
   }
 
   return { readyForCanonicalImport: false, requiresTransformation: true, reason: "no_transform_profile_for_source", pipeline_context: contexts, domain_tags: domainTags };
@@ -193,12 +253,14 @@ async function main() {
   const { pool, databaseStatus } = createPool("corpus-import-audit");
 
   const queue = await readQueueRows(pool);
+  const localStagingSql = readLocalStagingSqlRows(dataDirs);
+  const stagedQueueRows = [...queue.rows, ...localStagingSql.rows];
   const rows = [];
   const targetTablesInspected = new Set();
   const stagedEdges = await readStagedCandidateEdges(pool);
   const queueCountsBySource = new Map();
   const queueCountsByCanonicalSource = new Map();
-  for (const queueRow of queue.rows) {
+  for (const queueRow of stagedQueueRows) {
     const sourceName = queueRow.source_name ?? queueRow.sourceName;
     if (!sourceName) continue;
     const count = estimateQueueRecordCount(queueRow);
@@ -267,22 +329,25 @@ async function main() {
     databaseStatus,
     queue: {
       exists: queue.exists,
-      rowCount: queue.rows.length,
-      rows: queue.displayRows ?? [],
+      rowCount: stagedQueueRows.length,
+      databaseRowCount: queue.rows.length,
+      localSqlRowCount: localStagingSql.rows.length,
+      rows: [...(queue.displayRows ?? []), ...localStagingSql.rows.map((row) => ({ source_name: row.source_name, source_type: row.source_type, target_hint: row.target_hint, record_count_estimate: row.record_count_estimate, import_status: row.import_status, local_sql_source: row._local_sql_source }))],
       payloadRecordCounts: Object.fromEntries(queueCountsBySource),
       canonicalPayloadRecordCounts: Object.fromEntries(queueCountsByCanonicalSource),
     },
+    localStagingSql: localStagingSql.reports,
     creamSubstrate: {
-      stagedRecordCount: queue.rows.filter((row) => normalizeSourceName(row.source_name).startsWith("cream:")).reduce((sum, row) => sum + (estimateQueueRecordCount(row) ?? 0), 0),
-      stagedRows: queue.rows.filter((row) => normalizeSourceName(row.source_name).startsWith("cream:")).map((row) => ({
+      stagedRecordCount: stagedQueueRows.filter((row) => normalizeSourceName(row.source_name).startsWith("cream:")).reduce((sum, row) => sum + (estimateQueueRecordCount(row) ?? 0), 0),
+      stagedRows: stagedQueueRows.filter((row) => normalizeSourceName(row.source_name).startsWith("cream:")).map((row) => ({
         source_name: row.source_name,
         source_type: row.source_type,
         import_status: row.import_status,
         target_hint: row.target_hint,
         disposition: transformDisposition(row),
       })),
-      readyForCanonicalImport: queue.rows.filter((row) => transformDisposition(row).readyForCanonicalImport).map((row) => row.source_name),
-      requiresTransformation: queue.rows.filter((row) => transformDisposition(row).requiresTransformation).map((row) => ({ source_name: row.source_name, ...transformDisposition(row) })),
+      readyForCanonicalImport: stagedQueueRows.filter((row) => transformDisposition(row).readyForCanonicalImport).map((row) => row.source_name),
+      requiresTransformation: stagedQueueRows.filter((row) => transformDisposition(row).requiresTransformation).map((row) => ({ source_name: row.source_name, ...transformDisposition(row) })),
     },
     stagedCandidateEdges: {
       exists: stagedEdges.exists,
@@ -316,7 +381,7 @@ async function main() {
     status: row.status,
   }));
   console.table(tableRows);
-  console.log(`\nQueue rows: ${queue.exists ? queue.rows.length : "corpus_import_queue missing"}`);
+  console.log(`\nQueue rows: ${queue.exists ? queue.rows.length : "corpus_import_queue missing"}; local SQL queue rows: ${localStagingSql.rows.length}`);
   console.log(`Cream staged records: ${output.creamSubstrate.stagedRecordCount}`);
   console.table(output.stagedCandidateEdges.groupedByFromEdgeToStrength);
   console.log(JSON.stringify(output, null, 2));
