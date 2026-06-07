@@ -1,0 +1,187 @@
+-- Cream-of-the-crop substrate starter audit.
+-- Read-only verification after running luminari_cream_of_crop_substrate.sql.
+-- Does not mutate canonical production tables or doctrine_graph_edges.
+begin read only;
+
+-- 1) Confirm queue rows exist and count staged cream records.
+select
+  count(*) as staged_cream_rows,
+  coalesce(sum(record_count_estimate), 0) as staged_cream_record_estimate
+from public.corpus_import_queue
+where source_name like 'cream:%';
+
+-- 2) Count staged candidate edges.
+select count(*) as staged_candidate_edges
+from public.corpus_graph_candidate_edges;
+
+-- 3) Group candidate edges by from_type, edge_type, to_type, strength.
+select
+  from_type,
+  edge_type,
+  to_type,
+  strength,
+  count(*) as edge_count
+from public.corpus_graph_candidate_edges
+group by from_type, edge_type, to_type, strength
+order by edge_count desc, from_type, edge_type, to_type, strength;
+
+-- 4) Identify staged records ready for canonical-import transform review.
+-- "Ready" here means a single curated JSON payload has minimum source identity fields;
+-- it is still not a canonical insert approval.
+select
+  id,
+  source_name,
+  source_type,
+  target_hint,
+  import_status,
+  case
+    when source_name like 'cream:legal_weak_joints_priority4.json:%'
+      and payload ? 'weakJointId'
+      and payload ? 'title'
+      then 'ready_for_weak_joint_transform_review'
+    when source_name like 'cream:legal_statutes_priority2.json:%'
+      and payload ? 'citation'
+      and (payload ? 'shortTitle' or payload ? 'short_title')
+      then 'ready_for_statute_transform_review'
+    when source_name like 'cream:legal_statute_key_text.json:%'
+      and payload ? 'citation'
+      and (payload ? 'keyProvisions' or payload ? 'key_provisions')
+      then 'ready_for_statute_key_text_transform_review'
+    when source_name like 'cream:legal_enforcement_state_combined.json:%'
+      and (payload ? 'agencyName' or payload ? 'agency_name')
+      and (payload ? 'statutoryAuthority' or payload ? 'statutory_authority')
+      then 'ready_for_enforcement_transform_review'
+    when source_name like 'cream:claim_elements_matrix_complete-2.json:%'
+      and payload ? 'claim_type'
+      and payload ? 'elements_to_prove'
+      then 'ready_for_claim_element_transform_review'
+    when source_name like 'cream:barrier_decision_tree_complete-1.json:%'
+      and payload ? 'barrier_category'
+      and payload ? 'barrier_tree'
+      then 'ready_for_barrier_tree_transform_review'
+    when source_name like 'cream:barrier_decision_tree_complete-1.json:%'
+      and payload ? 'barrier_id'
+      and (payload ? 'recommended_accommodations' or payload ? 'resource_routing')
+      then 'ready_for_flat_barrier_record_transform_review'
+    when source_name like 'cream:accountability_routes_full.txt:%'
+      and coalesce(payload->>'raw_text', raw_text, '') ilike '%oversight_body:%'
+      and coalesce(payload->>'raw_text', raw_text, '') ilike '%what_to_report:%'
+      then 'ready_for_accountability_route_transform_review'
+    when source_name like 'cream:government_benefits_registry.jsonl:%'
+      and payload ? 'full_entity_name'
+      and payload->>'record_type' = 'government_benefit_program'
+      then 'ready_for_government_benefit_transform_review'
+    when source_name like 'cream:workflow_registry.jsonl:%'
+      and payload ? 'workflow_uuid'
+      and payload ? 'workflow_name'
+      and payload ? 'steps'
+      then 'ready_for_workflow_transform_review'
+    when source_name like 'cream:escalation_registry.jsonl:%'
+      and payload ? 'escalation_uuid'
+      and payload ? 'pathway_name'
+      then 'ready_for_escalation_transform_review'
+    when source_name like 'cream:committee_registry.jsonl:%'
+      and (payload ? 'entity_id' or payload ? 'entity_uuid')
+      and payload ? 'full_entity_name'
+      then 'ready_for_committee_transform_review'
+    when source_name like 'cream:committee_membership_registry.jsonl:%'
+      and payload ? 'committee_id'
+      and (payload ? 'legislator_id' or payload ? 'member_id' or payload ? 'bioguide_id')
+      then 'ready_for_committee_membership_transform_review'
+    when source_name like 'cream:legislator_registry.jsonl:%'
+      and (payload ? 'bioguide_id' or payload ? 'entity_uuid')
+      and payload ? 'full_entity_name'
+      then 'ready_for_legislator_transform_review'
+    else 'requires_transform_mapping_or_payload_review'
+  end as import_readiness,
+  coalesce(
+    payload->>'weakJointId',
+    payload->>'citation',
+    payload->>'agency_name',
+    payload->>'agencyName',
+    payload->>'claim_type',
+    payload->>'barrier_category',
+    payload->>'barrier_id',
+    payload->>'full_entity_name',
+    payload->>'workflow_uuid',
+    payload->>'escalation_uuid',
+    payload->>'entity_id',
+    payload->>'entity_uuid',
+    payload->>'bioguide_id'
+  ) as source_record_key,
+  coalesce(payload->'domains', payload->'domain_tags', payload->'oversight_domains', payload->'benefit_categories', '[]'::jsonb) as domain_tags,
+  coalesce(payload->>'jurisdiction', payload->>'state', 'unspecified') as jurisdiction
+from public.corpus_import_queue
+where source_name like 'cream:%'
+order by source_name;
+
+-- 5) Candidate edge promotion buckets.
+-- Pending-review rows are never considered safe enough to promote.
+select
+  id,
+  source_name,
+  source_id,
+  from_type,
+  from_id,
+  edge_type,
+  to_type,
+  to_id,
+  strength,
+  pipeline_context,
+  user_lens,
+  domain_tags,
+  jurisdiction,
+  evidence_basis,
+  confidence,
+  review_status,
+  case
+    when review_status in ('approved', 'ready_for_promotion', 'promote')
+      and strength = 'strong'
+      and confidence >= 0.85
+      then 'safe_enough_after_review'
+    else 'requires_review'
+  end as promotion_bucket
+from public.corpus_graph_candidate_edges
+order by promotion_bucket, from_type, edge_type, to_type, strength, id;
+
+-- 6) Canonical DB counts for comparison only.
+with target_tables(table_name) as (
+  values
+    ('legal_weak_joints'),
+    ('legal_statutes'),
+    ('legal_statute_key_text'),
+    ('legal_enforcement_records'),
+    ('agency_authority_map'),
+    ('government_benefits_registry'),
+    ('workflow_registry'),
+    ('registry_workflows'),
+    ('escalation_registry'),
+    ('escalation_routes'),
+    ('committee_registry'),
+    ('committee_membership_registry'),
+    ('committee_memberships'),
+    ('legislator_registry'),
+    ('claim_element_matrix'),
+    ('barrier_decision_tree'),
+    ('accountability_routes'),
+    ('registry_oversight_bodies'),
+    ('doctrine_graph_edges')
+), existing_tables as (
+  select t.table_name
+  from target_tables t
+  join information_schema.tables ist
+    on ist.table_schema = 'public'
+   and ist.table_name = t.table_name
+)
+select
+  t.table_name,
+  (e.table_name is not null) as table_exists,
+  case
+    when e.table_name is null then null
+    else (xpath('/row/count/text()', query_to_xml(format('select count(*) as count from public.%I', t.table_name), true, false, '')))[1]::text::bigint
+  end as row_count
+from target_tables t
+left join existing_tables e using (table_name)
+order by t.table_name;
+
+rollback;
