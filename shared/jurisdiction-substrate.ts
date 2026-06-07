@@ -1,3 +1,12 @@
+/**
+ * Integration-safe jurisdiction substrate types and small deterministic helpers.
+ *
+ * This module does not declare a new canonical jurisdiction table. Canonical
+ * identity is represented as a `(refTable, refId)` pair so current Lighthouse
+ * tables and Atlas bridge projections can remain authoritative until an ADR-led
+ * migration replaces them.
+ */
+
 export const JURISDICTION_TYPES = [
   "federal",
   "state",
@@ -16,6 +25,16 @@ export const JURISDICTION_TYPES = [
 
 export type JurisdictionType = (typeof JURISDICTION_TYPES)[number];
 
+export const LEGACY_JURISDICTION_TYPE_MAP = {
+  city: "municipal",
+  municipal: "municipal",
+  county: "county",
+  state: "state",
+  federal: "federal",
+  tribal: "tribal",
+  territory: "territory",
+} as const satisfies Record<string, JurisdictionType>;
+
 export const COVERAGE_STATES = [
   "covered",
   "partially_covered",
@@ -29,6 +48,66 @@ export const COVERAGE_STATES = [
 ] as const;
 
 export type CoverageState = (typeof COVERAGE_STATES)[number];
+
+export const PROMOTION_STATUSES = [
+  "queued",
+  "audited",
+  "needs_transform",
+  "candidate",
+  "review_required",
+  "approved",
+  "promoted",
+  "rejected",
+  "duplicate_risk",
+  "parse_error",
+  "unknown",
+  "superseded",
+] as const;
+
+export type PromotionStatus = (typeof PROMOTION_STATUSES)[number];
+export type ReviewStatus = PromotionStatus;
+
+export const JURISDICTION_RELATIONSHIP_TYPES = [
+  "located_in",
+  "contains",
+  "overlaps",
+  "administered_by",
+  "enforced_by",
+  "appeal_to",
+  "venue_for",
+  "service_area",
+  "funded_by",
+  "regulated_by",
+  "delegated_to",
+  "compact_with",
+  "preempted_by",
+  "concurrent_with",
+  "exclusive_authority",
+  "referral_to",
+  "oversight_by",
+  "reviewed_by",
+] as const;
+
+export type JurisdictionRelationshipType = (typeof JURISDICTION_RELATIONSHIP_TYPES)[number];
+
+export const JURISDICTION_ALIAS_TYPES = [
+  "registry_id",
+  "legacy_id",
+  "state_code",
+  "territory_code",
+  "fips",
+  "county_fips",
+  "census_geoid",
+  "gnis",
+  "bia_identifier",
+  "openstates_id",
+  "court_identifier",
+  "display_name",
+  "alternate_name",
+  "slug",
+] as const;
+
+export type JurisdictionAliasType = (typeof JURISDICTION_ALIAS_TYPES)[number];
 
 export const US_STATES = [
   { name: "Alabama", code: "AL" },
@@ -82,6 +161,8 @@ export const US_STATES = [
   { name: "Wisconsin", code: "WI" },
   { name: "Wyoming", code: "WY" },
 ] as const;
+
+export const DISTRICT_OF_COLUMBIA = { name: "District of Columbia", code: "DC" } as const;
 
 export const US_TERRITORIES = [
   { name: "Puerto Rico", code: "PR" },
@@ -149,314 +230,402 @@ export const PIPELINE_CONTEXTS = [
   "complete_export",
 ] as const;
 
-export type RuralAccessMode =
-  | "rural"
-  | "frontier"
-  | "remote"
-  | "statewide_remote_service"
-  | "regional_service_area"
-  | "transportation_barrier"
-  | "telehealth_available"
-  | "phone_intake_available"
-  | "online_intake_available"
-  | "in_person_only";
+export type PipelineContext = (typeof PIPELINE_CONTEXTS)[number];
 
-export type JurisdictionMetadata = {
-  jurisdiction?: string | null;
-  jurisdictionType?: JurisdictionType | null;
-  jurisdictionCode?: string | null;
-  country?: string | null;
-  state?: string | null;
-  stateCode?: string | null;
-  territory?: string | null;
-  territoryCode?: string | null;
-  districtOfColumbia?: boolean | null;
+export type CanonicalJurisdictionRef = {
+  jurisdictionRefTable: "jurisdictions" | "registry_jurisdictions" | "jurisdiction_hierarchy" | "atlas_bridge" | string;
+  jurisdictionRefId: string;
+};
+
+export type TribalJurisdictionMetadata = {
   tribalNation?: string | null;
   federalRecognitionStatus?: string | null;
+  sourceAuthority?: string | null;
   tribalGovernmentName?: string | null;
   tribalCourtName?: string | null;
   reservationOrServiceArea?: string | null;
   stateOverlap?: string[] | null;
   federalAgencyOverlap?: string[] | null;
-  sourceAuthority?: string | null;
-  county?: string | null;
+  biaOverlap?: string[] | null;
+  ihsOverlap?: string[] | null;
+  bieOverlap?: string[] | null;
+  icwaRelevance?: string | null;
+  publicLaw280Relevance?: string | null;
+  treatyReservedRightsReference?: string | null;
+};
+
+export type ServiceAreaMetadata = {
   countyFips?: string | null;
-  city?: string | null;
-  municipality?: string | null;
-  municipalCode?: string | null;
-  region?: string | null;
-  federalDistrict?: string | null;
-  federalCircuit?: string | null;
-  courtLevel?: string | null;
-  agencyLevel?: string | null;
-  serviceArea?: string | null;
-  coverageArea?: string | null;
-  ruralUrbanClassification?: string | null;
-  ruralAccess?: RuralAccessMode[] | null;
-  sourceJurisdictionText?: string | null;
-  jurisdictionConfidence?: number | null;
-  jurisdictionNotes?: string | null;
+  censusGeoid?: string | null;
+  serviceAreaGeometryRef?: string | null;
+  regionalServiceArea?: string | null;
+  legalAidServiceArea?: string | null;
+  tribalServiceArea?: string | null;
+  distanceTravelBarrierFlags?: string[] | null;
+  remotePhoneOnlineIntake?: Array<"remote" | "phone" | "online" | "in_person_only"> | null;
+  ruralFrontierClassification?: string | null;
 };
 
-export type JurisdictionLink = JurisdictionMetadata & {
-  relation: "primary" | "overlap" | "administered_by" | "enforced_by" | "appeal_to" | "service_area";
-};
-
-export type JurisdictionAwareRecord = {
-  recordId: string;
-  pipelineContext: (typeof PIPELINE_CONTEXTS)[number];
-  domain?: (typeof NATIONWIDE_DOMAINS)[number] | string | null;
-  runtimeSurface?: (typeof RUNTIME_SURFACES)[number] | string | null;
-  jurisdiction: JurisdictionMetadata;
-  jurisdictions?: JurisdictionLink[];
-  sourceText?: string | null;
-};
-
-export type CoverageReportKind =
-  | "federal_coverage_matrix"
-  | "fifty_state_coverage_matrix"
-  | "district_of_columbia_coverage_report"
-  | "territory_coverage_matrix"
-  | "tribal_jurisdiction_coverage_report"
-  | "county_coverage_matrix"
-  | "municipal_coverage_matrix"
-  | "rural_access_coverage_report"
-  | "urban_access_coverage_report"
-  | "regional_multi_jurisdiction_coverage_report"
-  | "domain_by_jurisdiction_coverage_matrix"
-  | "runtime_surface_by_jurisdiction_coverage_matrix"
-  | "pipeline_context_by_jurisdiction_coverage_matrix";
-
-export type CoverageMatrixRow = {
-  reportKind: CoverageReportKind;
+export type JurisdictionAssertionDraft = TribalJurisdictionMetadata & ServiceAreaMetadata & {
+  sourceTable: string;
+  sourceRecordId: string;
+  sourceName?: string | null;
+  sourceHash?: string | null;
+  candidateRecordId?: string | null;
+  canonicalRecordId?: string | null;
+  jurisdictionRefTable?: string | null;
+  jurisdictionRefId?: string | null;
   jurisdictionType: JurisdictionType;
-  jurisdictionCode: string;
-  jurisdictionName: string;
-  domain?: string;
-  runtimeSurface?: string;
-  pipelineContext?: string;
+  jurisdictionLabel?: string | null;
+  jurisdictionCode?: string | null;
+  relationshipType: JurisdictionRelationshipType;
+  confidence: number;
+  evidenceBasis: string;
+  createdFromRule: string;
+  reviewStatus: ReviewStatus;
+  promotionStatus: PromotionStatus;
+  supersedesId?: string | null;
+  isActive: boolean;
+};
+
+export type JurisdictionAlias = CanonicalJurisdictionRef & {
+  id: string;
+  aliasType: JurisdictionAliasType;
+  aliasValue: string;
+  sourceSystem: string;
+  confidence: number;
+  validFrom?: string | null;
+  validTo?: string | null;
+  isActive: boolean;
+};
+
+export type JurisdictionCoverageRun = {
+  id: string;
+  runKey: string;
+  reportKind: string;
+  scope: string;
+  sourceInventoryHash: string;
+  generatedAt: string;
+  generatedBy: string;
+  notes?: string | null;
+};
+
+export type JurisdictionCoverageItem = CanonicalJurisdictionRef & {
+  id: string;
+  runId: string;
+  jurisdictionType: JurisdictionType;
+  domain?: string | null;
+  runtimeSurface?: string | null;
+  pipelineContext?: PipelineContext | string | null;
   coverageState: CoverageState;
-  canonicalCount: number;
+  expectedCount: number;
   stagedCount: number;
   candidateCount: number;
-  backlogCount: number;
-  knownGapCount: number;
-  notes?: string;
+  promotedCount: number;
+  verifiedCount: number;
+  gapCount: number;
+  confidence?: number | null;
+  freshnessStatus?: string | null;
+  gapReason?: string | null;
+  nextAction?: string | null;
 };
 
-const stateByCode = new Map(US_STATES.map((state) => [state.code.toLowerCase(), state]));
-const stateByName = new Map(US_STATES.map((state) => [state.name.toLowerCase(), state]));
-const territoryByCode = new Map(US_TERRITORIES.map((territory) => [territory.code.toLowerCase(), territory]));
-const territoryByName = new Map(US_TERRITORIES.map((territory) => [territory.name.toLowerCase(), territory]));
+export type JurisdictionOverlapAssertion = {
+  id: string;
+  fromJurisdictionRefTable: string;
+  fromJurisdictionRefId: string;
+  toJurisdictionRefTable: string;
+  toJurisdictionRefId: string;
+  relationshipType: JurisdictionRelationshipType;
+  legalBasis?: string | null;
+  evidenceBasis?: string | null;
+  confidence?: number | null;
+  reviewStatus: ReviewStatus;
+  isActive: boolean;
+  validFrom?: string | null;
+  validTo?: string | null;
+};
 
-export function detectJurisdictionFromText(sourceText: string): JurisdictionMetadata {
-  const normalized = sourceText.trim();
-  const lower = normalized.toLowerCase();
+export type JurisdictionMetadataGap = {
+  id: string;
+  sourceTable: string;
+  sourceRecordId: string;
+  missingField: string;
+  jurisdictionHint?: string | null;
+  gapReason: string;
+  severity: "low" | "medium" | "high" | "critical";
+  pipelineContext?: PipelineContext | string | null;
+  runtimeSurface?: string | null;
+  createdAt: string;
+  resolvedAt?: string | null;
+  resolutionNotes?: string | null;
+};
 
-  if (/\b(tribe|tribal|nation|reservation|icwa|bia|ihs|bie|indian country)\b/i.test(normalized)) {
-    return {
-      jurisdiction: normalized,
-      jurisdictionType: "tribal",
-      country: "US",
-      sourceJurisdictionText: sourceText,
-      jurisdictionConfidence: 0.55,
-      jurisdictionNotes: "Tribal indicators detected; preserve as tribal until reviewed, not as generic state/federal.",
-    };
+export type JurisdictionSourceInput = {
+  sourceTable: string;
+  sourceRecordId: string;
+  sourceName?: string | null;
+  sourceHash?: string | null;
+  candidateRecordId?: string | null;
+  canonicalRecordId?: string | null;
+  knownJurisdictionRefs?: Array<CanonicalJurisdictionRef & { type: JurisdictionType; label?: string; code?: string }>;
+  stateCode?: string | null;
+  state?: string | null;
+  territoryCode?: string | null;
+  territory?: string | null;
+  districtOfColumbia?: boolean | null;
+  tribal?: TribalJurisdictionMetadata | null;
+  county?: string | null;
+  countyFips?: string | null;
+  municipality?: string | null;
+  municipalCode?: string | null;
+  serviceArea?: ServiceAreaMetadata | null;
+  jurisdictionalText?: string | null;
+  arbitraryText?: string | null;
+};
+
+const stateByCode = new Map<string, (typeof US_STATES)[number]>(US_STATES.map((state) => [state.code, state]));
+const stateByName = new Map<string, (typeof US_STATES)[number]>(US_STATES.map((state) => [state.name.toLowerCase(), state]));
+const territoryByCode = new Map<string, (typeof US_TERRITORIES)[number]>(US_TERRITORIES.map((territory) => [territory.code, territory]));
+const territoryByName = new Map<string, (typeof US_TERRITORIES)[number]>(US_TERRITORIES.map((territory) => [territory.name.toLowerCase(), territory]));
+
+export function normalizeJurisdictionType(input: string | null | undefined): JurisdictionType {
+  if (!input) return "unknown";
+  return LEGACY_JURISDICTION_TYPE_MAP[input.toLowerCase() as keyof typeof LEGACY_JURISDICTION_TYPE_MAP] ??
+    (JURISDICTION_TYPES.includes(input as JurisdictionType) ? input as JurisdictionType : "unknown");
+}
+
+function baseAssertion(input: JurisdictionSourceInput, overrides: Partial<JurisdictionAssertionDraft> & Pick<JurisdictionAssertionDraft, "jurisdictionType" | "relationshipType" | "evidenceBasis" | "createdFromRule">): JurisdictionAssertionDraft {
+  return {
+    sourceTable: input.sourceTable,
+    sourceRecordId: input.sourceRecordId,
+    sourceName: input.sourceName ?? null,
+    sourceHash: input.sourceHash ?? null,
+    candidateRecordId: input.candidateRecordId ?? null,
+    canonicalRecordId: input.canonicalRecordId ?? null,
+    confidence: 0.5,
+    reviewStatus: "candidate",
+    promotionStatus: "candidate",
+    isActive: true,
+    ...input.serviceArea,
+    ...overrides,
+  };
+}
+
+export function buildJurisdictionAssertionsFromSource(input: JurisdictionSourceInput): JurisdictionAssertionDraft[] {
+  const assertions: JurisdictionAssertionDraft[] = [];
+
+  for (const ref of input.knownJurisdictionRefs ?? []) {
+    assertions.push(baseAssertion(input, {
+      jurisdictionRefTable: ref.jurisdictionRefTable,
+      jurisdictionRefId: ref.jurisdictionRefId,
+      jurisdictionType: ref.type,
+      jurisdictionLabel: ref.label ?? null,
+      jurisdictionCode: ref.code ?? null,
+      relationshipType: "located_in",
+      confidence: 0.98,
+      evidenceBasis: `Known jurisdiction reference ${ref.jurisdictionRefTable}:${ref.jurisdictionRefId}`,
+      createdFromRule: "known_jurisdiction_ref",
+    }));
   }
 
-  if (/\b(district of columbia|washington, dc|washington d\.c\.|\bdc\b)\b/i.test(normalized)) {
-    return {
-      jurisdiction: "District of Columbia",
+  if (input.districtOfColumbia) {
+    assertions.push(baseAssertion(input, {
+      jurisdictionRefTable: "registry_jurisdictions",
+      jurisdictionRefId: "j_washington_dc",
       jurisdictionType: "district_of_columbia",
-      jurisdictionCode: "DC",
-      country: "US",
-      districtOfColumbia: true,
-      sourceJurisdictionText: sourceText,
-      jurisdictionConfidence: 0.9,
-    };
+      jurisdictionLabel: DISTRICT_OF_COLUMBIA.name,
+      jurisdictionCode: DISTRICT_OF_COLUMBIA.code,
+      relationshipType: "located_in",
+      confidence: 0.95,
+      evidenceBasis: "Explicit District of Columbia field",
+      createdFromRule: "explicit_dc_field",
+    }));
   }
 
-  for (const territory of US_TERRITORIES) {
-    if (lower.includes(territory.name.toLowerCase()) || new RegExp(`\\b${territory.code.toLowerCase()}\\b`).test(lower)) {
-      return {
-        jurisdiction: territory.name,
-        jurisdictionType: "territory",
-        jurisdictionCode: territory.code,
-        country: "US",
-        territory: territory.name,
-        territoryCode: territory.code,
-        sourceJurisdictionText: sourceText,
-        jurisdictionConfidence: 0.85,
-      };
+  const state = input.stateCode ? stateByCode.get(input.stateCode.toUpperCase()) : input.state ? stateByName.get(input.state.toLowerCase()) : undefined;
+  if (state) {
+    assertions.push(baseAssertion(input, {
+      jurisdictionRefTable: "registry_jurisdictions",
+      jurisdictionRefId: `j_${state.name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "")}`,
+      jurisdictionType: "state",
+      jurisdictionLabel: state.name,
+      jurisdictionCode: state.code,
+      relationshipType: "located_in",
+      confidence: input.stateCode ? 0.93 : 0.88,
+      evidenceBasis: input.stateCode ? "Explicit state_code field" : "Explicit state field",
+      createdFromRule: "explicit_state_field",
+    }));
+  }
+
+  const territory = input.territoryCode ? territoryByCode.get(input.territoryCode.toUpperCase()) : input.territory ? territoryByName.get(input.territory.toLowerCase()) : undefined;
+  if (territory) {
+    assertions.push(baseAssertion(input, {
+      jurisdictionRefTable: "registry_jurisdictions",
+      jurisdictionRefId: `j_${territory.name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "")}`,
+      jurisdictionType: "territory",
+      jurisdictionLabel: territory.name,
+      jurisdictionCode: territory.code,
+      relationshipType: "located_in",
+      confidence: input.territoryCode ? 0.93 : 0.88,
+      evidenceBasis: input.territoryCode ? "Explicit territory_code field" : "Explicit territory field",
+      createdFromRule: "explicit_territory_field",
+    }));
+  }
+
+  if (input.tribal?.tribalNation || input.tribal?.tribalGovernmentName || input.tribal?.tribalCourtName) {
+    assertions.push(baseAssertion(input, {
+      ...input.tribal,
+      jurisdictionType: "tribal",
+      jurisdictionLabel: input.tribal.tribalNation ?? input.tribal.tribalGovernmentName ?? input.tribal.tribalCourtName ?? null,
+      relationshipType: "overlaps",
+      confidence: 0.86,
+      evidenceBasis: "Explicit tribal jurisdiction field",
+      createdFromRule: "explicit_tribal_field",
+      reviewStatus: "review_required",
+      promotionStatus: "review_required",
+    }));
+  }
+
+  if (input.county || input.countyFips) {
+    assertions.push(baseAssertion(input, {
+      jurisdictionType: "county",
+      jurisdictionLabel: input.county ?? null,
+      jurisdictionCode: input.countyFips ?? null,
+      countyFips: input.countyFips ?? null,
+      relationshipType: "service_area",
+      confidence: input.countyFips ? 0.84 : 0.72,
+      evidenceBasis: input.countyFips ? "Explicit county_fips field" : "Explicit county field",
+      createdFromRule: "explicit_county_field",
+    }));
+  }
+
+  if (input.municipality || input.municipalCode) {
+    assertions.push(baseAssertion(input, {
+      jurisdictionType: "municipal",
+      jurisdictionLabel: input.municipality ?? null,
+      jurisdictionCode: input.municipalCode ?? null,
+      relationshipType: "service_area",
+      confidence: input.municipalCode ? 0.82 : 0.7,
+      evidenceBasis: input.municipalCode ? "Explicit municipal_code field" : "Explicit municipality field",
+      createdFromRule: "explicit_municipal_field",
+    }));
+  }
+
+  if (input.jurisdictionalText) {
+    const lower = input.jurisdictionalText.toLowerCase();
+    if (/\b(united states|federal|u\.s\.|usa|national)\b/i.test(input.jurisdictionalText)) {
+      assertions.push(baseAssertion(input, {
+        jurisdictionRefTable: "registry_jurisdictions",
+        jurisdictionRefId: "j_federal",
+        jurisdictionType: "federal",
+        jurisdictionLabel: "United States",
+        jurisdictionCode: "US",
+        relationshipType: "administered_by",
+        confidence: 0.62,
+        evidenceBasis: "Controlled jurisdictional text mentions federal authority",
+        createdFromRule: "controlled_text_federal",
+        reviewStatus: "review_required",
+        promotionStatus: "review_required",
+      }));
+    }
+    for (const stateCandidate of US_STATES) {
+      if (lower.includes(stateCandidate.name.toLowerCase())) {
+        assertions.push(baseAssertion(input, {
+          jurisdictionRefTable: "registry_jurisdictions",
+          jurisdictionRefId: `j_${stateCandidate.name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "")}`,
+          jurisdictionType: "state",
+          jurisdictionLabel: stateCandidate.name,
+          jurisdictionCode: stateCandidate.code,
+          relationshipType: "overlaps",
+          confidence: 0.58,
+          evidenceBasis: "Controlled jurisdictional text names state",
+          createdFromRule: "controlled_text_state_name",
+          reviewStatus: "review_required",
+          promotionStatus: "review_required",
+        }));
+      }
+    }
+    if (/\b(tribe|tribal|nation|reservation|icwa|bia|ihs|bie|indian country)\b/i.test(input.jurisdictionalText)) {
+      assertions.push(baseAssertion(input, {
+        jurisdictionType: "tribal",
+        jurisdictionLabel: input.tribal?.tribalNation ?? null,
+        relationshipType: "overlaps",
+        confidence: 0.52,
+        evidenceBasis: "Controlled jurisdictional text contains tribal authority indicator",
+        createdFromRule: "controlled_text_tribal_indicator",
+        reviewStatus: "review_required",
+        promotionStatus: "review_required",
+      }));
     }
   }
 
-  for (const state of US_STATES) {
-    if (lower.includes(state.name.toLowerCase()) || new RegExp(`\\b${state.code.toLowerCase()}\\b`).test(lower)) {
-      return {
-        jurisdiction: state.name,
-        jurisdictionType: "state",
-        jurisdictionCode: state.code,
-        country: "US",
-        state: state.name,
-        stateCode: state.code,
-        sourceJurisdictionText: sourceText,
-        jurisdictionConfidence: lower.includes(state.name.toLowerCase()) ? 0.85 : 0.65,
-      };
-    }
+  if (assertions.length === 0) {
+    assertions.push(baseAssertion(input, {
+      jurisdictionType: "unknown",
+      relationshipType: "overlaps",
+      confidence: 0,
+      evidenceBasis: "No structured jurisdiction fields or controlled jurisdictional text resolved",
+      createdFromRule: "fallback_unknown",
+      reviewStatus: "unknown",
+      promotionStatus: "unknown",
+    }));
   }
 
-  if (/\b(united states|federal|u\.s\.|usa|national)\b/i.test(normalized)) {
-    return {
-      jurisdiction: "United States",
-      jurisdictionType: "federal",
-      jurisdictionCode: "US",
-      country: "US",
-      sourceJurisdictionText: sourceText,
-      jurisdictionConfidence: 0.75,
-    };
-  }
+  return assertions;
+}
 
+export function buildMetadataGaps(input: JurisdictionSourceInput, assertions: JurisdictionAssertionDraft[]): Omit<JurisdictionMetadataGap, "id" | "createdAt">[] {
+  const hasUnknown = assertions.some((assertion) => assertion.jurisdictionType === "unknown");
+  if (!hasUnknown) return [];
+  return [{
+    sourceTable: input.sourceTable,
+    sourceRecordId: input.sourceRecordId,
+    missingField: "jurisdiction_ref",
+    jurisdictionHint: input.jurisdictionalText ?? input.arbitraryText ?? null,
+    gapReason: "No structured jurisdiction identity resolved",
+    severity: "high",
+    pipelineContext: "candidate",
+    runtimeSurface: null,
+    resolvedAt: null,
+    resolutionNotes: null,
+  }];
+}
+
+export function stableInventoryHash(value: unknown): string {
+  const stable = JSON.stringify(sortForHash(value));
+  let hash = 5381;
+  for (let i = 0; i < stable.length; i++) hash = ((hash << 5) + hash) ^ stable.charCodeAt(i);
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+function sortForHash(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortForHash);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)).map(([key, nested]) => [key, sortForHash(nested)]));
+  }
+  return value;
+}
+
+export function createCoverageRun(input: Omit<JurisdictionCoverageRun, "id" | "runKey" | "sourceInventoryHash"> & { sourceInventory: unknown }): JurisdictionCoverageRun {
+  const sourceInventoryHash = stableInventoryHash(input.sourceInventory);
   return {
-    jurisdiction: null,
-    jurisdictionType: "unknown",
-    country: "US",
-    sourceJurisdictionText: sourceText,
-    jurisdictionConfidence: 0,
-    jurisdictionNotes: "No reliable jurisdiction detected; report as missing metadata rather than dropping the record.",
+    id: `${input.reportKind}:${input.scope}:${sourceInventoryHash}`,
+    runKey: `${input.reportKind}:${input.scope}:${sourceInventoryHash}`,
+    reportKind: input.reportKind,
+    scope: input.scope,
+    sourceInventoryHash,
+    generatedAt: input.generatedAt,
+    generatedBy: input.generatedBy,
+    notes: input.notes ?? null,
   };
 }
 
-export function normalizeJurisdictionMetadata(input: JurisdictionMetadata): JurisdictionMetadata {
-  const source = input.sourceJurisdictionText ?? input.jurisdiction ?? input.stateCode ?? input.territoryCode ?? "";
-  const detected = source ? detectJurisdictionFromText(source) : { jurisdictionType: "unknown" as const, country: "US" };
-  const byStateCode = input.stateCode ? stateByCode.get(input.stateCode.toLowerCase()) : undefined;
-  const byStateName = input.state ? stateByName.get(input.state.toLowerCase()) : undefined;
-  const byTerritoryCode = input.territoryCode ? territoryByCode.get(input.territoryCode.toLowerCase()) : undefined;
-  const byTerritoryName = input.territory ? territoryByName.get(input.territory.toLowerCase()) : undefined;
-
-  const state = byStateCode ?? byStateName;
-  const territory = byTerritoryCode ?? byTerritoryName;
-  const jurisdictionType = input.jurisdictionType ?? (territory ? "territory" : state ? "state" : detected.jurisdictionType);
-
-  return {
-    ...detected,
-    ...input,
-    jurisdictionType,
-    country: input.country ?? "US",
-    jurisdiction: input.jurisdiction ?? territory?.name ?? state?.name ?? detected.jurisdiction,
-    jurisdictionCode: input.jurisdictionCode ?? territory?.code ?? state?.code ?? detected.jurisdictionCode,
-    state: input.state ?? state?.name ?? detected.state,
-    stateCode: input.stateCode ?? state?.code ?? detected.stateCode,
-    territory: input.territory ?? territory?.name ?? detected.territory,
-    territoryCode: input.territoryCode ?? territory?.code ?? detected.territoryCode,
-    sourceJurisdictionText: input.sourceJurisdictionText ?? detected.sourceJurisdictionText,
-    jurisdictionConfidence: input.jurisdictionConfidence ?? detected.jurisdictionConfidence ?? 0,
-  };
-}
-
-export function hasOverlappingJurisdiction(record: JurisdictionAwareRecord): boolean {
-  return (record.jurisdictions?.length ?? 0) > 1 || record.jurisdiction.jurisdictionType === "mixed";
-}
-
-export function buildCoverageMatrix(records: JurisdictionAwareRecord[]): CoverageMatrixRow[] {
-  const rows = new Map<string, CoverageMatrixRow>();
-
-  const ensureRow = (
-    reportKind: CoverageReportKind,
-    jurisdictionType: JurisdictionType,
-    jurisdictionCode: string,
-    jurisdictionName: string,
-    extras: Partial<CoverageMatrixRow> = {},
-  ) => {
-    const key = [reportKind, jurisdictionType, jurisdictionCode, extras.domain, extras.runtimeSurface, extras.pipelineContext].join("::");
-    if (!rows.has(key)) {
-      rows.set(key, {
-        reportKind,
-        jurisdictionType,
-        jurisdictionCode,
-        jurisdictionName,
-        coverageState: "known_gap",
-        canonicalCount: 0,
-        stagedCount: 0,
-        candidateCount: 0,
-        backlogCount: 0,
-        knownGapCount: 1,
-        ...extras,
-      });
-    }
-    return rows.get(key)!;
-  };
-
-  ensureRow("federal_coverage_matrix", "federal", "US", "United States");
-  for (const state of US_STATES) ensureRow("fifty_state_coverage_matrix", "state", state.code, state.name);
-  ensureRow("district_of_columbia_coverage_report", "district_of_columbia", "DC", "District of Columbia");
-  for (const territory of US_TERRITORIES) ensureRow("territory_coverage_matrix", "territory", territory.code, territory.name);
-
-  for (const record of records) {
-    const jurisdictions = record.jurisdictions?.length ? record.jurisdictions : [{ ...record.jurisdiction, relation: "primary" as const }];
-    for (const link of jurisdictions) {
-      const meta = normalizeJurisdictionMetadata(link);
-      const jurisdictionType = meta.jurisdictionType ?? "unknown";
-      const jurisdictionCode = meta.jurisdictionCode ?? meta.countyFips ?? meta.municipalCode ?? meta.jurisdiction ?? "UNKNOWN";
-      const jurisdictionName = meta.jurisdiction ?? meta.county ?? meta.city ?? meta.tribalNation ?? "Unknown jurisdiction";
-      const reportKind: CoverageReportKind =
-        jurisdictionType === "federal" ? "federal_coverage_matrix" :
-        jurisdictionType === "state" ? "fifty_state_coverage_matrix" :
-        jurisdictionType === "district_of_columbia" ? "district_of_columbia_coverage_report" :
-        jurisdictionType === "territory" ? "territory_coverage_matrix" :
-        jurisdictionType === "tribal" ? "tribal_jurisdiction_coverage_report" :
-        jurisdictionType === "county" ? "county_coverage_matrix" :
-        jurisdictionType === "municipal" ? "municipal_coverage_matrix" :
-        jurisdictionType === "regional" || jurisdictionType === "interstate" || jurisdictionType === "federal_circuit" || jurisdictionType === "administrative_region" ? "regional_multi_jurisdiction_coverage_report" :
-        "domain_by_jurisdiction_coverage_matrix";
-
-      const primary = ensureRow(reportKind, jurisdictionType, jurisdictionCode, jurisdictionName, { knownGapCount: 0 });
-      primary.knownGapCount = 0;
-      if (record.pipelineContext === "canonical") primary.canonicalCount += 1;
-      if (record.pipelineContext === "staged") primary.stagedCount += 1;
-      if (record.pipelineContext === "candidate") primary.candidateCount += 1;
-      if (["queue", "backlog", "review", "promotion_batch"].includes(record.pipelineContext)) primary.backlogCount += 1;
-
-      for (const [kind, field, value] of [
-        ["domain_by_jurisdiction_coverage_matrix", "domain", record.domain],
-        ["runtime_surface_by_jurisdiction_coverage_matrix", "runtimeSurface", record.runtimeSurface],
-        ["pipeline_context_by_jurisdiction_coverage_matrix", "pipelineContext", record.pipelineContext],
-      ] as const) {
-        if (!value) continue;
-        const row = ensureRow(kind, jurisdictionType, jurisdictionCode, jurisdictionName, { [field]: value, knownGapCount: 0 });
-        row.knownGapCount = 0;
-        if (record.pipelineContext === "canonical") row.canonicalCount += 1;
-        if (record.pipelineContext === "staged") row.stagedCount += 1;
-        if (record.pipelineContext === "candidate") row.candidateCount += 1;
-        if (["queue", "backlog", "review", "promotion_batch"].includes(record.pipelineContext)) row.backlogCount += 1;
-      }
-
-      if (meta.ruralUrbanClassification?.toLowerCase().includes("rural") || meta.ruralAccess?.length) {
-        ensureRow("rural_access_coverage_report", jurisdictionType, jurisdictionCode, jurisdictionName, { knownGapCount: 0 });
-      }
-      if (meta.ruralUrbanClassification?.toLowerCase().includes("urban")) {
-        ensureRow("urban_access_coverage_report", jurisdictionType, jurisdictionCode, jurisdictionName, { knownGapCount: 0 });
-      }
-    }
-  }
-
-  return [...rows.values()].map((row) => ({
-    ...row,
-    coverageState:
-      row.canonicalCount > 0 ? "covered" :
-      row.stagedCount > 0 ? "staged_not_promoted" :
-      row.candidateCount > 0 ? "candidate_only" :
-      row.backlogCount > 0 ? "partially_covered" :
-      row.knownGapCount > 0 ? "known_gap" :
-      "unknown",
-  }));
-}
-
-export function paginateCompleteExport<T>(items: T[], cursor = 0, limit = 1000): { items: T[]; nextCursor: number | null; total: number } {
-  const safeCursor = Math.max(0, cursor);
+export function createCursorPage<T>(itemsFetchedForPage: T[], cursor: string | null, limit: number): { items: T[]; nextCursor: string | null } {
+  const offset = cursor ? Number.parseInt(cursor, 10) : 0;
+  const safeOffset = Number.isFinite(offset) && offset >= 0 ? offset : 0;
   const safeLimit = Math.max(1, limit);
-  const page = items.slice(safeCursor, safeCursor + safeLimit);
-  const nextCursor = safeCursor + page.length < items.length ? safeCursor + page.length : null;
-  return { items: page, nextCursor, total: items.length };
+  const items = itemsFetchedForPage.slice(0, safeLimit);
+  const hasMore = itemsFetchedForPage.length > safeLimit;
+  return { items, nextCursor: hasMore ? String(safeOffset + safeLimit) : null };
 }
