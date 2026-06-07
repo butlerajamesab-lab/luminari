@@ -67,10 +67,49 @@ select
       and coalesce(payload->>'raw_text', raw_text, '') ilike '%oversight_body:%'
       and coalesce(payload->>'raw_text', raw_text, '') ilike '%what_to_report:%'
       then 'ready_for_accountability_route_transform_review'
+    when source_name like 'cream:government_benefits_registry.jsonl:%'
+      and payload ? 'full_entity_name'
+      and payload->>'record_type' = 'government_benefit_program'
+      then 'ready_for_government_benefit_transform_review'
+    when source_name like 'cream:workflow_registry.jsonl:%'
+      and payload ? 'workflow_uuid'
+      and payload ? 'workflow_name'
+      and payload ? 'steps'
+      then 'ready_for_workflow_transform_review'
+    when source_name like 'cream:escalation_registry.jsonl:%'
+      and payload ? 'escalation_uuid'
+      and payload ? 'pathway_name'
+      then 'ready_for_escalation_transform_review'
+    when source_name like 'cream:committee_registry.jsonl:%'
+      and (payload ? 'entity_id' or payload ? 'entity_uuid')
+      and payload ? 'full_entity_name'
+      then 'ready_for_committee_transform_review'
+    when source_name like 'cream:committee_membership_registry.jsonl:%'
+      and payload ? 'committee_id'
+      and (payload ? 'legislator_id' or payload ? 'member_id' or payload ? 'bioguide_id')
+      then 'ready_for_committee_membership_transform_review'
+    when source_name like 'cream:legislator_registry.jsonl:%'
+      and (payload ? 'bioguide_id' or payload ? 'entity_uuid')
+      and payload ? 'full_entity_name'
+      then 'ready_for_legislator_transform_review'
     else 'requires_transform_mapping_or_payload_review'
   end as import_readiness,
-  coalesce(payload->>'weakJointId', payload->>'citation', payload->>'agency_name', payload->>'agencyName', payload->>'claim_type', payload->>'barrier_category', payload->>'barrier_id') as source_record_key,
-  coalesce(payload->'domains', '[]'::jsonb) as domain_tags,
+  coalesce(
+    payload->>'weakJointId',
+    payload->>'citation',
+    payload->>'agency_name',
+    payload->>'agencyName',
+    payload->>'claim_type',
+    payload->>'barrier_category',
+    payload->>'barrier_id',
+    payload->>'full_entity_name',
+    payload->>'workflow_uuid',
+    payload->>'escalation_uuid',
+    payload->>'entity_id',
+    payload->>'entity_uuid',
+    payload->>'bioguide_id'
+  ) as source_record_key,
+  coalesce(payload->'domains', payload->'domain_tags', payload->'oversight_domains', payload->'benefit_categories', '[]'::jsonb) as domain_tags,
   coalesce(payload->>'jurisdiction', payload->>'state', 'unspecified') as jurisdiction
 from public.corpus_import_queue
 where source_name like 'cream:%'

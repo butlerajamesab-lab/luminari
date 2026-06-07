@@ -191,10 +191,31 @@ function transformDisposition(row) {
   const payload = row.payload ?? {};
   const targetHint = String(row.target_hint ?? "").toLowerCase();
   const sourceType = String(row.source_type ?? "").toLowerCase();
-  const domains = payload.domains ?? payload.domain_tags ?? [];
+  const domains = payload.domains ?? payload.domain_tags ?? payload.oversight_domains ?? payload.benefit_categories ?? [];
   const rawPayloadText = payload.raw_text ?? row.raw_text;
-  const contexts = inferPipelineContext(payload.title, payload.description, payload.summary, payload.practicalNote, payload.programArea, payload.claim_type, payload.barrier_category, rawPayloadText, domains, targetHint);
-  const domainTags = Array.isArray(domains) && domains.length ? domains : inferDomainTags(payload.title, payload.description, payload.summary, payload.practicalNote, payload.programArea, payload.claim_type, payload.barrier_category, rawPayloadText, targetHint);
+  const inferenceValues = [
+    payload.title,
+    payload.description,
+    payload.summary,
+    payload.practicalNote,
+    payload.programArea,
+    payload.claim_type,
+    payload.barrier_category,
+    payload.full_entity_name,
+    payload.record_type,
+    payload.domain_batch,
+    payload.notes,
+    payload.workflow_name,
+    payload.pathway_name,
+    payload.when_to_use,
+    rawPayloadText,
+    domains,
+    payload.official_source_urls,
+    payload.legal_citations,
+    targetHint,
+  ];
+  const contexts = inferPipelineContext(...inferenceValues);
+  const domainTags = Array.isArray(domains) && domains.length ? domains : inferDomainTags(...inferenceValues);
 
   if (!sourceName.startsWith("cream:") && !targetHint.includes("cream of crop")) {
     return { readyForCanonicalImport: false, requiresTransformation: true, reason: "not_cream_starter_row", pipeline_context: contexts, domain_tags: domainTags };
@@ -227,6 +248,24 @@ function transformDisposition(row) {
   if (/accountability_routes_full\.txt/.test(sourceName)) {
     const rawText = String(payload.raw_text ?? row.raw_text ?? "");
     return { readyForCanonicalImport: /oversight_body:/i.test(rawText) && /what_to_report:/i.test(rawText), requiresTransformation: true, transformProfile: "accountability_route_raw_text_to_public_accountability_routes", reason: "curated source record raw_text must be parsed into route fields before canonical import", pipeline_context: contexts, domain_tags: domainTags };
+  }
+  if (/government_benefits_registry\.jsonl/.test(sourceName)) {
+    return { readyForCanonicalImport: Boolean(payload.full_entity_name && payload.record_type === "government_benefit_program"), requiresTransformation: true, transformProfile: "government_benefit_payload_to_public_government_benefits_registry", reason: "benefit registry payload must normalize official source URLs, related statutes, workflow deadlines, and escalation pathways before canonical import", pipeline_context: contexts, domain_tags: domainTags };
+  }
+  if (/workflow_registry\.jsonl/.test(sourceName)) {
+    return { readyForCanonicalImport: Boolean(payload.workflow_uuid && payload.workflow_name && Array.isArray(payload.steps)), requiresTransformation: true, transformProfile: "workflow_payload_to_public_workflow_registry", reason: "workflow payload requires target-table fit review and step/deadline normalization before canonical import", pipeline_context: contexts, domain_tags: domainTags };
+  }
+  if (/escalation_registry\.jsonl/.test(sourceName)) {
+    return { readyForCanonicalImport: Boolean(payload.escalation_uuid && payload.pathway_name), requiresTransformation: true, transformProfile: "escalation_payload_to_public_escalation_registry", reason: "escalation pathway payload must normalize destination entities and escalation steps before canonical import", pipeline_context: contexts, domain_tags: domainTags };
+  }
+  if (/committee_registry\.jsonl/.test(sourceName)) {
+    return { readyForCanonicalImport: Boolean((payload.entity_id || payload.entity_uuid) && payload.full_entity_name), requiresTransformation: true, transformProfile: "committee_payload_to_public_committee_registry", reason: "committee payload must preserve official source provenance while normalizing oversight domains and public contact fields", pipeline_context: contexts, domain_tags: domainTags };
+  }
+  if (/committee_membership_registry\.jsonl/.test(sourceName)) {
+    return { readyForCanonicalImport: Boolean(payload.committee_id && (payload.legislator_id || payload.member_id || payload.bioguide_id)), requiresTransformation: true, transformProfile: "committee_membership_payload_to_public_committee_membership_registry", reason: "committee membership payload must link normalized committee and legislator identifiers before canonical import", pipeline_context: contexts, domain_tags: domainTags };
+  }
+  if (/legislator_registry\.jsonl/.test(sourceName)) {
+    return { readyForCanonicalImport: Boolean((payload.bioguide_id || payload.entity_uuid) && payload.full_entity_name), requiresTransformation: true, transformProfile: "legislator_payload_to_public_legislator_registry", reason: "legislator payload must normalize contact surfaces, committee memberships, and provenance before canonical import", pipeline_context: contexts, domain_tags: domainTags };
   }
 
   return { readyForCanonicalImport: false, requiresTransformation: true, reason: "no_transform_profile_for_source", pipeline_context: contexts, domain_tags: domainTags };
