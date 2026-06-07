@@ -105,9 +105,20 @@ function readLocalStagingSqlRows(dataDirs) {
     try {
       const text = fs.readFileSync(file, "utf8");
       const parsedRows = extractCorpusImportQueueRowsFromSql(text, relativePath);
-      if (parsedRows.length) {
+      const rawInsertCount = (text.match(/insert\s+into\s+public\.corpus_import_queue/gi) ?? []).length;
+      const parseErrorCount = parsedRows.filter((row) => row.import_status === "parse_error").length;
+      if (parsedRows.length || rawInsertCount) {
         rows.push(...parsedRows);
-        reports.push({ path: relativePath, queueRowsParsed: parsedRows.length });
+        reports.push({
+          path: relativePath,
+          queueRowsParsed: parsedRows.length,
+          rawInsertCount,
+          parseErrorCount,
+          unparsedInsertCount: Math.max(0, rawInsertCount - parsedRows.length),
+          incompleteSqlWarning: rawInsertCount > parsedRows.length
+            ? "Some corpus_import_queue insert statements were not parsed; this usually means the local SQL handoff is incomplete or cut off mid-insert."
+            : null,
+        });
       }
     } catch (error) {
       reports.push({ path: relativePath, queueRowsParsed: 0, error: error.message });
@@ -181,15 +192,16 @@ function transformDisposition(row) {
   const targetHint = String(row.target_hint ?? "").toLowerCase();
   const sourceType = String(row.source_type ?? "").toLowerCase();
   const domains = payload.domains ?? payload.domain_tags ?? [];
-  const contexts = inferPipelineContext(payload.title, payload.description, payload.summary, payload.practicalNote, payload.programArea, payload.claim_type, payload.barrier_category, domains, targetHint);
-  const domainTags = Array.isArray(domains) && domains.length ? domains : inferDomainTags(payload.title, payload.description, payload.summary, payload.practicalNote, payload.programArea, payload.claim_type, payload.barrier_category, targetHint);
+  const rawPayloadText = payload.raw_text ?? row.raw_text;
+  const contexts = inferPipelineContext(payload.title, payload.description, payload.summary, payload.practicalNote, payload.programArea, payload.claim_type, payload.barrier_category, rawPayloadText, domains, targetHint);
+  const domainTags = Array.isArray(domains) && domains.length ? domains : inferDomainTags(payload.title, payload.description, payload.summary, payload.practicalNote, payload.programArea, payload.claim_type, payload.barrier_category, rawPayloadText, targetHint);
 
   if (!sourceName.startsWith("cream:") && !targetHint.includes("cream of crop")) {
     return { readyForCanonicalImport: false, requiresTransformation: true, reason: "not_cream_starter_row", pipeline_context: contexts, domain_tags: domainTags };
   }
 
-  if (sourceType !== "curated_json_record" || !payload || typeof payload !== "object") {
-    return { readyForCanonicalImport: false, requiresTransformation: true, reason: "not_a_single_curated_json_payload", pipeline_context: contexts, domain_tags: domainTags };
+  if (!["curated_json_record", "curated_source_record"].includes(sourceType) || !payload || typeof payload !== "object") {
+    return { readyForCanonicalImport: false, requiresTransformation: true, reason: "not_a_single_curated_payload", pipeline_context: contexts, domain_tags: domainTags };
   }
 
   if (/legal_weak_joints_priority4\.json/.test(sourceName)) {
@@ -208,7 +220,13 @@ function transformDisposition(row) {
     return { readyForCanonicalImport: Boolean(payload.claim_type && payload.elements_to_prove), requiresTransformation: true, transformProfile: "claim_elements_payload_to_public_claim_element_matrix", reason: "grouped claim payload must be exploded or mapped into canonical claim-element rows", pipeline_context: contexts, domain_tags: domainTags };
   }
   if (/barrier_decision_tree_complete-1\.json/.test(sourceName)) {
-    return { readyForCanonicalImport: Boolean(payload.barrier_category && payload.barrier_tree), requiresTransformation: true, transformProfile: "barrier_tree_payload_to_public_barrier_decision_tree", reason: "nested barrier tree must be transformed to canonical barrier decision tree shape", pipeline_context: contexts, domain_tags: domainTags };
+    const hasNestedBarrierTree = Boolean(payload.barrier_category && payload.barrier_tree);
+    const hasFlatBarrierRecord = Boolean(payload.barrier_id && (payload.recommended_accommodations || payload.resource_routing));
+    return { readyForCanonicalImport: hasNestedBarrierTree || hasFlatBarrierRecord, requiresTransformation: true, transformProfile: "barrier_tree_payload_to_public_barrier_decision_tree", reason: hasFlatBarrierRecord ? "flat barrier record must be attached to the canonical barrier decision tree shape" : "nested barrier tree must be transformed to canonical barrier decision tree shape", pipeline_context: contexts, domain_tags: domainTags };
+  }
+  if (/accountability_routes_full\.txt/.test(sourceName)) {
+    const rawText = String(payload.raw_text ?? row.raw_text ?? "");
+    return { readyForCanonicalImport: /oversight_body:/i.test(rawText) && /what_to_report:/i.test(rawText), requiresTransformation: true, transformProfile: "accountability_route_raw_text_to_public_accountability_routes", reason: "curated source record raw_text must be parsed into route fields before canonical import", pipeline_context: contexts, domain_tags: domainTags };
   }
 
   return { readyForCanonicalImport: false, requiresTransformation: true, reason: "no_transform_profile_for_source", pipeline_context: contexts, domain_tags: domainTags };

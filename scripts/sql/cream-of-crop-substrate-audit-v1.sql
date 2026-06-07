@@ -59,9 +59,17 @@ select
       and payload ? 'barrier_category'
       and payload ? 'barrier_tree'
       then 'ready_for_barrier_tree_transform_review'
+    when source_name like 'cream:barrier_decision_tree_complete-1.json:%'
+      and payload ? 'barrier_id'
+      and (payload ? 'recommended_accommodations' or payload ? 'resource_routing')
+      then 'ready_for_flat_barrier_record_transform_review'
+    when source_name like 'cream:accountability_routes_full.txt:%'
+      and coalesce(payload->>'raw_text', raw_text, '') ilike '%oversight_body:%'
+      and coalesce(payload->>'raw_text', raw_text, '') ilike '%what_to_report:%'
+      then 'ready_for_accountability_route_transform_review'
     else 'requires_transform_mapping_or_payload_review'
   end as import_readiness,
-  coalesce(payload->>'weakJointId', payload->>'citation', payload->>'agency_name', payload->>'agencyName', payload->>'claim_type', payload->>'barrier_category') as source_record_key,
+  coalesce(payload->>'weakJointId', payload->>'citation', payload->>'agency_name', payload->>'agencyName', payload->>'claim_type', payload->>'barrier_category', payload->>'barrier_id') as source_record_key,
   coalesce(payload->'domains', '[]'::jsonb) as domain_tags,
   coalesce(payload->>'jurisdiction', payload->>'state', 'unspecified') as jurisdiction
 from public.corpus_import_queue
