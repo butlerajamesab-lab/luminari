@@ -1,0 +1,53 @@
+{
+  "generatedAt": "2026-06-08T06:45:32.089Z",
+  "mode": "dry-run",
+  "status": "database-unavailable",
+  "dependencyAdded": null,
+  "parser": {
+    "name": "wordprocessingml-xml-fallback",
+    "version": "unzip+xml-text-v1",
+    "dependencyAttempt": "mammoth preferred but npm registry returned 403 in this environment; using controlled DOCX WordprocessingML XML extraction fallback."
+  },
+  "safety": {
+    "writesAllowed": [],
+    "canonicalProductionTablesMutated": false,
+    "doctrineGraphEdgesInserted": false,
+    "atlasChanged": false,
+    "sunamBypassed": false,
+    "conveyorBypassed": false,
+    "rlsSecurityIndexesChanged": false
+  },
+  "envStatus": {
+    "DATABASE_URL": false,
+    "SUPABASE_URL": false,
+    "SUPABASE_SERVICE_ROLE_KEY": false,
+    "LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY": false,
+    "fallback_admin_key_available": false
+  },
+  "schema": {
+    "tableExists": null,
+    "columns": []
+  },
+  "summary": {
+    "mode": "dry-run",
+    "docxRowsDiscovered": 0,
+    "docxRowsExtracted": 0,
+    "docxExtractionFailures": 0,
+    "docxEmptyTextReview": 0,
+    "rowsStillBlocked": 0,
+    "rowsNewlyEligibleForNormalizationGateRouting": 0,
+    "totalExtractedCharacters": 0,
+    "totalExtractedLines": 0,
+    "statusCounts": {}
+  },
+  "rows": [],
+  "nextOrder": [
+    "DOCX file",
+    "raw text extraction into corpus_import_queue staging fields",
+    "Form Signal Extraction v3 after raw text exists",
+    "proto-form/form-signal candidates",
+    "review/gate",
+    "existing Sunam/conveyor path"
+  ],
+  "message": "DATABASE_URL is not configured; database audit sections will be marked unavailable."
+}
