@@ -340,7 +340,7 @@ async function main() {
           record_count_estimate: row.record_count_estimate,
           duplicate_risk: risk.duplicateRisk || classified.action === "insert-duplicate-risk",
           duplicate_risk_reasons: risk.duplicateRiskReasons,
-          action: args.apply ? classified.action.replace(/^insert/, "would-insert") : `would-${classified.action}`,
+          action: args.apply ? classified.action : `would-${classified.action}`,
           reason: classified.reason,
           parse_error: decoded.parseError,
         };
