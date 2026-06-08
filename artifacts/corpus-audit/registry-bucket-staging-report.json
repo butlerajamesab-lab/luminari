@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2026-06-08T01:42:55.119Z",
+  "mode": "dry-run",
+  "status": "storage-unavailable",
+  "safety": {
+    "writesAllowed": [],
+    "canonicalProductionTablesMutated": false,
+    "doctrineGraphEdgesInserted": false,
+    "atlasChanged": false,
+    "rlsSecurityIndexesChanged": false
+  },
+  "envStatus": {
+    "SUPABASE_URL": false,
+    "SUPABASE_SERVICE_ROLE_KEY": false,
+    "LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY": false,
+    "fallback_admin_key_available": false,
+    "DATABASE_URL": false
+  },
+  "bucketsConfigured": [
+    "registry files",
+    "Everything else",
+    "everything-else"
+  ],
+  "prefix": null,
+  "schema": null,
+  "summary": {
+    "filesDiscovered": 0,
+    "wouldStage": 0,
+    "staged": 0,
+    "duplicateRiskCount": 0,
+    "unreadableCount": 0,
+    "targetHintGroupCounts": {}
+  },
+  "files": [],
+  "bucketErrors": [],
+  "message": "SUPABASE_URL and a server-side Supabase admin key are required; no storage scan was attempted."
+}

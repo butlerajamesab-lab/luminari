@@ -163,6 +163,116 @@ export function countCsvRecords(text) {
   return Math.max(0, lines.length - 1);
 }
 
+
+export function parseRegistryBucketNames(env = process.env) {
+  const configured = env.REGISTRY_BUCKET_NAMES?.trim()
+    ? env.REGISTRY_BUCKET_NAMES
+    : env.REGISTRY_BUCKET_NAME;
+  const names = configured
+    ? configured.split(",").map((name) => name.trim()).filter(Boolean)
+    : ["registry files", "Everything else", "everything-else"];
+  return [...new Set(names)];
+}
+
+export function detectStorageFileExtension(storagePath) {
+  const ext = path.extname(String(storagePath ?? "")).toLowerCase();
+  return ext || "unknown";
+}
+
+export function storageModeForExtension(sourceExt) {
+  const ext = String(sourceExt ?? "").toLowerCase();
+  if (ext === ".json") return "json_payload";
+  if ([".jsonl", ".csv", ".txt", ".md", ".html", ".sql", ".ts", ".js"].includes(ext)) return "raw_text";
+  if ([".zip", ".pdf"].includes(ext)) return "base64_payload";
+  return "binary_metadata";
+}
+
+export function isTextStorageExtension(sourceExt) {
+  return [".json", ".jsonl", ".csv", ".txt", ".md", ".html", ".sql", ".ts", ".js"].includes(String(sourceExt ?? "").toLowerCase());
+}
+
+export function estimateStorageRecordCount({ sourceExt, text, payload }) {
+  const ext = String(sourceExt ?? "").toLowerCase();
+  if (ext === ".json") return extractJsonRecordCount(payload);
+  if (ext === ".jsonl") return countJsonlRecords(text ?? "");
+  if (ext === ".csv") return countCsvRecords(text ?? "");
+  if ([".txt", ".md", ".html", ".ts", ".js"].includes(ext)) {
+    return String(text ?? "").split(/\r?\n/).filter((line) => line.trim()).length;
+  }
+  if (ext === ".sql") return (String(text ?? "").match(/\binsert\s+into\b/gi) ?? []).length;
+  return null;
+}
+
+export function inferStorageTargetMetadata(...values) {
+  const haystack = values.map(normalizeText).join(" ").toLowerCase();
+  const rules = [
+    { hint: "legal_weak_joints", surfaces: ["legal_weak_joints", "weak_joint", "failure_layer", "doctrine_graph", "reform_graph"], pattern: /legal[_ -]?weak[_ -]?joints?|weak[_ -]?joint|failure[_ -]?layer/ },
+    { hint: "legal_statutes", surfaces: ["legal_statutes", "authority_layer", "legal_library", "doctrine_graph"], pattern: /legal[_ -]?statutes?|statute[_ -]?key[_ -]?text|legal[_ -]?library|\bstatutes?\b|authority[_ -]?layer/ },
+    { hint: "legal_case_law", surfaces: ["legal_case_law", "authority_layer", "legal_library"], pattern: /legal[_ -]?case[_ -]?law|case[_ -]?law|\bcases?\b|precedent/ },
+    { hint: "legal_enforcement", surfaces: ["legal_enforcement", "agencies_registry", "enforcement_intel", "agency_metrics"], pattern: /legal[_ -]?enforcement|agency[_ -]?authority|enforcement[_ -]?records?|agency[_ -]?metrics|agencies?[_ -]?registry/ },
+    { hint: "government_benefits_registry", surfaces: ["government_benefits_registry", "benefits_navigator"], pattern: /government[_ -]?benefits|benefits?[_ -]?registry|benefits?[_ -]?navigator|snap|medicaid|ssi|ssdi|tanf/ },
+    { hint: "workflow_registry", surfaces: ["workflow_registry", "investigation_workflow", "enforcement_pathway"], pattern: /workflow|investigation[_ -]?workflow|enforcement[_ -]?pathway/ },
+    { hint: "escalation_registry", surfaces: ["escalation_registry", "enforcement_pathway"], pattern: /escalation|enforcement[_ -]?pathway/ },
+    { hint: "accountability_routes", surfaces: ["accountability_routes", "enforcement_intel", "resource_directory"], pattern: /accountability[_ -]?routes?|resource[_ -]?directory|oversight[_ -]?bod/ },
+    { hint: "barrier_decision_tree", surfaces: ["barrier_decision_tree", "litigation_barriers"], pattern: /barrier[_ -]?decision[_ -]?tree|litigation[_ -]?barriers?/ },
+    { hint: "claim_element_matrix", surfaces: ["claim_element_matrix", "proof_frameworks", "claim_elements"], pattern: /claim[_ -]?elements?|claim[_ -]?element[_ -]?matrix|proof[_ -]?frameworks?/ },
+    { hint: "committee_registry", surfaces: ["committee_registry", "legislator_registry", "coalition_graph", "reform_graph"], pattern: /committee|legislator|legislature|coalition[_ -]?graph/ },
+    { hint: "coalition_intelligence", surfaces: ["coalition_intelligence", "reform_graph"], pattern: /coalition|reform[_ -]?graph/ },
+  ];
+  const matched = rules.filter((rule) => rule.pattern.test(haystack));
+  const targetHint = matched[0]?.hint ?? "review_required";
+  const targetSurfaces = matched.length
+    ? [...new Set(matched.flatMap((rule) => rule.surfaces))]
+    : ["review_required"];
+  const pipelineContext = inferPipelineContext(haystack, targetHint, targetSurfaces);
+  const domainTags = inferDomainTags(haystack, targetHint, targetSurfaces);
+  return { targetHint, targetSurfaces, pipelineContext, domainTags };
+}
+
+export function buildStorageStagingRow({ bucketName, storagePath, byteSize, sha256, contentType, sourceExt, storageMode, payload, rawText, base64Payload, recordCountEstimate, duplicateRisk = false, duplicateRiskReasons = [] }) {
+  const metadata = inferStorageTargetMetadata(bucketName, storagePath, rawText, payload);
+  return {
+    source_name: `${bucketName}/${storagePath}`,
+    source_type: "supabase_storage",
+    source_ext: sourceExt,
+    storage_bucket: bucketName,
+    storage_path: storagePath,
+    byte_size: byteSize,
+    sha256,
+    content_type: contentType ?? null,
+    storage_mode: storageMode,
+    target_hint: metadata.targetHint,
+    record_count_estimate: recordCountEstimate,
+    payload: payload ?? {
+      storage_bucket: bucketName,
+      storage_path: storagePath,
+      source_ext: sourceExt,
+      storage_mode: storageMode,
+      duplicate_risk: duplicateRisk,
+      duplicate_risk_reasons: duplicateRiskReasons,
+    },
+    raw_text: rawText ?? null,
+    base64_payload: base64Payload ?? null,
+    pipeline_context: metadata.pipelineContext,
+    domain_tags: metadata.domainTags,
+    target_surfaces: metadata.targetSurfaces,
+    import_status: duplicateRisk ? "duplicate_risk_review" : "pending_storage_review",
+    created_at: new Date().toISOString(),
+  };
+}
+
+export function hasDuplicateRisk(candidate, existingRows = []) {
+  const risks = [];
+  for (const row of existingRows) {
+    if (!row) continue;
+    const sameContent = row.sha256 && candidate.sha256 && row.sha256 === candidate.sha256;
+    const sameLocation = (row.storage_bucket === candidate.storage_bucket && row.storage_path === candidate.storage_path) || row.source_name === candidate.source_name;
+    if (sameContent && !sameLocation) risks.push("same_sha256_different_storage_location");
+    if (sameLocation && row.sha256 && candidate.sha256 && row.sha256 !== candidate.sha256) risks.push("same_storage_path_changed_sha256");
+  }
+  return { duplicateRisk: risks.length > 0, duplicateRiskReasons: [...new Set(risks)] };
+}
+
 export function findDataDirectories(cliDataDir) {
   const candidates = [
     cliDataDir,
