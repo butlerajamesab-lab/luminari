@@ -236,8 +236,12 @@ function get_duwamish_layer_fields(active_layer_slug: layer_slug): { fields: pre
       { label: "treaty_date", value: truth_record.treaty_date.value, source_url: truth_record.treaty_date.source_url, source_posture },
       { label: "signatory_position", value: truth_record.signatory_position.value, source_url: truth_record.signatory_position.source_url, source_posture },
       { label: "chief_name", value: truth_record.chief_name.value, source_url: truth_record.chief_name.source_url, source_posture },
+      { label: "chief_role", value: duwamish_truth_seed.layer_1_treaty.signatory_chief.role, source_url: duwamish_truth_seed.layer_1_treaty.signatory_chief.source.url, source_posture },
+      { label: "chief_known_for", value: duwamish_truth_seed.layer_1_treaty.signatory_chief.known_for, source_url: duwamish_truth_seed.layer_1_treaty.signatory_chief.source.url, source_posture },
       { label: "chief_lineage_note", value: truth_record.chief_lineage_note.value, source_url: truth_record.chief_lineage_note.source_url, source_posture },
       { label: "city_named_for_chief", value: truth_record.city_named_for_chief.value, source_url: truth_record.city_named_for_chief.source_url, source_posture },
+      { label: "largest_village_location", value: duwamish_truth_seed.layer_1_treaty.largest_village_location, source_url: duwamish_truth_seed.layer_1_treaty.source.url, source_posture },
+      { label: "village_fate", value: duwamish_truth_seed.layer_1_treaty.village_fate, source_url: duwamish_truth_seed.layer_1_treaty.source.url, source_posture },
     ],
     dispossession: [
       { label: "dispossession_events", value: truth_record.dispossession_events.value, source_url: truth_record.dispossession_events.source_url, source_posture, warning: truth_record.dispossession_events.conflict_note },
