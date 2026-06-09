@@ -1,11 +1,12 @@
 import { useAuth } from "@/core/hooks/useAuth";
 import { duwamish_language_seed } from "@/data/duwamish_language_seed";
 import { duwamish_truth_layers } from "@/data/recognition_atlas_layers";
+import { continuous_habitation_paradox } from "@/data/recognition_weak_joints";
 import { duwamish_truth_seed } from "@/data/duwamish_truth_seed";
 import { get_conflict_fields, resolve_truth_layer } from "@/resolvers/truth_layer_resolver";
 import type { ReactNode } from "react";
 import { Link, useRoute } from "wouter";
-import { ArrowLeft, EyeOff, Lock, Shield } from "lucide-react";
+import { ArrowLeft, ArrowRight, EyeOff, Lock, Shield } from "lucide-react";
 
 const tone = {
   bg: "#0c0f14",
@@ -247,6 +248,23 @@ export default function RecognitionAtlasLayer() {
             ),
           })}
         </div>
+
+        {active_layer_slug === "dispossession" && section_card({
+          title: "Weak Joints Illustrated",
+          children: (
+            <article style={{ border: `1px solid rgba(212,160,23,0.35)`, background: "rgba(212,160,23,0.06)", borderRadius: 16, padding: "0.95rem" }}>
+              <div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{continuous_habitation_paradox.weak_joint_id}</div>
+              <h3 style={{ margin: "0.5rem 0" }}>{continuous_habitation_paradox.title}</h3>
+              <p style={{ color: tone.muted, lineHeight: 1.65 }}>{continuous_habitation_paradox.description}</p>
+              <p style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>
+                authorship: {continuous_habitation_paradox.authorship} · publication_status: {continuous_habitation_paradox.publication_status}
+              </p>
+              <Link href="/recognition-gideon?weak_joint=continuous_habitation_paradox" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 6 }}>
+                Open Recognition Gideon analysis <ArrowRight size={14} />
+              </Link>
+            </article>
+          ),
+        })}
 
         {active_layer_slug === "language" && section_card({
           title: "Language entries for review",
