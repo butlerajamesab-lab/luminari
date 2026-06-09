@@ -70,6 +70,7 @@ import LegalLibrary from "./pages/LegalLibrary";
 import AgencyMetrics from "./pages/AgencyMetrics";
 import CivilGideon from "./pages/CivilGideon";
 import RecognitionAtlas from "./pages/RecognitionAtlas";
+import RecognitionAtlasLayer from "./pages/RecognitionAtlasLayer";
 import MentalHealth from "./pages/MentalHealth";
 import CategoryLanding from "./pages/CategoryLanding";
 import CategoryExplorer from "./pages/CategoryExplorer";
@@ -245,6 +246,7 @@ function App() {
                 <Route path="/legal-library" component={LegalLibrary} />
                 <Route path="/agency-metrics" component={AgencyMetrics} />
                 <Route path="/civil-gideon" component={CivilGideon} />
+                <Route path="/recognition-atlas/:tribe_id/:layer_slug" component={RecognitionAtlasLayer} />
                 <Route path="/recognition-atlas" component={RecognitionAtlas} />
                 <Route path="/mental-health" component={MentalHealth} />
                 <Route path="/categories" component={CategoryExplorer} />
