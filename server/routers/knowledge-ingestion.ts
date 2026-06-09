@@ -176,64 +176,75 @@ const advocacyOrgImportSchema = z.object({
   intakeUrl: z.string().optional(),
 });
 
+
+const knowledgeBackboneTableList = [
+  { name: "legal_statutes", label: "Statutes", target: 900 },
+  { name: "legal_case_law", label: "Case Law", target: 400 },
+  { name: "agency_authority_map", label: "Agency Authorities", target: 200 },
+  { name: "strategy_claim_catalog", label: "Claim Catalog", target: 100 },
+  { name: "lumensend_templates", label: "LumenSend Templates", target: 50 },
+  { name: "assembly_section_library", label: "Section Library", target: 60 },
+  { name: "legislator_contacts", label: "Legislator Contacts", target: 65 },
+  { name: "advocacy_organizations", label: "Advocacy Organizations", target: 100 },
+  { name: "doctrine_registry", label: "Doctrine Registry", target: 100 },
+  { name: "court_directory", label: "Court Directory", target: 180 },
+  { name: "workflow_master", label: "Workflows", target: 100 },
+  { name: "evidence_profiles", label: "Evidence Profiles", target: 50 },
+  { name: "deadline_rules", label: "Deadline Rules", target: 100 },
+  { name: "escalation_routes", label: "Escalation Routes", target: 50 },
+  { name: "weak_joint_triggers", label: "Weak Joint Registry", target: 50 },
+  { name: "proof_frameworks", label: "Proof Frameworks", target: 90 },
+  { name: "signal_registry", label: "Signal Registry", target: 100 },
+  { name: "pattern_registry", label: "Pattern Registry", target: 50 },
+  { name: "settlement_formulas", label: "Settlement Formulas", target: 70 },
+  { name: "evidence_confidence_rules", label: "Evidence Confidence Rules", target: 70 },
+  { name: "claim_validation_rules", label: "Claim Validation Rules", target: 220 },
+  { name: "remedy_feasibility_rules", label: "Remedy Feasibility Rules", target: 30 },
+  { name: "procedural_paths", label: "Procedural Paths", target: 160 },
+  { name: "coalition_legislators", label: "Coalition Legislators", target: 60 },
+  { name: "coalition_agencies", label: "Coalition Agencies", target: 35 },
+  { name: "coalition_advocacy_orgs", label: "Coalition Advocacy Orgs", target: 30 },
+  { name: "coalition_media", label: "Coalition Media", target: 20 },
+  { name: "reform_packages", label: "Reform Packages", target: 5 },
+  { name: "advocacy_targets", label: "Advocacy Targets", target: 50 },
+  { name: "campaigns", label: "Campaigns", target: 3 },
+  { name: "reform_package_versions", label: "Reform Package Versions", target: 3 },
+  { name: "reform_strategy_memory", label: "Strategy Memory", target: 5 },
+  { name: "data_stream_registry", label: "Data Stream Registry", target: 15 },
+  { name: "consumer_complaints", label: "Consumer Complaints", target: 200 },
+  { name: "campaign_finance_records", label: "Campaign Finance", target: 150 },
+  { name: "legal_enforcement_records", label: "Enforcement Records", target: 900 },
+  { name: "legal_weak_joints", label: "Weak Joint Registry (Legal)", target: 100 },
+  { name: "policy_change_registry", label: "Policy Changes", target: 25 },
+  { name: "registry_jurisdictions", label: "Registry Jurisdictions", target: 50 },
+  { name: "registry_programs", label: "Registry Programs", target: 500 },
+  { name: "registry_oversight_bodies", label: "Oversight Bodies", target: 70 },
+  { name: "registry_workflows", label: "Registry Workflows", target: 30 },
+  { name: "registry_policy_alerts", label: "Policy Alerts", target: 20 },
+  { name: "registry_contacts", label: "Registry Contacts", target: 100 },
+  { name: "registry_signals", label: "Registry Signals", target: 200 },
+] as const;
+
+const allowedKnowledgeBackboneTables = new Set(knowledgeBackboneTableList.map((table) => table.name));
+const safeIdentifierPattern = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
+function quoteSafeIdentifier(identifier: string): string {
+  if (!safeIdentifierPattern.test(identifier)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: `Unsafe SQL identifier: ${identifier}` });
+  }
+  return `"${identifier.replace(/"/g, '""')}"`;
+}
+
 /* ─── Knowledge Ingestion Router ─── */
 export const knowledgeIngestionRouter = router({
   /* ── Population Stats (all knowledge tables) ── */
   populationStats: publicProcedure.query(async () => {
-    const tables = [
-      { name: "legal_statutes", label: "Statutes", target: 900 },
-      { name: "legal_case_law", label: "Case Law", target: 400 },
-      { name: "agency_authority_map", label: "Agency Authorities", target: 200 },
-      { name: "strategy_claim_catalog", label: "Claim Catalog", target: 100 },
-      { name: "lumensend_templates", label: "LumenSend Templates", target: 50 },
-      { name: "assembly_section_library", label: "Section Library", target: 60 },
-      { name: "legislator_contacts", label: "Legislator Contacts", target: 65 },
-      { name: "advocacy_organizations", label: "Advocacy Organizations", target: 100 },
-      { name: "doctrine_registry", label: "Doctrine Registry", target: 100 },
-      { name: "court_directory", label: "Court Directory", target: 180 },
-      { name: "workflow_master", label: "Workflows", target: 100 },
-      { name: "evidence_profiles", label: "Evidence Profiles", target: 50 },
-      { name: "deadline_rules", label: "Deadline Rules", target: 100 },
-      { name: "escalation_routes", label: "Escalation Routes", target: 50 },
-      { name: "weak_joint_triggers", label: "Weak Joint Registry", target: 50 },
-      { name: "proof_frameworks", label: "Proof Frameworks", target: 90 },
-      { name: "signal_registry", label: "Signal Registry", target: 100 },
-      { name: "pattern_registry", label: "Pattern Registry", target: 50 },
-      { name: "settlement_formulas", label: "Settlement Formulas", target: 70 },
-      { name: "evidence_confidence_rules", label: "Evidence Confidence Rules", target: 70 },
-      { name: "claim_validation_rules", label: "Claim Validation Rules", target: 220 },
-      { name: "remedy_feasibility_rules", label: "Remedy Feasibility Rules", target: 30 },
-      { name: "procedural_paths", label: "Procedural Paths", target: 160 },
-      { name: "coalition_legislators", label: "Coalition Legislators", target: 60 },
-      { name: "coalition_agencies", label: "Coalition Agencies", target: 35 },
-      { name: "coalition_advocacy_orgs", label: "Coalition Advocacy Orgs", target: 30 },
-      { name: "coalition_media", label: "Coalition Media", target: 20 },
-      { name: "reform_packages", label: "Reform Packages", target: 5 },
-      { name: "advocacy_targets", label: "Advocacy Targets", target: 50 },
-      { name: "campaigns", label: "Campaigns", target: 3 },
-      { name: "reform_package_versions", label: "Reform Package Versions", target: 3 },
-      { name: "reform_strategy_memory", label: "Strategy Memory", target: 5 },
-      { name: "data_stream_registry", label: "Data Stream Registry", target: 15 },
-      { name: "consumer_complaints", label: "Consumer Complaints", target: 200 },
-      { name: "campaign_finance_records", label: "Campaign Finance", target: 150 },
-      { name: "legal_enforcement_records", label: "Enforcement Records", target: 900 },
-      { name: "legal_weak_joints", label: "Weak Joint Registry (Legal)", target: 100 },
-      { name: "policy_change_registry", label: "Policy Changes", target: 25 },
-      { name: "registry_jurisdictions", label: "Registry Jurisdictions", target: 50 },
-      { name: "registry_programs", label: "Registry Programs", target: 500 },
-      { name: "registry_oversight_bodies", label: "Oversight Bodies", target: 70 },
-      { name: "registry_workflows", label: "Registry Workflows", target: 30 },
-      { name: "registry_policy_alerts", label: "Policy Alerts", target: 20 },
-      { name: "registry_contacts", label: "Registry Contacts", target: 100 },
-      { name: "registry_signals", label: "Registry Signals", target: 200 },
-    ];
-
-    const quoteIdentifier = (identifier: string) => `"${identifier.replace(/"/g, '""')}"`;
+    const tables = knowledgeBackboneTableList;
 
     const results = await Promise.all(
       tables.map(async (t) => {
         try {
-          const { rows } = await getPool().query(`SELECT COUNT(*)::int AS cnt FROM ${quoteIdentifier(t.name)}`);
+          const { rows } = await getPool().query(`SELECT COUNT(*)::int AS cnt FROM ${quoteSafeIdentifier(t.name)}`);
           const cnt = Number(rows[0]?.cnt ?? 0);
           return {
             name: t.name,
@@ -549,7 +560,7 @@ export const knowledgeIngestionRouter = router({
       return { inserted, skipped: input.records.length - inserted - errors.length, errors };
     }),
 
-  /* ── Universal JSON Import (auto-detect format, flatten domain groups, map fields) ── */
+  /* ── Universal JSON Import (auto-detect format, flatten domain groups, preserve snake_case fields) ── */
   importUniversalJSON: adminProcedure
     .input(z.object({
       targetTable: z.string(),
@@ -557,7 +568,6 @@ export const knowledgeIngestionRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       const addedBy = ctx.user.name ?? ctx.user.openId;
-      const now = Date.now();
       let parsed: any;
       try {
         parsed = JSON.parse(input.rawJson);
@@ -574,7 +584,7 @@ export const knowledgeIngestionRouter = router({
         for (const [domainKey, arr] of Object.entries(parsed)) {
           if (Array.isArray(arr)) {
             for (const rec of arr) {
-              records.push({ ...rec, _sourceGroup: domainKey });
+              records.push(typeof rec === "object" && rec !== null && !Array.isArray(rec) ? { ...rec, _sourceGroup: domainKey } : rec);
             }
           }
         }
@@ -585,224 +595,141 @@ export const knowledgeIngestionRouter = router({
       if (records.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "No records found in JSON" });
       if (records.length > 2000) throw new TRPCError({ code: "BAD_REQUEST", message: "Maximum 2000 records per import" });
 
-      // Field mapping: snake_case user fields → camelCase schema fields
-      const fieldMap: Record<string, string> = {
-        text_excerpt: "summary",
-        source_url: "sourceUrl",
-        statute_id: "_skip",
-        case_name: "caseName",
-        year_decided: "yearDecided",
-        key_quotes: "keyQuotes",
-        statutes_interpreted: "statutesInterpreted",
-        subsequent_history: "subsequentHistory",
-        agency_short: "agencyShort",
-        complaint_types: "complaintTypes",
-        statutory_authority: "statutoryAuthority",
-        response_timeline_days: "responseTimelineDays",
-        complaint_pathway: "complaintPathway",
-        common_outcomes: "commonOutcomes",
-        linked_weak_joints: "linkedWeakJoints",
-        claim_type: "claimType",
-        statute_citation: "statuteCitation",
-        elements_required: "elementsRequired",
-        standard_of_proof: "standardOfProof",
-        typical_forum: "typicalForum",
-        sol_years: "solYears",
-        damages_available: "damagesAvailable",
-        full_name: "fullName",
-        contact_email: "contactEmail",
-        contact_phone: "contactPhone",
-        office_address: "officeAddress",
-        org_type: "orgType",
-        services_offered: "servicesOffered",
-        eligibility_criteria: "eligibilityCriteria",
-        hours_of_operation: "hoursOfOperation",
-        intake_url: "intakeUrl",
-        document_type: "documentType",
-        subject_template: "subjectTemplate",
-        body_template: "bodyTemplate",
-        section_name: "sectionName",
-        section_type: "sectionType",
-        template_id: "templateId",
-        order_index: "orderIndex",
-        content_template: "contentTemplate",
-        conditional_rules: "conditionalRules",
-        legal_standards: "legalStandards",
-        example_content: "exampleContent",
-        primary_cases: "primaryCases",
-        court_name: "courtName",
-        court_type: "courtType",
-        filing_url: "filingUrl",
-        clerk_name: "clerkName",
-        clerk_email: "clerkEmail",
-        issue_types: "issueTypes",
-        trigger_conditions: "triggerConditions",
-        primary_agency: "primaryAgency",
-        entry_forms: "entryForms",
-        initial_deadline_rule: "initialDeadlineRule",
-        evidence_profile_id: "evidenceProfileId",
-        appeal_chain: "appealChain",
-        weak_joint_ids: "weakJointIds",
-        estimated_duration: "estimatedDuration",
-        success_rate: "successRate",
-        required_minimum: "requiredMinimum",
-        common_failure_modes: "commonFailureModes",
-        preservation_notes: "preservationNotes",
-        spoliation_risks: "spoliationRisks",
-        high_value: "highValue",
-        deadline_type: "deadlineType",
-        time_limit_days: "timeLimitDays",
-        extended_limit_days: "extendedLimitDays",
-        extended_condition: "extendedCondition",
-        tolling_possible: "tollingPossible",
-        tolling_conditions: "tollingConditions",
-        warning_threshold_days: "warningThresholdDays",
-        critical_threshold_days: "criticalThresholdDays",
-        workflow_id: "workflowId",
-        preservation_requirements: "preservationRequirements",
-        weak_joint_id: "weakJointId",
-        trigger_name: "triggerName",
-        trigger_condition: "triggerCondition",
-        severity_weight: "severityWeight",
-        elements_of_proof: "elementsOfProof",
-        burden_of_proof: "burdenOfProof",
-        standard_of_review: "standardOfReview",
-        required_causation: "requiredCausation",
-        typical_evidence: "typicalEvidence",
-        common_defenses: "commonDefenses",
-        key_precedents: "keyPrecedents",
-        signal_id: "signalId",
-        trigger_patterns: "triggerPatterns",
-        linked_doctrine: "linkedDoctrine",
-        linked_contradiction_templates: "linkedContradictionTemplates",
-        recommended_next_steps: "recommendedNextSteps",
-        pattern_id: "patternId",
-        pattern_name: "patternName",
-        pattern_description: "patternDescription",
-        pattern_type: "patternType",
-        signal_type: "signalType",
-        jurisdiction_scope: "jurisdictionScope",
-        related_laws: "relatedLaws",
-        related_agencies: "relatedAgencies",
-        harm_domains: "harmDomains",
-        formula_id: "formulaId",
-        formula_name: "formulaName",
-        formula_expression: "formulaExpression",
-        multiplier_ranges: "multiplierRanges",
-        statutory_basis: "statutoryBasis",
-        source_type: "sourceType",
-        key_requirements: "keyRequirements",
-        effective_date: "effectiveDate",
-        key_provisions: "keyProvisions",
-        administrative_agencies: "administrativeAgencies",
-        enforcement_triggers: "enforcementTriggers",
-        neutral_summary_card: "neutralSummaryCard",
-        added_by: "addedBy",
-      };
+      if (!allowedKnowledgeBackboneTables.has(input.targetTable as any)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Unsupported Knowledge Backbone target table" });
+      }
 
-      // Legacy NOT NULL columns that need defaults per table
+      const quotedTable = quoteSafeIdentifier(input.targetTable);
+      const pool = getPool();
+      const { rows: columnRows } = await pool.query(
+        `
+          SELECT column_name, data_type, udt_name
+          FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = $1
+        `,
+        [input.targetTable]
+      );
+
+      if (columnRows.length === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: `Target table not found: ${input.targetTable}` });
+      }
+
+      const columns = new Map<string, { dataType: string; udtName: string }>(
+        columnRows.map((row: { column_name: string; data_type: string; udt_name: string }) => [
+          row.column_name,
+          { dataType: row.data_type, udtName: row.udt_name },
+        ])
+      );
+
+      // Legacy NOT NULL columns that need defaults per table. Keep universal JSON defaults snake_case only.
       const legacyDefaults: Record<string, Record<string, any>> = {
         legal_statutes: { jurisdiction_id: 0, statute_citation: "" },
         legal_case_law: { jurisdiction_id: 0, case_citation: "" },
         lumensend_templates: { name: "" },
         legislator_contacts: { full_name: "", jurisdiction: "", chamber: "other" },
         advocacy_organizations: { name: "", org_type: "other", jurisdiction: "" },
-        deadline_rules: { claimType: "", jurisdiction: "", triggerEvent: "", deadlineType: "filing" },
-        weak_joint_triggers: { triggerName: "" },
+        deadline_rules: { claim_type: "", jurisdiction: "", trigger_event: "", deadline_type: "filing" },
+        weak_joint_triggers: { trigger_name: "" },
       };
 
-      function mapRecord(raw: any): Record<string, any> {
-        const mapped: Record<string, any> = {};
-        for (const [key, val] of Object.entries(raw)) {
-          if (key === "meta" || key === "_sourceGroup") continue;
-          const target = fieldMap[key];
-          if (target === "_skip") continue;
-          mapped[target ?? key] = val;
-        }
-        // Ensure domain → domains array
-        if (mapped.domain && !mapped.domains) {
-          mapped.domains = [mapped.domain];
-        }
-        // Apply legacy defaults for the target table
-        const defaults = legacyDefaults[input.targetTable] ?? {};
-        for (const [col, def] of Object.entries(defaults)) {
-          if (mapped[col] === undefined) mapped[col] = def;
-        }
-        return mapped;
-      }
-
-      // Table → Drizzle reference
-      const tableMap: Record<string, any> = {
-        legal_statutes: legalStatutes,
-        legal_case_law: legalCaseLaw,
-        agency_authority_map: agencyAuthorityMap,
-        strategy_claim_catalog: strategyClaimCatalog,
-        lumensend_templates: lumensendTemplates,
-        assembly_section_library: assemblySectionLibrary,
-        legislator_contacts: legislatorContacts,
-        advocacy_organizations: advocacyOrganizations,
-        doctrine_registry: doctrineRegistry,
-        court_directory: courtDirectory,
-        workflow_master: workflowMaster,
-        evidence_profiles: evidenceProfiles,
-        deadline_rules: deadlineRules,
-        escalation_routes: escalationRoutes,
-        weak_joint_triggers: weakJointTriggers,
-        proof_frameworks: proofFrameworks,
-        signal_registry: signalRegistry,
-        pattern_registry: patternRegistry,
-        settlement_formulas: settlementFormulas,
+      const isJsonColumn = (columnName: string) => {
+        const column = columns.get(columnName);
+        return column?.dataType === "json" || column?.dataType === "jsonb" || column?.udtName === "json" || column?.udtName === "jsonb";
       };
 
-      const drizzleTable = tableMap[input.targetTable];
-      if (!drizzleTable) {
-        // Fallback: raw SQL insert for tables without Drizzle schema
-        let inserted = 0;
-        const errors: string[] = [];
-        for (let i = 0; i < records.length; i++) {
-          try {
-            const mapped = mapRecord(records[i]);
-            mapped.createdAt = mapped.createdAt ?? now;
-            mapped.updatedAt = mapped.updatedAt ?? now;
-            mapped.addedBy = mapped.addedBy ?? addedBy;
-            const cols = Object.keys(mapped);
-            const vals = cols.map((c) => {
-              const v = mapped[c];
-              return typeof v === "object" && v !== null ? JSON.stringify(v) : v;
-            });
-            const placeholders = cols.map(() => "?").join(", ");
-        // @ts-ignore - extra arg is valid at runtime
-            await db.execute(sql.raw(`INSERT INTO \`${input.targetTable}\` (${cols.map(c => `\`${c}\``).join(", ")}) VALUES (${placeholders})`, vals as any));
-            inserted++;
-          } catch (err: any) {
-            if (err?.code === "ER_DUP_ENTRY") { /* skip */ } else {
-              errors.push(`Row ${i}: ${err?.message ?? "Unknown"}`);
+      const normalizeValue = (columnName: string, value: any) => {
+        if (value === undefined) return undefined;
+        if (isJsonColumn(columnName)) {
+          if (typeof value === "string") {
+            try {
+              JSON.parse(value);
+              return value;
+            } catch {
+              return JSON.stringify(value);
             }
           }
+          return JSON.stringify(value);
         }
-        return { inserted, skipped: records.length - inserted - errors.length, errors, total: records.length };
-      }
+        if (Array.isArray(value) || (typeof value === "object" && value !== null)) return JSON.stringify(value);
+        return value;
+      };
 
-      // Drizzle insert path
+      const nowMs = Date.now();
+      const nowIso = new Date(nowMs).toISOString();
+      const auditValue = (columnName: string) => {
+        const column = columns.get(columnName);
+        if (["bigint", "integer", "numeric", "double precision", "real", "smallint"].includes(column?.dataType ?? "")) return nowMs;
+        return nowIso;
+      };
+
       let inserted = 0;
       let skipped = 0;
       const errors: string[] = [];
+
       for (let i = 0; i < records.length; i++) {
         try {
-          const mapped = mapRecord(records[i]);
-          mapped.createdAt = mapped.createdAt ?? now;
-          mapped.updatedAt = mapped.updatedAt ?? now;
-          mapped.addedBy = mapped.addedBy ?? addedBy;
-          await db.insert(drizzleTable).values(mapped);
+          const raw = records[i];
+          if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+            skipped++;
+            errors.push(`Row ${i + 1}: record must be a JSON object`);
+            continue;
+          }
+
+          const row: Record<string, any> = {};
+          let matchedInputColumn = false;
+
+          for (const [key, value] of Object.entries(raw)) {
+            if (key === "meta" || key === "_sourceGroup") continue;
+            if (!safeIdentifierPattern.test(key) || !columns.has(key)) continue;
+            const normalizedValue = normalizeValue(key, value);
+            if (normalizedValue === undefined) continue;
+            row[key] = normalizedValue;
+            matchedInputColumn = true;
+          }
+
+          if (!matchedInputColumn) {
+            skipped++;
+            errors.push(`Row ${i + 1}: no valid snake_case columns matched target table`);
+            continue;
+          }
+
+          const defaults = legacyDefaults[input.targetTable] ?? {};
+          for (const [columnName, defaultValue] of Object.entries(defaults)) {
+            if (columns.has(columnName) && row[columnName] === undefined) row[columnName] = normalizeValue(columnName, defaultValue);
+          }
+
+          if (columns.has("created_at") && row.created_at === undefined) row.created_at = auditValue("created_at");
+          if (columns.has("updated_at") && row.updated_at === undefined) row.updated_at = auditValue("updated_at");
+          if (columns.has("added_by") && row.added_by === undefined) row.added_by = addedBy;
+
+          const columnNames = Object.keys(row).filter((columnName) => columns.has(columnName));
+          if (columnNames.length === 0) {
+            skipped++;
+            errors.push(`Row ${i + 1}: no valid snake_case columns matched target table`);
+            continue;
+          }
+
+          const quotedColumns = columnNames.map(quoteSafeIdentifier).join(", ");
+          const values = columnNames.map((columnName) => row[columnName]);
+          const placeholders = columnNames
+            .map((columnName, valueIndex) => {
+              const placeholder = `$${valueIndex + 1}`;
+              if (isJsonColumn(columnName)) return `${placeholder}::${columns.get(columnName)?.udtName === "json" ? "json" : "jsonb"}`;
+              return placeholder;
+            })
+            .join(", ");
+
+          await pool.query(`INSERT INTO ${quotedTable} (${quotedColumns}) VALUES (${placeholders})`, values);
           inserted++;
         } catch (err: any) {
-          if (err?.code === "ER_DUP_ENTRY") {
+          if (err?.code === "ER_DUP_ENTRY" || err?.code === "23505") {
             skipped++;
           } else {
-            errors.push(`Row ${i}: ${err?.message ?? "Unknown"}`);
+            errors.push(`Row ${i + 1}: ${err?.message ?? "Unknown"}`);
           }
         }
       }
+
       return { inserted, skipped, errors, total: records.length };
     }),
 
