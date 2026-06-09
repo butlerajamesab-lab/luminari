@@ -257,6 +257,10 @@ function get_duwamish_layer_fields(active_layer_slug: layer_slug): { fields: pre
       { label: "recognition_events_count", value: truth_record.recognition_events_count.value, source_url: truth_record.recognition_events_count.source_url, source_posture },
       { label: "recognition_granted_reversed", value: truth_record.recognition_granted_reversed.value, source_url: truth_record.recognition_granted_reversed.source_url, source_posture, warning: truth_record.recognition_granted_reversed.conflict_note },
       { label: "reversal_agent", value: truth_record.reversal_agent.value, source_url: truth_record.reversal_agent.source_url, source_posture, warning: truth_record.reversal_agent.conflict_note },
+      { label: "recognition_event_labels", value: duwamish_truth_seed.layer_3_recognition_timeline.events.map((event) => event.event_label), source_url: duwamish_truth_seed.layer_3_recognition_timeline.source.url, source_posture },
+      { label: "recognition_event_years", value: duwamish_truth_seed.layer_3_recognition_timeline.events.map((event) => String(event.year)), source_url: duwamish_truth_seed.layer_3_recognition_timeline.source.url, source_posture },
+      { label: "recognition_event_outcomes", value: duwamish_truth_seed.layer_3_recognition_timeline.events.map((event) => event.outcome), source_url: duwamish_truth_seed.layer_3_recognition_timeline.source.url, source_posture },
+      { label: "recognition_event_agents", value: duwamish_truth_seed.layer_3_recognition_timeline.events.map((event) => event.agent ?? "not_reported_in_seed"), source_url: duwamish_truth_seed.layer_3_recognition_timeline.source.url, source_posture },
     ],
     lawsuit: [
       { label: "lawsuit_filed_date", value: truth_record.lawsuit_filed_date.value, source_url: truth_record.lawsuit_filed_date.source_url, source_posture },
