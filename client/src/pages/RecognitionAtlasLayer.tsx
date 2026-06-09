@@ -3,6 +3,7 @@ import { duwamish_language_seed } from "@/data/duwamish_language_seed";
 import { duwamish_truth_layers } from "@/data/recognition_atlas_layers";
 import { duwamish_truth_seed } from "@/data/duwamish_truth_seed";
 import { get_conflict_fields, resolve_truth_layer } from "@/resolvers/truth_layer_resolver";
+import type { ReactNode } from "react";
 import { Link, useRoute } from "wouter";
 import { ArrowLeft, EyeOff, Lock, Shield } from "lucide-react";
 
@@ -68,7 +69,7 @@ function render_value(value: preview_field["value"]) {
   return String(value);
 }
 
-function section_card({ title, children }: { title: string; children: React.ReactNode }) {
+function section_card({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 22, padding: "1.25rem" }}>
       <h2 style={{ margin: "0 0 1rem", fontSize: "1.25rem" }}>{title}</h2>
