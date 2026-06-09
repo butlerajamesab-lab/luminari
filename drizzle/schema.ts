@@ -9995,6 +9995,198 @@ export const unifiedResources = pgTable("unified_resources", {
 export type UnifiedResource = typeof unifiedResources.$inferSelect;
 export type InsertUnifiedResource = typeof unifiedResources.$inferInsert;
 
+
+export const jurisdictionAssertions = pgTable("jurisdiction_assertions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sourceTable: text("source_table").notNull(),
+  sourceRecordId: text("source_record_id").notNull(),
+  sourceName: text("source_name"),
+  sourceHash: text("source_hash"),
+  candidateRecordId: text("candidate_record_id"),
+  canonicalRecordId: text("canonical_record_id"),
+  jurisdictionRefTable: text("jurisdiction_ref_table"),
+  jurisdictionRefId: text("jurisdiction_ref_id"),
+  jurisdictionType: text("jurisdiction_type").notNull(),
+  jurisdictionLabel: text("jurisdiction_label"),
+  jurisdictionCode: text("jurisdiction_code"),
+  relationshipType: text("relationship_type").notNull(),
+  confidence: numeric("confidence", { precision: 5, scale: 4 }),
+  evidenceBasis: text("evidence_basis").notNull(),
+  createdFromRule: text("created_from_rule").notNull(),
+  reviewStatus: text("review_status").notNull().default("queued"),
+  promotionStatus: text("promotion_status").notNull().default("queued"),
+  promotionBatchId: text("promotion_batch_id"),
+  reviewDecisionBy: text("review_decision_by"),
+  reviewDecisionAt: timestamp("review_decision_at", { withTimezone: true }),
+  rejectedReason: text("rejected_reason"),
+  supersedesId: uuid("supersedes_id"),
+  isActive: boolean("is_active").notNull().default(true),
+  tribalNation: text("tribal_nation"),
+  federalRecognitionStatus: text("federal_recognition_status"),
+  sourceAuthority: text("source_authority"),
+  tribalGovernmentName: text("tribal_government_name"),
+  tribalCourtName: text("tribal_court_name"),
+  reservationOrServiceArea: text("reservation_or_service_area"),
+  stateOverlap: text("state_overlap").array().notNull().default(sql`'{}'::text[]`),
+  federalAgencyOverlap: text("federal_agency_overlap").array().notNull().default(sql`'{}'::text[]`),
+  biaOverlap: text("bia_overlap").array().notNull().default(sql`'{}'::text[]`),
+  ihsOverlap: text("ihs_overlap").array().notNull().default(sql`'{}'::text[]`),
+  bieOverlap: text("bie_overlap").array().notNull().default(sql`'{}'::text[]`),
+  icwaRelevance: text("icwa_relevance"),
+  publicLaw280Relevance: text("public_law_280_relevance"),
+  treatyReservedRightsReference: text("treaty_reserved_rights_reference"),
+  countyFips: text("county_fips"),
+  censusGeoid: text("census_geoid"),
+  serviceAreaGeometryRef: text("service_area_geometry_ref"),
+  regionalServiceArea: text("regional_service_area"),
+  legalAidServiceArea: text("legal_aid_service_area"),
+  tribalServiceArea: text("tribal_service_area"),
+  distanceTravelBarrierFlags: text("distance_travel_barrier_flags").array().notNull().default(sql`'{}'::text[]`),
+  remotePhoneOnlineIntake: text("remote_phone_online_intake").array().notNull().default(sql`'{}'::text[]`),
+  ruralFrontierClassification: text("rural_frontier_classification"),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("idx_ja_source").on(table.sourceTable, table.sourceRecordId),
+  index("idx_ja_candidate").on(table.candidateRecordId),
+  index("idx_ja_canonical").on(table.canonicalRecordId),
+  index("idx_ja_ref").on(table.jurisdictionRefTable, table.jurisdictionRefId),
+  index("idx_ja_type").on(table.jurisdictionType),
+  index("idx_ja_review").on(table.reviewStatus, table.promotionStatus),
+  index("idx_ja_active").on(table.isActive),
+]);
+
+export type JurisdictionAssertion = typeof jurisdictionAssertions.$inferSelect;
+export type InsertJurisdictionAssertion = typeof jurisdictionAssertions.$inferInsert;
+
+export const jurisdictionAliases = pgTable("jurisdiction_aliases", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  canonicalJurisdictionRefTable: text("canonical_jurisdiction_ref_table").notNull(),
+  canonicalJurisdictionRefId: text("canonical_jurisdiction_ref_id").notNull(),
+  aliasType: text("alias_type").notNull(),
+  aliasValue: text("alias_value").notNull(),
+  sourceSystem: text("source_system").notNull(),
+  confidence: numeric("confidence", { precision: 5, scale: 4 }),
+  validFrom: date("valid_from"),
+  validTo: date("valid_to"),
+  isActive: boolean("is_active").notNull().default(true),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("idx_ja_alias_active_unique").on(table.canonicalJurisdictionRefTable, table.canonicalJurisdictionRefId, table.aliasType, table.aliasValue, table.sourceSystem),
+  index("idx_ja_alias_lookup").on(table.aliasType, table.aliasValue, table.sourceSystem),
+  index("idx_ja_alias_canonical").on(table.canonicalJurisdictionRefTable, table.canonicalJurisdictionRefId),
+]);
+
+export type JurisdictionAliasRecord = typeof jurisdictionAliases.$inferSelect;
+export type InsertJurisdictionAlias = typeof jurisdictionAliases.$inferInsert;
+
+export const jurisdictionCoverageRuns = pgTable("jurisdiction_coverage_runs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  runKey: text("run_key").notNull().unique(),
+  reportKind: text("report_kind").notNull(),
+  scope: text("scope").notNull(),
+  sourceInventoryHash: text("source_inventory_hash").notNull(),
+  generatedAt: timestamp("generated_at", { withTimezone: true }).defaultNow().notNull(),
+  generatedBy: text("generated_by").notNull(),
+  notes: text("notes"),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
+}, (table) => [
+  index("idx_jcr_kind_scope").on(table.reportKind, table.scope),
+  index("idx_jcr_generated").on(table.generatedAt),
+]);
+
+export type JurisdictionCoverageRunRecord = typeof jurisdictionCoverageRuns.$inferSelect;
+export type InsertJurisdictionCoverageRun = typeof jurisdictionCoverageRuns.$inferInsert;
+
+export const jurisdictionCoverageItems = pgTable("jurisdiction_coverage_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  runId: uuid("run_id").notNull(),
+  jurisdictionRefTable: text("jurisdiction_ref_table"),
+  jurisdictionRefId: text("jurisdiction_ref_id"),
+  jurisdictionType: text("jurisdiction_type").notNull(),
+  domain: text("domain"),
+  runtimeSurface: text("runtime_surface"),
+  pipelineContext: text("pipeline_context"),
+  coverageState: text("coverage_state").notNull(),
+  expectedCount: integer("expected_count").notNull().default(0),
+  stagedCount: integer("staged_count").notNull().default(0),
+  candidateCount: integer("candidate_count").notNull().default(0),
+  promotedCount: integer("promoted_count").notNull().default(0),
+  verifiedCount: integer("verified_count").notNull().default(0),
+  gapCount: integer("gap_count").notNull().default(0),
+  confidence: numeric("confidence", { precision: 5, scale: 4 }),
+  freshnessStatus: text("freshness_status"),
+  gapReason: text("gap_reason"),
+  nextAction: text("next_action"),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("idx_jci_run").on(table.runId),
+  index("idx_jci_ref").on(table.jurisdictionRefTable, table.jurisdictionRefId),
+  index("idx_jci_state").on(table.coverageState),
+  index("idx_jci_surface").on(table.runtimeSurface),
+  index("idx_jci_domain").on(table.domain),
+  index("idx_jci_pipeline").on(table.pipelineContext),
+]);
+
+export type JurisdictionCoverageItemRecord = typeof jurisdictionCoverageItems.$inferSelect;
+export type InsertJurisdictionCoverageItem = typeof jurisdictionCoverageItems.$inferInsert;
+
+export const jurisdictionOverlapAssertions = pgTable("jurisdiction_overlap_assertions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  fromJurisdictionRefTable: text("from_jurisdiction_ref_table").notNull(),
+  fromJurisdictionRefId: text("from_jurisdiction_ref_id").notNull(),
+  toJurisdictionRefTable: text("to_jurisdiction_ref_table").notNull(),
+  toJurisdictionRefId: text("to_jurisdiction_ref_id").notNull(),
+  relationshipType: text("relationship_type").notNull(),
+  legalBasis: text("legal_basis"),
+  evidenceBasis: text("evidence_basis"),
+  confidence: numeric("confidence", { precision: 5, scale: 4 }),
+  reviewStatus: text("review_status").notNull().default("queued"),
+  isActive: boolean("is_active").notNull().default(true),
+  validFrom: date("valid_from"),
+  validTo: date("valid_to"),
+  supersedesId: uuid("supersedes_id"),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("idx_joa_from").on(table.fromJurisdictionRefTable, table.fromJurisdictionRefId),
+  index("idx_joa_to").on(table.toJurisdictionRefTable, table.toJurisdictionRefId),
+  index("idx_joa_relation").on(table.relationshipType),
+  index("idx_joa_review").on(table.reviewStatus),
+  index("idx_joa_active").on(table.isActive),
+]);
+
+export type JurisdictionOverlapAssertionRecord = typeof jurisdictionOverlapAssertions.$inferSelect;
+export type InsertJurisdictionOverlapAssertion = typeof jurisdictionOverlapAssertions.$inferInsert;
+
+export const jurisdictionMetadataGaps = pgTable("jurisdiction_metadata_gaps", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sourceTable: text("source_table").notNull(),
+  sourceRecordId: text("source_record_id").notNull(),
+  missingField: text("missing_field").notNull(),
+  jurisdictionHint: text("jurisdiction_hint"),
+  gapReason: text("gap_reason").notNull(),
+  severity: text("severity").notNull(),
+  pipelineContext: text("pipeline_context"),
+  runtimeSurface: text("runtime_surface"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  resolutionNotes: text("resolution_notes"),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
+}, (table) => [
+  index("idx_jmg_source").on(table.sourceTable, table.sourceRecordId),
+  index("idx_jmg_open").on(table.severity, table.createdAt),
+  index("idx_jmg_surface").on(table.runtimeSurface),
+]);
+
+export type JurisdictionMetadataGapRecord = typeof jurisdictionMetadataGaps.$inferSelect;
+export type InsertJurisdictionMetadataGap = typeof jurisdictionMetadataGaps.$inferInsert;
+
 export const signalFlowLogs = pgTable("signal_flow_logs", {
   id: serial("id").primaryKey(),
   signalId: varchar("signal_id_sfl", { length: 64 }).notNull(), // FK to detected_signals.signal_id
