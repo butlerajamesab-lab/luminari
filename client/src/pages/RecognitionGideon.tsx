@@ -1,4 +1,6 @@
 import { useAuth } from "@/core/hooks/useAuth";
+import { community_continuity_condition } from "@/data/recognition_conditions";
+import { continuous_habitation_paradox } from "@/data/recognition_weak_joints";
 import {
   recognition_gideon_axes,
   route_to_recognition_profiles,
@@ -35,6 +37,15 @@ const status_tone: Record<recognition_condition_status, string> = {
   unknown: tone.muted,
 };
 
+const six_gideon_pillars = [
+  "Recognition Conditions",
+  "Recognition Regulations",
+  "Recognition Decisions",
+  "Recognition Cases",
+  "Agency Practices",
+  "Weak Joints",
+];
+
 function gate_panel({ title, message }: { title: string; message: string }) {
   return (
     <main style={{ minHeight: "100vh", background: tone.bg, color: tone.paper, display: "grid", placeItems: "center", padding: "2rem", fontFamily: "Inter, system-ui, sans-serif" }}>
@@ -50,6 +61,18 @@ function gate_panel({ title, message }: { title: string; message: string }) {
         </Link>
       </section>
     </main>
+  );
+}
+
+function tag_row({ values }: { values: string[] }) {
+  return (
+    <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+      {values.map((value) => (
+        <span key={value} style={{ border: `1px solid ${tone.card_border}`, background: "rgba(255,255,255,0.025)", borderRadius: 999, color: tone.muted, fontFamily: "JetBrains Mono, monospace", fontSize: 12, padding: "0.35rem 0.55rem" }}>
+          {value}
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -116,6 +139,55 @@ export default function RecognitionGideon() {
               <div style={{ fontFamily: "JetBrains Mono, monospace", color: tone.paper }}>{value}</div>
             </div>
           ))}
+        </section>
+
+        <section style={{ marginTop: "2rem" }}>
+          <h2 style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Scale size={22} color={tone.gold} /> Recognition Gideon doctrine
+          </h2>
+          <div style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 22, padding: "1.25rem" }}>
+            <p style={{ color: tone.paper, lineHeight: 1.65, marginTop: 0 }}>
+              Recognition Atlas preserves tribal truth. Recognition Gideon analyzes recognition systems. Atlas is evidence. Gideon is analysis.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: "0.75rem" }}>
+              {six_gideon_pillars.map((pillar) => (
+                <article key={pillar} style={{ border: `1px solid ${tone.card_border}`, background: "rgba(255,255,255,0.025)", borderRadius: 16, padding: "0.85rem" }}>
+                  <div style={{ color: tone.gold, fontWeight: 700 }}>{pillar}</div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section style={{ marginTop: "2rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1rem" }}>
+          <article style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 22, padding: "1.25rem" }}>
+            <div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{community_continuity_condition.condition_id}</div>
+            <h2 style={{ margin: "0.55rem 0" }}>Condition preview · {community_continuity_condition.title}</h2>
+            <p style={{ color: tone.muted, lineHeight: 1.65 }}>{community_continuity_condition.description}</p>
+            <h4>governing_authorities</h4>
+            {tag_row({ values: community_continuity_condition.governing_authorities })}
+            <h4>evidence_types</h4>
+            {tag_row({ values: community_continuity_condition.evidence_types })}
+            <h4>common_failure_modes</h4>
+            {tag_row({ values: community_continuity_condition.common_failure_modes })}
+          </article>
+
+          <article style={{ border: `1px solid rgba(212,160,23,0.35)`, background: "rgba(212,160,23,0.06)", borderRadius: 22, padding: "1.25rem" }}>
+            <div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{continuous_habitation_paradox.weak_joint_id}</div>
+            <h2 style={{ margin: "0.55rem 0" }}>Weak joint preview · {continuous_habitation_paradox.title}</h2>
+            <p style={{ color: tone.muted, lineHeight: 1.65 }}>{continuous_habitation_paradox.description}</p>
+            <p style={{ color: tone.paper, lineHeight: 1.65 }}>{continuous_habitation_paradox.why_it_is_a_contradiction}</p>
+            <h4>linked_condition</h4>
+            {tag_row({ values: continuous_habitation_paradox.conditions })}
+            <h4>affected_tribes</h4>
+            {tag_row({ values: continuous_habitation_paradox.tribes })}
+            <p style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>
+              authorship: {continuous_habitation_paradox.authorship} · publication_status: {continuous_habitation_paradox.publication_status}
+            </p>
+            <Link href="/recognition-atlas/duwamish/dispossession" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 6, marginTop: "0.75rem" }}>
+              View in Duwamish Atlas <ArrowRight size={14} />
+            </Link>
+          </article>
         </section>
 
         <section style={{ marginTop: "2rem" }}>
