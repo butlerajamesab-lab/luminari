@@ -3,6 +3,7 @@ import { duwamish_language_seed } from "@/data/duwamish_language_seed";
 import { duwamish_truth_layers } from "@/data/recognition_atlas_layers";
 import { continuous_habitation_paradox } from "@/data/recognition_weak_joints";
 import { duwamish_truth_seed } from "@/data/duwamish_truth_seed";
+import { muwekma_truth_seed } from "@/data/muwekma_truth_seed";
 import { get_conflict_fields, resolve_truth_layer } from "@/resolvers/truth_layer_resolver";
 import type { ReactNode } from "react";
 import { Link, useRoute } from "wouter";
@@ -29,11 +30,20 @@ type layer_slug =
   | "language"
   | "ally-call";
 
+type supported_tribe_id = "duwamish" | "muwekma";
+
 type preview_field = {
   label: string;
   value: string | number | boolean | string[];
   source_url?: string;
   warning?: string;
+};
+
+type layer_preview_config = {
+  key: string;
+  title: string;
+  subtitle: string;
+  description: string;
 };
 
 const layer_slug_to_key: Record<layer_slug, string> = {
@@ -44,6 +54,51 @@ const layer_slug_to_key: Record<layer_slug, string> = {
   lawsuit: "layer_4_lawsuit",
   language: "layer_5_language_vault",
   "ally-call": "layer_6_ally_call",
+};
+
+const muwekma_layer_configs: Record<layer_slug, layer_preview_config> = {
+  identity: {
+    key: "layer_0_identity",
+    title: "Identity Core",
+    subtitle: "Muwékma · Those Who Walk Forward",
+    description: "WE ARE STILL HERE. Muwékma identity, homeland, and present-day community territory render here as an admin-preview record pending tribal review.",
+  },
+  treaty: {
+    key: "layer_1_treaty",
+    title: "Treaty Record",
+    subtitle: "No ratified treaty recorded in this seed",
+    description: "Treaty and land-cession framing for Muwékma recognition analysis. This remains admin-preview only pending tribal review.",
+  },
+  dispossession: {
+    key: "layer_2_dispossession",
+    title: "Dispossession Record",
+    subtitle: "Missionization, secularization, state violence, and federal omission",
+    description: "The Muwékma seed identifies structural disruptions to continuity including missionization, disease, secularization, rancho grants, Gold Rush violence, and omission from the 1978 list.",
+  },
+  timeline: {
+    key: "layer_3_recognition_timeline",
+    title: "Recognition Timeline",
+    subtitle: "Prior federal identification, omission, petition, denial, and litigation",
+    description: "Recognition events from federal identification and Verona Band history through petition, denial, litigation, and recent advocacy.",
+  },
+  lawsuit: {
+    key: "layer_4_lawsuit",
+    title: "Lawsuit Claims",
+    subtitle: "Muwékma Ohlone v. Salazar frame",
+    description: "Legal claims and procedural posture from the Muwékma recognition record, rendered as admin-preview only pending tribal review.",
+  },
+  language: {
+    key: "layer_5_living_culture",
+    title: "Living Culture / Language",
+    subtitle: "Chochenyo language and cultural revitalization",
+    description: "Chochenyo language, cultural practices, community continuity, and stewardship records from the Muwékma seed.",
+  },
+  "ally-call": {
+    key: "layer_6_ally_call",
+    title: "Ally Call",
+    subtitle: "Support recognition and Muwékma stewardship",
+    description: "Land acknowledgement and ally actions from the Muwékma seed. This is not public-facing and does not indicate tribal approval.",
+  },
 };
 
 const back_link_style = {
@@ -118,43 +173,23 @@ function field_grid({ fields }: { fields: preview_field[] }) {
   );
 }
 
-export default function RecognitionAtlasLayer() {
-  const [, params] = useRoute("/recognition-atlas/:tribe_id/:layer_slug");
-  const { user, isAuthenticated, loading } = useAuth();
+function is_supported_tribe_id(tribe_id: string): tribe_id is supported_tribe_id {
+  return tribe_id === "duwamish" || tribe_id === "muwekma";
+}
 
-  if (loading) {
-    return gate_panel({
-      title: "Loading Recognition Atlas layer preview",
-      message: "Checking admin access before showing this unpublished layer preview.",
-    });
-  }
+function get_layer_config(tribe_id: supported_tribe_id, active_layer_slug: layer_slug): layer_preview_config | undefined {
+  if (tribe_id === "muwekma") return muwekma_layer_configs[active_layer_slug];
+  const layer_key = layer_slug_to_key[active_layer_slug];
+  return duwamish_truth_layers.find((layer) => layer.key === layer_key);
+}
 
-  if (!isAuthenticated || user?.role !== "admin") {
-    return gate_panel({
-      title: "Recognition Atlas layer preview requires admin access",
-      message: "This layer is available only for pre-publication review. It is not public-facing and does not indicate tribal approval.",
-    });
-  }
-
-  const tribe_id = params?.tribe_id ?? "";
-  const active_layer_slug = params?.layer_slug as layer_slug | undefined;
-
-  if (tribe_id !== "duwamish" || !active_layer_slug || !(active_layer_slug in layer_slug_to_key)) {
-    return gate_panel({
-      title: "Recognition Atlas layer not found",
-      message: "Only the Duwamish admin preview layers are wired in this phase.",
-    });
-  }
-
+function get_duwamish_layer_fields(active_layer_slug: layer_slug): { fields: preview_field[]; conflict_fields: ReturnType<typeof get_conflict_fields> } {
   const truth_record = resolve_truth_layer({
     tribe_id: "duwamish",
     priority: "truth_layer_first",
     include_source_refs: true,
     include_conflict_flags: true,
   }, duwamish_truth_seed);
-  const conflict_fields = get_conflict_fields(truth_record);
-  const layer_key = layer_slug_to_key[active_layer_slug];
-  const layer_config = duwamish_truth_layers.find((layer) => layer.key === layer_key);
 
   const layer_fields: Record<layer_slug, preview_field[]> = {
     identity: [
@@ -207,6 +242,101 @@ export default function RecognitionAtlasLayer() {
     ],
   };
 
+  return { fields: layer_fields[active_layer_slug], conflict_fields: get_conflict_fields(truth_record) };
+}
+
+function get_muwekma_layer_fields(active_layer_slug: layer_slug): preview_field[] {
+  const recovered_warning = muwekma_truth_seed.meta.recovered_thread_unverified
+    ? "recovered_thread_unverified · requires tribal review"
+    : undefined;
+
+  const layer_fields: Record<layer_slug, preview_field[]> = {
+    identity: [
+      { label: "tribe_self_name", value: muwekma_truth_seed.layer_0_identity.tribe_self_name, source_url: muwekma_truth_seed.layer_0_identity.source.url, warning: recovered_warning },
+      { label: "name_meaning", value: muwekma_truth_seed.layer_0_identity.name_meaning, source_url: muwekma_truth_seed.layer_0_identity.source.url, warning: recovered_warning },
+      { label: "primary_declaration", value: muwekma_truth_seed.layer_0_identity.primary_declaration, source_url: muwekma_truth_seed.layer_0_identity.source.url, warning: recovered_warning },
+      { label: "territorial_declaration", value: muwekma_truth_seed.layer_0_identity.territorial_declaration, source_url: muwekma_truth_seed.layer_0_identity.source.url, warning: recovered_warning },
+      { label: "homeland_waters", value: muwekma_truth_seed.layer_0_identity.homeland_waters, source_url: muwekma_truth_seed.layer_0_identity.source.url, warning: recovered_warning },
+      { label: "present_day_member_territory", value: muwekma_truth_seed.layer_0_identity.present_day_member_territory, source_url: muwekma_truth_seed.layer_0_identity.source.url, warning: recovered_warning },
+    ],
+    treaty: [
+      { label: "treaty_name", value: muwekma_truth_seed.layer_1_treaty.treaty_name, source_url: muwekma_truth_seed.layer_1_treaty.source.url, warning: recovered_warning },
+      { label: "treaty_date", value: muwekma_truth_seed.layer_1_treaty.treaty_date, source_url: muwekma_truth_seed.layer_1_treaty.source.url, warning: recovered_warning },
+      { label: "signatory_position", value: muwekma_truth_seed.layer_1_treaty.signatory_position, source_url: muwekma_truth_seed.layer_1_treaty.source.url, warning: recovered_warning },
+    ],
+    dispossession: [
+      { label: "dispossession_events", value: muwekma_truth_seed.layer_2_dispossession.events.map((event) => event.event_label), source_url: muwekma_truth_seed.layer_2_dispossession.source.url, warning: recovered_warning },
+      { label: "agents", value: muwekma_truth_seed.layer_2_dispossession.events.map((event) => event.agent ?? "agent_unlisted"), source_url: muwekma_truth_seed.layer_2_dispossession.source.url, warning: recovered_warning },
+      { label: "outcomes", value: muwekma_truth_seed.layer_2_dispossession.events.map((event) => event.outcome ?? "outcome_unlisted"), source_url: muwekma_truth_seed.layer_2_dispossession.source.url, warning: recovered_warning },
+    ],
+    timeline: [
+      { label: "recognition_current_status", value: muwekma_truth_seed.layer_3_recognition_timeline.current_status, source_url: muwekma_truth_seed.layer_3_recognition_timeline.source.url, warning: recovered_warning },
+      { label: "recognition_events_count", value: muwekma_truth_seed.layer_3_recognition_timeline.events.length, source_url: muwekma_truth_seed.layer_3_recognition_timeline.source.url, warning: recovered_warning },
+      { label: "recognition_event_labels", value: muwekma_truth_seed.layer_3_recognition_timeline.events.map((event) => event.event_label), source_url: muwekma_truth_seed.layer_3_recognition_timeline.source.url, warning: recovered_warning },
+    ],
+    lawsuit: [
+      { label: "lawsuit_filed_date", value: muwekma_truth_seed.layer_4_lawsuit.filed_date, source_url: muwekma_truth_seed.layer_4_lawsuit.source.url, warning: recovered_warning },
+      { label: "lawsuit_court", value: muwekma_truth_seed.layer_4_lawsuit.court, source_url: muwekma_truth_seed.layer_4_lawsuit.source.url, warning: recovered_warning },
+      { label: "lawsuit_claims", value: muwekma_truth_seed.layer_4_lawsuit.claims.map((claim) => claim.claim_label), source_url: muwekma_truth_seed.layer_4_lawsuit.source.url, warning: recovered_warning },
+      { label: "current_procedural_status", value: muwekma_truth_seed.layer_4_lawsuit.current_procedural_status, source_url: muwekma_truth_seed.layer_4_lawsuit.source.url, warning: recovered_warning },
+    ],
+    language: [
+      { label: "language_name", value: muwekma_truth_seed.layer_5_living_culture.language.language_name, source_url: muwekma_truth_seed.layer_5_living_culture.language.source.url, warning: recovered_warning },
+      { label: "language_program", value: muwekma_truth_seed.layer_5_living_culture.language.program_name, source_url: muwekma_truth_seed.layer_5_living_culture.language.source.url, warning: recovered_warning },
+      { label: "living_practices_count", value: muwekma_truth_seed.layer_5_living_culture.living_practices.length, source_url: muwekma_truth_seed.layer_5_living_culture.source.url, warning: recovered_warning },
+      { label: "physical_home_address", value: muwekma_truth_seed.layer_5_living_culture.physical_home.address, source_url: muwekma_truth_seed.layer_5_living_culture.physical_home.source.url, warning: recovered_warning },
+      { label: "physical_home_public_access", value: muwekma_truth_seed.layer_5_living_culture.physical_home.public_access, source_url: muwekma_truth_seed.layer_5_living_culture.physical_home.source.url, warning: recovered_warning },
+      { label: "enrolled_members_approx", value: muwekma_truth_seed.layer_5_living_culture.enrolled_members_approx, source_url: muwekma_truth_seed.layer_5_living_culture.source.url, warning: recovered_warning },
+      { label: "environmental_coalition", value: muwekma_truth_seed.layer_5_living_culture.environmental_coalition, source_url: muwekma_truth_seed.layer_5_living_culture.source.url, warning: recovered_warning },
+    ],
+    "ally-call": [
+      { label: "land_status", value: muwekma_truth_seed.layer_6_ally_call.land_status, source_url: muwekma_truth_seed.layer_6_ally_call.source.url, warning: recovered_warning },
+      { label: "closing_statement", value: muwekma_truth_seed.layer_6_ally_call.closing_statement, source_url: muwekma_truth_seed.layer_6_ally_call.source.url, warning: recovered_warning },
+      { label: "ally_actions_count", value: muwekma_truth_seed.layer_6_ally_call.ally_actions.length, source_url: muwekma_truth_seed.layer_6_ally_call.source.url, warning: recovered_warning },
+    ],
+  };
+
+  return layer_fields[active_layer_slug];
+}
+
+export default function RecognitionAtlasLayer() {
+  const [, params] = useRoute("/recognition-atlas/:tribe_id/:layer_slug");
+  const { user, isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return gate_panel({
+      title: "Loading Recognition Atlas layer preview",
+      message: "Checking admin access before showing this unpublished layer preview.",
+    });
+  }
+
+  if (!isAuthenticated || user?.role !== "admin") {
+    return gate_panel({
+      title: "Recognition Atlas layer preview requires admin access",
+      message: "This layer is available only for pre-publication review. It is not public-facing and does not indicate tribal approval.",
+    });
+  }
+
+  const tribe_id = params?.tribe_id ?? "";
+  const active_layer_slug = params?.layer_slug as layer_slug | undefined;
+
+  if (!is_supported_tribe_id(tribe_id) || !active_layer_slug || !(active_layer_slug in layer_slug_to_key)) {
+    return gate_panel({
+      title: "Recognition Atlas layer not found",
+      message: "Only the Duwamish and Muwékma admin preview layers are wired in this phase.",
+    });
+  }
+
+  const layer_key = tribe_id === "muwekma" && active_layer_slug === "language"
+    ? "layer_5_living_culture"
+    : layer_slug_to_key[active_layer_slug];
+  const layer_config = get_layer_config(tribe_id, active_layer_slug);
+  const duwamish_layer_data = tribe_id === "duwamish" ? get_duwamish_layer_fields(active_layer_slug) : undefined;
+  const layer_fields = tribe_id === "duwamish"
+    ? duwamish_layer_data?.fields ?? []
+    : get_muwekma_layer_fields(active_layer_slug);
+  const conflict_fields = duwamish_layer_data?.conflict_fields ?? [];
+
   return (
     <main style={{ minHeight: "100vh", background: tone.bg, color: tone.paper, fontFamily: "Inter, system-ui, sans-serif", padding: "clamp(1.25rem, 3vw, 3rem)" }}>
       <section style={{ maxWidth: 1180, margin: "0 auto" }}>
@@ -233,7 +363,7 @@ export default function RecognitionAtlasLayer() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
           {section_card({
             title: "Resolved fields",
-            children: field_grid({ fields: layer_fields[active_layer_slug] }),
+            children: field_grid({ fields: layer_fields }),
           })}
 
           {section_card({
@@ -249,7 +379,7 @@ export default function RecognitionAtlasLayer() {
           })}
         </div>
 
-        {active_layer_slug === "dispossession" && section_card({
+        {tribe_id === "duwamish" && active_layer_slug === "dispossession" && section_card({
           title: "Weak Joints Illustrated",
           children: (
             <article style={{ border: `1px solid rgba(212,160,23,0.35)`, background: "rgba(212,160,23,0.06)", borderRadius: 16, padding: "0.95rem" }}>
@@ -266,7 +396,7 @@ export default function RecognitionAtlasLayer() {
           ),
         })}
 
-        {active_layer_slug === "language" && section_card({
+        {tribe_id === "duwamish" && active_layer_slug === "language" && section_card({
           title: "Language entries for review",
           children: (
             <div style={{ display: "grid", gap: "0.75rem" }}>
