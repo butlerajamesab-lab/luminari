@@ -67,7 +67,7 @@ export const duwamish_truth_layers: truth_layer_config[] = [
         action_label: "view_identity_data",
         route: "/recognition-atlas/duwamish/identity",
         visibility: "admin_only",
-        route_status: "planned",
+        route_status: "live",
         external: false,
       },
       {
@@ -90,7 +90,7 @@ export const duwamish_truth_layers: truth_layer_config[] = [
         action_label: "view_treaty_record",
         route: "/recognition-atlas/duwamish/treaty",
         visibility: "admin_only",
-        route_status: "planned",
+        route_status: "live",
         external: false,
       },
       {
@@ -109,6 +109,13 @@ export const duwamish_truth_layers: truth_layer_config[] = [
     status: "locked_pending_tribal_review",
     description: "Forced removals, burned longhouses, exile to Ballast Island. The record that answers any continuity standard with the acts that broke continuity.",
     actions: [
+      {
+        action_label: "view_dispossession_data",
+        route: "/recognition-atlas/duwamish/dispossession",
+        visibility: "admin_only",
+        route_status: "live",
+        external: false,
+      },
       {
         action_label: "view_dispossession_map",
         route: "/civic-map?layer=dispossession&tribe=duwamish",
@@ -136,7 +143,7 @@ export const duwamish_truth_layers: truth_layer_config[] = [
         action_label: "view_recognition_timeline",
         route: "/recognition-atlas/duwamish/timeline",
         visibility: "admin_only",
-        route_status: "planned",
+        route_status: "live",
         external: false,
       },
       {
@@ -159,7 +166,7 @@ export const duwamish_truth_layers: truth_layer_config[] = [
         action_label: "view_lawsuit_claims",
         route: "/recognition-atlas/duwamish/lawsuit",
         visibility: "admin_only",
-        route_status: "planned",
+        route_status: "live",
         external: false,
       },
       {
@@ -182,7 +189,7 @@ export const duwamish_truth_layers: truth_layer_config[] = [
         action_label: "open_language_vault",
         route: "/recognition-atlas/duwamish/language",
         visibility: "admin_only",
-        route_status: "planned",
+        route_status: "live",
         external: false,
       },
       {
@@ -205,7 +212,7 @@ export const duwamish_truth_layers: truth_layer_config[] = [
         action_label: "view_ally_call",
         route: "/recognition-atlas/duwamish/ally-call",
         visibility: "admin_only",
-        route_status: "planned",
+        route_status: "live",
         external: false,
       },
       {
