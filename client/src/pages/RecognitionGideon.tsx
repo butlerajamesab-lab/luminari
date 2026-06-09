@@ -5,7 +5,7 @@ import {
   recognition_gideon_axes,
   route_to_recognition_profiles,
 } from "@/data/route_to_recognition_registry";
-import type { recognition_condition_status } from "@/types/route_to_recognition";
+import type { recognition_condition_status, route_to_recognition_profile } from "@/types/route_to_recognition";
 import { Link } from "wouter";
 import {
   ArrowRight,
@@ -45,6 +45,15 @@ const six_gideon_pillars = [
   "Agency Practices",
   "Weak Joints",
 ];
+
+function atlas_page_href(profile: route_to_recognition_profile) {
+  return `/recognition-atlas/${profile.tribe_id}/identity`;
+}
+
+function atlas_page_label(profile: route_to_recognition_profile) {
+  const tribe_label = profile.tribe_self_name || profile.tribe_name;
+  return `${tribe_label} page`;
+}
 
 function gate_panel({ title, message }: { title: string; message: string }) {
   return (
@@ -185,7 +194,7 @@ export default function RecognitionGideon() {
               authorship: {continuous_habitation_paradox.authorship} · publication_status: {continuous_habitation_paradox.publication_status}
             </p>
             <Link href="/recognition-atlas/duwamish/dispossession" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 6, marginTop: "0.75rem" }}>
-              View in Duwamish Atlas <ArrowRight size={14} />
+              View in Duwamish page <ArrowRight size={14} />
             </Link>
           </article>
         </section>
@@ -257,11 +266,11 @@ export default function RecognitionGideon() {
                 ))}
               </ul>
               <div style={{ display: "flex", gap: "0.65rem", flexWrap: "wrap", marginTop: "1rem" }}>
-                <Link href={`/recognition-atlas/${profile.tribe_id}/identity`} style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 6 }}>
-                  Atlas record <ArrowRight size={14} />
+                <Link href={atlas_page_href(profile)} style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 6 }}>
+                  {atlas_page_label(profile)} <ArrowRight size={14} />
                 </Link>
                 <Link href="/recognition-atlas" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 6 }}>
-                  Atlas hub <ArrowRight size={14} />
+                  Recognition Atlas hub <ArrowRight size={14} />
                 </Link>
               </div>
             </article>
