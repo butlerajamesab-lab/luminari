@@ -247,6 +247,10 @@ function get_duwamish_layer_fields(active_layer_slug: layer_slug): { fields: pre
       { label: "dispossession_events", value: truth_record.dispossession_events.value, source_url: truth_record.dispossession_events.source_url, source_posture, warning: truth_record.dispossession_events.conflict_note },
       { label: "forced_removal_agent", value: truth_record.forced_removal_agent.value, source_url: truth_record.forced_removal_agent.source_url, source_posture, warning: truth_record.forced_removal_agent.conflict_note },
       { label: "displacement_method", value: truth_record.displacement_method.value, source_url: truth_record.displacement_method.source_url, source_posture },
+      { label: "event_descriptions", value: duwamish_truth_seed.layer_2_dispossession.events.map((event) => event.description ?? "not_reported_in_seed"), source_url: duwamish_truth_seed.layer_2_dispossession.source.url, source_posture },
+      { label: "event_outcomes", value: duwamish_truth_seed.layer_2_dispossession.events.map((event) => event.outcome ?? "not_reported_in_seed"), source_url: duwamish_truth_seed.layer_2_dispossession.source.url, source_posture },
+      { label: "event_agents", value: duwamish_truth_seed.layer_2_dispossession.events.map((event) => event.agent ?? "not_reported_in_seed"), source_url: duwamish_truth_seed.layer_2_dispossession.source.url, source_posture },
+      { label: "event_dates", value: duwamish_truth_seed.layer_2_dispossession.events.map((event) => event.date_approx ?? "not_reported_in_seed"), source_url: duwamish_truth_seed.layer_2_dispossession.source.url, source_posture },
     ],
     timeline: [
       { label: "recognition_current_status", value: truth_record.recognition_current_status.value, source_url: truth_record.recognition_current_status.source_url, source_posture, warning: truth_record.recognition_current_status.conflict_note },
