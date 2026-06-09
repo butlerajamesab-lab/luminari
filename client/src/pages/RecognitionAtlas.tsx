@@ -1,9 +1,21 @@
 import { useAuth } from "@/core/hooks/useAuth";
+import {
+  duwamish_language_entries,
+  duwamish_truth_layers,
+  type truth_layer_action,
+} from "@/data/recognition_atlas_layers";
+import { duwamish_truth_seed } from "@/data/duwamish_truth_seed";
+import {
+  get_conflict_fields,
+  resolve_truth_layer,
+} from "@/resolvers/truth_layer_resolver";
 import { Link } from "wouter";
 import {
+  AlertTriangle,
   ArrowRight,
   BookOpen,
   CheckCircle2,
+  ExternalLink,
   EyeOff,
   Globe2,
   Languages,
@@ -24,60 +36,6 @@ const tone = {
   green: "#34d399",
   red: "#ef4444",
 };
-
-const language_entries = [
-  {
-    original_text: "dxʷdəwʔabš",
-    romanization: "dx-dew-uh-absh",
-    english_gloss: "People of the Inside",
-    note: "The tribe's own name for themselves. This renders before the anglicized name.",
-  },
-  {
-    original_text: "tʷəlšucid",
-    romanization: "Lushootseed",
-    english_gloss: "Language named in the Duwamish cultural record",
-    note: "Language preservation layer remains locked until tribal review and approval.",
-  },
-];
-
-const truth_layers = [
-  {
-    layer_id: "layer_0_identity",
-    title: "Identity Core",
-    status: "admin_preview",
-    text: "WE ARE STILL HERE. The host tribe of Seattle. Their own words render first.",
-  },
-  {
-    layer_id: "layer_1_treaty",
-    title: "Treaty Record",
-    status: "locked_pending_tribal_review",
-    text: "Treaty of Point Elliott, Chief Si'ahl, and the city that bears his name.",
-  },
-  {
-    layer_id: "layer_2_dispossession",
-    title: "Dispossession Record",
-    status: "locked_pending_tribal_review",
-    text: "The record that answers any continuity standard with the acts that broke continuity.",
-  },
-  {
-    layer_id: "layer_3_recognition_timeline",
-    title: "Recognition Timeline",
-    status: "locked_pending_tribal_review",
-    text: "Petition, acknowledgement, reversal, litigation, and current recognition fight.",
-  },
-  {
-    layer_id: "layer_4_lawsuit",
-    title: "Lawsuit Claims",
-    status: "locked_pending_tribal_review",
-    text: "Legal theories and claims must remain draft until verified against tribal-approved language.",
-  },
-  {
-    layer_id: "layer_5_language_vault",
-    title: "Language Vault",
-    status: "locked_pending_tribal_review",
-    text: "Permanent language preservation. Immutable after tribal approval. No government override.",
-  },
-];
 
 function gate_panel({ title, message }: { title: string; message: string }) {
   return (
@@ -117,6 +75,45 @@ function gate_panel({ title, message }: { title: string; message: string }) {
   );
 }
 
+function action_button({ action }: { action: truth_layer_action }) {
+  const label = action.action_label.replace(/_/g, " ");
+  const shared_style = {
+    border: `1px solid ${action.route_status === "live" ? "rgba(126,179,232,0.45)" : tone.card_border}`,
+    background: action.route_status === "live" ? "rgba(126,179,232,0.08)" : "rgba(255,255,255,0.025)",
+    color: action.route_status === "live" ? tone.blue : "rgba(240,236,228,0.35)",
+    borderRadius: 999,
+    padding: "0.45rem 0.7rem",
+    fontSize: 12,
+    textDecoration: "none",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    textTransform: "capitalize" as const,
+  };
+
+  if (action.route_status !== "live") {
+    return (
+      <span title="planned_route_not_implemented" style={shared_style}>
+        <Lock size={12} /> {label} · planned
+      </span>
+    );
+  }
+
+  if (action.external) {
+    return (
+      <a href={action.route} target="_blank" rel="noopener noreferrer" style={shared_style}>
+        {label} <ExternalLink size={12} />
+      </a>
+    );
+  }
+
+  return (
+    <Link href={action.route} style={shared_style}>
+      {label} <ArrowRight size={12} />
+    </Link>
+  );
+}
+
 export default function RecognitionAtlas() {
   const { user, isAuthenticated, loading } = useAuth();
 
@@ -140,6 +137,14 @@ export default function RecognitionAtlas() {
       message: "This record is still in preparation and requires tribal review before public publication.",
     });
   }
+
+  const truth_record = resolve_truth_layer({
+    tribe_id: "duwamish",
+    priority: "truth_layer_first",
+    include_source_refs: true,
+    include_conflict_flags: true,
+  }, duwamish_truth_seed);
+  const conflict_fields = get_conflict_fields(truth_record);
 
   return (
     <main
@@ -226,15 +231,17 @@ export default function RecognitionAtlas() {
           }}
         >
           <span style={{ color: tone.gold, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.14em" }}>
-            Anchor node preview
+            Anchor node preview · resolved from duwamish_truth_seed
           </span>
-          <h2 style={{ fontSize: "clamp(2rem, 5vw, 4.5rem)", margin: "0.75rem 0 0.35rem" }}>dxʷdəwʔabš</h2>
-          <p style={{ color: tone.blue, fontSize: "1.35rem", margin: 0 }}>Duwamish Tribe · People of the Inside</p>
+          <h2 style={{ fontSize: "clamp(2rem, 5vw, 4.5rem)", margin: "0.75rem 0 0.35rem" }}>{truth_record.tribe_self_name.value}</h2>
+          <p style={{ color: tone.blue, fontSize: "1.35rem", margin: 0 }}>
+            Duwamish Tribe · {truth_record.name_meaning.value}
+          </p>
           <blockquote style={{ borderLeft: `4px solid ${tone.gold}`, paddingLeft: "1rem", margin: "1.5rem 0", fontSize: "1.5rem", lineHeight: 1.35 }}>
-            WE ARE STILL HERE.
+            {truth_record.primary_declaration.value}
           </blockquote>
           <p style={{ color: tone.muted, lineHeight: 1.75, maxWidth: 860 }}>
-            This preview is built from the architecture we recovered: truth layer first, language preservation permanent, section locks on by default, and no public release without tribal approval.
+            {truth_record.territorial_declaration.value}. This preview is now backed by the recovered truth-layer seed and resolver. The content remains admin-only and pending tribal review.
           </p>
         </section>
 
@@ -244,12 +251,19 @@ export default function RecognitionAtlas() {
               <Languages size={20} color={tone.blue} />
               <h3 style={{ margin: 0 }}>Language preservation</h3>
             </div>
-            {language_entries.map((entry) => (
-              <div key={entry.original_text} style={{ borderTop: `1px solid ${tone.card_border}`, paddingTop: 12, marginTop: 12 }}>
+            {duwamish_language_entries.map((entry) => (
+              <div key={entry.entry_id} style={{ borderTop: `1px solid ${tone.card_border}`, paddingTop: 12, marginTop: 12 }}>
                 <div style={{ fontSize: "1.4rem", color: tone.paper }}>{entry.original_text}</div>
                 <div style={{ color: tone.muted, fontSize: 13 }}>{entry.romanization}</div>
                 <div style={{ color: tone.blue, marginTop: 4 }}>{entry.english_gloss}</div>
-                <p style={{ color: tone.muted, lineHeight: 1.55, marginBottom: 0 }}>{entry.note}</p>
+                {entry.extended_meaning && (
+                  <p style={{ color: tone.muted, lineHeight: 1.55, marginBottom: 0 }}>{entry.extended_meaning}</p>
+                )}
+                {entry.verified_by_tribe === false && (
+                  <p style={{ color: "rgba(212,160,23,0.8)", fontSize: 12, marginBottom: 0 }}>
+                    recovered_thread_unverified · requires tribal review
+                  </p>
+                )}
               </div>
             ))}
           </div>
@@ -270,18 +284,38 @@ export default function RecognitionAtlas() {
 
         <section style={{ marginTop: "1.25rem" }}>
           <h2 style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <AlertTriangle size={22} color={tone.gold} /> Conflict flags
+          </h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
+            {conflict_fields.map((conflict) => (
+              <article key={conflict.field} style={{ border: `1px solid rgba(239,68,68,0.22)`, background: "rgba(239,68,68,0.055)", borderRadius: 20, padding: "1rem" }}>
+                <div style={{ color: tone.red, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{conflict.field}</div>
+                <p style={{ color: tone.muted, lineHeight: 1.6 }}>{conflict.conflict_note}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section style={{ marginTop: "1.25rem" }}>
+          <h2 style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <BookOpen size={22} color={tone.gold} /> Truth layers
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
-            {truth_layers.map((layer) => (
-              <article key={layer.layer_id} style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 20, padding: "1rem" }}>
-                <div style={{ color: tone.muted, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{layer.layer_id}</div>
-                <h3 style={{ margin: "0.55rem 0" }}>{layer.title}</h3>
-                <p style={{ color: tone.muted, lineHeight: 1.6 }}>{layer.text}</p>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: layer.status === "admin_preview" ? tone.gold : tone.muted, fontSize: 12 }}>
-                  {layer.status === "admin_preview" ? <CheckCircle2 size={14} /> : <Lock size={14} />}
+            {duwamish_truth_layers.map((layer) => (
+              <article key={layer.key} style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 20, padding: "1rem" }}>
+                <div style={{ color: tone.muted, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{layer.key}</div>
+                <h3 style={{ margin: "0.55rem 0 0.25rem" }}>{layer.title}</h3>
+                <p style={{ color: tone.blue, margin: 0 }}>{layer.subtitle}</p>
+                <p style={{ color: tone.muted, lineHeight: 1.6 }}>{layer.description}</p>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: layer.status === "available_admin_only" ? tone.gold : tone.muted, fontSize: 12 }}>
+                  {layer.status === "available_admin_only" ? <CheckCircle2 size={14} /> : <Lock size={14} />}
                   {layer.status}
                 </span>
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "1rem" }}>
+                  {layer.actions.map((action) => (
+                    <span key={action.action_label}>{action_button({ action })}</span>
+                  ))}
+                </div>
               </article>
             ))}
           </div>
