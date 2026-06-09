@@ -2,7 +2,7 @@ import { useAuth } from "@/core/hooks/useAuth";
 import {
   recognition_gideon_axes,
   route_to_recognition_profiles,
-} from "@/data/route_to_recognition_profiles";
+} from "@/data/route_to_recognition_registry";
 import type { recognition_condition_status } from "@/types/route_to_recognition";
 import { Link } from "wouter";
 import {
@@ -89,7 +89,7 @@ export default function RecognitionGideon() {
               RTR Matrix
             </h1>
             <p style={{ color: tone.muted, lineHeight: 1.75, fontSize: "1.08rem", maxWidth: 840, marginTop: "1.5rem" }}>
-              Civil Gideon compares states against right-to-counsel needs. Recognition Gideon compares tribal communities against recognition conditions, barriers, contradictions, and routes to recognition. This preview starts with Duwamish as the anchor profile and leaves space for each tribe to author and approve its own record.
+              Civil Gideon compares states against right-to-counsel needs. Recognition Gideon compares tribal communities against recognition conditions, barriers, contradictions, and routes to recognition. This preview starts with Duwamish as the anchor profile and Muwékma as the second comparison profile. Each tribe still controls its own record before anything can publish.
             </p>
           </div>
 
