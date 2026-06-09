@@ -225,7 +225,10 @@ function get_duwamish_layer_fields(active_layer_slug: layer_slug): { fields: pre
       { label: "name_meaning", value: truth_record.name_meaning.value, source_url: truth_record.name_meaning.source_url, source_posture: "verbatim_tribal_source" },
       { label: "primary_declaration", value: truth_record.primary_declaration.value, source_url: truth_record.primary_declaration.source_url, source_posture: "verbatim_tribal_source" },
       { label: "territorial_declaration", value: truth_record.territorial_declaration.value, source_url: truth_record.territorial_declaration.source_url, source_posture: "verbatim_tribal_source" },
+      { label: "territorial_basis", value: duwamish_truth_seed.layer_0_identity.territorial_basis, source_url: duwamish_truth_seed.layer_0_identity.source.url, source_posture },
+      { label: "oral_tradition_anchor", value: truth_record.oral_tradition_anchor.value, source_url: truth_record.oral_tradition_anchor.source_url, source_posture },
       { label: "homeland_waters", value: truth_record.homeland_waters.value, source_url: truth_record.homeland_waters.source_url, source_posture },
+      { label: "homeland_geography", value: duwamish_truth_seed.layer_0_identity.homeland_geography, source_url: duwamish_truth_seed.layer_0_identity.source.url, source_posture },
       { label: "present_day_member_territory", value: truth_record.present_day_member_territory.value, source_url: truth_record.present_day_member_territory.source_url, source_posture },
     ],
     treaty: [
