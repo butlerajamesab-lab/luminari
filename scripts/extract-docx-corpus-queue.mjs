@@ -19,12 +19,14 @@ const jsonReportPath = path.join(artifactDir, "docx-extraction-report.json");
 const csvReportPath = path.join(artifactDir, "docx-extraction-report.csv");
 
 function parseArgs(argv = process.argv.slice(2)) {
-  const args = { dryRun: false, apply: false, jsonOnly: false };
+  const args = { dryRun: false, apply: false, jsonOnly: false, id: null };
   for (const arg of argv) {
     if (arg === "--dry-run") args.dryRun = true;
-    if (arg === "--apply") args.apply = true;
-    if (arg === "--json") args.jsonOnly = true;
+    else if (arg === "--apply") args.apply = true;
+    else if (arg === "--json") args.jsonOnly = true;
+    else if (arg.startsWith("--id=")) args.id = Number.parseInt(arg.slice("--id=".length), 10);
   }
+  if (args.id !== null && (!Number.isInteger(args.id) || args.id <= 0)) throw new Error("--id must be a positive integer.");
   if (!args.apply) args.dryRun = true;
   if (args.apply && args.dryRun) throw new Error("Choose either --dry-run or --apply, not both.");
   return args;
@@ -79,12 +81,50 @@ async function bufferFromSupabase(row, supabase) {
   return Buffer.from(await data.arrayBuffer());
 }
 
+function encodeStoragePath(storagePath) {
+  return String(storagePath ?? "")
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+}
+
+function buildPublicStorageUrl(row) {
+  const supabaseUrl = process.env.SUPABASE_URL?.trim()?.replace(/\/+$/, "");
+  if (!supabaseUrl || !row.storage_bucket || !row.storage_path) return null;
+  return `${supabaseUrl}/storage/v1/object/public/${encodeURIComponent(row.storage_bucket)}/${encodeStoragePath(row.storage_path)}`;
+}
+
+async function bufferFromPublicStorageUrl(row) {
+  const publicUrl = buildPublicStorageUrl(row);
+  if (!publicUrl) return null;
+  const response = await fetch(publicUrl);
+  if (!response.ok) throw new Error(`public-storage-url-download-failed: HTTP ${response.status} ${response.statusText}`);
+  return Buffer.from(await response.arrayBuffer());
+}
+
 async function getDocxBuffer(row, supabase) {
+  const attempts = [];
   const stagedBuffer = bufferFromRow(row);
-  if (stagedBuffer?.length) return { buffer: stagedBuffer, source: "corpus_import_queue.base64_payload" };
-  const storageBuffer = await bufferFromSupabase(row, supabase);
-  if (storageBuffer?.length) return { buffer: storageBuffer, source: "supabase_storage_download" };
-  return { buffer: null, source: null };
+  attempts.push({ source: "corpus_import_queue.base64_payload", status: stagedBuffer?.length ? "selected" : "empty" });
+  if (stagedBuffer?.length) return { buffer: stagedBuffer, source: "corpus_import_queue.base64_payload", attempts };
+
+  try {
+    const storageBuffer = await bufferFromSupabase(row, supabase);
+    attempts.push({ source: "supabase_storage_download", status: storageBuffer?.length ? "selected" : "not_configured_or_missing_path" });
+    if (storageBuffer?.length) return { buffer: storageBuffer, source: "supabase_storage_download", attempts };
+  } catch (error) {
+    attempts.push({ source: "supabase_storage_download", status: "failed", error: error.message });
+  }
+
+  try {
+    const publicStorageBuffer = await bufferFromPublicStorageUrl(row);
+    attempts.push({ source: "public_storage_url", status: publicStorageBuffer?.length ? "selected" : "not_configured_or_missing_path" });
+    if (publicStorageBuffer?.length) return { buffer: publicStorageBuffer, source: "public_storage_url", attempts };
+  } catch (error) {
+    attempts.push({ source: "public_storage_url", status: "failed", error: error.message });
+  }
+
+  return { buffer: null, source: null, attempts };
 }
 
 function decodeXmlEntities(text) {
@@ -163,6 +203,8 @@ function mergePayload(row, extraction) {
       binary_source: extraction.binarySource,
       extraction_status: extraction.status,
       extraction_error: extraction.error ?? null,
+      binary_source_attempts: extraction.binarySourceAttempts ?? [],
+      public_storage_url: extraction.publicStorageUrl ?? buildPublicStorageUrl(row),
       extracted_character_count: extraction.characterCount,
       extracted_line_count: extraction.lineCount,
       original_source_ext: row.source_ext ?? null,
@@ -185,9 +227,16 @@ function buildDocxWhere(columns) {
   return clauses.length ? `(${clauses.join(" or ")})` : null;
 }
 
-async function readDocxRows(pool, columns) {
-  const where = buildDocxWhere(columns);
-  if (!where) return [];
+async function readDocxRows(pool, columns, targetId = null) {
+  const docxWhere = buildDocxWhere(columns);
+  if (!docxWhere) return [];
+  const whereParts = [docxWhere];
+  const values = [];
+  if (targetId !== null) {
+    values.push(targetId);
+    whereParts.push(`id = $${values.length}`);
+  }
+  const where = whereParts.map((clause) => `(${clause})`).join(" and ");
   const wanted = [
     "id", "source_name", "source_type", "source_ext", "storage_bucket", "storage_path",
     "byte_size", "sha256", "content_type", "target_hint", "target_surfaces", "raw_text",
@@ -195,7 +244,7 @@ async function readDocxRows(pool, columns) {
   ].filter((column) => columns.includes(column));
   const selected = wanted.map((column) => `"${column.replaceAll('"', '""')}"`).join(", ");
   const orderBy = [columns.includes("created_at") ? "created_at DESC NULLS LAST" : null, columns.includes("source_name") ? "source_name" : null].filter(Boolean).join(", ") || "1";
-  const result = await pool.query(`select ${selected} from public.corpus_import_queue where ${where} order by ${orderBy}`);
+  const result = await pool.query(`select ${selected} from public.corpus_import_queue where ${where} order by ${orderBy}`, values);
   return result.rows;
 }
 
@@ -212,6 +261,7 @@ async function updateQueueRow(pool, row, extraction, columns) {
   add("record_count_estimate", extraction.lineCount);
   add("storage_mode", "raw_text");
   add("import_status", extraction.status);
+  add("updated_at", extraction.extractedAt);
   if (!setClauses.length) return { updated: false, reason: "no-compatible-update-columns" };
   values.push(row.id);
   await pool.query(`update public.corpus_import_queue set ${setClauses.join(", ")} where id = $${values.length}`, values);
@@ -226,7 +276,7 @@ function csvCell(value) {
 async function writeReports(report) {
   await fs.mkdir(artifactDir, { recursive: true });
   await fs.writeFile(jsonReportPath, `${JSON.stringify(report, null, 2)}\n`);
-  const headers = ["id", "source_name", "storage_bucket", "storage_path", "status", "action", "character_count", "line_count", "error", "next_step"];
+  const headers = ["id", "source_name", "storage_bucket", "storage_path", "status", "action", "binary_source", "character_count", "line_count", "error", "next_step"];
   const rows = report.rows.map((row) => headers.map((header) => csvCell(row[header])).join(","));
   await fs.writeFile(csvReportPath, `${headers.join(",")}\n${rows.join("\n")}\n`);
 }
@@ -282,6 +332,7 @@ async function main() {
     schema: null,
     summary: summarize([], args.apply ? "apply" : "dry-run"),
     rows: [],
+    targetId: args.id,
     nextOrder: [
       "DOCX file",
       "raw text extraction into corpus_import_queue staging fields",
@@ -310,7 +361,7 @@ async function main() {
       return;
     }
 
-    const rows = await readDocxRows(pool, schema.columns);
+    const rows = await readDocxRows(pool, schema.columns, args.id);
     for (const row of rows) {
       const rowReport = {
         id: row.id ?? null,
@@ -331,6 +382,9 @@ async function main() {
         parser_version: report.parser.version,
         extracted_at: null,
         error: null,
+        binary_source: null,
+        binary_source_attempts: [],
+        public_storage_url: buildPublicStorageUrl(row),
         next_step: "Extract raw text first; then run Form Signal Extraction v3 and route candidates through existing gates.",
       };
       try {
@@ -338,7 +392,8 @@ async function main() {
         if (!binary.buffer) {
           rowReport.action = "blocked_missing_binary_source";
           rowReport.status = "docx_extraction_failed";
-          rowReport.error = "No base64_payload was available in corpus_import_queue and Supabase Storage download is not configured/available.";
+          rowReport.error = "No base64_payload was available in corpus_import_queue, Supabase Storage service-role download failed/unavailable, and public Storage URL fallback failed/unavailable.";
+          rowReport.binary_source_attempts = binary.attempts;
           report.rows.push(rowReport);
           continue;
         }
@@ -355,6 +410,8 @@ async function main() {
           parserVersion: report.parser.version,
           parserEntries: extracted.entries,
           binarySource: binary.source,
+          binarySourceAttempts: binary.attempts,
+          publicStorageUrl: buildPublicStorageUrl(row),
           characterCount: rawText.length,
           lineCount: lineCount(rawText),
         };
@@ -364,6 +421,7 @@ async function main() {
         rowReport.extracted_at = extractedAt;
         rowReport.parser_entries = extracted.entries;
         rowReport.binary_source = binary.source;
+        rowReport.binary_source_attempts = binary.attempts;
         rowReport.action = args.apply ? "update-corpus-import-queue" : "would-update-corpus-import-queue";
         if (args.apply) {
           const updated = await updateQueueRow(pool, row, extraction, schema.columns);
@@ -386,6 +444,8 @@ async function main() {
             parserVersion: report.parser.version,
             parserEntries: [],
             binarySource: null,
+            binarySourceAttempts: [],
+            publicStorageUrl: buildPublicStorageUrl(row),
             characterCount: 0,
             lineCount: 0,
           };
