@@ -45,6 +45,32 @@ const layer_slug_to_key: Record<layer_slug, string> = {
   "ally-call": "layer_6_ally_call",
 };
 
+const back_link_style = {
+  color: tone.blue,
+  textDecoration: "none",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+  border: `1px solid rgba(126,179,232,0.35)`,
+  background: "rgba(126,179,232,0.06)",
+  borderRadius: 999,
+  padding: "0.45rem 0.7rem",
+  fontSize: 13,
+};
+
+function return_links() {
+  return (
+    <nav style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+      <Link href="/recognition-atlas" style={back_link_style}>
+        <ArrowLeft size={16} /> Recognition Atlas
+      </Link>
+      <Link href="/recognition-gideon" style={back_link_style}>
+        <ArrowLeft size={16} /> Recognition Gideon / RTR Matrix
+      </Link>
+    </nav>
+  );
+}
+
 function gate_panel({ title, message }: { title: string; message: string }) {
   return (
     <main style={{ minHeight: "100vh", background: tone.bg, color: tone.paper, display: "grid", placeItems: "center", padding: "2rem", fontFamily: "Inter, system-ui, sans-serif" }}>
@@ -55,9 +81,7 @@ function gate_panel({ title, message }: { title: string; message: string }) {
         </div>
         <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", margin: "0 0 1rem" }}>{title}</h1>
         <p style={{ color: tone.muted, lineHeight: 1.7, fontSize: "1.05rem", marginBottom: "1.5rem" }}>{message}</p>
-        <Link href="/recognition-atlas" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 8 }}>
-          Back to Recognition Atlas
-        </Link>
+        {return_links()}
       </section>
     </main>
   );
@@ -185,9 +209,7 @@ export default function RecognitionAtlasLayer() {
   return (
     <main style={{ minHeight: "100vh", background: tone.bg, color: tone.paper, fontFamily: "Inter, system-ui, sans-serif", padding: "clamp(1.25rem, 3vw, 3rem)" }}>
       <section style={{ maxWidth: 1180, margin: "0 auto" }}>
-        <Link href="/recognition-atlas" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8, marginBottom: "1.5rem" }}>
-          <ArrowLeft size={16} /> Back to Recognition Atlas
-        </Link>
+        {return_links()}
 
         <div style={{ border: `1px solid rgba(212,160,23,0.35)`, background: "rgba(212,160,23,0.08)", color: tone.gold, borderRadius: 999, padding: "0.5rem 0.85rem", display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "1.5rem" }}>
           <EyeOff size={14} /> Tribal council/admin preview — Not Public
