@@ -32,10 +32,18 @@ type layer_slug =
 
 type supported_tribe_id = "duwamish" | "muwekma";
 
+type source_posture =
+  | "verbatim_tribal_source"
+  | "structured_extraction_from_tribal_source"
+  | "tribe_affiliated_source"
+  | "external_source"
+  | "lighthouse_analysis";
+
 type preview_field = {
   label: string;
   value: string | number | boolean | string[];
   source_url?: string;
+  source_posture: source_posture;
   warning?: string;
 };
 
@@ -61,7 +69,7 @@ const muwekma_layer_configs: Record<layer_slug, layer_preview_config> = {
     key: "layer_0_identity",
     title: "Identity Core",
     subtitle: "Muwékma · Those Who Walk Forward",
-    description: "WE ARE STILL HERE. Muwékma identity, homeland, and present-day community territory render here as an admin-preview record pending tribal review.",
+    description: "Muwékma identity, homeland, and present-day community territory render here as a cited admin-preview review packet pending tribal review.",
   },
   treaty: {
     key: "layer_1_treaty",
@@ -73,13 +81,13 @@ const muwekma_layer_configs: Record<layer_slug, layer_preview_config> = {
     key: "layer_2_dispossession",
     title: "Dispossession Record",
     subtitle: "Missionization, secularization, state violence, and federal omission",
-    description: "The Muwékma seed identifies structural disruptions to continuity including missionization, disease, secularization, rancho grants, Gold Rush violence, and omission from the 1978 list.",
+    description: "Cited source fields from the Muwékma seed are rendered for tribal review without claiming approval.",
   },
   timeline: {
     key: "layer_3_recognition_timeline",
     title: "Recognition Timeline",
     subtitle: "Prior federal identification, omission, petition, denial, and litigation",
-    description: "Recognition events from federal identification and Verona Band history through petition, denial, litigation, and recent advocacy.",
+    description: "Recognition events from the Muwékma seed, rendered as a source review packet.",
   },
   lawsuit: {
     key: "layer_4_lawsuit",
@@ -165,11 +173,29 @@ function field_grid({ fields }: { fields: preview_field[] }) {
         <article key={field.label} style={{ border: `1px solid ${tone.card_border}`, background: "rgba(255,255,255,0.025)", borderRadius: 16, padding: "0.9rem" }}>
           <div style={{ color: tone.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>{field.label}</div>
           <div style={{ color: tone.paper, lineHeight: 1.55 }}>{render_value(field.value)}</div>
-          {field.source_url && <div style={{ color: tone.blue, fontSize: 12, marginTop: 8 }}>{field.source_url}</div>}
+          <div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12, marginTop: 10 }}>
+            source_posture: {field.source_posture}
+          </div>
+          {field.source_url && (
+            <a href={field.source_url} target="_blank" rel="noreferrer" style={{ color: tone.blue, fontSize: 12, marginTop: 8, display: "inline-block" }}>
+              citation: {field.source_url}
+            </a>
+          )}
           {field.warning && <div style={{ color: tone.gold, fontSize: 12, marginTop: 8 }}>{field.warning}</div>}
         </article>
       ))}
     </div>
+  );
+}
+
+function council_review_packet_notice({ tribe_id }: { tribe_id: supported_tribe_id }) {
+  return (
+    <section style={{ border: `1px solid rgba(52,211,153,0.35)`, background: "rgba(52,211,153,0.055)", borderRadius: 22, padding: "1rem", marginBottom: "1rem" }}>
+      <h2 style={{ margin: "0 0 0.5rem" }}>Council review source packet</h2>
+      <p style={{ color: tone.muted, lineHeight: 1.65, margin: 0 }}>
+        This preview is a cited structured review packet for {tribe_id}. It is not public, not final, and not tribal approval. Each field shows source_posture and citation so the tribe can confirm, correct, restrict, replace, or reject what appears here.
+      </p>
+    </section>
   );
 }
 
@@ -191,108 +217,129 @@ function get_duwamish_layer_fields(active_layer_slug: layer_slug): { fields: pre
     include_conflict_flags: true,
   }, duwamish_truth_seed);
 
+  const source_posture: source_posture = "structured_extraction_from_tribal_source";
+
   const layer_fields: Record<layer_slug, preview_field[]> = {
     identity: [
-      { label: "tribe_self_name", value: truth_record.tribe_self_name.value, source_url: truth_record.tribe_self_name.source_url },
-      { label: "name_meaning", value: truth_record.name_meaning.value, source_url: truth_record.name_meaning.source_url },
-      { label: "primary_declaration", value: truth_record.primary_declaration.value, source_url: truth_record.primary_declaration.source_url },
-      { label: "territorial_declaration", value: truth_record.territorial_declaration.value, source_url: truth_record.territorial_declaration.source_url },
-      { label: "homeland_waters", value: truth_record.homeland_waters.value, source_url: truth_record.homeland_waters.source_url },
-      { label: "present_day_member_territory", value: truth_record.present_day_member_territory.value, source_url: truth_record.present_day_member_territory.source_url },
+      { label: "tribe_self_name", value: truth_record.tribe_self_name.value, source_url: truth_record.tribe_self_name.source_url, source_posture: "verbatim_tribal_source" },
+      { label: "name_meaning", value: truth_record.name_meaning.value, source_url: truth_record.name_meaning.source_url, source_posture: "verbatim_tribal_source" },
+      { label: "primary_declaration", value: truth_record.primary_declaration.value, source_url: truth_record.primary_declaration.source_url, source_posture: "verbatim_tribal_source" },
+      { label: "territorial_declaration", value: truth_record.territorial_declaration.value, source_url: truth_record.territorial_declaration.source_url, source_posture: "verbatim_tribal_source" },
+      { label: "homeland_waters", value: truth_record.homeland_waters.value, source_url: truth_record.homeland_waters.source_url, source_posture },
+      { label: "present_day_member_territory", value: truth_record.present_day_member_territory.value, source_url: truth_record.present_day_member_territory.source_url, source_posture },
     ],
     treaty: [
-      { label: "treaty_name", value: truth_record.treaty_name.value, source_url: truth_record.treaty_name.source_url },
-      { label: "treaty_date", value: truth_record.treaty_date.value, source_url: truth_record.treaty_date.source_url },
-      { label: "signatory_position", value: truth_record.signatory_position.value, source_url: truth_record.signatory_position.source_url },
-      { label: "chief_name", value: truth_record.chief_name.value, source_url: truth_record.chief_name.source_url },
-      { label: "chief_lineage_note", value: truth_record.chief_lineage_note.value, source_url: truth_record.chief_lineage_note.source_url },
-      { label: "city_named_for_chief", value: truth_record.city_named_for_chief.value, source_url: truth_record.city_named_for_chief.source_url },
+      { label: "treaty_name", value: truth_record.treaty_name.value, source_url: truth_record.treaty_name.source_url, source_posture },
+      { label: "treaty_date", value: truth_record.treaty_date.value, source_url: truth_record.treaty_date.source_url, source_posture },
+      { label: "signatory_position", value: truth_record.signatory_position.value, source_url: truth_record.signatory_position.source_url, source_posture },
+      { label: "chief_name", value: truth_record.chief_name.value, source_url: truth_record.chief_name.source_url, source_posture },
+      { label: "chief_lineage_note", value: truth_record.chief_lineage_note.value, source_url: truth_record.chief_lineage_note.source_url, source_posture },
+      { label: "city_named_for_chief", value: truth_record.city_named_for_chief.value, source_url: truth_record.city_named_for_chief.source_url, source_posture },
     ],
     dispossession: [
-      { label: "dispossession_events", value: truth_record.dispossession_events.value, source_url: truth_record.dispossession_events.source_url, warning: truth_record.dispossession_events.conflict_note },
-      { label: "forced_removal_agent", value: truth_record.forced_removal_agent.value, source_url: truth_record.forced_removal_agent.source_url, warning: truth_record.forced_removal_agent.conflict_note },
-      { label: "displacement_method", value: truth_record.displacement_method.value, source_url: truth_record.displacement_method.source_url },
+      { label: "dispossession_events", value: truth_record.dispossession_events.value, source_url: truth_record.dispossession_events.source_url, source_posture, warning: truth_record.dispossession_events.conflict_note },
+      { label: "forced_removal_agent", value: truth_record.forced_removal_agent.value, source_url: truth_record.forced_removal_agent.source_url, source_posture, warning: truth_record.forced_removal_agent.conflict_note },
+      { label: "displacement_method", value: truth_record.displacement_method.value, source_url: truth_record.displacement_method.source_url, source_posture },
     ],
     timeline: [
-      { label: "recognition_current_status", value: truth_record.recognition_current_status.value, source_url: truth_record.recognition_current_status.source_url, warning: truth_record.recognition_current_status.conflict_note },
-      { label: "recognition_events_count", value: truth_record.recognition_events_count.value, source_url: truth_record.recognition_events_count.source_url },
-      { label: "recognition_granted_reversed", value: truth_record.recognition_granted_reversed.value, source_url: truth_record.recognition_granted_reversed.source_url, warning: truth_record.recognition_granted_reversed.conflict_note },
-      { label: "reversal_agent", value: truth_record.reversal_agent.value, source_url: truth_record.reversal_agent.source_url, warning: truth_record.reversal_agent.conflict_note },
+      { label: "recognition_current_status", value: truth_record.recognition_current_status.value, source_url: truth_record.recognition_current_status.source_url, source_posture, warning: truth_record.recognition_current_status.conflict_note },
+      { label: "recognition_events_count", value: truth_record.recognition_events_count.value, source_url: truth_record.recognition_events_count.source_url, source_posture },
+      { label: "recognition_granted_reversed", value: truth_record.recognition_granted_reversed.value, source_url: truth_record.recognition_granted_reversed.source_url, source_posture, warning: truth_record.recognition_granted_reversed.conflict_note },
+      { label: "reversal_agent", value: truth_record.reversal_agent.value, source_url: truth_record.reversal_agent.source_url, source_posture, warning: truth_record.reversal_agent.conflict_note },
     ],
     lawsuit: [
-      { label: "lawsuit_filed_date", value: truth_record.lawsuit_filed_date.value, source_url: truth_record.lawsuit_filed_date.source_url },
-      { label: "lawsuit_court", value: truth_record.lawsuit_court.value, source_url: truth_record.lawsuit_court.source_url },
-      { label: "lawsuit_claims", value: truth_record.lawsuit_claims.value, source_url: truth_record.lawsuit_claims.source_url },
-      { label: "sex_discrimination_claim_present", value: truth_record.sex_discrimination_claim_present.value, source_url: truth_record.sex_discrimination_claim_present.source_url, warning: truth_record.sex_discrimination_claim_present.conflict_note },
+      { label: "lawsuit_filed_date", value: truth_record.lawsuit_filed_date.value, source_url: truth_record.lawsuit_filed_date.source_url, source_posture },
+      { label: "lawsuit_court", value: truth_record.lawsuit_court.value, source_url: truth_record.lawsuit_court.source_url, source_posture },
+      { label: "lawsuit_claims", value: truth_record.lawsuit_claims.value, source_url: truth_record.lawsuit_claims.source_url, source_posture },
+      { label: "sex_discrimination_claim_present", value: truth_record.sex_discrimination_claim_present.value, source_url: truth_record.sex_discrimination_claim_present.source_url, source_posture, warning: truth_record.sex_discrimination_claim_present.conflict_note },
     ],
     language: [
-      { label: "language_name", value: truth_record.language_name.value, source_url: truth_record.language_name.source_url },
-      { label: "language_program_active", value: truth_record.language_program_active.value, source_url: truth_record.language_program_active.source_url },
-      { label: "living_practices_count", value: truth_record.living_practices_count.value, source_url: truth_record.living_practices_count.source_url },
-      { label: "physical_home_address", value: truth_record.physical_home_address.value, source_url: truth_record.physical_home_address.source_url },
-      { label: "physical_home_public_access", value: truth_record.physical_home_public_access.value, source_url: truth_record.physical_home_public_access.source_url },
-      { label: "enrolled_members_approx", value: truth_record.enrolled_members_approx.value, source_url: truth_record.enrolled_members_approx.source_url },
-      { label: "canoe_journey_active", value: truth_record.canoe_journey_active.value, source_url: truth_record.canoe_journey_active.source_url },
-      { label: "mmiw_work_active", value: truth_record.mmiw_work_active.value, source_url: truth_record.mmiw_work_active.source_url },
+      { label: "language_name", value: truth_record.language_name.value, source_url: truth_record.language_name.source_url, source_posture: "verbatim_tribal_source" },
+      { label: "language_program_active", value: truth_record.language_program_active.value, source_url: truth_record.language_program_active.source_url, source_posture },
+      { label: "living_practices_count", value: truth_record.living_practices_count.value, source_url: truth_record.living_practices_count.source_url, source_posture },
+      { label: "physical_home_address", value: truth_record.physical_home_address.value, source_url: truth_record.physical_home_address.source_url, source_posture },
+      { label: "physical_home_public_access", value: truth_record.physical_home_public_access.value, source_url: truth_record.physical_home_public_access.source_url, source_posture },
+      { label: "enrolled_members_approx", value: truth_record.enrolled_members_approx.value, source_url: truth_record.enrolled_members_approx.source_url, source_posture },
+      { label: "canoe_journey_active", value: truth_record.canoe_journey_active.value, source_url: truth_record.canoe_journey_active.source_url, source_posture },
+      { label: "mmiw_work_active", value: truth_record.mmiw_work_active.value, source_url: truth_record.mmiw_work_active.source_url, source_posture },
     ],
     "ally-call": [
-      { label: "land_status", value: truth_record.land_status.value, source_url: truth_record.land_status.source_url },
-      { label: "closing_statement", value: truth_record.closing_statement.value, source_url: truth_record.closing_statement.source_url },
-      { label: "ally_actions_count", value: truth_record.ally_actions_count.value, source_url: truth_record.ally_actions_count.source_url },
+      { label: "land_status", value: truth_record.land_status.value, source_url: truth_record.land_status.source_url, source_posture },
+      { label: "closing_statement", value: truth_record.closing_statement.value, source_url: truth_record.closing_statement.source_url, source_posture: "verbatim_tribal_source" },
+      { label: "ally_actions_count", value: truth_record.ally_actions_count.value, source_url: truth_record.ally_actions_count.source_url, source_posture },
     ],
   };
 
   return { fields: layer_fields[active_layer_slug], conflict_fields: get_conflict_fields(truth_record) };
 }
 
+function source_posture_for_muwekma(source_domain: string): source_posture {
+  if (source_domain === "muwekma.org") return "structured_extraction_from_tribal_source";
+  if (source_domain === "muwekmafoundation.org") return "tribe_affiliated_source";
+  return "external_source";
+}
+
+function reported_values(values: Array<string | undefined>): string[] {
+  const filtered_values = values.filter((value): value is string => Boolean(value));
+  return filtered_values.length > 0 ? filtered_values : ["not_reported_in_seed"];
+}
+
 function get_muwekma_layer_fields(active_layer_slug: layer_slug): preview_field[] {
   const recovered_warning = muwekma_truth_seed.meta.recovered_thread_unverified
-    ? "recovered_thread_unverified · requires tribal review"
+    ? "source_authenticated_from_tribal_website · council_review_required"
     : undefined;
+
+  const identity_posture = source_posture_for_muwekma(muwekma_truth_seed.layer_0_identity.source.source_domain);
+  const treaty_posture = source_posture_for_muwekma(muwekma_truth_seed.layer_1_treaty.source.source_domain);
+  const dispossession_posture = source_posture_for_muwekma(muwekma_truth_seed.layer_2_dispossession.source.source_domain);
+  const timeline_posture = source_posture_for_muwekma(muwekma_truth_seed.layer_3_recognition_timeline.source.source_domain);
+  const lawsuit_posture = source_posture_for_muwekma(muwekma_truth_seed.layer_4_lawsuit.source.source_domain);
+  const culture_posture = source_posture_for_muwekma(muwekma_truth_seed.layer_5_living_culture.source.source_domain);
+  const ally_posture = source_posture_for_muwekma(muwekma_truth_seed.layer_6_ally_call.source.source_domain);
 
   const layer_fields: Record<layer_slug, preview_field[]> = {
     identity: [
-      { label: "tribe_self_name", value: muwekma_truth_seed.layer_0_identity.tribe_self_name, source_url: muwekma_truth_seed.layer_0_identity.source.url, warning: recovered_warning },
-      { label: "name_meaning", value: muwekma_truth_seed.layer_0_identity.name_meaning, source_url: muwekma_truth_seed.layer_0_identity.source.url, warning: recovered_warning },
-      { label: "primary_declaration", value: muwekma_truth_seed.layer_0_identity.primary_declaration, source_url: muwekma_truth_seed.layer_0_identity.source.url, warning: recovered_warning },
-      { label: "territorial_declaration", value: muwekma_truth_seed.layer_0_identity.territorial_declaration, source_url: muwekma_truth_seed.layer_0_identity.source.url, warning: recovered_warning },
-      { label: "homeland_waters", value: muwekma_truth_seed.layer_0_identity.homeland_waters, source_url: muwekma_truth_seed.layer_0_identity.source.url, warning: recovered_warning },
-      { label: "present_day_member_territory", value: muwekma_truth_seed.layer_0_identity.present_day_member_territory, source_url: muwekma_truth_seed.layer_0_identity.source.url, warning: recovered_warning },
+      { label: "tribe_self_name", value: muwekma_truth_seed.layer_0_identity.tribe_self_name, source_url: muwekma_truth_seed.layer_0_identity.source.url, source_posture: identity_posture, warning: recovered_warning },
+      { label: "name_meaning", value: muwekma_truth_seed.layer_0_identity.name_meaning, source_url: muwekma_truth_seed.layer_0_identity.source.url, source_posture: identity_posture, warning: recovered_warning },
+      { label: "primary_declaration", value: muwekma_truth_seed.layer_0_identity.primary_declaration, source_url: muwekma_truth_seed.layer_0_identity.source.url, source_posture: identity_posture, warning: recovered_warning },
+      { label: "territorial_declaration", value: muwekma_truth_seed.layer_0_identity.territorial_declaration, source_url: muwekma_truth_seed.layer_0_identity.source.url, source_posture: identity_posture, warning: recovered_warning },
+      { label: "homeland_waters", value: muwekma_truth_seed.layer_0_identity.homeland_waters, source_url: muwekma_truth_seed.layer_0_identity.source.url, source_posture: identity_posture, warning: recovered_warning },
+      { label: "present_day_member_territory", value: muwekma_truth_seed.layer_0_identity.present_day_member_territory, source_url: muwekma_truth_seed.layer_0_identity.source.url, source_posture: identity_posture, warning: recovered_warning },
     ],
     treaty: [
-      { label: "treaty_name", value: muwekma_truth_seed.layer_1_treaty.treaty_name, source_url: muwekma_truth_seed.layer_1_treaty.source.url, warning: recovered_warning },
-      { label: "treaty_date", value: muwekma_truth_seed.layer_1_treaty.treaty_date, source_url: muwekma_truth_seed.layer_1_treaty.source.url, warning: recovered_warning },
-      { label: "signatory_position", value: muwekma_truth_seed.layer_1_treaty.signatory_position, source_url: muwekma_truth_seed.layer_1_treaty.source.url, warning: recovered_warning },
+      { label: "treaty_name", value: muwekma_truth_seed.layer_1_treaty.treaty_name, source_url: muwekma_truth_seed.layer_1_treaty.source.url, source_posture: treaty_posture, warning: recovered_warning },
+      { label: "treaty_date", value: muwekma_truth_seed.layer_1_treaty.treaty_date, source_url: muwekma_truth_seed.layer_1_treaty.source.url, source_posture: treaty_posture, warning: recovered_warning },
+      { label: "signatory_position", value: muwekma_truth_seed.layer_1_treaty.signatory_position, source_url: muwekma_truth_seed.layer_1_treaty.source.url, source_posture: treaty_posture, warning: recovered_warning },
     ],
     dispossession: [
-      { label: "dispossession_events", value: muwekma_truth_seed.layer_2_dispossession.events.map((event) => event.event_label), source_url: muwekma_truth_seed.layer_2_dispossession.source.url, warning: recovered_warning },
-      { label: "agents", value: muwekma_truth_seed.layer_2_dispossession.events.map((event) => event.agent ?? "agent_unlisted"), source_url: muwekma_truth_seed.layer_2_dispossession.source.url, warning: recovered_warning },
-      { label: "outcomes", value: muwekma_truth_seed.layer_2_dispossession.events.map((event) => event.outcome ?? "outcome_unlisted"), source_url: muwekma_truth_seed.layer_2_dispossession.source.url, warning: recovered_warning },
+      { label: "dispossession_events", value: muwekma_truth_seed.layer_2_dispossession.events.map((event) => event.event_label), source_url: muwekma_truth_seed.layer_2_dispossession.source.url, source_posture: dispossession_posture, warning: recovered_warning },
+      { label: "agents_reported_in_seed", value: reported_values(muwekma_truth_seed.layer_2_dispossession.events.map((event) => event.agent)), source_url: muwekma_truth_seed.layer_2_dispossession.source.url, source_posture: dispossession_posture, warning: recovered_warning },
+      { label: "outcomes_reported_in_seed", value: reported_values(muwekma_truth_seed.layer_2_dispossession.events.map((event) => event.outcome)), source_url: muwekma_truth_seed.layer_2_dispossession.source.url, source_posture: dispossession_posture, warning: recovered_warning },
     ],
     timeline: [
-      { label: "recognition_current_status", value: muwekma_truth_seed.layer_3_recognition_timeline.current_status, source_url: muwekma_truth_seed.layer_3_recognition_timeline.source.url, warning: recovered_warning },
-      { label: "recognition_events_count", value: muwekma_truth_seed.layer_3_recognition_timeline.events.length, source_url: muwekma_truth_seed.layer_3_recognition_timeline.source.url, warning: recovered_warning },
-      { label: "recognition_event_labels", value: muwekma_truth_seed.layer_3_recognition_timeline.events.map((event) => event.event_label), source_url: muwekma_truth_seed.layer_3_recognition_timeline.source.url, warning: recovered_warning },
+      { label: "recognition_current_status", value: muwekma_truth_seed.layer_3_recognition_timeline.current_status, source_url: muwekma_truth_seed.layer_3_recognition_timeline.source.url, source_posture: timeline_posture, warning: recovered_warning },
+      { label: "recognition_events_count", value: muwekma_truth_seed.layer_3_recognition_timeline.events.length, source_url: muwekma_truth_seed.layer_3_recognition_timeline.source.url, source_posture: timeline_posture, warning: recovered_warning },
+      { label: "recognition_event_labels", value: muwekma_truth_seed.layer_3_recognition_timeline.events.map((event) => event.event_label), source_url: muwekma_truth_seed.layer_3_recognition_timeline.source.url, source_posture: timeline_posture, warning: recovered_warning },
     ],
     lawsuit: [
-      { label: "lawsuit_filed_date", value: muwekma_truth_seed.layer_4_lawsuit.filed_date, source_url: muwekma_truth_seed.layer_4_lawsuit.source.url, warning: recovered_warning },
-      { label: "lawsuit_court", value: muwekma_truth_seed.layer_4_lawsuit.court, source_url: muwekma_truth_seed.layer_4_lawsuit.source.url, warning: recovered_warning },
-      { label: "lawsuit_claims", value: muwekma_truth_seed.layer_4_lawsuit.claims.map((claim) => claim.claim_label), source_url: muwekma_truth_seed.layer_4_lawsuit.source.url, warning: recovered_warning },
-      { label: "current_procedural_status", value: muwekma_truth_seed.layer_4_lawsuit.current_procedural_status, source_url: muwekma_truth_seed.layer_4_lawsuit.source.url, warning: recovered_warning },
+      { label: "lawsuit_filed_date", value: muwekma_truth_seed.layer_4_lawsuit.filed_date, source_url: muwekma_truth_seed.layer_4_lawsuit.source.url, source_posture: lawsuit_posture, warning: recovered_warning },
+      { label: "lawsuit_court", value: muwekma_truth_seed.layer_4_lawsuit.court, source_url: muwekma_truth_seed.layer_4_lawsuit.source.url, source_posture: lawsuit_posture, warning: recovered_warning },
+      { label: "lawsuit_claims", value: muwekma_truth_seed.layer_4_lawsuit.claims.map((claim) => claim.claim_label), source_url: muwekma_truth_seed.layer_4_lawsuit.source.url, source_posture: lawsuit_posture, warning: recovered_warning },
+      { label: "current_procedural_status", value: muwekma_truth_seed.layer_4_lawsuit.current_procedural_status, source_url: muwekma_truth_seed.layer_4_lawsuit.source.url, source_posture: lawsuit_posture, warning: recovered_warning },
     ],
     language: [
-      { label: "language_name", value: muwekma_truth_seed.layer_5_living_culture.language.language_name, source_url: muwekma_truth_seed.layer_5_living_culture.language.source.url, warning: recovered_warning },
-      { label: "language_program", value: muwekma_truth_seed.layer_5_living_culture.language.program_name, source_url: muwekma_truth_seed.layer_5_living_culture.language.source.url, warning: recovered_warning },
-      { label: "living_practices_count", value: muwekma_truth_seed.layer_5_living_culture.living_practices.length, source_url: muwekma_truth_seed.layer_5_living_culture.source.url, warning: recovered_warning },
-      { label: "physical_home_address", value: muwekma_truth_seed.layer_5_living_culture.physical_home.address, source_url: muwekma_truth_seed.layer_5_living_culture.physical_home.source.url, warning: recovered_warning },
-      { label: "physical_home_public_access", value: muwekma_truth_seed.layer_5_living_culture.physical_home.public_access, source_url: muwekma_truth_seed.layer_5_living_culture.physical_home.source.url, warning: recovered_warning },
-      { label: "enrolled_members_approx", value: muwekma_truth_seed.layer_5_living_culture.enrolled_members_approx, source_url: muwekma_truth_seed.layer_5_living_culture.source.url, warning: recovered_warning },
-      { label: "environmental_coalition", value: muwekma_truth_seed.layer_5_living_culture.environmental_coalition, source_url: muwekma_truth_seed.layer_5_living_culture.source.url, warning: recovered_warning },
+      { label: "language_name", value: muwekma_truth_seed.layer_5_living_culture.language.language_name, source_url: muwekma_truth_seed.layer_5_living_culture.language.source.url, source_posture: source_posture_for_muwekma(muwekma_truth_seed.layer_5_living_culture.language.source.source_domain), warning: recovered_warning },
+      { label: "language_program", value: muwekma_truth_seed.layer_5_living_culture.language.program_name, source_url: muwekma_truth_seed.layer_5_living_culture.language.source.url, source_posture: source_posture_for_muwekma(muwekma_truth_seed.layer_5_living_culture.language.source.source_domain), warning: recovered_warning },
+      { label: "living_practices_count", value: muwekma_truth_seed.layer_5_living_culture.living_practices.length, source_url: muwekma_truth_seed.layer_5_living_culture.source.url, source_posture: culture_posture, warning: recovered_warning },
+      { label: "physical_home_address", value: muwekma_truth_seed.layer_5_living_culture.physical_home.address, source_url: muwekma_truth_seed.layer_5_living_culture.physical_home.source.url, source_posture: source_posture_for_muwekma(muwekma_truth_seed.layer_5_living_culture.physical_home.source.source_domain), warning: recovered_warning },
+      { label: "physical_home_public_access", value: muwekma_truth_seed.layer_5_living_culture.physical_home.public_access, source_url: muwekma_truth_seed.layer_5_living_culture.physical_home.source.url, source_posture: source_posture_for_muwekma(muwekma_truth_seed.layer_5_living_culture.physical_home.source.source_domain), warning: recovered_warning },
+      { label: "enrolled_members_approx", value: muwekma_truth_seed.layer_5_living_culture.enrolled_members_approx, source_url: muwekma_truth_seed.layer_5_living_culture.source.url, source_posture: culture_posture, warning: recovered_warning },
+      { label: "environmental_coalition", value: muwekma_truth_seed.layer_5_living_culture.environmental_coalition, source_url: muwekma_truth_seed.layer_5_living_culture.source.url, source_posture: culture_posture, warning: recovered_warning },
     ],
     "ally-call": [
-      { label: "land_status", value: muwekma_truth_seed.layer_6_ally_call.land_status, source_url: muwekma_truth_seed.layer_6_ally_call.source.url, warning: recovered_warning },
-      { label: "closing_statement", value: muwekma_truth_seed.layer_6_ally_call.closing_statement, source_url: muwekma_truth_seed.layer_6_ally_call.source.url, warning: recovered_warning },
-      { label: "ally_actions_count", value: muwekma_truth_seed.layer_6_ally_call.ally_actions.length, source_url: muwekma_truth_seed.layer_6_ally_call.source.url, warning: recovered_warning },
+      { label: "land_status", value: muwekma_truth_seed.layer_6_ally_call.land_status, source_url: muwekma_truth_seed.layer_6_ally_call.source.url, source_posture: ally_posture, warning: recovered_warning },
+      { label: "closing_statement", value: muwekma_truth_seed.layer_6_ally_call.closing_statement, source_url: muwekma_truth_seed.layer_6_ally_call.source.url, source_posture: ally_posture, warning: recovered_warning },
+      { label: "ally_actions_count", value: muwekma_truth_seed.layer_6_ally_call.ally_actions.length, source_url: muwekma_truth_seed.layer_6_ally_call.source.url, source_posture: ally_posture, warning: recovered_warning },
     ],
   };
 
@@ -341,6 +388,7 @@ export default function RecognitionAtlasLayer() {
     <main style={{ minHeight: "100vh", background: tone.bg, color: tone.paper, fontFamily: "Inter, system-ui, sans-serif", padding: "clamp(1.25rem, 3vw, 3rem)" }}>
       <section style={{ maxWidth: 1180, margin: "0 auto" }}>
         {return_links()}
+        {council_review_packet_notice({ tribe_id })}
 
         <div style={{ border: `1px solid rgba(212,160,23,0.35)`, background: "rgba(212,160,23,0.08)", color: tone.gold, borderRadius: 999, padding: "0.5rem 0.85rem", display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "1.5rem" }}>
           <EyeOff size={14} /> Tribal council/admin preview — Not Public
@@ -405,8 +453,11 @@ export default function RecognitionAtlasLayer() {
                   <div style={{ color: tone.paper, fontSize: "1.25rem" }}>{entry.original_text}</div>
                   <div style={{ color: tone.muted }}>{entry.romanization}</div>
                   <div style={{ color: tone.blue }}>{entry.english_gloss}</div>
+                  <div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12, marginTop: 8 }}>
+                    source_posture: source_authenticated_from_tribal_website · citation: {entry.source_url}
+                  </div>
                   {entry.extended_meaning && <p style={{ color: tone.muted, lineHeight: 1.6 }}>{entry.extended_meaning}</p>}
-                  {entry.verified_by_tribe === false && <p style={{ color: tone.gold, fontSize: 12 }}>recovered_thread_unverified · requires tribal review</p>}
+                  {entry.verified_by_tribe === false && <p style={{ color: tone.gold, fontSize: 12 }}>council_review_required</p>}
                 </article>
               ))}
             </div>
