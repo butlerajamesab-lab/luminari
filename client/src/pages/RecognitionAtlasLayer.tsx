@@ -295,6 +295,10 @@ function get_duwamish_layer_fields(active_layer_slug: layer_slug): { fields: pre
       { label: "land_status", value: truth_record.land_status.value, source_url: truth_record.land_status.source_url, source_posture },
       { label: "closing_statement", value: truth_record.closing_statement.value, source_url: truth_record.closing_statement.source_url, source_posture: "verbatim_tribal_source" },
       { label: "ally_actions_count", value: truth_record.ally_actions_count.value, source_url: truth_record.ally_actions_count.source_url, source_posture },
+      { label: "land_acknowledgement_template", value: duwamish_truth_seed.layer_6_ally_call.template_text, source_url: duwamish_truth_seed.layer_6_ally_call.source.url, source_posture: "verbatim_tribal_source" },
+      { label: "ally_actions", value: duwamish_truth_seed.layer_6_ally_call.ally_actions.map((action) => action.action_label), source_url: duwamish_truth_seed.layer_6_ally_call.source.url, source_posture },
+      { label: "ally_action_descriptions", value: duwamish_truth_seed.layer_6_ally_call.ally_actions.map((action) => action.description), source_url: duwamish_truth_seed.layer_6_ally_call.source.url, source_posture },
+      { label: "ally_action_urls", value: duwamish_truth_seed.layer_6_ally_call.ally_actions.map((action) => action.url ?? "not_reported_in_seed"), source_url: duwamish_truth_seed.layer_6_ally_call.source.url, source_posture },
     ],
   };
 
