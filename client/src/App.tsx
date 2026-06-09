@@ -69,6 +69,7 @@ import LumenSend from "./pages/LumenSend";
 import LegalLibrary from "./pages/LegalLibrary";
 import AgencyMetrics from "./pages/AgencyMetrics";
 import CivilGideon from "./pages/CivilGideon";
+import NativeNationsHub from "./pages/NativeNationsHub";
 import RecognitionAtlas from "./pages/RecognitionAtlas";
 import RecognitionAtlasLayer from "./pages/RecognitionAtlasLayer";
 import RecognitionGideon from "./pages/RecognitionGideon";
@@ -247,6 +248,7 @@ function App() {
                 <Route path="/legal-library" component={LegalLibrary} />
                 <Route path="/agency-metrics" component={AgencyMetrics} />
                 <Route path="/civil-gideon" component={CivilGideon} />
+                <Route path="/native-nations" component={NativeNationsHub} />
                 <Route path="/recognition-gideon" component={RecognitionGideon} />
                 <Route path="/recognition-atlas/:tribe_id/:layer_slug" component={RecognitionAtlasLayer} />
                 <Route path="/recognition-atlas" component={RecognitionAtlas} />
