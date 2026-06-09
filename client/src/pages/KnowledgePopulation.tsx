@@ -31,6 +31,80 @@ const TABLE_ICONS: Record<string, React.ReactNode> = {
   proof_frameworks: <Target className="h-4 w-4" />,
 };
 
+type TargetTruth = {
+  targetKind: "seed" | "jurisdictional" | "finite_universe";
+  explanation: string;
+};
+
+const DEFAULT_TARGET_TRUTH: TargetTruth = {
+  targetKind: "seed",
+  explanation: "This target is a seed threshold for proving the rail works. It is not a claim of national functional coverage or universe completion.",
+};
+
+const TABLE_TARGET_TRUTH: Record<string, TargetTruth> = {
+  legislator_contacts: {
+    targetKind: "jurisdictional",
+    explanation: "Seed count only. National function requires federal, state, DC, territorial, and applicable tribal/local legislative coverage or explicitly logged gaps.",
+  },
+  coalition_legislators: {
+    targetKind: "jurisdictional",
+    explanation: "Strategic seed set only. Coalition routing is not nationally functional until jurisdiction and committee coverage are verified nationwide.",
+  },
+  advocacy_organizations: {
+    targetKind: "jurisdictional",
+    explanation: "Seed count only. Real function requires national plus state/local coverage across support domains, not one dense region.",
+  },
+  coalition_advocacy_orgs: {
+    targetKind: "seed",
+    explanation: "Minimum coalition density threshold. Counts may exceed this target without implying universe completion.",
+  },
+  coalition_agencies: {
+    targetKind: "jurisdictional",
+    explanation: "Seed count only. National function requires federal, state, DC, territorial, tribal, and local agency routing where relevant.",
+  },
+  court_directory: {
+    targetKind: "jurisdictional",
+    explanation: "Seed count only. National function requires federal, state, tribal, administrative, county, and local filing forums where relevant.",
+  },
+  deadline_rules: {
+    targetKind: "jurisdictional",
+    explanation: "Seed count only. National function requires jurisdiction-specific deadlines and fallback warnings across the main claim families.",
+  },
+  escalation_routes: {
+    targetKind: "jurisdictional",
+    explanation: "Seed count only. No-dead-end operation requires verified fallback or escalation routes across jurisdictions.",
+  },
+  workflow_master: {
+    targetKind: "jurisdictional",
+    explanation: "Seed count only. Workflows must become jurisdiction-aware before this can be called nationally functional.",
+  },
+  legal_statutes: {
+    targetKind: "jurisdictional",
+    explanation: "Seed count only. National legal grounding requires federal and jurisdiction-specific statutes across the supported problem families.",
+  },
+  legal_case_law: {
+    targetKind: "jurisdictional",
+    explanation: "Seed count only. National legal grounding requires source-bound jurisdictional case law coverage, not just record count.",
+  },
+};
+
+const getTargetTruth = (tableName: string) => TABLE_TARGET_TRUTH[tableName] ?? DEFAULT_TARGET_TRUTH;
+
+const getSeedBadgeLabel = (count: number, coverage: number) => {
+  if (count === 0) return "Empty";
+  if (coverage >= 100) return "Seeded";
+  return `${coverage}% seed`;
+};
+
+const getSeedStatusText = (count: number, target: number, coverage: number) => {
+  if (count === 0) return "No verified seed data yet";
+  if (coverage >= 100) {
+    const surplus = count - target;
+    return surplus > 0 ? `Seed target met · +${surplus.toLocaleString()} over seed` : "Seed target met";
+  }
+  return `${Math.max(target - count, 0).toLocaleString()} more seed records needed`;
+};
+
 // All tables now use the universal import endpoint
 
 export default function KnowledgePopulation() {
@@ -133,14 +207,6 @@ export default function KnowledgePopulation() {
     return "text-emerald-400";
   };
 
-  const getProgressColor = (coverage: number) => {
-    if (coverage === 0) return "bg-red-500/30";
-    if (coverage < 25) return "bg-orange-500/30";
-    if (coverage < 50) return "bg-yellow-500/30";
-    if (coverage < 75) return "bg-blue-500/30";
-    return "bg-emerald-500/30";
-  };
-
   if (isLoading) {
     return (
       <div className="p-6 space-y-4">
@@ -180,6 +246,20 @@ export default function KnowledgePopulation() {
         </Button>
       </div>
 
+      <Card className="border-amber-500/30 bg-amber-500/5">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
+            <div className="space-y-1 text-sm">
+              <div className="font-medium text-amber-300">No-dead-end coverage language is active.</div>
+              <p className="text-muted-foreground">
+                These counts are seed thresholds unless a table explicitly says otherwise. Seeded means the rail has enough data to operate for testing and early routing; it does not mean national function, no-dead-end coverage, or universe completion.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Summary Card */}
       {stats?.summary && (
         <Card className="border-primary/20 bg-primary/5">
@@ -191,13 +271,13 @@ export default function KnowledgePopulation() {
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold">{stats.summary.totalTarget.toLocaleString()}</div>
-                <div className="text-sm text-muted-foreground">Target Records</div>
+                <div className="text-sm text-muted-foreground">Seed Target Records</div>
               </div>
               <div className="text-center">
                 <div className={`text-3xl font-bold ${getCoverageColor(stats.summary.overallCoverage)}`}>
                   {stats.summary.overallCoverage}%
                 </div>
-                <div className="text-sm text-muted-foreground">Overall Coverage</div>
+                <div className="text-sm text-muted-foreground">Seed Coverage</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-red-400">{stats.summary.criticallyLow.length}</div>
@@ -219,7 +299,7 @@ export default function KnowledgePopulation() {
               <div className="mt-2 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg flex items-start gap-2">
                 <AlertTriangle className="h-4 w-4 text-orange-400 mt-0.5 shrink-0" />
                 <div className="text-sm">
-                  <span className="font-medium text-orange-400">Under-populated (&lt;25%): </span>
+                  <span className="font-medium text-orange-400">Under-seeded (&lt;25%): </span>
                   <span className="text-muted-foreground">{stats.summary.underPopulated.join(", ")}</span>
                 </div>
               </div>
@@ -230,63 +310,71 @@ export default function KnowledgePopulation() {
 
       {/* Table Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {stats?.tables.map((t) => (
-          <Card key={t.name} className={t.count === 0 ? "border-red-500/30" : ""}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  {TABLE_ICONS[t.name] ?? <Database className="h-4 w-4" />}
-                  {t.label}
-                </CardTitle>
-                <Badge variant={t.count === 0 ? "destructive" : t.coverage < 25 ? "secondary" : "default"}>
-                  {t.count === 0 ? "Empty" : t.coverage >= 100 ? "Complete" : `${t.coverage}%`}
-                </Badge>
-              </div>
-              <CardDescription className="text-xs">
-                {t.count.toLocaleString()} / {t.target.toLocaleString()} records
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="relative">
-                <Progress value={t.coverage} className="h-2" />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className={`text-xs font-medium ${getCoverageColor(t.coverage)}`}>
-                  {t.coverage === 0 ? "No data" : t.coverage >= 100 ? "Target met" : `${t.target - t.count} more needed`}
-                </span>
-                <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleImportClick(t.name)}
-                    disabled={importing === t.name}
-                    className="h-7 text-xs"
-                  >
-                    <Upload className="h-3 w-3 mr-1" />
-                    {importing === t.name ? "Importing..." : "File"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={sqlPasteTable === t.name ? "default" : "outline"}
-                    onClick={() => {
-                      if (sqlPasteTable === t.name) {
-                        setSqlPasteTable(null);
-                        setSqlText('');
-                      } else {
-                        setSqlPasteTable(t.name);
-                        setSqlText('');
-                      }
-                    }}
-                    className="h-7 text-xs"
-                  >
-                    <ClipboardPaste className="h-3 w-3 mr-1" />
-                    Paste SQL
-                  </Button>
+        {stats?.tables.map((t) => {
+          const targetTruth = getTargetTruth(t.name);
+          const displayProgress = Math.min(t.coverage, 100);
+          return (
+            <Card key={t.name} className={t.count === 0 ? "border-red-500/30" : ""}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    {TABLE_ICONS[t.name] ?? <Database className="h-4 w-4" />}
+                    {t.label}
+                  </CardTitle>
+                  <Badge variant={t.count === 0 ? "destructive" : t.coverage < 25 ? "secondary" : "default"}>
+                    {getSeedBadgeLabel(t.count, t.coverage)}
+                  </Badge>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                <CardDescription className="text-xs space-y-1">
+                  <div>{t.count.toLocaleString()} / {t.target.toLocaleString()} seed records</div>
+                  <div className="text-muted-foreground/90">{targetTruth.explanation}</div>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="relative">
+                  <Progress value={displayProgress} className="h-2" />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className={`text-xs font-medium ${getCoverageColor(t.coverage)}`}>
+                    {getSeedStatusText(t.count, t.target, t.coverage)}
+                  </span>
+                  <div className="flex gap-1 shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleImportClick(t.name)}
+                      disabled={importing === t.name}
+                      className="h-7 text-xs"
+                    >
+                      <Upload className="h-3 w-3 mr-1" />
+                      {importing === t.name ? "Importing..." : "File"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={sqlPasteTable === t.name ? "default" : "outline"}
+                      onClick={() => {
+                        if (sqlPasteTable === t.name) {
+                          setSqlPasteTable(null);
+                          setSqlText('');
+                        } else {
+                          setSqlPasteTable(t.name);
+                          setSqlText('');
+                        }
+                      }}
+                      className="h-7 text-xs"
+                    >
+                      <ClipboardPaste className="h-3 w-3 mr-1" />
+                      Paste SQL
+                    </Button>
+                  </div>
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  Coverage type: {targetTruth.targetKind.replace(/_/g, " ")}. This card must not be read as complete national no-dead-end coverage unless that state is explicitly shown.
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* SQL Paste Panel */}
@@ -355,11 +443,11 @@ export default function KnowledgePopulation() {
             <p className="mt-1">
               Click <span className="inline-flex items-center gap-1 text-xs bg-muted px-1.5 py-0.5 rounded"><Upload className="h-3 w-3" /> File</span> to upload a <code className="text-xs bg-muted px-1 py-0.5 rounded">.json</code> file.
               Supports flat arrays <code className="text-xs bg-muted px-1 py-0.5 rounded">{"[{...}]"}</code> or domain-grouped objects.
-              Both snake_case and camelCase field names are auto-mapped.
+              Snake_case fields are preserved and unknown columns are ignored.
             </p>
           </div>
           <p className="text-xs">
-            Maximum 2,000 records per import, 5MB size limit. Duplicates are automatically skipped.
+            Maximum 2,000 records per import, 5MB size limit. Duplicates may still skip until enrichment merge/upsert is implemented.
           </p>
         </CardContent>
       </Card>
