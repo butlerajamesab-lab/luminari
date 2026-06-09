@@ -267,6 +267,10 @@ function get_duwamish_layer_fields(active_layer_slug: layer_slug): { fields: pre
       { label: "lawsuit_court", value: truth_record.lawsuit_court.value, source_url: truth_record.lawsuit_court.source_url, source_posture },
       { label: "lawsuit_claims", value: truth_record.lawsuit_claims.value, source_url: truth_record.lawsuit_claims.source_url, source_posture },
       { label: "sex_discrimination_claim_present", value: truth_record.sex_discrimination_claim_present.value, source_url: truth_record.sex_discrimination_claim_present.source_url, source_posture, warning: truth_record.sex_discrimination_claim_present.conflict_note },
+      { label: "lawsuit_defendant", value: duwamish_truth_seed.layer_4_lawsuit.defendant, source_url: duwamish_truth_seed.layer_4_lawsuit.source.url, source_posture },
+      { label: "lawsuit_legal_bases", value: duwamish_truth_seed.layer_4_lawsuit.claims.map((claim) => claim.legal_basis), source_url: duwamish_truth_seed.layer_4_lawsuit.source.url, source_posture },
+      { label: "lawsuit_statutes_or_doctrines", value: duwamish_truth_seed.layer_4_lawsuit.claims.map((claim) => claim.statute_or_doctrine ?? "not_reported_in_seed"), source_url: duwamish_truth_seed.layer_4_lawsuit.source.url, source_posture },
+      { label: "current_procedural_status", value: duwamish_truth_seed.layer_4_lawsuit.current_procedural_status, source_url: duwamish_truth_seed.layer_4_lawsuit.source.url, source_posture },
     ],
     language: [
       { label: "language_name", value: truth_record.language_name.value, source_url: truth_record.language_name.source_url, source_posture: "verbatim_tribal_source" },
