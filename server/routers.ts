@@ -3310,9 +3310,9 @@ const invitesRouter = router({
       return { success: true, target_role: invite.target_role, target_plan: invite.target_plan };
     }),
   redemptions: adminProcedure
-    .input(z.object({ inviteId: z.number() }))
+    .input(z.object({ invite_id: z.number() }))
     .query(async ({ input }) => {
-      return dbHelpers.listInviteRedemptions(input.inviteId);
+      return dbHelpers.listInviteRedemptions(input.invite_id);
     }),
 });
 
