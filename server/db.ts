@@ -13,7 +13,6 @@ import {
   entityMergeSuggestions, uploadSessions, provenanceAuditLogs, batchRerunRuns,
   caseCollaborators, corpusSnapshots,
   checklistItems, userFeedback, pipelineEvents, shareLinks, notifications,
-  adminInvites, inviteRedemptions,
   foiaRequests, foiaStatutes, foiaAgencies, missingRecords,
   caseNarratives,
   patternTypes, patterns, patternOccurrences,
@@ -3172,84 +3171,178 @@ export async function notifyShareExpiring(shareLinkId: number) {
 
 // ─── Admin Invite Helpers ───
 
-export async function createAdminInvite(data: {
+type AdminInviteRuntime = {
+  id: number;
   token: string;
-  createdBy: number;
-  targetRole: "user" | "admin";
-  targetPlan: "free" | "advocacy" | "family_advocacy" | "analyst" | "professional" | "enterprise";
-  label?: string;
-  maxUses: number;
-  expiresAt: number;
-}) {
-  const now = Date.now();
-  const result = await db.insert(adminInvites).values({
-    token: data.token,
-    createdBy: data.createdBy,
-    targetRole: data.targetRole,
-    targetPlan: data.targetPlan,
-    label: data.label || null,
-    maxUses: data.maxUses,
-    useCount: 0,
-    expiresAt: data.expiresAt,
-    inviteStatus: "active",
-    createdAt: now,
-  }).$returningId();
-  return { id: result[0].id, token: data.token };
+  created_by: number;
+  target_role: "user" | "admin";
+  target_plan: "free" | "advocacy" | "family_advocacy" | "analyst" | "professional" | "enterprise";
+  label: string | null;
+  max_uses: number;
+  use_count: number;
+  expires_at: number;
+  invite_status: "active" | "expired" | "revoked" | "exhausted";
+  created_at: number;
+};
+
+function getExecuteRows(result: unknown): any[] {
+  if (Array.isArray(result)) {
+    return Array.isArray(result[0]) ? result[0] : result;
+  }
+  const maybeRows = (result as { rows?: unknown })?.rows;
+  return Array.isArray(maybeRows) ? maybeRows : [];
 }
 
-export async function getInviteByToken(token: string): Promise<AdminInvite | null> {
-  const rows = await db.select().from(adminInvites).where(eq(adminInvites.token, token)).limit(1);
+export async function createAdminInvite(data: {
+  token: string;
+  created_by: number;
+  target_role: "user" | "admin";
+  target_plan: "free" | "advocacy" | "family_advocacy" | "analyst" | "professional" | "enterprise";
+  label?: string;
+  max_uses: number;
+  expires_at: number;
+}) {
+  const now = Date.now();
+  const rows = getExecuteRows(await db.execute(sql`
+    INSERT INTO public.admin_invites (
+      token,
+      created_by,
+      target_role,
+      target_plan,
+      label,
+      max_uses,
+      use_count,
+      expires_at,
+      invite_status,
+      created_at
+    )
+    VALUES (
+      ${data.token},
+      ${data.created_by},
+      ${data.target_role},
+      ${data.target_plan},
+      ${data.label || null},
+      ${data.max_uses},
+      0,
+      ${data.expires_at},
+      'active',
+      ${now}
+    )
+    RETURNING id
+  `));
+
+  return { id: rows[0].id, token: data.token };
+}
+
+export async function getInviteByToken(token: string): Promise<AdminInviteRuntime | null> {
+  const rows = getExecuteRows(await db.execute(sql`
+    SELECT
+      id,
+      token,
+      created_by,
+      target_role,
+      target_plan,
+      label,
+      max_uses,
+      use_count,
+      expires_at,
+      invite_status,
+      created_at
+    FROM public.admin_invites
+    WHERE token = ${token}
+    LIMIT 1
+  `));
   return rows[0] || null;
 }
 
-export async function listAdminInvites(createdBy?: number) {
-  if (createdBy) {
-    return db.select().from(adminInvites)
-      .where(eq(adminInvites.createdBy, createdBy))
-      .orderBy(desc(adminInvites.createdAt));
+export async function listAdminInvites(created_by?: number): Promise<AdminInviteRuntime[]> {
+  if (created_by) {
+    return getExecuteRows(await db.execute(sql`
+      SELECT
+        id,
+        token,
+        created_by,
+        target_role,
+        target_plan,
+        label,
+        max_uses,
+        use_count,
+        expires_at,
+        invite_status,
+        created_at
+      FROM public.admin_invites
+      WHERE created_by = ${created_by}
+      ORDER BY created_at DESC
+    `));
   }
-  return db.select().from(adminInvites).orderBy(desc(adminInvites.createdAt));
+
+  return getExecuteRows(await db.execute(sql`
+    SELECT
+      id,
+      token,
+      created_by,
+      target_role,
+      target_plan,
+      label,
+      max_uses,
+      use_count,
+      expires_at,
+      invite_status,
+      created_at
+    FROM public.admin_invites
+    ORDER BY created_at DESC
+  `));
 }
 
 export async function revokeAdminInvite(id: number) {
-  await db.update(adminInvites)
-    .set({ inviteStatus: "revoked" })
-    .where(eq(adminInvites.id, id));
+  await db.execute(sql`
+    UPDATE public.admin_invites
+    SET invite_status = 'revoked'
+    WHERE id = ${id}
+  `);
 }
 
-export async function redeemInvite(inviteId: number, userId: number, targetRole: string, targetPlan: string) {
+export async function redeemInvite(invite_id: number, user_id: number, target_role: string, target_plan: string) {
   const now = Date.now();
   // Increment use count and check if exhausted
-  const invite = await db.select().from(adminInvites).where(eq(adminInvites.id, inviteId)).limit(1);
-  const newUseCount = (invite[0]?.useCount || 0) + 1;
-  const newStatus = newUseCount >= (invite[0]?.maxUses || 1) ? "exhausted" as const : "active" as const;
-  await db.update(adminInvites)
-    .set({ useCount: sql`${adminInvites.useCount} + 1`, inviteStatus: newStatus })
-    .where(eq(adminInvites.id, inviteId));
+  const rows = getExecuteRows(await db.execute(sql`
+    SELECT max_uses, use_count
+    FROM public.admin_invites
+    WHERE id = ${invite_id}
+    LIMIT 1
+  `));
+  const new_use_count = (rows[0]?.use_count || 0) + 1;
+  const new_status = new_use_count >= (rows[0]?.max_uses || 1) ? "exhausted" as const : "active" as const;
+
+  await db.execute(sql`
+    UPDATE public.admin_invites
+    SET use_count = use_count + 1, invite_status = ${new_status}
+    WHERE id = ${invite_id}
+  `);
   // Record redemption
-  await db.insert(inviteRedemptions).values({
-    inviteId,
-    userId,
-    redeemedAt: now,
-  });
+  await db.execute(sql`
+    INSERT INTO public.invite_redemptions (invite_id, user_id, redeemed_at)
+    VALUES (${invite_id}, ${user_id}, ${now})
+  `);
   // Apply role and plan to user
   await db.update(users)
-    .set({ role: targetRole as any, plan: targetPlan as any, updatedAt: now })
-    .where(eq(users.id, userId));
+    .set({ role: target_role as any, plan: target_plan as any, updatedAt: now })
+    .where(eq(users.id, user_id));
 }
 
-export async function listInviteRedemptions(inviteId: number) {
-  return db.select({
-    id: inviteRedemptions.id,
-    userId: inviteRedemptions.userId,
-    redeemedAt: inviteRedemptions.redeemedAt,
-    userName: users.name,
-    userEmail: users.email,
-  })
-    .from(inviteRedemptions)
-    .leftJoin(users, eq(inviteRedemptions.userId, users.id))
-    .where(eq(inviteRedemptions.inviteId, inviteId))
-    .orderBy(desc(inviteRedemptions.redeemedAt));
+export async function listInviteRedemptions(invite_id: number) {
+  return getExecuteRows(await db.execute(sql`
+    SELECT
+      invite_redemptions.id,
+      invite_redemptions.user_id,
+      invite_redemptions.redeemed_at,
+      users.name AS user_name,
+      users.email AS user_email
+    FROM public.invite_redemptions
+    LEFT JOIN users ON invite_redemptions.user_id = users.id
+    WHERE invite_redemptions.invite_id = ${invite_id}
+    ORDER BY invite_redemptions.redeemed_at DESC
+  `));
 }
 
 // ─── Expanded Pipeline Analytics ───

@@ -189,7 +189,7 @@ export default function AdminUsers() {
             </div>
             <div>
               <p className="text-2xl font-bold text-foreground">
-                {invites?.filter((i) => i.inviteStatus === "active" && i.expiresAt > Date.now() && i.useCount < i.maxUses).length ?? 0}
+                {invites?.filter((i) => i.invite_status === "active" && i.expires_at > Date.now() && i.use_count < i.max_uses).length ?? 0}
               </p>
               <p className="text-xs text-muted-foreground">Active Invites</p>
             </div>
@@ -391,11 +391,11 @@ export default function AdminUsers() {
                 <div className="flex items-end">
                   <Button
                     onClick={() => createInviteMutation.mutate({
-                      targetRole: inviteRole,
-                      targetPlan: invitePlan as any,
+                      target_role: inviteRole,
+                      target_plan: invitePlan as any,
                       label: inviteLabel || undefined,
-                      maxUses: inviteMaxUses,
-                      expiresInDays: inviteExpDays,
+                      max_uses: inviteMaxUses,
+                      expires_in_days: inviteExpDays,
                     })}
                     disabled={createInviteMutation.isPending}
                     className="w-full"
@@ -431,11 +431,11 @@ export default function AdminUsers() {
                     ) : invites?.length === 0 ? (
                       <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No invite links yet.</td></tr>
                     ) : invites?.map((inv) => {
-                      const isExpired = inv.expiresAt < Date.now();
-                      const isRevoked = inv.inviteStatus === "revoked";
-                      const isMaxed = inv.inviteStatus === "exhausted" || inv.useCount >= inv.maxUses;
-                      const isActive = inv.inviteStatus === "active" && !isExpired && !isMaxed;
-                      const planInfo = PLAN_LABELS[inv.targetPlan] || PLAN_LABELS.free;
+                      const isExpired = inv.expires_at < Date.now();
+                      const isRevoked = inv.invite_status === "revoked";
+                      const isMaxed = inv.invite_status === "exhausted" || inv.use_count >= inv.max_uses;
+                      const isActive = inv.invite_status === "active" && !isExpired && !isMaxed;
+                      const planInfo = PLAN_LABELS[inv.target_plan] || PLAN_LABELS.free;
 
                       return (
                         <tr key={inv.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
@@ -446,8 +446,8 @@ export default function AdminUsers() {
                           </td>
                           <td className="p-3">
                             <div className="flex items-center gap-1.5">
-                              <Badge variant={inv.targetRole === "admin" ? "default" : "outline"} className="text-xs">
-                                {inv.targetRole}
+                              <Badge variant={inv.target_role === "admin" ? "default" : "outline"} className="text-xs">
+                                {inv.target_role}
                               </Badge>
                               <Badge className={`${planInfo.color} text-xs`}>
                                 {planInfo.label}
@@ -455,7 +455,7 @@ export default function AdminUsers() {
                             </div>
                           </td>
                           <td className="p-3 text-muted-foreground">
-                            {inv.useCount} / {inv.maxUses}
+                            {inv.use_count} / {inv.max_uses}
                           </td>
                           <td className="p-3">
                             {isActive ? (
@@ -477,7 +477,7 @@ export default function AdminUsers() {
                             )}
                           </td>
                           <td className="p-3 text-muted-foreground text-xs">
-                            {new Date(inv.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            {new Date(inv.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                           </td>
                           <td className="p-3 text-right">
                             <div className="flex items-center justify-end gap-1">

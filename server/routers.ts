@@ -3256,23 +3256,23 @@ import { randomBytes as cryptoRandomBytes } from "crypto";
 const invitesRouter = router({
   create: adminProcedure
     .input(z.object({
-      targetRole: z.enum(["user", "admin"]).default("admin"),
-      targetPlan: z.enum(["free", "advocacy", "family_advocacy", "analyst", "professional", "enterprise"]).default("advocacy"),
+      target_role: z.enum(["user", "admin"]).default("admin"),
+      target_plan: z.enum(["free", "advocacy", "family_advocacy", "analyst", "professional", "enterprise"]).default("advocacy"),
       label: z.string().optional(),
-      maxUses: z.number().min(1).max(1000).default(1),
-      expiresInDays: z.number().min(1).max(365).default(7),
+      max_uses: z.number().min(1).max(1000).default(1),
+      expires_in_days: z.number().min(1).max(365).default(7),
     }))
     .mutation(async ({ ctx, input }) => {
       const token = cryptoRandomBytes(32).toString("hex");
-      const expiresAt = Date.now() + input.expiresInDays * 24 * 60 * 60 * 1000;
+      const expires_at = Date.now() + input.expires_in_days * 24 * 60 * 60 * 1000;
       const result = await dbHelpers.createAdminInvite({
         token,
-        createdBy: ctx.user.id,
-        targetRole: input.targetRole,
-        targetPlan: input.targetPlan,
+        created_by: ctx.user.id,
+        target_role: input.target_role,
+        target_plan: input.target_plan,
         label: input.label,
-        maxUses: input.maxUses,
-        expiresAt,
+        max_uses: input.max_uses,
+        expires_at,
       });
       return { id: result.id, token: result.token };
     }),
@@ -3291,25 +3291,23 @@ const invitesRouter = router({
     .query(async ({ input }) => {
       const invite = await dbHelpers.getInviteByToken(input.token);
       if (!invite) return { valid: false, reason: "Invite not found" } as const;
-      if (invite.inviteStatus === "revoked") return { valid: false, reason: "This invite has been revoked" } as const;
-      if (invite.inviteStatus === "exhausted") return { valid: false, reason: "This invite has reached its usage limit" } as const;
-      if (invite.expiresAt < Date.now()) return { valid: false, reason: "This invite has expired" } as const;
-      if (invite.useCount >= invite.maxUses) return { valid: false, reason: "This invite has reached its usage limit" } as const;
-      const role = invite.targetRole;
-      const plan = invite.targetPlan;
-      return { valid: true, invite: { assignedRole: role as "user" | "admin", assignedPlan: plan as "free" | "advocacy" | "family_advocacy" | "analyst" | "professional" | "enterprise", label: invite.label } } as const;
+      if (invite.invite_status === "revoked") return { valid: false, reason: "This invite has been revoked" } as const;
+      if (invite.invite_status === "exhausted") return { valid: false, reason: "This invite has reached its usage limit" } as const;
+      if (invite.expires_at < Date.now()) return { valid: false, reason: "This invite has expired" } as const;
+      if (invite.use_count >= invite.max_uses) return { valid: false, reason: "This invite has reached its usage limit" } as const;
+      return { valid: true, invite: { target_role: invite.target_role, target_plan: invite.target_plan, label: invite.label } } as const;
     }),
   redeem: protectedProcedure
     .input(z.object({ token: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const invite = await dbHelpers.getInviteByToken(input.token);
       if (!invite) throw new TRPCError({ code: "NOT_FOUND", message: "Invite not found" });
-      if (invite.inviteStatus === "revoked") throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has been revoked" });
-      if (invite.inviteStatus === "exhausted") throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has reached its usage limit" });
-      if (invite.expiresAt < Date.now()) throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has expired" });
-      if (invite.useCount >= invite.maxUses) throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has reached its usage limit" });
-      await dbHelpers.redeemInvite(invite.id, ctx.user.id, invite.targetRole, invite.targetPlan);
-      return { success: true, assignedRole: invite.targetRole, assignedPlan: invite.targetPlan };
+      if (invite.invite_status === "revoked") throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has been revoked" });
+      if (invite.invite_status === "exhausted") throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has reached its usage limit" });
+      if (invite.expires_at < Date.now()) throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has expired" });
+      if (invite.use_count >= invite.max_uses) throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has reached its usage limit" });
+      await dbHelpers.redeemInvite(invite.id, ctx.user.id, invite.target_role, invite.target_plan);
+      return { success: true, target_role: invite.target_role, target_plan: invite.target_plan };
     }),
   redemptions: adminProcedure
     .input(z.object({ inviteId: z.number() }))

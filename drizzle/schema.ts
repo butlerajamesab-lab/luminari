@@ -143,7 +143,7 @@ export type CollaboratorAccessLevel = typeof COLLABORATOR_ACCESS_LEVELS[number];
 // ─── Notifications ───
 
 
-// ─── Admin Invite Links (targetRole, targetPlan, inviteStatus) ───
+// ─── Admin Invite Links (target_role, target_plan, invite_status) ───
 
 
 // ─── Invite Redemptions (tracks who used which invite) ───
@@ -3443,32 +3443,32 @@ export type Notification = typeof notifications.$inferSelect;
 export const adminInvites = pgTable("admin_invites", {
   id: serial("id").primaryKey(),
   token: varchar("token", { length: 128 }).notNull().unique(),
-  createdBy: integer("createdBy").notNull(),
-  targetRole: pgEnum("admin_invites_target_role_enum", ["user", "admin"])("targetRole").default("admin").notNull(),
-  targetPlan: pgEnum("admin_invites_target_plan_enum", ["free", "advocacy", "family_advocacy", "analyst", "professional", "enterprise"])("targetPlan").default("advocacy").notNull(),
+  created_by: integer("created_by").notNull(),
+  target_role: pgEnum("admin_invites_target_role_enum", ["user", "admin"])("target_role").default("admin").notNull(),
+  target_plan: pgEnum("admin_invites_target_plan_enum", ["free", "advocacy", "family_advocacy", "analyst", "professional", "enterprise"])("target_plan").default("advocacy").notNull(),
   label: varchar("label", { length: 256 }),
-  maxUses: integer("maxUses").default(1).notNull(),
-  useCount: integer("useCount").default(0).notNull(),
-  expiresAt: bigint("expiresAt", { mode: "number" }).notNull(),
-  inviteStatus: pgEnum("admin_invites_invite_status_enum", ["active", "expired", "revoked", "exhausted"])("inviteStatus").default("active").notNull(),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  max_uses: integer("max_uses").default(1).notNull(),
+  use_count: integer("use_count").default(0).notNull(),
+  expires_at: bigint("expires_at", { mode: "number" }).notNull(),
+  invite_status: pgEnum("admin_invites_invite_status_enum", ["active", "expired", "revoked", "exhausted"])("invite_status").default("active").notNull(),
+  created_at: bigint("created_at", { mode: "number" }).notNull(),
 }, (table) => [
   uniqueIndex("idx_invite_token").on(table.token),
-  index("idx_invite_created_by").on(table.createdBy),
-  index("idx_invite_status").on(table.inviteStatus),
-  index("idx_invite_expires").on(table.expiresAt),
+  index("idx_invite_created_by").on(table.created_by),
+  index("idx_invite_status").on(table.invite_status),
+  index("idx_invite_expires").on(table.expires_at),
 ]);
 
 export type AdminInvite = typeof adminInvites.$inferSelect;
 
 export const inviteRedemptions = pgTable("invite_redemptions", {
   id: serial("id").primaryKey(),
-  inviteId: integer("inviteId").notNull(),
-  userId: integer("userId").notNull(),
-  redeemedAt: bigint("redeemedAt", { mode: "number" }).notNull(),
+  invite_id: integer("invite_id").notNull(),
+  user_id: integer("user_id").notNull(),
+  redeemed_at: bigint("redeemed_at", { mode: "number" }).notNull(),
 }, (table) => [
-  index("idx_redemption_invite").on(table.inviteId),
-  index("idx_redemption_user").on(table.userId),
+  index("idx_redemption_invite").on(table.invite_id),
+  index("idx_redemption_user").on(table.user_id),
 ]);
 
 export type InviteRedemption = typeof inviteRedemptions.$inferSelect;
