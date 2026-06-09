@@ -8,6 +8,7 @@ import {
   repoRoot,
   tableExists,
 } from "./lib/corpus-audit-utils.mjs";
+import { classifyIngestionPolicy } from "./lib/ingestion-policy.mjs";
 
 const artifactDir = path.join(repoRoot, "artifacts", "corpus-audit");
 const jsonReportPath = path.join(artifactDir, "corpus-queue-gate-routing-report.json");
@@ -20,6 +21,7 @@ const inspectedFiles = [
   "server/ingestion/signal-detector.ts",
   "scripts/stage-registry-bucket-files.mjs",
   "scripts/lib/corpus-audit-utils.mjs",
+  "scripts/lib/ingestion-policy.mjs",
 ];
 
 const inspectedTables = [
@@ -230,6 +232,7 @@ function destinationFor(row, parser) {
 function classifyRow(row) {
   const parser = detectParser(row);
   const destination = destinationFor(row, parser);
+  const policy = classifyIngestionPolicy(row);
   return {
     rowId: row.id ?? null,
     sourceName: row.source_name ?? null,
@@ -242,6 +245,11 @@ function classifyRow(row) {
     parser: parser.parser,
     parserStatus: parser.parserStatus,
     intendedDestination: destination.destination,
+    policyClass: policy.policyClass,
+    dedupeBehavior: policy.dedupeBehavior,
+    promotionAllowedByPolicy: policy.promotionAllowed,
+    policyTarget: policy.policyTarget,
+    policyReason: policy.policyReason,
     blockedReason: destination.blockedReason,
     nextStep: destination.nextStep,
   };
@@ -250,7 +258,7 @@ function classifyRow(row) {
 function groupRows(rows) {
   const groups = new Map();
   for (const row of rows) {
-    const keyParts = [row.sourceType, row.sourceExt, row.targetHint, row.storageBucket, row.parser, row.intendedDestination].map((part) => part ?? "(missing)");
+    const keyParts = [row.sourceType, row.sourceExt, row.targetHint, row.storageBucket, row.parser, row.intendedDestination, row.policyClass, row.dedupeBehavior].map((part) => part ?? "(missing)");
     const key = keyParts.join("||");
     if (!groups.has(key)) {
       groups.set(key, {
@@ -260,6 +268,11 @@ function groupRows(rows) {
         storageBucket: row.storageBucket ?? null,
         parser: row.parser,
         intendedDestination: row.intendedDestination,
+        policyClass: row.policyClass,
+        dedupeBehavior: row.dedupeBehavior,
+        promotionAllowedByPolicy: row.promotionAllowedByPolicy,
+        policyTarget: row.policyTarget,
+        policyReason: row.policyReason,
         rowCount: 0,
         blockedReason: row.blockedReason,
         nextStep: row.nextStep,
@@ -286,7 +299,7 @@ function csvCell(value) {
 function writeReports(report) {
   fs.mkdirSync(artifactDir, { recursive: true });
   fs.writeFileSync(jsonReportPath, `${JSON.stringify(report, null, 2)}\n`);
-  const headers = ["sourceType", "sourceExt", "targetHint", "storageBucket", "parser", "intendedDestination", "rowCount", "blockedReason", "nextStep"];
+  const headers = ["sourceType", "sourceExt", "targetHint", "storageBucket", "parser", "intendedDestination", "policyClass", "dedupeBehavior", "promotionAllowedByPolicy", "rowCount", "blockedReason", "policyReason", "nextStep"];
   const rows = report.rowGroups.map((group) => headers.map((header) => csvCell(group[header])).join(","));
   fs.writeFileSync(csvReportPath, `${headers.join(",")}\n${rows.join("\n")}\n`);
 }
@@ -347,6 +360,10 @@ function summarize(rows) {
     rowsRequiringManualReview: rows.filter((row) => row.intendedDestination === "extraction_staging_review").length,
     rowsByDestination: countBy(rows, "intendedDestination"),
     rowsByParser: countBy(rows, "parser"),
+    rowsByPolicyClass: countBy(rows, "policyClass"),
+    rowsByDedupeBehavior: countBy(rows, "dedupeBehavior"),
+    rowsPromotionAllowedByPolicy: rows.filter((row) => row.promotionAllowedByPolicy).length,
+    rowsPromotionBlockedByPolicy: rows.filter((row) => !row.promotionAllowedByPolicy).length,
   };
 }
 
@@ -375,7 +392,7 @@ async function main() {
     rowGroups: [],
     rows: [],
     parserGaps: [],
-    proposedNextAdapter: "Implement write mode that normalizes corpus_import_queue rows into existing pre-promotion inputs only: live_signals for Sunam candidates and registry_entity_extraction_v4 for conveyor candidates. Keep canonical promotion inside Sunam/conveyor.",
+    proposedNextAdapter: "Implement write mode that normalizes corpus_import_queue rows into existing pre-promotion inputs only. Entity/contact rows may use non-destructive enrichment after validation. Authority/legal rows must remain strict source-bound candidates and cannot silently merge into canonical truth.",
   };
 
   try {
