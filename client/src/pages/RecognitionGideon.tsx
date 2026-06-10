@@ -1,10 +1,13 @@
 import { useAuth } from "@/core/hooks/useAuth";
 import { community_continuity_condition } from "@/data/recognition_conditions";
 import { continuous_habitation_paradox } from "@/data/recognition_weak_joints";
+import { duwamish_truth_seed } from "@/data/duwamish_truth_seed";
+import { muwekma_truth_seed } from "@/data/muwekma_truth_seed";
 import {
   recognition_gideon_axes,
   route_to_recognition_profiles,
 } from "@/data/route_to_recognition_registry";
+import { resolve_truth_layer } from "@/resolvers/truth_layer_resolver";
 import type { recognition_condition_status, route_to_recognition_profile } from "@/types/route_to_recognition";
 import { Link } from "wouter";
 import {
@@ -46,13 +49,58 @@ const six_gideon_pillars = [
   "Weak Joints",
 ];
 
+type source_field = {
+  label: string;
+  value: string | string[];
+  source_posture: "verbatim_tribal_source" | "structured_extraction_from_tribal_source";
+  citation_url: string;
+};
+
 function atlas_page_href(profile: route_to_recognition_profile) {
-  return `/recognition-atlas/${profile.tribe_id}/identity`;
+  return `/recognition-atlas/${profile.tribe_id}`;
 }
 
 function atlas_page_label(profile: route_to_recognition_profile) {
   const tribe_label = profile.tribe_self_name || profile.tribe_name;
-  return `${tribe_label} page`;
+  return `${tribe_label} tribal card`;
+}
+
+function layer_page_href(profile: route_to_recognition_profile) {
+  return `/recognition-atlas/${profile.tribe_id}/identity`;
+}
+
+function render_source_value(value: source_field["value"]) {
+  return Array.isArray(value) ? value.join(" · ") : value;
+}
+
+function verbatim_source_fields(profile: route_to_recognition_profile): source_field[] {
+  if (profile.tribe_id === "muwekma") {
+    const source_url = muwekma_truth_seed.layer_0_identity.source.url;
+    return [
+      { label: "tribe_self_name", value: muwekma_truth_seed.layer_0_identity.tribe_self_name, source_posture: "structured_extraction_from_tribal_source", citation_url: source_url },
+      { label: "name_meaning", value: muwekma_truth_seed.layer_0_identity.name_meaning, source_posture: "structured_extraction_from_tribal_source", citation_url: source_url },
+      { label: "primary_declaration", value: muwekma_truth_seed.layer_0_identity.primary_declaration, source_posture: "verbatim_tribal_source", citation_url: source_url },
+      { label: "territorial_declaration", value: muwekma_truth_seed.layer_0_identity.territorial_declaration, source_posture: "verbatim_tribal_source", citation_url: source_url },
+      { label: "homeland_waters", value: muwekma_truth_seed.layer_0_identity.homeland_waters, source_posture: "structured_extraction_from_tribal_source", citation_url: source_url },
+      { label: "present_day_member_territory", value: muwekma_truth_seed.layer_0_identity.present_day_member_territory, source_posture: "structured_extraction_from_tribal_source", citation_url: source_url },
+    ];
+  }
+
+  const truth_record = resolve_truth_layer({
+    tribe_id: "duwamish",
+    priority: "truth_layer_first",
+    include_source_refs: true,
+    include_conflict_flags: true,
+  }, duwamish_truth_seed);
+
+  return [
+    { label: "tribe_self_name", value: truth_record.tribe_self_name.value, source_posture: "verbatim_tribal_source", citation_url: truth_record.tribe_self_name.source_url },
+    { label: "name_meaning", value: truth_record.name_meaning.value, source_posture: "verbatim_tribal_source", citation_url: truth_record.name_meaning.source_url },
+    { label: "primary_declaration", value: truth_record.primary_declaration.value, source_posture: "verbatim_tribal_source", citation_url: truth_record.primary_declaration.source_url },
+    { label: "territorial_declaration", value: truth_record.territorial_declaration.value, source_posture: "verbatim_tribal_source", citation_url: truth_record.territorial_declaration.source_url },
+    { label: "homeland_waters", value: truth_record.homeland_waters.value, source_posture: "structured_extraction_from_tribal_source", citation_url: truth_record.homeland_waters.source_url },
+    { label: "present_day_member_territory", value: truth_record.present_day_member_territory.value, source_posture: "structured_extraction_from_tribal_source", citation_url: truth_record.present_day_member_territory.source_url },
+  ];
 }
 
 function gate_panel({ title, message }: { title: string; message: string }) {
@@ -80,6 +128,21 @@ function tag_row({ values }: { values: string[] }) {
         <span key={value} style={{ border: `1px solid ${tone.card_border}`, background: "rgba(255,255,255,0.025)", borderRadius: 999, color: tone.muted, fontFamily: "JetBrains Mono, monospace", fontSize: 12, padding: "0.35rem 0.55rem" }}>
           {value}
         </span>
+      ))}
+    </div>
+  );
+}
+
+function source_field_grid({ fields }: { fields: source_field[] }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "0.75rem" }}>
+      {fields.map((field) => (
+        <article key={field.label} style={{ border: `1px solid ${tone.card_border}`, background: "rgba(255,255,255,0.025)", borderRadius: 16, padding: "0.9rem" }}>
+          <div style={{ color: tone.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>{field.label}</div>
+          <div style={{ color: tone.paper, lineHeight: 1.55 }}>{render_source_value(field.value)}</div>
+          <div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12, marginTop: 10 }}>source_posture: {field.source_posture}</div>
+          <a href={field.citation_url} target="_blank" rel="noreferrer" style={{ color: tone.blue, fontSize: 12, marginTop: 8, display: "inline-block", wordBreak: "break-word" }}>citation: {field.citation_url}</a>
+        </article>
       ))}
     </div>
   );
@@ -114,35 +177,21 @@ export default function RecognitionGideon() {
 
         <header style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(280px, 0.8fr)", gap: "2rem", alignItems: "end" }}>
           <div>
-            <p style={{ color: tone.blue, letterSpacing: "0.14em", textTransform: "uppercase", fontSize: 12, marginBottom: 12 }}>
-              Recognition Gideon · Route to Recognition
-            </p>
-            <h1 style={{ fontSize: "clamp(2.8rem, 8vw, 6.5rem)", lineHeight: 0.9, margin: 0 }}>
-              RTR Matrix
-            </h1>
+            <p style={{ color: tone.blue, letterSpacing: "0.14em", textTransform: "uppercase", fontSize: 12, marginBottom: 12 }}>Recognition Gideon · Route to Recognition</p>
+            <h1 style={{ fontSize: "clamp(2.8rem, 8vw, 6.5rem)", lineHeight: 0.9, margin: 0 }}>RTR Matrix</h1>
             <p style={{ color: tone.muted, lineHeight: 1.75, fontSize: "1.08rem", maxWidth: 840, marginTop: "1.5rem" }}>
-              Civil Gideon compares states against right-to-counsel needs. Recognition Gideon compares tribal communities against recognition conditions, barriers, contradictions, and routes to recognition. This preview starts with Duwamish as the anchor profile and Muwékma as the second comparison profile. Each tribe still controls its own record before anything can publish.
+              Civil Gideon compares states against right-to-counsel needs. Recognition Gideon compares recognition conditions, barriers, contradictions, and routes to recognition. Verbatim tribal/Atlas source fields render separately from Luminari analysis.
             </p>
           </div>
 
           <aside style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 22, padding: "1.25rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-              <Shield size={20} color={tone.green} />
-              <strong>Protection state</strong>
-            </div>
-            <p style={{ color: tone.muted, lineHeight: 1.6, margin: 0 }}>
-              RTR uses Atlas truth layers as source material. It does not publish or approve any tribal record. It compares conditions only after tribe-specific layers exist.
-            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}><Shield size={20} color={tone.green} /><strong>Protection state</strong></div>
+            <p style={{ color: tone.muted, lineHeight: 1.6, margin: 0 }}>RTR uses Atlas truth layers as source material. It does not publish or approve any tribal record. RTR analysis must be clearly labeled as Luminari analysis.</p>
           </aside>
         </header>
 
         <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem", marginTop: "2rem" }}>
-          {[
-            ["comparison_unit", "tribal_community"],
-            ["civil_gideon_parallel", "state_matrix"],
-            ["populated_profiles", String(populated_profiles)],
-            ["publication_status", "admin_preview_only"],
-          ].map(([label, value]) => (
+          {[["comparison_unit", "tribal_community"], ["civil_gideon_parallel", "state_matrix"], ["populated_profiles", String(populated_profiles)], ["publication_status", "admin_preview_only"]].map(([label, value]) => (
             <div key={label} style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 18, padding: "1rem" }}>
               <div style={{ color: tone.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>{label}</div>
               <div style={{ fontFamily: "JetBrains Mono, monospace", color: tone.paper }}>{value}</div>
@@ -151,19 +200,12 @@ export default function RecognitionGideon() {
         </section>
 
         <section style={{ marginTop: "2rem" }}>
-          <h2 style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Scale size={22} color={tone.gold} /> Recognition Gideon doctrine
-          </h2>
+          <h2 style={{ display: "flex", alignItems: "center", gap: 10 }}><Scale size={22} color={tone.gold} /> Recognition Gideon doctrine</h2>
           <div style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 22, padding: "1.25rem" }}>
-            <p style={{ color: tone.paper, lineHeight: 1.65, marginTop: 0 }}>
-              Recognition Atlas preserves tribal truth. Recognition Gideon analyzes recognition systems. Atlas is evidence. Gideon is analysis.
-            </p>
+            <p style={{ color: tone.paper, lineHeight: 1.65, marginTop: 0 }}>Recognition Atlas preserves tribal truth. Recognition Gideon analyzes recognition systems. Atlas is evidence. Gideon is analysis.</p>
+            <p style={{ color: tone.gold, lineHeight: 1.65 }}>Source material stops being source material when it is summarized, compressed, paraphrased, or detached from citation. Tribal/source words render as source fields. RTR interpretation renders as Luminari analysis.</p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: "0.75rem" }}>
-              {six_gideon_pillars.map((pillar) => (
-                <article key={pillar} style={{ border: `1px solid ${tone.card_border}`, background: "rgba(255,255,255,0.025)", borderRadius: 16, padding: "0.85rem" }}>
-                  <div style={{ color: tone.gold, fontWeight: 700 }}>{pillar}</div>
-                </article>
-              ))}
+              {six_gideon_pillars.map((pillar) => (<article key={pillar} style={{ border: `1px solid ${tone.card_border}`, background: "rgba(255,255,255,0.025)", borderRadius: 16, padding: "0.85rem" }}><div style={{ color: tone.gold, fontWeight: 700 }}>{pillar}</div></article>))}
             </div>
           </div>
         </section>
@@ -190,19 +232,13 @@ export default function RecognitionGideon() {
             {tag_row({ values: continuous_habitation_paradox.conditions })}
             <h4>affected_tribes</h4>
             {tag_row({ values: continuous_habitation_paradox.tribes })}
-            <p style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>
-              authorship: {continuous_habitation_paradox.authorship} · publication_status: {continuous_habitation_paradox.publication_status}
-            </p>
-            <Link href="/recognition-atlas/duwamish/dispossession" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 6, marginTop: "0.75rem" }}>
-              View in Duwamish page <ArrowRight size={14} />
-            </Link>
+            <p style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>source_posture: lighthouse_analysis · authorship: {continuous_habitation_paradox.authorship} · publication_status: {continuous_habitation_paradox.publication_status}</p>
+            <Link href="/recognition-atlas/duwamish/dispossession" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 6, marginTop: "0.75rem" }}>View in Duwamish source packet <ArrowRight size={14} /></Link>
           </article>
         </section>
 
         <section style={{ marginTop: "2rem" }}>
-          <h2 style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Scale size={22} color={tone.gold} /> Recognition conditions
-          </h2>
+          <h2 style={{ display: "flex", alignItems: "center", gap: 10 }}><Scale size={22} color={tone.gold} /> Recognition conditions</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))", gap: "1rem" }}>
             {recognition_gideon_axes.map((axis) => (
               <article key={axis.axis_key} style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 20, padding: "1rem" }}>
@@ -210,6 +246,7 @@ export default function RecognitionGideon() {
                 <h3 style={{ margin: "0.55rem 0 0.25rem" }}>{axis.axis_label}</h3>
                 <p style={{ color: tone.blue, lineHeight: 1.55 }}>{axis.civil_gideon_parallel}</p>
                 <p style={{ color: tone.muted, lineHeight: 1.65 }}>{axis.recognition_gideon_question}</p>
+                <p style={{ color: tone.gold, lineHeight: 1.6 }}>source_posture: lighthouse_analysis</p>
                 <p style={{ color: tone.gold, lineHeight: 1.6 }}>{axis.why_it_matters}</p>
               </article>
             ))}
@@ -217,36 +254,12 @@ export default function RecognitionGideon() {
         </section>
 
         <section style={{ marginTop: "2rem" }}>
-          <h2 style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <GitBranch size={22} color={tone.gold} /> Route to Recognition comparison
-          </h2>
+          <h2 style={{ display: "flex", alignItems: "center", gap: 10 }}><GitBranch size={22} color={tone.gold} /> Route to Recognition comparison</h2>
+          <p style={{ color: tone.gold, lineHeight: 1.6 }}>The table below is source_posture: lighthouse_analysis. It is not tribal source wording.</p>
           <div style={{ overflowX: "auto", border: `1px solid ${tone.card_border}`, borderRadius: 22, background: tone.card_bg }}>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 980 }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: "left", padding: "1rem", color: tone.muted, borderBottom: `1px solid ${tone.card_border}` }}>tribe</th>
-                  {condition_keys.map((condition_key) => (
-                    <th key={condition_key} style={{ textAlign: "left", padding: "1rem", color: tone.muted, borderBottom: `1px solid ${tone.card_border}` }}>{condition_key}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {route_to_recognition_profiles.map((profile) => (
-                  <tr key={profile.tribe_id}>
-                    <td style={{ padding: "1rem", borderBottom: `1px solid ${tone.card_border}`, verticalAlign: "top" }}>
-                      <strong>{profile.tribe_name}</strong>
-                      {profile.tribe_self_name && <div style={{ color: tone.blue }}>{profile.tribe_self_name}</div>}
-                      <div style={{ color: tone.muted, fontSize: 12 }}>{profile.recognition_status}</div>
-                    </td>
-                    {profile.recognition_conditions.map((condition) => (
-                      <td key={condition.condition_key} style={{ padding: "1rem", borderBottom: `1px solid ${tone.card_border}`, verticalAlign: "top" }}>
-                        <div style={{ color: status_tone[condition.status], fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{condition.status}</div>
-                        <p style={{ color: tone.muted, lineHeight: 1.5, marginBottom: 0 }}>{condition.why_gap_should_not_count_against_tribe}</p>
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
+              <thead><tr><th style={{ textAlign: "left", padding: "1rem", color: tone.muted, borderBottom: `1px solid ${tone.card_border}` }}>tribe</th>{condition_keys.map((condition_key) => (<th key={condition_key} style={{ textAlign: "left", padding: "1rem", color: tone.muted, borderBottom: `1px solid ${tone.card_border}` }}>{condition_key}</th>))}</tr></thead>
+              <tbody>{route_to_recognition_profiles.map((profile) => (<tr key={profile.tribe_id}><td style={{ padding: "1rem", borderBottom: `1px solid ${tone.card_border}`, verticalAlign: "top" }}><strong>{profile.tribe_name}</strong>{profile.tribe_self_name && <div style={{ color: tone.blue }}>{profile.tribe_self_name}</div>}<div style={{ color: tone.muted, fontSize: 12 }}>{profile.recognition_status}</div><div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12, marginTop: 8 }}>source_posture: lighthouse_analysis</div></td>{profile.recognition_conditions.map((condition) => (<td key={condition.condition_key} style={{ padding: "1rem", borderBottom: `1px solid ${tone.card_border}`, verticalAlign: "top" }}><div style={{ color: status_tone[condition.status], fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{condition.status}</div><p style={{ color: tone.muted, lineHeight: 1.5, marginBottom: 0 }}>{condition.why_gap_should_not_count_against_tribe}</p><div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12, marginTop: 8 }}>source_posture: lighthouse_analysis</div></td>))}</tr>))}</tbody>
             </table>
           </div>
         </section>
@@ -259,19 +272,14 @@ export default function RecognitionGideon() {
               <p style={{ color: tone.blue }}>{profile.tribe_self_name} · {profile.name_meaning}</p>
               <p style={{ color: tone.muted, lineHeight: 1.6 }}>tribal_review_status: {profile.tribal_review_status}</p>
               <p style={{ color: tone.muted, lineHeight: 1.6 }}>publication_status: {profile.publication_status}</p>
-              <h4>Strongest approval arguments</h4>
-              <ul style={{ color: tone.muted, lineHeight: 1.65, paddingLeft: "1.2rem" }}>
-                {profile.strongest_approval_arguments.map((argument) => (
-                  <li key={argument}>{argument}</li>
-                ))}
-              </ul>
+              <h4>Verbatim Atlas source fields</h4>
+              {source_field_grid({ fields: verbatim_source_fields(profile) })}
+              <h4>Luminari analysis — not tribal source wording</h4>
+              <ul style={{ color: tone.muted, lineHeight: 1.65, paddingLeft: "1.2rem" }}>{profile.strongest_approval_arguments.map((argument) => (<li key={argument}>{argument}</li>))}</ul>
+              <p style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>source_posture: lighthouse_analysis_pending_tribal_review</p>
               <div style={{ display: "flex", gap: "0.65rem", flexWrap: "wrap", marginTop: "1rem" }}>
-                <Link href={atlas_page_href(profile)} style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 6 }}>
-                  {atlas_page_label(profile)} <ArrowRight size={14} />
-                </Link>
-                <Link href="/recognition-atlas" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 6 }}>
-                  Recognition Atlas hub <ArrowRight size={14} />
-                </Link>
+                <Link href={atlas_page_href(profile)} style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 6 }}>{atlas_page_label(profile)} <ArrowRight size={14} /></Link>
+                <Link href={layer_page_href(profile)} style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 6 }}>Identity source packet <ArrowRight size={14} /></Link>
               </div>
             </article>
           ))}
