@@ -1,24 +1,12 @@
 import { useAuth } from "@/core/hooks/useAuth";
-import {
-  duwamish_language_entries,
-  duwamish_truth_layers,
-  type truth_layer_action,
-} from "@/data/recognition_atlas_layers";
-import { duwamish_truth_seed } from "@/data/duwamish_truth_seed";
-import {
-  get_conflict_fields,
-  resolve_truth_layer,
-} from "@/resolvers/truth_layer_resolver";
 import { Link } from "wouter";
 import {
-  AlertTriangle,
   ArrowRight,
   BookOpen,
-  CheckCircle2,
-  ExternalLink,
   EyeOff,
-  Globe2,
-  Languages,
+  FileText,
+  GitBranch,
+  Layers3,
   Lock,
   MapPin,
   Shield,
@@ -34,82 +22,52 @@ const tone = {
   gold: "#D4A017",
   blue: "#7eb3e8",
   green: "#34d399",
-  red: "#ef4444",
 };
+
+const tribal_record_layers = [
+  ["layer_0_identity", "Identity Core", "Endonyms, homelands, declarations, governance posture, and review state."],
+  ["layer_1_treaty", "Treaty / Political Relationship", "Treaties, federal identification, political relationship records, and related authorities."],
+  ["layer_2_dispossession", "Dispossession Record", "Removal, displacement, burned homelands, administrative omission, and continuity-impact records."],
+  ["layer_3_recognition_timeline", "Recognition Timeline", "Petitions, findings, acknowledgements, reversals, omissions, litigation, and current status."],
+  ["layer_4_lawsuit", "Lawsuit Claims", "Case posture, claims, defendants, relief sought, and tribe-authored legal framing when available."],
+  ["layer_5_language_vault", "Language / Living Culture", "Language, cultural continuity, physical home, programs, practices, and preservation materials."],
+  ["layer_6_ally_call", "Ally Call", "Tribe-approved ways to support, participate, learn, or route people to official tribal channels."],
+];
+
+const recognition_pathway_cards = [
+  ["official_criteria", "Official Criteria", "The Recognition Atlas presentation layer should quote governing recognition criteria exactly when legal text is displayed."],
+  ["service_gap", "Service Gap", "The Unrecognized Tribes Addendum documents what non-recognition blocks and what partial access pathways remain."],
+  ["rtr_matrix", "RTR Matrix", "Recognition Gideon analyzes conditions, weak joints, and government-created evidentiary gaps without making recognition determinations."],
+  ["state_recognition", "State Recognition Map", "State recognition, state-law protections, and partial services are tracked separately from federal recognition."],
+];
 
 function gate_panel({ title, message }: { title: string; message: string }) {
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: tone.bg,
-        color: tone.paper,
-        display: "grid",
-        placeItems: "center",
-        padding: "2rem",
-        fontFamily: "Inter, system-ui, sans-serif",
-      }}
-    >
-      <section
-        style={{
-          width: "min(720px, 100%)",
-          border: `1px solid ${tone.card_border}`,
-          background: tone.card_bg,
-          borderRadius: 24,
-          padding: "2rem",
-        }}
-      >
+    <main style={{ minHeight: "100vh", background: tone.bg, color: tone.paper, display: "grid", placeItems: "center", padding: "2rem", fontFamily: "Inter, system-ui, sans-serif" }}>
+      <section style={{ width: "min(720px, 100%)", border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 24, padding: "2rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
           <Lock size={22} color={tone.gold} />
-          <span style={{ color: tone.gold, textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>
-            Admin gated
-          </span>
+          <span style={{ color: tone.gold, textTransform: "uppercase", letterSpacing: "0.12em", fontSize: 12 }}>Admin gated</span>
         </div>
         <h1 style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", margin: "0 0 1rem" }}>{title}</h1>
         <p style={{ color: tone.muted, lineHeight: 1.7, fontSize: "1.05rem", marginBottom: "1.5rem" }}>{message}</p>
-        <Link href="/civil-gideon" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 8 }}>
-          Return to Civil Gideon <ArrowRight size={16} />
+        <Link href="/native-nations" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 8 }}>
+          Native Nations Hub <ArrowRight size={16} />
         </Link>
       </section>
     </main>
   );
 }
 
-function action_button({ action }: { action: truth_layer_action }) {
-  const label = action.action_label.replace(/_/g, " ");
-  const shared_style = {
-    border: `1px solid ${action.route_status === "live" ? "rgba(126,179,232,0.45)" : tone.card_border}`,
-    background: action.route_status === "live" ? "rgba(126,179,232,0.08)" : "rgba(255,255,255,0.025)",
-    color: action.route_status === "live" ? tone.blue : "rgba(240,236,228,0.35)",
-    borderRadius: 999,
-    padding: "0.45rem 0.7rem",
-    fontSize: 12,
-    textDecoration: "none",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 6,
-    textTransform: "capitalize" as const,
-  };
-
-  if (action.route_status !== "live") {
-    return (
-      <span title="planned_route_not_implemented" style={shared_style}>
-        <Lock size={12} /> {label} · planned
-      </span>
-    );
-  }
-
-  if (action.external) {
-    return (
-      <a href={action.route} target="_blank" rel="noopener noreferrer" style={shared_style}>
-        {label} <ExternalLink size={12} />
-      </a>
-    );
-  }
-
+function route_card({ title, href, description, label }: { title: string; href: string; description: string; label: string }) {
   return (
-    <Link href={action.route} style={shared_style}>
-      {label} <ArrowRight size={12} />
+    <Link href={href} style={{ border: `1px solid rgba(126,179,232,0.35)`, background: "rgba(126,179,232,0.07)", color: tone.paper, borderRadius: 20, padding: "1rem", textDecoration: "none", display: "block" }}>
+      <div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12, marginBottom: 8 }}>{label}</div>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 10 }}>
+        <h3 style={{ margin: 0, fontSize: "1.1rem" }}>{title}</h3>
+        <ArrowRight size={16} color={tone.blue} />
+      </div>
+      <p style={{ color: tone.muted, lineHeight: 1.6, margin: 0 }}>{description}</p>
     </Link>
   );
 }
@@ -120,99 +78,52 @@ export default function RecognitionAtlas() {
   if (loading) {
     return gate_panel({
       title: "Loading Recognition Atlas preview",
-      message: "Checking admin access before showing this unpublished public-site preview.",
+      message: "Checking admin access before showing this unpublished Recognition Atlas presentation layer.",
     });
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || user?.role !== "admin") {
     return gate_panel({
       title: "Recognition Atlas preview requires admin access",
-      message: "This Lighthouse route exists only so the public projection can be prepared before tribal approval. It is not public-facing yet.",
+      message: "This route is the admin-preview presentation layer for Recognition Atlas. It is not public-facing and does not indicate tribal approval.",
     });
   }
-
-  if (user?.role !== "admin") {
-    return gate_panel({
-      title: "Recognition Atlas is not public yet",
-      message: "This record is still in preparation and requires tribal review before public publication.",
-    });
-  }
-
-  const truth_record = resolve_truth_layer({
-    tribe_id: "duwamish",
-    priority: "truth_layer_first",
-    include_source_refs: true,
-    include_conflict_flags: true,
-  }, duwamish_truth_seed);
-  const conflict_fields = get_conflict_fields(truth_record);
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: tone.bg,
-        color: tone.paper,
-        fontFamily: "Inter, system-ui, sans-serif",
-        padding: "clamp(1.25rem, 3vw, 3rem)",
-      }}
-    >
+    <main style={{ minHeight: "100vh", background: tone.bg, color: tone.paper, fontFamily: "Inter, system-ui, sans-serif", padding: "clamp(1.25rem, 3vw, 3rem)" }}>
       <section style={{ maxWidth: 1180, margin: "0 auto" }}>
-        <div
-          style={{
-            border: `1px solid rgba(212,160,23,0.35)`,
-            background: "rgba(212,160,23,0.08)",
-            color: tone.gold,
-            borderRadius: 999,
-            padding: "0.5rem 0.85rem",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            fontSize: 12,
-            textTransform: "uppercase",
-            letterSpacing: "0.12em",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <EyeOff size={14} /> Admin Preview — Not Public
+        <div style={{ border: `1px solid rgba(212,160,23,0.35)`, background: "rgba(212,160,23,0.08)", color: tone.gold, borderRadius: 999, padding: "0.5rem 0.85rem", display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "1.5rem" }}>
+          <EyeOff size={14} /> Admin Preview — presentation layer not public
         </div>
 
         <header style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.5fr) minmax(280px, 0.8fr)", gap: "2rem", alignItems: "end" }}>
           <div>
             <p style={{ color: tone.blue, letterSpacing: "0.14em", textTransform: "uppercase", fontSize: 12, marginBottom: 12 }}>
-              Lighthouse public projection · locked until tribal approval
+              Recognition Atlas · project backbone
             </p>
-            <h1 style={{ fontSize: "clamp(2.8rem, 8vw, 6.5rem)", lineHeight: 0.9, margin: 0 }}>
-              Recognition Atlas
-            </h1>
-            <p style={{ color: tone.muted, lineHeight: 1.75, fontSize: "1.08rem", maxWidth: 760, marginTop: "1.5rem" }}>
-              This page is the Lighthouse-side preview of the Recognition Atlas. It is visible to admins only while the Duwamish record and future tribal records are prepared for review. Nothing here is a public claim of approval, endorsement, or final publication.
+            <h1 style={{ fontSize: "clamp(2.8rem, 8vw, 6.5rem)", lineHeight: 0.9, margin: 0 }}>Recognition Atlas</h1>
+            <p style={{ color: tone.muted, lineHeight: 1.75, fontSize: "1.08rem", maxWidth: 860, marginTop: "1.5rem" }}>
+              Recognition Atlas is the presentation area for the tribal-recognition project. It explains the Atlas/Gideon split, routes into tribal cards, and links to Recognition Gideon / RTR analysis. Tribe-specific records live on their own tribal pages and deep source-packet layers.
             </p>
           </div>
 
-          <aside
-            style={{
-              border: `1px solid ${tone.card_border}`,
-              background: tone.card_bg,
-              borderRadius: 22,
-              padding: "1.25rem",
-            }}
-          >
+          <aside style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 22, padding: "1.25rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
               <Shield size={20} color={tone.green} />
-              <strong>Protection state</strong>
+              <strong>Luminari commitment</strong>
             </div>
             <p style={{ color: tone.muted, lineHeight: 1.6, margin: 0 }}>
-              Atlas remains the private build and approval workspace. Lighthouse only witnesses records after the tribe approves publication.
+              This presentation layer does not make recognition determinations, evaluate whether a community qualifies, or speak for tribes. The framework is the vessel. They are the author.
             </p>
           </aside>
         </header>
 
         <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem", marginTop: "2rem" }}>
           {[
-            ["visibility", "admin_only"],
-            ["source_workspace", "atlas"],
-            ["public_surface", "lighthouse"],
-            ["publication_gate", "tribe_approved"],
+            ["mudroom", "native_nations_hub"],
+            ["presentation_area", "recognition_atlas"],
+            ["tribal_cards", "standalone_pages"],
+            ["analysis_engine", "recognition_gideon_rtr"],
           ].map(([label, value]) => (
             <div key={label} style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 18, padding: "1rem" }}>
               <div style={{ color: tone.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>{label}</div>
@@ -221,103 +132,54 @@ export default function RecognitionAtlas() {
           ))}
         </section>
 
-        <section
-          style={{
-            marginTop: "2rem",
-            border: `1px solid ${tone.card_border}`,
-            background: "linear-gradient(135deg, rgba(126,179,232,0.08), rgba(255,255,255,0.025))",
-            borderRadius: 28,
-            padding: "clamp(1.25rem, 3vw, 2rem)",
-          }}
-        >
-          <span style={{ color: tone.gold, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.14em" }}>
-            Anchor node preview · resolved from duwamish_truth_seed
-          </span>
-          <h2 style={{ fontSize: "clamp(2rem, 5vw, 4.5rem)", margin: "0.75rem 0 0.35rem" }}>{truth_record.tribe_self_name.value}</h2>
-          <p style={{ color: tone.blue, fontSize: "1.35rem", margin: 0 }}>
-            Duwamish Tribe · {truth_record.name_meaning.value}
-          </p>
-          <blockquote style={{ borderLeft: `4px solid ${tone.gold}`, paddingLeft: "1rem", margin: "1.5rem 0", fontSize: "1.5rem", lineHeight: 1.35 }}>
-            {truth_record.primary_declaration.value}
-          </blockquote>
-          <p style={{ color: tone.muted, lineHeight: 1.75, maxWidth: 860 }}>
-            {truth_record.territorial_declaration.value}. This preview is now backed by the recovered truth-layer seed and resolver. The content remains admin-only and pending tribal review.
-          </p>
+        <section style={{ marginTop: "2rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
+          {route_card({ title: "Duwamish Tribal Card", href: "/recognition-atlas/duwamish", label: "tribal_card", description: "Open the dedicated Duwamish parent page. This is where Duwamish-specific depth belongs." })}
+          {route_card({ title: "Muwékma Identity Layer", href: "/recognition-atlas/muwekma/identity", label: "tribal_layer", description: "Open the Muwékma admin-preview identity source packet while the Muwékma parent card is prepared." })}
+          {route_card({ title: "Recognition Gideon / RTR Matrix", href: "/recognition-gideon", label: "analysis_engine", description: "Open the system-analysis layer for recognition conditions, weak joints, and Route to Recognition comparison." })}
+          {route_card({ title: "Native Nations Hub", href: "/native-nations", label: "mudroom", description: "Return to the gentle entryway for Native Nations pathways and support routing." })}
         </section>
 
-        <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem", marginTop: "1.25rem" }}>
-          <div style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 22, padding: "1.25rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-              <Languages size={20} color={tone.blue} />
-              <h3 style={{ margin: 0 }}>Language preservation</h3>
-            </div>
-            {duwamish_language_entries.map((entry) => (
-              <div key={entry.entry_id} style={{ borderTop: `1px solid ${tone.card_border}`, paddingTop: 12, marginTop: 12 }}>
-                <div style={{ fontSize: "1.4rem", color: tone.paper }}>{entry.original_text}</div>
-                <div style={{ color: tone.muted, fontSize: 13 }}>{entry.romanization}</div>
-                <div style={{ color: tone.blue, marginTop: 4 }}>{entry.english_gloss}</div>
-                {entry.extended_meaning && (
-                  <p style={{ color: tone.muted, lineHeight: 1.55, marginBottom: 0 }}>{entry.extended_meaning}</p>
-                )}
-                {entry.verified_by_tribe === false && (
-                  <p style={{ color: "rgba(212,160,23,0.8)", fontSize: 12, marginBottom: 0 }}>
-                    recovered_thread_unverified · requires tribal review
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 22, padding: "1.25rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-              <Globe2 size={20} color={tone.green} />
-              <h3 style={{ margin: 0 }}>Atlas → Lighthouse</h3>
-            </div>
-            <ol style={{ color: tone.muted, lineHeight: 1.8, paddingLeft: "1.25rem" }}>
-              <li>Build and source the record in Atlas.</li>
-              <li>Lock every section pending tribal review.</li>
-              <li>Preview the public projection here as admin only.</li>
-              <li>Publish to Lighthouse only after tribal approval.</li>
-            </ol>
-          </div>
-        </section>
-
-        <section style={{ marginTop: "1.25rem" }}>
-          <h2 style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <AlertTriangle size={22} color={tone.gold} /> Conflict flags
+        <section style={{ marginTop: "2rem", border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 24, padding: "1.25rem" }}>
+          <h2 style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 0 }}>
+            <Layers3 size={22} color={tone.gold} /> Tribal card pattern
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
-            {conflict_fields.map((conflict) => (
-              <article key={conflict.field} style={{ border: `1px solid rgba(239,68,68,0.22)`, background: "rgba(239,68,68,0.055)", borderRadius: 20, padding: "1rem" }}>
-                <div style={{ color: tone.red, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{conflict.field}</div>
-                <p style={{ color: tone.muted, lineHeight: 1.6 }}>{conflict.conflict_note}</p>
+          <p style={{ color: tone.muted, lineHeight: 1.65 }}>
+            Each tribal page is a standalone card that can pull its own layered source packets. The Atlas hub explains the pattern; it does not duplicate the tribal record.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "0.85rem" }}>
+            {tribal_record_layers.map(([key, title, description]) => (
+              <article key={key} style={{ border: `1px solid ${tone.card_border}`, background: "rgba(255,255,255,0.025)", borderRadius: 16, padding: "0.9rem" }}>
+                <div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{key}</div>
+                <h3 style={{ margin: "0.55rem 0 0.35rem" }}>{title}</h3>
+                <p style={{ color: tone.muted, lineHeight: 1.55, margin: 0 }}>{description}</p>
               </article>
             ))}
           </div>
         </section>
 
-        <section style={{ marginTop: "1.25rem" }}>
-          <h2 style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <BookOpen size={22} color={tone.gold} /> Truth layers
+        <section style={{ marginTop: "1.25rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
+          {recognition_pathway_cards.map(([key, title, description]) => (
+            <article key={key} style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 20, padding: "1rem" }}>
+              <div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{key}</div>
+              <h3 style={{ margin: "0.55rem 0 0.35rem" }}>{title}</h3>
+              <p style={{ color: tone.muted, lineHeight: 1.6, margin: 0 }}>{description}</p>
+            </article>
+          ))}
+        </section>
+
+        <section style={{ marginTop: "1.25rem", border: `1px solid rgba(52,211,153,0.35)`, background: "rgba(52,211,153,0.055)", borderRadius: 22, padding: "1rem" }}>
+          <h2 style={{ display: "flex", alignItems: "center", gap: 10, margin: "0 0 0.75rem" }}>
+            <GitBranch size={22} color={tone.green} /> Atlas / Gideon split
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
-            {duwamish_truth_layers.map((layer) => (
-              <article key={layer.key} style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 20, padding: "1rem" }}>
-                <div style={{ color: tone.muted, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{layer.key}</div>
-                <h3 style={{ margin: "0.55rem 0 0.25rem" }}>{layer.title}</h3>
-                <p style={{ color: tone.blue, margin: 0 }}>{layer.subtitle}</p>
-                <p style={{ color: tone.muted, lineHeight: 1.6 }}>{layer.description}</p>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: layer.status === "available_admin_only" ? tone.gold : tone.muted, fontSize: 12 }}>
-                  {layer.status === "available_admin_only" ? <CheckCircle2 size={14} /> : <Lock size={14} />}
-                  {layer.status}
-                </span>
-                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "1rem" }}>
-                  {layer.actions.map((action) => (
-                    <span key={action.action_label}>{action_button({ action })}</span>
-                  ))}
-                </div>
-              </article>
-            ))}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "0.85rem" }}>
+            <article style={{ border: `1px solid ${tone.card_border}`, background: "rgba(255,255,255,0.025)", borderRadius: 16, padding: "0.9rem" }}>
+              <h3 style={{ marginTop: 0 }}>Atlas is source-packet material</h3>
+              <p style={{ color: tone.muted, lineHeight: 1.6, margin: 0 }}>Tribal pages and layer pages hold tribe-specific records, citations, review state, and publication controls.</p>
+            </article>
+            <article style={{ border: `1px solid ${tone.card_border}`, background: "rgba(255,255,255,0.025)", borderRadius: 16, padding: "0.9rem" }}>
+              <h3 style={{ marginTop: 0 }}>Gideon is analysis support</h3>
+              <p style={{ color: tone.muted, lineHeight: 1.6, margin: 0 }}>Recognition Gideon organizes criteria, weak joints, service gaps, and RTR comparison without replacing tribal records.</p>
+            </article>
           </div>
         </section>
 
@@ -326,14 +188,17 @@ export default function RecognitionAtlas() {
             luminari_commitment: <strong style={{ color: tone.paper }}>we_are_the_vessel_they_are_the_author</strong>
           </p>
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-            <Link href="/civil-gideon" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
-              Civil Gideon <ArrowRight size={15} />
+            <Link href="/recognition-gideon" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
+              Recognition Gideon <ArrowRight size={15} />
             </Link>
-            <Link href="/civic-map" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
-              CivicMap <MapPin size={15} />
+            <Link href="/native-nations" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
+              Native Nations <Users size={15} />
             </Link>
-            <Link href="/mission-control" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
-              Mission Control <Users size={15} />
+            <Link href="/recognition-atlas/duwamish" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
+              Duwamish Card <MapPin size={15} />
+            </Link>
+            <Link href="/legal-library" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
+              Legal Library <FileText size={15} />
             </Link>
           </div>
         </footer>
