@@ -71,6 +71,7 @@ import AgencyMetrics from "./pages/AgencyMetrics";
 import CivilGideon from "./pages/CivilGideon";
 import NativeNationsHub from "./pages/NativeNationsHub";
 import RecognitionAtlas from "./pages/RecognitionAtlas";
+import RecognitionAtlasTribe from "./pages/RecognitionAtlasTribe";
 import RecognitionAtlasLayer from "./pages/RecognitionAtlasLayer";
 import RecognitionGideon from "./pages/RecognitionGideon";
 import MentalHealth from "./pages/MentalHealth";
@@ -251,6 +252,7 @@ function App() {
                 <Route path="/native-nations" component={NativeNationsHub} />
                 <Route path="/recognition-gideon" component={RecognitionGideon} />
                 <Route path="/recognition-atlas/:tribe_id/:layer_slug" component={RecognitionAtlasLayer} />
+                <Route path="/recognition-atlas/:tribe_id" component={RecognitionAtlasTribe} />
                 <Route path="/recognition-atlas" component={RecognitionAtlas} />
                 <Route path="/mental-health" component={MentalHealth} />
                 <Route path="/categories" component={CategoryExplorer} />
