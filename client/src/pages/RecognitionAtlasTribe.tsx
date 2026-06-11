@@ -1,8 +1,9 @@
 import { useAuth } from "@/core/hooks/useAuth";
-import { duwamish_language_entries, duwamish_truth_layers } from "@/data/recognition_atlas_layers";
+import { duwamish_language_entries } from "@/data/recognition_atlas_layers";
 import { duwamish_truth_seed } from "@/data/duwamish_truth_seed";
 import { muwekma_truth_seed } from "@/data/muwekma_truth_seed";
 import { muwekma_rtr_conflict_flags } from "@/data/muwekma_rtr_conflict_flags";
+import { chinook_truth_seed } from "@/data/chinook_truth_seed";
 import { get_conflict_fields, resolve_truth_layer } from "@/resolvers/truth_layer_resolver";
 import { Link, useRoute } from "wouter";
 import { AlertTriangle, ArrowLeft, ArrowRight, BookOpen, EyeOff, Globe2, Languages, Lock, Shield } from "lucide-react";
@@ -19,6 +20,8 @@ const tone = {
   red: "#ef4444",
 };
 
+type supported_tribe_id = "duwamish" | "muwekma" | "chinook";
+
 type layer_card = {
   key: string;
   title: string;
@@ -28,13 +31,61 @@ type layer_card = {
   status: string;
 };
 
-function readable(value: string | boolean) {
+type conflict_field = {
+  field: string;
+  conflict_note: string;
+};
+
+type tribal_card_page = {
+  tribe_id: supported_tribe_id;
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  declaration: string;
+  description: string;
+  language_title: string;
+  language_children: React.ReactNode;
+  conflict_fields: conflict_field[];
+  layers: layer_card[];
+};
+
+const layer_definitions = [
+  ["layer_0_identity", "Identity Core", "Identity, homeland, government, and self-description.", "identity"],
+  ["layer_1_treaty", "Treaty / Political Relationship", "Treaty or formal political relationship record.", "treaty"],
+  ["layer_2_dispossession", "Dispossession Record", "Land loss, administrative erasure, takings, and continuity-impacting harms.", "dispossession"],
+  ["layer_3_recognition_timeline", "Recognition Timeline", "Federal recognition, omission, litigation, and administrative trace.", "timeline"],
+  ["layer_4_lawsuit", "Lawsuit Claims", "Court record, legal claims, and procedural posture.", "lawsuit"],
+  ["layer_5_language_vault", "Language / Living Culture", "Language, living culture, stewardship, and continuity.", "language"],
+  ["layer_6_ally_call", "Ally Call", "Tribe-directed support actions and recognition pathways.", "ally-call"],
+] as const;
+
+function readable(value: string | boolean | number | undefined | null) {
+  if (value === undefined || value === null) return "";
   if (typeof value === "boolean") return value ? "True" : "False";
-  return value
+  return String(value)
     .replace(/_/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function layer_cards(tribe_id: supported_tribe_id, subtitle_overrides: Record<string, string> = {}): layer_card[] {
+  return layer_definitions.map(([key, title, description, slug]) => ({
+    key,
+    title,
+    subtitle: subtitle_overrides[key] ?? title,
+    description,
+    route: `/recognition-atlas/${tribe_id}/${slug}`,
+    status: "locked_pending_tribal_review",
+  }));
+}
+
+function page_link({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8, border: `1px solid rgba(126,179,232,0.35)`, background: "rgba(126,179,232,0.06)", borderRadius: 999, padding: "0.45rem 0.7rem", fontSize: 13 }}>
+      {children}
+    </Link>
+  );
 }
 
 function gate_panel({ title, message }: { title: string; message: string }) {
@@ -55,18 +106,11 @@ function gate_panel({ title, message }: { title: string; message: string }) {
   );
 }
 
-function page_link({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link href={href} style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8, border: `1px solid rgba(126,179,232,0.35)`, background: "rgba(126,179,232,0.06)", borderRadius: 999, padding: "0.45rem 0.7rem", fontSize: 13 }}>
-      {children}
-    </Link>
-  );
-}
-
-function status_grid({ tribe_id }: { tribe_id: string }) {
+function status_grid({ tribe_id }: { tribe_id: supported_tribe_id }) {
+  const tribe_name = tribe_id === "muwekma" ? "Muwékma" : tribe_id === "chinook" ? "Chinook Indian Nation" : "Duwamish";
   return (
     <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem", marginTop: "2rem" }}>
-      {[["Visibility", "Admin only"], ["Source workspace", "Atlas"], ["Publication gate", "Tribe approved"], ["Tribe", tribe_id === "muwekma" ? "Muwékma" : "Duwamish"]].map(([label, value]) => (
+      {[["Visibility", "Admin only"], ["Source workspace", "Atlas"], ["Publication gate", "Tribe approved"], ["Tribe", tribe_name]].map(([label, value]) => (
         <div key={label} style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 18, padding: "1rem" }}>
           <div style={{ color: tone.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>{label}</div>
           <div style={{ color: tone.paper }}>{value}</div>
@@ -93,18 +137,9 @@ function layer_grid({ layers, title }: { layers: layer_card[]; title: string }) 
   );
 }
 
-function duwamish_page() {
+function duwamish_page(): tribal_card_page {
   const truth_record = resolve_truth_layer({ tribe_id: "duwamish", priority: "truth_layer_first", include_source_refs: true, include_conflict_flags: true }, duwamish_truth_seed);
   const conflict_fields = get_conflict_fields(truth_record);
-  const layers: layer_card[] = duwamish_truth_layers.map((layer) => ({
-    key: layer.key,
-    title: layer.title,
-    subtitle: layer.subtitle,
-    description: layer.description,
-    route: layer.actions[0]?.route ?? "/recognition-atlas/duwamish/identity",
-    status: layer.status,
-  }));
-
   return {
     tribe_id: "duwamish",
     eyebrow: "Recognition Atlas tribal card · Duwamish",
@@ -122,22 +157,16 @@ function duwamish_page() {
       </div>
     )),
     conflict_fields,
-    layers,
+    layers: layer_cards("duwamish", {
+      layer_0_identity: "dxʷdəwʔabš · People of the Inside",
+      layer_1_treaty: "Treaty of Point Elliott",
+      layer_3_recognition_timeline: "Recognition, reversal, remand, and litigation",
+    }),
   };
 }
 
-function muwekma_page() {
+function muwekma_page(): tribal_card_page {
   const seed = muwekma_truth_seed;
-  const layers: layer_card[] = [
-    ["layer_0_identity", "Identity Core", "Muwékma · Those Who Walk Forward", "Muwékma identity, homeland, waters, and present-day member territory.", "/recognition-atlas/muwekma/identity"],
-    ["layer_1_treaty", "Treaty / Political Relationship", "Verona Band / federal identification and omission", "Political relationship record, prior federal identification, and no ratified treaty recorded in this seed.", "/recognition-atlas/muwekma/treaty"],
-    ["layer_2_dispossession", "Dispossession Record", "Missionization, secularization, displacement, and omission", "Structured event record for continuity-impacting historical and administrative events.", "/recognition-atlas/muwekma/dispossession"],
-    ["layer_3_recognition_timeline", "Recognition Timeline", "Federal identification, omission, petition, denial, litigation", "Recognition events from the Muwékma seed rendered as a source review packet.", "/recognition-atlas/muwekma/timeline"],
-    ["layer_4_lawsuit", "Lawsuit Claims", "Muwékma Ohlone v. Salazar frame", "Legal claims and procedural posture from the Muwékma recognition record.", "/recognition-atlas/muwekma/lawsuit"],
-    ["layer_5_living_culture", "Living Culture / Language", "Chochenyo language and cultural revitalization", "Chochenyo language, cultural practices, community continuity, and stewardship records.", "/recognition-atlas/muwekma/language"],
-    ["layer_6_ally_call", "Ally Call", "How to stand with the Muwékma Ohlone Tribe", "Land acknowledgement and ally actions from the Muwékma seed.", "/recognition-atlas/muwekma/ally-call"],
-  ].map(([key, title, subtitle, description, route]) => ({ key, title, subtitle, description, route, status: "locked_pending_tribal_review" }));
-
   return {
     tribe_id: "muwekma",
     eyebrow: "Recognition Atlas tribal card · Muwékma",
@@ -162,8 +191,55 @@ function muwekma_page() {
       field: readable(flag.field),
       conflict_note: readable(flag.value),
     })),
-    layers,
+    layers: layer_cards("muwekma", {
+      layer_0_identity: "Muwékma · Those Who Walk Forward",
+      layer_1_treaty: "Verona Band / federal identification and omission",
+      layer_5_language_vault: "Chochenyo language and cultural revitalization",
+    }),
   };
+}
+
+function chinook_page(): tribal_card_page {
+  const seed = chinook_truth_seed;
+  return {
+    tribe_id: "chinook",
+    eyebrow: "Recognition Atlas tribal card · Chinook",
+    title: seed.layer_0_identity.tribe_self_name,
+    subtitle: "Five western-most Chinookan speaking tribes at the mouth of the Columbia River",
+    declaration: seed.layer_0_identity.self_description,
+    description: `${seed.layer_0_identity.constituent_peoples}. This tribal card consolidates the Chinook Indian Nation Recognition Atlas layers into identity, treaty, dispossession, recognition timeline, lawsuit, language/living culture, ally call, and source-packet links.`,
+    language_title: "Chinookan language and living culture",
+    language_children: [
+      ["Language family", seed.layer_5_language_vault.language_name],
+      ["Community description", seed.layer_5_language_vault.community_description],
+      ["Review note", seed.layer_5_language_vault.living_culture_note],
+    ].map(([label, value]) => (
+      <div key={label} style={{ borderTop: `1px solid ${tone.card_border}`, paddingTop: 12, marginTop: 12 }}>
+        <div style={{ color: tone.muted, fontSize: 12 }}>{label}</div>
+        <div style={{ color: tone.paper, lineHeight: 1.55 }}>{value}</div>
+      </div>
+    )),
+    conflict_fields: [],
+    layers: layer_cards("chinook", {
+      layer_0_identity: "Constituent peoples, constitution, government",
+      layer_1_treaty: "Tansy Point Treaty record",
+      layer_2_dispossession: "1864 taking and claims award",
+      layer_3_recognition_timeline: "215 years of federal interaction",
+      layer_4_lawsuit: "Chinook Indian Nation v. Zinke",
+      layer_5_language_vault: "Chinookan-speaking community",
+      layer_6_ally_call: "Congressional recognition and #ChinookJustice",
+    }),
+  };
+}
+
+function is_supported_tribe_id(tribe_id: string): tribe_id is supported_tribe_id {
+  return tribe_id === "duwamish" || tribe_id === "muwekma" || tribe_id === "chinook";
+}
+
+function get_page(tribe_id: supported_tribe_id): tribal_card_page {
+  if (tribe_id === "muwekma") return muwekma_page();
+  if (tribe_id === "chinook") return chinook_page();
+  return duwamish_page();
 }
 
 export default function RecognitionAtlasTribe() {
@@ -173,9 +249,9 @@ export default function RecognitionAtlasTribe() {
 
   if (loading) return gate_panel({ title: "Loading tribal card preview", message: "Checking admin access before showing this unpublished tribal card." });
   if (!isAuthenticated || user?.role !== "admin") return gate_panel({ title: "Tribal card requires admin access", message: "This tribal card is still in preparation and requires tribal review before public publication." });
-  if (tribe_id !== "duwamish" && tribe_id !== "muwekma") return gate_panel({ title: "Tribal card not available yet", message: "This Recognition Atlas tribal card has not been scaffolded into the admin preview yet." });
+  if (!is_supported_tribe_id(tribe_id)) return gate_panel({ title: "Tribal card not available yet", message: "This Recognition Atlas tribal card has not been scaffolded into the admin preview yet." });
 
-  const page = tribe_id === "muwekma" ? muwekma_page() : duwamish_page();
+  const page = get_page(tribe_id);
 
   return (
     <main style={{ minHeight: "100vh", background: tone.bg, color: tone.paper, fontFamily: "Inter, system-ui, sans-serif", padding: "clamp(1.25rem, 3vw, 3rem)" }}>
