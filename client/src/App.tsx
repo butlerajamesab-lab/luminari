@@ -104,6 +104,7 @@ import EvidenceLab from "./pages/EvidenceLab";
 import ShopOffice from "./pages/ShopOffice";
 import ResourceDirectory from "./pages/ResourceDirectory";
 import SovereignControl from "./pages/SovereignControl";
+import IngestionControl from "./pages/IngestionControl";
 import GovernanceDashboard from "./pages/GovernanceDashboard";
 import Verify from "./pages/Verify";
 import ExtractionDashboard from "./pages/ExtractionDashboard";
@@ -286,6 +287,7 @@ function App() {
                 <Route path="/shop-office" component={ShopOffice} />
                 <Route path="/resources" component={ResourceDirectory} />
                 <Route path="/sovereign-control" component={SovereignControl} />
+                <Route path="/ingestion-control" component={IngestionControl} />
                 <Route path="/mission-control/governance" component={GovernanceDashboard} />
                 <Route path="/verify" component={Verify} />
                 <Route path="/business-analytics" component={BusinessAnalytics} />
