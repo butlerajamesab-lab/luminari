@@ -5,7 +5,7 @@ import { muwekma_truth_seed } from "@/data/muwekma_truth_seed";
 import { muwekma_rtr_conflict_flags } from "@/data/muwekma_rtr_conflict_flags";
 import { get_conflict_fields, resolve_truth_layer } from "@/resolvers/truth_layer_resolver";
 import { Link, useRoute } from "wouter";
-import { AlertTriangle, ArrowLeft, ArrowRight, BookOpen, CheckCircle2, EyeOff, Globe2, Languages, Lock, Shield } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, BookOpen, EyeOff, Globe2, Languages, Lock, Shield } from "lucide-react";
 
 const tone = {
   bg: "#0c0f14",
@@ -27,6 +27,15 @@ type layer_card = {
   route: string;
   status: string;
 };
+
+function readable(value: string | boolean) {
+  if (typeof value === "boolean") return value ? "True" : "False";
+  return value
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
 
 function gate_panel({ title, message }: { title: string; message: string }) {
   return (
@@ -57,10 +66,10 @@ function page_link({ href, children }: { href: string; children: React.ReactNode
 function status_grid({ tribe_id }: { tribe_id: string }) {
   return (
     <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem", marginTop: "2rem" }}>
-      {[["visibility", "admin_only"], ["tribal_review_status", "locked_pending_tribal_review"], ["source_workspace", "atlas"], ["publication_gate", "tribe_approved"], ["tribe_id", tribe_id]].map(([label, value]) => (
+      {[["Visibility", "Admin only"], ["Source workspace", "Atlas"], ["Publication gate", "Tribe approved"], ["Tribe", tribe_id === "muwekma" ? "Muwékma" : "Duwamish"]].map(([label, value]) => (
         <div key={label} style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 18, padding: "1rem" }}>
           <div style={{ color: tone.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>{label}</div>
-          <div style={{ fontFamily: "JetBrains Mono, monospace", color: tone.paper }}>{value}</div>
+          <div style={{ color: tone.paper }}>{value}</div>
         </div>
       ))}
     </section>
@@ -74,13 +83,9 @@ function layer_grid({ layers, title }: { layers: layer_card[]; title: string }) 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
         {layers.map((layer) => (
           <Link key={layer.key} href={layer.route} style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 20, padding: "1rem", color: tone.paper, textDecoration: "none", display: "block" }}>
-            <div style={{ color: tone.muted, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{layer.key}</div>
-            <h3 style={{ margin: "0.55rem 0 0.25rem" }}>{layer.title}</h3>
+            <h3 style={{ margin: "0 0 0.25rem" }}>{layer.title}</h3>
             <p style={{ color: tone.blue, margin: 0 }}>{layer.subtitle}</p>
             <p style={{ color: tone.muted, lineHeight: 1.6 }}>{layer.description}</p>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: tone.gold, fontSize: 12 }}>
-              <CheckCircle2 size={14} /> {layer.status}
-            </span>
           </Link>
         ))}
       </div>
@@ -114,7 +119,6 @@ function duwamish_page() {
         <div style={{ color: tone.muted, fontSize: 13 }}>{entry.romanization}</div>
         <div style={{ color: tone.blue, marginTop: 4 }}>{entry.english_gloss}</div>
         {entry.extended_meaning && <p style={{ color: tone.muted, lineHeight: 1.55, marginBottom: 0 }}>{entry.extended_meaning}</p>}
-        {entry.verified_by_tribe === false && <p style={{ color: "rgba(212,160,23,0.8)", fontSize: 12, marginBottom: 0 }}>recovered_thread_unverified · requires tribal review</p>}
       </div>
     )),
     conflict_fields,
@@ -143,20 +147,20 @@ function muwekma_page() {
     description: `${seed.layer_0_identity.territorial_declaration}. This tribal card consolidates the Muwékma Recognition Atlas layers into the Muwékma page: identity, political relationship, dispossession, recognition timeline, lawsuit, living culture and language, ally call, and source-packet links.`,
     language_title: "Chochenyo language and living culture",
     language_children: [
-      ["language_name", seed.layer_5_living_culture.language.language_name],
-      ["language_program", seed.layer_5_living_culture.language.program_name],
-      ["program_purpose", seed.layer_5_living_culture.language.program_purpose],
-      ["living_practices", seed.layer_5_living_culture.living_practices.map((practice) => practice.practice_name).join(" · ")],
-      ["environmental_coalition", seed.layer_5_living_culture.environmental_coalition],
+      ["Language", seed.layer_5_living_culture.language.language_name],
+      ["Program", seed.layer_5_living_culture.language.program_name],
+      ["Purpose", seed.layer_5_living_culture.language.program_purpose],
+      ["Living practices", seed.layer_5_living_culture.living_practices.map((practice) => readable(practice.practice_name)).join(" · ")],
+      ["Environmental coalition", seed.layer_5_living_culture.environmental_coalition],
     ].map(([label, value]) => (
       <div key={label} style={{ borderTop: `1px solid ${tone.card_border}`, paddingTop: 12, marginTop: 12 }}>
-        <div style={{ color: tone.muted, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{label}</div>
+        <div style={{ color: tone.muted, fontSize: 12 }}>{label}</div>
         <div style={{ color: tone.paper, lineHeight: 1.55 }}>{value}</div>
       </div>
     )),
     conflict_fields: muwekma_rtr_conflict_flags.map((flag) => ({
-      field: flag.field,
-      conflict_note: `${flag.value} · source_posture: ${flag.source_posture}`,
+      field: readable(flag.field),
+      conflict_note: readable(flag.value),
     })),
     layers,
   };
@@ -218,7 +222,7 @@ export default function RecognitionAtlasTribe() {
           <section style={{ marginTop: "1.25rem" }}>
             <h2 style={{ display: "flex", alignItems: "center", gap: 10 }}><AlertTriangle size={22} color={tone.gold} /> Conflict flags</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
-              {page.conflict_fields.map((conflict) => (<article key={conflict.field} style={{ border: `1px solid rgba(239,68,68,0.22)`, background: "rgba(239,68,68,0.055)", borderRadius: 20, padding: "1rem" }}><div style={{ color: tone.red, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{conflict.field}</div><p style={{ color: tone.muted, lineHeight: 1.6 }}>{conflict.conflict_note}</p></article>))}
+              {page.conflict_fields.map((conflict) => (<article key={conflict.field} style={{ border: `1px solid rgba(239,68,68,0.22)`, background: "rgba(239,68,68,0.055)", borderRadius: 20, padding: "1rem" }}><div style={{ color: tone.red, fontSize: 12 }}>{conflict.field}</div><p style={{ color: tone.muted, lineHeight: 1.6 }}>{conflict.conflict_note}</p></article>))}
             </div>
           </section>
         )}
@@ -226,7 +230,7 @@ export default function RecognitionAtlasTribe() {
         {layer_grid({ layers: page.layers, title: `${page.title} source-packet layers` })}
 
         <footer style={{ marginTop: "2rem", paddingTop: "1.5rem", borderTop: `1px solid ${tone.card_border}`, display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
-          <p style={{ color: tone.muted, margin: 0 }}>luminari_commitment: <strong style={{ color: tone.paper }}>we_are_the_vessel_they_are_the_author</strong></p>
+          <p style={{ color: tone.muted, margin: 0 }}>Luminari commitment: <strong style={{ color: tone.paper }}>The framework is the vessel. They are the author.</strong></p>
           <Link href="/recognition-gideon" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>Recognition Gideon / RTR Matrix <ArrowRight size={15} /></Link>
         </footer>
       </section>
