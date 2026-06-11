@@ -23,11 +23,11 @@ const tone = {
 
 type layer_slug = "identity" | "treaty" | "dispossession" | "timeline" | "lawsuit" | "language" | "ally-call";
 type supported_tribe_id = "duwamish" | "muwekma";
-type source_posture = "verbatim_tribal_source" | "structured_extraction_from_tribal_source" | "tribe_affiliated_source" | "external_source" | "lighthouse_analysis";
+type sourcePosture = "verbatim_tribal_source" | "structured_extraction_from_tribal_source" | "structured_extraction_from_public_record" | "structured_extraction_from_tribal_affiliated_scholarly_source" | "tribe_affiliated_source" | "external_source" | "lighthouse_analysis_pending_tribal_review";
 
 type source_meta = {
   url: string;
-  source_posture: source_posture;
+  sourcePosture: sourcePosture;
   warning?: string;
 };
 
@@ -112,7 +112,7 @@ const back_link_style = {
   fontSize: 13,
 };
 
-function source_posture_for_muwekma(source_domain: string): source_posture {
+function source_posture_for_muwekma(source_domain: string): sourcePosture {
   if (source_domain === "muwekma.org") return "structured_extraction_from_tribal_source";
   if (source_domain === "muwekmafoundation.org") return "tribe_affiliated_source";
   return "external_source";
@@ -152,7 +152,7 @@ function section_card({ title, children }: { title: string; children: ReactNode 
 function source_footer(source: source_meta) {
   return (
     <div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12, marginTop: 10 }}>
-      source_posture: {source.source_posture}
+      <span style={{ border: `1px solid rgba(212,160,23,0.35)`, borderRadius: 999, padding: "0.2rem 0.45rem" }}>{source.sourcePosture.replace(/_/g, " ")}</span>
       {source.url && (
         <a href={source.url} target="_blank" rel="noreferrer" style={{ color: tone.blue, display: "block", marginTop: 8, wordBreak: "break-word" }}>citation: {source.url}</a>
       )}
@@ -183,7 +183,7 @@ function list_value(values: Array<string | number | undefined>) {
 function source_for_muwekma_layer(layer_source: typeof muwekma_truth_seed.layer_0_identity.source, warning?: string): source_meta {
   return {
     url: layer_source.url,
-    source_posture: source_posture_for_muwekma(layer_source.source_domain),
+    sourcePosture: layer_source.source_posture ?? source_posture_for_muwekma(layer_source.source_domain),
     warning,
   };
 }
@@ -192,7 +192,7 @@ function council_review_packet_notice({ tribe_id }: { tribe_id: supported_tribe_
   return (
     <section style={{ border: `1px solid rgba(52,211,153,0.35)`, background: "rgba(52,211,153,0.055)", borderRadius: 22, padding: "1rem", marginBottom: "1rem" }}>
       <h2 style={{ margin: "0 0 0.5rem" }}>Council review source packet</h2>
-      <p style={{ color: tone.muted, lineHeight: 1.65, margin: 0 }}>This preview is a cited structured review packet for {tribe_id}. It is not public, not final, and not tribal approval. Each field shows source_posture and citation so the tribe can confirm, correct, restrict, replace, or reject what appears here.</p>
+      <p style={{ color: tone.muted, lineHeight: 1.65, margin: 0 }}>This preview is a cited structured review packet for {tribe_id}. It is not public, not final, and not tribal approval. Each field shows a source badge and citation so the tribe can confirm, correct, restrict, replace, or reject what appears here.</p>
     </section>
   );
 }
@@ -209,18 +209,18 @@ function get_layer_config(tribe_id: supported_tribe_id, active_layer_slug: layer
 
 function get_duwamish_layer_fields(active_layer_slug: layer_slug): { fields: preview_field[]; conflict_fields: ReturnType<typeof get_conflict_fields> } {
   const truth_record = resolve_truth_layer({ tribe_id: "duwamish", priority: "truth_layer_first", include_source_refs: true, include_conflict_flags: true }, duwamish_truth_seed);
-  const source_posture: source_posture = "structured_extraction_from_tribal_source";
-  const source = (url?: string): source_meta => ({ url: url ?? duwamish_truth_seed.layer_0_identity.source.url, source_posture });
+  const defaultSourcePosture: sourcePosture = "structured_extraction_from_tribal_source";
+  const source = (url?: string, sourcePosture: sourcePosture = defaultSourcePosture): source_meta => ({ url: url ?? duwamish_truth_seed.layer_0_identity.source.url, sourcePosture });
 
   const layer_fields: Record<layer_slug, preview_field[]> = {
     identity: [
-      { label: "tribe_self_name", value: truth_record.tribe_self_name.value, source: { url: truth_record.tribe_self_name.source_url, source_posture: "verbatim_tribal_source" } },
-      { label: "name_meaning", value: truth_record.name_meaning.value, source: { url: truth_record.name_meaning.source_url, source_posture: "verbatim_tribal_source" } },
-      { label: "primary_declaration", value: truth_record.primary_declaration.value, source: { url: truth_record.primary_declaration.source_url, source_posture: "verbatim_tribal_source" } },
-      { label: "territorial_declaration", value: truth_record.territorial_declaration.value, source: { url: truth_record.territorial_declaration.source_url, source_posture: "verbatim_tribal_source" } },
+      { label: "tribe_self_name", value: truth_record.tribe_self_name.value, source: { url: truth_record.tribe_self_name.source_url, sourcePosture: "verbatim_tribal_source" } },
+      { label: "name_meaning", value: truth_record.name_meaning.value, source: { url: truth_record.name_meaning.source_url, sourcePosture: "verbatim_tribal_source" } },
+      { label: "primary_declaration", value: truth_record.primary_declaration.value, source: { url: truth_record.primary_declaration.source_url, sourcePosture: "verbatim_tribal_source" } },
+      { label: "territorial_declaration", value: truth_record.territorial_declaration.value, source: { url: truth_record.territorial_declaration.source_url, sourcePosture: "verbatim_tribal_source" } },
       { label: "territorial_basis", value: duwamish_truth_seed.layer_0_identity.territorial_basis, source: source(duwamish_truth_seed.layer_0_identity.source.url) },
       { label: "oral_tradition_anchor", value: truth_record.oral_tradition_anchor.value, source: source(truth_record.oral_tradition_anchor.source_url) },
-      { label: "homeland_waters", value: truth_record.homeland_waters.value.join(" · "), source: source(truth_record.homeland_waters.source_url) },
+      { label: "homeland_waters", value: truth_record.homeland_waters.value.join(" · "), source: source(truth_record.homeland_waters.source_url, duwamish_truth_seed.layer_0_identity.homeland_waters_source_posture ?? defaultSourcePosture) },
       { label: "homeland_geography", value: duwamish_truth_seed.layer_0_identity.homeland_geography, source: source(duwamish_truth_seed.layer_0_identity.source.url) },
       { label: "present_day_member_territory", value: truth_record.present_day_member_territory.value.join(" · "), source: source(truth_record.present_day_member_territory.source_url) },
     ],
@@ -262,7 +262,7 @@ function get_duwamish_layer_fields(active_layer_slug: layer_slug): { fields: pre
       { label: "current_procedural_status", value: duwamish_truth_seed.layer_4_lawsuit.current_procedural_status, source: source(duwamish_truth_seed.layer_4_lawsuit.source.url) },
     ],
     language: [
-      { label: "language_name", value: truth_record.language_name.value, source: { url: truth_record.language_name.source_url, source_posture: "verbatim_tribal_source" } },
+      { label: "language_name", value: truth_record.language_name.value, source: { url: truth_record.language_name.source_url, sourcePosture: "verbatim_tribal_source" } },
       { label: "language_program_active", value: String(truth_record.language_program_active.value), source: source(truth_record.language_program_active.source_url) },
       { label: "living_practices", value: duwamish_truth_seed.layer_5_living_culture.living_practices.map((practice) => `${practice.practice_name}: ${practice.description} — ${practice.cultural_significance}`).join(" · "), source: source(duwamish_truth_seed.layer_5_living_culture.source.url) },
       { label: "physical_home_name", value: duwamish_truth_seed.layer_5_living_culture.physical_home.name, source: source(duwamish_truth_seed.layer_5_living_culture.physical_home.source.url) },
@@ -272,13 +272,14 @@ function get_duwamish_layer_fields(active_layer_slug: layer_slug): { fields: pre
     ],
     "ally-call": [
       { label: "land_status", value: truth_record.land_status.value, source: source(truth_record.land_status.source_url) },
-      { label: "closing_statement", value: truth_record.closing_statement.value, source: { url: truth_record.closing_statement.source_url, source_posture: "verbatim_tribal_source" } },
-      { label: "land_acknowledgement_template", value: duwamish_truth_seed.layer_6_ally_call.template_text, source: { url: duwamish_truth_seed.layer_6_ally_call.source.url, source_posture: "verbatim_tribal_source" } },
+      { label: "closing_statement", value: truth_record.closing_statement.value, source: { url: truth_record.closing_statement.source_url, sourcePosture: "verbatim_tribal_source" } },
+      { label: "land_acknowledgement_template", value: duwamish_truth_seed.layer_6_ally_call.template_text, source: { url: duwamish_truth_seed.layer_6_ally_call.source.url, sourcePosture: "verbatim_tribal_source" } },
       { label: "ally_actions", value: duwamish_truth_seed.layer_6_ally_call.ally_actions.map((action) => `${action.action_label}: ${action.description}${action.url ? ` — ${action.url}` : ""}`).join(" · "), source: source(duwamish_truth_seed.layer_6_ally_call.source.url) },
     ],
   };
 
-  return { fields: layer_fields[active_layer_slug].filter((field) => field.value !== ""), conflict_fields: get_conflict_fields(truth_record) };
+  const conflict_fields = active_layer_slug === "dispossession" || active_layer_slug === "timeline" ? get_conflict_fields(truth_record) : [];
+  return { fields: layer_fields[active_layer_slug].filter((field) => field.value !== ""), conflict_fields };
 }
 
 function get_muwekma_layer_fields(active_layer_slug: layer_slug): preview_field[] {
@@ -291,13 +292,19 @@ function get_muwekma_layer_fields(active_layer_slug: layer_slug): preview_field[
       { label: "tribe_self_name", value: seed.layer_0_identity.tribe_self_name, source: source(seed.layer_0_identity.source) },
       { label: "name_meaning", value: seed.layer_0_identity.name_meaning, source: source(seed.layer_0_identity.source) },
       { label: "anglicized_name", value: seed.layer_0_identity.anglicized_name, source: source(seed.layer_0_identity.source) },
-      { label: "primary_declaration", value: seed.layer_0_identity.primary_declaration, source: source(seed.layer_0_identity.source) },
-      { label: "territorial_declaration", value: seed.layer_0_identity.territorial_declaration, source: source(seed.layer_0_identity.source) },
+      { label: "primary_declaration", value: seed.layer_0_identity.primary_declaration, source: { url: seed.layer_0_identity.primary_declaration_citation ?? seed.layer_0_identity.source.url, sourcePosture: seed.layer_0_identity.primary_declaration_source_posture ?? source_posture_for_muwekma(seed.layer_0_identity.source.source_domain) } },
+      { label: "territorial_declaration", value: seed.layer_0_identity.territorial_declaration === "requires_tribal_review" ? "Requires tribal review" : seed.layer_0_identity.territorial_declaration, source: source(seed.layer_0_identity.source) },
+      { label: "territorial_declaration_note", value: seed.layer_0_identity.territorial_declaration_note ?? "", source: source(seed.layer_0_identity.source) },
       { label: "territorial_basis", value: seed.layer_0_identity.territorial_basis, source: source(seed.layer_0_identity.source) },
       { label: "oral_tradition_anchor", value: seed.layer_0_identity.oral_tradition_anchor, source: source(seed.layer_0_identity.source) },
       { label: "homeland_waters", value: seed.layer_0_identity.homeland_waters.join(" · "), source: source(seed.layer_0_identity.source) },
       { label: "homeland_geography", value: seed.layer_0_identity.homeland_geography, source: source(seed.layer_0_identity.source) },
       { label: "present_day_member_territory", value: seed.layer_0_identity.present_day_member_territory.join(" · "), source: source(seed.layer_0_identity.source) },
+      ...(seed.layer_0_identity.chochenyo_greeting ? [
+        { label: "chochenyo_greeting", value: seed.layer_0_identity.chochenyo_greeting.chochenyo_greeting, source: { url: seed.layer_0_identity.chochenyo_greeting.citation, sourcePosture: seed.layer_0_identity.chochenyo_greeting.source_posture } },
+        { label: "chochenyo_greeting_phonetic", value: seed.layer_0_identity.chochenyo_greeting.phonetic, source: { url: seed.layer_0_identity.chochenyo_greeting.citation, sourcePosture: seed.layer_0_identity.chochenyo_greeting.source_posture } },
+        { label: "chochenyo_greeting_meaning", value: seed.layer_0_identity.chochenyo_greeting.meaning, source: { url: seed.layer_0_identity.chochenyo_greeting.citation, sourcePosture: seed.layer_0_identity.chochenyo_greeting.source_posture } },
+      ] : []),
     ],
     treaty: [
       { label: "treaty_name", value: seed.layer_1_treaty.treaty_name, source: source(seed.layer_1_treaty.source) },
@@ -310,10 +317,12 @@ function get_muwekma_layer_fields(active_layer_slug: layer_slug): preview_field[
       { label: "event_methods", value: list_value(seed.layer_2_dispossession.events.map((event) => event.method)), source: source(seed.layer_2_dispossession.source) },
       { label: "event_descriptions", value: list_value(seed.layer_2_dispossession.events.map((event) => event.description)), source: source(seed.layer_2_dispossession.source) },
       { label: "event_outcomes", value: list_value(seed.layer_2_dispossession.events.map((event) => event.outcome)), source: source(seed.layer_2_dispossession.source) },
+      { label: "event_evidence", value: list_value(seed.layer_2_dispossession.events.map((event) => event.evidence)), source: source(seed.layer_2_dispossession.source) },
+      { label: "event_citations", value: list_value(seed.layer_2_dispossession.events.map((event) => event.citation)), source: source(seed.layer_2_dispossession.source) },
     ].filter((field): field is preview_field => field.value !== null),
     timeline: [
       { label: "recognition_current_status", value: seed.layer_3_recognition_timeline.current_status, source: source(seed.layer_3_recognition_timeline.source) },
-      { label: "recognition_events", value: seed.layer_3_recognition_timeline.events.map((event) => `${event.year}: ${event.event_label}${event.outcome ? ` (${event.outcome})` : ""}${event.agent ? ` — ${event.agent}` : ""}`).join(" · "), source: source(seed.layer_3_recognition_timeline.source) },
+      { label: "recognition_events", value: seed.layer_3_recognition_timeline.events.map((event) => `${event.year}: ${event.event_label}${event.outcome ? ` (${event.outcome})` : ""}${event.agent ? ` — ${event.agent}` : ""}${event.date ? ` · ${event.date}` : ""}${event.description ? ` · ${event.description}` : ""}${event.basis ? ` · ${event.basis}` : ""}${event.case ? ` · ${event.case}` : ""}${event.citation ? ` · ${event.citation}` : ""}`).join(" · "), source: source(seed.layer_3_recognition_timeline.source) },
     ],
     lawsuit: [
       { label: "lawsuit_filed_date", value: seed.layer_4_lawsuit.filed_date, source: source(seed.layer_4_lawsuit.source) },
@@ -326,6 +335,11 @@ function get_muwekma_layer_fields(active_layer_slug: layer_slug): preview_field[
     language: [
       { label: "language_name", value: seed.layer_5_living_culture.language.language_name, source: source(seed.layer_5_living_culture.language.source) },
       { label: "common_name", value: seed.layer_5_living_culture.language.common_name, source: source(seed.layer_5_living_culture.language.source) },
+      ...(seed.layer_0_identity.chochenyo_greeting ? [
+        { label: "chochenyo_greeting", value: seed.layer_0_identity.chochenyo_greeting.chochenyo_greeting, source: { url: seed.layer_0_identity.chochenyo_greeting.citation, sourcePosture: seed.layer_0_identity.chochenyo_greeting.source_posture } },
+        { label: "chochenyo_greeting_phonetic", value: seed.layer_0_identity.chochenyo_greeting.phonetic, source: { url: seed.layer_0_identity.chochenyo_greeting.citation, sourcePosture: seed.layer_0_identity.chochenyo_greeting.source_posture } },
+        { label: "chochenyo_greeting_meaning", value: seed.layer_0_identity.chochenyo_greeting.meaning, source: { url: seed.layer_0_identity.chochenyo_greeting.citation, sourcePosture: seed.layer_0_identity.chochenyo_greeting.source_posture } },
+      ] : []),
       { label: "language_program", value: seed.layer_5_living_culture.language.program_name, source: source(seed.layer_5_living_culture.language.source) },
       { label: "program_established", value: String(seed.layer_5_living_culture.language.program_established), source: source(seed.layer_5_living_culture.language.source) },
       { label: "program_purpose", value: seed.layer_5_living_culture.language.program_purpose, source: source(seed.layer_5_living_culture.language.source) },
@@ -385,7 +399,7 @@ export default function RecognitionAtlasLayer() {
           {section_card({ title: "Protection state", children: (<div style={{ color: tone.muted, lineHeight: 1.75 }}><p><Shield size={16} color={tone.green} /> Atlas remains the private build and approval workspace.</p><p>public_display_permitted: false</p><p>approval_status: locked_pending_tribe_review</p><p>luminari_commitment: we_are_the_vessel_they_are_the_author</p></div>) })}
         </div>
         {tribe_id === "duwamish" && active_layer_slug === "dispossession" && section_card({ title: "Weak Joints Illustrated", children: (<article style={{ border: `1px solid rgba(212,160,23,0.35)`, background: "rgba(212,160,23,0.06)", borderRadius: 16, padding: "0.95rem" }}><div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{continuous_habitation_paradox.weak_joint_id}</div><h3 style={{ margin: "0.5rem 0" }}>{continuous_habitation_paradox.title}</h3><p style={{ color: tone.muted, lineHeight: 1.65 }}>{continuous_habitation_paradox.description}</p><p style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>authorship: {continuous_habitation_paradox.authorship} · publication_status: {continuous_habitation_paradox.publication_status}</p><Link href="/recognition-gideon?weak_joint=continuous_habitation_paradox" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 6 }}>Open Recognition Gideon analysis <ArrowRight size={14} /></Link></article>) })}
-        {tribe_id === "duwamish" && active_layer_slug === "language" && section_card({ title: "Language entries for review", children: (<div style={{ display: "grid", gap: "0.75rem" }}>{[duwamish_language_seed.self_identifier_entry, duwamish_language_seed.primary_declaration_entry, ...duwamish_language_seed.entries].map((entry) => (<article key={entry.entry_id} style={{ border: `1px solid ${tone.card_border}`, borderRadius: 16, padding: "0.9rem", background: "rgba(255,255,255,0.025)" }}><div style={{ color: tone.paper, fontSize: "1.25rem" }}>{entry.original_text}</div><div style={{ color: tone.muted }}>{entry.romanization}</div><div style={{ color: tone.blue }}>{entry.english_gloss}</div><div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12, marginTop: 8 }}>source_posture: source_authenticated_from_tribal_website · citation: {entry.source_url}</div>{entry.extended_meaning && <p style={{ color: tone.muted, lineHeight: 1.6 }}>{entry.extended_meaning}</p>}{entry.verified_by_tribe === false && <p style={{ color: tone.gold, fontSize: 12 }}>council_review_required</p>}</article>))}</div>) })}
+        {tribe_id === "duwamish" && active_layer_slug === "language" && section_card({ title: "Language entries for review", children: (<div style={{ display: "grid", gap: "0.75rem" }}>{[duwamish_language_seed.self_identifier_entry, duwamish_language_seed.primary_declaration_entry, ...duwamish_language_seed.entries].map((entry) => (<article key={entry.entry_id} style={{ border: `1px solid ${tone.card_border}`, borderRadius: 16, padding: "0.9rem", background: "rgba(255,255,255,0.025)" }}><div style={{ color: tone.paper, fontSize: "1.25rem" }}>{entry.original_text}</div><div style={{ color: tone.muted }}>{entry.romanization}</div><div style={{ color: tone.blue }}>{entry.english_gloss}</div><div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12, marginTop: 8 }}><span style={{ border: `1px solid rgba(212,160,23,0.35)`, borderRadius: 999, padding: "0.2rem 0.45rem" }}>source authenticated from tribal website</span><a href={entry.source_url} target="_blank" rel="noreferrer" style={{ color: tone.blue, display: "block", marginTop: 8, wordBreak: "break-word" }}>citation: {entry.source_url}</a></div>{entry.extended_meaning && <p style={{ color: tone.muted, lineHeight: 1.6 }}>{entry.extended_meaning}</p>}{entry.verified_by_tribe === false && <p style={{ color: tone.gold, fontSize: 12 }}>council_review_required</p>}</article>))}</div>) })}
         {conflict_fields.length > 0 && section_card({ title: "Conflict flags visible in this record", children: (<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "0.75rem" }}>{conflict_fields.map((conflict) => (<article key={conflict.field} style={{ border: `1px solid rgba(239,68,68,0.22)`, background: "rgba(239,68,68,0.055)", borderRadius: 16, padding: "0.9rem" }}><div style={{ color: tone.red, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{conflict.field}</div><p style={{ color: tone.muted, lineHeight: 1.6 }}>{conflict.conflict_note}</p></article>))}</div>) })}
       </section>
     </main>

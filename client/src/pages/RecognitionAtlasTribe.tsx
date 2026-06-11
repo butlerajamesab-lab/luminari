@@ -144,15 +144,18 @@ function muwekma_page() {
     title: seed.layer_0_identity.tribe_self_name,
     subtitle: `Muwékma Ohlone Tribe · ${seed.layer_0_identity.name_meaning}`,
     declaration: seed.layer_0_identity.primary_declaration,
-    description: `${seed.layer_0_identity.territorial_declaration}. This tribal card consolidates the Muwékma Recognition Atlas layers into the Muwékma page: identity, political relationship, dispossession, recognition timeline, lawsuit, living culture and language, ally call, and source-packet links.`,
+    description: `${seed.layer_0_identity.territorial_declaration === "requires_tribal_review" ? "Territorial declaration requires tribal review" : seed.layer_0_identity.territorial_declaration}. This tribal card consolidates the Muwékma Recognition Atlas layers into the Muwékma page: identity, political relationship, dispossession, recognition timeline, lawsuit, living culture and language, ally call, and source-packet links.`,
     language_title: "Chochenyo language and living culture",
     language_children: [
+      ["Chochenyo greeting", seed.layer_0_identity.chochenyo_greeting?.chochenyo_greeting ?? ""],
+      ["Greeting phonetic", seed.layer_0_identity.chochenyo_greeting?.phonetic ?? ""],
+      ["Greeting meaning", seed.layer_0_identity.chochenyo_greeting?.meaning ?? ""],
       ["Language", seed.layer_5_living_culture.language.language_name],
       ["Program", seed.layer_5_living_culture.language.program_name],
       ["Purpose", seed.layer_5_living_culture.language.program_purpose],
       ["Living practices", seed.layer_5_living_culture.living_practices.map((practice) => readable(practice.practice_name)).join(" · ")],
       ["Environmental coalition", seed.layer_5_living_culture.environmental_coalition],
-    ].map(([label, value]) => (
+    ].filter(([, value]) => value !== "").map(([label, value]) => (
       <div key={label} style={{ borderTop: `1px solid ${tone.card_border}`, paddingTop: 12, marginTop: 12 }}>
         <div style={{ color: tone.muted, fontSize: 12 }}>{label}</div>
         <div style={{ color: tone.paper, lineHeight: 1.55 }}>{value}</div>

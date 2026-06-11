@@ -1,22 +1,45 @@
+export type source_posture =
+  | "verbatim_tribal_source"
+  | "structured_extraction_from_tribal_source"
+  | "structured_extraction_from_public_record"
+  | "structured_extraction_from_tribal_affiliated_scholarly_source"
+  | "tribe_affiliated_source"
+  | "external_source"
+  | "lighthouse_analysis_pending_tribal_review";
+
 export type source_ref = {
   url: string;
   page_title: string;
-  source_domain: "muwekma.org" | "muwekmafoundation.org" | "unicornriot.ninja";
+  source_domain: "muwekma.org" | "muwekmafoundation.org" | "unicornriot.ninja" | "bia.gov";
   retrieved_date: string;
   authored_by: "muwekma_tribe" | "muwekma_affiliated_source" | "external_source";
+  source_posture?: source_posture;
+};
+
+export type chochenyo_greeting_record = {
+  chochenyo_greeting: string;
+  phonetic: string;
+  meaning: string;
+  source_posture: source_posture;
+  citation: string;
 };
 
 export type identity_core = {
   tribe_self_name: string;
+  tribe_self_name_source_posture?: source_posture;
   name_meaning: string;
   anglicized_name: string;
   primary_declaration: string;
+  primary_declaration_source_posture?: source_posture;
+  primary_declaration_citation?: string;
   territorial_declaration: string;
+  territorial_declaration_note?: string;
   territorial_basis: string;
   oral_tradition_anchor: string;
   homeland_waters: string[];
   homeland_geography: string;
   present_day_member_territory: string[];
+  chochenyo_greeting?: chochenyo_greeting_record;
   source: source_ref;
 };
 
@@ -27,6 +50,9 @@ export type dispossession_event = {
   method?: string;
   description?: string;
   outcome?: string;
+  evidence?: string;
+  citation?: string;
+  source_posture?: source_posture;
 };
 
 export type dispossession_record = {
@@ -61,11 +87,19 @@ export type recognition_event = {
   event_label: string;
   outcome?: "granted" | "denied" | "reversed" | "filed" | "pending" | "opposed";
   agent?: string;
+  date?: string;
+  description?: string;
+  basis?: string;
+  citation?: string;
+  case?: string;
+  source_posture?: source_posture;
 };
 
 export type recognition_timeline = {
   events: recognition_event[];
-  current_status: "active_lawsuit" | "pending_remand" | "denied" | "recognized";
+  current_status: "active_lawsuit" | "pending_remand" | "denied" | "recognized" | "previously_identified_then_omitted_denied";
+  current_status_source_posture?: source_posture;
+  current_status_citation?: string;
   source: source_ref;
 };
 

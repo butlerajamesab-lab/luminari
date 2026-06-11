@@ -114,7 +114,7 @@ export function resolve_truth_layer(
     tribe_self_name: make_truth_field(seed.layer_0_identity.tribe_self_name, identity_url),
     name_meaning: make_truth_field(seed.layer_0_identity.name_meaning, identity_url),
     oral_tradition_anchor: make_truth_field(seed.layer_0_identity.oral_tradition_anchor, history_url),
-    homeland_waters: make_truth_field(seed.layer_0_identity.homeland_waters, identity_url),
+    homeland_waters: make_truth_field(seed.layer_0_identity.homeland_waters, history_url),
     present_day_member_territory: make_truth_field(seed.layer_0_identity.present_day_member_territory, history_url),
     treaty_name: make_truth_field(seed.layer_1_treaty.treaty_name, treaty_url),
     treaty_date: make_truth_field(seed.layer_1_treaty.treaty_date, treaty_url),
