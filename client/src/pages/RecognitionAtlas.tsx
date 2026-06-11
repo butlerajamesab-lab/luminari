@@ -134,7 +134,7 @@ export default function RecognitionAtlas() {
 
         <section style={{ marginTop: "2rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
           {route_card({ title: "Duwamish Tribal Card", href: "/recognition-atlas/duwamish", label: "tribal_card", description: "Open the dedicated Duwamish parent page. This is where Duwamish-specific depth belongs." })}
-          {route_card({ title: "Muwékma Identity Layer", href: "/recognition-atlas/muwekma/identity", label: "tribal_layer", description: "Open the Muwékma admin-preview identity source packet while the Muwékma parent card is prepared." })}
+          {route_card({ title: "Muwékma Tribal Card", href: "/recognition-atlas/muwekma", label: "tribal_card", description: "Open the dedicated Muwékma parent page. This is where Muwékma-specific depth belongs." })}
           {route_card({ title: "Recognition Gideon / RTR Matrix", href: "/recognition-gideon", label: "analysis_engine", description: "Open the system-analysis layer for recognition conditions, weak joints, and Route to Recognition comparison." })}
           {route_card({ title: "Native Nations Hub", href: "/native-nations", label: "mudroom", description: "Return to the gentle entryway for Native Nations pathways and support routing." })}
         </section>
@@ -196,6 +196,9 @@ export default function RecognitionAtlas() {
             </Link>
             <Link href="/recognition-atlas/duwamish" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
               Duwamish Card <MapPin size={15} />
+            </Link>
+            <Link href="/recognition-atlas/muwekma" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
+              Muwékma Card <MapPin size={15} />
             </Link>
             <Link href="/legal-library" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
               Legal Library <FileText size={15} />
