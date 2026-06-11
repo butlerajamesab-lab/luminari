@@ -2,7 +2,6 @@ import { useAuth } from "@/core/hooks/useAuth";
 import { Link } from "wouter";
 import {
   ArrowRight,
-  BookOpen,
   EyeOff,
   FileText,
   GitBranch,
@@ -34,11 +33,11 @@ const tribal_record_layers = [
   ["layer_6_ally_call", "Ally Call", "This layer tells people exactly how the tribe wants to be supported. It points to their own websites and foundations, land rematriation and stewardship efforts, language and cultural programs, public events, and recognition campaigns. Every action in this layer should come from the tribe or their designated partners."],
 ];
 
-const recognition_pathway_cards = [
-  ["official_criteria", "Official Criteria", "The Recognition Atlas presentation layer should quote governing recognition criteria exactly when legal text is displayed."],
-  ["service_gap", "Service Gap", "The Unrecognized Tribes Addendum documents what non-recognition blocks and what partial access pathways remain."],
-  ["rtr_matrix", "RTR Matrix", "Recognition Gideon analyzes conditions, weak joints, and government-created evidentiary gaps without making recognition determinations."],
-  ["state_recognition", "State Recognition Map", "State recognition, state-law protections, and partial services are tracked separately from federal recognition."],
+const atlas_links = [
+  ["Duwamish Tribal Card", "/recognition-atlas/duwamish", "Open the dedicated Duwamish parent page. This is where Duwamish-specific depth belongs."],
+  ["Muwékma Tribal Card", "/recognition-atlas/muwekma", "Open the dedicated Muwékma parent page. This is where Muwékma-specific depth belongs."],
+  ["Recognition Gideon / RTR Matrix", "/recognition-gideon", "Open the system-analysis layer for recognition conditions, weak joints, and Route to Recognition comparison."],
+  ["Native Nations Hub", "/native-nations", "Return to the gentle entryway for Native Nations pathways and support routing."],
 ];
 
 function gate_panel({ title, message }: { title: string; message: string }) {
@@ -59,16 +58,18 @@ function gate_panel({ title, message }: { title: string; message: string }) {
   );
 }
 
-function route_card({ title, href, description, label }: { title: string; href: string; description: string; label: string }) {
+function nav_links() {
   return (
-    <Link href={href} style={{ border: `1px solid rgba(126,179,232,0.35)`, background: "rgba(126,179,232,0.07)", color: tone.paper, borderRadius: 20, padding: "1rem", textDecoration: "none", display: "block" }}>
-      <div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12, marginBottom: 8 }}>{label}</div>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 10 }}>
-        <h3 style={{ margin: 0, fontSize: "1.1rem" }}>{title}</h3>
-        <ArrowRight size={16} color={tone.blue} />
-      </div>
-      <p style={{ color: tone.muted, lineHeight: 1.6, margin: 0 }}>{description}</p>
-    </Link>
+    <section style={{ marginTop: "2rem", border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 22, padding: "1.25rem" }}>
+      <ul style={{ color: tone.muted, lineHeight: 1.8, paddingLeft: "1.25rem", margin: 0 }}>
+        {atlas_links.map(([title, href, description]) => (
+          <li key={href}>
+            <Link href={href} style={{ color: tone.blue, fontWeight: 800, textDecoration: "none" }}>{title}</Link>
+            <span> — {description}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -118,26 +119,7 @@ export default function RecognitionAtlas() {
           </aside>
         </header>
 
-        <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem", marginTop: "2rem" }}>
-          {[
-            ["mudroom", "native_nations_hub"],
-            ["presentation_area", "recognition_atlas"],
-            ["tribal_cards", "standalone_pages"],
-            ["analysis_engine", "recognition_gideon_rtr"],
-          ].map(([label, value]) => (
-            <div key={label} style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 18, padding: "1rem" }}>
-              <div style={{ color: tone.muted, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>{label}</div>
-              <div style={{ fontFamily: "JetBrains Mono, monospace", color: tone.paper }}>{value}</div>
-            </div>
-          ))}
-        </section>
-
-        <section style={{ marginTop: "2rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
-          {route_card({ title: "Duwamish Tribal Card", href: "/recognition-atlas/duwamish", label: "tribal_card", description: "Open the dedicated Duwamish parent page. This is where Duwamish-specific depth belongs." })}
-          {route_card({ title: "Muwékma Tribal Card", href: "/recognition-atlas/muwekma", label: "tribal_card", description: "Open the dedicated Muwékma parent page. This is where Muwékma-specific depth belongs." })}
-          {route_card({ title: "Recognition Gideon / RTR Matrix", href: "/recognition-gideon", label: "analysis_engine", description: "Open the system-analysis layer for recognition conditions, weak joints, and Route to Recognition comparison." })}
-          {route_card({ title: "Native Nations Hub", href: "/native-nations", label: "mudroom", description: "Return to the gentle entryway for Native Nations pathways and support routing." })}
-        </section>
+        {nav_links()}
 
         <section style={{ marginTop: "2rem", border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 24, padding: "1.25rem" }}>
           <h2 style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 0 }}>
@@ -157,16 +139,6 @@ export default function RecognitionAtlas() {
           </div>
         </section>
 
-        <section style={{ marginTop: "1.25rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
-          {recognition_pathway_cards.map(([key, title, description]) => (
-            <article key={key} style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 20, padding: "1rem" }}>
-              <div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{key}</div>
-              <h3 style={{ margin: "0.55rem 0 0.35rem" }}>{title}</h3>
-              <p style={{ color: tone.muted, lineHeight: 1.6, margin: 0 }}>{description}</p>
-            </article>
-          ))}
-        </section>
-
         <section style={{ marginTop: "1.25rem", border: `1px solid rgba(52,211,153,0.35)`, background: "rgba(52,211,153,0.055)", borderRadius: 22, padding: "1rem" }}>
           <h2 style={{ display: "flex", alignItems: "center", gap: 10, margin: "0 0 0.75rem" }}>
             <GitBranch size={22} color={tone.green} /> Atlas / Gideon split
@@ -183,10 +155,7 @@ export default function RecognitionAtlas() {
           </div>
         </section>
 
-        <footer style={{ marginTop: "2rem", paddingTop: "1.5rem", borderTop: `1px solid ${tone.card_border}`, display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
-          <p style={{ color: tone.muted, margin: 0 }}>
-            luminari_commitment: <strong style={{ color: tone.paper }}>we_are_the_vessel_they_are_the_author</strong>
-          </p>
+        <footer style={{ marginTop: "2rem", paddingTop: "1.5rem", borderTop: `1px solid ${tone.card_border}`, display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end" }}>
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
             <Link href="/recognition-gideon" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
               Recognition Gideon <ArrowRight size={15} />
