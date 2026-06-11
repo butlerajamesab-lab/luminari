@@ -2,6 +2,7 @@ import { useAuth } from "@/core/hooks/useAuth";
 import { duwamish_language_entries, duwamish_truth_layers } from "@/data/recognition_atlas_layers";
 import { duwamish_truth_seed } from "@/data/duwamish_truth_seed";
 import { muwekma_truth_seed } from "@/data/muwekma_truth_seed";
+import { muwekma_rtr_conflict_flags } from "@/data/muwekma_rtr_conflict_flags";
 import { get_conflict_fields, resolve_truth_layer } from "@/resolvers/truth_layer_resolver";
 import { Link, useRoute } from "wouter";
 import { AlertTriangle, ArrowLeft, ArrowRight, BookOpen, CheckCircle2, EyeOff, Globe2, Languages, Lock, Shield } from "lucide-react";
@@ -153,7 +154,10 @@ function muwekma_page() {
         <div style={{ color: tone.paper, lineHeight: 1.55 }}>{value}</div>
       </div>
     )),
-    conflict_fields: [],
+    conflict_fields: muwekma_rtr_conflict_flags.map((flag) => ({
+      field: flag.field,
+      conflict_note: `${flag.value} · source_posture: ${flag.source_posture}`,
+    })),
     layers,
   };
 }
