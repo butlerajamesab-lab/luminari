@@ -25,13 +25,13 @@ const tone = {
 };
 
 const tribal_record_layers = [
-  ["layer_0_identity", "Identity Core", "Endonyms, homelands, declarations, governance posture, and review state."],
-  ["layer_1_treaty", "Treaty / Political Relationship", "Treaties, federal identification, political relationship records, and related authorities."],
-  ["layer_2_dispossession", "Dispossession Record", "Removal, displacement, burned homelands, administrative omission, and continuity-impact records."],
-  ["layer_3_recognition_timeline", "Recognition Timeline", "Petitions, findings, acknowledgements, reversals, omissions, litigation, and current status."],
-  ["layer_4_lawsuit", "Lawsuit Claims", "Case posture, claims, defendants, relief sought, and tribe-authored legal framing when available."],
-  ["layer_5_language_vault", "Language / Living Culture", "Language, cultural continuity, physical home, programs, practices, and preservation materials."],
-  ["layer_6_ally_call", "Ally Call", "Tribe-approved ways to support, participate, learn, or route people to official tribal channels."],
+  ["layer_0_identity", "Identity Core", "This layer says who the tribe is in their own words. It records their name and its meaning, where they are from, and how they describe their homeland and present-day community. It is the starting point for every other layer."],
+  ["layer_1_treaty", "Treaty / Political Relationship", "This layer shows how governments have officially related to the tribe. If there is a treaty, it names the treaty, gives the date and signatories, and links to sources. If there is no treaty, it says so. It can also include information about chiefs, villages, and how those agreements were honored or broken."],
+  ["layer_2_dispossession", "Dispossession Record", "This layer records what was done to push the tribe off their land or out of the record. It lists missions, removals, burned homelands, relocations, and administrative omissions, with dates and sources. It is the factual backbone for claims that community continuity was blocked by government action."],
+  ["layer_3_recognition_timeline", "Recognition Timeline", "This layer traces how recognition bodies have treated the tribe over time. It records petitions, decisions, omissions, acknowledgements, reversals, appeals, and current cases, with dates and citations. It shows how a tribe can be recognized, unrecognized, or left in limbo."],
+  ["layer_4_lawsuit", "Lawsuit Claims", "If the tribe has taken their case to court, this layer holds that story in their frame. It lists the case, court, defendants, legal claims, and what they are asking the court to do. It makes clear that denial and omission are being challenged as legal harms, not accepted as final truths."],
+  ["layer_5_language_vault", "Language / Living Culture", "This layer documents how language and culture continue today. It records language programs, ceremonies, regalia, songs, teachings, and community practices, usually from tribal and foundation sources. Once the tribe approves entries here, they are preserved as a permanent record of living culture."],
+  ["layer_6_ally_call", "Ally Call", "This layer tells people exactly how the tribe wants to be supported. It points to their own websites and foundations, land rematriation and stewardship efforts, language and cultural programs, public events, and recognition campaigns. Every action in this layer should come from the tribe or their designated partners."],
 ];
 
 const recognition_pathway_cards = [
