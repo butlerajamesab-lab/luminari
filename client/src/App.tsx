@@ -240,6 +240,8 @@ function App() {
                 <Route path="/templates" component={CaseTemplates} />
                 <Route path="/import-bundle" component={ImportBundle} />
                 <Route path="/mission-control" component={MissionControl} />
+                <Route path="/sovereign-control" component={SovereignControl} />
+                <Route path="/ingestion-control" component={IngestionControl} />
                 <Route path="/" component={HomeOrWelcome} />
                 <Route path="/lighthouse" component={Lighthouse} />
                 <Route path="/civic-map" component={CivicMap} />
@@ -286,8 +288,6 @@ function App() {
                 <Route path="/evidence-lab" component={EvidenceLab} />
                 <Route path="/shop-office" component={ShopOffice} />
                 <Route path="/resources" component={ResourceDirectory} />
-                <Route path="/sovereign-control" component={SovereignControl} />
-                <Route path="/ingestion-control" component={IngestionControl} />
                 <Route path="/mission-control/governance" component={GovernanceDashboard} />
                 <Route path="/verify" component={Verify} />
                 <Route path="/business-analytics" component={BusinessAnalytics} />
