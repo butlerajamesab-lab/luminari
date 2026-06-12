@@ -98,21 +98,23 @@ ingestionControlRestRouter.post("/corpus-import-queue/:id/extract-docx", async (
     const command_report = parsed_stdout?.report ?? null;
     const command_csv = parsed_stdout?.csv ?? null;
     const command_no_output = !stdout.trim() || !command_summary;
-    const command_failed = command_no_output || Number(command_summary?.docxExtractionFailures ?? 0) > 0;
     const command_extracted = Number(command_summary?.docxRowsExtracted ?? 0) > 0;
+    const command_zero_extracted = !command_no_output && !command_extracted;
+    const command_failed = command_no_output || command_zero_extracted || Number(command_summary?.docxExtractionFailures ?? 0) > 0;
     const after = await get_corpus_import_queue_row({ id });
     const state_changed = row_state_changed(before.row, after.row);
     const command_result = { action: "extract_docx_queue_row", dry_run, queue_row_id: id, runtime_ms: Date.now() - started_at, state_changed, command_failed, command_extracted, command_summary, command_report, command_csv, stdout_preview: stdout.slice(0, 4000), stderr_preview: stderr.slice(0, 4000) };
-    const error_code = command_no_output ? "extract_docx_no_command_output" : (command_failed ? "extract_docx_command_reported_failure" : (!dry_run && !state_changed ? "extract_docx_no_state_change" : null));
+    const error_code = command_no_output ? "extract_docx_no_command_output" : (command_zero_extracted ? "extract_docx_zero_rows_extracted" : (command_failed ? "extract_docx_command_reported_failure" : (!dry_run && !state_changed ? "extract_docx_no_state_change" : null)));
     await persist_extract_command_diagnostic(id, { ...command_result, error_code, recorded_at: new Date().toISOString() });
     const refreshed = await get_corpus_import_queue_row({ id });
     const response_result = { ...command_result, before_row: before.row, row: refreshed.row ?? after.row ?? before.row };
 
     if (command_no_output) return res.status(409).json({ success: false, error: "extract_docx_no_command_output", message: "extract_docx_queue_row exited without JSON stdout; extractor did not actually report a result.", ...response_result });
+    if (command_zero_extracted) return res.status(dry_run ? 200 : 409).json({ success: false, error: "extract_docx_zero_rows_extracted", message: "extract_docx_queue_row returned JSON but extracted zero rows for the requested id.", ...response_result });
     if (command_failed) return res.status(dry_run ? 200 : 409).json({ success: false, error: "extract_docx_command_reported_failure", message: "extract_docx_queue_row reported one or more DOCX extraction failures.", ...response_result });
     if (!dry_run && !state_changed) return res.status(409).json({ success: false, error: "extract_docx_no_state_change", message: "extract_docx_queue_row finished but raw_text_chars, import_status, and blocked_reason did not change.", ...response_result });
     return res.json({ success: true, ...response_result });
   } catch (error: any) {
-    return res.status(500).json({ success: false, action: "extract_docx_queue_row", error: "extract_docx_queue_row_failed", message: error?.message ?? String(error), runtime_ms: Date.now() - started_at });
+    return res.status(500).json({ success: false, action: "extract_docx_queue_row", error: "extract_docx_queue_row_failed", message: error?.message ?? String(error), runtime_ms: Date.now() - started_at, stdout_preview: error?.stdout ?? "", stderr_preview: error?.stderr ?? "" });
   }
 });
