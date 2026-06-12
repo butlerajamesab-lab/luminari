@@ -57,6 +57,10 @@ function firstString(...values) {
   return values.find((value) => typeof value === "string" && value.trim())?.trim() ?? null;
 }
 
+function existingRawText(row) {
+  return typeof row.raw_text === "string" && row.raw_text.trim() ? row.raw_text.trim() : null;
+}
+
 function bufferFromRow(row) {
   const payload = safeJson(row.payload, {});
   const base64 = firstString(row.base64_payload, payload.base64_payload, payload.base64Payload, payload.docx_base64, payload.docxBase64, payload.binary_base64);
@@ -96,26 +100,33 @@ async function bufferFromPublicStorageUrl(row) {
   return Buffer.from(await response.arrayBuffer());
 }
 
-async function getDocxBuffer(row) {
+async function getDocxSource(row) {
   const attempts = [];
+  const rawText = existingRawText(row);
+  attempts.push({ source: "corpus_import_queue.raw_text", status: rawText ? "selected" : "empty" });
+  if (rawText) return { buffer: null, rawText, source: "corpus_import_queue.raw_text", attempts };
+
   const stagedBuffer = bufferFromRow(row);
   attempts.push({ source: "corpus_import_queue.base64_payload", status: stagedBuffer?.length ? "selected" : "empty" });
-  if (stagedBuffer?.length) return { buffer: stagedBuffer, source: "corpus_import_queue.base64_payload", attempts };
+  if (stagedBuffer?.length) return { buffer: stagedBuffer, rawText: null, source: "corpus_import_queue.base64_payload", attempts };
+
   try {
     const storageBuffer = await bufferFromAuthenticatedStorage(row);
     attempts.push({ source: "supabase_storage_rest_download", status: storageBuffer?.length ? "selected" : "not_configured_or_missing_path" });
-    if (storageBuffer?.length) return { buffer: storageBuffer, source: "supabase_storage_rest_download", attempts };
+    if (storageBuffer?.length) return { buffer: storageBuffer, rawText: null, source: "supabase_storage_rest_download", attempts };
   } catch (error) {
     attempts.push({ source: "supabase_storage_rest_download", status: "failed", error: error.message });
   }
+
   try {
     const publicStorageBuffer = await bufferFromPublicStorageUrl(row);
     attempts.push({ source: "public_storage_url", status: publicStorageBuffer?.length ? "selected" : "not_configured_or_missing_path" });
-    if (publicStorageBuffer?.length) return { buffer: publicStorageBuffer, source: "public_storage_url", attempts };
+    if (publicStorageBuffer?.length) return { buffer: publicStorageBuffer, rawText: null, source: "public_storage_url", attempts };
   } catch (error) {
     attempts.push({ source: "public_storage_url", status: "failed", error: error.message });
   }
-  return { buffer: null, source: null, attempts };
+
+  return { buffer: null, rawText: null, source: null, attempts };
 }
 
 function decodeXmlEntities(text) {
@@ -162,6 +173,7 @@ function mergePayload(row, extraction) {
   return {
     ...existing,
     docx_extraction: {
+      ...(existing.docx_extraction ?? {}),
       corpus_import_queue_id: row.id ?? null,
       source_name: row.source_name ?? null,
       storage_bucket: row.storage_bucket ?? null,
@@ -262,28 +274,27 @@ async function main() {
   const { pool, databaseStatus } = createPool("docx-corpus-queue-extractor");
   const report = {
     generatedAt: new Date().toISOString(), mode: args.apply ? "apply" : "dry-run", status: "started",
-    parser: { name: "wordprocessingml-xml-fallback", version: "unzip+xml-text-v1", dependencyAttempt: "mammoth preferred, but this implementation intentionally uses a controlled WordprocessingML XML fallback without adding dependencies." },
+    parser: { name: "wordprocessingml-xml-fallback", version: "unzip+xml-text-v1", dependencyAttempt: "controlled WordprocessingML XML fallback" },
     safety: { writesAllowed: args.apply ? ["public.corpus_import_queue"] : [], canonicalProductionTablesMutated: false, doctrineGraphEdgesInserted: false, atlasChanged: false, sunamBypassed: false, conveyorBypassed: false, rlsSecurityIndexesChanged: false },
     envStatus: { DATABASE_URL: Boolean(process.env.DATABASE_URL?.trim()), SUPABASE_URL: Boolean(getSupabaseUrl()), SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()), LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY?.trim()), fallback_admin_key_available: Boolean(getServiceRoleKey()) },
     schema: null, summary: summarize([], args.apply ? "apply" : "dry-run"), rows: [], targetId: args.id,
-    nextOrder: ["DOCX file", "raw text extraction into corpus_import_queue staging fields", "Form Signal Extraction v3 after raw text exists", "proto-form/form-signal candidates", "review/gate", "existing Sunam/conveyor path"],
   };
   try {
     const schema = await inspectSchema(pool); report.schema = schema;
-    if (!pool) { report.status = "database-unavailable"; report.message = databaseStatus; await writeReports(report); if (!args.jsonOnly) console.log(JSON.stringify({ status: report.status, summary: report.summary, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2)); return; }
-    if (!schema.tableExists) { report.status = "queue-unavailable"; report.message = "public.corpus_import_queue does not exist."; await writeReports(report); if (!args.jsonOnly) console.log(JSON.stringify({ status: report.status, summary: report.summary, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2)); return; }
+    if (!pool) { report.status = "database-unavailable"; report.message = databaseStatus; await writeReports(report); if (!args.jsonOnly) console.log(JSON.stringify({ status: report.status, summary: report.summary, rows: report.rows, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2)); return; }
+    if (!schema.tableExists) { report.status = "queue-unavailable"; report.message = "public.corpus_import_queue does not exist."; await writeReports(report); if (!args.jsonOnly) console.log(JSON.stringify({ status: report.status, summary: report.summary, rows: report.rows, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2)); return; }
     const rows = await readDocxRows(pool, schema.columns, args.id);
     for (const row of rows) {
       const rowReport = { id: row.id ?? null, source_name: row.source_name ?? null, storage_bucket: row.storage_bucket ?? null, storage_path: row.storage_path ?? null, byte_size: row.byte_size ?? null, sha256: row.sha256 ?? null, content_type: row.content_type ?? null, source_ext: row.source_ext ?? null, target_hint: row.target_hint ?? null, previous_status: row.import_status ?? null, action: args.apply ? "pending" : "would-extract", status: null, character_count: 0, line_count: 0, parser_name: report.parser.name, parser_version: report.parser.version, extracted_at: null, error: null, binary_source: null, binary_source_attempts: [], public_storage_url: buildPublicStorageUrl(row), next_step: "Extract raw text first; then run Form Signal Extraction v3 and route candidates through existing gates." };
       try {
-        const binary = await getDocxBuffer(row);
-        if (!binary.buffer) { rowReport.action = "blocked_missing_binary_source"; rowReport.status = "docx_extraction_failed"; rowReport.error = "No base64_payload was available in corpus_import_queue, authenticated Storage REST download failed/unavailable, and public Storage URL fallback failed/unavailable."; rowReport.binary_source_attempts = binary.attempts; report.rows.push(rowReport); continue; }
-        const extracted = await extractDocxText(binary.buffer);
+        const source = await getDocxSource(row);
+        if (!source.buffer && !source.rawText) { rowReport.action = "blocked_missing_binary_source"; rowReport.status = "docx_extraction_failed"; rowReport.error = "No raw_text, no base64_payload, authenticated Storage REST download failed/unavailable, and public Storage URL fallback failed/unavailable."; rowReport.binary_source_attempts = source.attempts; report.rows.push(rowReport); continue; }
+        const extracted = source.rawText ? { rawText: source.rawText, entries: safeJson(row.payload, {})?.docx_extraction?.parser_entries ?? [] } : await extractDocxText(source.buffer);
         const rawText = extracted.rawText;
         const extractedAt = new Date().toISOString();
         const status = nextStatus(rawText, null);
-        const extraction = { rawText, status, error: null, extractedAt, parserName: report.parser.name, parserVersion: report.parser.version, parserEntries: extracted.entries, binarySource: binary.source, binarySourceAttempts: binary.attempts, publicStorageUrl: buildPublicStorageUrl(row), characterCount: rawText.length, lineCount: lineCount(rawText) };
-        rowReport.status = status; rowReport.character_count = extraction.characterCount; rowReport.line_count = extraction.lineCount; rowReport.extracted_at = extractedAt; rowReport.parser_entries = extracted.entries; rowReport.binary_source = binary.source; rowReport.binary_source_attempts = binary.attempts; rowReport.action = args.apply ? "update-corpus-import-queue" : "would-update-corpus-import-queue";
+        const extraction = { rawText, status, error: null, extractedAt, parserName: report.parser.name, parserVersion: report.parser.version, parserEntries: extracted.entries, binarySource: source.source, binarySourceAttempts: source.attempts, publicStorageUrl: buildPublicStorageUrl(row), characterCount: rawText.length, lineCount: lineCount(rawText) };
+        rowReport.status = status; rowReport.character_count = extraction.characterCount; rowReport.line_count = extraction.lineCount; rowReport.extracted_at = extractedAt; rowReport.parser_entries = extracted.entries; rowReport.binary_source = source.source; rowReport.binary_source_attempts = source.attempts; rowReport.action = args.apply ? "update-corpus-import-queue" : "would-update-corpus-import-queue";
         if (args.apply) { const updated = await updateQueueRow(pool, row, extraction, schema.columns); rowReport.action = updated.updated ? "updated-corpus-import-queue" : "blocked_no_compatible_update_columns"; rowReport.error = updated.reason; }
       } catch (error) {
         const extractedAt = new Date().toISOString(); rowReport.status = "docx_extraction_failed"; rowReport.error = error.message; rowReport.extracted_at = extractedAt; rowReport.action = args.apply ? "update-failure-status" : "would-update-failure-status";
@@ -298,5 +309,7 @@ async function main() {
 
 main().catch(async (error) => {
   const report = { generatedAt: new Date().toISOString(), mode: process.argv.includes("--apply") ? "apply" : "dry-run", status: "error", error: error.message, safety: { canonicalProductionTablesMutated: false, doctrineGraphEdgesInserted: false, atlasChanged: false, sunamBypassed: false, conveyorBypassed: false, rlsSecurityIndexesChanged: false }, summary: summarize([], process.argv.includes("--apply") ? "apply" : "dry-run"), rows: [] };
-  await writeReports(report); console.error(error.message); process.exitCode = 1;
+  await writeReports(report);
+  console.error(error.message);
+  process.exitCode = 1;
 });
