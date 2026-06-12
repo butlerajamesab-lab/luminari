@@ -70,6 +70,8 @@ export default function IngestionControl() {
   const [rows, set_rows] = useState<visible_queue_row[]>([]);
   const [selected_row, set_selected_row] = useState<queue_row_detail | null>(null);
   const [loading, set_loading] = useState(false);
+  const [action_row_id, set_action_row_id] = useState<number | null>(null);
+  const [action_message, set_action_message] = useState<string | null>(null);
   const [error_message, set_error_message] = useState<string | null>(null);
 
   const load_queue = async () => {
@@ -116,6 +118,35 @@ export default function IngestionControl() {
       set_selected_row(result.row);
     } catch (error: any) {
       set_error_message(error?.message ?? String(error));
+    }
+  };
+
+  const extract_docx_queue_row = async (id: number) => {
+    set_action_row_id(id);
+    set_action_message(null);
+    set_error_message(null);
+
+    try {
+      const result = await read_json_response<{ success: boolean; row?: visible_queue_row; message?: string; error?: string }>(
+        await fetch(`/api/ingestion-control/corpus-import-queue/${id}/extract-docx`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({ dry_run: false }),
+        }),
+      );
+
+      if (!result.success) {
+        throw new Error(result.message ?? result.error ?? "extract_docx_queue_row_failed");
+      }
+
+      set_action_message(`extract_docx_queue_row complete for id_${id}`);
+      await load_queue();
+      await load_row(id);
+    } catch (error: any) {
+      set_error_message(error?.message ?? String(error));
+    } finally {
+      set_action_row_id(null);
     }
   };
 
@@ -185,6 +216,12 @@ export default function IngestionControl() {
         </Select>
       </div>
 
+      {action_message && (
+        <Card className="border-green-500/30 bg-green-950/10">
+          <CardContent className="p-3 text-sm text-green-300">{action_message}</CardContent>
+        </Card>
+      )}
+
       {error_message && (
         <Card className="border-red-500/30 bg-red-950/10">
           <CardContent className="p-3 text-sm text-red-300">{error_message}</CardContent>
@@ -216,9 +253,17 @@ export default function IngestionControl() {
                     <div><span className="text-foreground">updated_at:</span> {format_date(row.updated_at)}</div>
                   </div>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => load_row(row.id)}>
-                  <Eye className="h-3 w-3 mr-1" /> view_row
-                </Button>
+                <div className="flex flex-col gap-2 shrink-0">
+                  <Button size="sm" variant="outline" onClick={() => load_row(row.id)}>
+                    <Eye className="h-3 w-3 mr-1" /> view_row
+                  </Button>
+                  {row.next_action === "extract_docx_queue_row" && (
+                    <Button size="sm" variant="secondary" onClick={() => extract_docx_queue_row(row.id)} disabled={action_row_id === row.id}>
+                      {action_row_id === row.id ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : null}
+                      extract_docx_queue_row
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
