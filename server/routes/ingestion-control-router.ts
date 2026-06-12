@@ -2,6 +2,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Router } from "express";
 import { allowed_target_hints, list_corpus_import_queue, get_corpus_import_queue_row, set_corpus_import_queue_target_hint } from "../engines/ingestion-control";
+import { getPool } from "../db";
 
 const execFileAsync = promisify(execFile);
 
@@ -28,6 +29,17 @@ function parse_command_json(stdout: string) {
   } catch {
     return null;
   }
+}
+
+async function persist_extract_command_diagnostic(id: number, diagnostic: Record<string, unknown>) {
+  const pool = getPool();
+  await pool.query(
+    `update public.corpus_import_queue
+       set payload = coalesce(payload, '{}'::jsonb) || jsonb_build_object('last_extract_command', $2::jsonb),
+           updated_at = now()
+     where id = $1`,
+    [id, JSON.stringify(diagnostic)],
+  );
 }
 
 ingestionControlRestRouter.get("/corpus-import-queue", async (req, res) => {
@@ -149,10 +161,21 @@ ingestionControlRestRouter.post("/corpus-import-queue/:id/extract-docx", async (
       command_summary,
       command_report,
       command_csv,
-      before_row: before.row,
-      row: after.row ?? before.row,
       stdout_preview: stdout.slice(0, 4000),
       stderr_preview: stderr.slice(0, 4000),
+    };
+
+    await persist_extract_command_diagnostic(id, {
+      ...command_result,
+      error_code: command_failed ? "extract_docx_command_reported_failure" : (!dry_run && !state_changed ? "extract_docx_no_state_change" : null),
+      recorded_at: new Date().toISOString(),
+    });
+
+    const refreshed = await get_corpus_import_queue_row({ id });
+    const response_result = {
+      ...command_result,
+      before_row: before.row,
+      row: refreshed.row ?? after.row ?? before.row,
     };
 
     if (command_failed) {
@@ -160,7 +183,7 @@ ingestionControlRestRouter.post("/corpus-import-queue/:id/extract-docx", async (
         success: false,
         error: "extract_docx_command_reported_failure",
         message: "extract_docx_queue_row reported one or more DOCX extraction failures.",
-        ...command_result,
+        ...response_result,
       });
     }
 
@@ -169,13 +192,13 @@ ingestionControlRestRouter.post("/corpus-import-queue/:id/extract-docx", async (
         success: false,
         error: "extract_docx_no_state_change",
         message: "extract_docx_queue_row finished but raw_text_chars, import_status, and blocked_reason did not change.",
-        ...command_result,
+        ...response_result,
       });
     }
 
     return res.json({
       success: true,
-      ...command_result,
+      ...response_result,
     });
   } catch (error: any) {
     return res.status(500).json({
