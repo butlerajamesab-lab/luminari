@@ -81,6 +81,28 @@ ingestionControlRestRouter.post("/corpus-import-queue/:id/set-target-hint", asyn
   }
 });
 
+ingestionControlRestRouter.post("/corpus-import-queue/extract-docx-drain", async (req, res) => {
+  const started_at = Date.now();
+  try {
+    const dry_run = Boolean(req.body?.dry_run);
+    const args = ["scripts/extract-docx-corpus-queue.mjs", dry_run ? "--dry-run" : "--apply"];
+    const { stdout, stderr } = await execFileAsync(process.execPath, args, { cwd: process.cwd(), timeout: 300000, maxBuffer: 1024 * 1024 * 50, env: process.env });
+    const parsed_stdout = parse_command_json(stdout);
+    const command_summary = parsed_stdout?.summary ?? null;
+    const command_report = parsed_stdout?.report ?? null;
+    const command_csv = parsed_stdout?.csv ?? null;
+    const command_no_output = !stdout.trim() || !command_summary;
+    const command_extracted = Number(command_summary?.docxRowsExtracted ?? 0) > 0;
+    const command_failed = command_no_output || Number(command_summary?.docxExtractionFailures ?? 0) > 0;
+    const command_result = { action: "extract_all_docx_queue_rows", dry_run, queue_row_id: null, runtime_ms: Date.now() - started_at, state_changed: command_extracted, command_failed, command_extracted, command_summary, command_report, command_csv, stdout_preview: stdout.slice(0, 12000), stderr_preview: stderr.slice(0, 4000), parsed_rows: Array.isArray(parsed_stdout?.rows) ? parsed_stdout.rows : [] };
+    if (command_no_output) return res.status(409).json({ success: false, error: "extract_docx_no_command_output", message: "extract_docx_drain exited without JSON stdout.", ...command_result });
+    if (command_failed) return res.status(dry_run ? 200 : 409).json({ success: false, error: "extract_docx_command_reported_failure", message: "extract_docx_drain reported one or more failures.", ...command_result });
+    return res.json({ success: true, ...command_result });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, action: "extract_all_docx_queue_rows", error: "extract_docx_drain_failed", message: error?.message ?? String(error), runtime_ms: Date.now() - started_at, stdout_preview: error?.stdout ?? "", stderr_preview: error?.stderr ?? "" });
+  }
+});
+
 ingestionControlRestRouter.post("/corpus-import-queue/:id/extract-docx", async (req, res) => {
   const started_at = Date.now();
   try {
