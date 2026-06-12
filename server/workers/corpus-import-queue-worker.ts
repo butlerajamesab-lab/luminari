@@ -30,11 +30,7 @@ function sleep(ms: number) {
 }
 
 function normalize_text(input: string) {
-  return input
-    .replace(/\r\n/g, "\n")
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  return input.replace(/\r\n/g, "\n").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 function action_to_status(action: corpus_import_worker_action) {
@@ -43,14 +39,31 @@ function action_to_status(action: corpus_import_worker_action) {
   return "pending_bucket_content_scan";
 }
 
+function row_matches_action(row: claimed_queue_row, action: corpus_import_worker_action) {
+  if (action === "extract_docx_queue_row") return row.source_ext === ".docx" && row.import_status === "pending_bucket_content_scan";
+  if (action === "normalize_docx_queue_row") return row.source_ext === ".docx" && row.import_status === "pending_docx_normalization";
+  return row.source_ext !== ".docx" && row.import_status === "pending_bucket_content_scan" && Boolean(row.target_hint);
+}
+
 async function claim_next_row(action: corpus_import_worker_action): Promise<claimed_queue_row | null> {
   const pool = getPool();
-  const result = await pool.query(
-    `select * from public.claim_corpus_import_queue_row($1, $2, $3) limit 1`,
-    [worker_id, action_to_status(action), lease_seconds],
-  );
-  const row = result.rows[0];
-  return row ? { ...row, id: Number(row.id), attempt_count: Number(row.attempt_count ?? 0) } : null;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const result = await pool.query(
+      `select * from public.claim_corpus_import_queue_row($1, $2, $3) limit 1`,
+      [worker_id, action_to_status(action), lease_seconds],
+    );
+    const row = result.rows[0];
+    if (!row) return null;
+    const mapped = { ...row, id: Number(row.id), attempt_count: Number(row.attempt_count ?? 0) };
+    if (row_matches_action(mapped, action)) return mapped;
+    await pool.query(
+      `update public.corpus_import_queue
+         set leased_by = null, lease_expires_at = null, worker_state = null, updated_at = now()
+       where id = $1 and leased_by = $2`,
+      [mapped.id, worker_id],
+    );
+  }
+  return null;
 }
 
 async function mark_failure(row: claimed_queue_row, error: any, operation_result_json: Record<string, unknown> = {}) {
@@ -58,25 +71,14 @@ async function mark_failure(row: claimed_queue_row, error: any, operation_result
   const retryable = Number(row.attempt_count ?? 0) < max_attempts;
   await pool.query(
     `select * from public.mark_corpus_import_queue_failure($1, $2, $3, $4, $5, $6::jsonb)`,
-    [
-      row.id,
-      worker_id,
-      error?.code ?? "worker_error",
-      error?.message ?? String(error),
-      retryable,
-      JSON.stringify(operation_result_json),
-    ],
+    [row.id, worker_id, error?.code ?? "worker_error", error?.message ?? String(error), retryable, JSON.stringify(operation_result_json)],
   );
 }
 
 async function handle_extract_docx(row: claimed_queue_row) {
   const started_at = Date.now();
   try {
-    const { stdout, stderr } = await execFileAsync(process.execPath, [
-      "scripts/extract-docx-corpus-queue.mjs",
-      `--id=${row.id}`,
-      "--apply",
-    ], {
+    const { stdout, stderr } = await execFileAsync(process.execPath, ["scripts/extract-docx-corpus-queue.mjs", `--id=${row.id}`, "--apply"], {
       cwd: process.cwd(),
       timeout: 300000,
       maxBuffer: 1024 * 1024 * 20,
@@ -86,26 +88,38 @@ async function handle_extract_docx(row: claimed_queue_row) {
     let parsed: any = null;
     try { parsed = stdout.trim() ? JSON.parse(stdout.trim()) : null; } catch {}
     const summary = parsed?.summary ?? null;
+    const row_report = Array.isArray(parsed?.rows) ? parsed.rows.find((entry: any) => Number(entry.id) === row.id) : null;
     const failures = Number(summary?.docxExtractionFailures ?? 0);
     const extracted = Number(summary?.docxRowsExtracted ?? 0);
+    const operation_result_json = {
+      action: "extract_docx_queue_row",
+      runtime_ms: Date.now() - started_at,
+      command_summary: summary,
+      command_report: parsed?.report ?? null,
+      command_csv: parsed?.csv ?? null,
+      row_report,
+      storage_bucket: row.storage_bucket,
+      storage_path: row.storage_path,
+      storage_mode: row.storage_mode,
+      stdout_preview: stdout.slice(0, 4000),
+      stderr_preview: stderr.slice(0, 4000),
+    };
 
     if (failures > 0 || extracted === 0) {
-      throw Object.assign(new Error("extract_docx_command_reported_failure"), {
-        code: "extract_docx_command_reported_failure",
-        stdout_preview: stdout.slice(0, 4000),
-        stderr_preview: stderr.slice(0, 4000),
-        command_summary: summary,
+      throw Object.assign(new Error(row_report?.error ?? "extract_docx_command_reported_failure"), {
+        code: row_report?.action === "blocked_missing_binary_source" ? "storage_materialization_failed" : "extract_docx_command_reported_failure",
+        operation_result_json,
       });
     }
 
     return true;
   } catch (error: any) {
-    await mark_failure(row, error, {
+    await mark_failure(row, error, error?.operation_result_json ?? {
       action: "extract_docx_queue_row",
       runtime_ms: Date.now() - started_at,
-      stdout_preview: error?.stdout_preview ?? "",
-      stderr_preview: error?.stderr_preview ?? "",
-      command_summary: error?.command_summary ?? null,
+      storage_bucket: row.storage_bucket,
+      storage_path: row.storage_path,
+      storage_mode: row.storage_mode,
     });
     return false;
   }
@@ -136,35 +150,23 @@ async function handle_route_dry_run(row: claimed_queue_row) {
     reason: "staging_only_no_canonical_promotion",
     storage_mode: row.storage_mode,
   };
-  await pool.query(
-    `select * from public.mark_route_dry_run_success($1, $2, $3::jsonb)`,
-    [row.id, worker_id, JSON.stringify(route_plan)],
-  );
+  await pool.query(`select * from public.mark_route_dry_run_success($1, $2, $3::jsonb)`, [row.id, worker_id, JSON.stringify(route_plan)]);
   return true;
 }
 
 export async function process_one_corpus_import_queue_row(action: corpus_import_worker_action) {
   const row = await claim_next_row(action);
   if (!row) return false;
-
   if (action === "extract_docx_queue_row") return handle_extract_docx(row);
   if (action === "normalize_docx_queue_row") return handle_normalize_docx(row);
   return handle_route_dry_run(row);
 }
 
 export async function corpus_import_queue_worker_loop() {
-  const actions: corpus_import_worker_action[] = [
-    "extract_docx_queue_row",
-    "extract_docx_queue_row",
-    "normalize_docx_queue_row",
-    "route_corpus_queue_dry_run",
-  ];
-
+  const actions: corpus_import_worker_action[] = ["extract_docx_queue_row", "extract_docx_queue_row", "normalize_docx_queue_row", "route_corpus_queue_dry_run"];
   for (;;) {
     let did_work = false;
-    for (const action of actions) {
-      did_work = (await process_one_corpus_import_queue_row(action)) || did_work;
-    }
+    for (const action of actions) did_work = (await process_one_corpus_import_queue_row(action)) || did_work;
     if (!did_work) await sleep(2000);
   }
 }
