@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Router } from "express";
-import { list_corpus_import_queue, get_corpus_import_queue_row } from "../engines/ingestion-control";
+import { allowed_target_hints, list_corpus_import_queue, get_corpus_import_queue_row, set_corpus_import_queue_target_hint } from "../engines/ingestion-control";
 
 const execFileAsync = promisify(execFile);
 
@@ -51,7 +51,7 @@ ingestionControlRestRouter.get("/corpus-import-queue", async (req, res) => {
       limit,
     });
 
-    res.json(result);
+    res.json({ ...result, allowed_target_hints });
   } catch (error: any) {
     res.status(500).json({
       success: false,
@@ -73,13 +73,30 @@ ingestionControlRestRouter.get("/corpus-import-queue/:id", async (req, res) => {
       return res.status(404).json(result);
     }
 
-    return res.json(result);
+    return res.json({ ...result, allowed_target_hints });
   } catch (error: any) {
     return res.status(500).json({
       success: false,
       error: "ingestion_control_row_read_failed",
       message: error?.message ?? String(error),
     });
+  }
+});
+
+ingestionControlRestRouter.post("/corpus-import-queue/:id/set-target-hint", async (req, res) => {
+  try {
+    const id = read_queue_row_id(req.params.id);
+    const target_hint = typeof req.body?.target_hint === "string" ? req.body.target_hint : "";
+    if (!id) return res.status(400).json({ success: false, error: "invalid_queue_row_id" });
+    if (!allowed_target_hints.includes(target_hint as any)) {
+      return res.status(400).json({ success: false, error: "target_hint_not_allowed", allowed_target_hints });
+    }
+
+    const result = await set_corpus_import_queue_target_hint({ id, target_hint: target_hint as any });
+    if (!result.success) return res.status(404).json(result);
+    return res.json(result);
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: "set_target_hint_failed", message: error?.message ?? String(error) });
   }
 });
 
