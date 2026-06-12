@@ -32,6 +32,14 @@ function parseArgs(argv = process.argv.slice(2)) {
   return args;
 }
 
+function getSupabaseUrl() {
+  return process.env.SUPABASE_URL?.trim()
+    || process.env.LIGHTHOUSE_SUPABASE_URL?.trim()
+    || process.env.VITE_SUPABASE_URL?.trim()
+    || process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
+    || "";
+}
+
 function getServiceRoleKey() {
   return process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
     || process.env.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY?.trim()
@@ -41,7 +49,7 @@ function getServiceRoleKey() {
 }
 
 function createSupabaseClientIfConfigured() {
-  const url = process.env.SUPABASE_URL?.trim();
+  const url = getSupabaseUrl();
   const key = getServiceRoleKey();
   if (!url || !key) return null;
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
@@ -75,9 +83,11 @@ function bufferFromRow(row) {
 }
 
 async function bufferFromSupabase(row, supabase) {
-  if (!supabase || !row.storage_bucket || !row.storage_path) return null;
+  if (!row.storage_bucket || !row.storage_path) return null;
+  if (!supabase) throw new Error("supabase-client-not-configured: missing Supabase URL or service-role key");
   const { data, error } = await supabase.storage.from(row.storage_bucket).download(row.storage_path);
   if (error) throw new Error(`supabase-download-failed: ${error.message}`);
+  if (!data) throw new Error("supabase-download-failed: empty response body");
   return Buffer.from(await data.arrayBuffer());
 }
 
@@ -89,7 +99,7 @@ function encodeStoragePath(storagePath) {
 }
 
 function buildPublicStorageUrl(row) {
-  const supabaseUrl = process.env.SUPABASE_URL?.trim()?.replace(/\/+$/, "");
+  const supabaseUrl = getSupabaseUrl().replace(/\/+$/, "");
   if (!supabaseUrl || !row.storage_bucket || !row.storage_path) return null;
   return `${supabaseUrl}/storage/v1/object/public/${encodeURIComponent(row.storage_bucket)}/${encodeStoragePath(row.storage_path)}`;
 }
@@ -110,7 +120,7 @@ async function getDocxBuffer(row, supabase) {
 
   try {
     const storageBuffer = await bufferFromSupabase(row, supabase);
-    attempts.push({ source: "supabase_storage_download", status: storageBuffer?.length ? "selected" : "not_configured_or_missing_path" });
+    attempts.push({ source: "supabase_storage_download", status: storageBuffer?.length ? "selected" : "empty_response" });
     if (storageBuffer?.length) return { buffer: storageBuffer, source: "supabase_storage_download", attempts };
   } catch (error) {
     attempts.push({ source: "supabase_storage_download", status: "failed", error: error.message });
@@ -324,8 +334,9 @@ async function main() {
     },
     envStatus: {
       DATABASE_URL: Boolean(process.env.DATABASE_URL?.trim()),
-      SUPABASE_URL: Boolean(process.env.SUPABASE_URL?.trim()),
-      SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()),
+      SUPABASE_URL: Boolean(getSupabaseUrl()),
+      SUPABASE_SERVICE_ROLE_KEY: Boolean(getServiceRoleKey()),
+      LIGHTHOUSE_SUPABASE_URL: Boolean(process.env.LIGHTHOUSE_SUPABASE_URL?.trim()),
       LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY?.trim()),
       fallback_admin_key_available: Boolean(getServiceRoleKey()),
     },
