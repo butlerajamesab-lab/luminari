@@ -12,6 +12,15 @@ function read_queue_row_id(value: unknown) {
   return Number.isInteger(id) && id > 0 ? id : null;
 }
 
+function row_state_changed(before_row: any, after_row: any) {
+  if (!before_row || !after_row) return false;
+  return (
+    Number(after_row.raw_text_chars ?? 0) > Number(before_row.raw_text_chars ?? 0)
+    || after_row.import_status !== before_row.import_status
+    || after_row.blocked_reason !== before_row.blocked_reason
+  );
+}
+
 ingestionControlRestRouter.get("/corpus-import-queue", async (req, res) => {
   try {
     const status_filter = typeof req.query.status_filter === "string" ? req.query.status_filter : "all";
@@ -96,16 +105,31 @@ ingestionControlRestRouter.post("/corpus-import-queue/:id/extract-docx", async (
     });
 
     const after = await get_corpus_import_queue_row({ id });
-
-    return res.json({
-      success: true,
+    const state_changed = row_state_changed(before.row, after.row);
+    const command_result = {
       action: "extract_docx_queue_row",
       dry_run,
       queue_row_id: id,
       runtime_ms: Date.now() - started_at,
+      state_changed,
+      before_row: before.row,
+      row: after.row ?? before.row,
       stdout_preview: stdout.slice(0, 4000),
       stderr_preview: stderr.slice(0, 4000),
-      row: after.row ?? before.row,
+    };
+
+    if (!dry_run && !state_changed) {
+      return res.status(409).json({
+        success: false,
+        error: "extract_docx_no_state_change",
+        message: "extract_docx_queue_row finished but raw_text_chars, import_status, and blocked_reason did not change.",
+        ...command_result,
+      });
+    }
+
+    return res.json({
+      success: true,
+      ...command_result,
     });
   } catch (error: any) {
     return res.status(500).json({
