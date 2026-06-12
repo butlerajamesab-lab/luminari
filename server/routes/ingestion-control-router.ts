@@ -21,6 +21,15 @@ function row_state_changed(before_row: any, after_row: any) {
   );
 }
 
+function parse_command_json(stdout: string) {
+  try {
+    const trimmed = stdout.trim();
+    return trimmed ? JSON.parse(trimmed) : null;
+  } catch {
+    return null;
+  }
+}
+
 ingestionControlRestRouter.get("/corpus-import-queue", async (req, res) => {
   try {
     const status_filter = typeof req.query.status_filter === "string" ? req.query.status_filter : "all";
@@ -104,6 +113,12 @@ ingestionControlRestRouter.post("/corpus-import-queue/:id/extract-docx", async (
       env: process.env,
     });
 
+    const parsed_stdout = parse_command_json(stdout);
+    const command_summary = parsed_stdout?.summary ?? null;
+    const command_report = parsed_stdout?.report ?? null;
+    const command_csv = parsed_stdout?.csv ?? null;
+    const command_failed = Number(command_summary?.docxExtractionFailures ?? 0) > 0;
+    const command_extracted = Number(command_summary?.docxRowsExtracted ?? 0) > 0;
     const after = await get_corpus_import_queue_row({ id });
     const state_changed = row_state_changed(before.row, after.row);
     const command_result = {
@@ -112,11 +127,25 @@ ingestionControlRestRouter.post("/corpus-import-queue/:id/extract-docx", async (
       queue_row_id: id,
       runtime_ms: Date.now() - started_at,
       state_changed,
+      command_failed,
+      command_extracted,
+      command_summary,
+      command_report,
+      command_csv,
       before_row: before.row,
       row: after.row ?? before.row,
       stdout_preview: stdout.slice(0, 4000),
       stderr_preview: stderr.slice(0, 4000),
     };
+
+    if (command_failed) {
+      return res.status(dry_run ? 200 : 409).json({
+        success: false,
+        error: "extract_docx_command_reported_failure",
+        message: "extract_docx_queue_row reported one or more DOCX extraction failures.",
+        ...command_result,
+      });
+    }
 
     if (!dry_run && !state_changed) {
       return res.status(409).json({
