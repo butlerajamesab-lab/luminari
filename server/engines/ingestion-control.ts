@@ -30,6 +30,23 @@ type CorpusImportQueueRow = {
   next_action: string;
 };
 
+export const allowed_target_hints = [
+  "state_enriched_registry_docx_review",
+  "registry_entity_extraction_v4",
+  "legal_authority_staging",
+  "legislator_registry",
+  "committee_registry",
+  "committee_membership_registry",
+  "government_benefits_registry",
+  "workflow_registry",
+  "escalation_registry",
+  "advocacy_organizations",
+  "advocacy_targets",
+  "agency_authority_map",
+] as const;
+
+export type TargetHintValue = typeof allowed_target_hints[number];
+
 function classify_policy(row: { target_hint: string | null; source_ext: string | null; import_status: string | null }) {
   const target_hint = (row.target_hint ?? "").toLowerCase();
   const source_ext = (row.source_ext ?? "").toLowerCase();
@@ -84,6 +101,25 @@ function classify_policy(row: { target_hint: string | null; source_ext: string |
   };
 }
 
+function map_queue_row(row: any): CorpusImportQueueRow {
+  return {
+    id: Number(row.id),
+    source_name: row.source_name ?? null,
+    source_ext: row.source_ext ?? null,
+    storage_bucket: row.storage_bucket ?? null,
+    storage_path: row.storage_path ?? null,
+    storage_mode: row.storage_mode ?? null,
+    target_hint: row.target_hint ?? null,
+    import_status: row.import_status ?? null,
+    record_count_estimate: row.record_count_estimate === null ? null : Number(row.record_count_estimate),
+    created_at: row.created_at ? String(row.created_at) : null,
+    updated_at: row.updated_at ? String(row.updated_at) : null,
+    raw_text_chars: Number(row.raw_text_chars ?? 0),
+    has_payload: Boolean(row.has_payload),
+    ...classify_policy(row),
+  };
+}
+
 export async function list_corpus_import_queue(input?: { status_filter?: CorpusImportQueueStatusFilter; limit?: number }) {
   const status_filter = input?.status_filter ?? "all";
   const limit = Math.min(Math.max(input?.limit ?? 100, 1), 500);
@@ -124,22 +160,7 @@ export async function list_corpus_import_queue(input?: { status_filter?: CorpusI
     values,
   );
 
-  const rows = result.rows.map((row: any): CorpusImportQueueRow => ({
-    id: Number(row.id),
-    source_name: row.source_name ?? null,
-    source_ext: row.source_ext ?? null,
-    storage_bucket: row.storage_bucket ?? null,
-    storage_path: row.storage_path ?? null,
-    storage_mode: row.storage_mode ?? null,
-    target_hint: row.target_hint ?? null,
-    import_status: row.import_status ?? null,
-    record_count_estimate: row.record_count_estimate === null ? null : Number(row.record_count_estimate),
-    created_at: row.created_at ? String(row.created_at) : null,
-    updated_at: row.updated_at ? String(row.updated_at) : null,
-    raw_text_chars: Number(row.raw_text_chars ?? 0),
-    has_payload: Boolean(row.has_payload),
-    ...classify_policy(row),
-  }));
+  const rows = result.rows.map(map_queue_row);
 
   return {
     success: true,
@@ -181,21 +202,45 @@ export async function get_corpus_import_queue_row(input: { id: number }) {
   return {
     success: true,
     row: {
-      id: Number(row.id),
-      source_name: row.source_name ?? null,
-      source_ext: row.source_ext ?? null,
-      storage_bucket: row.storage_bucket ?? null,
-      storage_path: row.storage_path ?? null,
-      storage_mode: row.storage_mode ?? null,
-      target_hint: row.target_hint ?? null,
-      import_status: row.import_status ?? null,
-      record_count_estimate: row.record_count_estimate === null ? null : Number(row.record_count_estimate),
-      created_at: row.created_at ? String(row.created_at) : null,
-      updated_at: row.updated_at ? String(row.updated_at) : null,
-      raw_text_chars: Number(row.raw_text_chars ?? 0),
+      ...map_queue_row(row),
       raw_text_preview: row.raw_text_preview ?? "",
       payload: row.payload ?? null,
-      ...classify_policy(row),
     },
   };
+}
+
+export async function set_corpus_import_queue_target_hint(input: { id: number; target_hint: TargetHintValue }) {
+  const pool = getPool();
+  if (!allowed_target_hints.includes(input.target_hint)) {
+    return { success: false, row: null, error: "target_hint_not_allowed" };
+  }
+
+  const result = await pool.query(
+    `update public.corpus_import_queue
+       set target_hint = $2,
+           updated_at = now()
+     where id = $1
+     returning
+       id,
+       source_name,
+       source_ext,
+       storage_bucket,
+       storage_path,
+       storage_mode,
+       target_hint,
+       import_status,
+       record_count_estimate,
+       created_at,
+       updated_at,
+       coalesce(char_length(raw_text), 0) as raw_text_chars,
+       payload is not null as has_payload`,
+    [input.id, input.target_hint],
+  );
+
+  const row = result.rows[0];
+  if (!row) {
+    return { success: false, row: null, error: "corpus_import_queue_row_not_found" };
+  }
+
+  return { success: true, row: map_queue_row(row) };
 }
