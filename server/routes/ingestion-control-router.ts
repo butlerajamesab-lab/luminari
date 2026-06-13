@@ -53,7 +53,7 @@ ingestionControlRestRouter.get("/corpus-import-queue", async (req, res) => {
     const status_filter = typeof req.query.status_filter === "string" ? req.query.status_filter : "all";
     const limit_raw = typeof req.query.limit === "string" ? Number(req.query.limit) : 100;
     const limit = Number.isFinite(limit_raw) ? limit_raw : 100;
-    const allowed_status_filters = new Set(["all", "blocked", "review_required", "pending_bucket_content_scan", "pending_docx_normalization", "docx_extraction_failed", "candidates_created"]);
+    const allowed_status_filters = new Set(["all", "blocked", "review_required", "pending_bucket_content_scan", "pending_docx_normalization", "ready_for_review", "docx_extraction_failed", "candidates_created"]);
     const result = await list_corpus_import_queue({ status_filter: allowed_status_filters.has(status_filter) ? status_filter as any : "all", limit });
     res.json({ ...result, allowed_target_hints });
   } catch (error: any) {
@@ -127,6 +127,34 @@ ingestionControlRestRouter.post("/corpus-import-queue/extract-docx-drain", async
     return res.json({ success: true, ...command_result });
   } catch (error: any) {
     return res.status(500).json({ success: false, action: "extract_all_docx_queue_rows", error: "extract_docx_drain_failed", message: error?.message ?? String(error), runtime_ms: Date.now() - started_at, stdout_preview: error?.stdout ?? "", stderr_preview: error?.stderr ?? "" });
+  }
+});
+
+ingestionControlRestRouter.post("/corpus-import-queue/normalize-docx-drain", async (_req, res) => {
+  const started_at = Date.now();
+  try {
+    const pool = getPool();
+    const result = await pool.query(`with normalized as (
+      update public.corpus_import_queue
+         set import_status = 'ready_for_review',
+             normalized_text = trim(regexp_replace(regexp_replace(regexp_replace(coalesce(raw_text, ''), E'\\r\\n', E'\\n', 'g'), E'[ \\t]+\\n', E'\\n', 'g'), E'\\n{3,}', E'\\n\\n', 'g')),
+             normalized_text_chars = char_length(trim(regexp_replace(regexp_replace(regexp_replace(coalesce(raw_text, ''), E'\\r\\n', E'\\n', 'g'), E'[ \\t]+\\n', E'\\n', 'g'), E'\\n{3,}', E'\\n\\n', 'g'))),
+             worker_state = 'completed_step',
+             leased_by = null,
+             lease_expires_at = null,
+             last_error_code = null,
+             last_error_message = null,
+             last_transition_at = now(),
+             updated_at = now(),
+             operation_result_json = coalesce(operation_result_json, '{}'::jsonb) || jsonb_build_object('last_bulk_normalize_at', now(), 'normalizer_version', 'ui-bulk-normalize-v1', 'action', 'normalize_docx_queue_row')
+       where source_ext = '.docx'
+         and import_status = 'pending_docx_normalization'
+         and coalesce(char_length(raw_text), 0) > 0
+       returning id, normalized_text_chars
+    ) select count(*)::int as normalized_rows, coalesce(sum(normalized_text_chars), 0)::bigint as normalized_characters from normalized`);
+    return res.json({ success: true, action: "normalize_all_docx_queue_rows", runtime_ms: Date.now() - started_at, summary: result.rows[0] });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, action: "normalize_all_docx_queue_rows", error: "normalize_docx_drain_failed", message: error?.message ?? String(error), runtime_ms: Date.now() - started_at });
   }
 });
 
