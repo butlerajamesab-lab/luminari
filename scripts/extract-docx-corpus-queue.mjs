@@ -281,8 +281,8 @@ async function main() {
   };
   try {
     const schema = await inspectSchema(pool); report.schema = schema;
-    if (!pool) { report.status = "database-unavailable"; report.message = databaseStatus; await writeReports(report); if (!args.jsonOnly) console.log(JSON.stringify({ status: report.status, summary: report.summary, rows: report.rows, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2)); return; }
-    if (!schema.tableExists) { report.status = "queue-unavailable"; report.message = "public.corpus_import_queue does not exist."; await writeReports(report); if (!args.jsonOnly) console.log(JSON.stringify({ status: report.status, summary: report.summary, rows: report.rows, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2)); return; }
+    if (!pool) { report.status = "database-unavailable"; report.message = databaseStatus; await writeReports(report); console.log(JSON.stringify({ status: report.status, summary: report.summary, rows: report.rows, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2)); return; }
+    if (!schema.tableExists) { report.status = "queue-unavailable"; report.message = "public.corpus_import_queue does not exist."; await writeReports(report); console.log(JSON.stringify({ status: report.status, summary: report.summary, rows: report.rows, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2)); return; }
     const rows = await readDocxRows(pool, schema.columns, args.id);
     for (const row of rows) {
       const rowReport = { id: row.id ?? null, source_name: row.source_name ?? null, storage_bucket: row.storage_bucket ?? null, storage_path: row.storage_path ?? null, byte_size: row.byte_size ?? null, sha256: row.sha256 ?? null, content_type: row.content_type ?? null, source_ext: row.source_ext ?? null, target_hint: row.target_hint ?? null, previous_status: row.import_status ?? null, action: args.apply ? "pending" : "would-extract", status: null, character_count: 0, line_count: 0, parser_name: report.parser.name, parser_version: report.parser.version, extracted_at: null, error: null, binary_source: null, binary_source_attempts: [], public_storage_url: buildPublicStorageUrl(row), next_step: "Extract raw text first; then run Form Signal Extraction v3 and route candidates through existing gates." };
@@ -303,7 +303,7 @@ async function main() {
       report.rows.push(rowReport);
     }
     report.status = "completed"; report.summary = summarize(report.rows, report.mode); await writeReports(report);
-    if (!args.jsonOnly) console.log(JSON.stringify({ status: report.status, summary: report.summary, rows: report.rows, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2));
+    console.log(JSON.stringify({ status: report.status, summary: report.summary, rows: report.rows, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2));
   } finally { if (pool) await pool.end(); }
 }
 
