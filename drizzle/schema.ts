@@ -8864,7 +8864,7 @@ export const adminChangeLog = pgTable("admin_change_log", {
   previousState: jsonb("previous_state_acl"),
   newState: jsonb("new_state_acl"),
   description: text("description_acl"),
-  timestamp: bigint("timestamp_acl", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  timestamp: timestamp("timestamp_acl", { withTimezone: true }).notNull().$defaultFn(() => new Date()),
   rollbackAvailable: boolean("rollback_available_acl").default(true),
   rolledBack: boolean("rolled_back_acl").default(false),
   rollbackData: jsonb("rollback_data_acl"),

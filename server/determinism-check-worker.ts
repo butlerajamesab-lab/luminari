@@ -342,7 +342,7 @@ async function logWorkerError(caseId: number | null, error: unknown): Promise<vo
           caseId,
           error: error instanceof Error ? error.message : String(error),
         }),
-        Date.now(),
+        new Date(),
         "warning",
       ]
     );

@@ -53,7 +53,7 @@ async function logChange(entry: LogEntry) {
     description: entry.description,
     rollbackAvailable: !!entry.rollbackData,
     rollbackData: entry.rollbackData,
-    timestamp: Date.now(),
+    timestamp: new Date(),
   });
 }
 
@@ -437,23 +437,34 @@ export async function executeSql(
   sqlStatement: string,
   adminId: string,
   adminName?: string,
-): Promise<{ success: boolean; result: any; rowsAffected: number }> {
+): Promise<{ success: boolean; result: any; rowsAffected: number; audit_error?: string }> {
   const preview = await previewSql(sqlStatement);
 
   try {
     const result = await db.execute(sql.raw(sqlStatement));
     const rows = result[0] as unknown as any[];
     const rowsAffected = (result[0] as any)?.affectedRows || rows?.length || 0;
+    let audit_error: string | undefined;
 
-    await logChange({
-      adminId, adminName,
-      actionType: preview.isDestructive ? "schema_edit" : "migration_run",
-      targetSystem: "database",
-      description: `Executed SQL: ${sqlStatement.substring(0, 200)}${sqlStatement.length > 200 ? "..." : ""}`,
-      newState: { sql: sqlStatement, rowsAffected },
-    });
+    try {
+      await logChange({
+        adminId, adminName,
+        actionType: preview.isDestructive ? "schema_edit" : "migration_run",
+        targetSystem: "database",
+        description: `Executed SQL: ${sqlStatement.substring(0, 200)}${sqlStatement.length > 200 ? "..." : ""}`,
+        newState: { sql: sqlStatement, rowsAffected },
+      });
+    } catch (auditError: any) {
+      audit_error = auditError?.message ?? String(auditError);
+      console.error("[Admin Sovereign Control] SQL audit log failed:", auditError);
+    }
 
-    return { success: true, result: preview.isSelect ? rows : { affectedRows: rowsAffected }, rowsAffected };
+    return {
+      success: true,
+      result: preview.isSelect ? rows : { affectedRows: rowsAffected },
+      rowsAffected,
+      ...(audit_error ? { audit_error } : {}),
+    };
   } catch (error: any) {
     return { success: false, result: { error: error.message }, rowsAffected: 0 };
   }
