@@ -77,27 +77,43 @@ function buildAuthenticatedStorageUrl(row) {
   return `${supabaseUrl}/storage/v1/object/${encodeURIComponent(row.storage_bucket)}/${encodeStoragePath(row.storage_path)}`;
 }
 
+function buildRenderStorageUrl(row) {
+  const supabaseUrl = getSupabaseUrl().replace(/\/+$/, "");
+  if (!supabaseUrl || !row.storage_bucket || !row.storage_path) return null;
+  return `${supabaseUrl}/storage/v1/render/object/${encodeURIComponent(row.storage_bucket)}/${encodeStoragePath(row.storage_path)}`;
+}
+
 function buildPublicStorageUrl(row) {
   const supabaseUrl = getSupabaseUrl().replace(/\/+$/, "");
   if (!supabaseUrl || !row.storage_bucket || !row.storage_path) return null;
   return `${supabaseUrl}/storage/v1/object/public/${encodeURIComponent(row.storage_bucket)}/${encodeStoragePath(row.storage_path)}`;
 }
 
-async function bufferFromAuthenticatedStorage(row) {
-  const url = buildAuthenticatedStorageUrl(row);
-  const key = getServiceRoleKey();
-  if (!url || !key) return null;
-  const response = await fetch(url, { headers: { Authorization: `Bearer ${key}`, apikey: key } });
-  if (!response.ok) throw new Error(`authenticated-storage-download-failed: HTTP ${response.status} ${response.statusText}`);
+async function fetchStorageBuffer(url, key, label) {
+  if (!url) return null;
+  const headers = key ? { Authorization: `Bearer ${key}`, apikey: key } : undefined;
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`${label}-failed: HTTP ${response.status} ${response.statusText}${body ? ` body=${body.slice(0, 300)}` : ""}`);
+  }
   return Buffer.from(await response.arrayBuffer());
 }
 
+async function bufferFromAuthenticatedStorage(row) {
+  const key = getServiceRoleKey();
+  if (!key) return null;
+  return fetchStorageBuffer(buildAuthenticatedStorageUrl(row), key, "authenticated-storage-download");
+}
+
+async function bufferFromAuthenticatedRenderStorage(row) {
+  const key = getServiceRoleKey();
+  if (!key) return null;
+  return fetchStorageBuffer(buildRenderStorageUrl(row), key, "authenticated-render-storage-download");
+}
+
 async function bufferFromPublicStorageUrl(row) {
-  const publicUrl = buildPublicStorageUrl(row);
-  if (!publicUrl) return null;
-  const response = await fetch(publicUrl);
-  if (!response.ok) throw new Error(`public-storage-url-download-failed: HTTP ${response.status} ${response.statusText}`);
-  return Buffer.from(await response.arrayBuffer());
+  return fetchStorageBuffer(buildPublicStorageUrl(row), null, "public-storage-url-download");
 }
 
 async function getDocxSource(row) {
@@ -116,6 +132,14 @@ async function getDocxSource(row) {
     if (storageBuffer?.length) return { buffer: storageBuffer, rawText: null, source: "supabase_storage_rest_download", attempts };
   } catch (error) {
     attempts.push({ source: "supabase_storage_rest_download", status: "failed", error: error.message });
+  }
+
+  try {
+    const renderBuffer = await bufferFromAuthenticatedRenderStorage(row);
+    attempts.push({ source: "supabase_storage_render_download", status: renderBuffer?.length ? "selected" : "not_configured_or_missing_path" });
+    if (renderBuffer?.length) return { buffer: renderBuffer, rawText: null, source: "supabase_storage_render_download", attempts };
+  } catch (error) {
+    attempts.push({ source: "supabase_storage_render_download", status: "failed", error: error.message });
   }
 
   try {
@@ -288,7 +312,7 @@ async function main() {
       const rowReport = { id: row.id ?? null, source_name: row.source_name ?? null, storage_bucket: row.storage_bucket ?? null, storage_path: row.storage_path ?? null, byte_size: row.byte_size ?? null, sha256: row.sha256 ?? null, content_type: row.content_type ?? null, source_ext: row.source_ext ?? null, target_hint: row.target_hint ?? null, previous_status: row.import_status ?? null, action: args.apply ? "pending" : "would-extract", status: null, character_count: 0, line_count: 0, parser_name: report.parser.name, parser_version: report.parser.version, extracted_at: null, error: null, binary_source: null, binary_source_attempts: [], public_storage_url: buildPublicStorageUrl(row), next_step: "Extract raw text first; then run Form Signal Extraction v3 and route candidates through existing gates." };
       try {
         const source = await getDocxSource(row);
-        if (!source.buffer && !source.rawText) { rowReport.action = "blocked_missing_binary_source"; rowReport.status = "docx_extraction_failed"; rowReport.error = "No raw_text, no base64_payload, authenticated Storage REST download failed/unavailable, and public Storage URL fallback failed/unavailable."; rowReport.binary_source_attempts = source.attempts; report.rows.push(rowReport); continue; }
+        if (!source.buffer && !source.rawText) { rowReport.action = "blocked_missing_binary_source"; rowReport.status = "docx_extraction_failed"; rowReport.error = "No raw_text, no base64_payload, authenticated Storage REST download failed/unavailable, authenticated render Storage fallback failed/unavailable, and public Storage URL fallback failed/unavailable."; rowReport.binary_source_attempts = source.attempts; report.rows.push(rowReport); continue; }
         const extracted = source.rawText ? { rawText: source.rawText, entries: safeJson(row.payload, {})?.docx_extraction?.parser_entries ?? [] } : await extractDocxText(source.buffer);
         const rawText = extracted.rawText;
         const extractedAt = new Date().toISOString();
