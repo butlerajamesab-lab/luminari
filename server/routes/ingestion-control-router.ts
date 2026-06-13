@@ -31,6 +31,12 @@ function parse_command_json(stdout: string) {
   }
 }
 
+function failed_rows_from_stdout(parsed_stdout: any) {
+  return Array.isArray(parsed_stdout?.rows)
+    ? parsed_stdout.rows.filter((row: any) => row?.status === "docx_extraction_failed" || row?.error)
+    : [];
+}
+
 async function persist_extract_command_diagnostic(id: number, diagnostic: Record<string, unknown>) {
   const pool = getPool();
   await pool.query(
@@ -93,10 +99,31 @@ ingestionControlRestRouter.post("/corpus-import-queue/extract-docx-drain", async
     const command_csv = parsed_stdout?.csv ?? null;
     const command_no_output = !stdout.trim() || !command_summary;
     const command_extracted = Number(command_summary?.docxRowsExtracted ?? 0) > 0;
-    const command_failed = command_no_output || Number(command_summary?.docxExtractionFailures ?? 0) > 0;
-    const command_result = { action: "extract_all_docx_queue_rows", dry_run, queue_row_id: null, runtime_ms: Date.now() - started_at, state_changed: command_extracted, command_failed, command_extracted, command_summary, command_report, command_csv, stdout_preview: stdout.slice(0, 12000), stderr_preview: stderr.slice(0, 4000), parsed_rows: Array.isArray(parsed_stdout?.rows) ? parsed_stdout.rows : [] };
+    const extraction_failures = Number(command_summary?.docxExtractionFailures ?? 0);
+    const partial_success = command_extracted && extraction_failures > 0;
+    const command_failed = command_no_output || (!command_extracted && extraction_failures > 0);
+    const failed_rows = failed_rows_from_stdout(parsed_stdout);
+    const command_result = {
+      action: "extract_all_docx_queue_rows",
+      dry_run,
+      queue_row_id: null,
+      runtime_ms: Date.now() - started_at,
+      state_changed: command_extracted,
+      command_failed,
+      command_extracted,
+      partial_success,
+      command_summary,
+      command_report,
+      command_csv,
+      failed_rows,
+      failed_row_count: failed_rows.length,
+      stdout_preview: stdout.slice(0, 12000),
+      stderr_preview: stderr.slice(0, 4000),
+      parsed_rows: Array.isArray(parsed_stdout?.rows) ? parsed_stdout.rows : [],
+    };
     if (command_no_output) return res.status(409).json({ success: false, error: "extract_docx_no_command_output", message: "extract_docx_drain exited without JSON stdout.", ...command_result });
-    if (command_failed) return res.status(dry_run ? 200 : 409).json({ success: false, error: "extract_docx_command_reported_failure", message: "extract_docx_drain reported one or more failures.", ...command_result });
+    if (partial_success) return res.json({ success: true, warning: "extract_docx_partial_success", message: `DOCX drain advanced ${command_summary.docxRowsExtracted} rows; ${extraction_failures} rows still need operator review.`, ...command_result });
+    if (command_failed) return res.status(dry_run ? 200 : 409).json({ success: false, error: "extract_docx_command_reported_failure", message: "extract_docx_drain reported failures and advanced no rows.", ...command_result });
     return res.json({ success: true, ...command_result });
   } catch (error: any) {
     return res.status(500).json({ success: false, action: "extract_all_docx_queue_rows", error: "extract_docx_drain_failed", message: error?.message ?? String(error), runtime_ms: Date.now() - started_at, stdout_preview: error?.stdout ?? "", stderr_preview: error?.stderr ?? "" });
