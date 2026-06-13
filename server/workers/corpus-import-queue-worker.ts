@@ -33,12 +33,6 @@ function normalize_text(input: string) {
   return input.replace(/\r\n/g, "\n").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
-function action_to_status(action: corpus_import_worker_action) {
-  if (action === "extract_docx_queue_row") return "pending_bucket_content_scan";
-  if (action === "normalize_docx_queue_row") return "pending_docx_normalization";
-  return "pending_bucket_content_scan";
-}
-
 function row_matches_action(row: claimed_queue_row, action: corpus_import_worker_action) {
   if (action === "extract_docx_queue_row") return row.source_ext === ".docx" && row.import_status === "pending_bucket_content_scan";
   if (action === "normalize_docx_queue_row") return row.source_ext === ".docx" && row.import_status === "pending_docx_normalization";
@@ -50,7 +44,7 @@ async function claim_next_row(action: corpus_import_worker_action): Promise<clai
   for (let attempt = 0; attempt < 5; attempt++) {
     const result = await pool.query(
       `select * from public.claim_corpus_import_queue_row($1, $2, $3) limit 1`,
-      [worker_id, action_to_status(action), lease_seconds],
+      [worker_id, action, lease_seconds],
     );
     const row = result.rows[0];
     if (!row) return null;
