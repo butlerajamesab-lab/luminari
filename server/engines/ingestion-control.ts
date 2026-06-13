@@ -6,6 +6,7 @@ export type CorpusImportQueueStatusFilter =
   | "review_required"
   | "pending_bucket_content_scan"
   | "pending_docx_normalization"
+  | "ready_for_review"
   | "docx_extraction_failed"
   | "candidates_created";
 
@@ -22,6 +23,7 @@ type CorpusImportQueueRow = {
   created_at: string | null;
   updated_at: string | null;
   raw_text_chars: number;
+  normalized_text_chars: number;
   has_payload: boolean;
   policy_class: string;
   dedupe_behavior: string;
@@ -62,16 +64,6 @@ function classify_policy(row: { target_hint: string | null; source_ext: string |
     };
   }
 
-  if (target_hint.includes("statute") || target_hint.includes("law") || target_hint.includes("legal_authority")) {
-    return {
-      policy_class: "strict_authority",
-      dedupe_behavior: "no_silent_merge",
-      intended_destination: target_hint || "legal_authority_staging",
-      blocked_reason: "strict_authority_requires_review",
-      next_action: "route_corpus_queue_dry_run",
-    };
-  }
-
   if (source_ext === ".docx" && import_status === "pending_bucket_content_scan") {
     return {
       policy_class: "entity_enrichment",
@@ -89,6 +81,26 @@ function classify_policy(row: { target_hint: string | null; source_ext: string |
       intended_destination: target_hint || "registry_entity_extraction_v4",
       blocked_reason: null,
       next_action: "normalize_docx_queue_row",
+    };
+  }
+
+  if (source_ext === ".docx" && import_status === "ready_for_review") {
+    return {
+      policy_class: "entity_enrichment",
+      dedupe_behavior: "enrich_blank_fields_only",
+      intended_destination: target_hint || "registry_entity_extraction_v4",
+      blocked_reason: null,
+      next_action: "create_registry_candidates",
+    };
+  }
+
+  if (target_hint.includes("statute") || target_hint.includes("law") || target_hint.includes("legal_authority")) {
+    return {
+      policy_class: "strict_authority",
+      dedupe_behavior: "no_silent_merge",
+      intended_destination: target_hint || "legal_authority_staging",
+      blocked_reason: "strict_authority_requires_review",
+      next_action: "route_corpus_queue_dry_run",
     };
   }
 
@@ -115,6 +127,7 @@ function map_queue_row(row: any): CorpusImportQueueRow {
     created_at: row.created_at ? String(row.created_at) : null,
     updated_at: row.updated_at ? String(row.updated_at) : null,
     raw_text_chars: Number(row.raw_text_chars ?? 0),
+    normalized_text_chars: Number(row.normalized_text_chars ?? 0),
     has_payload: Boolean(row.has_payload),
     ...classify_policy(row),
   };
@@ -152,10 +165,20 @@ export async function list_corpus_import_queue(input?: { status_filter?: CorpusI
        created_at,
        updated_at,
        coalesce(char_length(raw_text), 0) as raw_text_chars,
+       coalesce(normalized_text_chars, char_length(normalized_text), 0) as normalized_text_chars,
        payload is not null as has_payload
      from public.corpus_import_queue
      ${where_sql}
-     order by updated_at desc nulls last, created_at desc nulls last, id desc
+     order by
+       case import_status
+         when 'ready_for_review' then 0
+         when 'pending_docx_normalization' then 1
+         when 'pending_bucket_content_scan' then 2
+         else 3
+       end,
+       updated_at desc nulls last,
+       created_at desc nulls last,
+       id desc
      limit ${limit_placeholder}`,
     values,
   );
@@ -187,7 +210,8 @@ export async function get_corpus_import_queue_row(input: { id: number }) {
        created_at,
        updated_at,
        coalesce(char_length(raw_text), 0) as raw_text_chars,
-       left(coalesce(raw_text, ''), 6000) as raw_text_preview,
+       coalesce(normalized_text_chars, char_length(normalized_text), 0) as normalized_text_chars,
+       left(coalesce(normalized_text, raw_text, ''), 6000) as raw_text_preview,
        payload
      from public.corpus_import_queue
      where id = $1`,
@@ -233,6 +257,7 @@ export async function set_corpus_import_queue_target_hint(input: { id: number; t
        created_at,
        updated_at,
        coalesce(char_length(raw_text), 0) as raw_text_chars,
+       coalesce(normalized_text_chars, char_length(normalized_text), 0) as normalized_text_chars,
        payload is not null as has_payload`,
     [input.id, input.target_hint],
   );
