@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { getPool } from "../db";
 
 export type CorpusImportQueueStatusFilter =
@@ -151,6 +152,9 @@ export async function list_corpus_import_queue(input?: { status_filter?: CorpusI
   values.push(limit);
   const limit_placeholder = `$${values.length}`;
 
+  const summary_result = await pool.query(`select import_status, count(*)::int as count from public.corpus_import_queue group by import_status`);
+  const status_counts = Object.fromEntries(summary_result.rows.map((row: any) => [row.import_status ?? "unknown", Number(row.count ?? 0)]));
+
   const result = await pool.query(
     `select
        id,
@@ -190,6 +194,7 @@ export async function list_corpus_import_queue(input?: { status_filter?: CorpusI
     status_filter,
     limit,
     row_count: rows.length,
+    summary_counts: status_counts,
     rows,
   };
 }
@@ -231,6 +236,172 @@ export async function get_corpus_import_queue_row(input: { id: number }) {
       payload: row.payload ?? null,
     },
   };
+}
+
+const CANDIDATE_EXTRACTOR_VERSION = "candidate_conveyor_v1";
+const CANDIDATE_TYPES = ["policy_alert", "agency", "legal_aid", "court", "tribal_entity", "benefit_program", "workflow", "deadline", "statute", "contact", "resource"] as const;
+
+type CandidateType = typeof CANDIDATE_TYPES[number];
+
+type ReadyQueueRow = {
+  id: number;
+  source_name: string | null;
+  storage_path: string | null;
+  sha256: string | null;
+  normalized_text: string;
+};
+
+type ExtractionCandidate = {
+  candidate_type: CandidateType;
+  name: string;
+  excerpt: string;
+  jurisdiction: string | null;
+  content_hash: string;
+  payload: Record<string, unknown>;
+  provenance: Record<string, unknown>;
+  confidence_scores: Record<string, unknown>;
+};
+
+function sha256(value: string) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function infer_jurisdiction(row: Pick<ReadyQueueRow, "source_name" | "storage_path">, text: string) {
+  const haystack = `${row.source_name ?? ""} ${row.storage_path ?? ""} ${text.slice(0, 2000)}`.toLowerCase();
+  const states: Record<string, string[]> = {
+    Alabama: ["alabama", "_al_", "-al-"], Alaska: ["alaska", "_ak_", "-ak-"], Arizona: ["arizona", "_az_", "-az-"], Arkansas: ["arkansas", "_ar_", "-ar-"], California: ["california", "_ca_", "-ca-"], Colorado: ["colorado", "_co_", "-co-"], Connecticut: ["connecticut", "_ct_", "-ct-"], Delaware: ["delaware", "_de_", "-de-"], Florida: ["florida", "_fl_", "-fl-"], Georgia: ["georgia", "_ga_", "-ga-"], Hawaii: ["hawaii", "_hi_", "-hi-"], Idaho: ["idaho", "_id_", "-id-"], Illinois: ["illinois", "_il_", "-il-"], Indiana: ["indiana", "_in_", "-in-"], Iowa: ["iowa", "_ia_", "-ia-"], Kansas: ["kansas", "_ks_", "-ks-"], Kentucky: ["kentucky", "_ky_", "-ky-"], Louisiana: ["louisiana", "_la_", "-la-"], Maine: ["maine", "_me_", "-me-"], Maryland: ["maryland", "_md_", "-md-"], Massachusetts: ["massachusetts", "_ma_", "-ma-"], Michigan: ["michigan", "_mi_", "-mi-"], Minnesota: ["minnesota", "_mn_", "-mn-"], Mississippi: ["mississippi", "_ms_", "-ms-"], Missouri: ["missouri", "_mo_", "-mo-"], Montana: ["montana", "_mt_", "-mt-"], Nebraska: ["nebraska", "_ne_", "-ne-"], Nevada: ["nevada", "_nv_", "-nv-"], "New Hampshire": ["new hampshire", "_nh_", "-nh-"], "New Jersey": ["new jersey", "_nj_", "-nj-"], "New Mexico": ["new mexico", "_nm_", "-nm-"], "New York": ["new york", "_ny_", "-ny-"], "North Carolina": ["north carolina", "_nc_", "-nc-"], "North Dakota": ["north dakota", "_nd_", "-nd-"], Ohio: ["ohio", "_oh_", "-oh-"], Oklahoma: ["oklahoma", "_ok_", "-ok-"], Oregon: ["oregon", "_or_", "-or-"], Pennsylvania: ["pennsylvania", "_pa_", "-pa-"], "Rhode Island": ["rhode island", "_ri_", "-ri-"], "South Carolina": ["south carolina", "_sc_", "-sc-"], "South Dakota": ["south dakota", "_sd_", "-sd-"], Tennessee: ["tennessee", "_tn_", "-tn-"], Texas: ["texas", "_tx_", "-tx-"], Utah: ["utah", "_ut_", "-ut-"], Vermont: ["vermont", "_vt_", "-vt-"], Virginia: ["virginia", "_va_", "-va-"], Washington: ["washington", "_wa_", "-wa-"], "West Virginia": ["west virginia", "_wv_", "-wv-"], Wisconsin: ["wisconsin", "_wi_", "-wi-"], Wyoming: ["wyoming", "_wy_", "-wy-"],
+  };
+  return Object.entries(states).find(([, needles]) => needles.some((needle) => haystack.includes(needle)))?.[0] ?? null;
+}
+
+function logical_sections(text: string) {
+  const blocks = text.replace(/\r\n/g, "\n").split(/\n{2,}|(?=^\s*(?:layer\s+\d+|[-*•]\s+|#{1,4}\s+))/gim).map((part) => part.trim()).filter(Boolean);
+  return blocks.length ? blocks : [text.trim()];
+}
+
+function detect_types(section: string): CandidateType[] {
+  const lower = section.toLowerCase();
+  const hits = new Set<CandidateType>();
+  if (/policy alert|alert|emergency|notice|advisory/.test(lower)) hits.add("policy_alert");
+  if (/agency|department|division|office of|authority/.test(lower)) hits.add("agency");
+  if (/legal aid|legal services|pro bono|law center/.test(lower)) hits.add("legal_aid");
+  if (/court|tribunal|clerk|judicial/.test(lower)) hits.add("court");
+  if (/tribal|tribe|native nation|indian affairs/.test(lower)) hits.add("tribal_entity");
+  if (/benefit|snap|medicaid|tanf|ssi|program|assistance/.test(lower)) hits.add("benefit_program");
+  if (/workflow|process|steps|intake|appeal|application/.test(lower)) hits.add("workflow");
+  if (/deadline|due date|within \d+ (?:day|days|month|months)|\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/.test(lower)) hits.add("deadline");
+  if (/\b(?:usc|u\.s\.c\.|cfr|c\.f\.r\.|§|section|statute|code)\b/i.test(section)) hits.add("statute");
+  if (/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}/i.test(section)) hits.add("contact");
+  if (/https?:\/\/|www\.|resource|directory|hotline|website/.test(lower)) hits.add("resource");
+  return [...hits];
+}
+
+function extract_obvious_values(section: string) {
+  return {
+    phones: section.match(/(?:\+1[-.\s]?)?\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}/g) ?? [],
+    emails: section.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) ?? [],
+    urls: section.match(/https?:\/\/[^\s)]+|www\.[^\s)]+/gi) ?? [],
+    statutes: section.match(/(?:\d+\s+U\.S\.C\.\s+§?\s*[\w.-]+|\d+\s+C\.F\.R\.\s+§?\s*[\w.-]+|§\s*[\w.-]+|section\s+[\w.-]+)/gi) ?? [],
+    deadlines: section.match(/(?:within\s+\d+\s+(?:day|days|month|months)|deadline[^.\n]*|due\s+(?:by|date)?[^.\n]*|\b\d{1,2}\/\d{1,2}\/\d{2,4}\b)/gi) ?? [],
+  };
+}
+
+function build_candidates(row: ReadyQueueRow) {
+  const jurisdiction = infer_jurisdiction(row, row.normalized_text);
+  const source_hash = row.sha256 ?? sha256(row.normalized_text);
+  const candidates: ExtractionCandidate[] = [];
+  logical_sections(row.normalized_text).slice(0, 400).forEach((section, index) => {
+    if (section.length < 40) return;
+    const types = detect_types(section);
+    if (!types.length) return;
+    const first_line = section.split("\n").map((line) => line.trim()).find(Boolean) ?? `candidate_${index + 1}`;
+    const excerpt = section.slice(0, 2500);
+    for (const candidate_type of types) {
+      const content_hash = sha256(`${row.id}:${candidate_type}:${excerpt}`);
+      candidates.push({
+        candidate_type,
+        name: first_line.slice(0, 240),
+        excerpt,
+        jurisdiction,
+        content_hash,
+        payload: { candidate_type, source_queue_id: row.id, source_name: row.source_name, storage_path: row.storage_path, source_text_hash: source_hash, normalized_excerpt: excerpt, extracted: extract_obvious_values(section), extraction_status: "candidate_created" },
+        provenance: { action: "create_candidates_from_ready", extractor_version: CANDIDATE_EXTRACTOR_VERSION, source_queue_id: row.id, source_name: row.source_name, storage_path: row.storage_path, source_text_hash: source_hash, section_index: index, deterministic_rules: true, canonical_promotion: false },
+        confidence_scores: { overall: 0.35, deterministic_candidate: true, promotion_ready: false, candidate_type },
+      });
+    }
+  });
+  return candidates;
+}
+
+async function registry_entity_extraction_v4_columns(client: any) {
+  const result = await client.query(`select column_name from information_schema.columns where table_schema = 'public' and table_name = 'registry_entity_extraction_v4'`);
+  return new Set(result.rows.map((row: any) => row.column_name));
+}
+
+async function insert_candidate(client: any, columns: Set<string>, row: ReadyQueueRow, candidate: ExtractionCandidate) {
+  const existing = await client.query(`select 1 from public.registry_entity_extraction_v4 where content_hash = $1 limit 1`, [candidate.content_hash]);
+  if (existing.rowCount) return false;
+  const insertable: Record<string, unknown> = {
+    source_file: row.source_name ?? row.storage_path,
+    jurisdiction: candidate.jurisdiction,
+    extraction_timestamp: new Date(),
+    extraction_version: CANDIDATE_EXTRACTOR_VERSION,
+    program_id: `${row.id}:${candidate.candidate_type}:${candidate.content_hash.slice(0, 12)}`,
+    name: candidate.name,
+    promotion_ready: { ready: false, status: "candidate_created", candidate_type: candidate.candidate_type },
+    forensic_provenance: candidate.provenance,
+    forensic_hash: candidate.content_hash,
+    confidence_scores: candidate.confidence_scores,
+    geocoding_hints: { jurisdiction: candidate.jurisdiction, source_queue_id: row.id },
+    content_hash: candidate.content_hash,
+  };
+  for (const [key, value] of Object.entries({ source_queue_id: row.id, corpus_import_queue_id: row.id, storage_path: row.storage_path, source_path: row.storage_path, source_name: row.source_name, source_text_hash: row.sha256 ?? sha256(row.normalized_text), raw_candidate_payload: candidate.payload, candidate_payload: candidate.payload, payload: candidate.payload, normalized_excerpt: candidate.excerpt, extraction_status: "candidate_created" })) {
+    if (columns.has(key)) insertable[key] = value;
+  }
+  const names = Object.keys(insertable).filter((name) => columns.has(name));
+  const placeholders = names.map((name, index) => columns.has(name) && typeof insertable[name] === "object" && !(insertable[name] instanceof Date) ? `$${index + 1}::jsonb` : `$${index + 1}`);
+  await client.query(`insert into public.registry_entity_extraction_v4 (${names.join(", ")}) values (${placeholders.join(", ")})`, names.map((name) => typeof insertable[name] === "object" && !(insertable[name] instanceof Date) ? JSON.stringify(insertable[name]) : insertable[name]));
+  return true;
+}
+
+export async function create_candidates_from_ready_queue() {
+  const pool = getPool();
+  const client = await pool.connect();
+  const started_at = Date.now();
+  try {
+    await client.query("begin");
+    const columns = await registry_entity_extraction_v4_columns(client);
+    for (const required of ["source_file", "jurisdiction", "extraction_timestamp", "extraction_version", "program_id", "name", "promotion_ready", "forensic_provenance", "forensic_hash", "confidence_scores", "geocoding_hints", "content_hash"]) {
+      if (!columns.has(required)) throw new Error(`registry_entity_extraction_v4 missing required column: ${required}`);
+    }
+    const rows_result = await client.query(`select id, source_name, storage_path, sha256, normalized_text from public.corpus_import_queue where import_status = 'ready_for_review' and length(trim(coalesce(normalized_text, ''))) > 0 order by id`);
+    const processed_rows: Array<Record<string, unknown>> = [];
+    let candidate_count = 0;
+    let inserted_count = 0;
+    let skipped_count = 0;
+    for (const row of rows_result.rows as ReadyQueueRow[]) {
+      const candidates = build_candidates(row);
+      let row_inserted = 0;
+      let row_skipped = 0;
+      for (const candidate of candidates) {
+        if (await insert_candidate(client, columns, row, candidate)) row_inserted += 1;
+        else row_skipped += 1;
+      }
+      candidate_count += candidates.length;
+      inserted_count += row_inserted;
+      skipped_count += row_skipped;
+      const operation_result = { action: "create_candidates_from_ready", candidate_count: candidates.length, inserted_count: row_inserted, skipped_count: row_skipped, created_at: new Date().toISOString(), target_table: "public.registry_entity_extraction_v4", extractor_version: CANDIDATE_EXTRACTOR_VERSION };
+      await client.query(`update public.corpus_import_queue set import_status = 'candidates_created', operation_result_json = coalesce(operation_result_json, '{}'::jsonb) || jsonb_build_object('last_candidate_conveyor', $2::jsonb), updated_at = now(), last_transition_at = now() where id = $1`, [row.id, JSON.stringify(operation_result)]);
+      processed_rows.push({ id: row.id, source_name: row.source_name, candidate_count: candidates.length, inserted_count: row_inserted, skipped_count: row_skipped });
+    }
+    await client.query("commit");
+    return { success: true, action: "create_candidates_from_ready", runtime_ms: Date.now() - started_at, target_table: "public.registry_entity_extraction_v4", extractor_version: CANDIDATE_EXTRACTOR_VERSION, processed_rows: processed_rows.length, candidate_count, inserted_count, skipped_count, rows: processed_rows, last_candidate_conveyor_result: processed_rows.at(-1) ?? null };
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function set_corpus_import_queue_target_hint(input: { id: number; target_hint: TargetHintValue }) {
