@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Router } from "express";
-import { allowed_target_hints, list_corpus_import_queue, get_corpus_import_queue_row, set_corpus_import_queue_target_hint } from "../engines/ingestion-control";
+import { allowed_target_hints, create_candidates_from_ready_queue, list_corpus_import_queue, get_corpus_import_queue_row, set_corpus_import_queue_target_hint } from "../engines/ingestion-control";
 import { getPool } from "../db";
 
 const execFileAsync = promisify(execFile);
@@ -127,6 +127,15 @@ ingestionControlRestRouter.post("/corpus-import-queue/extract-docx-drain", async
     return res.json({ success: true, ...command_result });
   } catch (error: any) {
     return res.status(500).json({ success: false, action: "extract_all_docx_queue_rows", error: "extract_docx_drain_failed", message: error?.message ?? String(error), runtime_ms: Date.now() - started_at, stdout_preview: error?.stdout ?? "", stderr_preview: error?.stderr ?? "" });
+  }
+});
+
+ingestionControlRestRouter.post("/corpus-import-queue/create-candidates-from-ready", async (_req, res) => {
+  try {
+    const result = await create_candidates_from_ready_queue();
+    return res.json(result);
+  } catch (error: any) {
+    return res.status(500).json({ success: false, action: "create_candidates_from_ready", error: "create_candidates_from_ready_failed", message: error?.message ?? String(error) });
   }
 });
 
