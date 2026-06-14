@@ -410,7 +410,12 @@ export async function list_registry_entity_candidates(input?: { limit?: number }
 
   const total_result = await pool.query(`select count(*)::int as total from public.registry_entity_extraction_v4`);
   const breakdown_result = await pool.query(
-    `select coalesce(promotion_ready->>'candidate_type', 'unknown') as candidate_type,
+    `select coalesce(
+              promotion_ready->>'candidate_type',
+              promotion_ready->>'resource_type',
+              promotion_ready->>'status',
+              'unknown'
+            ) as candidate_type,
             count(*)::int as count
        from public.registry_entity_extraction_v4
       group by 1
@@ -449,7 +454,7 @@ export async function list_registry_entity_candidates(input?: { limit?: number }
       name: row.name ?? null,
       confidence: row.confidence === null || row.confidence === undefined ? null : Number(row.confidence),
       promotion_ready: row.promotion_ready ?? null,
-      candidate_type: row.promotion_ready?.candidate_type ?? row.promotion_ready?.status ?? "unknown",
+      candidate_type: row.promotion_ready?.candidate_type ?? row.promotion_ready?.resource_type ?? row.promotion_ready?.status ?? "unknown",
       extraction_timestamp: row.extraction_timestamp ? String(row.extraction_timestamp) : null,
       extraction_version: row.extraction_version ?? null,
       program_id: row.program_id ?? null,
