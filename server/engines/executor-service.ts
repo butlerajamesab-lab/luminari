@@ -202,7 +202,7 @@ export async function applyEnginePatch(
       newState: { ...current, ...setValues },
       rollbackAvailable: true,
       rollbackData: { type: "engine_patch", engineId, previousValues: Object.fromEntries(Object.entries(diff).map(([k, v]) => [k, v.from])) },
-      timestamp: Date.now(),
+      timestamp: new Date(),
     });
 
     const patchId = (logEntry as any).insertId;
@@ -278,7 +278,7 @@ export async function applyStreamPatch(
       newState: { ...current, ...setValues },
       rollbackAvailable: true,
       rollbackData: { type: "stream_patch", streamId, previousValues: Object.fromEntries(Object.entries(diff).map(([k, v]) => [k, v.from])) },
-      timestamp: Date.now(),
+      timestamp: new Date(),
     });
 
     const patchId = (logEntry as any).insertId;
@@ -329,7 +329,7 @@ export async function applySchemaPatch(
       newState: { sql: sqlStatement, affectedRows },
       rollbackAvailable: !!rollbackSql,
       rollbackData: rollbackSql ? { type: "schema_patch", sql: rollbackSql } : null,
-      timestamp: Date.now(),
+      timestamp: new Date(),
     });
 
     const patchId = (logEntry as any).insertId;
@@ -387,7 +387,7 @@ export async function rollbackPatch(changeId: number, executedBy: string, execut
       previousState: change.newState,
       newState: change.previousState,
       rollbackAvailable: false,
-      timestamp: Date.now(),
+      timestamp: new Date(),
     });
 
     return { success: true, summary: `Rolled back: ${change.description}` };
@@ -445,7 +445,7 @@ export async function resetStreamCheckpoint(streamId: string, executedBy: string
     newState: { lastIngestedAt: null },
     rollbackAvailable: true,
     rollbackData: { type: "stream_patch", streamId, previousValues: { lastIngestedAt: previousCheckpoint } },
-    timestamp: Date.now(),
+    timestamp: new Date(),
   });
 
   return { success: true, summary: `Checkpoint reset for ${streamId}. Next ingestion will fetch all records.` };
