@@ -36,6 +36,7 @@ const tribal_record_layers = [
 const atlas_links = [
   ["Duwamish Tribal Card", "/recognition-atlas/duwamish", "Open the dedicated Duwamish parent page. This is where Duwamish-specific depth belongs."],
   ["Muwékma Tribal Card", "/recognition-atlas/muwekma", "Open the dedicated Muwékma parent page. This is where Muwékma-specific depth belongs."],
+  ["Chinook Tribal Card", "/recognition-atlas/chinook", "Open the dedicated Chinook Indian Nation parent page and seven-layer source packet."],
   ["Recognition Gideon / RTR Matrix", "/recognition-gideon", "Open the system-analysis layer for recognition conditions, weak joints, and Route to Recognition comparison."],
   ["Native Nations Hub", "/native-nations", "Return to the gentle entryway for Native Nations pathways and support routing."],
 ];
@@ -168,6 +169,9 @@ export default function RecognitionAtlas() {
             </Link>
             <Link href="/recognition-atlas/muwekma" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
               Muwékma Card <MapPin size={15} />
+            </Link>
+            <Link href="/recognition-atlas/chinook" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
+              Chinook Card <MapPin size={15} />
             </Link>
             <Link href="/legal-library" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
               Legal Library <FileText size={15} />

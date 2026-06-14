@@ -4,6 +4,7 @@ import { duwamish_truth_layers } from "@/data/recognition_atlas_layers";
 import { continuous_habitation_paradox } from "@/data/recognition_weak_joints";
 import { duwamish_truth_seed } from "@/data/duwamish_truth_seed";
 import { muwekma_truth_seed } from "@/data/muwekma_truth_seed";
+import { chinook_truth_seed } from "@/data/chinook_truth_seed";
 import { get_conflict_fields, resolve_truth_layer } from "@/resolvers/truth_layer_resolver";
 import type { ReactNode } from "react";
 import { Link, useRoute } from "wouter";
@@ -22,8 +23,15 @@ const tone = {
 };
 
 type layer_slug = "identity" | "treaty" | "dispossession" | "timeline" | "lawsuit" | "language" | "ally-call";
-type supported_tribe_id = "duwamish" | "muwekma";
-type source_posture = "verbatim_tribal_source" | "structured_extraction_from_tribal_source" | "tribe_affiliated_source" | "external_source" | "lighthouse_analysis";
+type supported_tribe_id = "duwamish" | "muwekma" | "chinook";
+type source_posture =
+  | "verbatim_tribal_source"
+  | "structured_extraction_from_tribal_source"
+  | "structured_extraction_from_public_record"
+  | "structured_extraction_from_tribal_affiliated_scholarly_source"
+  | "tribe_affiliated_source"
+  | "external_source"
+  | "lighthouse_analysis";
 
 type source_meta = {
   url: string;
@@ -55,48 +63,23 @@ const layer_slug_to_key: Record<layer_slug, string> = {
 };
 
 const muwekma_layer_configs: Record<layer_slug, layer_preview_config> = {
-  identity: {
-    key: "layer_0_identity",
-    title: "Identity Core",
-    subtitle: "Muwékma · Those Who Walk Forward",
-    description: "Muwékma identity, homeland, and present-day community territory render here as a cited admin-preview review packet pending tribal review.",
-  },
-  treaty: {
-    key: "layer_1_treaty",
-    title: "Treaty / Political Relationship",
-    subtitle: "Verona Band / federal identification and omission",
-    description: "Political relationship and treaty-status fields render from the Muwékma source seed with citation and source posture.",
-  },
-  dispossession: {
-    key: "layer_2_dispossession",
-    title: "Dispossession Record",
-    subtitle: "Continuity-impacting events and administrative omission",
-    description: "Each event renders as a cited source-packet row. This is not a summary and not a recognition determination.",
-  },
-  timeline: {
-    key: "layer_3_recognition_timeline",
-    title: "Recognition Timeline",
-    subtitle: "Prior federal identification, omission, petition, denial, and litigation",
-    description: "Recognition events render with year, label, outcome, and agent from the Muwékma source seed.",
-  },
-  lawsuit: {
-    key: "layer_4_lawsuit",
-    title: "Lawsuit Claims",
-    subtitle: "Muwékma Ohlone v. Salazar frame",
-    description: "Legal claims and procedural posture render from the Muwékma recognition record with citations and source posture.",
-  },
-  language: {
-    key: "layer_5_living_culture",
-    title: "Living Culture / Language",
-    subtitle: "Chochenyo language and cultural revitalization",
-    description: "Language program, living practices, physical home, and stewardship fields render from the seed without count-only compression.",
-  },
-  "ally-call": {
-    key: "layer_6_ally_call",
-    title: "Ally Call",
-    subtitle: "How to stand with the Muwékma Ohlone Tribe",
-    description: "Land acknowledgement, closing statement, and every ally action render from the Muwékma source seed.",
-  },
+  identity: { key: "layer_0_identity", title: "Identity Core", subtitle: "Muwékma · Those Who Walk Forward", description: "Muwékma identity, homeland, and present-day community territory render here as a cited admin-preview review packet pending tribal review." },
+  treaty: { key: "layer_1_treaty", title: "Treaty / Political Relationship", subtitle: "Verona Band / federal identification and omission", description: "Political relationship and treaty-status fields render from the Muwékma source seed with citation and source posture." },
+  dispossession: { key: "layer_2_dispossession", title: "Dispossession Record", subtitle: "Continuity-impacting events and administrative omission", description: "Each event renders as a cited source-packet row. This is not a summary and not a recognition determination." },
+  timeline: { key: "layer_3_recognition_timeline", title: "Recognition Timeline", subtitle: "Prior federal identification, omission, petition, denial, and litigation", description: "Recognition events render with year, label, outcome, and agent from the Muwékma source seed." },
+  lawsuit: { key: "layer_4_lawsuit", title: "Lawsuit Claims", subtitle: "Muwékma Ohlone v. Salazar frame", description: "Legal claims and procedural posture render from the Muwékma recognition record with citations and source posture." },
+  language: { key: "layer_5_living_culture", title: "Living Culture / Language", subtitle: "Chochenyo language and cultural revitalization", description: "Language program, living practices, physical home, and stewardship fields render from the seed without count-only compression." },
+  "ally-call": { key: "layer_6_ally_call", title: "Ally Call", subtitle: "How to stand with the Muwékma Ohlone Tribe", description: "Land acknowledgement, closing statement, and every ally action render from the Muwékma source seed." },
+};
+
+const chinook_layer_configs: Record<layer_slug, layer_preview_config> = {
+  identity: { key: "layer_0_identity", title: "Identity Core", subtitle: "Chinook Indian Nation · five western-most Chinookan speaking tribes", description: "Identity, constituent peoples, constitution, headquarters, and Tribal Council source fields." },
+  treaty: { key: "layer_1_treaty", title: "Treaty / Political Relationship", subtitle: "Tansy Point Treaty record", description: "Treaty text, reserved-rights language, and tribal treaty framing from cited sources." },
+  dispossession: { key: "layer_2_dispossession", title: "Dispossession Record", subtitle: "1864 taking, claims litigation, and ICC award", description: "Secretary of Interior taking, homeland refusal, Court of Claims, and 10-cent-per-acre award record." },
+  timeline: { key: "layer_3_recognition_timeline", title: "Recognition Timeline", subtitle: "215 Years of Broken Promises & Failed Obligations", description: "Federal interaction, treaty non-ratification, trust-fund cutoff, recognition reversal, and litigation timeline." },
+  lawsuit: { key: "layer_4_lawsuit", title: "Lawsuit Claims", subtitle: "Chinook Indian Nation v. Zinke", description: "Source packet for constructive ratification, re-petition ban, claims-award money, and special-master claims." },
+  language: { key: "layer_5_language_vault", title: "Language / Living Culture", subtitle: "Chinookan-speaking community", description: "Language and living-culture packet held pending tribal review before expansion." },
+  "ally-call": { key: "layer_6_ally_call", title: "Ally Call", subtitle: "Congressional recognition and #ChinookJustice", description: "Tribe-directed recognition request, donate, volunteer, campaign, and Congress-contact routes." },
 };
 
 const back_link_style = {
@@ -151,12 +134,10 @@ function section_card({ title, children }: { title: string; children: ReactNode 
 
 function source_footer(source: source_meta) {
   return (
-    <div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12, marginTop: 10 }}>
-      source_posture: {source.source_posture}
-      {source.url && (
-        <a href={source.url} target="_blank" rel="noreferrer" style={{ color: tone.blue, display: "block", marginTop: 8, wordBreak: "break-word" }}>citation: {source.url}</a>
-      )}
-      {source.warning && <div style={{ color: tone.gold, marginTop: 8 }}>{source.warning}</div>}
+    <div style={{ marginTop: 10 }}>
+      <span style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12, border: `1px solid rgba(212,160,23,0.35)`, borderRadius: 999, padding: "0.2rem 0.45rem" }}>{source.source_posture}</span>
+      {source.url && <a href={source.url} target="_blank" rel="noreferrer" style={{ color: tone.blue, display: "block", marginTop: 8, wordBreak: "break-word", fontSize: 12 }}>citation</a>}
+      {source.warning && <div style={{ color: tone.gold, marginTop: 8, fontSize: 12 }}>{source.warning}</div>}
     </div>
   );
 }
@@ -181,28 +162,29 @@ function list_value(values: Array<string | number | undefined>) {
 }
 
 function source_for_muwekma_layer(layer_source: typeof muwekma_truth_seed.layer_0_identity.source, warning?: string): source_meta {
-  return {
-    url: layer_source.url,
-    source_posture: source_posture_for_muwekma(layer_source.source_domain),
-    warning,
-  };
+  return { url: layer_source.url, source_posture: source_posture_for_muwekma(layer_source.source_domain), warning };
+}
+
+function source_for_chinook(source: { url: string; source_posture: string }): source_meta {
+  return { url: source.url, source_posture: source.source_posture as source_posture };
 }
 
 function council_review_packet_notice({ tribe_id }: { tribe_id: supported_tribe_id }) {
   return (
     <section style={{ border: `1px solid rgba(52,211,153,0.35)`, background: "rgba(52,211,153,0.055)", borderRadius: 22, padding: "1rem", marginBottom: "1rem" }}>
       <h2 style={{ margin: "0 0 0.5rem" }}>Council review source packet</h2>
-      <p style={{ color: tone.muted, lineHeight: 1.65, margin: 0 }}>This preview is a cited structured review packet for {tribe_id}. It is not public, not final, and not tribal approval. Each field shows source_posture and citation so the tribe can confirm, correct, restrict, replace, or reject what appears here.</p>
+      <p style={{ color: tone.muted, lineHeight: 1.65, margin: 0 }}>This preview is a cited structured review packet for {tribe_id}. It is not public, not final, and not tribal approval. Each field carries source posture and citation so the tribe can confirm, correct, restrict, replace, or reject what appears here.</p>
     </section>
   );
 }
 
 function is_supported_tribe_id(tribe_id: string): tribe_id is supported_tribe_id {
-  return tribe_id === "duwamish" || tribe_id === "muwekma";
+  return tribe_id === "duwamish" || tribe_id === "muwekma" || tribe_id === "chinook";
 }
 
 function get_layer_config(tribe_id: supported_tribe_id, active_layer_slug: layer_slug): layer_preview_config | undefined {
   if (tribe_id === "muwekma") return muwekma_layer_configs[active_layer_slug];
+  if (tribe_id === "chinook") return chinook_layer_configs[active_layer_slug];
   const layer_key = layer_slug_to_key[active_layer_slug];
   return duwamish_truth_layers.find((layer) => layer.key === layer_key);
 }
@@ -350,6 +332,78 @@ function get_muwekma_layer_fields(active_layer_slug: layer_slug): preview_field[
   return layer_fields[active_layer_slug];
 }
 
+function get_chinook_layer_fields(active_layer_slug: layer_slug): preview_field[] {
+  const seed = chinook_truth_seed;
+  const source = source_for_chinook;
+
+  const layer_fields: Record<layer_slug, preview_field[]> = {
+    identity: [
+      { label: "tribe_self_name", value: seed.layer_0_identity.tribe_self_name, source: source(seed.layer_0_identity.source) },
+      { label: "self_description", value: seed.layer_0_identity.self_description, source: source(seed.layer_0_identity.source) },
+      { label: "constituent_peoples", value: seed.layer_0_identity.constituent_peoples, source: source(seed.layer_0_identity.source) },
+      { label: "constitution_note", value: seed.layer_0_identity.constitution_note, source: source(seed.layer_0_identity.source) },
+      { label: "constitution_age_claim", value: seed.layer_0_identity.constitution_age_claim, source: source(seed.layer_0_identity.source) },
+      { label: "governing_body_name", value: seed.layer_0_identity.governing_body.name, source: source(seed.layer_0_identity.governing_body.source) },
+      { label: "governing_body_structure", value: seed.layer_0_identity.governing_body.structure, source: source(seed.layer_0_identity.governing_body.source) },
+      { label: "governing_body_name_note", value: seed.layer_0_identity.governing_body.vacancies_note, source: source(seed.layer_0_identity.governing_body.source) },
+      { label: "headquarters", value: seed.layer_0_identity.headquarters.address, source: source(seed.layer_0_identity.headquarters.source) },
+      { label: "phone", value: seed.layer_0_identity.headquarters.phone, source: source(seed.layer_0_identity.headquarters.source) },
+      { label: "email", value: seed.layer_0_identity.headquarters.email, source: source(seed.layer_0_identity.headquarters.source) },
+    ],
+    treaty: [
+      { label: "treaty_name", value: seed.layer_1_treaty.treaty_name, source: source(seed.layer_1_treaty.source) },
+      { label: "treaty_date", value: seed.layer_1_treaty.treaty_date, source: source(seed.layer_1_treaty.source) },
+      { label: "treaty_place", value: seed.layer_1_treaty.treaty_place, source: source(seed.layer_1_treaty.source) },
+      { label: "bands_named", value: seed.layer_1_treaty.bands_named.join(" · "), source: source(seed.layer_1_treaty.source) },
+      { label: "verbatim_opening", value: seed.layer_1_treaty.verbatim_opening, source: source(seed.layer_1_treaty.source) },
+      { label: "verbatim_reserved_rights", value: seed.layer_1_treaty.verbatim_reserved_rights, source: source(seed.layer_1_treaty.source) },
+      { label: "tribal_framing", value: seed.layer_1_treaty.tribal_framing, source: source(seed.layer_1_treaty.tribal_source) },
+      { label: "ratification_status", value: seed.layer_1_treaty.ratification_status, source: source(seed.layer_1_treaty.tribal_source) },
+    ],
+    dispossession: seed.layer_2_dispossession.events.map((event) => ({
+      label: `${event.year}_${event.event_label}`,
+      value: [event.description, event.verbatim_quote].filter(Boolean).join(" — "),
+      source: { url: event.citation, source_posture: event.source_posture as source_posture },
+    })),
+    timeline: [
+      { label: "timeline_title", value: seed.layer_3_recognition_timeline.title, source: source(seed.layer_3_recognition_timeline.source) },
+      { label: "timeline_subtitle", value: seed.layer_3_recognition_timeline.subtitle, source: source(seed.layer_3_recognition_timeline.source) },
+      { label: "status_statement", value: seed.layer_3_recognition_timeline.status_statement, source: source(seed.layer_3_recognition_timeline.source) },
+      { label: "current_status", value: seed.layer_3_recognition_timeline.current_status, source: source(seed.layer_3_recognition_timeline.source) },
+      ...seed.layer_3_recognition_timeline.events.map((event) => ({
+        label: `${event.year}${event.month ? `_${event.month}` : ""}_${event.event_label}`,
+        value: `${event.month ? `${event.month} ` : ""}${event.year}: ${event.description}${event.outcome ? ` (${event.outcome})` : ""}`,
+        source: source(event.source),
+      })),
+    ],
+    lawsuit: [
+      { label: "case_name", value: seed.layer_4_lawsuit.case_name, source: source(seed.layer_4_lawsuit.source) },
+      { label: "filed_date", value: seed.layer_4_lawsuit.filed_date, source: source(seed.layer_4_lawsuit.source) },
+      { label: "defendant", value: seed.layer_4_lawsuit.defendant, source: source(seed.layer_4_lawsuit.source) },
+      { label: "current_procedural_status", value: seed.layer_4_lawsuit.current_procedural_status, source: source(seed.layer_4_lawsuit.source) },
+      ...seed.layer_4_lawsuit.claims.map((claim) => ({
+        label: claim.claim_label,
+        value: claim.legal_basis,
+        source: source(seed.layer_4_lawsuit.source),
+      })),
+    ],
+    language: [
+      { label: "language_name", value: seed.layer_5_language_vault.language_name, source: source(seed.layer_5_language_vault.source) },
+      { label: "community_description", value: seed.layer_5_language_vault.community_description, source: source(seed.layer_5_language_vault.source) },
+      { label: "living_culture_note", value: seed.layer_5_language_vault.living_culture_note, source: source(seed.layer_5_language_vault.source) },
+    ],
+    "ally-call": [
+      { label: "recognition_request", value: seed.layer_6_ally_call.recognition_request, source: source(seed.layer_6_ally_call.source) },
+      { label: "donate_url", value: seed.layer_6_ally_call.donate_url, source: source(seed.layer_6_ally_call.justice_source) },
+      { label: "volunteer_url", value: seed.layer_6_ally_call.volunteer_url, source: source(seed.layer_6_ally_call.source) },
+      { label: "justice_campaign_url", value: seed.layer_6_ally_call.justice_campaign_url, source: source(seed.layer_6_ally_call.justice_source) },
+      { label: "contact_congress_url", value: seed.layer_6_ally_call.contact_congress_url, source: source(seed.layer_6_ally_call.source) },
+    ],
+  };
+
+  return layer_fields[active_layer_slug].filter((field) => field.value !== "");
+}
+
 export default function RecognitionAtlasLayer() {
   const [, params] = useRoute("/recognition-atlas/:tribe_id/:layer_slug");
   const { user, isAuthenticated, loading } = useAuth();
@@ -359,12 +413,12 @@ export default function RecognitionAtlasLayer() {
 
   const tribe_id = params?.tribe_id ?? "";
   const active_layer_slug = params?.layer_slug as layer_slug | undefined;
-  if (!is_supported_tribe_id(tribe_id) || !active_layer_slug || !(active_layer_slug in layer_slug_to_key)) return gate_panel({ title: "Recognition Atlas layer not found", message: "Only the Duwamish and Muwékma admin preview layers are wired in this phase." });
+  if (!is_supported_tribe_id(tribe_id) || !active_layer_slug || !(active_layer_slug in layer_slug_to_key)) return gate_panel({ title: "Recognition Atlas layer not found", message: "Only the Duwamish, Muwékma, and Chinook admin preview layers are wired in this phase." });
 
   const layer_key = tribe_id === "muwekma" && active_layer_slug === "language" ? "layer_5_living_culture" : layer_slug_to_key[active_layer_slug];
   const layer_config = get_layer_config(tribe_id, active_layer_slug);
   const duwamish_layer_data = tribe_id === "duwamish" ? get_duwamish_layer_fields(active_layer_slug) : undefined;
-  const layer_fields = tribe_id === "duwamish" ? duwamish_layer_data?.fields ?? [] : get_muwekma_layer_fields(active_layer_slug);
+  const layer_fields = tribe_id === "duwamish" ? duwamish_layer_data?.fields ?? [] : tribe_id === "chinook" ? get_chinook_layer_fields(active_layer_slug) : get_muwekma_layer_fields(active_layer_slug);
   const conflict_fields = duwamish_layer_data?.conflict_fields ?? [];
 
   return (
@@ -385,7 +439,7 @@ export default function RecognitionAtlasLayer() {
           {section_card({ title: "Protection state", children: (<div style={{ color: tone.muted, lineHeight: 1.75 }}><p><Shield size={16} color={tone.green} /> Atlas remains the private build and approval workspace.</p><p>public_display_permitted: false</p><p>approval_status: locked_pending_tribe_review</p><p>luminari_commitment: we_are_the_vessel_they_are_the_author</p></div>) })}
         </div>
         {tribe_id === "duwamish" && active_layer_slug === "dispossession" && section_card({ title: "Weak Joints Illustrated", children: (<article style={{ border: `1px solid rgba(212,160,23,0.35)`, background: "rgba(212,160,23,0.06)", borderRadius: 16, padding: "0.95rem" }}><div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{continuous_habitation_paradox.weak_joint_id}</div><h3 style={{ margin: "0.5rem 0" }}>{continuous_habitation_paradox.title}</h3><p style={{ color: tone.muted, lineHeight: 1.65 }}>{continuous_habitation_paradox.description}</p><p style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>authorship: {continuous_habitation_paradox.authorship} · publication_status: {continuous_habitation_paradox.publication_status}</p><Link href="/recognition-gideon?weak_joint=continuous_habitation_paradox" style={{ color: tone.blue, textDecoration: "none", display: "inline-flex", gap: 6 }}>Open Recognition Gideon analysis <ArrowRight size={14} /></Link></article>) })}
-        {tribe_id === "duwamish" && active_layer_slug === "language" && section_card({ title: "Language entries for review", children: (<div style={{ display: "grid", gap: "0.75rem" }}>{[duwamish_language_seed.self_identifier_entry, duwamish_language_seed.primary_declaration_entry, ...duwamish_language_seed.entries].map((entry) => (<article key={entry.entry_id} style={{ border: `1px solid ${tone.card_border}`, borderRadius: 16, padding: "0.9rem", background: "rgba(255,255,255,0.025)" }}><div style={{ color: tone.paper, fontSize: "1.25rem" }}>{entry.original_text}</div><div style={{ color: tone.muted }}>{entry.romanization}</div><div style={{ color: tone.blue }}>{entry.english_gloss}</div><div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12, marginTop: 8 }}>source_posture: source_authenticated_from_tribal_website · citation: {entry.source_url}</div>{entry.extended_meaning && <p style={{ color: tone.muted, lineHeight: 1.6 }}>{entry.extended_meaning}</p>}{entry.verified_by_tribe === false && <p style={{ color: tone.gold, fontSize: 12 }}>council_review_required</p>}</article>))}</div>) })}
+        {tribe_id === "duwamish" && active_layer_slug === "language" && section_card({ title: "Language entries for review", children: (<div style={{ display: "grid", gap: "0.75rem" }}>{[duwamish_language_seed.self_identifier_entry, duwamish_language_seed.primary_declaration_entry, ...duwamish_language_seed.entries].map((entry) => (<article key={entry.entry_id} style={{ border: `1px solid ${tone.card_border}`, borderRadius: 16, padding: "0.9rem", background: "rgba(255,255,255,0.025)" }}><div style={{ color: tone.paper, fontSize: "1.25rem" }}>{entry.original_text}</div><div style={{ color: tone.muted }}>{entry.romanization}</div><div style={{ color: tone.blue }}>{entry.english_gloss}</div><div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12, marginTop: 8 }}>source authenticated from tribal website · <a href={entry.source_url} target="_blank" rel="noreferrer" style={{ color: tone.blue }}>citation</a></div>{entry.extended_meaning && <p style={{ color: tone.muted, lineHeight: 1.6 }}>{entry.extended_meaning}</p>}{entry.verified_by_tribe === false && <p style={{ color: tone.gold, fontSize: 12 }}>council_review_required</p>}</article>))}</div>) })}
         {conflict_fields.length > 0 && section_card({ title: "Conflict flags visible in this record", children: (<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "0.75rem" }}>{conflict_fields.map((conflict) => (<article key={conflict.field} style={{ border: `1px solid rgba(239,68,68,0.22)`, background: "rgba(239,68,68,0.055)", borderRadius: 16, padding: "0.9rem" }}><div style={{ color: tone.red, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{conflict.field}</div><p style={{ color: tone.muted, lineHeight: 1.6 }}>{conflict.conflict_note}</p></article>))}</div>) })}
       </section>
     </main>
