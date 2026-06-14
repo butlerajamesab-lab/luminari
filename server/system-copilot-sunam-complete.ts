@@ -457,7 +457,7 @@ export async function executeArtifact(artifactId: number, executedBy: string) {
       newState: { content: artifact.content, type: artifact.artifactType },
       rollbackAvailable: !!artifact.rollbackContent,
       rollbackData: artifact.rollbackContent ? { content: artifact.rollbackContent, type: artifact.artifactType } : null,
-      timestamp: Date.now(),
+      timestamp: new Date(),
     });
 
     return { success: true, summary: resultSummary };

@@ -295,7 +295,7 @@ export async function runHealerCycle(): Promise<HealerAction[]> {
           newState: fix.updates,
           rollbackAvailable: true,
           rollbackData: beforeState,
-          timestamp: Date.now(),
+          timestamp: new Date(),
         });
 
         cycleActions.push({
@@ -354,7 +354,6 @@ export async function runHealerCycle(): Promise<HealerAction[]> {
           });
 
           // Log re-run result
-          // @ts-expect-error pre-existing type mismatch
           await db.insert(adminChangeLog).values({
             adminId: "sunam-healer",
             actionType: "stream_run",
@@ -363,7 +362,7 @@ export async function runHealerCycle(): Promise<HealerAction[]> {
             description: `[AUTONOMOUS] Re-run after fix: ${result.success ? `${result.recordsProcessed} records, ${result.signalsGenerated} signals` : `FAILED: ${result.errors[0]}`}`,
             newState: afterState,
             rollbackAvailable: false,
-            timestamp: Date.now(),
+            timestamp: new Date(),
           });
 
         } catch (runErr: any) {

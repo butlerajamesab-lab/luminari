@@ -636,7 +636,7 @@ export async function dispatchTool(
           actionType: "stream_edit", targetSystem: "data_stream_registry",
           targetId: args.stream_id,
           description: `[SUNAM] Re-enabled stream ${args.stream_id} and reset failure counters`,
-          rollbackAvailable: false, timestamp: Date.now(),
+          rollbackAvailable: false, timestamp: new Date(),
         });
         return { ...base, success: true, result: { stream_id: args.stream_id, status: "enabled", failures_reset: true } };
       }
@@ -651,7 +651,7 @@ export async function dispatchTool(
           actionType: "stream_disable", targetSystem: "data_stream_registry",
           targetId: args.stream_id,
           description: `[SUNAM] Disabled stream ${args.stream_id}: ${args.reason ?? "no reason given"}`,
-          rollbackAvailable: false, timestamp: Date.now(),
+          rollbackAvailable: false, timestamp: new Date(),
         });
         return { ...base, success: true, result: { stream_id: args.stream_id, status: "disabled" } };
       }
@@ -675,7 +675,7 @@ export async function dispatchTool(
           actionType: "stream_add", targetSystem: "data_stream_registry",
           targetId: args.stream_id,
           description: `[SUNAM] Registered new stream: ${args.stream_name} (${args.stream_id})`,
-          rollbackAvailable: false, timestamp: Date.now(),
+          rollbackAvailable: false, timestamp: new Date(),
         });
         return { ...base, success: true, result: { stream_id: args.stream_id, registered: true } };
       }
@@ -797,7 +797,7 @@ export async function dispatchTool(
           actionType: "signal_weight_change", targetSystem: "data_stream_registry",
           targetId: args.stream_id,
           description: `[SUNAM] Signal weight for ${args.stream_id} → weight=${args.signal_weight ?? "unchanged"}, confidence=${args.confidence_multiplier ?? "unchanged"}`,
-          rollbackAvailable: false, timestamp: Date.now(),
+          rollbackAvailable: false, timestamp: new Date(),
         });
         return { ...base, success: true, result: { stream_id: args.stream_id, signal_weight: args.signal_weight, confidence_multiplier: args.confidence_multiplier } };
       }
