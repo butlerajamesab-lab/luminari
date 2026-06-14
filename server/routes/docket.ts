@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { createClient } from "@supabase/supabase-js";
 import { ENV } from "../_core/env";
-import { getMasterList, getSessionList, type LegiScanMasterBill } from "../../src/services/legiscan";
+import { getMasterList, getSessionList, type LegiScanMasterBill } from "../services/legiscan";
 
 const CACHE_TTL_MS = 8 * 60 * 60 * 1000;
 
