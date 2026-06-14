@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Router } from "express";
-import { allowed_target_hints, create_candidates_from_ready_queue, list_corpus_import_queue, get_corpus_import_queue_row, set_corpus_import_queue_target_hint } from "../engines/ingestion-control";
+import { allowed_target_hints, create_candidates_from_ready_queue, list_corpus_import_queue, get_corpus_import_queue_row, list_registry_entity_candidates, set_corpus_import_queue_target_hint } from "../engines/ingestion-control";
 import { getPool } from "../db";
 
 const execFileAsync = promisify(execFile);
@@ -47,6 +47,17 @@ async function persist_extract_command_diagnostic(id: number, diagnostic: Record
     [id, JSON.stringify(diagnostic)],
   );
 }
+
+ingestionControlRestRouter.get("/registry-entity-candidates", async (req, res) => {
+  try {
+    const limit_raw = typeof req.query.limit === "string" ? Number(req.query.limit) : 25;
+    const limit = Number.isFinite(limit_raw) ? limit_raw : 25;
+    const result = await list_registry_entity_candidates({ limit });
+    return res.json(result);
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: "registry_entity_candidates_read_failed", message: error?.message ?? String(error) });
+  }
+});
 
 ingestionControlRestRouter.get("/corpus-import-queue", async (req, res) => {
   try {

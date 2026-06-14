@@ -1240,7 +1240,7 @@ Timestamp: ${new Date(executedAt).toISOString()}`,
     description: `[SUNAM EXECUTE] ${instruction.substring(0, 200)} — ${steps.length} actions taken`,
     newState: { instruction, steps: steps.length, success: steps.every(s => s.success) },
     rollbackAvailable: false,
-    timestamp: executedAt,
+    timestamp: new Date(executedAt),
   });
 
   return {

@@ -404,6 +404,65 @@ export async function create_candidates_from_ready_queue() {
   }
 }
 
+export async function list_registry_entity_candidates(input?: { limit?: number }) {
+  const pool = getPool();
+  const limit = Math.min(Math.max(input?.limit ?? 25, 1), 100);
+
+  const total_result = await pool.query(`select count(*)::int as total from public.registry_entity_extraction_v4`);
+  const breakdown_result = await pool.query(
+    `select coalesce(
+              promotion_ready->>'candidate_type',
+              promotion_ready->>'resource_type',
+              promotion_ready->>'status',
+              'unknown'
+            ) as candidate_type,
+            count(*)::int as count
+       from public.registry_entity_extraction_v4
+      group by 1
+      order by count desc, candidate_type asc`,
+  );
+  const recent_result = await pool.query(
+    `select
+        source_file,
+        jurisdiction,
+        name,
+        promotion_ready,
+        confidence_scores,
+        coalesce((confidence_scores->>'overall')::numeric, null) as confidence,
+        extraction_timestamp,
+        extraction_version,
+        program_id,
+        content_hash
+       from public.registry_entity_extraction_v4
+      order by extraction_timestamp desc nulls last, content_hash desc nulls last
+      limit $1`,
+    [limit],
+  );
+
+  return {
+    success: true,
+    table: "public.registry_entity_extraction_v4",
+    canonical_promotion_enabled: false,
+    total_candidate_count: Number(total_result.rows[0]?.total ?? 0),
+    candidate_type_breakdown: breakdown_result.rows.map((row: any) => ({
+      candidate_type: row.candidate_type ?? "unknown",
+      count: Number(row.count ?? 0),
+    })),
+    recent_candidates: recent_result.rows.map((row: any) => ({
+      source_file: row.source_file ?? null,
+      jurisdiction: row.jurisdiction ?? null,
+      name: row.name ?? null,
+      confidence: row.confidence === null || row.confidence === undefined ? null : Number(row.confidence),
+      promotion_ready: row.promotion_ready ?? null,
+      candidate_type: row.promotion_ready?.candidate_type ?? row.promotion_ready?.resource_type ?? row.promotion_ready?.status ?? "unknown",
+      extraction_timestamp: row.extraction_timestamp ? String(row.extraction_timestamp) : null,
+      extraction_version: row.extraction_version ?? null,
+      program_id: row.program_id ?? null,
+      content_hash: row.content_hash ?? null,
+    })),
+  };
+}
+
 export async function set_corpus_import_queue_target_hint(input: { id: number; target_hint: TargetHintValue }) {
   const pool = getPool();
   if (!allowed_target_hints.includes(input.target_hint)) {
