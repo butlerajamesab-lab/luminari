@@ -1,9 +1,19 @@
+export type source_posture =
+  | "verbatim_tribal_source"
+  | "structured_extraction_from_tribal_source"
+  | "structured_extraction_from_public_record"
+  | "structured_extraction_from_tribal_affiliated_scholarly_source"
+  | "tribe_affiliated_source"
+  | "external_source"
+  | "lighthouse_analysis_pending_tribal_review";
+
 export type source_ref = {
   url: string;
   page_title: string;
   source_domain: "duwamishtribe.org";
   retrieved_date: string;
   authored_by: "duwamish_tribe";
+  source_posture?: source_posture;
 };
 
 export type identity_core = {
@@ -15,6 +25,7 @@ export type identity_core = {
   territorial_basis: string;
   oral_tradition_anchor: string;
   homeland_waters: string[];
+  homeland_waters_source_posture?: source_posture;
   homeland_geography: string;
   present_day_member_territory: string[];
   source: source_ref;
