@@ -150,6 +150,22 @@ ingestionControlRestRouter.post("/corpus-import-queue/create-candidates-from-rea
   }
 });
 
+ingestionControlRestRouter.post("/promote-staged-resources-to-readable", async (req, res) => {
+  const started_at = Date.now();
+  try {
+    const dry_run = req.body?.dry_run !== false;
+    const limit_raw = Number(req.body?.limit ?? 0);
+    const args = ["scripts/promote-staged-resources-to-readable.mjs", dry_run ? "--dry-run" : "--apply"];
+    if (Number.isInteger(limit_raw) && limit_raw > 0) args.push(`--limit=${limit_raw}`);
+    const { stdout, stderr } = await execFileAsync(process.execPath, args, { cwd: process.cwd(), timeout: 300000, maxBuffer: 1024 * 1024 * 20, env: process.env });
+    const parsed_stdout = parse_command_json(stdout);
+    if (!parsed_stdout) return res.status(409).json({ success: false, action: "promote_staged_resources_to_readable", error: "promotion_command_no_json_output", runtime_ms: Date.now() - started_at, stdout_preview: stdout.slice(0, 4000), stderr_preview: stderr.slice(0, 4000) });
+    return res.json({ ...parsed_stdout, action: "promote_staged_resources_to_readable", runtime_ms: Date.now() - started_at, stderr_preview: stderr.slice(0, 4000) });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, action: "promote_staged_resources_to_readable", error: "promote_staged_resources_failed", message: error?.message ?? String(error), runtime_ms: Date.now() - started_at, stdout_preview: error?.stdout ?? "", stderr_preview: error?.stderr ?? "" });
+  }
+});
+
 ingestionControlRestRouter.post("/corpus-import-queue/normalize-docx-drain", async (_req, res) => {
   const started_at = Date.now();
   try {
@@ -157,8 +173,8 @@ ingestionControlRestRouter.post("/corpus-import-queue/normalize-docx-drain", asy
     const result = await pool.query(`with normalized as (
       update public.corpus_import_queue
          set import_status = 'ready_for_review',
-             normalized_text = trim(regexp_replace(regexp_replace(regexp_replace(coalesce(raw_text, ''), E'\\r\\n', E'\\n', 'g'), E'[ \\t]+\\n', E'\\n', 'g'), E'\\n{3,}', E'\\n\\n', 'g')),
-             normalized_text_chars = char_length(trim(regexp_replace(regexp_replace(regexp_replace(coalesce(raw_text, ''), E'\\r\\n', E'\\n', 'g'), E'[ \\t]+\\n', E'\\n', 'g'), E'\\n{3,}', E'\\n\\n', 'g'))),
+             normalized_text = trim(regexp_replace(regexp_replace(regexp_replace(coalesce(raw_text, ''), E'\r\n', E'\n', 'g'), E'[ \t]+\n', E'\n', 'g'), E'\n{3,}', E'\n\n', 'g')),
+             normalized_text_chars = char_length(trim(regexp_replace(regexp_replace(regexp_replace(coalesce(raw_text, ''), E'\r\n', E'\n', 'g'), E'[ \t]+\n', E'\n', 'g'), E'\n{3,}', E'\n\n', 'g'))),
              worker_state = 'completed_step',
              leased_by = null,
              lease_expires_at = null,
