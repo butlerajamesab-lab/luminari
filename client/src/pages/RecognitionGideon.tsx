@@ -2,7 +2,8 @@ import { useAuth } from "@/core/hooks/useAuth";
 import { community_continuity_condition } from "@/data/recognition_conditions";
 import { continuous_habitation_paradox } from "@/data/recognition_weak_joints";
 import { duwamish_truth_seed } from "@/data/duwamish_truth_seed";
-import { muwekma_truth_seed } from "@/data/muwekma_truth_seed";
+import { muwekma_truth_seed_corrected as muwekma_truth_seed } from "@/data/muwekma_truth_seed_corrected";
+import { chinook_truth_seed } from "@/data/chinook_truth_seed";
 import {
   recognition_gideon_axes,
   route_to_recognition_profiles,
@@ -74,13 +75,29 @@ function render_source_value(value: source_field["value"]) {
 }
 
 function verbatim_source_fields(profile: route_to_recognition_profile): source_field[] {
+  if (profile.tribe_id === "chinook") {
+    const identity_source_url = chinook_truth_seed.layer_0_identity.source.url;
+    const treaty_source_url = chinook_truth_seed.layer_1_treaty.source.url;
+    const recognition_source_url = chinook_truth_seed.layer_3_recognition_timeline.source.url;
+    const government_source_url = chinook_truth_seed.layer_0_identity.governing_body.source.url;
+
+    return [
+      { label: "tribe_self_name", value: chinook_truth_seed.layer_0_identity.tribe_self_name, source_posture: "verbatim_tribal_source", citation_url: identity_source_url },
+      { label: "self_description", value: chinook_truth_seed.layer_0_identity.self_description, source_posture: "verbatim_tribal_source", citation_url: identity_source_url },
+      { label: "constituent_peoples", value: chinook_truth_seed.layer_0_identity.constituent_peoples, source_posture: "verbatim_tribal_source", citation_url: identity_source_url },
+      { label: "treaty_name", value: chinook_truth_seed.layer_1_treaty.treaty_name, source_posture: "verbatim_tribal_source", citation_url: treaty_source_url },
+      { label: "governing_body", value: chinook_truth_seed.layer_0_identity.governing_body.name, source_posture: "verbatim_tribal_source", citation_url: government_source_url },
+      { label: "recognition_status", value: chinook_truth_seed.layer_3_recognition_timeline.current_status, source_posture: "structured_extraction_from_tribal_source", citation_url: recognition_source_url },
+    ];
+  }
+
   if (profile.tribe_id === "muwekma") {
     const source_url = muwekma_truth_seed.layer_0_identity.source.url;
     return [
       { label: "tribe_self_name", value: muwekma_truth_seed.layer_0_identity.tribe_self_name, source_posture: "structured_extraction_from_tribal_source", citation_url: source_url },
       { label: "name_meaning", value: muwekma_truth_seed.layer_0_identity.name_meaning, source_posture: "structured_extraction_from_tribal_source", citation_url: source_url },
-      { label: "primary_declaration", value: muwekma_truth_seed.layer_0_identity.primary_declaration, source_posture: "verbatim_tribal_source", citation_url: source_url },
-      { label: "territorial_declaration", value: muwekma_truth_seed.layer_0_identity.territorial_declaration, source_posture: "verbatim_tribal_source", citation_url: source_url },
+      { label: "primary_declaration", value: muwekma_truth_seed.layer_0_identity.primary_declaration, source_posture: "verbatim_tribal_source", citation_url: muwekma_truth_seed.layer_0_identity.primary_declaration_citation ?? source_url },
+      { label: "territorial_declaration", value: muwekma_truth_seed.layer_0_identity.territorial_declaration === "requires_tribal_review" ? "Requires tribal review" : muwekma_truth_seed.layer_0_identity.territorial_declaration, source_posture: "verbatim_tribal_source", citation_url: source_url },
       { label: "homeland_waters", value: muwekma_truth_seed.layer_0_identity.homeland_waters, source_posture: "structured_extraction_from_tribal_source", citation_url: source_url },
       { label: "present_day_member_territory", value: muwekma_truth_seed.layer_0_identity.present_day_member_territory, source_posture: "structured_extraction_from_tribal_source", citation_url: source_url },
     ];
@@ -212,7 +229,7 @@ export default function RecognitionGideon() {
 
         <section style={{ marginTop: "2rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1rem" }}>
           <article style={{ border: `1px solid ${tone.card_border}`, background: tone.card_bg, borderRadius: 22, padding: "1.25rem" }}>
-            <div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{community_continuity_condition.condition_id}</div>
+            <div style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{community_continuity_condition.condition_key}</div>
             <h2 style={{ margin: "0.55rem 0" }}>Condition preview · {community_continuity_condition.title}</h2>
             <p style={{ color: tone.muted, lineHeight: 1.65 }}>{community_continuity_condition.description}</p>
             <h4>governing_authorities</h4>
