@@ -24,6 +24,24 @@ const native_nations_pathways = [
   "Share Tribal Input / Source Materials",
 ];
 
+const tribal_source_packets = [
+  {
+    title: "Duwamish Tribal Card",
+    href: "/recognition-atlas/duwamish",
+    description: "Open the Duwamish Recognition Atlas parent card and source-packet layers.",
+  },
+  {
+    title: "Muwékma Tribal Card",
+    href: "/recognition-atlas/muwekma",
+    description: "Open the Muwékma Recognition Atlas parent card and source-packet layers.",
+  },
+  {
+    title: "Chinook Tribal Card",
+    href: "/recognition-atlas/chinook",
+    description: "Open the Chinook Indian Nation Recognition Atlas parent card and seven-layer source packet.",
+  },
+];
+
 const suggested_pathways = [
   "Start a guided intake to organize the Nation, family, program, or records-recovery need.",
   "Gather source materials, contacts, deadlines, agencies, and existing documentation before drafting requests.",
@@ -75,6 +93,19 @@ function support_card({ title, href, description }: { title: string; href: strin
   );
 }
 
+function source_packet_card({ title, href, description }: { title: string; href: string; description: string }) {
+  return (
+    <Link href={href} style={{ border: `1px solid rgba(212,160,23,0.35)`, background: "rgba(212,160,23,0.07)", color: tone.paper, borderRadius: 18, padding: "1rem", textDecoration: "none", display: "block" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 10 }}>
+        <h3 style={{ margin: 0, fontSize: "1.05rem" }}>{title}</h3>
+        <ArrowRight size={16} color={tone.gold} />
+      </div>
+      <p style={{ color: tone.muted, lineHeight: 1.6, margin: "0 0 0.85rem" }}>{description}</p>
+      <span style={{ color: tone.gold, fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>recognition_atlas_source_packet</span>
+    </Link>
+  );
+}
+
 export default function NativeNationsHub() {
   const { user, isAuthenticated, loading } = useAuth();
 
@@ -119,6 +150,13 @@ export default function NativeNationsHub() {
           <h2 style={{ margin: "0 0 1rem", fontSize: "1.4rem" }}>Native Nations focus pathways</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "0.85rem" }}>
             {native_nations_pathways.map((title) => planned_card({ title }))}
+          </div>
+        </section>
+
+        <section style={{ marginTop: "1.5rem" }}>
+          <h2 style={{ margin: "0 0 1rem", fontSize: "1.4rem" }}>Tribal source packets</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "0.85rem" }}>
+            {tribal_source_packets.map((packet) => source_packet_card(packet))}
           </div>
         </section>
 
