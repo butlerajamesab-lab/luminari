@@ -22,6 +22,7 @@ export const duwamish_truth_seed: duwamish_truth_layer = {
     territorial_basis: "Time immemorial — oral traditions reference the last Ice Age",
     oral_tradition_anchor: "North Wind, South Wind — references the Ice Weir breaking over the Duwamish River",
     homeland_waters: ["Elliott Bay", "Duwamish River Watershed", "Black River", "Cedar River"],
+    homeland_waters_source_posture: "structured_extraction_from_public_record",
     homeland_geography: "Seattle / Greater King County",
     present_day_member_territory: ["Seattle", "Burien", "Tukwila", "Renton", "Redmond"],
     source: make_source("https://www.duwamishtribe.org", "Duwamish Tribe — Home"),
@@ -99,11 +100,6 @@ export const duwamish_truth_seed: duwamish_truth_layer = {
     court: "U.S. District Court for the Western District of Washington",
     defendant: "Department of the Interior",
     claims: [
-      {
-        claim_label: "judicial_declaration",
-        legal_basis: "Historical recognition by Congress and U.S. courts",
-        statute_or_doctrine: "List Act of 1994",
-      },
       {
         claim_label: "compel_listing",
         legal_basis: "Congress never terminated tribal sovereignty; Department legally obligated to list the tribe",
