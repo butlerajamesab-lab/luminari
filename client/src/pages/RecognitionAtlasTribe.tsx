@@ -1,7 +1,7 @@
 import { useAuth } from "@/core/hooks/useAuth";
 import { duwamish_language_entries } from "@/data/recognition_atlas_layers";
 import { duwamish_truth_seed } from "@/data/duwamish_truth_seed";
-import { muwekma_truth_seed } from "@/data/muwekma_truth_seed";
+import { muwekma_truth_seed_corrected as muwekma_truth_seed } from "@/data/muwekma_truth_seed_corrected";
 import { muwekma_rtr_conflict_flags } from "@/data/muwekma_rtr_conflict_flags";
 import { chinook_truth_seed } from "@/data/chinook_truth_seed";
 import { get_conflict_fields, resolve_truth_layer } from "@/resolvers/truth_layer_resolver";
