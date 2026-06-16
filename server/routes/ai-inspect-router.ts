@@ -223,6 +223,16 @@ export const API_ROUTE_TABLE: ReadonlyArray<{
   { method: "USE", path: "/api/executor/*", source: "executor_routes" },
 ];
 
+export const NATIVE_RECOGNITION_ROUTE_CANDIDATES: ReadonlyArray<{
+  expected_path: string;
+  expected_component: string;
+}> = [
+  { expected_path: "/native-nations-hub", expected_component: "NativeNationsHub" },
+  { expected_path: "/recognition-atlas", expected_component: "RecognitionAtlas" },
+  { expected_path: "/recognition-atlas/:tribe", expected_component: "RecognitionAtlas" },
+  { expected_path: "/route-to-recognition", expected_component: "RouteToRecognition" },
+];
+
 /**
  * Page → primary tRPC namespace (first one referenced in the page's calls).
  * Extracted from all_pages_calls.tsv, manifest 2026-05-21.
@@ -392,9 +402,29 @@ router.get("/site-map", async (_req: Request, res: Response) => {
         (n) => n === "-",
       ).length,
     },
+    frontend_surface: {
+      total_routes: ROUTE_TABLE.length,
+      routes: ROUTE_TABLE,
+    },
     api_surface: {
-      total: API_ROUTE_TABLE.length,
+      total_mounts: API_ROUTE_TABLE.length,
       routes: API_ROUTE_TABLE,
+    },
+    native_recognition_surface: {
+      candidates: NATIVE_RECOGNITION_ROUTE_CANDIDATES.map((candidate) => {
+        const matched_route = ROUTE_TABLE.find(
+          (route) =>
+            route.path === candidate.expected_path ||
+            route.component === candidate.expected_component,
+        );
+
+        return {
+          expected_path: candidate.expected_path,
+          expected_component: candidate.expected_component,
+          route_status: matched_route ? "registered" : "not_registered",
+          matched_route: matched_route ?? null,
+        };
+      }),
     },
     backbone: {
       cases: casesCount,
