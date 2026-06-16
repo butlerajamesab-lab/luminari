@@ -206,6 +206,23 @@ export const ROUTE_TABLE: ReadonlyArray<{ path: string; component: string }> = [
   { path: "/business-analytics", component: "BusinessAnalytics" },
 ];
 
+export const API_ROUTE_TABLE: ReadonlyArray<{
+  method: string;
+  path: string;
+  source: string;
+}> = [
+  { method: "USE", path: "/api/trpc", source: "app_router_trpc" },
+  { method: "GET", path: "/api/health", source: "inline_health_check" },
+  { method: "USE", path: "/api/ai", source: "ai_inspect_router" },
+  { method: "USE", path: "/api/system", source: "system_visibility_router" },
+  { method: "USE", path: "/api/conveyor", source: "conveyor_router" },
+  { method: "USE", path: "/api/civic-map", source: "civic_map_router" },
+  { method: "USE", path: "/api/atlas", source: "atlas_proxy_router" },
+  { method: "USE", path: "/api/ingestion-control", source: "ingestion_control_rest_router" },
+  { method: "USE", path: "/api/docket", source: "docket_router" },
+  { method: "USE", path: "/api/executor/*", source: "executor_routes" },
+];
+
 /**
  * Page → primary tRPC namespace (first one referenced in the page's calls).
  * Extracted from all_pages_calls.tsv, manifest 2026-05-21.
@@ -374,6 +391,10 @@ router.get("/site-map", async (_req: Request, res: Response) => {
       pagesStaticOrUnwired: Object.values(PAGE_TO_NAMESPACE).filter(
         (n) => n === "-",
       ).length,
+    },
+    api_surface: {
+      total: API_ROUTE_TABLE.length,
+      routes: API_ROUTE_TABLE,
     },
     backbone: {
       cases: casesCount,
