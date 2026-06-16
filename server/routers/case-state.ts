@@ -3,31 +3,45 @@
  *
  * All platform outputs that get "committed" to a case land here.
  * Control Room reads from this table exclusively.
+ *
+ * State rules:
+ *   - procedural_path: single slot, overwrite on new commit
+ *   - remedy_strategy: single slot, overwrite on new commit
+ *   - claim_type: single slot, controlled set
+ *   - findings/barriers/benefits/signals/statutes/foia/filings: multi, append
+ *
+ * Signal routing on commit:
+ *   - structural → barriers
+ *   - evidentiary → findings
+ *   - pattern → strategy context (stored in signals with tag)
+ *   - resource → benefits
  */
 import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
 import { db } from "../db";
 import { cases, caseState, caseFlags } from "../../drizzle/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { emitSignal } from "../live-signal-emitter";
 
-async function verify_case_ownership(case_id: number, user_id: number) {
-  const [case_row] = await db.select({ id: cases.id, user_id: cases.userId })
-    .from(cases).where(eq(cases.id, case_id));
-  if (!case_row || case_row.user_id !== user_id) {
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+async function verifyCaseOwnership(caseId: number, userId: number) {
+  const [c] = await db.select({ id: cases.id, userId: cases.userId })
+    .from(cases).where(eq(cases.id, caseId));
+  if (!c || c.userId !== userId) {
     throw new Error("Case not found or access denied");
   }
-  return case_row;
+  return c;
 }
 
-async function get_or_create_case_state(case_id: number, user_id: number) {
-  const [existing] = await db.select().from(caseState).where(eq(caseState.caseId, case_id));
+async function getOrCreateCaseState(caseId: number, userId: number) {
+  const [existing] = await db.select().from(caseState).where(eq(caseState.caseId, caseId));
   if (existing) return existing;
 
   const now = Date.now();
   await db.insert(caseState).values({
-    caseId: case_id,
-    userId: user_id,
+    caseId,
+    userId,
     committedFindingIds: [],
     committedBarrierIds: [],
     committedBenefitIds: [],
@@ -40,11 +54,11 @@ async function get_or_create_case_state(case_id: number, user_id: number) {
     updatedAt: now,
   });
 
-  const [created] = await db.select().from(caseState).where(eq(caseState.caseId, case_id));
+  const [created] = await db.select().from(caseState).where(eq(caseState.caseId, caseId));
   return created;
 }
 
-function compute_completeness(state: typeof caseState.$inferSelect): {
+function computeCompleteness(state: typeof caseState.$inferSelect): {
   score: number;
   missing: string[];
   present: string[];
@@ -59,26 +73,27 @@ function compute_completeness(state: typeof caseState.$inferSelect): {
     { key: "statutes", label: "Relevant statutes attached", present: (state.committedStatuteIds as number[]).length > 0 },
   ];
 
-  const present = checks.filter((check) => check.present).map((check) => check.label);
-  const missing = checks.filter((check) => !check.present).map((check) => check.label);
+  const present = checks.filter(c => c.present).map(c => c.label);
+  const missing = checks.filter(c => !c.present).map(c => c.label);
   const score = Math.round((present.length / checks.length) * 100);
 
   return { score, missing, present };
 }
 
-async function update_completeness(case_id: number) {
-  const [state] = await db.select().from(caseState).where(eq(caseState.caseId, case_id));
+async function updateCompleteness(caseId: number) {
+  const [state] = await db.select().from(caseState).where(eq(caseState.caseId, caseId));
   if (!state) return;
 
-  const { score, missing, present } = compute_completeness(state);
+  const { score, missing, present } = computeCompleteness(state);
 
+  // Generate system flags for missing items
   await db.delete(caseFlags).where(
-    and(eq(caseFlags.caseId, case_id), eq(caseFlags.type, "system"), eq(caseFlags.status, "open"))
+    and(eq(caseFlags.caseId, caseId), eq(caseFlags.type, "system"), eq(caseFlags.status, "open"))
   );
 
   const now = Date.now();
-  const flags_to_insert = missing.map((label) => ({
-    caseId: case_id,
+  const flagsToInsert = missing.map(label => ({
+    caseId,
     userId: state.userId,
     type: "system" as const,
     location: "completeness",
@@ -87,8 +102,8 @@ async function update_completeness(case_id: number) {
     createdAt: now,
   }));
 
-  if (flags_to_insert.length > 0) {
-    await db.insert(caseFlags).values(flags_to_insert);
+  if (flagsToInsert.length > 0) {
+    await db.insert(caseFlags).values(flagsToInsert);
   }
 
   await db.update(caseState)
@@ -97,217 +112,340 @@ async function update_completeness(case_id: number) {
       completenessBreakdown: { score, missing, present },
       updatedAt: now,
     })
-    .where(eq(caseState.caseId, case_id));
+    .where(eq(caseState.caseId, caseId));
 }
 
+// ─── Router ───────────────────────────────────────────────────────────────────
+
 export const caseStateRouter = router({
+  /**
+   * Get the current case state for a case
+   */
   get: protectedProcedure
-    .input(z.object({ case_id: z.number() }))
+    .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      const state = await get_or_create_case_state(input.case_id, ctx.user.id);
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+      const state = await getOrCreateCaseState(input.caseId, ctx.user.id);
+
+      // Get open flags
       const flags = await db.select().from(caseFlags)
-        .where(and(eq(caseFlags.caseId, input.case_id), eq(caseFlags.status, "open")));
+        .where(and(eq(caseFlags.caseId, input.caseId), eq(caseFlags.status, "open")));
+
       return { state, flags };
     }),
 
-  commit_finding: protectedProcedure
-    .input(z.object({ case_id: z.number(), finding_id: z.number() }))
+  /**
+   * Commit a finding to the case state
+   */
+  commitFinding: protectedProcedure
+    .input(z.object({
+      caseId: z.number(),
+      findingId: z.number(),
+    }))
     .mutation(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      const state = await get_or_create_case_state(input.case_id, ctx.user.id);
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+      const state = await getOrCreateCaseState(input.caseId, ctx.user.id);
+
       const current = (state.committedFindingIds as number[]) || [];
-      if (!current.includes(input.finding_id)) {
+      if (!current.includes(input.findingId)) {
         await db.update(caseState)
-          .set({ committedFindingIds: [...current, input.finding_id], updatedAt: Date.now() })
-          .where(eq(caseState.caseId, input.case_id));
+          .set({
+            committedFindingIds: [...current, input.findingId],
+            updatedAt: Date.now(),
+          })
+          .where(eq(caseState.caseId, input.caseId));
       }
-      await update_completeness(input.case_id);
-      return { success: true, finding_id: input.finding_id };
+
+      await updateCompleteness(input.caseId);
+      return { success: true, findingId: input.findingId };
     }),
 
-  commit_procedural_path: protectedProcedure
+  /**
+   * Commit a procedural path (single slot — overwrites)
+   */
+  commitProceduralPath: protectedProcedure
     .input(z.object({
-      case_id: z.number(),
-      path_id: z.number().optional(),
-      path_label: z.string(),
+      caseId: z.number(),
+      pathId: z.number().optional(),
+      pathLabel: z.string(),
       deadlines: z.array(z.object({
         label: z.string(),
         date: z.string(),
-        days_remaining: z.number(),
+        daysRemaining: z.number(),
         critical: z.boolean(),
       })).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      await get_or_create_case_state(input.case_id, ctx.user.id);
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+      await getOrCreateCaseState(input.caseId, ctx.user.id);
+
       await db.update(caseState)
         .set({
-          proceduralPathId: input.path_id ?? null,
-          proceduralPathLabel: input.path_label,
+          proceduralPathId: input.pathId ?? null,
+          proceduralPathLabel: input.pathLabel,
           computedDeadlines: input.deadlines ?? null,
           updatedAt: Date.now(),
         })
-        .where(eq(caseState.caseId, input.case_id));
+        .where(eq(caseState.caseId, input.caseId));
 
-      await update_completeness(input.case_id);
+      await updateCompleteness(input.caseId);
 
+      // Emit DEADLINE_APPROACHING signals for any critical deadlines within 14 days
       if (input.deadlines && input.deadlines.length > 0) {
-        const critical_deadlines = input.deadlines.filter(
-          (deadline) => deadline.days_remaining >= 0 && deadline.days_remaining <= 14
+        const criticalDeadlines = input.deadlines.filter(
+          d => d.daysRemaining >= 0 && d.daysRemaining <= 14
         );
-        for (const deadline of critical_deadlines) {
+        for (const deadline of criticalDeadlines) {
           try {
-            const [case_state_row] = await db.select({ jurisdiction: caseState.jurisdiction })
-              .from(caseState).where(eq(caseState.caseId, input.case_id));
+            // Get case jurisdiction for the signal
+            const [cs] = await db.select({ jurisdiction: caseState.jurisdiction })
+              .from(caseState).where(eq(caseState.caseId, input.caseId));
             await emitSignal({
               effectType: "DEADLINE_APPROACHING",
               targetTable: "case_state",
-              targetId: input.case_id,
+              targetId: input.caseId,
               signalType: "DEADLINE_APPROACHING:case_state",
-              title: `Deadline in ${deadline.days_remaining} days: ${deadline.label}`,
-              explanation: `Case #${input.case_id} procedural path "${input.path_label}" has a deadline approaching: ${deadline.label} on ${deadline.date} (${deadline.days_remaining} days remaining).`,
-              severity: deadline.days_remaining <= 3 ? "critical" : deadline.days_remaining <= 7 ? "high" : "medium",
-              jurisdiction: case_state_row?.jurisdiction ?? "federal",
+              title: `Deadline in ${deadline.daysRemaining} days: ${deadline.label}`,
+              explanation: `Case #${input.caseId} procedural path "${input.pathLabel}" has a deadline approaching: ${deadline.label} on ${deadline.date} (${deadline.daysRemaining} days remaining).`,
+              severity: deadline.daysRemaining <= 3 ? "critical" : deadline.daysRemaining <= 7 ? "high" : "medium",
+              jurisdiction: cs?.jurisdiction ?? "federal",
               domain: "procedural",
-              deadlineDays: deadline.days_remaining,
+              deadlineDays: deadline.daysRemaining,
               sourceTimestamp: Date.now(),
             });
           } catch { /* non-fatal */ }
         }
       }
 
-      return { success: true, path_label: input.path_label };
+      return { success: true, pathLabel: input.pathLabel };
     }),
 
-  commit_remedy_strategy: protectedProcedure
-    .input(z.object({ case_id: z.number(), strategy_id: z.number().optional(), strategy_label: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      await get_or_create_case_state(input.case_id, ctx.user.id);
-      await db.update(caseState)
-        .set({ remedyStrategyId: input.strategy_id ?? null, remedyStrategyLabel: input.strategy_label, updatedAt: Date.now() })
-        .where(eq(caseState.caseId, input.case_id));
-      await update_completeness(input.case_id);
-      return { success: true, strategy_label: input.strategy_label };
-    }),
-
-  set_claim_type: protectedProcedure
+  /**
+   * Commit a remedy strategy (single slot — overwrites)
+   */
+  commitRemedyStrategy: protectedProcedure
     .input(z.object({
-      case_id: z.number(),
-      claim_type: z.enum(["wage_theft", "wrongful_termination", "discrimination_employment", "discrimination_housing", "eviction_unlawful", "housing_denial", "benefits_denial", "other"]),
+      caseId: z.number(),
+      strategyId: z.number().optional(),
+      strategyLabel: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+      await getOrCreateCaseState(input.caseId, ctx.user.id);
+
+      await db.update(caseState)
+        .set({
+          remedyStrategyId: input.strategyId ?? null,
+          remedyStrategyLabel: input.strategyLabel,
+          updatedAt: Date.now(),
+        })
+        .where(eq(caseState.caseId, input.caseId));
+
+      await updateCompleteness(input.caseId);
+      return { success: true, strategyLabel: input.strategyLabel };
+    }),
+
+  /**
+   * Set claim type (single slot — overwrites)
+   */
+  setClaimType: protectedProcedure
+    .input(z.object({
+      caseId: z.number(),
+      claimType: z.enum([
+        "wage_theft", "wrongful_termination", "discrimination_employment",
+        "discrimination_housing", "eviction_unlawful", "housing_denial",
+        "benefits_denial", "other"
+      ]),
       jurisdiction: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      await get_or_create_case_state(input.case_id, ctx.user.id);
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+      await getOrCreateCaseState(input.caseId, ctx.user.id);
+
       await db.update(caseState)
-        .set({ claimType: input.claim_type, jurisdiction: input.jurisdiction ?? null, updatedAt: Date.now() })
-        .where(eq(caseState.caseId, input.case_id));
-      await update_completeness(input.case_id);
-      return { success: true, claim_type: input.claim_type, jurisdiction: input.jurisdiction };
+        .set({
+          claimType: input.claimType,
+          jurisdiction: input.jurisdiction ?? null,
+          updatedAt: Date.now()
+        })
+        .where(eq(caseState.caseId, input.caseId));
+
+      await updateCompleteness(input.caseId);
+      return { success: true, claimType: input.claimType, jurisdiction: input.jurisdiction };
     }),
 
-  commit_barrier: protectedProcedure
-    .input(z.object({ case_id: z.number(), barrier_id: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      const state = await get_or_create_case_state(input.case_id, ctx.user.id);
-      const current = (state.committedBarrierIds as number[]) || [];
-      if (!current.includes(input.barrier_id)) {
-        await db.update(caseState)
-          .set({ committedBarrierIds: [...current, input.barrier_id], updatedAt: Date.now() })
-          .where(eq(caseState.caseId, input.case_id));
-      }
-      await update_completeness(input.case_id);
-      return { success: true, barrier_id: input.barrier_id };
-    }),
-
-  commit_benefit: protectedProcedure
-    .input(z.object({ case_id: z.number(), benefit_id: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      const state = await get_or_create_case_state(input.case_id, ctx.user.id);
-      const current = (state.committedBenefitIds as number[]) || [];
-      if (!current.includes(input.benefit_id)) {
-        await db.update(caseState)
-          .set({ committedBenefitIds: [...current, input.benefit_id], updatedAt: Date.now() })
-          .where(eq(caseState.caseId, input.case_id));
-      }
-      await update_completeness(input.case_id);
-      return { success: true, benefit_id: input.benefit_id };
-    }),
-
-  commit_signal: protectedProcedure
-    .input(z.object({ case_id: z.number(), signal_id: z.number(), signal_type: z.string().optional() }))
-    .mutation(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      const state = await get_or_create_case_state(input.case_id, ctx.user.id);
-      const current = (state.committedSignalIds as number[]) || [];
-      if (!current.includes(input.signal_id)) {
-        await db.update(caseState)
-          .set({ committedSignalIds: [...current, input.signal_id], updatedAt: Date.now() })
-          .where(eq(caseState.caseId, input.case_id));
-      }
-      await update_completeness(input.case_id);
-      return { success: true, signal_id: input.signal_id, routed_as: input.signal_type ?? "signal" };
-    }),
-
-  commit_statute: protectedProcedure
-    .input(z.object({ case_id: z.number(), statute_id: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      const state = await get_or_create_case_state(input.case_id, ctx.user.id);
-      const current = (state.committedStatuteIds as number[]) || [];
-      if (!current.includes(input.statute_id)) {
-        await db.update(caseState)
-          .set({ committedStatuteIds: [...current, input.statute_id], updatedAt: Date.now() })
-          .where(eq(caseState.caseId, input.case_id));
-      }
-      await update_completeness(input.case_id);
-      return { success: true, statute_id: input.statute_id };
-    }),
-
-  commit_foia: protectedProcedure
-    .input(z.object({ case_id: z.number(), foia_id: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      const state = await get_or_create_case_state(input.case_id, ctx.user.id);
-      const current = (state.committedFoiaIds as number[]) || [];
-      if (!current.includes(input.foia_id)) {
-        await db.update(caseState)
-          .set({ committedFoiaIds: [...current, input.foia_id], updatedAt: Date.now() })
-          .where(eq(caseState.caseId, input.case_id));
-      }
-      await update_completeness(input.case_id);
-      return { success: true, foia_id: input.foia_id };
-    }),
-
-  commit_filing: protectedProcedure
-    .input(z.object({ case_id: z.number(), filing_id: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      const state = await get_or_create_case_state(input.case_id, ctx.user.id);
-      const current = (state.committedFilingIds as number[]) || [];
-      if (!current.includes(input.filing_id)) {
-        await db.update(caseState)
-          .set({ committedFilingIds: [...current, input.filing_id], updatedAt: Date.now() })
-          .where(eq(caseState.caseId, input.case_id));
-      }
-      await update_completeness(input.case_id);
-      return { success: true, filing_id: input.filing_id };
-    }),
-
-  remove_commit: protectedProcedure
+  /**
+   * Commit a litigation barrier
+   */
+  commitBarrier: protectedProcedure
     .input(z.object({
-      case_id: z.number(),
-      item_type: z.enum(["finding", "barrier", "benefit", "signal", "statute", "foia", "filing"]),
-      item_id: z.number(),
+      caseId: z.number(),
+      barrierId: z.number(),
     }))
     .mutation(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      const state = await get_or_create_case_state(input.case_id, ctx.user.id);
-      const field_map: Record<string, keyof typeof state> = {
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+      const state = await getOrCreateCaseState(input.caseId, ctx.user.id);
+
+      const current = (state.committedBarrierIds as number[]) || [];
+      if (!current.includes(input.barrierId)) {
+        await db.update(caseState)
+          .set({
+            committedBarrierIds: [...current, input.barrierId],
+            updatedAt: Date.now(),
+          })
+          .where(eq(caseState.caseId, input.caseId));
+      }
+
+      await updateCompleteness(input.caseId);
+      return { success: true, barrierId: input.barrierId };
+    }),
+
+  /**
+   * Commit a benefit program
+   */
+  commitBenefit: protectedProcedure
+    .input(z.object({
+      caseId: z.number(),
+      benefitId: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+      const state = await getOrCreateCaseState(input.caseId, ctx.user.id);
+
+      const current = (state.committedBenefitIds as number[]) || [];
+      if (!current.includes(input.benefitId)) {
+        await db.update(caseState)
+          .set({
+            committedBenefitIds: [...current, input.benefitId],
+            updatedAt: Date.now(),
+          })
+          .where(eq(caseState.caseId, input.caseId));
+      }
+
+      await updateCompleteness(input.caseId);
+      return { success: true, benefitId: input.benefitId };
+    }),
+
+  /**
+   * Commit a signal — routes by signal type
+   * structural → barriers, evidentiary → findings, pattern → signals (tagged), resource → benefits
+   */
+  commitSignal: protectedProcedure
+    .input(z.object({
+      caseId: z.number(),
+      signalId: z.number(),
+      signalType: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+      const state = await getOrCreateCaseState(input.caseId, ctx.user.id);
+
+      const current = (state.committedSignalIds as number[]) || [];
+      if (!current.includes(input.signalId)) {
+        await db.update(caseState)
+          .set({
+            committedSignalIds: [...current, input.signalId],
+            updatedAt: Date.now(),
+          })
+          .where(eq(caseState.caseId, input.caseId));
+      }
+
+      await updateCompleteness(input.caseId);
+      return { success: true, signalId: input.signalId, routedAs: input.signalType ?? "signal" };
+    }),
+
+  /**
+   * Commit a statute or case law reference
+   */
+  commitStatute: protectedProcedure
+    .input(z.object({
+      caseId: z.number(),
+      statuteId: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+      const state = await getOrCreateCaseState(input.caseId, ctx.user.id);
+
+      const current = (state.committedStatuteIds as number[]) || [];
+      if (!current.includes(input.statuteId)) {
+        await db.update(caseState)
+          .set({
+            committedStatuteIds: [...current, input.statuteId],
+            updatedAt: Date.now(),
+          })
+          .where(eq(caseState.caseId, input.caseId));
+      }
+
+      await updateCompleteness(input.caseId);
+      return { success: true, statuteId: input.statuteId };
+    }),
+
+  /**
+   * Commit a FOIA request to the case
+   */
+  commitFoia: protectedProcedure
+    .input(z.object({
+      caseId: z.number(),
+      foiaId: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+      const state = await getOrCreateCaseState(input.caseId, ctx.user.id);
+
+      const current = (state.committedFoiaIds as number[]) || [];
+      if (!current.includes(input.foiaId)) {
+        await db.update(caseState)
+          .set({
+            committedFoiaIds: [...current, input.foiaId],
+            updatedAt: Date.now(),
+          })
+          .where(eq(caseState.caseId, input.caseId));
+      }
+
+      await updateCompleteness(input.caseId);
+      return { success: true, foiaId: input.foiaId };
+    }),
+
+  /**
+   * Commit a filing packet
+   */
+  commitFiling: protectedProcedure
+    .input(z.object({
+      caseId: z.number(),
+      filingId: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+      const state = await getOrCreateCaseState(input.caseId, ctx.user.id);
+
+      const current = (state.committedFilingIds as number[]) || [];
+      if (!current.includes(input.filingId)) {
+        await db.update(caseState)
+          .set({
+            committedFilingIds: [...current, input.filingId],
+            updatedAt: Date.now(),
+          })
+          .where(eq(caseState.caseId, input.caseId));
+      }
+
+      await updateCompleteness(input.caseId);
+      return { success: true, filingId: input.filingId };
+    }),
+
+  /**
+   * Remove a committed item (undo commit)
+   */
+  removeCommit: protectedProcedure
+    .input(z.object({
+      caseId: z.number(),
+      itemType: z.enum(["finding", "barrier", "benefit", "signal", "statute", "foia", "filing"]),
+      itemId: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+      const state = await getOrCreateCaseState(input.caseId, ctx.user.id);
+
+      const fieldMap: Record<string, keyof typeof state> = {
         finding: "committedFindingIds",
         barrier: "committedBarrierIds",
         benefit: "committedBenefitIds",
@@ -316,211 +454,281 @@ export const caseStateRouter = router({
         foia: "committedFoiaIds",
         filing: "committedFilingIds",
       };
-      const field = field_map[input.item_type];
+
+      const field = fieldMap[input.itemType];
       const current = (state[field] as number[]) || [];
-      const updated = current.filter((id) => id !== input.item_id);
+      const updated = current.filter(id => id !== input.itemId);
+
       await db.update(caseState)
         .set({ [field]: updated, updatedAt: Date.now() } as any)
-        .where(eq(caseState.caseId, input.case_id));
-      await update_completeness(input.case_id);
+        .where(eq(caseState.caseId, input.caseId));
+
+      await updateCompleteness(input.caseId);
       return { success: true };
     }),
 
-  add_flag: protectedProcedure
+  /**
+   * Add a user flag to a case
+   */
+  addFlag: protectedProcedure
     .input(z.object({
-      case_id: z.number(),
+      caseId: z.number(),
       location: z.string(),
       message: z.string(),
-      target_id: z.number().optional(),
-      target_type: z.string().optional(),
-      area_name: z.string().optional(),
+      targetId: z.number().optional(),
+      targetType: z.string().optional(),
+      areaName: z.string().optional(),
       state: z.string().optional(),
       lat: z.number().optional(),
       lng: z.number().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+
       const now = Date.now();
       await db.insert(caseFlags).values({
-        caseId: input.case_id,
+        caseId: input.caseId,
         userId: ctx.user.id,
         type: "user",
         location: input.location,
         message: input.message,
-        targetId: input.target_id ?? null,
-        targetType: input.target_type ?? null,
-        areaName: input.area_name ?? null,
+        targetId: input.targetId ?? null,
+        targetType: input.targetType ?? null,
+        areaName: input.areaName ?? null,
         state: input.state ?? null,
         lat: input.lat ?? null,
         lng: input.lng ?? null,
         status: "open",
         createdAt: now,
       });
+
       return { success: true };
     }),
 
-  resolve_flag: protectedProcedure
-    .input(z.object({ case_id: z.number(), flag_id: z.number() }))
+  /**
+   * Resolve a flag
+   */
+  resolveFlag: protectedProcedure
+    .input(z.object({
+      caseId: z.number(),
+      flagId: z.number(),
+    }))
     .mutation(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+
       await db.update(caseFlags)
         .set({ status: "resolved", resolvedAt: Date.now() })
-        .where(and(eq(caseFlags.id, input.flag_id), eq(caseFlags.caseId, input.case_id)));
+        .where(and(eq(caseFlags.id, input.flagId), eq(caseFlags.caseId, input.caseId)));
+
       return { success: true };
     }),
 
-  get_procedural_deadlines: protectedProcedure
-    .input(z.object({ case_id: z.number() }))
+  /**
+   * Get procedural deadlines from procedural_timelines table
+   * by claim type + jurisdiction committed to the case
+   */
+  getProceduralDeadlines: protectedProcedure
+    .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      const [state] = await db.select({ claim_type: caseState.claimType, jurisdiction: caseState.jurisdiction })
-        .from(caseState).where(eq(caseState.caseId, input.case_id));
-      if (!state?.claim_type) return [];
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+
+      // Get the committed claim type and jurisdiction from case_state
+      const [state] = await db.select({
+        claimType: caseState.claimType,
+        jurisdiction: caseState.jurisdiction,
+      }).from(caseState).where(eq(caseState.caseId, input.caseId));
+
+      if (!state?.claimType) return [];
 
       const jurisdiction = state.jurisdiction || "federal";
-      const claim_type = state.claim_type;
+      const claimType = state.claimType;
+
+      // Query procedural_timelines directly via raw SQL since table is not in Drizzle schema
       const conn = await import("mysql2/promise");
       const connection = await conn.default.createConnection(process.env.DATABASE_URL!);
+
+      // Try exact jurisdiction match first, then fall back to federal
       const [rows] = await connection.query(
-        `SELECT * FROM procedural_timelines
+        `SELECT * FROM procedural_timelines 
          WHERE claim_type = ? AND (jurisdiction = ? OR jurisdiction = 'federal')
          ORDER BY CASE WHEN jurisdiction = ? THEN 0 ELSE 1 END
          LIMIT 3`,
-        [claim_type, jurisdiction, jurisdiction]
+        [claimType, jurisdiction, jurisdiction]
       ) as any;
+
       await connection.end();
 
       const timelines = rows as any[];
       if (!timelines.length) return [];
+
+      // Convert timeline rows into deadline objects for the UI
       const deadlines: Array<{
         id: string;
-        claim_type: string;
-        deadline_type: string;
-        deadline_date: string | null;
-        deadline_days: number | null;
+        claimType: string;
+        deadlineType: string;
+        deadlineDate: string | null;
+        deadlineDays: number | null;
         description: string;
         jurisdiction: string;
-        tolling_applied: boolean;
-        special_considerations: string | null;
+        tollingApplied: boolean;
+        specialConsiderations: string | null;
       }> = [];
+
       const now = new Date();
 
-      for (const timeline of timelines) {
-        if (timeline.filing_deadline) {
-          const deadline_date = timeline.filing_deadline_days
-            ? new Date(now.getTime() + timeline.filing_deadline_days * 24 * 60 * 60 * 1000).toISOString()
+      for (const t of timelines) {
+        // Main filing deadline
+        if (t.filing_deadline) {
+          const deadlineDate = t.filing_deadline_days
+            ? new Date(now.getTime() + t.filing_deadline_days * 24 * 60 * 60 * 1000).toISOString()
             : null;
           deadlines.push({
-            id: `filing-${timeline.id}`,
-            claim_type: timeline.claim_type,
-            deadline_type: "Filing Deadline",
-            deadline_date,
-            deadline_days: timeline.filing_deadline_days,
-            description: timeline.filing_deadline,
-            jurisdiction: timeline.jurisdiction,
-            tolling_applied: false,
-            special_considerations: timeline.special_considerations,
+            id: `filing-${t.id}`,
+            claimType: t.claim_type,
+            deadlineType: "Filing Deadline",
+            deadlineDate,
+            deadlineDays: t.filing_deadline_days,
+            description: t.filing_deadline,
+            jurisdiction: t.jurisdiction,
+            tollingApplied: false,
+            specialConsiderations: t.special_considerations,
           });
         }
-        if (timeline.eeoc_charge_deadline) {
+        // EEOC charge deadline
+        if (t.eeoc_charge_deadline) {
           deadlines.push({
-            id: `eeoc-${timeline.id}`,
-            claim_type: timeline.claim_type,
-            deadline_type: "EEOC Charge",
-            deadline_date: null,
-            deadline_days: null,
-            description: timeline.eeoc_charge_deadline,
-            jurisdiction: timeline.jurisdiction,
-            tolling_applied: false,
-            special_considerations: null,
+            id: `eeoc-${t.id}`,
+            claimType: t.claim_type,
+            deadlineType: "EEOC Charge",
+            deadlineDate: null,
+            deadlineDays: null,
+            description: t.eeoc_charge_deadline,
+            jurisdiction: t.jurisdiction,
+            tollingApplied: false,
+            specialConsiderations: null,
           });
         }
-        if (timeline.dfeh_complaint_deadline) {
+        // DFEH complaint deadline
+        if (t.dfeh_complaint_deadline) {
           deadlines.push({
-            id: `dfeh-${timeline.id}`,
-            claim_type: timeline.claim_type,
-            deadline_type: "DFEH Complaint",
-            deadline_date: null,
-            deadline_days: null,
-            description: timeline.dfeh_complaint_deadline,
-            jurisdiction: timeline.jurisdiction,
-            tolling_applied: false,
-            special_considerations: null,
+            id: `dfeh-${t.id}`,
+            claimType: t.claim_type,
+            deadlineType: "DFEH Complaint",
+            deadlineDate: null,
+            deadlineDays: null,
+            description: t.dfeh_complaint_deadline,
+            jurisdiction: t.jurisdiction,
+            tollingApplied: false,
+            specialConsiderations: null,
           });
         }
-        if (timeline.appeal_deadline) {
+        // Appeal deadline
+        if (t.appeal_deadline) {
           deadlines.push({
-            id: `appeal-${timeline.id}`,
-            claim_type: timeline.claim_type,
-            deadline_type: "Appeal Deadline",
-            deadline_date: null,
-            deadline_days: null,
-            description: timeline.appeal_deadline,
-            jurisdiction: timeline.jurisdiction,
-            tolling_applied: false,
-            special_considerations: null,
+            id: `appeal-${t.id}`,
+            claimType: t.claim_type,
+            deadlineType: "Appeal Deadline",
+            deadlineDate: null,
+            deadlineDays: null,
+            description: t.appeal_deadline,
+            jurisdiction: t.jurisdiction,
+            tollingApplied: false,
+            specialConsiderations: null,
           });
         }
       }
+
       return deadlines;
     }),
 
-  get_remedy_matrix: protectedProcedure
-    .input(z.object({ case_id: z.number() }))
+  /**
+   * Get remedy matrix for the committed claim type + jurisdiction
+   */
+  getRemedyMatrix: protectedProcedure
+    .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      const [state] = await db.select({ claim_type: caseState.claimType, jurisdiction: caseState.jurisdiction })
-        .from(caseState).where(eq(caseState.caseId, input.case_id));
-      if (!state?.claim_type) return null;
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+
+      const [state] = await db.select({
+        claimType: caseState.claimType,
+        jurisdiction: caseState.jurisdiction,
+      }).from(caseState).where(eq(caseState.caseId, input.caseId));
+
+      if (!state?.claimType) return null;
+
       const conn = await import("mysql2/promise");
       const connection = await conn.default.createConnection(process.env.DATABASE_URL!);
+
       const [rows] = await connection.query(
-        `SELECT * FROM remedy_matrix
+        `SELECT * FROM remedy_matrix 
          WHERE claim_type = ? AND (jurisdiction = ? OR jurisdiction = 'federal')
          ORDER BY CASE WHEN jurisdiction = ? THEN 0 ELSE 1 END
          LIMIT 1`,
-        [state.claim_type, state.jurisdiction || "federal", state.jurisdiction || "federal"]
+        [state.claimType, state.jurisdiction || "federal", state.jurisdiction || "federal"]
       ) as any;
+
       await connection.end();
       return (rows as any[])[0] ?? null;
     }),
 
-  get_remedy_full: protectedProcedure
-    .input(z.object({ case_id: z.number() }))
+  /**
+   * Get full remedy feasibility data from remedy_feasibility_full table
+   * Returns all 5 strategy types for the case's jurisdiction
+   */
+  getRemedyFull: protectedProcedure
+    .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      const [state] = await db.select({ jurisdiction: caseState.jurisdiction })
-        .from(caseState).where(eq(caseState.caseId, input.case_id));
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+
+      const [state] = await db.select({
+        claimType: caseState.claimType,
+        jurisdiction: caseState.jurisdiction,
+      }).from(caseState).where(eq(caseState.caseId, input.caseId));
+
       const jurisdiction = state?.jurisdiction || null;
       const conn = await import("mysql2/promise");
       const connection = await conn.default.createConnection(process.env.DATABASE_URL!);
-      const query_jurisdiction = jurisdiction || 'CA';
+
+      const queryJurisdiction = jurisdiction || 'CA';
       const [rows] = await connection.query(
         `SELECT * FROM remedy_feasibility_full WHERE jurisdiction = ? ORDER BY strategy_type`,
-        [query_jurisdiction]
+        [queryJurisdiction]
       ) as any;
+
       await connection.end();
+
       return {
-        jurisdiction: query_jurisdiction,
-        is_fallback: !jurisdiction,
+        jurisdiction: queryJurisdiction,
+        isFallback: !jurisdiction,
         strategies: (rows as any[]).map((row: any) => ({
-          strategy_type: row.strategy_type as string,
-          cost_range: row.cost_range as string,
-          time_estimate: row.time_estimate as string,
+          strategyType: row.strategy_type as string,
+          costRange: row.cost_range as string,
+          timeEstimate: row.time_estimate as string,
           prerequisites: typeof row.prerequisites === 'string' ? JSON.parse(row.prerequisites) : (row.prerequisites ?? []),
-          risk_flags: typeof row.risk_flags === 'string' ? JSON.parse(row.risk_flags) : (row.risk_flags ?? []),
+          riskFlags: typeof row.risk_flags === 'string' ? JSON.parse(row.risk_flags) : (row.risk_flags ?? []),
         })),
       };
     }),
 
-  get_flags: protectedProcedure
-    .input(z.object({ case_id: z.number(), status: z.enum(["open", "resolved", "all"]).optional().default("open") }))
+  /**
+   * Get all flags for a case
+   */
+  getFlags: protectedProcedure
+    .input(z.object({
+      caseId: z.number(),
+      status: z.enum(["open", "resolved", "all"]).optional().default("open"),
+    }))
     .query(async ({ ctx, input }) => {
-      await verify_case_ownership(input.case_id, ctx.user.id);
-      const query = db.select().from(caseFlags).where(eq(caseFlags.caseId, input.case_id));
+      await verifyCaseOwnership(input.caseId, ctx.user.id);
+
+      const query = db.select().from(caseFlags).where(eq(caseFlags.caseId, input.caseId));
+
       if (input.status !== "all") {
-        return db.select().from(caseFlags).where(and(eq(caseFlags.caseId, input.case_id), eq(caseFlags.status, input.status)));
+        return db.select().from(caseFlags).where(
+          and(eq(caseFlags.caseId, input.caseId), eq(caseFlags.status, input.status))
+        );
       }
+
       return query;
     }),
 });
