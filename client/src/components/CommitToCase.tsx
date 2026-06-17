@@ -91,26 +91,26 @@ export function CommitToCase({
   const activeCaseId = targetCaseId ?? currentCaseId;
 
   // All commit mutations
-  const commitFinding = trpc.caseState.commitFinding.useMutation({ onSuccess: handleSuccess, onError: handleError });
-  const commitBarrier = trpc.caseState.commitBarrier.useMutation({ onSuccess: handleSuccess, onError: handleError });
-  const commitBenefit = trpc.caseState.commitBenefit.useMutation({ onSuccess: handleSuccess, onError: handleError });
-  const commitSignal = trpc.caseState.commitSignal.useMutation({ onSuccess: handleSuccess, onError: handleError });
-  const commitStatute = trpc.caseState.commitStatute.useMutation({ onSuccess: handleSuccess, onError: handleError });
-  const commitFoia = trpc.caseState.commitFoia.useMutation({ onSuccess: handleSuccess, onError: handleError });
-  const commitFiling = trpc.caseState.commitFiling.useMutation({ onSuccess: handleSuccess, onError: handleError });
-  const commitPath = trpc.caseState.commitProceduralPath.useMutation({ onSuccess: handleSuccess, onError: handleError });
-  const commitStrategy = trpc.caseState.commitRemedyStrategy.useMutation({ onSuccess: handleSuccess, onError: handleError });
-  const setClaimType = trpc.caseState.setClaimType.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_finding = trpc.case_state.commit_finding.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_barrier = trpc.case_state.commit_barrier.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_benefit = trpc.case_state.commit_benefit.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_signal = trpc.case_state.commit_signal.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_statute = trpc.case_state.commit_statute.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_foia = trpc.case_state.commit_foia.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_filing = trpc.case_state.commit_filing.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_path = trpc.case_state.commit_procedural_path.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const commit_strategy = trpc.case_state.commit_remedy_strategy.useMutation({ onSuccess: handleSuccess, onError: handleError });
+  const set_claim_type = trpc.case_state.set_claim_type.useMutation({ onSuccess: handleSuccess, onError: handleError });
 
   const isLoading =
-    commitFinding.isPending || commitBarrier.isPending || commitBenefit.isPending ||
-    commitSignal.isPending || commitStatute.isPending || commitFoia.isPending ||
-    commitFiling.isPending || commitPath.isPending || commitStrategy.isPending ||
-    setClaimType.isPending;
+    commit_finding.isPending || commit_barrier.isPending || commit_benefit.isPending ||
+    commit_signal.isPending || commit_statute.isPending || commit_foia.isPending ||
+    commit_filing.isPending || commit_path.isPending || commit_strategy.isPending ||
+    set_claim_type.isPending;
 
   function handleSuccess() {
     setCommitted(true);
-    utils.caseState.get.invalidate({ caseId: activeCaseId! });
+    utils.case_state.get.invalidate({ case_id: activeCaseId! });
     toast.success("Committed to case", { description: getSuccessMessage() });
     onCommitted?.();
     // Reset committed state after 3s so button is re-usable
@@ -151,34 +151,34 @@ export function CommitToCase({
   function doCommit(caseId: number) {
     switch (type) {
       case "finding":
-        commitFinding.mutate({ caseId, findingId: itemId! });
+        commit_finding.mutate({ case_id: caseId, finding_id: itemId! });
         break;
       case "barrier":
-        commitBarrier.mutate({ caseId, barrierId: itemId! });
+        commit_barrier.mutate({ case_id: caseId, barrier_id: itemId! });
         break;
       case "benefit":
-        commitBenefit.mutate({ caseId, benefitId: itemId! });
+        commit_benefit.mutate({ case_id: caseId, benefit_id: itemId! });
         break;
       case "signal":
-        commitSignal.mutate({ caseId, signalId: itemId!, signalType });
+        commit_signal.mutate({ case_id: caseId, signal_id: itemId!, signal_type: signalType });
         break;
       case "statute":
-        commitStatute.mutate({ caseId, statuteId: itemId! });
+        commit_statute.mutate({ case_id: caseId, statute_id: itemId! });
         break;
       case "foia":
-        commitFoia.mutate({ caseId, foiaId: itemId! });
+        commit_foia.mutate({ case_id: caseId, foia_id: itemId! });
         break;
       case "filing":
-        commitFiling.mutate({ caseId, filingId: itemId! });
+        commit_filing.mutate({ case_id: caseId, filing_id: itemId! });
         break;
       case "proceduralPath":
-        commitPath.mutate({ caseId, pathId, pathLabel: pathLabel!, deadlines });
+        commit_path.mutate({ case_id: caseId, path_id: pathId, path_label: pathLabel!, deadlines: deadlines?.map((deadline) => ({ label: deadline.label, date: deadline.date, days_remaining: deadline.daysRemaining, critical: deadline.critical })) });
         break;
       case "remedyStrategy":
-        commitStrategy.mutate({ caseId, strategyId, strategyLabel: strategyLabel! });
+        commit_strategy.mutate({ case_id: caseId, strategy_id: strategyId, strategy_label: strategyLabel! });
         break;
       case "claimType":
-        setClaimType.mutate({ caseId, claimType: claimType as any });
+        set_claim_type.mutate({ case_id: caseId, claim_type: claimType as any });
         break;
     }
   }
@@ -313,7 +313,7 @@ export function FlagArea({ location, message, targetId, targetType, areaName, cl
   const [inputMsg, setInputMsg] = useState(message || "");
   const [showInput, setShowInput] = useState(false);
 
-  const addFlag = trpc.caseState.addFlag.useMutation({
+  const add_flag = trpc.case_state.add_flag.useMutation({
     onSuccess: () => {
       setFlagged(true);
       setShowInput(false);
@@ -337,7 +337,7 @@ export function FlagArea({ location, message, targetId, targetType, areaName, cl
             onChange={e => setInputMsg(e.target.value)}
             onKeyDown={e => {
               if (e.key === "Enter") {
-                addFlag.mutate({ caseId: currentCaseId, location, message: inputMsg || "Needs attention", targetId, targetType, areaName });
+                add_flag.mutate({ case_id: currentCaseId, location, message: inputMsg || "Needs attention", target_id: targetId, target_type: targetType, area_name: areaName });
               }
               if (e.key === "Escape") setShowInput(false);
             }}
@@ -348,7 +348,7 @@ export function FlagArea({ location, message, targetId, targetType, areaName, cl
             size="sm"
             variant="ghost"
             className="h-7 px-2 text-xs"
-            onClick={() => addFlag.mutate({ caseId: currentCaseId, location, message: inputMsg || "Needs attention", targetId, targetType, areaName })}
+            onClick={() => add_flag.mutate({ case_id: currentCaseId, location, message: inputMsg || "Needs attention", target_id: targetId, target_type: targetType, area_name: areaName })}
           >
             Flag
           </Button>
@@ -360,8 +360,8 @@ export function FlagArea({ location, message, targetId, targetType, areaName, cl
         <Button
           size="sm"
           variant="ghost"
-          disabled={addFlag.isPending}
-          onClick={() => message ? addFlag.mutate({ caseId: currentCaseId, location, message, targetId, targetType, areaName }) : setShowInput(true)}
+          disabled={add_flag.isPending}
+          onClick={() => message ? add_flag.mutate({ case_id: currentCaseId, location, message, target_id: targetId, target_type: targetType, area_name: areaName }) : setShowInput(true)}
           className={cn(
             "h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-amber-500",
             flagged && "text-amber-500"

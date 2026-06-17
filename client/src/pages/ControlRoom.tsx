@@ -55,14 +55,14 @@ import {
 type PipelineStage = "idle" | "viability" | "strategy" | "assembly" | "pattern" | "complete" | "error";
 
 /* ─── Case Completeness Panel ─── */
-function CaseCompletenessPanel({ caseId }: { caseId: number }) {
+function CaseCompletenessPanel({ case_id: caseId }: { caseId: number }) {
   const [, navigate] = useLocation();
-  const { data: state, isLoading } = trpc.caseState.get.useQuery(
-    { caseId },
+  const { data: state, isLoading } = trpc.case_state.get.useQuery(
+    { case_id: caseId },
     { refetchInterval: 15000 }
   );
-  const { data: flags } = trpc.caseState.getFlags.useQuery(
-    { caseId, status: "open" },
+  const { data: flags } = trpc.case_state.get_flags.useQuery(
+    { case_id: caseId, status: "open" },
     { refetchInterval: 15000 }
   );
 
@@ -248,10 +248,10 @@ function CaseCompletenessPanel({ caseId }: { caseId: number }) {
 }
 
 /* ─── Evidence Summary Panel ─── */
-function EvidenceSummaryPanel({ caseId }: { caseId: number }) {
+function EvidenceSummaryPanel({ case_id: caseId }: { caseId: number }) {
   const [, navigate] = useLocation();
   const { data: stats, isLoading } = trpc.cases.stats.useQuery(
-    { caseId },
+    { case_id: caseId },
     { refetchInterval: 30000 }
   );
 
@@ -317,9 +317,9 @@ function EvidenceSummaryPanel({ caseId }: { caseId: number }) {
 }
 
 /* ─── Strategy Paths Panel ─── */
-function StrategyPathsPanel({ caseId }: { caseId: number }) {
+function StrategyPathsPanel({ case_id: caseId }: { caseId: number }) {
   const { data: paths, isLoading } = trpc.strategyEngine.getStrategyPaths.useQuery(
-    { caseId },
+    { case_id: caseId },
     { refetchInterval: 15000 }
   );
 
@@ -327,11 +327,11 @@ function StrategyPathsPanel({ caseId }: { caseId: number }) {
 
   // Load element-fact links and missing evidence for expanded detail
   const { data: elementLinks } = trpc.strategyEngine.getElementFactLinks.useQuery(
-    { caseId },
+    { case_id: caseId },
     { enabled: expandedPath !== null }
   );
   const { data: missingEvidence } = trpc.strategyEngine.getMissingEvidenceTasks.useQuery(
-    { caseId },
+    { case_id: caseId },
     { enabled: expandedPath !== null }
   );
 
@@ -502,13 +502,13 @@ function StrategyPathsPanel({ caseId }: { caseId: number }) {
 }
 
 /* ─── Deadlines Panel ─── */
-function DeadlinesPanel({ caseId }: { caseId: number }) {
+function DeadlinesPanel({ case_id: caseId }: { caseId: number }) {
   const { data: strategyDeadlines, isLoading: strategyLoading } = trpc.strategyEngine.getDeadlines.useQuery(
-    { caseId },
+    { case_id: caseId },
     { refetchInterval: 30000 }
   );
-  const { data: proceduralDeadlines, isLoading: proceduralLoading } = trpc.caseState.getProceduralDeadlines.useQuery(
-    { caseId },
+  const { data: proceduralDeadlines, isLoading: proceduralLoading } = trpc.case_state.get_procedural_deadlines.useQuery(
+    { case_id: caseId },
     { refetchInterval: 60000 }
   );
 
@@ -677,10 +677,10 @@ function LegistarEventsWidget() {
 }
 
 /* ─── Next Actions Panel ─── */
-function NextActionsPanel({ caseId }: { caseId: number }) {
+function NextActionsPanel({ case_id: caseId }: { caseId: number }) {
   const [, navigate] = useLocation();
   const { data: packets, isLoading } = trpc.assemblyEngine.getPackets.useQuery(
-    { caseId },
+    { case_id: caseId },
     { refetchInterval: 15000 }
   );
 
@@ -784,7 +784,7 @@ function NextActionsPanel({ caseId }: { caseId: number }) {
 }
 
 /* ─── Pattern Signals Panel ─── */
-function PatternSignalsPanel({ caseId }: { caseId: number }) {
+function PatternSignalsPanel({ case_id: caseId }: { caseId: number }) {
   const [, navigate] = useLocation();
   const { data: inferences, isLoading: infLoading } = trpc.patternEngine.getSystemicInferences.useQuery();
   const { data: entityClusters } = trpc.patternEngine.getEntityClusters.useQuery();
@@ -898,10 +898,10 @@ function PatternSignalsPanel({ caseId }: { caseId: number }) {
 }
 
 /* ─── Key Findings Panel ─── */
-function KeyFindingsPanel({ caseId }: { caseId: number }) {
+function KeyFindingsPanel({ case_id: caseId }: { caseId: number }) {
   const [, navigate] = useLocation();
   const { data: findings, isLoading } = trpc.findings.listEnriched.useQuery(
-    { caseId },
+    { case_id: caseId },
     { refetchInterval: 30000 }
   );
 
@@ -1012,7 +1012,7 @@ function KeyFindingsPanel({ caseId }: { caseId: number }) {
 }
 
 /* ─── Pipeline Trigger + Progress ─── */
-function PipelineTrigger({ caseId }: { caseId: number }) {
+function PipelineTrigger({ case_id: caseId }: { caseId: number }) {
   const [stage, setStage] = useState<PipelineStage>("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -1020,7 +1020,7 @@ function PipelineTrigger({ caseId }: { caseId: number }) {
 
   // Pipeline status polling
   const { data: pipelineStatus } = trpc.pipeline.getPipelineStatus.useQuery(
-    { caseId },
+    { case_id: caseId },
     { refetchInterval: stage !== "idle" && stage !== "complete" && stage !== "error" ? 3000 : 30000 }
   );
 
@@ -1046,7 +1046,7 @@ function PipelineTrigger({ caseId }: { caseId: number }) {
       // Stage 2: Strategy
       setStage("strategy");
       toast.info("Running Strategy Engine...");
-      await strategyMut.mutateAsync({ caseId });
+      await strategyMut.mutateAsync({ case_id: caseId });
 
       // Stage 3: Assembly — initialize a filing packet if none exists
       setStage("assembly");
@@ -1070,15 +1070,15 @@ function PipelineTrigger({ caseId }: { caseId: number }) {
       toast.success("Full pipeline complete!");
 
       // Invalidate all queries
-      utils.cases.stats.invalidate({ caseId });
-      utils.strategyEngine.getStrategyPaths.invalidate({ caseId });
-      utils.strategyEngine.getDeadlines.invalidate({ caseId });
-      utils.assemblyEngine.getPackets.invalidate({ caseId });
+      utils.cases.stats.invalidate({ case_id: caseId });
+      utils.strategyEngine.getStrategyPaths.invalidate({ case_id: caseId });
+      utils.strategyEngine.getDeadlines.invalidate({ case_id: caseId });
+      utils.assemblyEngine.getPackets.invalidate({ case_id: caseId });
       utils.patternEngine.getSystemicInferences.invalidate();
       utils.patternEngine.getEntityClusters.invalidate();
       utils.patternEngine.getConductClusters.invalidate();
       utils.patternEngine.getCaseLinks.invalidate();
-      utils.pipeline.getPipelineStatus.invalidate({ caseId });
+      utils.pipeline.getPipelineStatus.invalidate({ case_id: caseId });
     } catch (err: any) {
       setStage("error");
       setError(err.message || "Pipeline failed");

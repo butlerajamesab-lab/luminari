@@ -4068,8 +4068,8 @@ function RemedyFeasibilityPanel({ onNavigateTo }: { onNavigateTo?: (tab: string)
   /* ── Jurisdiction-Specific Feasibility Card ── */
   function JurisdictionFeasibilityCard() {
     const { currentCaseId } = useCase();
-    const { data: fullData, isLoading: fullLoading } = trpc.caseState.getRemedyFull.useQuery(
-      { caseId: currentCaseId! },
+    const { data: fullData, isLoading: fullLoading } = trpc.case_state.get_remedy_full.useQuery(
+      { case_id: currentCaseId! },
       { enabled: !!currentCaseId }
     );
     if (!currentCaseId) return null;
@@ -4626,7 +4626,7 @@ function HardeningPipelinePanel() {
   const strategies = trpc.remedyFeasibility.strategies.useQuery();
   const ppClaimTypes = trpc.proceduralPathEngine.claimTypes.useQuery();
 
-  const [claimType, setClaimType] = useState("");
+  const [claimType, set_claim_type] = useState("");
   const [jurisdiction, setJurisdiction] = useState("");
   const [strategyType, setStrategyType] = useState("");
   const [evidenceInput, setEvidenceInput] = useState("");
@@ -4728,7 +4728,7 @@ function HardeningPipelinePanel() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="text-sm text-slate-400 block mb-1">Claim Type</label>
-              <select className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm" value={claimType} onChange={e => { setClaimType(e.target.value); setJurisdiction(""); }}>
+              <select className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm" value={claimType} onChange={e => { set_claim_type(e.target.value); setJurisdiction(""); }}>
                 <option value="">Select...</option>
                 {(ecClaimTypes.data || []).map(ct => <option key={ct} value={ct}>{ct.replace(/_/g, " ")}</option>)}
               </select>

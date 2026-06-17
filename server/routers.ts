@@ -5062,7 +5062,7 @@ export const appRouter = router({
   actionPaths: actionPathsRouter,
   supportMatcher: supportMatcherRouter,
   resourceVerification: resourceVerificationRouter,
-  caseState: caseStateRouter,
+  case_state: caseStateRouter,
   registryCanonicalIngest: router({
     run: protectedProcedure.mutation(async () => {
       const filePath = path.resolve(process.cwd(), "data/luminari_registry_canonical_export.json");
