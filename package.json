@@ -7,14 +7,15 @@
     "dev": "NODE_ENV=development tsx watch server/core/index.ts",
     "build": "vite build && esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && ([ ! -d server/config ] || cp -r server/config dist/config)",
     "start": "NODE_ENV=production node dist/index.js",
-    "check": "tsc --noEmit && node scripts/check-public-runtime-camelcase.mjs",
+    "check": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "vitest run",
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
     "seed": "tsx server/db/seed/master-seed.ts",
     "seed:normalize": "tsx server/db/seed/normalize-seed.ts",
     "check:wire-contracts": "node scripts/check-wire-contracts.cjs",
-    "check:snake-case": "node scripts/check-public-runtime-camelcase.mjs"
+    "check:snake-case": "node scripts/audit-runtime-camelcase.mjs --strict",
+    "audit:snake-case": "node scripts/audit-runtime-camelcase.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
