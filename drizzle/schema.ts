@@ -3222,7 +3222,7 @@ export const uploadSessions = pgTable("upload_sessions", {
   completedFiles: integer("completedFiles").notNull().default(0),
   failedFiles: integer("failedFiles").notNull().default(0),
   duplicateFiles: integer("duplicateFiles").notNull().default(0),
-  status: pgEnum("upload_sessions_session_status_enum", ["uploading", "processing", "complete", "failed", "expired"])("sessionStatus").default("uploading").notNull(),
+  status: pgEnum("upload_sessions_session_status_enum", ["uploading", "processing", "complete", "failed", "expired"])("session_status").default("uploading").notNull(),
   createdAt: bigint("createdAt", { mode: "number" }).notNull(),
   updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
 }, (table) => [
@@ -3360,7 +3360,7 @@ export const checklistItems = pgTable("checklist_items", {
   priority: pgEnum("checklist_items_priority_enum", ["critical", "important", "helpful"])("priority").default("important").notNull(),
   checked: boolean("checked").default(false).notNull(),
   checkedAt: bigint("checkedAt", { mode: "number" }),
-  sortOrder: integer("sortOrder").default(0).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
   createdAt: bigint("createdAt", { mode: "number" }).notNull(),
 }, (table) => [
   index("idx_checklist_case").on(table.caseId),
@@ -3754,7 +3754,7 @@ export const lighthouseSpotlight = pgTable("lighthouse_spotlight", {
   cta: varchar("cta", { length: 64 }).default("Learn More").notNull(), // call-to-action text
   href: text("href"), // optional link
   active: boolean("active").default(true).notNull(),
-  sortOrder: integer("sortOrder").default(0).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
   startDate: bigint("startDate", { mode: "number" }), // optional scheduling
   endDate: bigint("endDate", { mode: "number" }),
   lat: doublePrecision("lat"), // geocoded latitude
