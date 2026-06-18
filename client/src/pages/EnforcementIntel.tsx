@@ -76,7 +76,7 @@ export default function EnforcementIntel() {
   const agencies = useMemo(() => {
     const items = tab === "forms" ? forms : tab === "guidance" ? guidance : tab === "penalties" ? penalties : viability;
     if (!items) return [];
-    return [...new Set(items.map((i: any) => i.agencyShort))].sort();
+    return [...new Set(items.map((i: any) => i.agency_short))].sort();
   }, [tab, forms, guidance, penalties, viability]);
 
   // Filter current tab data
@@ -84,7 +84,7 @@ export default function EnforcementIntel() {
     const items = tab === "forms" ? forms : tab === "guidance" ? guidance : tab === "penalties" ? penalties : viability;
     if (!items) return [];
     let result = items as any[];
-    if (filterAgency) result = result.filter(i => i.agencyShort === filterAgency);
+    if (filterAgency) result = result.filter(i => i.agency_short === filterAgency);
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(i =>
@@ -148,7 +148,7 @@ export default function EnforcementIntel() {
           { label: "Forms", value: stats?.forms ?? 0, color: c.teal },
           { label: "Guidance", value: stats?.guidance ?? 0, color: c.purple },
           { label: "Penalties", value: stats?.penalties ?? 0, color: c.red },
-          { label: "Viability Rules", value: stats?.viabilityRules ?? 0, color: c.amber },
+          { label: "Viability Rules", value: stats?.viability_rules ?? 0, color: c.amber },
           { label: "Doctrines", value: stats?.doctrines ?? 0, color: c.gold },
           { label: "Barriers", value: stats?.barriers ?? 0, color: c.blue },
           { label: "Signals", value: stats?.signals ?? 0, color: c.green },
@@ -261,22 +261,22 @@ export default function EnforcementIntel() {
                       color: c.teal, fontSize: 10, fontFamily: fontMono, fontWeight: 700,
                       background: c.tealBg, padding: "1px 6px", borderRadius: 4,
                     }}>
-                      {item.agencyShort}
+                      {item.agency_short}
                     </span>
-                    {item.pipelineCategory && (
+                    {item.pipeline_category && (
                       <span style={{
                         color: c.gold, fontSize: 9, fontFamily: fontMono,
                         background: c.goldBg, padding: "1px 6px", borderRadius: 4,
                       }}>
-                        {item.pipelineCategory}
+                        {item.pipeline_category}
                       </span>
                     )}
                   </div>
                   <h3 style={{ color: c.paper, fontSize: 14, margin: 0, fontWeight: 600 }}>
-                    {tab === "forms" ? item.formName :
-                     tab === "guidance" ? item.documentTitle :
-                     tab === "penalties" ? item.violationType :
-                     item.claimType}
+                    {tab === "forms" ? item.form_name :
+                     tab === "guidance" ? item.document_title :
+                     tab === "penalties" ? item.violation_type :
+                     item.claim_type}
                   </h3>
                 </div>
               </button>
@@ -290,39 +290,39 @@ export default function EnforcementIntel() {
                       <p style={{ color: c.paper, fontSize: 13, lineHeight: 1.6, margin: "0 0 12px 0" }}>
                         {item.purpose}
                       </p>
-                      {item.formNumber && (
+                      {item.form_number && (
                         <div style={{ marginBottom: 8 }}>
                           <span style={{ color: c.muted, fontSize: 10, fontFamily: fontMono }}>Form: </span>
-                          <span style={{ color: c.paper, fontSize: 12, fontFamily: fontMono }}>{item.formNumber}</span>
+                          <span style={{ color: c.paper, fontSize: 12, fontFamily: fontMono }}>{item.form_number}</span>
                         </div>
                       )}
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-                        {item.requiredFields && (
+                        {item.required_fields && (
                           <div style={{ background: c.tealBg, border: `1px solid ${c.tealBorder}`, borderRadius: 8, padding: 12 }}>
                             <span style={{ color: c.teal, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>Required Fields</span>
                             <ul style={{ margin: "6px 0 0 0", padding: "0 0 0 16px" }}>
-                              {(item.requiredFields as string[]).map((f: string, i: number) => (
+                              {(item.required_fields as string[]).map((f: string, i: number) => (
                                 <li key={i} style={{ color: c.paper, fontSize: 12, lineHeight: 1.6 }}>{f}</li>
                               ))}
                             </ul>
                           </div>
                         )}
-                        {item.supportingDocuments && (
+                        {item.supporting_documents && (
                           <div style={{ background: c.purpleBg, border: `1px solid ${c.purpleBorder}`, borderRadius: 8, padding: 12 }}>
                             <span style={{ color: c.purple, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>Supporting Documents</span>
                             <ul style={{ margin: "6px 0 0 0", padding: "0 0 0 16px" }}>
-                              {(item.supportingDocuments as string[]).map((d: string, i: number) => (
+                              {(item.supporting_documents as string[]).map((d: string, i: number) => (
                                 <li key={i} style={{ color: c.paper, fontSize: 12, lineHeight: 1.6 }}>{d}</li>
                               ))}
                             </ul>
                           </div>
                         )}
                       </div>
-                      {item.submissionMethods && (
+                      {item.submission_methods && (
                         <div style={{ marginBottom: 12 }}>
                           <span style={{ color: c.muted, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>Submission Methods</span>
                           <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}>
-                            {(item.submissionMethods as string[]).map((m: string, i: number) => (
+                            {(item.submission_methods as string[]).map((m: string, i: number) => (
                               <span key={i} style={{
                                 background: c.cardBg, border: `1px solid ${c.cardBorder}`,
                                 borderRadius: 4, padding: "3px 8px", fontSize: 11, color: c.paper,
@@ -333,10 +333,10 @@ export default function EnforcementIntel() {
                           </div>
                         </div>
                       )}
-                      {item.filingDeadline && (
+                      {item.filing_deadline && (
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
                           <Clock size={12} style={{ color: c.amber }} />
-                          <span style={{ color: c.amber, fontSize: 12 }}>{item.filingDeadline}</span>
+                          <span style={{ color: c.amber, fontSize: 12 }}>{item.filing_deadline}</span>
                         </div>
                       )}
                       {item.link && (
@@ -359,30 +359,30 @@ export default function EnforcementIntel() {
                           borderRadius: 4, padding: "2px 8px", fontSize: 10, color: c.purple,
                           fontFamily: fontMono,
                         }}>
-                          {item.guidanceType.replace(/_/g, " ")}
+                          {item.guidance_type.replace(/_/g, " ")}
                         </span>
-                        {item.publicationDate && (
-                          <span style={{ color: c.muted, fontSize: 11 }}>{item.publicationDate}</span>
+                        {item.publication_date && (
+                          <span style={{ color: c.muted, fontSize: 11 }}>{item.publication_date}</span>
                         )}
                       </div>
                       <div style={{ marginBottom: 12 }}>
                         <span style={{ color: c.muted, fontSize: 10, fontFamily: fontMono }}>Issue Area: </span>
-                        <span style={{ color: c.paper, fontSize: 13 }}>{item.issueArea}</span>
+                        <span style={{ color: c.paper, fontSize: 13 }}>{item.issue_area}</span>
                       </div>
-                      {item.authorityBasis && (
+                      {item.authority_basis && (
                         <div style={{ marginBottom: 12 }}>
                           <span style={{ color: c.muted, fontSize: 10, fontFamily: fontMono }}>Authority: </span>
-                          <span style={{ color: c.gold, fontSize: 12 }}>{item.authorityBasis}</span>
+                          <span style={{ color: c.gold, fontSize: 12 }}>{item.authority_basis}</span>
                         </div>
                       )}
-                      {item.keyRules && (
+                      {item.key_rules && (
                         <div style={{
                           background: c.purpleBg, border: `1px solid ${c.purpleBorder}`,
                           borderRadius: 8, padding: 12, marginBottom: 12,
                         }}>
                           <span style={{ color: c.purple, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>Key Rules</span>
                           <ul style={{ margin: "6px 0 0 0", padding: "0 0 0 16px" }}>
-                            {(item.keyRules as string[]).map((r: string, i: number) => (
+                            {(item.key_rules as string[]).map((r: string, i: number) => (
                               <li key={i} style={{ color: c.paper, fontSize: 12, lineHeight: 1.6 }}>{r}</li>
                             ))}
                           </ul>
@@ -394,8 +394,8 @@ export default function EnforcementIntel() {
                           <span style={{ color: c.paper, fontSize: 12, fontFamily: fontMono }}>{item.citation}</span>
                         </div>
                       )}
-                      {item.documentLink && (
-                        <a href={item.documentLink} target="_blank" rel="noopener noreferrer" style={{
+                      {item.document_link && (
+                        <a href={item.document_link} target="_blank" rel="noopener noreferrer" style={{
                           display: "inline-flex", alignItems: "center", gap: 4,
                           color: c.blue, fontSize: 12, textDecoration: "none",
                         }}>
@@ -409,30 +409,30 @@ export default function EnforcementIntel() {
                   {tab === "penalties" && (
                     <>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
-                        {item.statutoryMaxPenalty && (
+                        {item.statutory_max_penalty && (
                           <div style={{ background: c.redBg, border: `1px solid ${c.redBorder}`, borderRadius: 8, padding: 12 }}>
                             <span style={{ color: c.red, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>Max Penalty</span>
-                            <p style={{ color: c.paper, fontSize: 12, margin: "6px 0 0 0", lineHeight: 1.4 }}>{item.statutoryMaxPenalty}</p>
+                            <p style={{ color: c.paper, fontSize: 12, margin: "6px 0 0 0", lineHeight: 1.4 }}>{item.statutory_max_penalty}</p>
                           </div>
                         )}
-                        {item.averagePenalty && (
+                        {item.average_penalty && (
                           <div style={{ background: c.amberBg, border: `1px solid ${c.amberBorder}`, borderRadius: 8, padding: 12 }}>
                             <span style={{ color: c.amber, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>Average</span>
-                            <p style={{ color: c.paper, fontSize: 12, margin: "6px 0 0 0", lineHeight: 1.4 }}>{item.averagePenalty}</p>
+                            <p style={{ color: c.paper, fontSize: 12, margin: "6px 0 0 0", lineHeight: 1.4 }}>{item.average_penalty}</p>
                           </div>
                         )}
-                        {item.typicalSettlementRange && (
+                        {item.typical_settlement_range && (
                           <div style={{ background: c.greenBg, border: `1px solid ${c.greenBorder}`, borderRadius: 8, padding: 12 }}>
                             <span style={{ color: c.green, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>Settlement Range</span>
-                            <p style={{ color: c.paper, fontSize: 12, margin: "6px 0 0 0", lineHeight: 1.4 }}>{item.typicalSettlementRange}</p>
+                            <p style={{ color: c.paper, fontSize: 12, margin: "6px 0 0 0", lineHeight: 1.4 }}>{item.typical_settlement_range}</p>
                           </div>
                         )}
                       </div>
-                      {item.additionalRemedies && (
+                      {item.additional_remedies && (
                         <div style={{ marginBottom: 12 }}>
                           <span style={{ color: c.muted, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>Additional Remedies</span>
                           <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}>
-                            {(item.additionalRemedies as string[]).map((r: string, i: number) => (
+                            {(item.additional_remedies as string[]).map((r: string, i: number) => (
                               <span key={i} style={{
                                 background: c.blueBg, border: `1px solid ${c.blueBorder}`,
                                 borderRadius: 4, padding: "2px 8px", fontSize: 11, color: c.blue,
@@ -443,11 +443,11 @@ export default function EnforcementIntel() {
                           </div>
                         </div>
                       )}
-                      {item.notableCases && (item.notableCases as string[]).length > 0 && (
+                      {item.notable_cases && (item.notable_cases as string[]).length > 0 && (
                         <div style={{ marginBottom: 12 }}>
                           <span style={{ color: c.muted, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>Notable Cases</span>
                           <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
-                            {(item.notableCases as string[]).map((nc: string, i: number) => (
+                            {(item.notable_cases as string[]).map((nc: string, i: number) => (
                               <div key={i} style={{
                                 background: "rgba(255,255,255,0.02)", borderRadius: 6, padding: "6px 10px",
                                 display: "flex", alignItems: "center", gap: 6,
@@ -476,14 +476,14 @@ export default function EnforcementIntel() {
                           borderRadius: 4, padding: "2px 8px", fontSize: 10, color: c.amber,
                           fontFamily: fontMono,
                         }}>
-                          Trigger: {item.triggerStrength}
+                          Trigger: {item.trigger_strength}
                         </span>
                         <span style={{
                           background: c.tealBg, border: `1px solid ${c.tealBorder}`,
                           borderRadius: 4, padding: "2px 8px", fontSize: 10, color: c.teal,
                           fontFamily: fontMono,
                         }}>
-                          Actionability: {item.historicalActionability}
+                          Actionability: {item.historical_actionability}
                         </span>
                         <span style={{
                           background: c.blueBg, border: `1px solid ${c.blueBorder}`,
@@ -493,30 +493,30 @@ export default function EnforcementIntel() {
                           {item.jurisdiction}
                         </span>
                       </div>
-                      {item.minimumIntakeThreshold && (
+                      {item.minimum_intake_threshold && (
                         <div style={{
                           background: c.tealBg, border: `1px solid ${c.tealBorder}`,
                           borderRadius: 8, padding: 12, marginBottom: 12,
                         }}>
                           <span style={{ color: c.teal, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>Minimum Intake Threshold</span>
-                          <p style={{ color: c.paper, fontSize: 12, margin: "6px 0 0 0", lineHeight: 1.5 }}>{item.minimumIntakeThreshold}</p>
+                          <p style={{ color: c.paper, fontSize: 12, margin: "6px 0 0 0", lineHeight: 1.5 }}>{item.minimum_intake_threshold}</p>
                         </div>
                       )}
-                      {item.deadlineDependency && (
+                      {item.deadline_dependency && (
                         <div style={{
                           display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 12,
                         }}>
                           <Clock size={14} style={{ color: c.amber, marginTop: 2, flexShrink: 0 }} />
                           <div>
                             <span style={{ color: c.amber, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>Deadline</span>
-                            <p style={{ color: c.paper, fontSize: 12, margin: "4px 0 0 0", lineHeight: 1.5 }}>{item.deadlineDependency}</p>
+                            <p style={{ color: c.paper, fontSize: 12, margin: "4px 0 0 0", lineHeight: 1.5 }}>{item.deadline_dependency}</p>
                           </div>
                         </div>
                       )}
-                      {item.recommendedChannel && (
+                      {item.recommended_channel && (
                         <div style={{ marginBottom: 12 }}>
                           <span style={{ color: c.muted, fontSize: 10, fontFamily: fontMono }}>Recommended Channel: </span>
-                          <span style={{ color: c.green, fontSize: 12 }}>{item.recommendedChannel}</span>
+                          <span style={{ color: c.green, fontSize: 12 }}>{item.recommended_channel}</span>
                         </div>
                       )}
                       {item.notes && (
