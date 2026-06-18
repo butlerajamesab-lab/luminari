@@ -47,6 +47,17 @@ import { resolveTemporalOrder } from "./phase2-temporal-ordering";
 // ─── Database Connection (Supabase PostgreSQL) ───
 // Lazy-initialized pool: does not connect at module load time.
 // Connection is only attempted when a query is actually made.
+//
+// This is the SINGLE canonical postgres client + drizzle instance for the
+// Lighthouse server. All other modules must import `db` / `getPool` from here
+// rather than constructing their own connection (see pg-config.ts).
+//
+// REMINDER: the Render env var DATABASE_URL must use the Supabase transaction
+// pooler on port 6543 (e.g. ...pooler.supabase.com:6543/postgres), NOT the
+// direct connection on 5432. The pooler does not support prepared statements,
+// so prepared statements stay disabled (postgres.js equivalent:
+// `postgres(DATABASE_URL, { prepare: false })`). The pg pool below never names
+// queries, so no prepared statements are emitted.
 let pgPool: Pool | null = null;
 let dbInstance: ReturnType<typeof drizzle> | null = null;
 function initializePool(): Pool {

@@ -41,6 +41,14 @@ export function createDatabasePool(options: DatabasePoolOptions = {}): Pool {
     });
   }
 
+  // Supabase pooling requirement: DATABASE_URL must point at the transaction
+  // pooler on port 6543 (NOT the direct connection on 5432). The transaction
+  // pooler does not support session-level prepared statements, so prepared
+  // statements must stay disabled. node-postgres only emits a prepared
+  // statement when a query is given a `name`; the canonical pool never names
+  // queries, and drizzle's node-postgres driver does not prepare unless
+  // `.prepare()` is called explicitly — keep it that way (postgres.js
+  // equivalent: `postgres(DATABASE_URL, { prepare: false })`).
   const config: PoolConfig = {
     connectionString,
     connectionTimeoutMillis: options.connectionTimeoutMillis ?? 10000,
