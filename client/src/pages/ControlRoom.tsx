@@ -55,12 +55,13 @@ import {
 type PipelineStage = "idle" | "viability" | "strategy" | "assembly" | "pattern" | "complete" | "error";
 
 /* ─── Case Completeness Panel ─── */
-function CaseCompletenessPanel({ case_id: caseId }: { caseId: number }) {
+function CaseCompletenessPanel({ caseId }: { caseId: number }) {
   const [, navigate] = useLocation();
-  const { data: state, isLoading } = trpc.case_state.get.useQuery(
+  const { data: caseStateResponse, isLoading } = trpc.case_state.get.useQuery(
     { case_id: caseId },
     { refetchInterval: 15000 }
   );
+  const state = caseStateResponse?.state;
   const { data: flags } = trpc.case_state.get_flags.useQuery(
     { case_id: caseId, status: "open" },
     { refetchInterval: 15000 }
@@ -248,7 +249,7 @@ function CaseCompletenessPanel({ case_id: caseId }: { caseId: number }) {
 }
 
 /* ─── Evidence Summary Panel ─── */
-function EvidenceSummaryPanel({ case_id: caseId }: { caseId: number }) {
+function EvidenceSummaryPanel({ caseId }: { caseId: number }) {
   const [, navigate] = useLocation();
   const { data: stats, isLoading } = trpc.cases.stats.useQuery(
     { case_id: caseId },
@@ -317,7 +318,7 @@ function EvidenceSummaryPanel({ case_id: caseId }: { caseId: number }) {
 }
 
 /* ─── Strategy Paths Panel ─── */
-function StrategyPathsPanel({ case_id: caseId }: { caseId: number }) {
+function StrategyPathsPanel({ caseId }: { caseId: number }) {
   const { data: paths, isLoading } = trpc.strategyEngine.getStrategyPaths.useQuery(
     { case_id: caseId },
     { refetchInterval: 15000 }
@@ -502,7 +503,7 @@ function StrategyPathsPanel({ case_id: caseId }: { caseId: number }) {
 }
 
 /* ─── Deadlines Panel ─── */
-function DeadlinesPanel({ case_id: caseId }: { caseId: number }) {
+function DeadlinesPanel({ caseId }: { caseId: number }) {
   const { data: strategyDeadlines, isLoading: strategyLoading } = trpc.strategyEngine.getDeadlines.useQuery(
     { case_id: caseId },
     { refetchInterval: 30000 }
@@ -677,7 +678,7 @@ function LegistarEventsWidget() {
 }
 
 /* ─── Next Actions Panel ─── */
-function NextActionsPanel({ case_id: caseId }: { caseId: number }) {
+function NextActionsPanel({ caseId }: { caseId: number }) {
   const [, navigate] = useLocation();
   const { data: packets, isLoading } = trpc.assemblyEngine.getPackets.useQuery(
     { case_id: caseId },
@@ -784,7 +785,7 @@ function NextActionsPanel({ case_id: caseId }: { caseId: number }) {
 }
 
 /* ─── Pattern Signals Panel ─── */
-function PatternSignalsPanel({ case_id: caseId }: { caseId: number }) {
+function PatternSignalsPanel({ caseId }: { caseId: number }) {
   const [, navigate] = useLocation();
   const { data: inferences, isLoading: infLoading } = trpc.patternEngine.getSystemicInferences.useQuery();
   const { data: entityClusters } = trpc.patternEngine.getEntityClusters.useQuery();
@@ -898,7 +899,7 @@ function PatternSignalsPanel({ case_id: caseId }: { caseId: number }) {
 }
 
 /* ─── Key Findings Panel ─── */
-function KeyFindingsPanel({ case_id: caseId }: { caseId: number }) {
+function KeyFindingsPanel({ caseId }: { caseId: number }) {
   const [, navigate] = useLocation();
   const { data: findings, isLoading } = trpc.findings.listEnriched.useQuery(
     { case_id: caseId },
@@ -1012,7 +1013,7 @@ function KeyFindingsPanel({ case_id: caseId }: { caseId: number }) {
 }
 
 /* ─── Pipeline Trigger + Progress ─── */
-function PipelineTrigger({ case_id: caseId }: { caseId: number }) {
+function PipelineTrigger({ caseId }: { caseId: number }) {
   const [stage, setStage] = useState<PipelineStage>("idle");
   const [error, setError] = useState<string | null>(null);
 
