@@ -18,6 +18,11 @@ const severityColor: Record<string, string> = {
   low: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
 };
 
+function get_dimension_score(dimensions: any, key: string, fallback = 0): number {
+  const value = dimensions?.[key]?.score;
+  return typeof value === "number" ? value : fallback;
+}
+
 function ScoreBar({ label, score, max, icon }: { label: string; score: number; max: number; icon: React.ReactNode }) {
   const pct = (score / max) * 100;
   const color = pct >= 75 ? "bg-red-500" : pct >= 50 ? "bg-orange-500" : pct >= 25 ? "bg-yellow-500" : "bg-emerald-500";
@@ -252,11 +257,11 @@ export default function ContradictionScoring() {
 
                     {/* Dimension Bars */}
                     <div className="space-y-3">
-                      <ScoreBar label="Legal Severity" score={singleScore.data.dimensions.legal_severity.score} max={25} icon={<Shield className="h-3.5 w-3.5" />} />
-                      <ScoreBar label="Evidence Strength" score={singleScore.data.dimensions.evidence_strength.score} max={25} icon={<Target className="h-3.5 w-3.5" />} />
-                      <ScoreBar label="Timeline Support" score={singleScore.data.dimensions.timeline_support.score} max={20} icon={<Clock className="h-3.5 w-3.5" />} />
-                      <ScoreBar label="Corroboration" score={singleScore.data.dimensions.corroboration.score} max={20} icon={<BarChart3 className="h-3.5 w-3.5" />} />
-                      <ScoreBar label="Systemic Risk" score={singleScore.data.dimensions.systemic_risk.score} max={10} icon={<Users className="h-3.5 w-3.5" />} />
+                      <ScoreBar label="Legal Severity" score={get_dimension_score(singleScore.data.dimensions, "legal_severity")} max={25} icon={<Shield className="h-3.5 w-3.5" />} />
+                      <ScoreBar label="Evidence Strength" score={get_dimension_score(singleScore.data.dimensions, "evidence_strength")} max={25} icon={<Target className="h-3.5 w-3.5" />} />
+                      <ScoreBar label="Timeline Support" score={get_dimension_score(singleScore.data.dimensions, "timeline_support")} max={20} icon={<Clock className="h-3.5 w-3.5" />} />
+                      <ScoreBar label="Corroboration" score={get_dimension_score(singleScore.data.dimensions, "corroboration")} max={20} icon={<BarChart3 className="h-3.5 w-3.5" />} />
+                      <ScoreBar label="Systemic Risk" score={get_dimension_score(singleScore.data.dimensions, "systemic_risk")} max={10} icon={<Users className="h-3.5 w-3.5" />} />
                     </div>
 
                     {/* Recommendation */}
@@ -268,7 +273,7 @@ export default function ContradictionScoring() {
                     </div>
 
                     <p className="text-xs text-muted-foreground">
-                      {singleScore.data.title} — {singleScore.data.domain.replace(/_/g, " ")}
+                      {singleScore.data.title} — {(singleScore.data.domain ?? "general").replace(/_/g, " ")}
                     </p>
                   </>
                 )}
