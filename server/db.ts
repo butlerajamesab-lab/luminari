@@ -51,7 +51,7 @@ let pgPool: Pool | null = null;
 let dbInstance: ReturnType<typeof drizzle> | null = null;
 function initializePool(): Pool {
   if (pgPool) return pgPool;
-  pgPool = createDatabasePool({ label: "DB", connectionTimeoutMillis: 10000, max: 10 });
+  pgPool = createDatabasePool({ label: "DB", connectionTimeoutMillis: 10000, max: 5 });
   return pgPool;
 }
 
@@ -4288,6 +4288,19 @@ import { gte } from "drizzle-orm";
 
 // ── Suggestions ──────────────────────────────────────────────────────
 
+let lighthouseSuggestionsUnavailable = false;
+function isUndefinedTableError(error: any) {
+  return error?.code === "42P01" || String(error?.message ?? "").includes('relation "lighthouse_suggestions" does not exist');
+}
+function markLighthouseSuggestionsUnavailable(error: any) {
+  if (isUndefinedTableError(error)) {
+    lighthouseSuggestionsUnavailable = true;
+    console.warn("[Lighthouse] lighthouse_suggestions unavailable; skipping optional suggestions hot path until restart.");
+    return true;
+  }
+  return false;
+}
+
 export async function createSuggestion(userId: number, content: string): Promise<number> {
   const now = Date.now();
   const [result] = await db.insert(lighthouseSuggestions).values({
@@ -4306,14 +4319,20 @@ export async function listSuggestions(opts?: {
   limit?: number;
   offset?: number;
 }): Promise<LighthouseSuggestion[]> {
-  let query = db.select().from(lighthouseSuggestions);
-  if (opts?.status) {
-    query = query.where(eq(lighthouseSuggestions.status, opts.status as any)) as any;
+  if (lighthouseSuggestionsUnavailable) return [];
+  try {
+    let query = db.select().from(lighthouseSuggestions);
+    if (opts?.status) {
+      query = query.where(eq(lighthouseSuggestions.status, opts.status as any)) as any;
+    }
+    return await (query as any)
+      .orderBy(desc(lighthouseSuggestions.votes), desc(lighthouseSuggestions.createdAt))
+      .limit(opts?.limit ?? 50)
+      .offset(opts?.offset ?? 0);
+  } catch (error: any) {
+    if (markLighthouseSuggestionsUnavailable(error)) return [];
+    throw error;
   }
-  return (query as any)
-    .orderBy(desc(lighthouseSuggestions.votes), desc(lighthouseSuggestions.createdAt))
-    .limit(opts?.limit ?? 50)
-    .offset(opts?.offset ?? 0);
 }
 
 export async function voteSuggestion(suggestionId: number, userId: number): Promise<boolean> {
@@ -4348,10 +4367,16 @@ export async function unvoteSuggestion(suggestionId: number, userId: number): Pr
 }
 
 export async function getUserVotedSuggestionIds(userId: number): Promise<number[]> {
-  const rows = await db.select({ suggestionId: lighthouseSuggestionVotes.suggestionId })
-    .from(lighthouseSuggestionVotes)
-    .where(eq(lighthouseSuggestionVotes.userId, userId));
-  return rows.map(r => r.suggestionId);
+  if (lighthouseSuggestionsUnavailable) return [];
+  try {
+    const rows = await db.select({ suggestionId: lighthouseSuggestionVotes.suggestionId })
+      .from(lighthouseSuggestionVotes)
+      .where(eq(lighthouseSuggestionVotes.userId, userId));
+    return rows.map(r => r.suggestionId);
+  } catch (error: any) {
+    if (markLighthouseSuggestionsUnavailable(error)) return [];
+    throw error;
+  }
 }
 
 export async function updateSuggestionStatus(
