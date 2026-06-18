@@ -1,6 +1,14 @@
 import { Pool, type PoolConfig } from "pg";
 
 const FAST_FAIL_CONNECTION_STRING = "postgresql://x:x@127.0.0.1:1/x";
+const STRIPPED_DATABASE_URL_PARAMS = [
+  "sslmode",
+  "sslcert",
+  "sslkey",
+  "sslrootcert",
+  "pgbouncer",
+  "connect_timeout",
+];
 
 let missingDatabaseUrlWarningIssued = false;
 
@@ -15,6 +23,18 @@ type DatabasePoolOptions = {
 
 export function getDatabaseUrl(): string | undefined {
   return process.env.DATABASE_URL?.trim() || undefined;
+}
+
+export function sanitizeDatabaseUrlForPg(connectionString: string): string {
+  try {
+    const url = new URL(connectionString);
+    for (const key of STRIPPED_DATABASE_URL_PARAMS) {
+      url.searchParams.delete(key);
+    }
+    return url.toString();
+  } catch {
+    return connectionString;
+  }
 }
 
 export function getDatabaseHostLabel(connectionString = getDatabaseUrl()): string {
@@ -41,6 +61,8 @@ export function createDatabasePool(options: DatabasePoolOptions = {}): Pool {
     });
   }
 
+  const sanitizedConnectionString = sanitizeDatabaseUrlForPg(connectionString);
+
   // Supabase pooling requirement: DATABASE_URL must point at the transaction
   // pooler on port 6543 (NOT the direct connection on 5432). The transaction
   // pooler does not support session-level prepared statements, so prepared
@@ -50,7 +72,7 @@ export function createDatabasePool(options: DatabasePoolOptions = {}): Pool {
   // `.prepare()` is called explicitly — keep it that way (postgres.js
   // equivalent: `postgres(DATABASE_URL, { prepare: false })`).
   const config: PoolConfig = {
-    connectionString,
+    connectionString: sanitizedConnectionString,
     connectionTimeoutMillis: options.connectionTimeoutMillis ?? 10000,
     ssl: { rejectUnauthorized: false },
     idleTimeoutMillis: options.idleTimeoutMillis ?? 30000,
@@ -66,6 +88,6 @@ export function createDatabasePool(options: DatabasePoolOptions = {}): Pool {
   pool.on("error", (err) => {
     console.error(`[${label}] Unexpected PostgreSQL pool error:`, err);
   });
-  console.log(`[${label}] PostgreSQL pool initialized via DATABASE_URL with SSL. Host: ${getDatabaseHostLabel(connectionString)}`);
+  console.log(`[${label}] PostgreSQL pool initialized via sanitized DATABASE_URL with SSL. Host: ${getDatabaseHostLabel(connectionString)}`);
   return pool;
 }
