@@ -2941,9 +2941,10 @@ export default function WorkbenchDashboard() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [, navigate] = useLocation();
   const params = useParams<{ caseId: string }>();
-  const { cases: userCases, activeCase, setActiveCase } = useCase();
+  const { cases: userCases, currentCase, currentCaseId, setCurrentCaseId } = useCase();
 
-  const caseId = params.caseId ? parseInt(params.caseId, 10) : activeCase?.id;
+  const routeCaseId = params.caseId ? parseInt(params.caseId, 10) : null;
+  const caseId = Number.isFinite(routeCaseId) ? routeCaseId : currentCaseId ?? currentCase?.id;
 
   // If no caseId, show case selector
   if (!caseId) {
@@ -2979,7 +2980,10 @@ export default function WorkbenchDashboard() {
               {userCases.map((c: any) => (
                 <button
                   key={c.id}
-                  onClick={() => navigate(`/workbench/${c.id}`)}
+                  onClick={() => {
+                    setCurrentCaseId(c.id);
+                    navigate(`/workbench/${c.id}`);
+                  }}
                   style={{
                     background: wb.cardBg,
                     border: `1px solid ${wb.cardBorder}`,
