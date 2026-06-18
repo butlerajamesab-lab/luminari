@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useAuth } from "@/core/hooks/useAuth";
 import { useLocation } from "wouter";
 import { useCase } from "@/contexts/CaseContext";
@@ -58,11 +57,10 @@ interface LabStation {
 export default function EvidenceLab() {
   const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
-  // @ts-expect-error pre-existing type mismatch
-  const { cases: userCases, activeCase } = useCase();
-  const hasCase = userCases && userCases.length > 0;
-
-  const caseId = activeCase?.id;
+  const { cases: userCases, currentCase, currentCaseId, setCurrentCaseId, isLoading: casesLoading } = useCase();
+  const hasCase = !!userCases?.length;
+  const caseId = currentCase?.id;
+  const showNoActiveCase = isAuthenticated && !casesLoading && hasCase && !currentCase && currentCaseId !== null;
 
   // Fetch evidence stats if we have a case
   const evidenceQuery = trpc.workbench.overview.useQuery(
@@ -195,9 +193,9 @@ export default function EvidenceLab() {
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {activeCase && (
+          {currentCase && (
             <button
-              onClick={() => navigate(`/workbench/${activeCase.id}`)}
+              onClick={() => navigate(`/workbench/${currentCase.id}`)}
               style={{
                 background: "none", border: `1px solid ${lb.cardBorder}`,
                 borderRadius: 6, padding: "4px 10px", cursor: "pointer",
@@ -205,7 +203,7 @@ export default function EvidenceLab() {
                 fontFamily: fontMono, fontSize: 11, color: lb.muted,
               }}
             >
-              <Briefcase size={12} /> {activeCase.name?.slice(0, 30)} <ChevronRight size={12} />
+              <Briefcase size={12} /> {currentCase.name?.slice(0, 30)} <ChevronRight size={12} />
             </button>
           )}
         </div>
@@ -221,6 +219,44 @@ export default function EvidenceLab() {
           The forensic core of the platform.
         </p>
       </div>
+
+      {/* ── No Active Case State ── */}
+      {showNoActiveCase && (
+        <div
+          data-state="no_active_case"
+          style={{
+            maxWidth: 900,
+            margin: "0 auto 24px",
+            padding: "0 24px",
+          }}
+        >
+          <div style={{
+            border: `1px solid ${lb.amber}40`,
+            background: `${lb.amber}10`,
+            borderRadius: 10,
+            padding: 16,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <AlertTriangle size={18} color={lb.amber} />
+              <div>
+                <p style={{ fontFamily: fontSans, fontSize: 14, color: lb.cream, margin: 0 }}>
+                  No active case selected.
+                </p>
+                <p style={{ fontFamily: fontSans, fontSize: 12, color: lb.muted, margin: "2px 0 0" }}>
+                  Choose a case before opening case-specific evidence tools.
+                </p>
+              </div>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => setCurrentCaseId(userCases?.[0]?.id ?? null)}>
+              Use first case
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* ── Stats Bar (if case active) ── */}
       {counts && (
