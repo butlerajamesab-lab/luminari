@@ -22,7 +22,7 @@ export const enforcementIntelligenceRouter = router({
   listForms: publicProcedure
     .input(z.object({ agency: z.string().optional() }).optional())
     .query(async ({ input }) => {
-      const where = input?.agency ? eq(agencyForms.agencyShort, input.agency) : undefined;
+      const where = input?.agency ? eq(agencyForms.agency_short, input.agency) : undefined;
       return db.select().from(agencyForms).where(where).orderBy(agencyForms.agency);
     }),
 
@@ -35,11 +35,11 @@ export const enforcementIntelligenceRouter = router({
 
   // ═══ Regulatory Guidance ═══
   listGuidance: publicProcedure
-    .input(z.object({ agency: z.string().optional(), issueArea: z.string().optional() }).optional())
+    .input(z.object({ agency: z.string().optional(), issue_area: z.string().optional() }).optional())
     .query(async ({ input }) => {
       const conditions: any[] = [];
-      if (input?.agency) conditions.push(eq(regulatoryGuidance.agencyShort, input.agency));
-      if (input?.issueArea) conditions.push(like(regulatoryGuidance.issueArea, `%${input.issueArea}%`));
+      if (input?.agency) conditions.push(eq(regulatoryGuidance.agency_short, input.agency));
+      if (input?.issue_area) conditions.push(like(regulatoryGuidance.issue_area, `%${input.issue_area}%`));
       const where = conditions.length > 0 ? (conditions.length === 1 ? conditions[0] : sql`${conditions[0]} AND ${conditions[1]}`) : undefined;
       return db.select().from(regulatoryGuidance).where(where).orderBy(regulatoryGuidance.agency);
     }),
@@ -55,7 +55,7 @@ export const enforcementIntelligenceRouter = router({
   listPenalties: publicProcedure
     .input(z.object({ agency: z.string().optional() }).optional())
     .query(async ({ input }) => {
-      const where = input?.agency ? eq(enforcementPenalties.agencyShort, input.agency) : undefined;
+      const where = input?.agency ? eq(enforcementPenalties.agency_short, input.agency) : undefined;
       return db.select().from(enforcementPenalties).where(where).orderBy(enforcementPenalties.agency);
     }),
 
@@ -68,11 +68,11 @@ export const enforcementIntelligenceRouter = router({
 
   // ═══ Enforcement Viability Rules ═══
   listViabilityRules: publicProcedure
-    .input(z.object({ agency: z.string().optional(), pipelineCategory: z.string().optional() }).optional())
+    .input(z.object({ agency: z.string().optional(), pipeline_category: z.string().optional() }).optional())
     .query(async ({ input }) => {
       const conditions: any[] = [];
-      if (input?.agency) conditions.push(eq(enforcementViabilityRules.agencyShort, input.agency));
-      if (input?.pipelineCategory) conditions.push(eq(enforcementViabilityRules.pipelineCategory, input.pipelineCategory));
+      if (input?.agency) conditions.push(eq(enforcementViabilityRules.agency_short, input.agency));
+      if (input?.pipeline_category) conditions.push(eq(enforcementViabilityRules.pipeline_category, input.pipeline_category));
       const where = conditions.length > 0 ? (conditions.length === 1 ? conditions[0] : sql`${conditions[0]} AND ${conditions[1]}`) : undefined;
       return db.select().from(enforcementViabilityRules).where(where);
     }),
@@ -84,11 +84,11 @@ export const enforcementIntelligenceRouter = router({
         id,
         name,
         description,
-        primary_cases as "primaryCases",
+        primary_cases,
         domains,
-        added_by as "addedBy",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
+        added_by,
+        created_at,
+        updated_at
       from public.doctrine_registry
       order by name
     `);
@@ -103,11 +103,11 @@ export const enforcementIntelligenceRouter = router({
           id,
           name,
           description,
-          primary_cases as "primaryCases",
+          primary_cases,
           domains,
-          added_by as "addedBy",
-          created_at as "createdAt",
-          updated_at as "updatedAt"
+          added_by,
+          created_at,
+          updated_at
         from public.doctrine_registry
         where id = $1
         limit 1
@@ -116,24 +116,24 @@ export const enforcementIntelligenceRouter = router({
     }),
 
   listDoctrineEdges: publicProcedure
-    .input(z.object({ edgeType: z.string().optional() }).optional())
+    .input(z.object({ edge_type: z.string().optional() }).optional())
     .query(async ({ input }) => {
       const params: unknown[] = [];
-      const where = input?.edgeType ? `where edge_type = $1` : "";
-      if (input?.edgeType) params.push(input.edgeType);
+      const where = input?.edge_type ? `where edge_type = $1` : "";
+      if (input?.edge_type) params.push(input.edge_type);
       const { rows } = await getPool().query(`
         select
           id,
-          from_type as "fromType",
-          from_id as "fromId",
-          edge_type as "edgeType",
-          to_type as "toType",
-          to_id as "toId",
+          from_type,
+          from_id,
+          edge_type,
+          to_type,
+          to_id,
           strength,
           notes,
-          added_by as "addedBy",
-          created_at as "createdAt",
-          updated_at as "updatedAt"
+          added_by,
+          created_at,
+          updated_at
         from public.doctrine_graph_edges
         ${where}
         order by from_type, edge_type
@@ -148,37 +148,37 @@ export const enforcementIntelligenceRouter = router({
           id,
           name,
           description,
-          primary_cases as "primaryCases",
+          primary_cases,
           domains,
-          added_by as "addedBy",
-          created_at as "createdAt",
-          updated_at as "updatedAt"
+          added_by,
+          created_at,
+          updated_at
         from public.doctrine_registry
         order by name
       `),
       getPool().query(`
         select
           id,
-          from_type as "fromType",
-          from_id as "fromId",
-          edge_type as "edgeType",
-          to_type as "toType",
-          to_id as "toId",
+          from_type,
+          from_id,
+          edge_type,
+          to_type,
+          to_id,
           strength,
           notes,
-          added_by as "addedBy",
-          created_at as "createdAt",
-          updated_at as "updatedAt"
+          added_by,
+          created_at,
+          updated_at
         from public.doctrine_graph_edges
         order by from_type, edge_type
       `),
     ]);
     const doctrines = doctrineResult.rows ?? [];
     const edges = edgeResult.rows ?? [];
-    // Group edges by fromType for visualization
+    // Group edges by from_type for visualization
     const byFromType: Record<string, typeof edges> = {};
     for (const e of edges) {
-      const key = `${e.fromType}:${e.fromId}`;
+      const key = `${e.from_type}:${e.from_id}`;
       if (!byFromType[key]) byFromType[key] = [];
       byFromType[key].push(e);
     }
@@ -187,7 +187,7 @@ export const enforcementIntelligenceRouter = router({
 
   // ═══ Litigation Barriers ═══
   listBarriers: publicProcedure.query(async () => {
-    return db.select().from(litigationBarriers).orderBy(litigationBarriers.barrierType);
+    return db.select().from(litigationBarriers).orderBy(litigationBarriers.barrier_type);
   }),
 
   getBarrier: publicProcedure
@@ -200,8 +200,8 @@ export const enforcementIntelligenceRouter = router({
   // ═══ Signal Registry ═══
   listSignals: publicProcedure.query(async () => {
     return db.select().from(signalRegistry)
-      .where(sql`"signalType" NOT LIKE 'contradiction_%' AND "signalType" NOT LIKE 'missing_evidence_%' AND "signalType" NOT LIKE 'inconsistency_%'`)
-      .orderBy(signalRegistry.signalType);
+      .where(sql`"signal_type" NOT LIKE 'contradiction_%' AND "signal_type" NOT LIKE 'missing_evidence_%' AND "signal_type" NOT LIKE 'inconsistency_%'`)
+      .orderBy(signalRegistry.signal_type);
   }),
 
   getSignal: publicProcedure
@@ -263,14 +263,14 @@ export const enforcementIntelligenceRouter = router({
     .input(z.object({
       incidentDate: z.string(), // ISO date string
       formId: z.number().optional(),
-      agencyShort: z.string().optional(),
+      agency_short: z.string().optional(),
     }))
     .query(async ({ input }) => {
       // Get all forms or a specific one
       const forms = input.formId
         ? await db.select().from(agencyForms).where(eq(agencyForms.id, input.formId))
-        : input.agencyShort
-          ? await db.select().from(agencyForms).where(eq(agencyForms.agencyShort, input.agencyShort))
+        : input.agency_short
+          ? await db.select().from(agencyForms).where(eq(agencyForms.agency_short, input.agency_short))
           : await db.select().from(agencyForms);
 
       const incident = new Date(input.incidentDate);
@@ -292,8 +292,8 @@ export const enforcementIntelligenceRouter = router({
         'FTC': { primaryDays: null, extendedDays: null, extendedCondition: null, noDeadline: true },
       };
 
-      return forms.map(f => {
-        const rule = deadlineMap[f.agencyShort] || { primaryDays: null, extendedDays: null, extendedCondition: null, noDeadline: true };
+      return forms.map((f: any) => {
+        const rule = deadlineMap[f.agency_short] || { primaryDays: null, extendedDays: null, extendedCondition: null, noDeadline: true };
 
         const daysSinceIncident = Math.floor((now.getTime() - incident.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -316,9 +316,9 @@ export const enforcementIntelligenceRouter = router({
         return {
           formId: f.id,
           agency: f.agency,
-          agencyShort: f.agencyShort,
-          formName: f.formName,
-          filingDeadlineText: f.filingDeadline,
+          agency_short: f.agency_short,
+          form_name: f.form_name,
+          filing_deadlineText: f.filing_deadline,
           incidentDate: input.incidentDate,
           daysSinceIncident,
           primaryDeadlineDays: rule.primaryDays,
@@ -361,28 +361,28 @@ export const enforcementIntelligenceRouter = router({
 
       // Fetch matching forms
       const matchingForms = pipelineCategories.length > 0
-        ? await db.select().from(agencyForms).where(inArray(agencyForms.pipelineCategory, pipelineCategories))
+        ? await db.select().from(agencyForms).where(inArray(agencyForms.pipeline_category, pipelineCategories))
         : await db.select().from(agencyForms);
 
       // Fetch matching guidance
       const matchingGuidance = pipelineCategories.length > 0
-        ? await db.select().from(regulatoryGuidance).where(inArray(regulatoryGuidance.pipelineCategory, pipelineCategories))
+        ? await db.select().from(regulatoryGuidance).where(inArray(regulatoryGuidance.pipeline_category, pipelineCategories))
         : await db.select().from(regulatoryGuidance);
 
       // Fetch matching penalties
       const matchingPenalties = pipelineCategories.length > 0
-        ? await db.select().from(enforcementPenalties).where(inArray(enforcementPenalties.pipelineCategory, pipelineCategories))
+        ? await db.select().from(enforcementPenalties).where(inArray(enforcementPenalties.pipeline_category, pipelineCategories))
         : await db.select().from(enforcementPenalties);
 
       // Fetch matching viability rules
       const matchingViability = pipelineCategories.length > 0
-        ? await db.select().from(enforcementViabilityRules).where(inArray(enforcementViabilityRules.pipelineCategory, pipelineCategories))
+        ? await db.select().from(enforcementViabilityRules).where(inArray(enforcementViabilityRules.pipeline_category, pipelineCategories))
         : await db.select().from(enforcementViabilityRules);
 
       // Fetch matching barriers
       const allBarriers = await db.select().from(litigationBarriers);
       const matchingBarriers = input.domain
-        ? allBarriers.filter(b => {
+        ? allBarriers.filter((b: any) => {
             const domains = b.domains as string[];
             return domains?.includes(input.domain!);
           })
@@ -394,7 +394,7 @@ export const enforcementIntelligenceRouter = router({
         forms: matchingForms,
         guidance: matchingGuidance,
         penalties: matchingPenalties,
-        viabilityRules: matchingViability,
+        viability_rules: matchingViability,
         barriers: matchingBarriers,
         totalResources: matchingForms.length + matchingGuidance.length + matchingPenalties.length + matchingViability.length + matchingBarriers.length,
       };
@@ -410,7 +410,7 @@ export const enforcementIntelligenceRouter = router({
       if (gaps.length === 0) return { gaps: [], suggestions: [] };
 
       // Collect unique domains from gaps
-      const domains = [...new Set(gaps.map(g => g.domain).filter(Boolean))] as string[];
+      const domains = [...new Set(gaps.map((g: any) => g.domain).filter(Boolean))] as string[];
 
       const domainToPipeline: Record<string, string[]> = {
         'civil_rights': ['civil_rights'],
@@ -427,23 +427,23 @@ export const enforcementIntelligenceRouter = router({
 
       const allPipelineCategories = [...new Set(domains.flatMap(d => domainToPipeline[d] || []))];
 
-      const [forms, guidanceDocs, penalties, viabilityRules] = await Promise.all([
+      const [forms, guidanceDocs, penalties, viability_rules] = await Promise.all([
         allPipelineCategories.length > 0
-          ? db.select().from(agencyForms).where(inArray(agencyForms.pipelineCategory, allPipelineCategories))
+          ? db.select().from(agencyForms).where(inArray(agencyForms.pipeline_category, allPipelineCategories))
           : db.select().from(agencyForms),
         allPipelineCategories.length > 0
-          ? db.select().from(regulatoryGuidance).where(inArray(regulatoryGuidance.pipelineCategory, allPipelineCategories))
+          ? db.select().from(regulatoryGuidance).where(inArray(regulatoryGuidance.pipeline_category, allPipelineCategories))
           : db.select().from(regulatoryGuidance),
         allPipelineCategories.length > 0
-          ? db.select().from(enforcementPenalties).where(inArray(enforcementPenalties.pipelineCategory, allPipelineCategories))
+          ? db.select().from(enforcementPenalties).where(inArray(enforcementPenalties.pipeline_category, allPipelineCategories))
           : db.select().from(enforcementPenalties),
         allPipelineCategories.length > 0
-          ? db.select().from(enforcementViabilityRules).where(inArray(enforcementViabilityRules.pipelineCategory, allPipelineCategories))
+          ? db.select().from(enforcementViabilityRules).where(inArray(enforcementViabilityRules.pipeline_category, allPipelineCategories))
           : db.select().from(enforcementViabilityRules),
       ]);
 
       return {
-        gaps: gaps.map(g => ({
+        gaps: gaps.map((g: any) => ({
           id: g.id,
           domain: g.domain,
           recordType: g.recordType,
@@ -455,7 +455,7 @@ export const enforcementIntelligenceRouter = router({
           forms,
           guidance: guidanceDocs,
           penalties,
-          viabilityRules,
+          viability_rules,
         },
         domains,
         pipelineCategories: allPipelineCategories,
@@ -496,32 +496,32 @@ export const enforcementIntelligenceRouter = router({
       }
 
       // ── Dimension 1: Legal Severity (0-25) ──
-      let legalSeverity = 10; // baseline
+      let legal_severity = 10; // baseline
       const domain = input.domain || (contradiction?.domains as string[])?.[0] || 'general';
       const highSeverityDomains = ['criminal_justice', 'civil_rights', 'housing', 'employment'];
-      if (highSeverityDomains.includes(domain)) legalSeverity += 5;
+      if (highSeverityDomains.includes(domain)) legal_severity += 5;
       // Check if linked to constitutional doctrine
-      if (contradiction?.doctrineACitation?.includes('Const') || contradiction?.doctrineBCitation?.includes('Const')) legalSeverity += 5;
+      if (contradiction?.doctrine_a_citation?.includes('Const') || contradiction?.doctrine_b_citation?.includes('Const')) legal_severity += 5;
       // Check if linked to a known weak joint
-      if (input.linkedToWeakJoint) legalSeverity += 5;
-      legalSeverity = Math.min(25, legalSeverity);
+      if (input.linkedToWeakJoint) legal_severity += 5;
+      legal_severity = Math.min(25, legal_severity);
 
       // ── Dimension 2: Evidence Strength (0-25) ──
-      let evidenceStrength = 5; // baseline
-      if (input.hasDirectEvidence) evidenceStrength += 10;
-      if (input.docCount > 3) evidenceStrength += 5;
-      else if (input.docCount > 1) evidenceStrength += 3;
-      if (input.hasCorroboratingDocs) evidenceStrength += 7;
-      evidenceStrength = Math.min(25, evidenceStrength);
+      let evidence_strength = 5; // baseline
+      if (input.hasDirectEvidence) evidence_strength += 10;
+      if (input.docCount > 3) evidence_strength += 5;
+      else if (input.docCount > 1) evidence_strength += 3;
+      if (input.hasCorroboratingDocs) evidence_strength += 7;
+      evidence_strength = Math.min(25, evidence_strength);
 
       // ── Dimension 3: Timeline Support (0-20) ──
-      let timelineSupport = 5; // baseline
-      if (input.hasTimelineSupport) timelineSupport += 10;
+      let timeline_support = 5; // baseline
+      if (input.hasTimelineSupport) timeline_support += 10;
       if (input.timelineGapDays !== undefined) {
-        if (input.timelineGapDays <= 30) timelineSupport += 5; // tight temporal proximity
-        else if (input.timelineGapDays <= 90) timelineSupport += 3;
+        if (input.timelineGapDays <= 30) timeline_support += 5; // tight temporal proximity
+        else if (input.timelineGapDays <= 90) timeline_support += 3;
       }
-      timelineSupport = Math.min(20, timelineSupport);
+      timeline_support = Math.min(20, timeline_support);
 
       // ── Dimension 4: Cross-Document Corroboration (0-20) ──
       let corroboration = 5; // baseline
@@ -531,38 +531,38 @@ export const enforcementIntelligenceRouter = router({
       corroboration = Math.min(20, corroboration);
 
       // ── Dimension 5: Systemic Risk (0-10) ──
-      let systemicRisk = 2; // baseline
-      if (input.affectsMultipleParties) systemicRisk += 3;
-      if (input.hasPatternEvidence) systemicRisk += 3;
-      if (input.linkedToWeakJoint) systemicRisk += 2;
-      systemicRisk = Math.min(10, systemicRisk);
+      let systemic_risk = 2; // baseline
+      if (input.affectsMultipleParties) systemic_risk += 3;
+      if (input.hasPatternEvidence) systemic_risk += 3;
+      if (input.linkedToWeakJoint) systemic_risk += 2;
+      systemic_risk = Math.min(10, systemic_risk);
 
-      const totalScore = legalSeverity + evidenceStrength + timelineSupport + corroboration + systemicRisk;
+      const total_score = legal_severity + evidence_strength + timeline_support + corroboration + systemic_risk;
 
       let severity: 'critical' | 'high' | 'medium' | 'low';
-      if (totalScore >= 75) severity = 'critical';
-      else if (totalScore >= 55) severity = 'high';
-      else if (totalScore >= 35) severity = 'medium';
+      if (total_score >= 75) severity = 'critical';
+      else if (total_score >= 55) severity = 'high';
+      else if (total_score >= 35) severity = 'medium';
       else severity = 'low';
 
       return {
         contradictionId: input.contradictionId ?? null,
         title: contradiction?.title ?? `${input.doctrineA ?? 'Unknown'} vs. ${input.doctrineB ?? 'Unknown'}`,
         domain,
-        totalScore,
+        total_score,
         severity,
         dimensions: {
-          legalSeverity: { score: legalSeverity, max: 25, weight: '25%' },
-          evidenceStrength: { score: evidenceStrength, max: 25, weight: '25%' },
-          timelineSupport: { score: timelineSupport, max: 20, weight: '20%' },
+          legal_severity: { score: legal_severity, max: 25, weight: '25%' },
+          evidence_strength: { score: evidence_strength, max: 25, weight: '25%' },
+          timeline_support: { score: timeline_support, max: 20, weight: '20%' },
           corroboration: { score: corroboration, max: 20, weight: '20%' },
-          systemicRisk: { score: systemicRisk, max: 10, weight: '10%' },
+          systemic_risk: { score: systemic_risk, max: 10, weight: '10%' },
         },
-        recommendation: totalScore >= 75
+        recommendation: total_score >= 75
           ? 'Immediate investigation priority — strong evidence of systemic contradiction'
-          : totalScore >= 55
+          : total_score >= 55
             ? 'High priority — sufficient evidence to warrant formal review'
-            : totalScore >= 35
+            : total_score >= 35
               ? 'Monitor — gather additional evidence before escalation'
               : 'Low priority — insufficient evidence for current action',
       };
@@ -571,32 +571,32 @@ export const enforcementIntelligenceRouter = router({
   // Batch score all contradictions in the library
   scoreAllContradictions: publicProcedure.query(async () => {
     const contradictions = await db.select().from(legalContradictions);
-    return contradictions.map(c => {
+    return contradictions.map((c: any) => {
       const domains = c.domains as string[];
       const domain = domains?.[0] || 'general';
       const highSeverityDomains = ['criminal_justice', 'civil_rights', 'housing', 'employment'];
 
-      let legalSeverity = 10;
-      if (highSeverityDomains.includes(domain)) legalSeverity += 5;
-      if (c.doctrineACitation?.includes('Const') || c.doctrineBCitation?.includes('Const')) legalSeverity += 5;
-      legalSeverity = Math.min(25, legalSeverity);
+      let legal_severity = 10;
+      if (highSeverityDomains.includes(domain)) legal_severity += 5;
+      if (c.doctrine_a_citation?.includes('Const') || c.doctrine_b_citation?.includes('Const')) legal_severity += 5;
+      legal_severity = Math.min(25, legal_severity);
 
       // Without case-specific evidence, use baseline scores
-      const evidenceStrength = 10;
-      const timelineSupport = 5;
+      const evidence_strength = 10;
+      const timeline_support = 5;
       const corroboration = 5;
 
-      let systemicRisk = 2;
-      if (c.harmDescription && c.harmDescription.length > 100) systemicRisk += 3;
-      if (c.reformStatus && c.reformStatus.toLowerCase().includes('no reform')) systemicRisk += 3;
-      systemicRisk = Math.min(10, systemicRisk);
+      let systemic_risk = 2;
+      if (c.harm_description && c.harm_description.length > 100) systemic_risk += 3;
+      if (c.reform_status && c.reform_status.toLowerCase().includes('no reform')) systemic_risk += 3;
+      systemic_risk = Math.min(10, systemic_risk);
 
-      const totalScore = legalSeverity + evidenceStrength + timelineSupport + corroboration + systemicRisk;
+      const total_score = legal_severity + evidence_strength + timeline_support + corroboration + systemic_risk;
 
       let severity: 'critical' | 'high' | 'medium' | 'low';
-      if (totalScore >= 75) severity = 'critical';
-      else if (totalScore >= 55) severity = 'high';
-      else if (totalScore >= 35) severity = 'medium';
+      if (total_score >= 75) severity = 'critical';
+      else if (total_score >= 55) severity = 'high';
+      else if (total_score >= 35) severity = 'medium';
       else severity = 'low';
 
       return {
@@ -604,15 +604,15 @@ export const enforcementIntelligenceRouter = router({
         title: c.title,
         domain,
         jurisdiction: c.jurisdiction,
-        totalScore,
+        total_score,
         severity,
-        legalSeverity,
-        evidenceStrength,
-        timelineSupport,
+        legal_severity,
+        evidence_strength,
+        timeline_support,
         corroboration,
-        systemicRisk,
+        systemic_risk,
       };
-    }).sort((a, b) => b.totalScore - a.totalScore);
+    }).sort((a: any, b: any) => b.total_score - a.total_score);
   }),
 
   // ═══════════════════════════════════════════════════════════════
@@ -622,9 +622,9 @@ export const enforcementIntelligenceRouter = router({
 
   getEnforcementPathway: publicProcedure
     .input(z.object({
-      agencyShort: z.string().optional(),
-      claimType: z.string().optional(),
-      pipelineCategory: z.string().optional(),
+      agency_short: z.string().optional(),
+      claim_type: z.string().optional(),
+      pipeline_category: z.string().optional(),
     }))
     .query(async ({ input }) => {
       // Define the 4 enforcement pathway models
@@ -701,10 +701,10 @@ export const enforcementIntelligenceRouter = router({
       };
 
       // If specific agency requested, return that model
-      if (input.agencyShort && pathwayModels[input.agencyShort]) {
+      if (input.agency_short && pathwayModels[input.agency_short]) {
         return {
           matchedBy: 'agency',
-          pathways: [{ agencyShort: input.agencyShort, ...pathwayModels[input.agencyShort] }],
+          pathways: [{ agency_short: input.agency_short, ...pathwayModels[input.agency_short] }],
         };
       }
 
@@ -740,15 +740,15 @@ export const enforcementIntelligenceRouter = router({
       let matchedAgencies: string[] = [];
       let matchedBy = 'all';
 
-      if (input.claimType) {
-        const key = input.claimType.toLowerCase().replace(/\s+/g, '_');
+      if (input.claim_type) {
+        const key = input.claim_type.toLowerCase().replace(/\s+/g, '_');
         matchedAgencies = claimToAgencies[key] || [];
-        matchedBy = 'claimType';
+        matchedBy = 'claim_type';
       }
-      if (matchedAgencies.length === 0 && input.pipelineCategory) {
-        const key = input.pipelineCategory.toLowerCase().replace(/\s+/g, '_');
+      if (matchedAgencies.length === 0 && input.pipeline_category) {
+        const key = input.pipeline_category.toLowerCase().replace(/\s+/g, '_');
         matchedAgencies = pipelineToAgencies[key] || [];
-        matchedBy = 'pipelineCategory';
+        matchedBy = 'pipeline_category';
       }
 
       // If no match, return all models
@@ -759,11 +759,11 @@ export const enforcementIntelligenceRouter = router({
 
       return {
         matchedBy,
-        claimType: input.claimType,
-        pipelineCategory: input.pipelineCategory,
+        claim_type: input.claim_type,
+        pipeline_category: input.pipeline_category,
         pathways: matchedAgencies
           .filter(a => pathwayModels[a])
-          .map(a => ({ agencyShort: a, ...pathwayModels[a] })),
+          .map(a => ({ agency_short: a, ...pathwayModels[a] })),
       };
     }),
 
@@ -796,17 +796,17 @@ export const enforcementIntelligenceRouter = router({
   generateInvestigationWorkflow: publicProcedure
     .input(z.object({
       domain: z.string(),
-      claimType: z.string().optional(),
-      pipelineCategory: z.string().optional(),
+      claim_type: z.string().optional(),
+      pipeline_category: z.string().optional(),
       incidentDate: z.string().optional(),
       hasDocuments: z.boolean().default(false),
       hasWitnesses: z.boolean().default(false),
-      agencyShort: z.string().optional(),
+      agency_short: z.string().optional(),
     }))
     .query(async ({ input }) => {
       // Fetch relevant weak joints for this domain
       const weakJoints = await db.select().from(legalWeakJoints)
-        .where(sql`JSON_CONTAINS(${legalWeakJoints.domains}, JSON_QUOTE(${input.domain}))`);
+        .where(sql`JSON_CONTAINS(domains, JSON_QUOTE(${input.domain}))`);
 
       // Fetch relevant signals
       const signals = await db.select().from(signalRegistry)
@@ -818,7 +818,7 @@ export const enforcementIntelligenceRouter = router({
 
       // Fetch relevant barriers
       const allBarriers = await db.select().from(litigationBarriers);
-      const barriers = allBarriers.filter(b => {
+      const barriers = allBarriers.filter((b: any) => {
         const domains = b.domains as string[];
         return domains?.includes(input.domain);
       });
@@ -842,14 +842,14 @@ export const enforcementIntelligenceRouter = router({
         const now = new Date();
         const daysSince = Math.floor((now.getTime() - incident.getTime()) / (1000 * 60 * 60 * 24));
 
-        if (input.agencyShort === 'OSHA' && daysSince > 15) {
+        if (input.agency_short === 'OSHA' && daysSince > 15) {
           immediateActions.push({
             priority: 1,
             action: 'File OSHA whistleblower complaint IMMEDIATELY',
             reason: `OSHA 30-day deadline — ${30 - daysSince} days remaining`,
             deadline: new Date(incident.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           });
-        } else if (input.agencyShort === 'EEOC' && daysSince > 120) {
+        } else if (input.agency_short === 'EEOC' && daysSince > 120) {
           immediateActions.push({
             priority: 1,
             action: 'File EEOC Charge of Discrimination as soon as possible',
@@ -937,7 +937,7 @@ export const enforcementIntelligenceRouter = router({
 
       // 5. Agency Steps (from enforcement pathway)
       const agencySteps: Array<{ agency: string; step: string; deadline: string }> = [];
-      if (input.agencyShort) {
+      if (input.agency_short) {
         const agencyDeadlines: Record<string, Array<{ step: string; deadline: string }>> = {
           'EEOC': [
             { step: 'File Charge of Discrimination (Form 5)', deadline: '180/300 days from incident' },
@@ -960,14 +960,14 @@ export const enforcementIntelligenceRouter = router({
             { step: 'Consider private right of action under state UDAP laws', deadline: 'Varies by state SOL' },
           ],
         };
-        const steps = agencyDeadlines[input.agencyShort] || [];
-        agencySteps.push(...steps.map(s => ({ agency: input.agencyShort!, ...s })));
+        const steps = agencyDeadlines[input.agency_short] || [];
+        agencySteps.push(...steps.map(s => ({ agency: input.agency_short!, ...s })));
       }
 
       // 6. Risk Flags from weak joints and barriers
       const riskFlags: Array<{ type: string; flag: string; mitigation: string }> = [];
 
-      weakJoints.slice(0, 5).forEach(wj => {
+      weakJoints.slice(0, 5).forEach((wj: any) => {
         riskFlags.push({
           type: 'Weak Joint',
           flag: wj.divergenceDescription.slice(0, 200),
@@ -975,26 +975,26 @@ export const enforcementIntelligenceRouter = router({
         });
       });
 
-      barriers.slice(0, 3).forEach(b => {
+      barriers.slice(0, 3).forEach((b: any) => {
         riskFlags.push({
           type: 'Litigation Barrier',
           flag: b.name,
-          mitigation: (b.possibleWorkarounds as string[])?.join('; ') || 'Consult with attorney about strategies to overcome this barrier',
+          mitigation: (b.possible_workarounds as string[])?.join('; ') || 'Consult with attorney about strategies to overcome this barrier',
         });
       });
 
       // 7. Signal Watch List
-      const signalWatchList = signals.map(s => ({
-        signalType: s.signalType,
+      const signalWatchList = signals.map((s: any) => ({
+        signal_type: s.signal_type,
         severity: s.severity,
-        triggerPatterns: s.triggerPatterns,
-        nextSteps: s.recommendedNextSteps,
+        trigger_patterns: s.trigger_patterns,
+        nextSteps: s.recommended_next_steps,
       }));
 
       return {
         domain: input.domain,
-        claimType: input.claimType,
-        agencyShort: input.agencyShort,
+        claim_type: input.claim_type,
+        agency_short: input.agency_short,
         generatedAt: Date.now(),
         workflow: {
           immediateActions: immediateActions.sort((a, b) => a.priority - b.priority),
@@ -1033,7 +1033,7 @@ export const enforcementIntelligenceRouter = router({
       forms: counts[0][0]?.count ?? 0,
       guidance: counts[1][0]?.count ?? 0,
       penalties: counts[2][0]?.count ?? 0,
-      viabilityRules: counts[3][0]?.count ?? 0,
+      viability_rules: counts[3][0]?.count ?? 0,
       doctrines: counts[4][0]?.count ?? 0,
       doctrineEdges: counts[5][0]?.count ?? 0,
       barriers: counts[6][0]?.count ?? 0,
@@ -1058,14 +1058,14 @@ export const enforcementIntelligenceRouter = router({
       const conditions = [];
       // detected_signals has no 'active' column — all rows are approved
       // @ts-expect-error pre-existing type mismatch
-      if (opts.severity) conditions.push(eq(detectedSignals.severityLevel, opts.severity));
+      if (opts.severity) conditions.push(eq((detectedSignals as any).severityLevel, opts.severity));
       // @ts-expect-error pre-existing type mismatch
-      if (opts.datasetId) conditions.push(eq(detectedSignals.datasetId, opts.datasetId));
+      if (opts.datasetId) conditions.push(eq((detectedSignals as any).datasetId, opts.datasetId));
       const rows = await db
         .select()
         .from(detectedSignals)
         .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .orderBy(desc(detectedSignals.detectionTimestamp))
+        .orderBy(desc((detectedSignals as any).detectionTimestamp))
         // @ts-expect-error pre-existing type mismatch
         .limit(opts.limit ?? 100)
         // @ts-expect-error pre-existing type mismatch
@@ -1076,25 +1076,25 @@ export const enforcementIntelligenceRouter = router({
   getLiveSignalStats: publicProcedure.query(async () => {
     const [total, critical, high, medium, low, byDataset] = await Promise.all([
       db.select({ count: sql<number>`COUNT(*)` }).from(detectedSignals),
-      db.select({ count: sql<number>`COUNT(*)` }).from(detectedSignals).where(eq(detectedSignals.severityLevel, "critical")),
-      db.select({ count: sql<number>`COUNT(*)` }).from(detectedSignals).where(eq(detectedSignals.severityLevel, "high")),
-      db.select({ count: sql<number>`COUNT(*)` }).from(detectedSignals).where(eq(detectedSignals.severityLevel, "medium")),
-      db.select({ count: sql<number>`COUNT(*)` }).from(detectedSignals).where(eq(detectedSignals.severityLevel, "low")),
-      db.select({ datasetId: detectedSignals.datasetId, count: sql<number>`COUNT(*)` })
+      db.select({ count: sql<number>`COUNT(*)` }).from(detectedSignals).where(eq((detectedSignals as any).severityLevel, "critical")),
+      db.select({ count: sql<number>`COUNT(*)` }).from(detectedSignals).where(eq((detectedSignals as any).severityLevel, "high")),
+      db.select({ count: sql<number>`COUNT(*)` }).from(detectedSignals).where(eq((detectedSignals as any).severityLevel, "medium")),
+      db.select({ count: sql<number>`COUNT(*)` }).from(detectedSignals).where(eq((detectedSignals as any).severityLevel, "low")),
+      db.select({ datasetId: (detectedSignals as any).datasetId, count: sql<number>`COUNT(*)` })
         .from(detectedSignals)
-        .groupBy(detectedSignals.datasetId),
+        .groupBy((detectedSignals as any).datasetId),
     ]);
     return {
       total: total[0]?.count ?? 0,
       bySeverity: { critical: critical[0]?.count ?? 0, high: high[0]?.count ?? 0, medium: medium[0]?.count ?? 0, low: low[0]?.count ?? 0 },
-      byDataset: byDataset.map(r => ({ datasetId: r.datasetId, count: r.count })),
+      byDataset: byDataset.map((r: any) => ({ datasetId: r.datasetId, count: r.count })),
     };
   }),
 
   getLiveSignal: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
-      const [row] = await db.select().from(detectedSignals).where(eq(detectedSignals.signalId, input.id)).limit(1);
+      const [row] = await db.select().from(detectedSignals).where(eq((detectedSignals as any).signalId, input.id)).limit(1);
       return row ?? null;
     }),
 
@@ -1142,17 +1142,17 @@ export const enforcementIntelligenceRouter = router({
   // ═══ Litigation Barriers + Weak Joints combined ═══
   listAllBarriers: publicProcedure
     .input(z.object({
-      barrierType: z.string().optional(),
+      barrier_type: z.string().optional(),
       domain: z.string().optional(),
       search: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
-      const barriers = await db.select().from(litigationBarriers).orderBy(litigationBarriers.barrierType);
-      const weakJoints = await db.select().from(legalWeakJoints).orderBy(legalWeakJoints.jurisdiction);
+      const barriers = await db.select().from(litigationBarriers).orderBy(litigationBarriers.barrier_type);
+      const weakJoints = await db.select().from(legalWeakJoints).orderBy(sql`jurisdiction`);
       // Normalize weak joints into barrier shape
       const normalizedWeak = weakJoints.map((wj: any) => ({
         id: `wj_${wj.id}`,
-        barrierType: 'weak_joint',
+        barrier_type: 'weak_joint',
         name: wj.divergenceDescription?.slice(0, 80) || wj.whatLawRequires?.slice(0, 60) || 'Weak Joint',
         description: wj.divergenceDescription || wj.whatActuallyHappens || '',
         domain: Array.isArray(wj.domains) ? wj.domains.join(', ') : (wj.domains || ''),
@@ -1166,8 +1166,8 @@ export const enforcementIntelligenceRouter = router({
       }));
       const normalizedBarriers = barriers.map((b: any) => ({ ...b, source: 'barrier' as const }));
       let combined = [...normalizedBarriers, ...normalizedWeak];
-      if (input?.barrierType && input.barrierType !== 'all') {
-        combined = combined.filter(b => b.barrierType === input.barrierType || b.source === input.barrierType);
+      if (input?.barrier_type && input.barrier_type !== 'all') {
+        combined = combined.filter(b => b.barrier_type === input.barrier_type || b.source === input.barrier_type);
       }
       if (input?.domain) {
         combined = combined.filter(b => b.domain?.toLowerCase().includes(input.domain!.toLowerCase()));

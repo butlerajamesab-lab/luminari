@@ -138,12 +138,12 @@ export default function ContradictionScoring() {
                           <tr key={s.id} className="border-b border-border/20 hover:bg-muted/30 transition-colors">
                             <td className="py-2.5 pr-3 max-w-[250px] truncate font-medium">{s.title}</td>
                             <td className="py-2.5 px-3 text-muted-foreground">{s.domain.replace(/_/g, " ")}</td>
-                            <td className="py-2.5 px-2 text-center font-mono font-bold">{s.totalScore}</td>
-                            <td className="py-2.5 px-2 text-center font-mono text-xs">{s.legalSeverity}/25</td>
-                            <td className="py-2.5 px-2 text-center font-mono text-xs">{s.evidenceStrength}/25</td>
-                            <td className="py-2.5 px-2 text-center font-mono text-xs">{s.timelineSupport}/20</td>
+                            <td className="py-2.5 px-2 text-center font-mono font-bold">{s.total_score}</td>
+                            <td className="py-2.5 px-2 text-center font-mono text-xs">{s.legal_severity}/25</td>
+                            <td className="py-2.5 px-2 text-center font-mono text-xs">{s.evidence_strength}/25</td>
+                            <td className="py-2.5 px-2 text-center font-mono text-xs">{s.timeline_support}/20</td>
                             <td className="py-2.5 px-2 text-center font-mono text-xs">{s.corroboration}/20</td>
-                            <td className="py-2.5 px-2 text-center font-mono text-xs">{s.systemicRisk}/10</td>
+                            <td className="py-2.5 px-2 text-center font-mono text-xs">{s.systemic_risk}/10</td>
                             <td className="py-2.5 px-2 text-center">
                               <Badge variant="outline" className={`text-xs ${severityColor[s.severity]}`}>{s.severity}</Badge>
                             </td>
@@ -243,7 +243,7 @@ export default function ContradictionScoring() {
                   <>
                     {/* Total Score */}
                     <div className="text-center py-4">
-                      <div className="text-5xl font-bold font-mono">{singleScore.data.totalScore}</div>
+                      <div className="text-5xl font-bold font-mono">{singleScore.data.total_score}</div>
                       <div className="text-sm text-muted-foreground mt-1">out of 100</div>
                       <Badge variant="outline" className={`mt-2 text-sm ${severityColor[singleScore.data.severity]}`}>
                         {singleScore.data.severity.toUpperCase()}
@@ -252,11 +252,11 @@ export default function ContradictionScoring() {
 
                     {/* Dimension Bars */}
                     <div className="space-y-3">
-                      <ScoreBar label="Legal Severity" score={singleScore.data.dimensions.legalSeverity.score} max={25} icon={<Shield className="h-3.5 w-3.5" />} />
-                      <ScoreBar label="Evidence Strength" score={singleScore.data.dimensions.evidenceStrength.score} max={25} icon={<Target className="h-3.5 w-3.5" />} />
-                      <ScoreBar label="Timeline Support" score={singleScore.data.dimensions.timelineSupport.score} max={20} icon={<Clock className="h-3.5 w-3.5" />} />
+                      <ScoreBar label="Legal Severity" score={singleScore.data.dimensions.legal_severity.score} max={25} icon={<Shield className="h-3.5 w-3.5" />} />
+                      <ScoreBar label="Evidence Strength" score={singleScore.data.dimensions.evidence_strength.score} max={25} icon={<Target className="h-3.5 w-3.5" />} />
+                      <ScoreBar label="Timeline Support" score={singleScore.data.dimensions.timeline_support.score} max={20} icon={<Clock className="h-3.5 w-3.5" />} />
                       <ScoreBar label="Corroboration" score={singleScore.data.dimensions.corroboration.score} max={20} icon={<BarChart3 className="h-3.5 w-3.5" />} />
-                      <ScoreBar label="Systemic Risk" score={singleScore.data.dimensions.systemicRisk.score} max={10} icon={<Users className="h-3.5 w-3.5" />} />
+                      <ScoreBar label="Systemic Risk" score={singleScore.data.dimensions.systemic_risk.score} max={10} icon={<Users className="h-3.5 w-3.5" />} />
                     </div>
 
                     {/* Recommendation */}
