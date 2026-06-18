@@ -51,7 +51,7 @@ let pgPool: Pool | null = null;
 let dbInstance: ReturnType<typeof drizzle> | null = null;
 function initializePool(): Pool {
   if (pgPool) return pgPool;
-  pgPool = createDatabasePool({ label: "DB", connectionTimeoutMillis: 10000, max: 10 });
+  pgPool = createDatabasePool({ label: "DB", connectionTimeoutMillis: 10000, max: 5 });
   return pgPool;
 }
 
@@ -4288,7 +4288,32 @@ import { gte } from "drizzle-orm";
 
 // ── Suggestions ──────────────────────────────────────────────────────
 
+let lighthouseSuggestionsUnavailableWarned = false;
+
+async function lighthouseSuggestionsAvailable(): Promise<boolean> {
+  const result = await getPool().query(
+    `select to_regclass('public.lighthouse_suggestions') is not null as available`,
+  );
+  const available = Boolean(result.rows[0]?.available);
+  if (!available && !lighthouseSuggestionsUnavailableWarned) {
+    console.warn(
+      "[lighthouse] public.lighthouse_suggestions is unavailable; suggestion endpoints will report unavailable instead of throwing repeated backend errors.",
+    );
+    lighthouseSuggestionsUnavailableWarned = true;
+  }
+  return available;
+}
+
+function lighthouseSuggestionsUnavailableError(): Error {
+  const error = new Error(
+    "public.lighthouse_suggestions is unavailable in this database",
+  ) as Error & { code?: string };
+  error.code = "LIGHTHOUSE_SUGGESTIONS_UNAVAILABLE";
+  return error;
+}
+
 export async function createSuggestion(userId: number, content: string): Promise<number> {
+  if (!(await lighthouseSuggestionsAvailable())) throw lighthouseSuggestionsUnavailableError();
   const now = Date.now();
   const [result] = await db.insert(lighthouseSuggestions).values({
     userId,
@@ -4306,6 +4331,7 @@ export async function listSuggestions(opts?: {
   limit?: number;
   offset?: number;
 }): Promise<LighthouseSuggestion[]> {
+  if (!(await lighthouseSuggestionsAvailable())) return [];
   let query = db.select().from(lighthouseSuggestions);
   if (opts?.status) {
     query = query.where(eq(lighthouseSuggestions.status, opts.status as any)) as any;
@@ -4317,6 +4343,7 @@ export async function listSuggestions(opts?: {
 }
 
 export async function voteSuggestion(suggestionId: number, userId: number): Promise<boolean> {
+  if (!(await lighthouseSuggestionsAvailable())) throw lighthouseSuggestionsUnavailableError();
   try {
     const now = Date.now();
     await db.insert(lighthouseSuggestionVotes).values({ suggestionId, userId, createdAt: now });
@@ -4332,6 +4359,7 @@ export async function voteSuggestion(suggestionId: number, userId: number): Prom
 }
 
 export async function unvoteSuggestion(suggestionId: number, userId: number): Promise<boolean> {
+  if (!(await lighthouseSuggestionsAvailable())) throw lighthouseSuggestionsUnavailableError();
   const now = Date.now();
   const [result] = await db.delete(lighthouseSuggestionVotes)
     .where(and(
@@ -4348,6 +4376,7 @@ export async function unvoteSuggestion(suggestionId: number, userId: number): Pr
 }
 
 export async function getUserVotedSuggestionIds(userId: number): Promise<number[]> {
+  if (!(await lighthouseSuggestionsAvailable())) return [];
   const rows = await db.select({ suggestionId: lighthouseSuggestionVotes.suggestionId })
     .from(lighthouseSuggestionVotes)
     .where(eq(lighthouseSuggestionVotes.userId, userId));
@@ -4359,6 +4388,7 @@ export async function updateSuggestionStatus(
   status: string,
   adminNote?: string,
 ): Promise<void> {
+  if (!(await lighthouseSuggestionsAvailable())) throw lighthouseSuggestionsUnavailableError();
   await db.update(lighthouseSuggestions).set({
     status: status as any,
     adminNote: adminNote ?? null,
@@ -4367,6 +4397,7 @@ export async function updateSuggestionStatus(
 }
 
 export async function deleteSuggestion(id: number): Promise<void> {
+  if (!(await lighthouseSuggestionsAvailable())) throw lighthouseSuggestionsUnavailableError();
   await db.delete(lighthouseSuggestionVotes).where(eq(lighthouseSuggestionVotes.suggestionId, id));
   await db.delete(lighthouseSuggestions).where(eq(lighthouseSuggestions.id, id));
 }

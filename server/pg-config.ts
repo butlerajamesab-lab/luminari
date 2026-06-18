@@ -8,6 +8,9 @@ type DatabasePoolOptions = {
   label?: string;
   connectionTimeoutMillis?: number;
   max?: number;
+  idleTimeoutMillis?: number;
+  maxUses?: number;
+  keepAlive?: boolean;
 };
 
 export function getDatabaseUrl(): string | undefined {
@@ -35,6 +38,8 @@ export function createDatabasePool(options: DatabasePoolOptions = {}): Pool {
     return new Pool({
       connectionString: FAST_FAIL_CONNECTION_STRING,
       connectionTimeoutMillis: 1000,
+      idleTimeoutMillis: options.idleTimeoutMillis ?? 10000,
+      max: options.max ?? 1,
     });
   }
 
@@ -42,6 +47,9 @@ export function createDatabasePool(options: DatabasePoolOptions = {}): Pool {
     connectionString,
     connectionTimeoutMillis: options.connectionTimeoutMillis ?? 10000,
     ssl: { rejectUnauthorized: false },
+    idleTimeoutMillis: options.idleTimeoutMillis ?? 30000,
+    maxUses: options.maxUses ?? 7500,
+    keepAlive: options.keepAlive ?? true,
   };
 
   if (options.max !== undefined) {
