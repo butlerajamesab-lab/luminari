@@ -567,7 +567,7 @@ export const knowledgeIngestionRouter = router({
       rawJson: z.string().max(5_000_000),
     }))
     .mutation(async ({ ctx, input }) => {
-      const addedBy = ctx.user.name ?? ctx.user.openId;
+      const added_by = ctx.user.name ?? ctx.user.openId;
       let parsed: any;
       try {
         parsed = JSON.parse(input.rawJson);
@@ -700,7 +700,7 @@ export const knowledgeIngestionRouter = router({
 
           if (columns.has("created_at") && row.created_at === undefined) row.created_at = auditValue("created_at");
           if (columns.has("updated_at") && row.updated_at === undefined) row.updated_at = auditValue("updated_at");
-          if (columns.has("added_by") && row.added_by === undefined) row.added_by = addedBy;
+          if (columns.has("added_by") && row.added_by === undefined) row.added_by = added_by;
 
           const columnNames = Object.keys(row).filter((columnName) => columns.has(columnName));
           if (columnNames.length === 0) {
@@ -921,7 +921,7 @@ export const knowledgeIngestionRouter = router({
       rawSql: z.string().max(5_000_000),
     }))
     .mutation(async ({ ctx, input }) => {
-      const addedBy = ctx.user.name ?? ctx.user.openId;
+      const added_by = ctx.user.name ?? ctx.user.openId;
       const now = Date.now();
 
       // Allowed tables (same as JSON import)
@@ -1015,9 +1015,14 @@ export const knowledgeIngestionRouter = router({
               }
               const record: Record<string, any> = {};
               for (let j = 0; j < columns.length; j++) {
-                record[columns[j]] = values[j];
+                const column = columns[j];
+                if (!safeIdentifierPattern.test(column) || /[A-Z]/.test(column)) {
+                  errors.push(`Rejected non-snake_case column: ${column}`);
+                  continue;
+                }
+                record[column] = values[j];
               }
-              records.push(record);
+              if (Object.keys(record).length > 0) records.push(record);
             } catch (e: any) {
               errors.push(`Parse error in tuple: ${e?.message ?? 'Unknown'}`);
             }
@@ -1039,10 +1044,10 @@ export const knowledgeIngestionRouter = router({
       for (let i = 0; i < records.length; i++) {
         try {
           const rec = records[i];
-          // Add defaults
-          if (!rec.createdAt) rec.createdAt = now;
-          if (!rec.updatedAt) rec.updatedAt = now;
-          if (!rec.addedBy) rec.addedBy = addedBy;
+          // Add snake_case defaults only when those columns are part of the pasted payload.
+          if ("created_at" in rec && !rec.created_at) rec.created_at = now;
+          if ("updated_at" in rec && !rec.updated_at) rec.updated_at = now;
+          if ("added_by" in rec && !rec.added_by) rec.added_by = added_by;
 
           const cols = Object.keys(rec);
           const vals = cols.map(c => {
