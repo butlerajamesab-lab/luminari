@@ -404,23 +404,119 @@ export async function create_candidates_from_ready_queue() {
   }
 }
 
-export async function list_registry_entity_candidates(input?: { limit?: number }) {
-  const pool = getPool();
-  const limit = Math.min(Math.max(input?.limit ?? 25, 1), 100);
+type registry_candidate_column_map = Record<string, boolean>;
 
-  const total_result = await pool.query(`select count(*)::int as total from public.registry_entity_extraction_v4`);
-  const breakdown_result = await pool.query(
-    `select coalesce(
-              promotion_ready->>'candidate_type',
-              promotion_ready->>'resource_type',
-              promotion_ready->>'status',
-              'unknown'
-            ) as candidate_type,
+type registry_candidate_filter_input = {
+  limit?: number;
+  candidate_type?: string | null;
+  document_family?: string | null;
+  promotion_lane?: string | null;
+};
+
+async function registry_candidate_columns(): Promise<registry_candidate_column_map> {
+  const pool = getPool();
+  const result = await pool.query(
+    `select column_name
+       from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'registry_entity_extraction_v4'`,
+  );
+  return Object.fromEntries(result.rows.map((row: any) => [row.column_name, true]));
+}
+
+function registry_json_text_expression(columns: registry_candidate_column_map, column_name: string, json_keys: string[], fallback: string) {
+  if (columns[column_name]) return column_name;
+  const json_sources = ["promotion_ready", "payload", "confidence_scores"].filter((source) => columns[source]);
+  const parts: string[] = [];
+  for (const source of json_sources) {
+    for (const json_key of json_keys) parts.push(`${source}->>'${json_key}'`);
+  }
+  parts.push(`'${fallback}'`);
+  if (parts.length === 1) return parts[0];
+  return `coalesce(${parts.join(", ")})`;
+}
+
+function registry_candidate_type_expression(columns: registry_candidate_column_map) {
+  return registry_json_text_expression(columns, "candidate_type", ["candidate_type", "resource_type", "status"], "unknown");
+}
+
+function registry_document_family_expression(columns: registry_candidate_column_map) {
+  return registry_json_text_expression(columns, "document_family", ["document_family", "source_family", "family"], "unclassified");
+}
+
+function registry_promotion_lane_expression(columns: registry_candidate_column_map) {
+  return registry_json_text_expression(columns, "promotion_lane", ["promotion_lane", "lane", "target_lane"], "unclassified");
+}
+
+function registry_verification_status_expression(columns: registry_candidate_column_map) {
+  return registry_json_text_expression(columns, "verification_status", ["verification_status", "review_status", "status"], "unclassified");
+}
+
+function registry_source_citation_expression(columns: registry_candidate_column_map) {
+  return registry_json_text_expression(columns, "source_citation", ["source_citation", "citation", "source_provenance", "forensic_provenance", "source_url"], "");
+}
+
+function registry_confidence_expression(columns: registry_candidate_column_map) {
+  if (columns.confidence) return "confidence";
+  if (columns.confidence_scores) return "nullif(confidence_scores->>'overall', '')::numeric";
+  return "null::numeric";
+}
+
+function registry_filter_sql(input: registry_candidate_filter_input, columns: registry_candidate_column_map) {
+  const params: any[] = [];
+  const clauses: string[] = [];
+  const filter_pairs = [
+    { value: input.candidate_type, expression: registry_candidate_type_expression(columns) },
+    { value: input.document_family, expression: registry_document_family_expression(columns) },
+    { value: input.promotion_lane, expression: registry_promotion_lane_expression(columns) },
+  ];
+  for (const pair of filter_pairs) {
+    if (typeof pair.value === "string" && pair.value.trim()) {
+      params.push(pair.value.trim());
+      clauses.push(`${pair.expression} = $${params.length}`);
+    }
+  }
+  return { where_sql: clauses.length ? `where ${clauses.join(" and ")}` : "", params };
+}
+
+async function registry_breakdown(expression: string) {
+  const pool = getPool();
+  const result = await pool.query(
+    `select coalesce(nullif(${expression}, ''), 'unclassified') as bucket_value,
             count(*)::int as count
        from public.registry_entity_extraction_v4
       group by 1
-      order by count desc, candidate_type asc`,
+      order by count desc, bucket_value asc`,
   );
+  return result.rows.map((row: any) => ({ bucket_value: row.bucket_value ?? "unclassified", count: Number(row.count ?? 0) }));
+}
+
+export async function get_registry_entity_candidates_summary() {
+  const pool = getPool();
+  const columns = await registry_candidate_columns();
+  const total_result = await pool.query(`select count(*)::int as total from public.registry_entity_extraction_v4`);
+  const candidate_type_breakdown = await registry_breakdown(registry_candidate_type_expression(columns));
+  const document_family_breakdown = await registry_breakdown(registry_document_family_expression(columns));
+  const promotion_lane_breakdown = await registry_breakdown(registry_promotion_lane_expression(columns));
+  const verification_status_breakdown = await registry_breakdown(registry_verification_status_expression(columns));
+  return {
+    success: true,
+    table: "public.registry_entity_extraction_v4",
+    total_candidate_count: Number(total_result.rows[0]?.total ?? 0),
+    candidate_type_breakdown: candidate_type_breakdown.map((row) => ({ candidate_type: row.bucket_value, count: row.count })),
+    document_family_breakdown: document_family_breakdown.map((row) => ({ document_family: row.bucket_value, count: row.count })),
+    promotion_lane_breakdown: promotion_lane_breakdown.map((row) => ({ promotion_lane: row.bucket_value, count: row.count })),
+    verification_status_breakdown: verification_status_breakdown.map((row) => ({ verification_status: row.bucket_value, count: row.count })),
+  };
+}
+
+export async function list_registry_entity_candidates(input?: { limit?: number }) {
+  const pool = getPool();
+  const columns = await registry_candidate_columns();
+  const limit = Math.min(Math.max(input?.limit ?? 25, 1), 100);
+  const candidate_type_sql = registry_candidate_type_expression(columns);
+  const confidence_sql = registry_confidence_expression(columns);
+
   const recent_result = await pool.query(
     `select
         source_file,
@@ -428,7 +524,8 @@ export async function list_registry_entity_candidates(input?: { limit?: number }
         name,
         promotion_ready,
         confidence_scores,
-        coalesce((confidence_scores->>'overall')::numeric, null) as confidence,
+        coalesce((${confidence_sql}), null) as confidence,
+        ${candidate_type_sql} as candidate_type,
         extraction_timestamp,
         extraction_version,
         program_id,
@@ -443,24 +540,105 @@ export async function list_registry_entity_candidates(input?: { limit?: number }
     success: true,
     table: "public.registry_entity_extraction_v4",
     canonical_promotion_enabled: false,
-    total_candidate_count: Number(total_result.rows[0]?.total ?? 0),
-    candidate_type_breakdown: breakdown_result.rows.map((row: any) => ({
-      candidate_type: row.candidate_type ?? "unknown",
-      count: Number(row.count ?? 0),
-    })),
+    total_candidate_count: Number((await pool.query(`select coalesce(reltuples, 0)::bigint as total from pg_class where oid = 'public.registry_entity_extraction_v4'::regclass`)).rows[0]?.total ?? 0),
+    candidate_type_breakdown: [],
     recent_candidates: recent_result.rows.map((row: any) => ({
       source_file: row.source_file ?? null,
       jurisdiction: row.jurisdiction ?? null,
       name: row.name ?? null,
       confidence: row.confidence === null || row.confidence === undefined ? null : Number(row.confidence),
       promotion_ready: row.promotion_ready ?? null,
-      candidate_type: row.promotion_ready?.candidate_type ?? row.promotion_ready?.resource_type ?? row.promotion_ready?.status ?? "unknown",
+      candidate_type: row.candidate_type ?? "unknown",
       extraction_timestamp: row.extraction_timestamp ? String(row.extraction_timestamp) : null,
       extraction_version: row.extraction_version ?? null,
       program_id: row.program_id ?? null,
       content_hash: row.content_hash ?? null,
     })),
   };
+}
+
+function is_protected_document_family(document_family: string) {
+  return ["federal", "national", "tribal", "protected_source"].includes(document_family);
+}
+
+function dry_run_lane_for_candidate(candidate: any) {
+  const document_family = candidate.document_family || "unclassified";
+  const promotion_lane = candidate.promotion_lane || "unclassified";
+  const candidate_type = String(candidate.candidate_type || "unknown").toLowerCase();
+  const protected_material = document_family === "tribal" || candidate_type.includes("tribal") || candidate_type.includes("recognition");
+  if (protected_material && promotion_lane === "resource_lane") return "hold_review_lane";
+  if (promotion_lane === "unclassified") return "hold_review_lane";
+  return promotion_lane;
+}
+
+function verify_registry_candidate(candidate: any) {
+  const blocked_reasons: string[] = [];
+  const document_family = candidate.document_family || "unclassified";
+  const promotion_lane = candidate.promotion_lane || "unclassified";
+  const candidate_type = String(candidate.candidate_type || "unknown").toLowerCase();
+  const protected_material = document_family === "tribal" || candidate_type.includes("tribal") || candidate_type.includes("recognition");
+  if (!candidate.name) blocked_reasons.push("name_required");
+  if (!candidate.source_file) blocked_reasons.push("source_file_required");
+  if (candidate.confidence !== null && candidate.confidence !== undefined && Number(candidate.confidence) < 0.6) blocked_reasons.push("confidence_below_threshold");
+  if (!candidate.jurisdiction && !is_protected_document_family(document_family)) blocked_reasons.push("jurisdiction_required");
+  if (!candidate.source_citation) blocked_reasons.push("source_provenance_required");
+  if (promotion_lane === "unclassified") blocked_reasons.push("promotion_lane_unclassified");
+  if (protected_material && promotion_lane === "resource_lane") blocked_reasons.push("protected_material_wrong_lane");
+  const verification_lane = dry_run_lane_for_candidate(candidate);
+  return { verified: blocked_reasons.length === 0, blocked_reasons, verification_lane };
+}
+
+export async function verify_registry_entity_candidates_dry_run(input: registry_candidate_filter_input) {
+  const pool = getPool();
+  const columns = await registry_candidate_columns();
+  const limit = Math.min(Math.max(input.limit ?? 100, 1), 500);
+  const candidate_type_sql = registry_candidate_type_expression(columns);
+  const document_family_sql = registry_document_family_expression(columns);
+  const promotion_lane_sql = registry_promotion_lane_expression(columns);
+  const confidence_sql = registry_confidence_expression(columns);
+  const source_citation_sql = registry_source_citation_expression(columns);
+  const { where_sql, params } = registry_filter_sql(input, columns);
+  const limit_param = params.length + 1;
+  const result = await pool.query(
+    `select
+        source_file,
+        jurisdiction,
+        name,
+        promotion_ready,
+        ${candidate_type_sql} as candidate_type,
+        ${document_family_sql} as document_family,
+        ${promotion_lane_sql} as promotion_lane,
+        coalesce((${confidence_sql}), null) as confidence,
+        nullif(${source_citation_sql}, '') as source_citation,
+        extraction_timestamp,
+        program_id,
+        content_hash
+       from public.registry_entity_extraction_v4
+       ${where_sql}
+      order by extraction_timestamp desc nulls last, content_hash desc nulls last
+      limit $${limit_param}`,
+    [...params, limit],
+  );
+  const lane_counts: Record<string, number> = {};
+  const blocked_reasons: Record<string, number> = {};
+  const sample_verified: any[] = [];
+  const sample_blocked: any[] = [];
+  let verified_count = 0;
+  let blocked_count = 0;
+  for (const row of result.rows) {
+    const verification = verify_registry_candidate(row);
+    lane_counts[verification.verification_lane] = (lane_counts[verification.verification_lane] ?? 0) + 1;
+    for (const reason of verification.blocked_reasons) blocked_reasons[reason] = (blocked_reasons[reason] ?? 0) + 1;
+    const sample = { source_file: row.source_file ?? null, jurisdiction: row.jurisdiction ?? null, name: row.name ?? null, candidate_type: row.candidate_type ?? "unknown", document_family: row.document_family ?? "unclassified", promotion_lane: row.promotion_lane ?? "unclassified", verification_lane: verification.verification_lane, confidence: row.confidence === null || row.confidence === undefined ? null : Number(row.confidence), blocked_reasons: verification.blocked_reasons };
+    if (verification.verified) {
+      verified_count += 1;
+      if (sample_verified.length < 10) sample_verified.push(sample);
+    } else {
+      blocked_count += 1;
+      if (sample_blocked.length < 10) sample_blocked.push(sample);
+    }
+  }
+  return { success: true, dry_run: true, processed_count: result.rows.length, verified_count, blocked_count, lane_counts, blocked_reasons, sample_verified, sample_blocked };
 }
 
 export async function set_corpus_import_queue_target_hint(input: { id: number; target_hint: TargetHintValue }) {

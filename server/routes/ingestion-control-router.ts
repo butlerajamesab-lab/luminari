@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Router } from "express";
-import { allowed_target_hints, create_candidates_from_ready_queue, list_corpus_import_queue, get_corpus_import_queue_row, list_registry_entity_candidates, set_corpus_import_queue_target_hint } from "../engines/ingestion-control";
+import { allowed_target_hints, create_candidates_from_ready_queue, list_corpus_import_queue, get_corpus_import_queue_row, get_registry_entity_candidates_summary, list_registry_entity_candidates, set_corpus_import_queue_target_hint, verify_registry_entity_candidates_dry_run } from "../engines/ingestion-control";
 import { getPool } from "../db";
 
 const execFileAsync = promisify(execFile);
@@ -58,6 +58,31 @@ ingestionControlRestRouter.get("/registry-entity-candidates", async (req, res) =
     return res.status(500).json({ success: false, error: "registry_entity_candidates_read_failed", message: error?.message ?? String(error) });
   }
 });
+
+ingestionControlRestRouter.get("/registry-entity-candidates/summary", async (_req, res) => {
+  try {
+    const result = await get_registry_entity_candidates_summary();
+    return res.json(result);
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: "registry_entity_candidates_summary_failed", message: error?.message ?? String(error) });
+  }
+});
+
+ingestionControlRestRouter.post("/registry-entity-candidates/verify-dry-run", async (req, res) => {
+  try {
+    const limit_raw = Number(req.body?.limit ?? 100);
+    const result = await verify_registry_entity_candidates_dry_run({
+      limit: Number.isFinite(limit_raw) ? limit_raw : 100,
+      candidate_type: typeof req.body?.candidate_type === "string" ? req.body.candidate_type : null,
+      document_family: typeof req.body?.document_family === "string" ? req.body.document_family : null,
+      promotion_lane: typeof req.body?.promotion_lane === "string" ? req.body.promotion_lane : null,
+    });
+    return res.json(result);
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: "registry_entity_candidates_verify_dry_run_failed", message: error?.message ?? String(error) });
+  }
+});
+
 
 ingestionControlRestRouter.get("/corpus-import-queue", async (req, res) => {
   try {
