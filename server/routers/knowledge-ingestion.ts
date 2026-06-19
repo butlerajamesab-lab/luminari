@@ -752,7 +752,7 @@ export const knowledgeIngestionRouter = router({
       if (input.jurisdiction) conditions.push(`jurisdiction = '${input.jurisdiction.replace(/'/g, "''")}' `);
       if (input.domain) conditions.push(`domains LIKE '%${input.domain.replace(/'/g, "''")}%'`);
       const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      const [rows] = await db.execute(sql.raw(`SELECT id, jurisdiction, citation, title, summary, domains, sourceType, createdAt FROM legal_statutes ${where} ORDER BY createdAt DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
+      const [rows] = await db.execute(sql.raw(`SELECT id, jurisdiction, citation, title, summary, domains, source_url, created_at FROM legal_statutes ${where} ORDER BY created_at DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
       const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM legal_statutes ${where}`));
       return { rows: rows as unknown as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
     }),
@@ -768,11 +768,11 @@ export const knowledgeIngestionRouter = router({
     }))
     .query(async ({ input }) => {
       const conditions: string[] = [];
-      if (input.search) conditions.push(`(caseName LIKE '%${input.search.replace(/'/g, "''")}%' OR citation LIKE '%${input.search.replace(/'/g, "''")}%' OR holding LIKE '%${input.search.replace(/'/g, "''")}%')`);
+      if (input.search) conditions.push(`(case_name LIKE '%${input.search.replace(/'/g, "''")}%' OR citation LIKE '%${input.search.replace(/'/g, "''")}%' OR summary LIKE '%${input.search.replace(/'/g, "''")}%')`);
       if (input.jurisdiction) conditions.push(`jurisdiction = '${input.jurisdiction.replace(/'/g, "''")}' `);
       if (input.domain) conditions.push(`domains LIKE '%${input.domain.replace(/'/g, "''")}%'`);
       const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      const [rows] = await db.execute(sql.raw(`SELECT id, caseName, citation, jurisdiction, court, holding AS summary, yearDecided, keyQuotes, domains, createdAt FROM legal_case_law ${where} ORDER BY createdAt DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
+      const [rows] = await db.execute(sql.raw(`SELECT id, case_name, citation, jurisdiction, court, summary, year_decided, key_quotes, domains, created_at FROM legal_case_law ${where} ORDER BY created_at DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
       const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM legal_case_law ${where}`));
       return { rows: rows as unknown as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
     }),
@@ -786,49 +786,14 @@ export const knowledgeIngestionRouter = router({
       offset: z.number().min(0).default(0),
     }))
     .query(async ({ input }) => {
-      // Build conditions for agencies_registry
-      const arConditions: string[] = [];
-      if (input.search) arConditions.push(`(agencyName LIKE '%${input.search.replace(/'/g, "''")}%' OR domain LIKE '%${input.search.replace(/'/g, "''")}%' OR jurisdiction LIKE '%${input.search.replace(/'/g, "''")}%')`);
-      if (input.jurisdiction) arConditions.push(`jurisdiction = '${input.jurisdiction.replace(/'/g, "''")}'`);
-      const arWhere = arConditions.length > 0 ? `WHERE ${arConditions.join(' AND ')}` : '';
+      const conditions: string[] = [];
+      if (input.search) conditions.push(`(agency_name LIKE '%${input.search.replace(/'/g, "''")}%' OR jurisdiction LIKE '%${input.search.replace(/'/g, "''")}%')`);
+      if (input.jurisdiction) conditions.push(`jurisdiction = '${input.jurisdiction.replace(/'/g, "''")}'`);
+      const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-      // Build conditions for agency_authority_map
-      const aamConditions: string[] = [];
-      if (input.search) aamConditions.push(`(agency LIKE '%${input.search.replace(/'/g, "''")}%' OR domain LIKE '%${input.search.replace(/'/g, "''")}%' OR statute LIKE '%${input.search.replace(/'/g, "''")}%')`);
-      const aamWhere = aamConditions.length > 0 ? `WHERE ${aamConditions.join(' AND ')}` : '';
-
-      // Query agencies_registry first (has real contact info)
-      const [arRows] = await db.execute(sql.raw(`SELECT id, agencyName AS agency_name, jurisdiction, domain AS authority_type, agencyType AS agency_type, website AS website_url, contactMethods AS contact_methods, officialStatus AS official_status, createdAt AS created_at FROM agencies_registry ${arWhere} ORDER BY agencyName ASC`));
-      // Query agency_authority_map for enforcement pathway data
-      const [aamRows] = await db.execute(sql.raw(`SELECT id, agency AS agency_name, agencyShort AS agency_short, domain AS authority_type, statute, complaintPathway AS filing_url, responseTimelineDays AS response_timeline_days, complaintTypes AS complaint_types, createdAt AS created_at FROM agency_authority_map ${aamWhere} ORDER BY createdAt DESC`));
-
-      // Merge: agencies_registry rows first, then agency_authority_map rows not already covered
-      const arNames = new Set((arRows as unknown as any[]).map((r: any) => r.agency_name?.toLowerCase()));
-      const aamFiltered = (aamRows as unknown as any[]).filter((r: any) => !arNames.has(r.agency_name?.toLowerCase()));
-
-      // Normalize agencies_registry rows to match UI shape
-      const normalizedAR = (arRows as unknown as any[]).map((r: any) => {
-        const cm = typeof r.contact_methods === 'string' ? JSON.parse(r.contact_methods) : (r.contact_methods ?? {});
-        return {
-          id: r.id,
-          agency_name: r.agency_name,
-          jurisdiction: r.jurisdiction,
-          authority_type: r.authority_type,
-          agency_type: r.agency_type,
-          website_url: r.website_url,
-          phone: cm.phone ?? null,
-          email: cm.email ?? null,
-          address: cm.address ?? null,
-          filing_url: cm.filing_url ?? cm.filingUrl ?? r.website_url,
-          official_status: r.official_status,
-          created_at: r.created_at,
-        };
-      });
-
-      const allRows = [...normalizedAR, ...aamFiltered];
-      const total = allRows.length;
-      const paginated = allRows.slice(input.offset, input.offset + input.limit);
-      return { rows: paginated, total };
+      const [rows] = await db.execute(sql.raw(`SELECT id, agency_name, jurisdiction, metadata, created_at FROM agencies_registry ${where} ORDER BY agency_name ASC LIMIT ${input.limit} OFFSET ${input.offset}`));
+      const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM agencies_registry ${where}`));
+      return { rows: rows as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
     }),
 
   /** Browse court directory */
