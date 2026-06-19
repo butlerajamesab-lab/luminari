@@ -3,11 +3,12 @@ import { createClient } from "@supabase/supabase-js";
 import { ENV } from "../_core/env";
 import { getMasterList, getSessionList, type LegiScanMasterBill } from "../services/legiscan";
 
-const CACHE_TTL_MS = 8 * 60 * 60 * 1000;
+const cache_ttl_ms = 8 * 60 * 60 * 1000;
 
-export const docketRouter = Router();
+export const docket_router = Router();
+export const docketRouter = docket_router;
 
-type DocketStateCacheRow = {
+type docket_state_cache_row = {
   id?: string;
   state: string;
   session_id: number;
@@ -18,7 +19,7 @@ type DocketStateCacheRow = {
   source: string;
 };
 
-const normalizeStateCode = (state: unknown): string => {
+const normalize_state_code = (state: unknown): string => {
   if (typeof state !== "string") {
     throw new Error("Missing required query parameter: state");
   }
@@ -45,59 +46,59 @@ const supabase = () => {
   });
 };
 
-const isFresh = (fetchedAt: string): boolean => {
-  const fetchedMs = new Date(fetchedAt).getTime();
+const is_fresh = (fetched_at: string): boolean => {
+  const fetched_ms = new Date(fetched_at).getTime();
 
-  if (!Number.isFinite(fetchedMs)) {
+  if (!Number.isFinite(fetched_ms)) {
     return false;
   }
 
-  return Date.now() - fetchedMs < CACHE_TTL_MS;
+  return Date.now() - fetched_ms < cache_ttl_ms;
 };
 
-const pickActiveSession = async (state: string) => {
+const pick_active_session = async (state: string) => {
   const sessions = await getSessionList(state);
 
   const current = sessions
     .filter(session => !session.prior)
     .sort((a, b) => {
-      const aYear = a.year_end ?? a.year_start ?? 0;
-      const bYear = b.year_end ?? b.year_start ?? 0;
-      return bYear - aYear;
+      const a_year = a.year_end ?? a.year_start ?? 0;
+      const b_year = b.year_end ?? b.year_start ?? 0;
+      return b_year - a_year;
     })[0];
 
   return current ?? sessions[0];
 };
 
-docketRouter.get("/state", async (req, res) => {
+docket_router.get("/state", async (req, res) => {
   try {
-    const state = normalizeStateCode(req.query.state);
+    const state = normalize_state_code(req.query.state);
     const db = supabase();
 
-    const { data: cached, error: cacheError } = await db
+    const { data: cached, error: cache_error } = await db
       .from("docket_bill_state_cache")
       .select("*")
       .eq("state", state)
-      .maybeSingle<DocketStateCacheRow>();
+      .maybeSingle<docket_state_cache_row>();
 
-    if (cacheError) {
-      throw cacheError;
+    if (cache_error) {
+      throw cache_error;
     }
 
-    if (cached && isFresh(cached.fetched_at)) {
+    if (cached && is_fresh(cached.fetched_at)) {
       return res.json({
         ok: true,
         source: "cache",
         state,
-        sessionId: cached.session_id,
-        sessionTitle: cached.session_title,
-        billCount: cached.bill_count,
-        fetchedAt: cached.fetched_at,
+        session_id: cached.session_id,
+        session_title: cached.session_title,
+        bill_count: cached.bill_count,
+        fetched_at: cached.fetched_at,
         bills: cached.bills,
       });
     }
 
-    const session = await pickActiveSession(state);
+    const session = await pick_active_session(state);
 
     if (!session?.session_id) {
       return res.status(404).json({
@@ -108,32 +109,32 @@ docketRouter.get("/state", async (req, res) => {
     }
 
     const bills = await getMasterList(session.session_id);
-    const row: DocketStateCacheRow = {
+    const row: docket_state_cache_row = {
       state,
       session_id: session.session_id,
       session_title: session.session_title ?? session.session_name ?? session.name ?? null,
       bills,
       bill_count: bills.length,
       fetched_at: new Date().toISOString(),
-      source: "legiscan.getMasterList",
+      source: "legiscan.get_master_list",
     };
 
-    const { error: upsertError } = await db
+    const { error: upsert_error } = await db
       .from("docket_bill_state_cache")
       .upsert(row, { onConflict: "state" });
 
-    if (upsertError) {
-      throw upsertError;
+    if (upsert_error) {
+      throw upsert_error;
     }
 
     return res.json({
       ok: true,
       source: cached ? "legiscan_refresh_stale_cache" : "legiscan_refresh_empty_cache",
       state,
-      sessionId: row.session_id,
-      sessionTitle: row.session_title,
-      billCount: row.bill_count,
-      fetchedAt: row.fetched_at,
+      session_id: row.session_id,
+      session_title: row.session_title,
+      bill_count: row.bill_count,
+      fetched_at: row.fetched_at,
       bills: row.bills,
     });
   } catch (error) {
