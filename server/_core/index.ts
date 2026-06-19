@@ -12,7 +12,7 @@ import { conveyorRouter } from "../routes/conveyor-router";
 import { civicMapRouter } from "../routes/civic-map-router";
 import { atlasProxyRouter } from "../routes/atlas-proxy-router";
 import { ingestionControlRestRouter } from "../routes/ingestion-control-router";
-import { docketRouter } from "../routes/docket";
+import { docket_router } from "../routes/docket";
 import { registerExecutorRoutes } from "../executor-routes";
 import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";
@@ -121,7 +121,7 @@ async function startServer() {
   // Ingestion Control API — server-side queue visibility, before static fallback
   app.use("/api/ingestion-control", ingestionControlRestRouter);
   // Docket Room API — LegiScan-backed state bill cache
-  app.use("/api/docket", docketRouter);
+  app.use("/api/docket", docket_router);
   // Sovereign Control executor API — must be mounted before Vite/static fallback
   registerExecutorRoutes(app);
 

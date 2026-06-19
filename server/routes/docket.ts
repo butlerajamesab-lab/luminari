@@ -1,19 +1,18 @@
 import { Router } from "express";
 import { createClient } from "@supabase/supabase-js";
 import { ENV } from "../_core/env";
-import { getMasterList, getSessionList, type LegiScanMasterBill } from "../services/legiscan";
+import { get_master_list, get_session_list, type legiscan_master_bill } from "../services/legiscan";
 
 const cache_ttl_ms = 8 * 60 * 60 * 1000;
 
 export const docket_router = Router();
-export const docketRouter = docket_router;
 
 type docket_state_cache_row = {
   id?: string;
   state: string;
   session_id: number;
   session_title: string | null;
-  bills: LegiScanMasterBill[];
+  bills: legiscan_master_bill[];
   bill_count: number;
   fetched_at: string;
   source: string;
@@ -57,7 +56,7 @@ const is_fresh = (fetched_at: string): boolean => {
 };
 
 const pick_active_session = async (state: string) => {
-  const sessions = await getSessionList(state);
+  const sessions = await get_session_list(state);
 
   const current = sessions
     .filter(session => !session.prior)
@@ -108,7 +107,7 @@ docket_router.get("/state", async (req, res) => {
       });
     }
 
-    const bills = await getMasterList(session.session_id);
+    const bills = await get_master_list(session.session_id);
     const row: docket_state_cache_row = {
       state,
       session_id: session.session_id,
@@ -119,12 +118,23 @@ docket_router.get("/state", async (req, res) => {
       source: "legiscan.get_master_list",
     };
 
-    const { error: upsert_error } = await db
-      .from("docket_bill_state_cache")
-      .upsert(row, { onConflict: "state" });
+    if (cached) {
+      const { error: upsert_error } = await db
+        .from("docket_bill_state_cache")
+        .update(row)
+        .eq("state", state);
 
-    if (upsert_error) {
-      throw upsert_error;
+      if (upsert_error) {
+        throw upsert_error;
+      }
+    } else {
+      const { error: upsert_error } = await db
+        .from("docket_bill_state_cache")
+        .insert(row);
+
+      if (upsert_error) {
+        throw upsert_error;
+      }
     }
 
     return res.json({
