@@ -105,17 +105,17 @@ export const ROUTE_TABLE: ReadonlyArray<{ path: string; component: string }> = [
   { path: "/lighthouse", component: "Lighthouse" },
   { path: "/civic-map", component: "CivicMap" },
   { path: "/viewfinder", component: "AnomalyViewfinder" },
-  { path: "/docket", component: "DocketRoom" },
-  { path: "/docket/:slug", component: "DocketRoom" },
+  { path: "/docket", component: "docket_room_page" },
+  { path: "/docket/:slug", component: "docket_room_page" },
   { path: "/lumensend", component: "LumenSend" },
   { path: "/legal-library", component: "LegalLibrary" },
   { path: "/agency-metrics", component: "AgencyMetrics" },
   { path: "/civil-gideon", component: "CivilGideon" },
-  { path: "/native-nations", component: "NativeNationsHub" },
-  { path: "/recognition-gideon", component: "RecognitionGideon" },
-  { path: "/recognition-atlas/:tribe_id/:layer_slug", component: "RecognitionAtlasLayer" },
-  { path: "/recognition-atlas/:tribe_id", component: "RecognitionAtlasTribe" },
-  { path: "/recognition-atlas", component: "RecognitionAtlas" },
+  { path: "/native-nations", component: "native_nations_hub_page" },
+  { path: "/recognition-gideon", component: "recognition_gideon_page" },
+  { path: "/recognition-atlas/:tribe_id/:layer_slug", component: "recognition_atlas_layer_page" },
+  { path: "/recognition-atlas/:tribe_id", component: "recognition_atlas_tribe_page" },
+  { path: "/recognition-atlas", component: "recognition_atlas_page" },
   { path: "/mental-health", component: "MentalHealth" },
   { path: "/categories", component: "CategoryExplorer" },
   { path: "/category/:categoryId", component: "CategoryLanding" },
@@ -173,11 +173,11 @@ export const NATIVE_RECOGNITION_ROUTE_CANDIDATES: ReadonlyArray<{
   expected_path: string;
   expected_component: string;
 }> = [
-  { expected_path: "/native-nations", expected_component: "NativeNationsHub" },
-  { expected_path: "/recognition-atlas", expected_component: "RecognitionAtlas" },
-  { expected_path: "/recognition-atlas/:tribe_id", expected_component: "RecognitionAtlasTribe" },
-  { expected_path: "/recognition-atlas/:tribe_id/:layer_slug", expected_component: "RecognitionAtlasLayer" },
-  { expected_path: "/recognition-gideon", expected_component: "RecognitionGideon" },
+  { expected_path: "/native-nations", expected_component: "native_nations_hub_page" },
+  { expected_path: "/recognition-atlas", expected_component: "recognition_atlas_page" },
+  { expected_path: "/recognition-atlas/:tribe_id", expected_component: "recognition_atlas_tribe_page" },
+  { expected_path: "/recognition-atlas/:tribe_id/:layer_slug", expected_component: "recognition_atlas_layer_page" },
+  { expected_path: "/recognition-gideon", expected_component: "recognition_gideon_page" },
 ];
 
 export const PAGE_TO_NAMESPACE: Readonly<Record<string, string>> = {
@@ -212,7 +212,7 @@ export const PAGE_TO_NAMESPACE: Readonly<Record<string, string>> = {
   ControlRoom: "lighthouse",
   DeadlineCalculator: "legalLibrary",
   DiscoverBenefits: "benefits",
-  DocketRoom: "docket",
+  docket_room_page: "docket",
   DoctrineGraph: "legalLibrary",
   DocumentDetail: "documents",
   Documents: "documents",
@@ -252,7 +252,7 @@ export const PAGE_TO_NAMESPACE: Readonly<Record<string, string>> = {
   MissionControl: "lighthouse",
   Mudroom: "operationalWorkflow",
   MyApplications: "benefitApps",
-  NativeNationsHub: "-",
+  native_nations_hub_page: "-",
   NetworkGraph: "relationships",
   NotFound: "-",
   Patterns: "patterns",
@@ -261,10 +261,10 @@ export const PAGE_TO_NAMESPACE: Readonly<Record<string, string>> = {
   ProofFrameworks: "legalLibrary",
   Provenance: "provenance",
   ProvenanceHistory: "provenance",
-  RecognitionAtlas: "-",
-  RecognitionAtlasLayer: "-",
-  RecognitionAtlasTribe: "-",
-  RecognitionGideon: "-",
+  recognition_atlas_page: "-",
+  recognition_atlas_layer_page: "-",
+  recognition_atlas_tribe_page: "-",
+  recognition_gideon_page: "-",
   ResourceDirectory: "civilGideon",
   ResourceVerification: "resourceVerification",
   SharedCaseView: "share",
@@ -289,7 +289,7 @@ router.get("/health", (_req: Request, res: Response) => {
   res.json({
     status: "ok",
     service: "luminari-ai-inspect",
-    lastChecked: now(),
+    last_checked: now(),
     mount: "/api/ai",
     schemaVersion: "2026-06-16",
   });
@@ -298,7 +298,7 @@ router.get("/health", (_req: Request, res: Response) => {
 router.get("/site-map", async (_req: Request, res: Response) => {
   setCache(res, "live");
   const [
-    casesCount,
+    cases_count,
     documentsCount,
     findingsCount,
     signalRegistryCount,
@@ -325,7 +325,7 @@ router.get("/site-map", async (_req: Request, res: Response) => {
     platform: "Luminari / Lighthouse",
     description:
       "Universal civic-forensic operating system. Receives a real human problem and returns verified next action, fallback, escalation, or logged gap.",
-    lastChecked: now(),
+    last_checked: now(),
     deploy: {
       domain: "lighthouse.columbiacitycustomllc.com",
       stack: "React 19 / Express / tRPC 11 / Drizzle / Supabase (Postgres)",
@@ -365,7 +365,7 @@ router.get("/site-map", async (_req: Request, res: Response) => {
       }),
     },
     backbone: {
-      cases: casesCount,
+      cases: cases_count,
       documents: documentsCount,
       findings: findingsCount,
       signalRegistry: signalRegistryCount,
@@ -383,7 +383,7 @@ router.get("/site-map", async (_req: Request, res: Response) => {
 router.get("/routes", (_req: Request, res: Response) => {
   setCache(res, "static");
   res.json({
-    lastChecked: now(),
+    last_checked: now(),
     count: ROUTE_TABLE.length,
     source: "client/src/App.tsx",
     routes: ROUTE_TABLE,
@@ -393,7 +393,7 @@ router.get("/routes", (_req: Request, res: Response) => {
 router.get("/namespaces", (_req: Request, res: Response) => {
   setCache(res, "static");
   res.json({
-    lastChecked: now(),
+    last_checked: now(),
     pageCount: Object.keys(PAGE_TO_NAMESPACE).length,
     source: "all_pages_calls.tsv plus App.tsx route manifest reconciliation",
     mapping: PAGE_TO_NAMESPACE,
@@ -402,7 +402,7 @@ router.get("/namespaces", (_req: Request, res: Response) => {
 
 router.get("/page/mission-control", async (_req: Request, res: Response) => {
   setCache(res, "live");
-  const [casesCount, documentsCount, findingsCount, pipelineRunsCount, engineRunsCount, engineRegistryCount, systemHealthLogsCount] = await Promise.all([
+  const [cases_count, documentsCount, findingsCount, pipelineRunsCount, engineRunsCount, engineRegistryCount, systemHealthLogsCount] = await Promise.all([
     countTable("cases"),
     countTable("documents"),
     countTable("findings"),
@@ -417,10 +417,10 @@ router.get("/page/mission-control", async (_req: Request, res: Response) => {
     component: "MissionControl",
     primaryNamespace: PAGE_TO_NAMESPACE.MissionControl,
     status: "live",
-    lastChecked: now(),
-    dataSource: "live — cases, documents, findings, pipeline_runs, engine_runs, engine_registry, system_health_logs",
+    last_checked: now(),
+    data_source: "live — cases, documents, findings, pipeline_runs, engine_runs, engine_registry, system_health_logs",
     sections: [
-      { name: "Platform Counts", counts: { cases: casesCount, documents: documentsCount, findings: findingsCount } },
+      { name: "Platform Counts", counts: { cases: cases_count, documents: documentsCount, findings: findingsCount } },
       { name: "Pipeline Queue", counts: { pipelineRuns: pipelineRunsCount, engineRuns: engineRunsCount } },
       { name: "Engine Registry", counts: { registered: engineRegistryCount } },
       { name: "Error Surface", counts: { logEntries: systemHealthLogsCount } },
@@ -444,8 +444,8 @@ router.get("/page/sovereign-control", async (_req: Request, res: Response) => {
     component: "SovereignControl",
     primaryNamespace: PAGE_TO_NAMESPACE.SovereignControl,
     status: "live",
-    lastChecked: now(),
-    dataSource: "live — engine_registry, claim_validation_rules, sunam_gate_log, governance_log, constitutional_violation_log, audit_trail",
+    last_checked: now(),
+    data_source: "live — engine_registry, claim_validation_rules, sunam_gate_log, governance_log, constitutional_violation_log, audit_trail",
     sections: [
       { name: "Engine Registry", counts: { registered: engineRegistryCount } },
       { name: "Constitutional Rules", counts: { validationRules: claimValidationRulesCount } },
@@ -458,7 +458,7 @@ router.get("/page/sovereign-control", async (_req: Request, res: Response) => {
 
 router.get("/page/docket", async (_req: Request, res: Response) => {
   setCache(res, "live");
-  const [casesCount, docketEntriesCount, deadlinesCount] = await Promise.all([
+  const [cases_count, docket_entries_count, deadlines_count] = await Promise.all([
     countTable("cases"),
     countTable("docket_entries"),
     countTable("deadlines"),
@@ -466,15 +466,15 @@ router.get("/page/docket", async (_req: Request, res: Response) => {
   res.json({
     route: "/docket",
     title: "Docket",
-    component: "DocketRoom",
-    primaryNamespace: PAGE_TO_NAMESPACE.DocketRoom,
+    component: "docket_room_page",
+    primary_namespace: PAGE_TO_NAMESPACE.docket_room_page,
     status: "live",
-    lastChecked: now(),
-    dataSource: "live — cases, docket_entries, deadlines",
+    last_checked: now(),
+    data_source: "live — cases, docket_entries, deadlines",
     sections: [
-      { name: "Cases", counts: { total: casesCount } },
-      { name: "Docket Entries", counts: { total: docketEntriesCount } },
-      { name: "Deadlines", counts: { tracked: deadlinesCount } },
+      { name: "Cases", counts: { total: cases_count } },
+      { name: "Docket Entries", counts: { total: docket_entries_count } },
+      { name: "Deadlines", counts: { tracked: deadlines_count } },
     ],
   });
 });
@@ -493,8 +493,8 @@ router.get("/page/signal-registry", async (_req: Request, res: Response) => {
     component: "SignalRegistry",
     primaryNamespace: PAGE_TO_NAMESPACE.SignalRegistry,
     status: "live",
-    lastChecked: now(),
-    dataSource: "live — signal_registry, signals, pattern_registry, signal_events",
+    last_checked: now(),
+    data_source: "live — signal_registry, signals, pattern_registry, signal_events",
     sections: [
       { name: "Signal Registry", counts: { total: signalRegistryCount } },
       { name: "Detected Signals", counts: { total: signalsCount } },
@@ -518,8 +518,8 @@ router.get("/page/benefits", async (_req: Request, res: Response) => {
     component: "BenefitsNavigator",
     primaryNamespace: PAGE_TO_NAMESPACE.BenefitsNavigator,
     status: "live",
-    lastChecked: now(),
-    dataSource: "live — registry_programs, government_benefits_registry, benefit_applications, eligibility_hints",
+    last_checked: now(),
+    data_source: "live — registry_programs, government_benefits_registry, benefit_applications, eligibility_hints",
     sections: [
       { name: "Eligibility Screener", counts: { eligibilityHints: eligibilityHintsCount } },
       { name: "Civic Program Registry", counts: { total: registryProgramsCount } },
@@ -542,8 +542,8 @@ router.get("/page/guided-intake", async (_req: Request, res: Response) => {
     component: "GuidedIntakeNew",
     primaryNamespace: PAGE_TO_NAMESPACE.GuidedIntakeNew,
     status: "live",
-    lastChecked: now(),
-    dataSource: "live — intake_records, entry_runs, map_intake_sessions",
+    last_checked: now(),
+    data_source: "live — intake_records, entry_runs, map_intake_sessions",
     sections: [
       { name: "Problem Framing", counts: { intakeRecords: intakeRecordsCount } },
       { name: "Entry Runs", counts: { total: entryRunsCount } },
@@ -554,7 +554,7 @@ router.get("/page/guided-intake", async (_req: Request, res: Response) => {
 
 router.get("/compare/main-vs-manus", async (_req: Request, res: Response) => {
   setCache(res, "live");
-  const [casesCount, documentsCount] = await Promise.all([
+  const [cases_count, documentsCount] = await Promise.all([
     countTable("cases"),
     countTable("documents"),
   ]);
@@ -562,12 +562,12 @@ router.get("/compare/main-vs-manus", async (_req: Request, res: Response) => {
     route: "/compare/main-vs-manus",
     title: "Main (Render) vs Manus Reference",
     purpose: "Semantic comparison between the live Render deployment and the Manus reference build.",
-    lastChecked: now(),
+    last_checked: now(),
     main: {
       url: "https://lighthouse.columbiacitycustomllc.com",
       branch: "main",
       stack: "React 19 / Express / tRPC 11 / Drizzle / Supabase Postgres (wepxlinwbjrkqdzkqpar)",
-      dbCounts: { cases: casesCount, documents: documentsCount },
+      dbCounts: { cases: cases_count, documents: documentsCount },
       status: "live — Supabase Postgres backend confirmed",
     },
     manus: {
