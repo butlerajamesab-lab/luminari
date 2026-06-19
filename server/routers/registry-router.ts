@@ -94,8 +94,8 @@ export const registryRouter = router({
       const [rows] = await pool.query(
         `SELECT p.id, p.name_rp AS name, p.agency_rp AS agency, p.category_rp AS category,
                 p.eligibility_rp AS eligibility, p.contact_rp AS contact, p.website_rp AS website,
-                p.apply_notes_rp AS applyNotes, p.jurisdiction_id_rp AS jurisdictionId,
-                j.abbreviation AS stateCode, j.name AS jurisdictionName
+                p.apply_notes_rp AS apply_notes, p.jurisdiction_id_rp AS jurisdiction_id,
+                j.abbreviation AS state_code, j.name AS jurisdiction_name
          FROM registry_programs p
          LEFT JOIN registry_jurisdictions j ON p.jurisdiction_id_rp = j.id
          ${where}
@@ -131,8 +131,8 @@ export const registryRouter = router({
       const [progRows] = await pool.query(
         `SELECT p.id, p.name_rp AS name, p.agency_rp AS agency, p.category_rp AS category,
                 p.eligibility_rp AS eligibility, p.contact_rp AS contact, p.website_rp AS website,
-                p.apply_notes_rp AS applyNotes, p.jurisdiction_id_rp AS jurisdictionId,
-                j.abbreviation AS stateCode, j.name AS jurisdictionName
+                p.apply_notes_rp AS apply_notes, p.jurisdiction_id_rp AS jurisdiction_id,
+                j.abbreviation AS state_code, j.name AS jurisdiction_name
          FROM registry_programs p
          LEFT JOIN registry_jurisdictions j ON p.jurisdiction_id_rp = j.id
          WHERE p.id = ?`,
@@ -143,24 +143,24 @@ export const registryRouter = router({
 
       // 2. Get oversight bodies in the same jurisdiction
       const [oversightRows] = await pool.query(
-        `SELECT ob.id, ob.agency_name_rob AS agencyName, ob.function_rob AS function,
-                ob.statute_of_limitations_rob AS statuteOfLimitations,
+        `SELECT ob.id, ob.agency_name_rob AS agency_name, ob.function_rob AS function,
+                ob.statute_of_limitations_rob AS statute_of_limitations,
                 ob.contact_rob AS contact, ob.pathway_rob AS pathway, ob.escalation_rob AS escalation,
-                ob.jurisdiction_id_rob AS jurisdictionId
+                ob.jurisdiction_id_rob AS jurisdiction_id
          FROM registry_oversight_bodies ob
          WHERE ob.jurisdiction_id_rob = ?
          ORDER BY ob.agency_name_rob`,
-        [program.jurisdictionId]
+        [program.jurisdiction_id]
       );
 
       // 3. Get related workflows for the jurisdiction
       const [workflowRows] = await pool.query(
-        `SELECT id, workflow_type_rw AS workflowType, primary_statutes_rw AS primaryStatutes,
-                steps_rw AS steps, deadlines_rw AS deadlines, escalation_paths_rw AS escalationPaths
+        `SELECT id, workflow_type_rw AS workflow_type, primary_statutes_rw AS primary_statutes,
+                steps_rw AS steps, deadlines_rw AS deadlines, escalation_paths_rw AS escalation_paths
          FROM registry_workflows
          WHERE jurisdiction_id_rw = ?
          ORDER BY workflow_type_rw`,
-        [program.jurisdictionId]
+        [program.jurisdiction_id]
       );
 
       // 4. Get cross-avenue programs (same category, same jurisdiction)
@@ -173,7 +173,7 @@ export const registryRouter = router({
            AND p2.id != ?
          ORDER BY p2.name_rp
          LIMIT 10`,
-        [program.jurisdictionId, program.category, input.programId]
+        [program.jurisdiction_id, program.category, input.programId]
       );
 
       return {
@@ -183,8 +183,8 @@ export const registryRouter = router({
         relatedPrograms: crossRows as any[],
         chain: {
           program: program.name,
-          jurisdiction: program.jurisdictionName || program.jurisdictionId,
-          stateCode: program.stateCode,
+          jurisdiction: program.jurisdiction_name || program.jurisdiction_id,
+          state_code: program.state_code,
           oversightCount: (oversightRows as any[]).length,
           workflowCount: (workflowRows as any[]).length,
           relatedProgramCount: (crossRows as any[]).length,
@@ -240,7 +240,7 @@ export const registryRouter = router({
       const [rows] = await pool.query(
         `SELECT p.id, p.name_rp AS name, p.agency_rp AS agency, p.category_rp AS category,
                 p.eligibility_rp AS eligibility, p.contact_rp AS contact, p.website_rp AS website,
-                p.apply_notes_rp AS applyNotes, j.abbreviation AS stateCode, j.name AS jurisdictionName
+                p.apply_notes_rp AS apply_notes, j.abbreviation AS state_code, j.name AS jurisdiction_name
          FROM registry_programs p
          LEFT JOIN registry_jurisdictions j ON p.jurisdiction_id_rp = j.id
          WHERE p.category_rp IN (${placeholders})
@@ -305,10 +305,10 @@ export const registryRouter = router({
 
       const where = `WHERE ${conditions.join(' AND ')}`;
       const [rows] = await pool.query(
-        `SELECT ob.id, ob.agency_name_rob AS agencyName, ob.function_rob AS function,
-                ob.statute_of_limitations_rob AS statuteOfLimitations,
+        `SELECT ob.id, ob.agency_name_rob AS agency_name, ob.function_rob AS function,
+                ob.statute_of_limitations_rob AS statute_of_limitations,
                 ob.contact_rob AS contact, ob.pathway_rob AS pathway, ob.escalation_rob AS escalation,
-                j.abbreviation AS stateCode, j.name AS jurisdictionName
+                j.abbreviation AS state_code, j.name AS jurisdiction_name
          FROM registry_oversight_bodies ob
          LEFT JOIN registry_jurisdictions j ON ob.jurisdiction_id_rob = j.id
          ${where}

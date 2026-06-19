@@ -798,30 +798,30 @@ export const knowledgeIngestionRouter = router({
       const aamWhere = aamConditions.length > 0 ? `WHERE ${aamConditions.join(' AND ')}` : '';
 
       // Query agencies_registry first (has real contact info)
-      const [arRows] = await db.execute(sql.raw(`SELECT id, agencyName, jurisdiction, domain AS authorityType, agencyType, website AS websiteUrl, contactMethods, officialStatus, createdAt FROM agencies_registry ${arWhere} ORDER BY agencyName ASC`));
+      const [arRows] = await db.execute(sql.raw(`SELECT id, agencyName AS agency_name, jurisdiction, domain AS authority_type, agencyType AS agency_type, website AS website_url, contactMethods AS contact_methods, officialStatus AS official_status, createdAt AS created_at FROM agencies_registry ${arWhere} ORDER BY agencyName ASC`));
       // Query agency_authority_map for enforcement pathway data
-      const [aamRows] = await db.execute(sql.raw(`SELECT id, agency AS agencyName, agencyShort, domain AS authorityType, statute, complaintPathway AS filingUrl, responseTimelineDays, complaintTypes, createdAt FROM agency_authority_map ${aamWhere} ORDER BY createdAt DESC`));
+      const [aamRows] = await db.execute(sql.raw(`SELECT id, agency AS agency_name, agencyShort AS agency_short, domain AS authority_type, statute, complaintPathway AS filing_url, responseTimelineDays AS response_timeline_days, complaintTypes AS complaint_types, createdAt AS created_at FROM agency_authority_map ${aamWhere} ORDER BY createdAt DESC`));
 
       // Merge: agencies_registry rows first, then agency_authority_map rows not already covered
-      const arNames = new Set((arRows as unknown as any[]).map((r: any) => r.agencyName?.toLowerCase()));
-      const aamFiltered = (aamRows as unknown as any[]).filter((r: any) => !arNames.has(r.agencyName?.toLowerCase()));
+      const arNames = new Set((arRows as unknown as any[]).map((r: any) => r.agency_name?.toLowerCase()));
+      const aamFiltered = (aamRows as unknown as any[]).filter((r: any) => !arNames.has(r.agency_name?.toLowerCase()));
 
       // Normalize agencies_registry rows to match UI shape
       const normalizedAR = (arRows as unknown as any[]).map((r: any) => {
-        const cm = typeof r.contactMethods === 'string' ? JSON.parse(r.contactMethods) : (r.contactMethods ?? {});
+        const cm = typeof r.contact_methods === 'string' ? JSON.parse(r.contact_methods) : (r.contact_methods ?? {});
         return {
           id: r.id,
-          agencyName: r.agencyName,
+          agency_name: r.agency_name,
           jurisdiction: r.jurisdiction,
-          authorityType: r.authorityType,
-          agencyType: r.agencyType,
-          websiteUrl: r.websiteUrl,
+          authority_type: r.authority_type,
+          agency_type: r.agency_type,
+          website_url: r.website_url,
           phone: cm.phone ?? null,
           email: cm.email ?? null,
           address: cm.address ?? null,
-          filingUrl: cm.filingUrl ?? r.websiteUrl,
-          officialStatus: r.officialStatus,
-          createdAt: r.createdAt,
+          filing_url: cm.filing_url ?? cm.filingUrl ?? r.website_url,
+          official_status: r.official_status,
+          created_at: r.created_at,
         };
       });
 
@@ -846,7 +846,7 @@ export const knowledgeIngestionRouter = router({
       if (input.search) conditions.push(`(agency_name_rob LIKE '%${input.search.replace(/'/g, "''")}%' OR function_rob LIKE '%${input.search.replace(/'/g, "''")}%')`);
       if (input.courtType) conditions.push(`function_rob LIKE '%${input.courtType.replace(/'/g, "''")}%'`);
       const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      const [rows] = await db.execute(sql.raw(`SELECT id, agency_name_rob AS court_name, function_rob AS court_type, contact_rob AS filing_portal, pathway_rob AS escalation_path, statute_of_limitations_rob AS sol, created_at_rob AS createdAt FROM registry_oversight_bodies ${where} ORDER BY created_at_rob DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
+      const [rows] = await db.execute(sql.raw(`SELECT id, agency_name_rob AS court_name, function_rob AS court_type, contact_rob AS filing_portal, pathway_rob AS escalation_path, statute_of_limitations_rob AS sol, created_at_rob AS created_at FROM registry_oversight_bodies ${where} ORDER BY created_at_rob DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
       const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM registry_oversight_bodies ${where}`));
       return { rows: rows as unknown as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
     }),
@@ -884,7 +884,7 @@ export const knowledgeIngestionRouter = router({
       if (input.search) conditions.push(`(formula_name LIKE '%${input.search.replace(/'/g, "''")}%' OR claim_type LIKE '%${input.search.replace(/'/g, "''")}%' OR notes LIKE '%${input.search.replace(/'/g, "''")}%')`);
       if (input.claimType) conditions.push(`claim_type = '${input.claimType.replace(/'/g, "''")}' `);
       const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      const [rows] = await db.execute(sql.raw(`SELECT formula_id AS id, formula_name AS formulaName, claim_type AS claimType, jurisdiction, formula_expression AS baseMultiplier, notes AS description, created_at AS createdAt FROM settlement_formulas ${where} ORDER BY created_at DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
+      const [rows] = await db.execute(sql.raw(`SELECT formula_id AS id, formula_name, claim_type, jurisdiction, formula_expression AS base_multiplier, notes AS description, created_at FROM settlement_formulas ${where} ORDER BY created_at DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
       const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM settlement_formulas ${where}`));
       return { rows: rows as unknown as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
     }),
