@@ -1,4 +1,5 @@
 import { router, publicProcedure } from "../_core/trpc";
+import { createDatabasePool } from "../pg-config";
 import { db, getPool } from "../db";
 import { sql } from "drizzle-orm";
 import { legalStatutes } from "../../drizzle/schema";
@@ -9,7 +10,7 @@ export const debugDbRouter = router({
     const hasUrl = !!dbUrl;
     let urlHost = "NOT_SET";
     let urlPort = "NOT_SET";
-
+    
     if (dbUrl) {
       try {
         const parsed = new URL(dbUrl);
@@ -19,28 +20,31 @@ export const debugDbRouter = router({
         urlHost = `PARSE_ERROR: ${e.message}`;
       }
     }
-
+    
     let canConnect = false;
     let queryResult: any = null;
     let errorMsg: string | null = null;
-
+    
     if (dbUrl && dbUrl !== "postgresql://dummy") {
       try {
-        const client = await getPool().connect();
-        try {
-          canConnect = true;
-          const res = await client.query("SELECT COUNT(*)::int as cnt FROM public.legal_statutes");
-          queryResult = res.rows[0];
-        } finally {
-          client.release();
-        }
+        const testPool = createDatabasePool({
+          label: "DebugDb",
+          max: 1,
+          connectionTimeoutMillis: 5000,
+        });
+        const client = await testPool.connect();
+        canConnect = true;
+        const res = await client.query("SELECT COUNT(*) as cnt FROM legal_statutes");
+        queryResult = res.rows[0];
+        client.release();
+        await testPool.end();
       } catch (e: any) {
         errorMsg = e.message;
       }
     } else {
       errorMsg = dbUrl ? "DATABASE_URL is dummy placeholder" : "DATABASE_URL is not set";
     }
-
+    
     return {
       hasUrl,
       urlHost,
@@ -50,15 +54,18 @@ export const debugDbRouter = router({
       errorMsg,
       nodeEnv: process.env.NODE_ENV,
       timestamp: new Date().toISOString(),
+      deployVersion: "f622979-v3",
     };
   }),
 
+  // Test Drizzle layer directly
   drizzleTest: publicProcedure.query(async () => {
     let drizzleResult: any = null;
     let drizzleError: string | null = null;
     let poolResult: any = null;
     let poolError: string | null = null;
 
+    // Test 1: Drizzle ORM query
     try {
       const [row] = await db.select({ count: sql<number>`COUNT(*)::int` }).from(legalStatutes);
       drizzleResult = row;
@@ -67,14 +74,12 @@ export const debugDbRouter = router({
       if (e.cause) drizzleError += ` | cause: ${e.cause.message}`;
     }
 
+    // Test 2: Raw pool query via getPool()
     try {
       const client = await getPool().connect();
-      try {
-        const res = await client.query("SELECT COUNT(*)::int as cnt FROM public.legal_statutes");
-        poolResult = res.rows[0];
-      } finally {
-        client.release();
-      }
+      const res = await client.query("SELECT COUNT(*)::int as cnt FROM legal_statutes");
+      poolResult = res.rows[0];
+      client.release();
     } catch (e: any) {
       poolError = e.message;
       if (e.cause) poolError += ` | cause: ${e.cause.message}`;
@@ -85,6 +90,7 @@ export const debugDbRouter = router({
       drizzleError,
       poolResult,
       poolError,
+      deployVersion: "f622979-v3",
       timestamp: new Date().toISOString(),
     };
   }),
