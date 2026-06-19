@@ -567,7 +567,7 @@ export const knowledgeIngestionRouter = router({
       rawJson: z.string().max(5_000_000),
     }))
     .mutation(async ({ ctx, input }) => {
-      const addedBy = ctx.user.name ?? ctx.user.openId;
+      const added_by = ctx.user.name ?? ctx.user.openId;
       let parsed: any;
       try {
         parsed = JSON.parse(input.rawJson);
@@ -700,7 +700,7 @@ export const knowledgeIngestionRouter = router({
 
           if (columns.has("created_at") && row.created_at === undefined) row.created_at = auditValue("created_at");
           if (columns.has("updated_at") && row.updated_at === undefined) row.updated_at = auditValue("updated_at");
-          if (columns.has("added_by") && row.added_by === undefined) row.added_by = addedBy;
+          if (columns.has("added_by") && row.added_by === undefined) row.added_by = added_by;
 
           const columnNames = Object.keys(row).filter((columnName) => columns.has(columnName));
           if (columnNames.length === 0) {
@@ -752,7 +752,7 @@ export const knowledgeIngestionRouter = router({
       if (input.jurisdiction) conditions.push(`jurisdiction = '${input.jurisdiction.replace(/'/g, "''")}' `);
       if (input.domain) conditions.push(`domains LIKE '%${input.domain.replace(/'/g, "''")}%'`);
       const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      const [rows] = await db.execute(sql.raw(`SELECT id, jurisdiction, citation, title, summary, domains, sourceType, createdAt FROM legal_statutes ${where} ORDER BY createdAt DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
+      const [rows] = await db.execute(sql.raw(`SELECT id, jurisdiction, citation, title, summary, domains, source_url, created_at FROM legal_statutes ${where} ORDER BY created_at DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
       const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM legal_statutes ${where}`));
       return { rows: rows as unknown as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
     }),
@@ -768,11 +768,11 @@ export const knowledgeIngestionRouter = router({
     }))
     .query(async ({ input }) => {
       const conditions: string[] = [];
-      if (input.search) conditions.push(`(caseName LIKE '%${input.search.replace(/'/g, "''")}%' OR citation LIKE '%${input.search.replace(/'/g, "''")}%' OR holding LIKE '%${input.search.replace(/'/g, "''")}%')`);
+      if (input.search) conditions.push(`(case_name LIKE '%${input.search.replace(/'/g, "''")}%' OR citation LIKE '%${input.search.replace(/'/g, "''")}%' OR summary LIKE '%${input.search.replace(/'/g, "''")}%')`);
       if (input.jurisdiction) conditions.push(`jurisdiction = '${input.jurisdiction.replace(/'/g, "''")}' `);
       if (input.domain) conditions.push(`domains LIKE '%${input.domain.replace(/'/g, "''")}%'`);
       const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      const [rows] = await db.execute(sql.raw(`SELECT id, caseName, citation, jurisdiction, court, holding AS summary, yearDecided, keyQuotes, domains, createdAt FROM legal_case_law ${where} ORDER BY createdAt DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
+      const [rows] = await db.execute(sql.raw(`SELECT id, case_name, citation, jurisdiction, court, summary, year_decided, key_quotes, domains, created_at FROM legal_case_law ${where} ORDER BY created_at DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
       const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM legal_case_law ${where}`));
       return { rows: rows as unknown as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
     }),
@@ -786,49 +786,14 @@ export const knowledgeIngestionRouter = router({
       offset: z.number().min(0).default(0),
     }))
     .query(async ({ input }) => {
-      // Build conditions for agencies_registry
-      const arConditions: string[] = [];
-      if (input.search) arConditions.push(`(agencyName LIKE '%${input.search.replace(/'/g, "''")}%' OR domain LIKE '%${input.search.replace(/'/g, "''")}%' OR jurisdiction LIKE '%${input.search.replace(/'/g, "''")}%')`);
-      if (input.jurisdiction) arConditions.push(`jurisdiction = '${input.jurisdiction.replace(/'/g, "''")}'`);
-      const arWhere = arConditions.length > 0 ? `WHERE ${arConditions.join(' AND ')}` : '';
+      const conditions: string[] = [];
+      if (input.search) conditions.push(`(agency_name LIKE '%${input.search.replace(/'/g, "''")}%' OR jurisdiction LIKE '%${input.search.replace(/'/g, "''")}%')`);
+      if (input.jurisdiction) conditions.push(`jurisdiction = '${input.jurisdiction.replace(/'/g, "''")}'`);
+      const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-      // Build conditions for agency_authority_map
-      const aamConditions: string[] = [];
-      if (input.search) aamConditions.push(`(agency LIKE '%${input.search.replace(/'/g, "''")}%' OR domain LIKE '%${input.search.replace(/'/g, "''")}%' OR statute LIKE '%${input.search.replace(/'/g, "''")}%')`);
-      const aamWhere = aamConditions.length > 0 ? `WHERE ${aamConditions.join(' AND ')}` : '';
-
-      // Query agencies_registry first (has real contact info)
-      const [arRows] = await db.execute(sql.raw(`SELECT id, agencyName, jurisdiction, domain AS authorityType, agencyType, website AS websiteUrl, contactMethods, officialStatus, createdAt FROM agencies_registry ${arWhere} ORDER BY agencyName ASC`));
-      // Query agency_authority_map for enforcement pathway data
-      const [aamRows] = await db.execute(sql.raw(`SELECT id, agency AS agencyName, agencyShort, domain AS authorityType, statute, complaintPathway AS filingUrl, responseTimelineDays, complaintTypes, createdAt FROM agency_authority_map ${aamWhere} ORDER BY createdAt DESC`));
-
-      // Merge: agencies_registry rows first, then agency_authority_map rows not already covered
-      const arNames = new Set((arRows as unknown as any[]).map((r: any) => r.agencyName?.toLowerCase()));
-      const aamFiltered = (aamRows as unknown as any[]).filter((r: any) => !arNames.has(r.agencyName?.toLowerCase()));
-
-      // Normalize agencies_registry rows to match UI shape
-      const normalizedAR = (arRows as unknown as any[]).map((r: any) => {
-        const cm = typeof r.contactMethods === 'string' ? JSON.parse(r.contactMethods) : (r.contactMethods ?? {});
-        return {
-          id: r.id,
-          agencyName: r.agencyName,
-          jurisdiction: r.jurisdiction,
-          authorityType: r.authorityType,
-          agencyType: r.agencyType,
-          websiteUrl: r.websiteUrl,
-          phone: cm.phone ?? null,
-          email: cm.email ?? null,
-          address: cm.address ?? null,
-          filingUrl: cm.filingUrl ?? r.websiteUrl,
-          officialStatus: r.officialStatus,
-          createdAt: r.createdAt,
-        };
-      });
-
-      const allRows = [...normalizedAR, ...aamFiltered];
-      const total = allRows.length;
-      const paginated = allRows.slice(input.offset, input.offset + input.limit);
-      return { rows: paginated, total };
+      const [rows] = await db.execute(sql.raw(`SELECT id, agency_name, jurisdiction, metadata, created_at FROM agencies_registry ${where} ORDER BY agency_name ASC LIMIT ${input.limit} OFFSET ${input.offset}`));
+      const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM agencies_registry ${where}`));
+      return { rows: rows as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
     }),
 
   /** Browse court directory */
@@ -846,7 +811,7 @@ export const knowledgeIngestionRouter = router({
       if (input.search) conditions.push(`(agency_name_rob LIKE '%${input.search.replace(/'/g, "''")}%' OR function_rob LIKE '%${input.search.replace(/'/g, "''")}%')`);
       if (input.courtType) conditions.push(`function_rob LIKE '%${input.courtType.replace(/'/g, "''")}%'`);
       const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      const [rows] = await db.execute(sql.raw(`SELECT id, agency_name_rob AS court_name, function_rob AS court_type, contact_rob AS filing_portal, pathway_rob AS escalation_path, statute_of_limitations_rob AS sol, created_at_rob AS createdAt FROM registry_oversight_bodies ${where} ORDER BY created_at_rob DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
+      const [rows] = await db.execute(sql.raw(`SELECT id, agency_name_rob AS court_name, function_rob AS court_type, contact_rob AS filing_portal, pathway_rob AS escalation_path, statute_of_limitations_rob AS sol, created_at_rob AS created_at FROM registry_oversight_bodies ${where} ORDER BY created_at_rob DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
       const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM registry_oversight_bodies ${where}`));
       return { rows: rows as unknown as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
     }),
@@ -884,7 +849,7 @@ export const knowledgeIngestionRouter = router({
       if (input.search) conditions.push(`(formula_name LIKE '%${input.search.replace(/'/g, "''")}%' OR claim_type LIKE '%${input.search.replace(/'/g, "''")}%' OR notes LIKE '%${input.search.replace(/'/g, "''")}%')`);
       if (input.claimType) conditions.push(`claim_type = '${input.claimType.replace(/'/g, "''")}' `);
       const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-      const [rows] = await db.execute(sql.raw(`SELECT formula_id AS id, formula_name AS formulaName, claim_type AS claimType, jurisdiction, formula_expression AS baseMultiplier, notes AS description, created_at AS createdAt FROM settlement_formulas ${where} ORDER BY created_at DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
+      const [rows] = await db.execute(sql.raw(`SELECT formula_id AS id, formula_name, claim_type, jurisdiction, formula_expression AS base_multiplier, notes AS description, created_at FROM settlement_formulas ${where} ORDER BY created_at DESC LIMIT ${input.limit} OFFSET ${input.offset}`));
       const [countRows] = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM settlement_formulas ${where}`));
       return { rows: rows as unknown as unknown as any[], total: Number((countRows as unknown as any[])[0]?.cnt ?? 0) };
     }),
@@ -956,7 +921,7 @@ export const knowledgeIngestionRouter = router({
       rawSql: z.string().max(5_000_000),
     }))
     .mutation(async ({ ctx, input }) => {
-      const addedBy = ctx.user.name ?? ctx.user.openId;
+      const added_by = ctx.user.name ?? ctx.user.openId;
       const now = Date.now();
 
       // Allowed tables (same as JSON import)
@@ -1050,9 +1015,14 @@ export const knowledgeIngestionRouter = router({
               }
               const record: Record<string, any> = {};
               for (let j = 0; j < columns.length; j++) {
-                record[columns[j]] = values[j];
+                const column = columns[j];
+                if (!safeIdentifierPattern.test(column) || /[A-Z]/.test(column)) {
+                  errors.push(`Rejected non-snake_case column: ${column}`);
+                  continue;
+                }
+                record[column] = values[j];
               }
-              records.push(record);
+              if (Object.keys(record).length > 0) records.push(record);
             } catch (e: any) {
               errors.push(`Parse error in tuple: ${e?.message ?? 'Unknown'}`);
             }
@@ -1074,10 +1044,10 @@ export const knowledgeIngestionRouter = router({
       for (let i = 0; i < records.length; i++) {
         try {
           const rec = records[i];
-          // Add defaults
-          if (!rec.createdAt) rec.createdAt = now;
-          if (!rec.updatedAt) rec.updatedAt = now;
-          if (!rec.addedBy) rec.addedBy = addedBy;
+          // Add snake_case defaults only when those columns are part of the pasted payload.
+          if ("created_at" in rec && !rec.created_at) rec.created_at = now;
+          if ("updated_at" in rec && !rec.updated_at) rec.updated_at = now;
+          if ("added_by" in rec && !rec.added_by) rec.added_by = added_by;
 
           const cols = Object.keys(rec);
           const vals = cols.map(c => {
