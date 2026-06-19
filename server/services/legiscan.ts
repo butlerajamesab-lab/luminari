@@ -1,6 +1,6 @@
-const LEGISCAN_BASE_URL = "https://api.legiscan.com/";
+const legiscan_base_url = "https://api.legiscan.com/";
 
-const requiredEnv = (name: string): string => {
+const required_env = (name: string): string => {
   const value = process.env[name];
 
   if (!value) {
@@ -10,16 +10,16 @@ const requiredEnv = (name: string): string => {
   return value;
 };
 
-type LegiScanStatus = "OK" | "ERROR";
+type legiscan_status = "OK" | "ERROR";
 
-type LegiScanEnvelope<TPayload> = TPayload & {
-  status: LegiScanStatus;
+type legiscan_envelope<payload> = payload & {
+  status: legiscan_status;
   alert?: {
     message?: string;
   };
 };
 
-export type LegiScanSession = {
+export type legiscan_session = {
   session_id: number;
   state_id?: number;
   year_start?: number;
@@ -34,7 +34,7 @@ export type LegiScanSession = {
   name?: string;
 };
 
-export type LegiScanMasterBill = {
+export type legiscan_master_bill = {
   bill_id: number;
   number: string;
   change_hash?: string;
@@ -47,9 +47,9 @@ export type LegiScanMasterBill = {
   last_action?: string;
 };
 
-export type LegiScanBillDetail = Record<string, unknown>;
+export type legiscan_bill_detail = Record<string, unknown>;
 
-const normalizeStateCode = (state: string): string => {
+const normalize_state_code = (state: string): string => {
   const normalized = state.trim().toUpperCase();
 
   if (!/^[A-Z]{2}$/.test(normalized) && normalized !== "DC") {
@@ -59,13 +59,13 @@ const normalizeStateCode = (state: string): string => {
   return normalized;
 };
 
-const legiscanRequest = async <TPayload>(
+const legiscan_request = async <payload>(
   op: string,
   params: Record<string, string | number>,
-): Promise<TPayload> => {
-  const url = new URL(LEGISCAN_BASE_URL);
+): Promise<payload> => {
+  const url = new URL(legiscan_base_url);
 
-  url.searchParams.set("key", requiredEnv("LEGISCAN_API_KEY"));
+  url.searchParams.set("key", required_env("LEGISCAN_API_KEY"));
   url.searchParams.set("op", op);
 
   for (const [key, value] of Object.entries(params)) {
@@ -78,36 +78,36 @@ const legiscanRequest = async <TPayload>(
     throw new Error(`LegiScan HTTP ${response.status} while calling ${op}`);
   }
 
-  const data = (await response.json()) as LegiScanEnvelope<TPayload>;
+  const data = (await response.json()) as legiscan_envelope<payload>;
 
   if (data.status === "ERROR") {
     throw new Error(data.alert?.message ?? `LegiScan API error while calling ${op}`);
   }
 
-  return data as TPayload;
+  return data as payload;
 };
 
-export const getSessionList = async (state: string): Promise<LegiScanSession[]> => {
-  const data = await legiscanRequest<{
+export const get_session_list = async (state: string): Promise<legiscan_session[]> => {
+  const data = await legiscan_request<{
     status: "OK";
-    sessions: LegiScanSession[];
+    sessions: legiscan_session[];
   }>("getSessionList", {
-    state: normalizeStateCode(state),
+    state: normalize_state_code(state),
   });
 
   return data.sessions;
 };
 
-export const getMasterList = async (sessionId: number): Promise<LegiScanMasterBill[]> => {
-  const data = await legiscanRequest<{
+export const get_master_list = async (session_id: number): Promise<legiscan_master_bill[]> => {
+  const data = await legiscan_request<{
     status: "OK";
-    masterlist: Record<string, LegiScanMasterBill | { session?: unknown }>;
+    masterlist: Record<string, legiscan_master_bill | { session?: unknown }>;
   }>("getMasterList", {
-    id: sessionId,
+    id: session_id,
   });
 
   return Object.values(data.masterlist).filter(
-    (entry): entry is LegiScanMasterBill =>
+    (entry): entry is legiscan_master_bill =>
       typeof entry === "object" &&
       entry !== null &&
       "bill_id" in entry &&
@@ -115,12 +115,12 @@ export const getMasterList = async (sessionId: number): Promise<LegiScanMasterBi
   );
 };
 
-export const getBill = async (billId: number): Promise<LegiScanBillDetail> => {
-  const data = await legiscanRequest<{
+export const get_bill = async (bill_id: number): Promise<legiscan_bill_detail> => {
+  const data = await legiscan_request<{
     status: "OK";
-    bill: LegiScanBillDetail;
+    bill: legiscan_bill_detail;
   }>("getBill", {
-    id: billId,
+    id: bill_id,
   });
 
   return data.bill;

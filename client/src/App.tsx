@@ -64,16 +64,16 @@ import MissionControl from "./pages/MissionControl";
 import Lighthouse from "./pages/Lighthouse";
 import CivicMap from "./pages/CivicMap";
 import AnomalyViewfinder from "./pages/AnomalyViewfinder";
-import DocketRoom from "./pages/DocketRoom";
+import docket_room_page from "./pages/DocketRoom";
 import LumenSend from "./pages/LumenSend";
 import LegalLibrary from "./pages/LegalLibrary";
 import AgencyMetrics from "./pages/AgencyMetrics";
 import CivilGideon from "./pages/CivilGideon";
-import NativeNationsHub from "./pages/NativeNationsHub";
-import RecognitionAtlas from "./pages/RecognitionAtlas";
-import RecognitionAtlasTribe from "./pages/RecognitionAtlasTribe";
-import RecognitionAtlasLayer from "./pages/RecognitionAtlasLayer";
-import RecognitionGideon from "./pages/RecognitionGideon";
+import native_nations_hub_page from "./pages/NativeNationsHub";
+import recognition_atlas_page from "./pages/RecognitionAtlas";
+import recognition_atlas_tribe_page from "./pages/RecognitionAtlasTribe";
+import recognition_atlas_layer_page from "./pages/RecognitionAtlasLayer";
+import recognition_gideon_page from "./pages/RecognitionGideon";
 import MentalHealth from "./pages/MentalHealth";
 import CategoryLanding from "./pages/CategoryLanding";
 import CategoryExplorer from "./pages/CategoryExplorer";
@@ -246,17 +246,17 @@ function App() {
                 <Route path="/lighthouse" component={Lighthouse} />
                 <Route path="/civic-map" component={CivicMap} />
                 <Route path="/viewfinder" component={AnomalyViewfinder} />
-                <Route path="/docket" component={DocketRoom} />
-                <Route path="/docket/:slug" component={DocketRoom} />
+                <Route path="/docket" component={docket_room_page} />
+                <Route path="/docket/:slug" component={docket_room_page} />
                 <Route path="/lumensend" component={LumenSend} />
                 <Route path="/legal-library" component={LegalLibrary} />
                 <Route path="/agency-metrics" component={AgencyMetrics} />
                 <Route path="/civil-gideon" component={CivilGideon} />
-                <Route path="/native-nations" component={NativeNationsHub} />
-                <Route path="/recognition-gideon" component={RecognitionGideon} />
-                <Route path="/recognition-atlas/:tribe_id/:layer_slug" component={RecognitionAtlasLayer} />
-                <Route path="/recognition-atlas/:tribe_id" component={RecognitionAtlasTribe} />
-                <Route path="/recognition-atlas" component={RecognitionAtlas} />
+                <Route path="/native-nations" component={native_nations_hub_page} />
+                <Route path="/recognition-gideon" component={recognition_gideon_page} />
+                <Route path="/recognition-atlas/:tribe_id/:layer_slug" component={recognition_atlas_layer_page} />
+                <Route path="/recognition-atlas/:tribe_id" component={recognition_atlas_tribe_page} />
+                <Route path="/recognition-atlas" component={recognition_atlas_page} />
                 <Route path="/mental-health" component={MentalHealth} />
                 <Route path="/categories" component={CategoryExplorer} />
                 <Route path="/category/:categoryId" component={CategoryLanding} />
