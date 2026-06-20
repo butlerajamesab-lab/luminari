@@ -15,6 +15,41 @@ type SupabaseAuthUser = {
   email?: string;
 };
 
+const USER_LOOKUP_TIMEOUT_MS = 1250;
+const CONTEXT_ERROR_LOG_THROTTLE_MS = 60_000;
+let lastContextUserLookupErrorLogAt = 0;
+let suppressedContextUserLookupErrors = 0;
+
+export async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
+function logContextUserLookupError(error: unknown): void {
+  const now = Date.now();
+  const detail = error instanceof Error ? error.message : String(error);
+
+  if (now - lastContextUserLookupErrorLogAt >= CONTEXT_ERROR_LOG_THROTTLE_MS) {
+    const suppressedSuffix = suppressedContextUserLookupErrors > 0
+      ? ` (${suppressedContextUserLookupErrors} similar user lookup errors suppressed in the last ${CONTEXT_ERROR_LOG_THROTTLE_MS / 1000}s)`
+      : "";
+    console.error(`[CONTEXT] Error during user lookup:${suppressedSuffix}`, detail);
+    lastContextUserLookupErrorLogAt = now;
+    suppressedContextUserLookupErrors = 0;
+    return;
+  }
+
+  suppressedContextUserLookupErrors += 1;
+}
+
 function getSupabaseConfig(): { url: string; key: string } | null {
   const url = process.env.LIGHTHOUSE_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const key = process.env.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -100,13 +135,15 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
 
   const session = (opts.req as any).session;
   try {
-    let dbUser: User | null = null;
-    if (session?.openId) dbUser = await getUserByOpenIdSnake(session.openId);
-    if (!dbUser && session?.user?.email) dbUser = await getUserByEmailSnake(String(session.user.email));
-    if (!dbUser) dbUser = await resolveUserFromSupabaseSession(opts.req);
-    user = dbUser;
+    user = await withTimeout((async () => {
+      let dbUser: User | null = null;
+      if (session?.openId) dbUser = await getUserByOpenIdSnake(session.openId);
+      if (!dbUser && session?.user?.email) dbUser = await getUserByEmailSnake(String(session.user.email));
+      if (!dbUser) dbUser = await resolveUserFromSupabaseSession(opts.req);
+      return dbUser;
+    })(), USER_LOOKUP_TIMEOUT_MS, "tRPC context user lookup");
   } catch (error) {
-    console.error("[CONTEXT] Error during user lookup:", String(error));
+    logContextUserLookupError(error);
     user = null;
   }
 
