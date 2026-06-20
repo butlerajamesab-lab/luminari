@@ -8,6 +8,13 @@ const execFileAsync = promisify(execFile);
 
 export const ingestionControlRestRouter = Router();
 
+
+function clamp_integer(value: unknown, fallback: number, min: number, max: number) {
+  const parsed = typeof value === "string" || typeof value === "number" ? Number(value) : fallback;
+  if (!Number.isInteger(parsed)) return fallback;
+  return Math.min(Math.max(parsed, min), max);
+}
+
 function read_queue_row_id(value: unknown) {
   const id = Number(value);
   return Number.isInteger(id) && id > 0 ? id : null;
@@ -50,8 +57,7 @@ async function persist_extract_command_diagnostic(id: number, diagnostic: Record
 
 ingestionControlRestRouter.get("/registry-entity-candidates", async (req, res) => {
   try {
-    const limit_raw = typeof req.query.limit === "string" ? Number(req.query.limit) : 25;
-    const limit = Number.isFinite(limit_raw) ? limit_raw : 25;
+    const limit = clamp_integer(req.query.limit, 25, 1, 100);
     const result = await list_registry_entity_candidates({ limit });
     return res.json(result);
   } catch (error: any) {
@@ -70,9 +76,9 @@ ingestionControlRestRouter.get("/registry-entity-candidates/summary", async (_re
 
 ingestionControlRestRouter.post("/registry-entity-candidates/verify-dry-run", async (req, res) => {
   try {
-    const limit_raw = Number(req.body?.limit ?? 100);
+    const limit = clamp_integer(req.body?.limit, 100, 1, 500);
     const result = await verify_registry_entity_candidates_dry_run({
-      limit: Number.isFinite(limit_raw) ? limit_raw : 100,
+      limit,
       candidate_type: typeof req.body?.candidate_type === "string" ? req.body.candidate_type : null,
       document_family: typeof req.body?.document_family === "string" ? req.body.document_family : null,
       promotion_lane: typeof req.body?.promotion_lane === "string" ? req.body.promotion_lane : null,
@@ -87,8 +93,7 @@ ingestionControlRestRouter.post("/registry-entity-candidates/verify-dry-run", as
 ingestionControlRestRouter.get("/corpus-import-queue", async (req, res) => {
   try {
     const status_filter = typeof req.query.status_filter === "string" ? req.query.status_filter : "all";
-    const limit_raw = typeof req.query.limit === "string" ? Number(req.query.limit) : 100;
-    const limit = Number.isFinite(limit_raw) ? limit_raw : 100;
+    const limit = clamp_integer(req.query.limit, 100, 1, 250);
     const allowed_status_filters = new Set(["all", "blocked", "review_required", "pending_bucket_content_scan", "pending_docx_normalization", "ready_for_review", "docx_extraction_failed", "candidates_created"]);
     const result = await list_corpus_import_queue({ status_filter: allowed_status_filters.has(status_filter) ? status_filter as any : "all", limit });
     res.json({ ...result, allowed_target_hints });
