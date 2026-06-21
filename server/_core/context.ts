@@ -1,10 +1,10 @@
-import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
-import type { User } from "../../drizzle/schema";
-import { getUserByEmailSnake, getUserByOpenIdSnake } from "./user-resolver";
+import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
+import type { User } from '../../drizzle/schema';
+import { getUserByEmailSnake, getUserByOpenIdSnake } from './user-resolver';
 
 export type TrpcContext = {
-  req: CreateExpressContextOptions["req"];
-  res: CreateExpressContextOptions["res"];
+  req: CreateExpressContextOptions['req'];
+  res: CreateExpressContextOptions['res'];
   user: User | null;
   isSystem?: boolean;
   isInspectionMode?: boolean;
@@ -15,7 +15,20 @@ type SupabaseAuthUser = {
   email?: string;
 };
 
-const USER_LOOKUP_TIMEOUT_MS = 1250;
+type ContextLookupPhase = {
+  phase: string;
+  elapsed_ms: number;
+};
+
+function readPositiveIntegerEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const USER_LOOKUP_TIMEOUT_MS = readPositiveIntegerEnv('CONTEXT_USER_LOOKUP_TIMEOUT_MS', 5000);
+const CONTEXT_SLOW_USER_LOOKUP_LOG_MS = readPositiveIntegerEnv('CONTEXT_SLOW_USER_LOOKUP_LOG_MS', 250);
 const CONTEXT_ERROR_LOG_THROTTLE_MS = 60_000;
 let lastContextUserLookupErrorLogAt = 0;
 let suppressedContextUserLookupErrors = 0;
@@ -33,6 +46,15 @@ export async function withTimeout<T>(promise: Promise<T>, ms: number, label: str
   }
 }
 
+async function timeContextPhase<T>(phase: string, phases: ContextLookupPhase[], task: () => Promise<T>): Promise<T> {
+  const started = Date.now();
+  try {
+    return await task();
+  } finally {
+    phases.push({ phase, elapsed_ms: Date.now() - started });
+  }
+}
+
 function logContextUserLookupError(error: unknown): void {
   const now = Date.now();
   const detail = error instanceof Error ? error.message : String(error);
@@ -40,7 +62,7 @@ function logContextUserLookupError(error: unknown): void {
   if (now - lastContextUserLookupErrorLogAt >= CONTEXT_ERROR_LOG_THROTTLE_MS) {
     const suppressedSuffix = suppressedContextUserLookupErrors > 0
       ? ` (${suppressedContextUserLookupErrors} similar user lookup errors suppressed in the last ${CONTEXT_ERROR_LOG_THROTTLE_MS / 1000}s)`
-      : "";
+      : '';
     console.error(`[CONTEXT] Error during user lookup:${suppressedSuffix}`, detail);
     lastContextUserLookupErrorLogAt = now;
     suppressedContextUserLookupErrors = 0;
@@ -50,20 +72,31 @@ function logContextUserLookupError(error: unknown): void {
   suppressedContextUserLookupErrors += 1;
 }
 
+function logSlowContextUserLookup(phases: ContextLookupPhase[], total_ms: number, user_found: boolean): void {
+  if (!phases.length || total_ms < CONTEXT_SLOW_USER_LOOKUP_LOG_MS) return;
+  console.warn('[CONTEXT] Slow user lookup', {
+    total_ms,
+    timeout_ms: USER_LOOKUP_TIMEOUT_MS,
+    slow_log_threshold_ms: CONTEXT_SLOW_USER_LOOKUP_LOG_MS,
+    user_found,
+    phases,
+  });
+}
+
 function getSupabaseConfig(): { url: string; key: string } | null {
   const url = process.env.LIGHTHOUSE_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const key = process.env.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
-  return { url: url.replace(/\/$/, ""), key };
+  return { url: url.replace(/\/$/, ''), key };
 }
 
-function isLighthouseInspectionMode(req?: CreateExpressContextOptions["req"]): boolean {
-  const headerFlag = req?.headers?.["x-lighthouse-inspection-mode"];
+function isLighthouseInspectionMode(req?: CreateExpressContextOptions['req']): boolean {
+  const headerFlag = req?.headers?.['x-lighthouse-inspection-mode'];
   return (
-    process.env.LIGHTHOUSE_INSPECTION_MODE === "true" ||
-    process.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true" ||
-    headerFlag === "true" ||
-    headerFlag === "1"
+    process.env.LIGHTHOUSE_INSPECTION_MODE === 'true' ||
+    process.env.VITE_LIGHTHOUSE_INSPECTION_MODE === 'true' ||
+    headerFlag === 'true' ||
+    headerFlag === '1'
   );
 }
 
@@ -71,28 +104,28 @@ function createInspectionUser(): User {
   const now = Date.now();
   return {
     id: 0,
-    openId: "inspection_user",
-    name: "Inspection User",
-    email: "inspection@lighthouse.local",
-    loginMethod: "temporary_lighthouse_inspection_mode",
-    role: "admin",
-    plan: "enterprise",
+    openId: 'inspection_user',
+    name: 'Inspection User',
+    email: 'inspection@lighthouse.local',
+    loginMethod: 'temporary_lighthouse_inspection_mode',
+    role: 'admin',
+    plan: 'enterprise',
     createdAt: now,
     updatedAt: now,
     lastSignedIn: now,
   };
 }
 
-function readHeader(req: CreateExpressContextOptions["req"] | undefined, name: string): string | null {
+function readHeader(req: CreateExpressContextOptions['req'] | undefined, name: string): string | null {
   const value = req?.headers?.[name.toLowerCase()];
   const first = Array.isArray(value) ? value[0] : value;
   return first ? String(first) : null;
 }
 
-function getForwardedSupabaseSession(req?: CreateExpressContextOptions["req"]): string | null {
-  const lighthouseHeader = readHeader(req, "x-lighthouse-supabase-session");
+function getForwardedSupabaseSession(req?: CreateExpressContextOptions['req']): string | null {
+  const lighthouseHeader = readHeader(req, 'x-lighthouse-supabase-session');
   if (lighthouseHeader?.trim()) return lighthouseHeader.trim();
-  const authHeader = readHeader(req, "authorization");
+  const authHeader = readHeader(req, 'authorization');
   const match = authHeader?.match(/^Bearer\s+(.+)$/i);
   return match?.[1]?.trim() || null;
 }
@@ -100,34 +133,49 @@ function getForwardedSupabaseSession(req?: CreateExpressContextOptions["req"]): 
 async function fetchSupabaseAuthUser(sessionValue: string): Promise<SupabaseAuthUser | null> {
   const config = getSupabaseConfig();
   if (!config) {
-    console.warn("[CONTEXT] Supabase auth REST unavailable; missing URL or key env vars");
+    console.warn('[CONTEXT] Supabase auth REST unavailable; missing URL or key env vars');
     return null;
   }
   const headers = new Headers();
-  headers.set("apikey", config.key);
-  headers.set("Author" + "ization", "Bearer " + sessionValue);
+  headers.set('apikey', config.key);
+  headers.set('Author' + 'ization', 'Bearer ' + sessionValue);
   const response = await fetch(`${config.url}/auth/v1/user`, { headers });
   if (!response.ok) {
-    console.warn("[CONTEXT] Supabase session rejected", response.status, response.statusText);
+    console.warn('[CONTEXT] Supabase session rejected', response.status, response.statusText);
     return null;
   }
   return (await response.json()) as SupabaseAuthUser;
 }
 
-async function resolveUserFromSupabaseSession(req?: CreateExpressContextOptions["req"]): Promise<User | null> {
+async function resolveUserFromSupabaseSession(
+  req?: CreateExpressContextOptions['req'],
+  phases: ContextLookupPhase[] = []
+): Promise<User | null> {
   const sessionValue = getForwardedSupabaseSession(req);
   if (!sessionValue) return null;
-  const authUser = await fetchSupabaseAuthUser(sessionValue);
+
+  const authUser = await timeContextPhase('supabase_auth_user_fetch', phases, () => fetchSupabaseAuthUser(sessionValue));
   if (!authUser) return null;
+
   const authEmail = authUser.email?.trim().toLowerCase();
+  const authOpenId = authUser.id?.trim();
   let dbUser: User | null = null;
-  if (authEmail) dbUser = await getUserByEmailSnake(authEmail);
-  if (!dbUser && authUser.id) dbUser = await getUserByOpenIdSnake(authUser.id);
+
+  if (authEmail) {
+    dbUser = await timeContextPhase('supabase_email_lookup', phases, () => getUserByEmailSnake(authEmail));
+  }
+
+  if (!dbUser && authOpenId) {
+    dbUser = await timeContextPhase('supabase_open_id_lookup', phases, () => getUserByOpenIdSnake(authOpenId));
+  }
+
   return dbUser;
 }
 
 export async function createContext(opts: CreateExpressContextOptions): Promise<TrpcContext> {
   let user: User | null = null;
+  const phases: ContextLookupPhase[] = [];
+  const started = Date.now();
   const isInspectionMode = isLighthouseInspectionMode(opts.req);
   if (isInspectionMode) {
     return { req: opts.req, res: opts.res, user: createInspectionUser(), isSystem: false, isInspectionMode: true };
@@ -137,14 +185,22 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
   try {
     user = await withTimeout((async () => {
       let dbUser: User | null = null;
-      if (session?.openId) dbUser = await getUserByOpenIdSnake(session.openId);
-      if (!dbUser && session?.user?.email) dbUser = await getUserByEmailSnake(String(session.user.email));
-      if (!dbUser) dbUser = await resolveUserFromSupabaseSession(opts.req);
+      if (session?.openId) {
+        dbUser = await timeContextPhase('session_open_id_lookup', phases, () => getUserByOpenIdSnake(String(session.openId)));
+      }
+      if (!dbUser && session?.user?.email) {
+        dbUser = await timeContextPhase('session_email_lookup', phases, () => getUserByEmailSnake(String(session.user.email)));
+      }
+      if (!dbUser) {
+        dbUser = await resolveUserFromSupabaseSession(opts.req, phases);
+      }
       return dbUser;
-    })(), USER_LOOKUP_TIMEOUT_MS, "tRPC context user lookup");
+    })(), USER_LOOKUP_TIMEOUT_MS, 'tRPC context user lookup');
   } catch (error) {
     logContextUserLookupError(error);
     user = null;
+  } finally {
+    logSlowContextUserLookup(phases, Date.now() - started, Boolean(user));
   }
 
   return { req: opts.req, res: opts.res, user, isSystem: false, isInspectionMode: false };
