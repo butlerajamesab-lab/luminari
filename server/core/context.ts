@@ -102,8 +102,8 @@ export async function createContext(
       // Strategy 2: Look up by email if available
       if (!dbUser && session?.user?.email) {
         const email = String(session.user.email).trim().toLowerCase();
-        const rows = await timeContextPhase('session_email_lookup', phases, () => (
-          db.db.select().from(users).where(eq(users.email, email))
+        const rows = await timeContextPhase('session_email_lookup', phases, async () => (
+          await db.db.select().from(users).where(eq(users.email, email))
         ));
         dbUser = rows[0] ?? null;
       }
