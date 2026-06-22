@@ -1,9 +1,17 @@
 import { Router } from "express";
 import { createClient } from "@supabase/supabase-js";
 import { ENV } from "../_core/env";
-import { get_master_list, get_session_list, type legiscan_master_bill } from "../services/legiscan";
+import {
+  get_bill,
+  get_master_list,
+  get_session_list,
+  LEGISCAN_ROLLOUT_STATES,
+  type legiscan_bill_detail,
+  type legiscan_master_bill,
+} from "../services/legiscan";
 
 const cache_ttl_ms = 8 * 60 * 60 * 1000;
+const bill_detail_cache_ttl_ms = 24 * 60 * 60 * 1000;
 
 export const docket_router = Router();
 
@@ -18,6 +26,13 @@ type docket_state_cache_row = {
   source: string;
 };
 
+type docket_bill_detail_cache_row = {
+  bill_id: number;
+  bill: legiscan_bill_detail;
+  fetched_at: string;
+  source: string;
+};
+
 const normalize_state_code = (state: unknown): string => {
   if (typeof state !== "string") {
     throw new Error("Missing required query parameter: state");
@@ -25,8 +40,22 @@ const normalize_state_code = (state: unknown): string => {
 
   const normalized = state.trim().toUpperCase();
 
-  if (!/^[A-Z]{2}$/.test(normalized) && normalized !== "DC") {
+  if (!LEGISCAN_ROLLOUT_STATES.includes(normalized)) {
     throw new Error(`Invalid state code: ${state}`);
+  }
+
+  return normalized;
+};
+
+const normalize_bill_id = (bill_id: unknown): number => {
+  if (typeof bill_id !== "string" || !/^\d+$/.test(bill_id)) {
+    throw new Error("Invalid bill_id parameter");
+  }
+
+  const normalized = Number(bill_id);
+
+  if (!Number.isSafeInteger(normalized) || normalized <= 0) {
+    throw new Error("Invalid bill_id parameter");
   }
 
   return normalized;
@@ -45,14 +74,14 @@ const supabase = () => {
   });
 };
 
-const is_fresh = (fetched_at: string): boolean => {
+const is_fresh = (fetched_at: string, ttl_ms = cache_ttl_ms): boolean => {
   const fetched_ms = new Date(fetched_at).getTime();
 
   if (!Number.isFinite(fetched_ms)) {
     return false;
   }
 
-  return Date.now() - fetched_ms < cache_ttl_ms;
+  return Date.now() - fetched_ms < ttl_ms;
 };
 
 const pick_active_session = async (state: string) => {
@@ -68,6 +97,22 @@ const pick_active_session = async (state: string) => {
 
   return current ?? sessions[0];
 };
+
+const serialize_error = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message.replace(/key=[^&\s]+/gi, "key=[redacted]");
+  }
+
+  return "Unknown Docket Room error";
+};
+
+docket_router.get("/jurisdictions", (_req, res) => {
+  return res.json({
+    ok: true,
+    states: LEGISCAN_ROLLOUT_STATES,
+    note: "Configured for 50 states plus Washington, D.C.; additional LegiScan jurisdictions are not enabled until verified.",
+  });
+});
 
 docket_router.get("/state", async (req, res) => {
   try {
@@ -115,26 +160,15 @@ docket_router.get("/state", async (req, res) => {
       bills,
       bill_count: bills.length,
       fetched_at: new Date().toISOString(),
-      source: "legiscan.get_master_list",
+      source: "legiscan.getMasterList",
     };
 
-    if (cached) {
-      const { error: upsert_error } = await db
-        .from("docket_bill_state_cache")
-        .update(row)
-        .eq("state", state);
+    const { error: upsert_error } = await db
+      .from("docket_bill_state_cache")
+      .upsert(row, { onConflict: "state" });
 
-      if (upsert_error) {
-        throw upsert_error;
-      }
-    } else {
-      const { error: upsert_error } = await db
-        .from("docket_bill_state_cache")
-        .insert(row);
-
-      if (upsert_error) {
-        throw upsert_error;
-      }
+    if (upsert_error) {
+      throw upsert_error;
     }
 
     return res.json({
@@ -148,10 +182,65 @@ docket_router.get("/state", async (req, res) => {
       bills: row.bills,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown Docket Room error";
     return res.status(500).json({
       ok: false,
-      message,
+      message: serialize_error(error),
+    });
+  }
+});
+
+docket_router.get("/bill/:bill_id", async (req, res) => {
+  try {
+    const bill_id = normalize_bill_id(req.params.bill_id);
+    const db = supabase();
+
+    const { data: cached, error: cache_error } = await db
+      .from("docket_bill_detail_cache")
+      .select("*")
+      .eq("bill_id", bill_id)
+      .maybeSingle<docket_bill_detail_cache_row>();
+
+    if (cache_error && cache_error.code !== "PGRST205") {
+      throw cache_error;
+    }
+
+    if (cached && is_fresh(cached.fetched_at, bill_detail_cache_ttl_ms)) {
+      return res.json({
+        ok: true,
+        source: "cache",
+        bill_id,
+        fetched_at: cached.fetched_at,
+        bill: cached.bill,
+      });
+    }
+
+    const bill = await get_bill(bill_id);
+    const row: docket_bill_detail_cache_row = {
+      bill_id,
+      bill,
+      fetched_at: new Date().toISOString(),
+      source: "legiscan.getBill",
+    };
+
+    const { error: upsert_error } = await db
+      .from("docket_bill_detail_cache")
+      .upsert(row, { onConflict: "bill_id" });
+
+    if (upsert_error) {
+      throw upsert_error;
+    }
+
+    return res.json({
+      ok: true,
+      source: cached ? "legiscan_refresh_stale_cache" : "legiscan_refresh_empty_cache",
+      bill_id,
+      fetched_at: row.fetched_at,
+      bill,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: serialize_error(error),
     });
   }
 });

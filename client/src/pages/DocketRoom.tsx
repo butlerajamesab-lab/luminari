@@ -51,6 +51,21 @@ const fontSerif = "'Cormorant Garamond', serif";
 const fontMono = "'IBM Plex Mono', monospace";
 const fontSans = "'Inter', system-ui, sans-serif";
 
+const DOCKET_ROOM_STRATEGY = [
+  {
+    label: "State Coverage",
+    text: "Full national coverage — all 50 states plus Washington D.C. LegiScan's unified schema makes this practical since no per-state custom integration is required. Coverage will be rolled out in waves (Pacific Northwest and high-priority states first) but the architecture is designed for all 52 LegiScan jurisdictions from the start.",
+  },
+  {
+    label: "Bill Volume",
+    text: "Topic-vertical per state, not exhaustive. We pull the top 50–100 most recently active bills per state per session refresh cycle using getMasterList (which is a single query per state regardless of session size). At 50 states × 100 bills = ~5,000 bills in active cache at any time. getBill detail is only fetched on explicit user click-through, never speculatively bulk-fetched.",
+  },
+  {
+    label: "Query Strategy",
+    text: "Server-side caching in Supabase (PostgreSQL) eliminates redundant API calls. The math on the 30,000/month free tier:\ngetSessionList: 50 states × 1 call = 50 queries (one-time per deploy, cached permanently until session changes)\ngetMasterList: 50 states × ~3 refreshes/day × 30 days = 4,500 queries/month\ngetBill detail: estimated 10–20 user-driven lookups/day × 30 days = 300–600 queries/month\nTotal estimated: ~5,100–5,150 queries/month — well within the 30,000 free tier\nNo speculative bulk bill-detail fetching. All getMasterList results are cached and served from the database. If usage grows, we will upgrade to a paid DataSet plan (which actually reduces API dependency by replacing polling with bulk downloads).",
+  },
+];
+
 // ── Section label map ────────────────────────────────────────────────
 const SECTION_ICONS: Record<string, any> = {
   summary: BookOpen,
@@ -679,6 +694,38 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
               Reveal structure. Interpret nothing. Judge nothing. Persuade no one.
             </span>
           </p>
+
+          <div style={{
+            display: "grid",
+            gap: "0.75rem",
+            marginTop: "1.5rem",
+            padding: "1rem",
+            background: dk.sectionBg,
+            border: `1px solid ${dk.steelBorder}`,
+            borderRadius: "8px",
+          }}>
+            {DOCKET_ROOM_STRATEGY.map(item => (
+              <div key={item.label}>
+                <div style={{
+                  fontFamily: fontMono,
+                  fontSize: "0.72rem",
+                  color: dk.steelBright,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                  marginBottom: "0.25rem",
+                }}>{item.label}</div>
+                <p style={{
+                  fontFamily: fontSans,
+                  fontSize: "0.82rem",
+                  color: dk.cream,
+                  lineHeight: 1.55,
+                  whiteSpace: "pre-line",
+                  margin: 0,
+                }}>{item.text}</p>
+              </div>
+            ))}
+          </div>
 
           {/* Stats bar */}
           {stats && (

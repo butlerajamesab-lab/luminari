@@ -1,5 +1,14 @@
 const legiscan_base_url = "https://api.legiscan.com/";
 
+export const LEGISCAN_ROLLOUT_STATES = [
+  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+  "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+  "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+  "DC",
+] as const;
+
 const required_env = (name: string): string => {
   const value = process.env[name];
 
@@ -52,15 +61,17 @@ export type legiscan_bill_detail = Record<string, unknown>;
 const normalize_state_code = (state: string): string => {
   const normalized = state.trim().toUpperCase();
 
-  if (!/^[A-Z]{2}$/.test(normalized) && normalized !== "DC") {
+  if (!LEGISCAN_ROLLOUT_STATES.includes(normalized as (typeof LEGISCAN_ROLLOUT_STATES)[number])) {
     throw new Error(`Invalid LegiScan state code: ${state}`);
   }
 
   return normalized;
 };
 
+const redact_api_key = (message: string): string => message.replace(/key=[^&\s]+/gi, "key=[redacted]");
+
 const legiscan_request = async <payload>(
-  op: string,
+  op: "getSessionList" | "getMasterList" | "getBill",
   params: Record<string, string | number>,
 ): Promise<payload> => {
   const url = new URL(legiscan_base_url);
@@ -81,7 +92,7 @@ const legiscan_request = async <payload>(
   const data = (await response.json()) as legiscan_envelope<payload>;
 
   if (data.status === "ERROR") {
-    throw new Error(data.alert?.message ?? `LegiScan API error while calling ${op}`);
+    throw new Error(redact_api_key(data.alert?.message ?? `LegiScan API error while calling ${op}`));
   }
 
   return data as payload;
@@ -106,13 +117,20 @@ export const get_master_list = async (session_id: number): Promise<legiscan_mast
     id: session_id,
   });
 
-  return Object.values(data.masterlist).filter(
-    (entry): entry is legiscan_master_bill =>
-      typeof entry === "object" &&
-      entry !== null &&
-      "bill_id" in entry &&
-      "number" in entry,
-  );
+  return Object.values(data.masterlist)
+    .filter(
+      (entry): entry is legiscan_master_bill =>
+        typeof entry === "object" &&
+        entry !== null &&
+        "bill_id" in entry &&
+        "number" in entry,
+    )
+    .sort((a, b) => {
+      const a_date = a.last_action_date ?? a.status_date ?? "";
+      const b_date = b.last_action_date ?? b.status_date ?? "";
+      return b_date.localeCompare(a_date);
+    })
+    .slice(0, 100);
 };
 
 export const get_bill = async (bill_id: number): Promise<legiscan_bill_detail> => {
