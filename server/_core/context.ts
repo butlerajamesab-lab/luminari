@@ -17,7 +17,10 @@ type SupabaseAuthUser = {
 
 type ContextLookupPhase = {
   phase: string;
+  status: 'started' | 'completed' | 'failed';
   elapsed_ms: number;
+  started_at: number;
+  detail?: string;
 };
 
 function readPositiveIntegerEnv(name: string, fallback: number): number {
@@ -28,6 +31,7 @@ function readPositiveIntegerEnv(name: string, fallback: number): number {
 }
 
 const USER_LOOKUP_TIMEOUT_MS = readPositiveIntegerEnv('CONTEXT_USER_LOOKUP_TIMEOUT_MS', 5000);
+const USER_DB_LOOKUP_TIMEOUT_MS = readPositiveIntegerEnv('CONTEXT_USER_DB_LOOKUP_TIMEOUT_MS', 1000);
 const CONTEXT_SLOW_USER_LOOKUP_LOG_MS = readPositiveIntegerEnv('CONTEXT_SLOW_USER_LOOKUP_LOG_MS', 250);
 const CONTEXT_ERROR_LOG_THROTTLE_MS = 60_000;
 let lastContextUserLookupErrorLogAt = 0;
@@ -46,18 +50,67 @@ export async function withTimeout<T>(promise: Promise<T>, ms: number, label: str
   }
 }
 
+function errorDetail(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 async function timeContextPhase<T>(phase: string, phases: ContextLookupPhase[], task: () => Promise<T>): Promise<T> {
-  const started = Date.now();
+  const startedAt = Date.now();
+  const entry: ContextLookupPhase = {
+    phase,
+    status: 'started',
+    elapsed_ms: 0,
+    started_at: startedAt,
+  };
+  phases.push(entry);
+
   try {
-    return await task();
+    const result = await task();
+    entry.status = 'completed';
+    return result;
+  } catch (error) {
+    entry.status = 'failed';
+    entry.detail = errorDetail(error);
+    throw error;
   } finally {
-    phases.push({ phase, elapsed_ms: Date.now() - started });
+    entry.elapsed_ms = Date.now() - startedAt;
   }
+}
+
+async function timeOptionalDbUserPhase(
+  phase: string,
+  phases: ContextLookupPhase[],
+  task: () => Promise<User | null>
+): Promise<User | null> {
+  try {
+    return await withTimeout(
+      timeContextPhase(phase, phases, task),
+      USER_DB_LOOKUP_TIMEOUT_MS,
+      `tRPC context ${phase}`
+    );
+  } catch (error) {
+    console.warn('[CONTEXT] User DB lookup phase settled as null after error', {
+      phase,
+      timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
+      error: errorDetail(error),
+    });
+    return null;
+  }
+}
+
+function serializeContextLookupPhases(phases: ContextLookupPhase[]) {
+  const now = Date.now();
+  return phases.map(({ phase, status, elapsed_ms, started_at, detail }) => ({
+    phase,
+    status,
+    elapsed_ms: status === 'started' ? now - started_at : elapsed_ms,
+    ...(detail ? { detail } : {}),
+  }));
 }
 
 function logContextUserLookupError(error: unknown): void {
   const now = Date.now();
-  const detail = error instanceof Error ? error.message : String(error);
+  const detail = errorDetail(error);
 
   if (now - lastContextUserLookupErrorLogAt >= CONTEXT_ERROR_LOG_THROTTLE_MS) {
     const suppressedSuffix = suppressedContextUserLookupErrors > 0
@@ -77,9 +130,10 @@ function logSlowContextUserLookup(phases: ContextLookupPhase[], total_ms: number
   console.warn('[CONTEXT] Slow user lookup', {
     total_ms,
     timeout_ms: USER_LOOKUP_TIMEOUT_MS,
+    db_phase_timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
     slow_log_threshold_ms: CONTEXT_SLOW_USER_LOOKUP_LOG_MS,
     user_found,
-    phases,
+    phases: serializeContextLookupPhases(phases),
   });
 }
 
@@ -162,11 +216,11 @@ async function resolveUserFromSupabaseSession(
   let dbUser: User | null = null;
 
   if (authEmail) {
-    dbUser = await timeContextPhase('supabase_email_lookup', phases, () => getUserByEmailSnake(authEmail));
+    dbUser = await timeOptionalDbUserPhase('supabase_email_lookup', phases, () => getUserByEmailSnake(authEmail));
   }
 
   if (!dbUser && authOpenId) {
-    dbUser = await timeContextPhase('supabase_open_id_lookup', phases, () => getUserByOpenIdSnake(authOpenId));
+    dbUser = await timeOptionalDbUserPhase('supabase_open_id_lookup', phases, () => getUserByOpenIdSnake(authOpenId));
   }
 
   return dbUser;
@@ -186,10 +240,10 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
     user = await withTimeout((async () => {
       let dbUser: User | null = null;
       if (session?.openId) {
-        dbUser = await timeContextPhase('session_open_id_lookup', phases, () => getUserByOpenIdSnake(String(session.openId)));
+        dbUser = await timeOptionalDbUserPhase('session_open_id_lookup', phases, () => getUserByOpenIdSnake(String(session.openId)));
       }
       if (!dbUser && session?.user?.email) {
-        dbUser = await timeContextPhase('session_email_lookup', phases, () => getUserByEmailSnake(String(session.user.email)));
+        dbUser = await timeOptionalDbUserPhase('session_email_lookup', phases, () => getUserByEmailSnake(String(session.user.email)));
       }
       if (!dbUser) {
         dbUser = await resolveUserFromSupabaseSession(opts.req, phases);
