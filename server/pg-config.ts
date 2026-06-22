@@ -1,42 +1,42 @@
-import { Pool, type PoolConfig } from "pg";
+import { Pool } from "pg";
 
-const FAST_FAIL_CONNECTION_STRING = "postgresql://x:x@127.0.0.1:1/x";
+const fast_fail_connection_string = "postgresql://x:x@127.0.0.1:1/x";
 
-let missingDatabaseUrlWarningIssued = false;
+let missing_database_url_warning_issued = false;
 
-type DatabasePoolOptions = {
+type database_pool_options = {
   label?: string;
-  connectionTimeoutMillis?: number;
+  connection_timeout_millis?: number;
   max?: number;
-  idleTimeoutMillis?: number;
-  maxUses?: number;
-  keepAlive?: boolean;
+  idle_timeout_millis?: number;
+  max_uses?: number;
+  keep_alive?: boolean;
 };
 
-export function getDatabaseUrl(): string | undefined {
+export function get_database_url(): string | undefined {
   return process.env.DATABASE_URL?.trim() || undefined;
 }
 
-export function getDatabaseHostLabel(connectionString = getDatabaseUrl()): string {
-  if (!connectionString) return "unconfigured";
+export function get_database_host_label(connection_string = get_database_url()): string {
+  if (!connection_string) return "unconfigured";
   try {
-    return new URL(connectionString).hostname;
+    return new URL(connection_string).hostname;
   } catch {
     return "invalid-url";
   }
 }
 
-export function createDatabasePool(options: DatabasePoolOptions = {}): Pool {
+export function create_database_pool(options: database_pool_options = {}): Pool {
   const label = options.label ?? "DB";
-  const connectionString = getDatabaseUrl();
+  const connection_string = get_database_url();
 
-  if (!connectionString) {
-    if (!missingDatabaseUrlWarningIssued) {
+  if (!connection_string) {
+    if (!missing_database_url_warning_issued) {
       console.warn(`[${label}] DATABASE_URL is not configured; database queries will fail fast until it is set.`);
-      missingDatabaseUrlWarningIssued = true;
+      missing_database_url_warning_issued = true;
     }
     return new Pool({
-      connectionString: FAST_FAIL_CONNECTION_STRING,
+      connectionString: fast_fail_connection_string,
       connectionTimeoutMillis: 1000,
     });
   }
@@ -49,23 +49,23 @@ export function createDatabasePool(options: DatabasePoolOptions = {}): Pool {
   // queries, and drizzle's node-postgres driver does not prepare unless
   // `.prepare()` is called explicitly — keep it that way (postgres.js
   // equivalent: `postgres(DATABASE_URL, { prepare: false })`).
-  const config: PoolConfig = {
-    connectionString,
-    connectionTimeoutMillis: options.connectionTimeoutMillis ?? 10000,
+  const connection_timeout_millis = options.connection_timeout_millis ?? 10000;
+  const idle_timeout_millis = options.idle_timeout_millis ?? 30000;
+  const max_uses = options.max_uses ?? 7500;
+  const keep_alive = options.keep_alive ?? true;
+
+  const pool = new Pool({
+    connectionString: connection_string,
+    connectionTimeoutMillis: connection_timeout_millis,
     ssl: { rejectUnauthorized: false },
-    idleTimeoutMillis: options.idleTimeoutMillis ?? 30000,
-    maxUses: options.maxUses ?? 7500,
-    keepAlive: options.keepAlive ?? true,
-  };
-
-  if (options.max !== undefined) {
-    config.max = options.max;
-  }
-
-  const pool = new Pool(config);
+    idleTimeoutMillis: idle_timeout_millis,
+    maxUses: max_uses,
+    keepAlive: keep_alive,
+    ...(options.max !== undefined ? { max: options.max } : {}),
+  });
   pool.on("error", (err) => {
     console.error(`[${label}] Unexpected PostgreSQL pool error:`, err);
   });
-  console.log(`[${label}] PostgreSQL pool initialized via DATABASE_URL with SSL. Host: ${getDatabaseHostLabel(connectionString)}`);
+  console.log(`[${label}] PostgreSQL pool initialized via DATABASE_URL with SSL. Host: ${get_database_host_label(connection_string)}`);
   return pool;
 }

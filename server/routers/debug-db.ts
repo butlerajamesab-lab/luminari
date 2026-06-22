@@ -1,96 +1,96 @@
 import { router, publicProcedure } from "../_core/trpc";
-import { createDatabasePool } from "../pg-config";
+import { create_database_pool } from "../pg-config";
 import { db, getPool } from "../db";
 import { sql } from "drizzle-orm";
 import { legalStatutes } from "../../drizzle/schema";
 
 export const debugDbRouter = router({
   connectionStatus: publicProcedure.query(async () => {
-    const dbUrl = process.env.DATABASE_URL;
-    const hasUrl = !!dbUrl;
-    let urlHost = "NOT_SET";
-    let urlPort = "NOT_SET";
+    const db_url = process.env.DATABASE_URL;
+    const has_url = !!db_url;
+    let url_host = "NOT_SET";
+    let url_port = "NOT_SET";
     
-    if (dbUrl) {
+    if (db_url) {
       try {
-        const parsed = new URL(dbUrl);
-        urlHost = parsed.hostname;
-        urlPort = parsed.port || "5432";
+        const parsed = new URL(db_url);
+        url_host = parsed.hostname;
+        url_port = parsed.port || "5432";
       } catch (e: any) {
-        urlHost = `PARSE_ERROR: ${e.message}`;
+        url_host = `PARSE_ERROR: ${e.message}`;
       }
     }
     
-    let canConnect = false;
-    let queryResult: any = null;
-    let errorMsg: string | null = null;
+    let can_connect = false;
+    let query_result: any = null;
+    let error_msg: string | null = null;
     
-    if (dbUrl && dbUrl !== "postgresql://dummy") {
+    if (db_url && db_url !== "postgresql://dummy") {
       try {
-        const testPool = createDatabasePool({
+        const test_pool = create_database_pool({
           label: "DebugDb",
           max: 1,
-          connectionTimeoutMillis: 5000,
+          connection_timeout_millis: 5000,
         });
-        const client = await testPool.connect();
-        canConnect = true;
+        const client = await test_pool.connect();
+        can_connect = true;
         const res = await client.query("SELECT COUNT(*) as cnt FROM legal_statutes");
-        queryResult = res.rows[0];
+        query_result = res.rows[0];
         client.release();
-        await testPool.end();
+        await test_pool.end();
       } catch (e: any) {
-        errorMsg = e.message;
+        error_msg = e.message;
       }
     } else {
-      errorMsg = dbUrl ? "DATABASE_URL is dummy placeholder" : "DATABASE_URL is not set";
+      error_msg = db_url ? "DATABASE_URL is dummy placeholder" : "DATABASE_URL is not set";
     }
     
     return {
-      hasUrl,
-      urlHost,
-      urlPort,
-      canConnect,
-      queryResult,
-      errorMsg,
-      nodeEnv: process.env.NODE_ENV,
+      has_url,
+      url_host,
+      url_port,
+      can_connect,
+      query_result,
+      error_msg,
+      node_env: process.env.NODE_ENV,
       timestamp: new Date().toISOString(),
-      deployVersion: "f622979-v3",
+      deploy_version: "f622979-v3",
     };
   }),
 
   // Test Drizzle layer directly
   drizzleTest: publicProcedure.query(async () => {
-    let drizzleResult: any = null;
-    let drizzleError: string | null = null;
-    let poolResult: any = null;
-    let poolError: string | null = null;
+    let drizzle_result: any = null;
+    let drizzle_error: string | null = null;
+    let pool_result: any = null;
+    let pool_error: string | null = null;
 
     // Test 1: Drizzle ORM query
     try {
       const [row] = await db.select({ count: sql<number>`COUNT(*)::int` }).from(legalStatutes);
-      drizzleResult = row;
+      drizzle_result = row;
     } catch (e: any) {
-      drizzleError = e.message;
-      if (e.cause) drizzleError += ` | cause: ${e.cause.message}`;
+      drizzle_error = e.message;
+      if (e.cause) drizzle_error += ` | cause: ${e.cause.message}`;
     }
 
     // Test 2: Raw pool query via getPool()
     try {
       const client = await getPool().connect();
       const res = await client.query("SELECT COUNT(*)::int as cnt FROM legal_statutes");
-      poolResult = res.rows[0];
+      pool_result = res.rows[0];
       client.release();
     } catch (e: any) {
-      poolError = e.message;
-      if (e.cause) poolError += ` | cause: ${e.cause.message}`;
+      pool_error = e.message;
+      if (e.cause) pool_error += ` | cause: ${e.cause.message}`;
     }
 
     return {
-      drizzleResult,
-      drizzleError,
-      poolResult,
-      poolError,
-      deployVersion: "f622979-v3",
+      drizzle_result,
+      drizzle_error,
+      pool_result,
+      pool_error,
+      deploy_version: "f622979-v3",
       timestamp: new Date().toISOString(),
     };
   }),
