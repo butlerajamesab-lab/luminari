@@ -69,6 +69,10 @@ const USER_DB_LOOKUP_TIMEOUT_MS = readPositiveIntegerEnv(
   "CONTEXT_USER_DB_LOOKUP_TIMEOUT_MS",
   1000,
 );
+const CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS = readPositiveIntegerEnv(
+  "CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS",
+  Math.min(2500, USER_LOOKUP_TIMEOUT_MS),
+);
 const CONTEXT_SLOW_USER_LOOKUP_LOG_MS = readPositiveIntegerEnv(
   "CONTEXT_SLOW_USER_LOOKUP_LOG_MS",
   250,
@@ -92,6 +96,27 @@ export async function withTimeout<T>(
 
   try {
     return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
+async function withAbortableTimeout<T>(
+  task: (signal: AbortSignal) => Promise<T>,
+  ms: number,
+  label: string,
+): Promise<T> {
+  const controller = new AbortController();
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => {
+      controller.abort();
+      reject(new Error(`${label} timed out after ${ms}ms`));
+    }, ms);
+  });
+
+  try {
+    return await Promise.race([task(controller.signal), timeoutPromise]);
   } finally {
     if (timeout) clearTimeout(timeout);
   }
@@ -229,6 +254,7 @@ function logSlowContextUserLookup(
     total_ms,
     timeout_ms: USER_LOOKUP_TIMEOUT_MS,
     db_phase_timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
+    supabase_auth_fetch_timeout_ms: CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS,
     slow_log_threshold_ms: CONTEXT_SLOW_USER_LOOKUP_LOG_MS,
     user_found,
     phases: serializeContextLookupPhases(phases),
@@ -297,6 +323,7 @@ function getForwardedSupabaseSession(
 
 async function fetchSupabaseAuthUser(
   sessionValue: string,
+  signal?: AbortSignal,
 ): Promise<SupabaseAuthUser | null> {
   const config = getSupabaseConfig();
   if (!config) {
@@ -308,7 +335,10 @@ async function fetchSupabaseAuthUser(
   const headers = new Headers();
   headers.set("apikey", config.key);
   headers.set("Author" + "ization", "Bearer " + sessionValue);
-  const response = await fetch(`${config.url}/auth/v1/user`, { headers });
+  const response = await fetch(`${config.url}/auth/v1/user`, {
+    headers,
+    signal,
+  });
   if (!response.ok) {
     console.warn(
       "[CONTEXT] Supabase session rejected",
@@ -328,10 +358,13 @@ async function resolveSupabaseAuthUser(
   if (!sessionValue) return null;
 
   try {
-    const authUser = await timeContextPhase(
-      "supabase_auth_user_fetch",
-      phases,
-      () => fetchSupabaseAuthUser(sessionValue),
+    const authUser = await withAbortableTimeout(
+      (signal) =>
+        timeContextPhase("supabase_auth_user_fetch", phases, () =>
+          fetchSupabaseAuthUser(sessionValue, signal),
+        ),
+      CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS,
+      "tRPC context supabase auth user fetch",
     );
     if (authUser) {
       logContextAuthEvent("supabase_auth_fetch_succeeded", {
@@ -342,6 +375,7 @@ async function resolveSupabaseAuthUser(
     return authUser;
   } catch (error) {
     logContextAuthEvent("supabase_auth_fetch_failed", {
+      timeout_ms: CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS,
       error: errorDetail(error),
     });
     return null;
