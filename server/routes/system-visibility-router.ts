@@ -61,35 +61,35 @@ async function safeQuery(sql: string): Promise<any[]> {
 router.get("/health", async (_req: Request, res: Response) => {
   cacheLive(res);
 
-  let dbConnected = false;
-  let dbVersion = "";
-  let tableCount = 0;
+  let db_connected = false;
+  let db_version = "";
+  let table_count = 0;
 
-  let dbError = "";
+  let db_error = "";
   try {
     const pool = getPool();
     const versionResult = await pool.query("SELECT version()");
-    dbVersion = versionResult.rows[0]?.version?.split(" ").slice(0, 2).join(" ") ?? "unknown";
-    dbConnected = true;
+    db_version = versionResult.rows[0]?.version?.split(" ").slice(0, 2).join(" ") ?? "unknown";
+    db_connected = true;
 
     const countResult = await pool.query(
       `SELECT COUNT(*)::int AS cnt FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`
     );
-    tableCount = Number(countResult.rows[0]?.cnt ?? 0);
+    table_count = Number(countResult.rows[0]?.cnt ?? 0);
   } catch (err: any) {
-    dbError = err?.message?.replace(/password=[^\s&]+/g, 'password=***') ?? "unknown error";
+    db_error = err?.message?.replace(/password=[^\s&]+/g, 'password=***') ?? "unknown error";
   }
 
   res.json({
-    status: dbConnected ? "healthy" : "degraded",
-    database: dbConnected ? "connected" : "unreachable",
-    ...(dbError ? { dbDiagnostic: dbError } : {}),
-    databaseUrl: process.env.DATABASE_URL ? "configured" : "missing",
-    databaseVersion: dbVersion,
+    status: db_connected ? "healthy" : "degraded",
+    database: db_connected ? "connected" : "unreachable",
+    ...(db_error ? { db_diagnostic: db_error } : {}),
+    database_url: process.env.DATABASE_URL ? "configured" : "missing",
+    database_version: db_version,
     supabase: "wepxlinwbjrkqdzkqpar",
-    publicTables: tableCount,
+    public_tables: table_count,
     runtime: "active",
-    buildVersion: process.env.RENDER_GIT_COMMIT?.slice(0, 8) ?? "dev",
+    build_version: process.env.RENDER_GIT_COMMIT?.slice(0, 8) ?? "dev",
     timestamp: now(),
   });
 });
@@ -102,7 +102,7 @@ router.get("/routes", async (_req: Request, res: Response) => {
   cacheStatic(res);
 
   // Frontend routes (from App.tsx — canonical list)
-  const frontendRoutes = [
+  const frontend_routes = [
     { path: "/", component: "Home", layer: "L0" },
     { path: "/welcome", component: "Welcome", layer: "L0" },
     { path: "/login", component: "Login", layer: "L0" },
@@ -189,7 +189,7 @@ router.get("/routes", async (_req: Request, res: Response) => {
   ];
 
   // Backend API mounts
-  const backendMounts = [
+  const backend_mounts = [
     { method: "USE", path: "/api/trpc", source: "appRouter (tRPC)" },
     { method: "USE", path: "/api/ai", source: "aiInspectRouter" },
     { method: "USE", path: "/api/system", source: "systemVisibilityRouter" },
@@ -208,8 +208,8 @@ router.get("/routes", async (_req: Request, res: Response) => {
 
   res.json({
     timestamp: now(),
-    frontend: { total: frontendRoutes.length, routes: frontendRoutes },
-    backend: { total: backendMounts.length, mounts: backendMounts },
+    frontend: { total: frontend_routes.length, routes: frontend_routes },
+    backend: { total: backend_mounts.length, mounts: backend_mounts },
   });
 });
 
@@ -235,7 +235,7 @@ router.get("/schema", async (_req: Request, res: Response) => {
     ORDER BY table_name
   `);
 
-  const foreignKeys = await safeQuery(`
+  const foreign_keys = await safeQuery(`
     SELECT
       tc.table_name AS source_table,
       kcu.column_name AS source_column,
@@ -252,32 +252,32 @@ router.get("/schema", async (_req: Request, res: Response) => {
     timestamp: now(),
     tables: { total: Array.isArray(tables) ? tables.length : 0, items: tables },
     views: { total: Array.isArray(views) ? views.length : 0, items: views },
-    foreignKeys: { total: Array.isArray(foreignKeys) ? foreignKeys.length : 0, items: foreignKeys },
+    foreign_keys: { total: Array.isArray(foreign_keys) ? foreign_keys.length : 0, items: foreign_keys },
   });
 });
 
 // ─────────────────────────────────────────────
 // PHASE 1: SCHEMA DETAIL (single table)
-// GET /api/system/schema/:tableName
+// GET /api/system/schema/:table_name_param
 // ─────────────────────────────────────────────
-router.get("/schema/:tableName", async (req: Request, res: Response) => {
+router.get("/schema/:table_name_param", async (req: Request, res: Response) => {
   cacheLive(res);
-  const tableName = req.params.tableName.replace(/[^a-z0-9_]/gi, "");
+  const table_name_param = req.params.table_name_param.replace(/[^a-z0-9_]/gi, "");
 
   const columns = await safeQuery(`
     SELECT column_name, data_type, is_nullable, column_default, character_maximum_length
     FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = '${tableName}'
+    WHERE table_schema = 'public' AND table_name = '${table_name_param}'
     ORDER BY ordinal_position
   `);
 
-  const rowCount = await safeQuery(`SELECT COUNT(*)::int AS count FROM "${tableName}"`);
+  const row_count = await safeQuery(`SELECT COUNT(*)::int AS count FROM "${table_name_param}"`);
 
   res.json({
     timestamp: now(),
-    table: tableName,
+    table: table_name_param,
     columns,
-    rowCount: rowCount[0]?.count ?? rowCount[0]?.error ?? "unknown",
+    row_count: row_count[0]?.count ?? row_count[0]?.error ?? "unknown",
   });
 });
 
@@ -343,9 +343,9 @@ router.get("/table-contracts", async (_req: Request, res: Response) => {
 
   res.json({
     timestamp: now(),
-    canonicalPattern: { good: ["phone", "email", "website", "address"], bad: ["contact", "contacts", "domains", "metadata", "related_entities", "_rp"] },
-    contactTables: canonicalContactTables,
-    blobColumns: blobDetection,
+    canonical_pattern: { good: ["phone", "email", "website", "address"], bad: ["contact", "contacts", "domains", "metadata", "related_entities", "_rp"] },
+    contact_tables: canonicalContactTables,
+    blob_columns: blobDetection,
     violations: { total: violations.length, items: violations },
   });
 });
@@ -357,7 +357,7 @@ router.get("/table-contracts", async (_req: Request, res: Response) => {
 router.get("/view-contracts", async (_req: Request, res: Response) => {
   cacheLive(res);
 
-  const viewDefinitions = await safeQuery(`
+  const view_definitions = await safeQuery(`
     SELECT table_name AS view_name, view_definition
     FROM information_schema.views
     WHERE table_schema = 'public'
@@ -365,23 +365,23 @@ router.get("/view-contracts", async (_req: Request, res: Response) => {
   `);
 
   // Extract source tables from view definitions
-  const viewContracts = Array.isArray(viewDefinitions) ? viewDefinitions.map((v: any) => {
+  const view_contracts = Array.isArray(view_definitions) ? view_definitions.map((v: any) => {
     const def = v.view_definition ?? "";
     // Extract table references from FROM and JOIN clauses
-    const tableRefs = [...def.matchAll(/(?:FROM|JOIN)\s+"?(\w+)"?/gi)].map((m: any) => m[1]).filter((t: string) => t !== "public");
+    const table_refs = [...def.matchAll(/(?:FROM|JOIN)\s+"?(\w+)"?/gi)].map((m: any) => m[1]).filter((t: string) => t !== "public");
     return {
       view: v.view_name,
-      sourceTables: [...new Set(tableRefs)],
-      definitionLength: def.length,
-      hasJoins: /JOIN/i.test(def),
-      hasUnion: /UNION/i.test(def),
+      source_tables: [...new Set(table_refs)],
+      definition_length: def.length,
+      has_joins: /JOIN/i.test(def),
+      has_union: /UNION/i.test(def),
     };
   }) : [];
 
   res.json({
     timestamp: now(),
-    views: { total: viewContracts.length, items: viewContracts },
-    rawDefinitions: viewDefinitions,
+    views: { total: view_contracts.length, items: view_contracts },
+    raw_definitions: view_definitions,
   });
 });
 
@@ -430,7 +430,7 @@ router.get("/runtime-map", async (_req: Request, res: Response) => {
   cacheLive(res);
 
   // Check which key tables actually have data
-  const keyTables = [
+  const key_tables = [
     "cases", "documents", "entities", "claims", "findings", "events",
     "knowledge_entries", "registry_programs", "legal_enforcement_records",
     "detected_signals", "raw_live_signals", "ingested_records",
@@ -445,39 +445,39 @@ router.get("/runtime-map", async (_req: Request, res: Response) => {
     "forms_registry", "resources",
   ];
 
-  const countQueries = keyTables.map(t => `SELECT '${t}' AS table_name, COUNT(*)::int AS row_count FROM "${t}"`);
-  const unionQuery = countQueries.join(" UNION ALL ");
-  const tableCounts = await safeQuery(unionQuery);
+  const count_queries = key_tables.map(t => `SELECT '${t}' AS table_name, COUNT(*)::int AS row_count FROM "${t}"`);
+  const union_query = count_queries.join(" UNION ALL ");
+  const table_counts = await safeQuery(union_query);
 
   // Hydration chain: how data flows from ingestion → storage → views → frontend
-  const hydrationChain = {
+  const hydration_chain = {
     ingestion: {
       sources: ["CFPB", "EEOC", "DOL", "HUD", "state labor boards", "manual upload"],
-      landingTables: ["raw_live_signals", "ingested_records"],
-      processingPipeline: ["signal extraction → detected_signals", "pattern detection → patterns", "entity extraction → entities"],
+      landing_tables: ["raw_live_signals", "ingested_records"],
+      processing_pipeline: ["signal extraction → detected_signals", "pattern detection → patterns", "entity extraction → entities"],
     },
     storage: {
-      canonicalTables: ["cases", "documents", "entities", "claims", "findings", "events"],
-      registryTables: ["knowledge_entries", "registry_programs", "legal_enforcement_records", "normalized_civic_resource"],
-      engineOutputs: ["activation_outputs", "signal_flags", "pattern_occurrences", "strategy_outputs", "procedural_outputs"],
+      canonical_tables: ["cases", "documents", "entities", "claims", "findings", "events"],
+      registry_tables: ["knowledge_entries", "registry_programs", "legal_enforcement_records", "normalized_civic_resource"],
+      engine_outputs: ["activation_outputs", "signal_flags", "pattern_occurrences", "strategy_outputs", "procedural_outputs"],
     },
     projection: {
       views: ["v_unified_civic_infrastructure (CivicMap aggregation)"],
       tRPC: "appRouter → lighthouse-gate-router.ts (restSelect queries)",
-      staticPages: ["civicmap.html (standalone, hardcoded Supabase anon key)"],
+      static_pages: ["civicmap.html (standalone, hardcoded Supabase anon key)"],
     },
     frontend: {
       framework: "React 19 + Wouter routing",
-      stateManagement: "TanStack Query (tRPC hooks)",
-      totalPages: 91,
+      state_management: "TanStack Query (tRPC hooks)",
+      total_pages: 91,
     },
   };
 
   res.json({
     timestamp: now(),
-    tableCounts: Array.isArray(tableCounts) ? tableCounts : [],
-    hydrationChain,
-    knownIssues: [
+    table_counts: Array.isArray(table_counts) ? table_counts : [],
+    hydration_chain,
+    known_issues: [
       "restSelect() in lighthouse-gate-router.ts uses camelCase column names but DB is snake_case — causes 400 errors",
       "civicmap.html has hardcoded anon key — does not read from env vars",
       "v_unified_civic_infrastructure view may not include all 12 source tables",
@@ -492,37 +492,37 @@ router.get("/runtime-map", async (_req: Request, res: Response) => {
 router.get("/drift", async (_req: Request, res: Response) => {
   cacheLive(res);
 
-  const driftChecks: Array<{ category: string; issue: string; severity: string; table?: string; column?: string }> = [];
+  const drift_checks: Array<{ category: string; issue: string; severity: string; table?: string; column?: string }> = [];
 
   // 1. Detect suffix doctrine contamination (_rp columns)
-  const rpColumns = await safeQuery(`
+  const rp_columns = await safeQuery(`
     SELECT table_name, column_name
     FROM information_schema.columns
     WHERE table_schema = 'public' AND column_name LIKE '%_rp'
     ORDER BY table_name
   `);
-  if (Array.isArray(rpColumns)) {
-    for (const col of rpColumns) {
-      driftChecks.push({ category: "suffix_contamination", issue: `_rp suffix: ${col.table_name}.${col.column_name}`, severity: "high", table: col.table_name, column: col.column_name });
+  if (Array.isArray(rp_columns)) {
+    for (const col of rp_columns) {
+      drift_checks.push({ category: "suffix_contamination", issue: `_rp suffix: ${col.table_name}.${col.column_name}`, severity: "high", table: col.table_name, column: col.column_name });
     }
   }
 
   // 2. Detect polymorphic contact storage
-  const contactBlobs = await safeQuery(`
+  const contact_blobs = await safeQuery(`
     SELECT table_name, column_name, data_type
     FROM information_schema.columns
     WHERE table_schema = 'public'
       AND column_name IN ('contact', 'contacts', 'contact_info', 'contact_details')
     ORDER BY table_name
   `);
-  if (Array.isArray(contactBlobs)) {
-    for (const col of contactBlobs) {
-      driftChecks.push({ category: "polymorphic_contact", issue: `blob contact field: ${col.table_name}.${col.column_name} (${col.data_type})`, severity: "high", table: col.table_name, column: col.column_name });
+  if (Array.isArray(contact_blobs)) {
+    for (const col of contact_blobs) {
+      drift_checks.push({ category: "polymorphic_contact", issue: `blob contact field: ${col.table_name}.${col.column_name} (${col.data_type})`, severity: "high", table: col.table_name, column: col.column_name });
     }
   }
 
   // 3. Detect serialized array/JSON fields that should be normalized
-  const jsonFields = await safeQuery(`
+  const json_fields = await safeQuery(`
     SELECT table_name, column_name, data_type
     FROM information_schema.columns
     WHERE table_schema = 'public'
@@ -530,25 +530,25 @@ router.get("/drift", async (_req: Request, res: Response) => {
       AND column_name NOT IN ('raw_payload', 'config', 'settings', 'metadata', 'extra')
     ORDER BY table_name
   `);
-  if (Array.isArray(jsonFields)) {
-    for (const col of jsonFields) {
-      driftChecks.push({ category: "serialized_field", issue: `JSON field: ${col.table_name}.${col.column_name}`, severity: "low", table: col.table_name, column: col.column_name });
+  if (Array.isArray(json_fields)) {
+    for (const col of json_fields) {
+      drift_checks.push({ category: "serialized_field", issue: `JSON field: ${col.table_name}.${col.column_name}`, severity: "low", table: col.table_name, column: col.column_name });
     }
   }
 
   // 4. Detect tables with RLS disabled (security drift)
-  const rlsStatus = await safeQuery(`
+  const rls_status = await safeQuery(`
     SELECT relname AS table_name, relrowsecurity AS rls_enabled
     FROM pg_class
     WHERE relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
       AND relkind = 'r'
     ORDER BY relname
   `);
-  const rlsOff = Array.isArray(rlsStatus) ? rlsStatus.filter((r: any) => r.rls_enabled === false) : [];
-  const rlsOn = Array.isArray(rlsStatus) ? rlsStatus.filter((r: any) => r.rls_enabled === true) : [];
+  const rls_off = Array.isArray(rls_status) ? rls_status.filter((r: any) => r.rls_enabled === false) : [];
+  const rls_on = Array.isArray(rls_status) ? rls_status.filter((r: any) => r.rls_enabled === true) : [];
 
   // 5. Detect naming convention drift (camelCase columns)
-  const camelCaseColumns = await safeQuery(`
+  const camel_case_columns = await safeQuery(`
     SELECT table_name, column_name
     FROM information_schema.columns
     WHERE table_schema = 'public'
@@ -557,7 +557,7 @@ router.get("/drift", async (_req: Request, res: Response) => {
   `);
 
   // 6. Detect empty tables (wired but no data)
-  const emptyTables = await safeQuery(`
+  const empty_tables = await safeQuery(`
     SELECT schemaname, relname AS table_name, n_live_tup AS row_estimate
     FROM pg_stat_user_tables
     WHERE schemaname = 'public' AND n_live_tup = 0
@@ -567,19 +567,19 @@ router.get("/drift", async (_req: Request, res: Response) => {
   res.json({
     timestamp: now(),
     summary: {
-      totalDriftIssues: driftChecks.length,
-      suffixContamination: driftChecks.filter(d => d.category === "suffix_contamination").length,
-      polymorphicContact: driftChecks.filter(d => d.category === "polymorphic_contact").length,
-      serializedFields: driftChecks.filter(d => d.category === "serialized_field").length,
-      camelCaseColumns: Array.isArray(camelCaseColumns) ? camelCaseColumns.length : 0,
-      rlsDisabled: rlsOff.length,
-      rlsEnabled: rlsOn.length,
-      emptyTables: Array.isArray(emptyTables) ? emptyTables.length : 0,
+      total_drift_issues: drift_checks.length,
+      suffix_contamination: drift_checks.filter(d => d.category === "suffix_contamination").length,
+      polymorphic_contact: drift_checks.filter(d => d.category === "polymorphic_contact").length,
+      serialized_fields: drift_checks.filter(d => d.category === "serialized_field").length,
+      camel_case_columns: Array.isArray(camel_case_columns) ? camel_case_columns.length : 0,
+      rls_disabled: rls_off.length,
+      rls_enabled: rls_on.length,
+      empty_tables: Array.isArray(empty_tables) ? empty_tables.length : 0,
     },
-    drift: driftChecks,
-    camelCaseColumns: Array.isArray(camelCaseColumns) ? camelCaseColumns : [],
-    rlsSecurity: { enabled: rlsOn.length, disabled: rlsOff.length, disabledTables: rlsOff.map((r: any) => r.table_name) },
-    emptyTables: Array.isArray(emptyTables) ? emptyTables.map((t: any) => t.table_name) : [],
+    drift: drift_checks,
+    camel_case_columns: Array.isArray(camel_case_columns) ? camel_case_columns : [],
+    rls_security: { enabled: rls_on.length, disabled: rls_off.length, disabled_tables: rls_off.map((r: any) => r.table_name) },
+    empty_tables: Array.isArray(empty_tables) ? empty_tables.map((t: any) => t.table_name) : [],
   });
 });
 

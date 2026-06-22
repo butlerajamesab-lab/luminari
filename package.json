@@ -16,7 +16,8 @@
     "check:wire-contracts": "node scripts/check-wire-contracts.cjs",
     "check:snake-case": "node scripts/audit-runtime-camelcase.mjs --strict",
     "audit:snake-case": "node scripts/audit-runtime-camelcase.mjs",
-    "smoke:docket:wa": "tsx scripts/smoke-docket-wa.mjs"
+    "smoke:docket:wa": "tsx scripts/smoke-docket-wa.mjs",
+    "check:contracts": "node scripts/check-owned-contracts-snake-case.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
