@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { createClient } from "@supabase/supabase-js";
-import { ENV } from "../_core/env";
 import {
   get_bill,
   get_master_list,
@@ -49,24 +48,27 @@ const normalize_state_code = (state: unknown): string => {
 
 const normalize_bill_id = (bill_id: unknown): number => {
   if (typeof bill_id !== "string" || !/^\d+$/.test(bill_id)) {
-    throw new Error("Invalid bill_id parameter");
+    throw new Error("invalid_bill_id_parameter");
   }
 
   const normalized = Number(bill_id);
 
   if (!Number.isSafeInteger(normalized) || normalized <= 0) {
-    throw new Error("Invalid bill_id parameter");
+    throw new Error("invalid_bill_id_parameter");
   }
 
   return normalized;
 };
 
 const supabase = () => {
-  if (!ENV.lighthouseSupabaseUrl || !ENV.lighthouseSupabaseServiceRoleKey) {
-    throw new Error("Supabase is not configured for Docket Room cache access");
+  const supabase_url = process.env.LIGHTHOUSE_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "";
+  const supabase_service_role_key = process.env.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+
+  if (!supabase_url || !supabase_service_role_key) {
+    throw new Error("supabase_not_configured_for_docket_room_cache_access");
   }
 
-  return createClient(ENV.lighthouseSupabaseUrl, ENV.lighthouseSupabaseServiceRoleKey, {
+  return createClient(supabase_url, supabase_service_role_key, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -103,14 +105,14 @@ const serialize_error = (error: unknown): string => {
     return error.message.replace(/key=[^&\s]+/gi, "key=[redacted]");
   }
 
-  return "Unknown Docket Room error";
+  return "unknown_docket_room_error";
 };
 
 docket_router.get("/jurisdictions", (_req, res) => {
   return res.json({
     ok: true,
     states: LEGISCAN_ROLLOUT_STATES,
-    note: "Configured for 50 states plus Washington, D.C.; additional LegiScan jurisdictions are not enabled until verified.",
+    note: "configured_for_50_states_plus_dc; additional_legiscan_jurisdictions_are_not_enabled_until_verified",
   });
 });
 
@@ -148,7 +150,7 @@ docket_router.get("/state", async (req, res) => {
       return res.status(404).json({
         ok: false,
         state,
-        message: `No LegiScan sessions found for ${state}`,
+        message: `no_legiscan_sessions_found_for_${state}`,
       });
     }
 
@@ -160,7 +162,7 @@ docket_router.get("/state", async (req, res) => {
       bills,
       bill_count: bills.length,
       fetched_at: new Date().toISOString(),
-      source: "legiscan.getMasterList",
+      source: "legiscan.get_master_list",
     };
 
     const { error: upsert_error } = await db
@@ -219,7 +221,7 @@ docket_router.get("/bill/:bill_id", async (req, res) => {
       bill_id,
       bill,
       fetched_at: new Date().toISOString(),
-      source: "legiscan.getBill",
+      source: "legiscan.get_bill",
     };
 
     const { error: upsert_error } = await db

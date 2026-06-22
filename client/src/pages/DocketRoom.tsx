@@ -53,16 +53,16 @@ const fontSans = "'Inter', system-ui, sans-serif";
 
 const DOCKET_ROOM_STRATEGY = [
   {
-    label: "State Coverage",
-    text: "Full national coverage — all 50 states plus Washington D.C. LegiScan's unified schema makes this practical since no per-state custom integration is required. Coverage will be rolled out in waves (Pacific Northwest and high-priority states first) but the architecture is designed for all 52 LegiScan jurisdictions from the start.",
+    label: "state_coverage",
+    text: "full_national_coverage — all_50_states_plus_washington_dc. legiscan_unified_schema_makes_this_practical_since_no_per_state_custom_integration_is_required. coverage_will_be_rolled_out_in_waves_pacific_northwest_and_high_priority_states_first_but_the_architecture_is_designed_for_all_52_legiscan_jurisdictions_from_the_start.",
   },
   {
-    label: "Bill Volume",
-    text: "Topic-vertical per state, not exhaustive. We pull the top 50–100 most recently active bills per state per session refresh cycle using getMasterList (which is a single query per state regardless of session size). At 50 states × 100 bills = ~5,000 bills in active cache at any time. getBill detail is only fetched on explicit user click-through, never speculatively bulk-fetched.",
+    label: "bill_volume",
+    text: "topic_vertical_per_state_not_exhaustive. we_pull_the_top_50_to_100_most_recently_active_bills_per_state_per_session_refresh_cycle_using_get_master_list_which_is_a_single_query_per_state_regardless_of_session_size. at_50_states_times_100_bills_equals_about_5000_bills_in_active_cache_at_any_time. get_bill_detail_is_only_fetched_on_explicit_user_click_through_never_speculatively_bulk_fetched.",
   },
   {
-    label: "Query Strategy",
-    text: "Server-side caching in Supabase (PostgreSQL) eliminates redundant API calls. The math on the 30,000/month free tier:\ngetSessionList: 50 states × 1 call = 50 queries (one-time per deploy, cached permanently until session changes)\ngetMasterList: 50 states × ~3 refreshes/day × 30 days = 4,500 queries/month\ngetBill detail: estimated 10–20 user-driven lookups/day × 30 days = 300–600 queries/month\nTotal estimated: ~5,100–5,150 queries/month — well within the 30,000 free tier\nNo speculative bulk bill-detail fetching. All getMasterList results are cached and served from the database. If usage grows, we will upgrade to a paid DataSet plan (which actually reduces API dependency by replacing polling with bulk downloads).",
+    label: "query_strategy",
+    text: "server_side_caching_in_supabase_postgresql_eliminates_redundant_api_calls. the_math_on_the_30000_per_month_free_tier:\nget_session_list_50_states_times_1_call_equals_50_queries_one_time_per_deploy_cached_permanently_until_session_changes\nget_master_list_50_states_times_about_3_refreshes_per_day_times_30_days_equals_4500_queries_per_month\nget_bill_detail_estimated_10_to_20_user_driven_lookups_per_day_times_30_days_equals_300_to_600_queries_per_month\ntotal_estimated_about_5100_to_5150_queries_per_month_well_within_the_30000_free_tier\nno_speculative_bulk_bill_detail_fetching. all_get_master_list_results_are_cached_and_served_from_the_database. if_usage_grows_we_will_upgrade_to_a_paid_dataset_plan_which_actually_reduces_api_dependency_by_replacing_polling_with_bulk_downloads.",
   },
 ];
 

@@ -2,7 +2,7 @@ create table if not exists public.docket_bill_detail_cache (
   bill_id integer primary key,
   bill jsonb not null,
   fetched_at timestamptz not null default now(),
-  source text not null default 'legiscan.getBill',
+  source text not null default 'legiscan.get_bill',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint docket_bill_detail_cache_bill_object check (jsonb_typeof(bill) = 'object')
