@@ -25,15 +25,15 @@ export function getDatabaseUrl(): string | undefined {
   return process.env.DATABASE_URL?.trim() || undefined;
 }
 
-export function sanitizeDatabaseUrlForPg(connectionString: string): string {
+export function sanitize_database_url_for_pg(connection_string: string): string {
   try {
-    const url = new URL(connectionString);
+    const url = new URL(connection_string);
     for (const key of STRIPPED_DATABASE_URL_PARAMS) {
       url.searchParams.delete(key);
     }
     return url.toString();
   } catch {
-    return connectionString;
+    return connection_string;
   }
 }
 
@@ -61,7 +61,7 @@ export function createDatabasePool(options: DatabasePoolOptions = {}): Pool {
     });
   }
 
-  const sanitizedConnectionString = sanitizeDatabaseUrlForPg(connectionString);
+  const sanitized_connection_string = sanitize_database_url_for_pg(connectionString);
 
   // Supabase pooling requirement: DATABASE_URL must point at the transaction
   // pooler on port 6543 (NOT the direct connection on 5432). The transaction
@@ -72,7 +72,7 @@ export function createDatabasePool(options: DatabasePoolOptions = {}): Pool {
   // `.prepare()` is called explicitly — keep it that way (postgres.js
   // equivalent: `postgres(DATABASE_URL, { prepare: false })`).
   const config: PoolConfig = {
-    connectionString: sanitizedConnectionString,
+    connectionString: sanitized_connection_string,
     connectionTimeoutMillis: options.connectionTimeoutMillis ?? 10000,
     ssl: { rejectUnauthorized: false },
     idleTimeoutMillis: options.idleTimeoutMillis ?? 30000,
