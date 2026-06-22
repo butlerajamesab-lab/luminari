@@ -105,7 +105,7 @@ async function startServer() {
   );
 
   app.get("/api/health", (_req, res) => {
-    res.json({ ok: true, supabaseProject: SUPABASE_PROJECT });
+    res.json({ ok: true, status: "healthy" });
   });
 
   // AI inspection routes — MUST be mounted before Vite/static serving

@@ -20,7 +20,7 @@ export const conduitRouter = router({
   metadataHealth: protectedProcedure.query(async ({ ctx }) => {
     // Table registry stats
     const [tableRows] = await db.execute(sql`
-      SELECT category, status, COUNT(*) as cnt, SUM(rowCount) as totalRows
+      SELECT category, status, COUNT(*) as cnt, SUM(rowCount) as total_rows
       FROM table_registry
       GROUP BY category, status
       ORDER BY category
@@ -28,9 +28,9 @@ export const conduitRouter = router({
 
     // Field dictionary stats
     const [fieldStats] = await db.execute(sql`
-      SELECT COUNT(*) as totalFields,
-             SUM(CASE WHEN isPrimaryKey = 1 THEN 1 ELSE 0 END) as pkFields,
-             SUM(CASE WHEN isIndexed = 1 THEN 1 ELSE 0 END) as indexedFields
+      SELECT COUNT(*) as total_fields,
+             SUM(CASE WHEN isPrimaryKey = 1 THEN 1 ELSE 0 END) as pk_fields,
+             SUM(CASE WHEN isIndexed = 1 THEN 1 ELSE 0 END) as indexed_fields
       FROM field_dictionary
     `);
 
