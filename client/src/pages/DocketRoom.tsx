@@ -51,6 +51,21 @@ const fontSerif = "'Cormorant Garamond', serif";
 const fontMono = "'IBM Plex Mono', monospace";
 const fontSans = "'Inter', system-ui, sans-serif";
 
+const DOCKET_ROOM_STRATEGY = [
+  {
+    label: "state_coverage",
+    text: "full_national_coverage — all_50_states_plus_washington_dc. legiscan_unified_schema_makes_this_practical_since_no_per_state_custom_integration_is_required. coverage_will_be_rolled_out_in_waves_pacific_northwest_and_high_priority_states_first_but_the_architecture_is_designed_for_all_52_legiscan_jurisdictions_from_the_start.",
+  },
+  {
+    label: "bill_volume",
+    text: "topic_vertical_per_state_not_exhaustive. we_pull_the_top_50_to_100_most_recently_active_bills_per_state_per_session_refresh_cycle_using_get_master_list_which_is_a_single_query_per_state_regardless_of_session_size. at_50_states_times_100_bills_equals_about_5000_bills_in_active_cache_at_any_time. get_bill_detail_is_only_fetched_on_explicit_user_click_through_never_speculatively_bulk_fetched.",
+  },
+  {
+    label: "query_strategy",
+    text: "server_side_caching_in_supabase_postgresql_eliminates_redundant_api_calls. the_math_on_the_30000_per_month_free_tier:\nget_session_list_50_states_times_1_call_equals_50_queries_one_time_per_deploy_cached_permanently_until_session_changes\nget_master_list_50_states_times_about_3_refreshes_per_day_times_30_days_equals_4500_queries_per_month\nget_bill_detail_estimated_10_to_20_user_driven_lookups_per_day_times_30_days_equals_300_to_600_queries_per_month\ntotal_estimated_about_5100_to_5150_queries_per_month_well_within_the_30000_free_tier\nno_speculative_bulk_bill_detail_fetching. all_get_master_list_results_are_cached_and_served_from_the_database. if_usage_grows_we_will_upgrade_to_a_paid_dataset_plan_which_actually_reduces_api_dependency_by_replacing_polling_with_bulk_downloads.",
+  },
+];
+
 // ── Section label map ────────────────────────────────────────────────
 const SECTION_ICONS: Record<string, any> = {
   summary: BookOpen,
@@ -679,6 +694,38 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
               Reveal structure. Interpret nothing. Judge nothing. Persuade no one.
             </span>
           </p>
+
+          <div style={{
+            display: "grid",
+            gap: "0.75rem",
+            marginTop: "1.5rem",
+            padding: "1rem",
+            background: dk.sectionBg,
+            border: `1px solid ${dk.steelBorder}`,
+            borderRadius: "8px",
+          }}>
+            {DOCKET_ROOM_STRATEGY.map(item => (
+              <div key={item.label}>
+                <div style={{
+                  fontFamily: fontMono,
+                  fontSize: "0.72rem",
+                  color: dk.steelBright,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                  marginBottom: "0.25rem",
+                }}>{item.label}</div>
+                <p style={{
+                  fontFamily: fontSans,
+                  fontSize: "0.82rem",
+                  color: dk.cream,
+                  lineHeight: 1.55,
+                  whiteSpace: "pre-line",
+                  margin: 0,
+                }}>{item.text}</p>
+              </div>
+            ))}
+          </div>
 
           {/* Stats bar */}
           {stats && (

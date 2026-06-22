@@ -1,9 +1,16 @@
 import { Router } from "express";
 import { createClient } from "@supabase/supabase-js";
-import { ENV } from "../_core/env";
-import { get_master_list, get_session_list, type legiscan_master_bill } from "../services/legiscan";
+import {
+  get_bill,
+  get_master_list,
+  get_session_list,
+  LEGISCAN_ROLLOUT_STATES,
+  type legiscan_bill_detail,
+  type legiscan_master_bill,
+} from "../services/legiscan";
 
 const cache_ttl_ms = 8 * 60 * 60 * 1000;
+const bill_detail_cache_ttl_ms = 24 * 60 * 60 * 1000;
 
 export const docket_router = Router();
 
@@ -18,6 +25,13 @@ type docket_state_cache_row = {
   source: string;
 };
 
+type docket_bill_detail_cache_row = {
+  bill_id: number;
+  bill: legiscan_bill_detail;
+  fetched_at: string;
+  source: string;
+};
+
 const normalize_state_code = (state: unknown): string => {
   if (typeof state !== "string") {
     throw new Error("Missing required query parameter: state");
@@ -25,19 +39,36 @@ const normalize_state_code = (state: unknown): string => {
 
   const normalized = state.trim().toUpperCase();
 
-  if (!/^[A-Z]{2}$/.test(normalized) && normalized !== "DC") {
+  if (!LEGISCAN_ROLLOUT_STATES.includes(normalized)) {
     throw new Error(`Invalid state code: ${state}`);
   }
 
   return normalized;
 };
 
-const supabase = () => {
-  if (!ENV.lighthouseSupabaseUrl || !ENV.lighthouseSupabaseServiceRoleKey) {
-    throw new Error("Supabase is not configured for Docket Room cache access");
+const normalize_bill_id = (bill_id: unknown): number => {
+  if (typeof bill_id !== "string" || !/^\d+$/.test(bill_id)) {
+    throw new Error("invalid_bill_id_parameter");
   }
 
-  return createClient(ENV.lighthouseSupabaseUrl, ENV.lighthouseSupabaseServiceRoleKey, {
+  const normalized = Number(bill_id);
+
+  if (!Number.isSafeInteger(normalized) || normalized <= 0) {
+    throw new Error("invalid_bill_id_parameter");
+  }
+
+  return normalized;
+};
+
+const supabase = () => {
+  const supabase_url = process.env.LIGHTHOUSE_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "";
+  const supabase_service_role_key = process.env.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+
+  if (!supabase_url || !supabase_service_role_key) {
+    throw new Error("supabase_not_configured_for_docket_room_cache_access");
+  }
+
+  return createClient(supabase_url, supabase_service_role_key, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -45,14 +76,14 @@ const supabase = () => {
   });
 };
 
-const is_fresh = (fetched_at: string): boolean => {
+const is_fresh = (fetched_at: string, ttl_ms = cache_ttl_ms): boolean => {
   const fetched_ms = new Date(fetched_at).getTime();
 
   if (!Number.isFinite(fetched_ms)) {
     return false;
   }
 
-  return Date.now() - fetched_ms < cache_ttl_ms;
+  return Date.now() - fetched_ms < ttl_ms;
 };
 
 const pick_active_session = async (state: string) => {
@@ -68,6 +99,22 @@ const pick_active_session = async (state: string) => {
 
   return current ?? sessions[0];
 };
+
+const serialize_error = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message.replace(/key=[^&\s]+/gi, "key=[redacted]");
+  }
+
+  return "unknown_docket_room_error";
+};
+
+docket_router.get("/jurisdictions", (_req, res) => {
+  return res.json({
+    ok: true,
+    states: LEGISCAN_ROLLOUT_STATES,
+    note: "configured_for_50_states_plus_dc; additional_legiscan_jurisdictions_are_not_enabled_until_verified",
+  });
+});
 
 docket_router.get("/state", async (req, res) => {
   try {
@@ -103,7 +150,7 @@ docket_router.get("/state", async (req, res) => {
       return res.status(404).json({
         ok: false,
         state,
-        message: `No LegiScan sessions found for ${state}`,
+        message: `no_legiscan_sessions_found_for_${state}`,
       });
     }
 
@@ -118,23 +165,12 @@ docket_router.get("/state", async (req, res) => {
       source: "legiscan.get_master_list",
     };
 
-    if (cached) {
-      const { error: upsert_error } = await db
-        .from("docket_bill_state_cache")
-        .update(row)
-        .eq("state", state);
+    const { error: upsert_error } = await db
+      .from("docket_bill_state_cache")
+      .upsert(row, { onConflict: "state" });
 
-      if (upsert_error) {
-        throw upsert_error;
-      }
-    } else {
-      const { error: upsert_error } = await db
-        .from("docket_bill_state_cache")
-        .insert(row);
-
-      if (upsert_error) {
-        throw upsert_error;
-      }
+    if (upsert_error) {
+      throw upsert_error;
     }
 
     return res.json({
@@ -148,10 +184,65 @@ docket_router.get("/state", async (req, res) => {
       bills: row.bills,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown Docket Room error";
     return res.status(500).json({
       ok: false,
-      message,
+      message: serialize_error(error),
+    });
+  }
+});
+
+docket_router.get("/bill/:bill_id", async (req, res) => {
+  try {
+    const bill_id = normalize_bill_id(req.params.bill_id);
+    const db = supabase();
+
+    const { data: cached, error: cache_error } = await db
+      .from("docket_bill_detail_cache")
+      .select("*")
+      .eq("bill_id", bill_id)
+      .maybeSingle<docket_bill_detail_cache_row>();
+
+    if (cache_error && cache_error.code !== "PGRST205") {
+      throw cache_error;
+    }
+
+    if (cached && is_fresh(cached.fetched_at, bill_detail_cache_ttl_ms)) {
+      return res.json({
+        ok: true,
+        source: "cache",
+        bill_id,
+        fetched_at: cached.fetched_at,
+        bill: cached.bill,
+      });
+    }
+
+    const bill = await get_bill(bill_id);
+    const row: docket_bill_detail_cache_row = {
+      bill_id,
+      bill,
+      fetched_at: new Date().toISOString(),
+      source: "legiscan.get_bill",
+    };
+
+    const { error: upsert_error } = await db
+      .from("docket_bill_detail_cache")
+      .upsert(row, { onConflict: "bill_id" });
+
+    if (upsert_error) {
+      throw upsert_error;
+    }
+
+    return res.json({
+      ok: true,
+      source: cached ? "legiscan_refresh_stale_cache" : "legiscan_refresh_empty_cache",
+      bill_id,
+      fetched_at: row.fetched_at,
+      bill,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: serialize_error(error),
     });
   }
 });
