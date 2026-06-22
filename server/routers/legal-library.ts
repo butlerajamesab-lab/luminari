@@ -65,7 +65,7 @@ export const legalLibraryRouter = router({
       source_url: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const id = await createStatute({ ...input, domains: castDomains(input.domains), addedBy: ctx.user.name ?? ctx.user.openId });
+      const id = await createStatute({ ...input, domains: castDomains(input.domains), addedBy: ctx.user.name ?? ctx.user.open_id });
       return { id };
     }),
 
@@ -129,7 +129,7 @@ export const legalLibraryRouter = router({
       source_url: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const id = await createCaseLaw({ ...input, domains: castDomains(input.domains), addedBy: ctx.user.name ?? ctx.user.openId });
+      const id = await createCaseLaw({ ...input, domains: castDomains(input.domains), addedBy: ctx.user.name ?? ctx.user.open_id });
       return { id };
     }),
 
@@ -167,7 +167,7 @@ export const legalLibraryRouter = router({
       data_source: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const id = await createEnforcementRecord({ ...input, domains: castDomains(input.domains), addedBy: ctx.user.name ?? ctx.user.openId });
+      const id = await createEnforcementRecord({ ...input, domains: castDomains(input.domains), addedBy: ctx.user.name ?? ctx.user.open_id });
       return { id };
     }),
 
@@ -204,7 +204,7 @@ export const legalLibraryRouter = router({
       affectedPopulation: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const id = await createWeakJoint({ ...input, domains: castDomains(input.domains), addedBy: ctx.user.name ?? ctx.user.openId });
+      const id = await createWeakJoint({ ...input, domains: castDomains(input.domains), addedBy: ctx.user.name ?? ctx.user.open_id });
       return { id };
     }),
 
@@ -240,7 +240,7 @@ export const legalLibraryRouter = router({
       reformStatus: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const id = await createContradiction({ ...input, domains: castDomains(input.domains), addedBy: ctx.user.name ?? ctx.user.openId });
+      const id = await createContradiction({ ...input, domains: castDomains(input.domains), addedBy: ctx.user.name ?? ctx.user.open_id });
       return { id };
     }),
   // ─── Statute Clauses (X-Ray) ───

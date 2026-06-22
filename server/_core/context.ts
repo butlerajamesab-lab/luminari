@@ -1,11 +1,10 @@
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
-import type { User } from '../../drizzle/schema';
-import { getUserByEmailSnake, getUserByOpenIdSnake } from './user-resolver';
+import { getUserByEmailSnake, getUserByOpenIdSnake, type RuntimeUser } from './user-resolver';
 
 export type TrpcContext = {
   req: CreateExpressContextOptions['req'];
   res: CreateExpressContextOptions['res'];
-  user: User | null;
+  user: RuntimeUser | null;
   isSystem?: boolean;
   isInspectionMode?: boolean;
 };
@@ -80,8 +79,8 @@ async function timeContextPhase<T>(phase: string, phases: ContextLookupPhase[], 
 async function timeOptionalDbUserPhase(
   phase: string,
   phases: ContextLookupPhase[],
-  task: () => Promise<User | null>
-): Promise<User | null> {
+  task: () => Promise<RuntimeUser | null>
+): Promise<RuntimeUser | null> {
   try {
     return await withTimeout(
       timeContextPhase(phase, phases, task),
@@ -154,19 +153,19 @@ function isLighthouseInspectionMode(req?: CreateExpressContextOptions['req']): b
   );
 }
 
-function createInspectionUser(): User {
+function createInspectionUser(): RuntimeUser {
   const now = Date.now();
   return {
     id: 0,
-    openId: 'inspection_user',
+    open_id: 'inspection_user',
     name: 'Inspection User',
     email: 'inspection@lighthouse.local',
-    loginMethod: 'temporary_lighthouse_inspection_mode',
+    login_method: 'temporary_lighthouse_inspection_mode',
     role: 'admin',
     plan: 'enterprise',
-    createdAt: now,
-    updatedAt: now,
-    lastSignedIn: now,
+    created_at: now,
+    updated_at: now,
+    last_signed_in: now,
   };
 }
 
@@ -204,7 +203,7 @@ async function fetchSupabaseAuthUser(sessionValue: string): Promise<SupabaseAuth
 async function resolveUserFromSupabaseSession(
   req?: CreateExpressContextOptions['req'],
   phases: ContextLookupPhase[] = []
-): Promise<User | null> {
+): Promise<RuntimeUser | null> {
   const sessionValue = getForwardedSupabaseSession(req);
   if (!sessionValue) return null;
 
@@ -213,7 +212,7 @@ async function resolveUserFromSupabaseSession(
 
   const authEmail = authUser.email?.trim().toLowerCase();
   const authOpenId = authUser.id?.trim();
-  let dbUser: User | null = null;
+  let dbUser: RuntimeUser | null = null;
 
   if (authEmail) {
     dbUser = await timeOptionalDbUserPhase('supabase_email_lookup', phases, () => getUserByEmailSnake(authEmail));
@@ -227,7 +226,7 @@ async function resolveUserFromSupabaseSession(
 }
 
 export async function createContext(opts: CreateExpressContextOptions): Promise<TrpcContext> {
-  let user: User | null = null;
+  let user: RuntimeUser | null = null;
   const phases: ContextLookupPhase[] = [];
   const started = Date.now();
   const isInspectionMode = isLighthouseInspectionMode(opts.req);
@@ -238,7 +237,7 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
   const session = (opts.req as any).session;
   try {
     user = await withTimeout((async () => {
-      let dbUser: User | null = null;
+      let dbUser: RuntimeUser | null = null;
       if (session?.openId) {
         dbUser = await timeOptionalDbUserPhase('session_open_id_lookup', phases, () => getUserByOpenIdSnake(String(session.openId)));
       }

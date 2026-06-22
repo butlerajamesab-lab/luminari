@@ -71,7 +71,7 @@ export const casePatternBridgeRouter = router({
         candidateId: input.candidateId,
         status: input.status,
         rationale: input.rationale,
-        actorId: ctx.user.openId,
+        actorId: ctx.user.open_id,
         actorRole: "admin",
       });
       return { success: true };
