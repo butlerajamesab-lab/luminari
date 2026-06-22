@@ -4,7 +4,7 @@ import { compareDateOccurred, normalizeDateForSort, isPreModernDate } from "./da
 import { runPhoenixDetection, emitPhoenixSignal } from "./engines/phoenix-detector";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { createDatabasePool } from "./pg-config";
+import { create_database_pool } from "./pg-config";
 import {
   users, cases, documents, quotes, entities, entityRoles,
   relationships, relationshipEvidence, claims, findings,
@@ -62,7 +62,7 @@ let pgPool: Pool | null = null;
 let dbInstance: ReturnType<typeof drizzle> | null = null;
 function initializePool(): Pool {
   if (pgPool) return pgPool;
-  pgPool = createDatabasePool({ label: "DB", connectionTimeoutMillis: 10000, max: 5 });
+  pgPool = create_database_pool({ label: "DB", connection_timeout_millis: 10000, max: 5 });
   return pgPool;
 }
 
