@@ -75,7 +75,7 @@ export const ingestionRouter = router({
           cronExpression: input.cronExpression ?? null,
         },
         rationale: `New data stream registered: ${input.datasetName} (${input.source}, ${input.jurisdiction}/${input.domain})`,
-        actorId: ctx.user?.openId ?? SYSTEM_ACTOR,
+        actorId: ctx.user?.open_id ?? SYSTEM_ACTOR,
         actorRole: "admin",
       });
 
@@ -97,7 +97,7 @@ export const ingestionRouter = router({
         datasetId: input.datasetId,
         enabled: input.enabled,
         rationale: input.rationale ?? `Data stream ${input.enabled ? "enabled" : "disabled"} via admin control panel`,
-        actorId: ctx.user.openId,
+        actorId: ctx.user.open_id,
         actorRole: "admin",
       });
       await refreshSchedules();
@@ -114,7 +114,7 @@ export const ingestionRouter = router({
       await governedDataStreamDelete({
         datasetId: input.datasetId,
         rationale: input.rationale ?? `Data stream removed via admin control panel`,
-        actorId: ctx.user.openId,
+        actorId: ctx.user.open_id,
         actorRole: "admin",
       });
       await refreshSchedules();
@@ -148,7 +148,7 @@ export const ingestionRouter = router({
     .mutation(async ({ ctx, input }) => {
       const result = await populateAtlasPublicStreams({
         streamIds: input?.stream_ids,
-        actorId: ctx.user?.openId ?? SYSTEM_ACTOR,
+        actorId: ctx.user?.open_id ?? SYSTEM_ACTOR,
         actorRole: "admin",
       });
 
