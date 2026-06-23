@@ -55,46 +55,6 @@ async function safeQuery(sql: string): Promise<any[]> {
 }
 
 // ─────────────────────────────────────────────
-// PHASE 1: HEALTH
-// GET /api/system/health
-// ─────────────────────────────────────────────
-router.get("/health", async (_req: Request, res: Response) => {
-  cacheLive(res);
-
-  let db_connected = false;
-  let db_version = "";
-  let table_count = 0;
-
-  let db_error = "";
-  try {
-    const pool = getPool();
-    const versionResult = await pool.query("SELECT version()");
-    db_version = versionResult.rows[0]?.version?.split(" ").slice(0, 2).join(" ") ?? "unknown";
-    db_connected = true;
-
-    const countResult = await pool.query(
-      `SELECT COUNT(*)::int AS cnt FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`
-    );
-    table_count = Number(countResult.rows[0]?.cnt ?? 0);
-  } catch (err: any) {
-    db_error = err?.message?.replace(/password=[^\s&]+/g, 'password=***') ?? "unknown error";
-  }
-
-  res.json({
-    status: db_connected ? "healthy" : "degraded",
-    database: db_connected ? "connected" : "unreachable",
-    ...(db_error ? { db_diagnostic: db_error } : {}),
-    database_url: process.env.DATABASE_URL ? "configured" : "missing",
-    database_version: db_version,
-    supabase: "wepxlinwbjrkqdzkqpar",
-    public_tables: table_count,
-    runtime: "active",
-    build_version: process.env.RENDER_GIT_COMMIT?.slice(0, 8) ?? "dev",
-    timestamp: now(),
-  });
-});
-
-// ─────────────────────────────────────────────
 // PHASE 1: ROUTES
 // GET /api/system/routes
 // ─────────────────────────────────────────────

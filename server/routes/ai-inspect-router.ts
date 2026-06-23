@@ -291,7 +291,7 @@ router.get("/health", (_req: Request, res: Response) => {
     service: "luminari-ai-inspect",
     last_checked: now(),
     mount: "/api/ai",
-    schemaVersion: "2026-06-16",
+    schema_version: "2026-06-16",
   });
 });
 
@@ -329,14 +329,14 @@ router.get("/site-map", async (_req: Request, res: Response) => {
     deploy: {
       domain: "lighthouse.columbiacitycustomllc.com",
       stack: "React 19 / Express / tRPC 11 / Drizzle / Supabase (Postgres)",
-      schemaSource: "wepxlinwbjrkqdzkqpar (public schema, 341 base tables)",
+      schema_source: "wepxlinwbjrkqdzkqpar (public schema, 341 base tables)",
     },
-    surfaceSummary: {
+    surface_summary: {
       routes: ROUTE_TABLE.length,
-      pagesWithTrpcNamespace: Object.values(PAGE_TO_NAMESPACE).filter(
+      pages_with_trpc_namespace: Object.values(PAGE_TO_NAMESPACE).filter(
         (n) => n !== "-",
       ).length,
-      pagesStaticOrUnwired: Object.values(PAGE_TO_NAMESPACE).filter(
+      pages_static_or_unwired: Object.values(PAGE_TO_NAMESPACE).filter(
         (n) => n === "-",
       ).length,
     },
@@ -368,13 +368,13 @@ router.get("/site-map", async (_req: Request, res: Response) => {
       cases: cases_count,
       documents: documentsCount,
       findings: findingsCount,
-      signalRegistry: signalRegistryCount,
+      signal_registry: signalRegistryCount,
       signals: signalsCount,
-      registryPrograms: registryProgramsCount,
-      legalStatutes: legalStatutesCount,
-      legalCaseLaw: legalCaseLawCount,
-      claimElementMatrix: claimElementMatrixCount,
-      engineRegistry: engineRegistryCount,
+      registry_programs: registryProgramsCount,
+      legal_statutes: legalStatutesCount,
+      legal_case_law: legalCaseLawCount,
+      claim_element_matrix: claimElementMatrixCount,
+      engine_registry: engineRegistryCount,
     },
     note: "Counts are live. Empty (0) tables indicate the surface is wired but no records have been written yet. error objects indicate the table or column does not exist in this DB.",
   });
@@ -394,7 +394,7 @@ router.get("/namespaces", (_req: Request, res: Response) => {
   setCache(res, "static");
   res.json({
     last_checked: now(),
-    pageCount: Object.keys(PAGE_TO_NAMESPACE).length,
+    page_count: Object.keys(PAGE_TO_NAMESPACE).length,
     source: "all_pages_calls.tsv plus App.tsx route manifest reconciliation",
     mapping: PAGE_TO_NAMESPACE,
   });
@@ -415,15 +415,15 @@ router.get("/page/mission-control", async (_req: Request, res: Response) => {
     route: "/mission-control",
     title: "Mission Control",
     component: "MissionControl",
-    primaryNamespace: PAGE_TO_NAMESPACE.MissionControl,
+    primary_namespace: PAGE_TO_NAMESPACE.MissionControl,
     status: "live",
     last_checked: now(),
     data_source: "live — cases, documents, findings, pipeline_runs, engine_runs, engine_registry, system_health_logs",
     sections: [
       { name: "Platform Counts", counts: { cases: cases_count, documents: documentsCount, findings: findingsCount } },
-      { name: "Pipeline Queue", counts: { pipelineRuns: pipelineRunsCount, engineRuns: engineRunsCount } },
+      { name: "Pipeline Queue", counts: { pipeline_runs: pipelineRunsCount, engine_runs: engineRunsCount } },
       { name: "Engine Registry", counts: { registered: engineRegistryCount } },
-      { name: "Error Surface", counts: { logEntries: systemHealthLogsCount } },
+      { name: "Error Surface", counts: { log_entries: systemHealthLogsCount } },
     ],
   });
 });
@@ -442,15 +442,15 @@ router.get("/page/sovereign-control", async (_req: Request, res: Response) => {
     route: "/sovereign-control",
     title: "Sovereign Control",
     component: "SovereignControl",
-    primaryNamespace: PAGE_TO_NAMESPACE.SovereignControl,
+    primary_namespace: PAGE_TO_NAMESPACE.SovereignControl,
     status: "live",
     last_checked: now(),
     data_source: "live — engine_registry, claim_validation_rules, sunam_gate_log, governance_log, constitutional_violation_log, audit_trail",
     sections: [
       { name: "Engine Registry", counts: { registered: engineRegistryCount } },
-      { name: "Constitutional Rules", counts: { validationRules: claimValidationRulesCount } },
-      { name: "Sunam Gate Activity", counts: { gateEvents: sunamGateLogCount } },
-      { name: "Governance Audit", counts: { governanceEvents: governanceLogCount, auditEntries: auditTrailCount } },
+      { name: "Constitutional Rules", counts: { validation_rules: claimValidationRulesCount } },
+      { name: "Sunam Gate Activity", counts: { gate_events: sunamGateLogCount } },
+      { name: "Governance Audit", counts: { governance_events: governanceLogCount, audit_entries: auditTrailCount } },
       { name: "Constitutional Violations", counts: { violations: constitutionalViolationLogCount } },
     ],
   });
@@ -491,7 +491,7 @@ router.get("/page/signal-registry", async (_req: Request, res: Response) => {
     route: "/signal-registry",
     title: "Signal Registry",
     component: "SignalRegistry",
-    primaryNamespace: PAGE_TO_NAMESPACE.SignalRegistry,
+    primary_namespace: PAGE_TO_NAMESPACE.SignalRegistry,
     status: "live",
     last_checked: now(),
     data_source: "live — signal_registry, signals, pattern_registry, signal_events",
@@ -516,12 +516,12 @@ router.get("/page/benefits", async (_req: Request, res: Response) => {
     route: "/benefits",
     title: "Benefits Navigator",
     component: "BenefitsNavigator",
-    primaryNamespace: PAGE_TO_NAMESPACE.BenefitsNavigator,
+    primary_namespace: PAGE_TO_NAMESPACE.BenefitsNavigator,
     status: "live",
     last_checked: now(),
     data_source: "live — registry_programs, government_benefits_registry, benefit_applications, eligibility_hints",
     sections: [
-      { name: "Eligibility Screener", counts: { eligibilityHints: eligibilityHintsCount } },
+      { name: "Eligibility Screener", counts: { eligibility_hints: eligibilityHintsCount } },
       { name: "Civic Program Registry", counts: { total: registryProgramsCount } },
       { name: "Government Benefits", counts: { total: governmentBenefitsCount } },
       { name: "User Applications", counts: { total: benefitApplicationsCount } },
@@ -540,12 +540,12 @@ router.get("/page/guided-intake", async (_req: Request, res: Response) => {
     route: "/guided-intake",
     title: "Guided Intake",
     component: "GuidedIntakeNew",
-    primaryNamespace: PAGE_TO_NAMESPACE.GuidedIntakeNew,
+    primary_namespace: PAGE_TO_NAMESPACE.GuidedIntakeNew,
     status: "live",
     last_checked: now(),
     data_source: "live — intake_records, entry_runs, map_intake_sessions",
     sections: [
-      { name: "Problem Framing", counts: { intakeRecords: intakeRecordsCount } },
+      { name: "Problem Framing", counts: { intake_records: intakeRecordsCount } },
       { name: "Entry Runs", counts: { total: entryRunsCount } },
       { name: "Map Intake Sessions", counts: { total: mapIntakeSessionsCount } },
     ],
@@ -567,14 +567,14 @@ router.get("/compare/main-vs-manus", async (_req: Request, res: Response) => {
       url: "https://lighthouse.columbiacitycustomllc.com",
       branch: "main",
       stack: "React 19 / Express / tRPC 11 / Drizzle / Supabase Postgres (wepxlinwbjrkqdzkqpar)",
-      dbCounts: { cases: cases_count, documents: documentsCount },
+      db_counts: { cases: cases_count, documents: documentsCount },
       status: "live — Supabase Postgres backend confirmed",
     },
     manus: {
       url: "https://3000-ice1zn74bmhq0q38qyje9-7e7ca167.manus.space",
       stack: "React 19 / Express / tRPC 11 / Drizzle / TiDB (MySQL-compatible)",
       status: "reference — Manus sandbox, not permanent hosting",
-      dbCounts: { note: "Cannot be read from this inspector — different DB host, no cross-environment access." },
+      db_counts: { note: "Cannot be read from this inspector — different DB host, no cross-environment access." },
     },
     drift: {
       note: "Counts above are for the Render/Supabase side only. Manus side requires its own inspector deployed in that environment for a true diff.",
