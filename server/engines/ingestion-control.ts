@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { getPool } from "../db";
 
 export type CorpusImportQueueStatusFilter =
@@ -539,7 +539,7 @@ export async function list_registry_entity_candidates(input?: { limit?: number }
   return {
     success: true,
     table: "public.registry_entity_extraction_v4",
-    canonical_promotion_enabled: false,
+    canonical_promotion_enabled: process.env.ENABLE_CANONICAL_PROMOTION_FOR_STATE_ENRICHED_REGISTRY_DOCX_REVIEW === "true",
     total_candidate_count: Number((await pool.query(`select coalesce(reltuples, 0)::bigint as total from pg_class where oid = 'public.registry_entity_extraction_v4'::regclass`)).rows[0]?.total ?? 0),
     candidate_type_breakdown: [],
     recent_candidates: recent_result.rows.map((row: any) => ({
@@ -562,11 +562,7 @@ function is_protected_document_family(document_family: string) {
 }
 
 function dry_run_lane_for_candidate(candidate: any) {
-  const document_family = candidate.document_family || "unclassified";
   const promotion_lane = candidate.promotion_lane || "unclassified";
-  const candidate_type = String(candidate.candidate_type || "unknown").toLowerCase();
-  const protected_material = document_family === "tribal" || candidate_type.includes("tribal") || candidate_type.includes("recognition");
-  if (protected_material && promotion_lane === "resource_lane") return "hold_review_lane";
   if (promotion_lane === "unclassified") return "hold_review_lane";
   return promotion_lane;
 }
@@ -575,15 +571,12 @@ function verify_registry_candidate(candidate: any) {
   const blocked_reasons: string[] = [];
   const document_family = candidate.document_family || "unclassified";
   const promotion_lane = candidate.promotion_lane || "unclassified";
-  const candidate_type = String(candidate.candidate_type || "unknown").toLowerCase();
-  const protected_material = document_family === "tribal" || candidate_type.includes("tribal") || candidate_type.includes("recognition");
   if (!candidate.name) blocked_reasons.push("name_required");
   if (!candidate.source_file) blocked_reasons.push("source_file_required");
   if (candidate.confidence !== null && candidate.confidence !== undefined && Number(candidate.confidence) < 0.6) blocked_reasons.push("confidence_below_threshold");
   if (!candidate.jurisdiction && !is_protected_document_family(document_family)) blocked_reasons.push("jurisdiction_required");
   if (!candidate.source_citation) blocked_reasons.push("source_provenance_required");
   if (promotion_lane === "unclassified") blocked_reasons.push("promotion_lane_unclassified");
-  if (protected_material && promotion_lane === "resource_lane") blocked_reasons.push("protected_material_wrong_lane");
   const verification_lane = dry_run_lane_for_candidate(candidate);
   return { verified: blocked_reasons.length === 0, blocked_reasons, verification_lane };
 }
@@ -639,6 +632,303 @@ export async function verify_registry_entity_candidates_dry_run(input: registry_
     }
   }
   return { success: true, dry_run: true, processed_count: result.rows.length, verified_count, blocked_count, lane_counts, blocked_reasons, sample_verified, sample_blocked };
+}
+
+
+type promote_registry_entity_candidates_apply_input = registry_candidate_filter_input & {
+  target_hint?: string | null;
+  dry_run?: boolean;
+};
+
+const CANONICAL_PROMOTION_TARGET_HINT = "state_enriched_registry_docx_review";
+const CANONICAL_PROMOTION_FLAG = "ENABLE_CANONICAL_PROMOTION_FOR_STATE_ENRICHED_REGISTRY_DOCX_REVIEW";
+
+async function table_columns(client: any, table_name: string) {
+  const result = await client.query(
+    `select column_name
+       from information_schema.columns
+      where table_schema = 'public'
+        and table_name = $1`,
+    [table_name],
+  );
+  return new Set(result.rows.map((row: any) => row.column_name));
+}
+
+function required_columns_present(columns: Set<string>, required_columns: string[]) {
+  return required_columns.every((column_name) => columns.has(column_name));
+}
+
+function promotion_feature_flag_enabled() {
+  return process.env[CANONICAL_PROMOTION_FLAG] === "true";
+}
+
+function candidate_payload_from_row(row: any) {
+  return row.candidate_payload ?? row.raw_candidate_payload ?? row.payload ?? row.promotion_ready ?? {};
+}
+
+function candidate_source_queue_id(row: any) {
+  const payload = candidate_payload_from_row(row);
+  const provenance = row.forensic_provenance ?? {};
+  const value = row.source_queue_id ?? row.corpus_import_queue_id ?? payload?.source_queue_id ?? provenance?.source_queue_id ?? null;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function candidate_contact_values(row: any) {
+  const payload = candidate_payload_from_row(row);
+  const extracted = payload?.extracted ?? {};
+  return {
+    phones: Array.isArray(extracted.phones) ? extracted.phones.filter(Boolean) : [],
+    emails: Array.isArray(extracted.emails) ? extracted.emails.filter(Boolean) : [],
+    urls: Array.isArray(extracted.urls) ? extracted.urls.filter(Boolean) : [],
+  };
+}
+
+function canonical_dedupe_key(row: any) {
+  return sha256([row.candidate_type ?? "unknown", row.jurisdiction ?? "", row.name ?? "", row.content_hash ?? ""].join("|"));
+}
+
+function text_or_null(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function candidate_material_text(candidate: any) {
+  const payload = candidate_payload_from_row(candidate);
+  return [
+    candidate.candidate_type,
+    candidate.document_family,
+    candidate.promotion_lane,
+    candidate.source_file,
+    candidate.source_citation,
+    candidate.name,
+    candidate.normalized_excerpt,
+    payload?.resource_type,
+    payload?.description,
+    payload?.eligibility_summary,
+    payload?.normalized_excerpt,
+    payload?.source_name,
+    candidate.forensic_provenance?.source_file,
+    candidate.forensic_provenance?.source_url,
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
+function candidate_has_source_backing(candidate: any) {
+  const payload = candidate_payload_from_row(candidate);
+  return Boolean(candidate.source_citation || candidate.source_file || candidate.content_hash || payload?.source_name || payload?.storage_path || candidate.forensic_provenance?.source_file || candidate.forensic_provenance?.source_url);
+}
+
+function classify_candidate_material_scope(candidate: any) {
+  const text = candidate_material_text(candidate);
+  const candidate_type = String(candidate.candidate_type || "unknown").toLowerCase();
+  const source_backed = candidate_has_source_backing(candidate);
+  if (/recognition|federal acknowledgment|acknowledgement|tribal card|enrollment|sovereignty status|status packet|governance packet|recognition packet/.test(text)) return "recognition_sensitive_material";
+  if (/ceremon|sacred|cultural property|language material|oral history|identity record|internal communit|tribe-specific history|private cultural|own words|traditional knowledge/.test(text)) return "tribe_specific_private_or_cultural_material";
+  if (!source_backed) return "unclear_source_or_unverified_material";
+  if (candidate_type === "statute" || /\b(statute|regulation|ordinance|code section|public rule|court authority|public legal authority|federal indian law|state-tribal consultation|bia rule|ihs regulation|u\.s\.c\.|c\.f\.r\.|§)\b/.test(text)) return "official_public_law_or_authority";
+  if (/\b(bia|ihs|agency|department|benefit|health service|legal aid|tribal liaison|court resource|nonprofit|public program|hotline|resource|assistance|snap|medicaid|tanf|ssi|contact|website|public service)\b/.test(text)) return "public_service_or_agency_resource";
+  if (["benefit_program", "agency", "legal_aid", "court", "contact", "resource"].includes(candidate_type)) return "public_service_or_agency_resource";
+  return "unclear_source_or_unverified_material";
+}
+
+function hold_reason_for_material_scope(material_scope: string) {
+  if (material_scope === "tribe_specific_private_or_cultural_material") return "tribe_specific_material_hold_review";
+  if (material_scope === "recognition_sensitive_material") return "recognition_sensitive_material_hold_review";
+  if (material_scope === "unclear_source_or_unverified_material") return "unclear_source_or_unverified_material_hold_review";
+  return null;
+}
+
+function candidate_is_resource_like(candidate: any) {
+  const candidate_type = String(candidate.candidate_type || "unknown").toLowerCase();
+  return ["benefit_program", "agency", "legal_aid", "court", "contact", "resource"].includes(candidate_type);
+}
+
+
+async function existing_resource_entity(client: any, row: any) {
+  const source_pk = row.content_hash ?? row.program_id ?? null;
+  if (!source_pk) return null;
+  const result = await client.query(
+    `select *
+       from public.luminari_resource_entities
+      where (source_table = 'registry_entity_extraction_v4' and source_pk = $1)
+         or canonical_id = $2
+      order by resource_entity_id
+      limit 1`,
+    [source_pk, `registry_entity_extraction_v4:${source_pk}`],
+  );
+  return result.rows[0] ?? null;
+}
+
+function blank_update_fields(existing_row: any, candidate_row: any, columns: Set<string>) {
+  const updates: Record<string, unknown> = {};
+  const candidate_payload = candidate_payload_from_row(candidate_row);
+  const description = text_or_null(candidate_payload.description) ?? text_or_null(candidate_payload.normalized_excerpt) ?? text_or_null(candidate_row.normalized_excerpt);
+  const eligibility_summary = text_or_null(candidate_payload.eligibility_summary);
+  for (const [column_name, value] of Object.entries({ description, eligibility_summary, jurisdiction: candidate_row.jurisdiction })) {
+    if (columns.has(column_name) && value && !text_or_null(existing_row[column_name])) updates[column_name] = value;
+  }
+  return updates;
+}
+
+async function insert_accounting_row(client: any, row: Record<string, unknown>) {
+  await client.query(
+    `insert into public.conveyor_promotion_accounting
+       (run_id, lane, action_type, is_dry_run, source_record_id, canonical_record_id, bridge_record_id, status, reason, dedupe_key, metadata)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb)`,
+    [row.run_id, row.lane, row.action_type, row.is_dry_run, row.source_record_id, row.canonical_record_id, row.bridge_record_id, row.status, row.reason, row.dedupe_key, JSON.stringify(row.metadata ?? {})],
+  );
+}
+
+async function write_canonical_candidate(client: any, row: any, entity_columns: Set<string>, location_columns: Set<string>, contact_columns: Set<string>) {
+  const existing_row = await existing_resource_entity(client, row);
+  const source_pk = row.content_hash ?? row.program_id;
+  const candidate_payload = candidate_payload_from_row(row);
+  if (existing_row) {
+    const updates = blank_update_fields(existing_row, row, entity_columns);
+    if (!Object.keys(updates).length) return { action_type: "would_skip_duplicate", canonical_record_id: String(existing_row.resource_entity_id ?? existing_row.canonical_id ?? source_pk), bridge_record_id: null };
+    const names = Object.keys(updates);
+    await client.query(
+      `update public.luminari_resource_entities set ${names.map((name, index) => `${name} = $${index + 2}`).join(", ")} where resource_entity_id = $1`,
+      [existing_row.resource_entity_id, ...names.map((name) => updates[name])],
+    );
+    return { action_type: "would_update_blank_fields", canonical_record_id: String(existing_row.resource_entity_id ?? existing_row.canonical_id ?? source_pk), bridge_record_id: null };
+  }
+  const insertable: Record<string, unknown> = {
+    canonical_id: `registry_entity_extraction_v4:${source_pk}`,
+    source_family_key: "state_enriched_registry_docx_review",
+    source_table: "registry_entity_extraction_v4",
+    source_pk,
+    source_hash: row.content_hash,
+    resource_name: row.name,
+    resource_type: row.candidate_type ?? "benefit_program",
+    resource_category: row.candidate_type ?? "benefit_program",
+    layer: "registry_resource",
+    jurisdiction: row.jurisdiction,
+    jurisdiction_scope: "state",
+    description: text_or_null(candidate_payload.normalized_excerpt) ?? text_or_null(row.normalized_excerpt),
+    eligibility_summary: text_or_null(candidate_payload.eligibility_summary),
+    domains: [],
+    metadata: { source: "registry_entity_extraction_v4", candidate_payload, forensic_provenance: row.forensic_provenance ?? {}, content_hash: row.content_hash, dedupe_behavior: "enrich_blank_fields_only" },
+    verification_status: "source_attached",
+    promotion_status: "review_ready",
+    provenance_status: "candidate_provenance_attached",
+  };
+  const names = Object.keys(insertable).filter((name) => entity_columns.has(name) && insertable[name] !== undefined);
+  const placeholders = names.map((name, index) => Array.isArray(insertable[name]) || (typeof insertable[name] === "object" && insertable[name] !== null) ? `$${index + 1}::jsonb` : `$${index + 1}`);
+  const inserted = await client.query(`insert into public.luminari_resource_entities (${names.join(", ")}) values (${placeholders.join(", ")}) returning resource_entity_id, canonical_id`, names.map((name) => Array.isArray(insertable[name]) || (typeof insertable[name] === "object" && insertable[name] !== null) ? JSON.stringify(insertable[name]) : insertable[name]));
+  const canonical_record_id = String(inserted.rows[0]?.resource_entity_id ?? inserted.rows[0]?.canonical_id ?? source_pk);
+  const contacts = candidate_contact_values(row);
+  const contact_values = [...contacts.phones.map((value: string) => ["phone", value]), ...contacts.emails.map((value: string) => ["email", value]), ...contacts.urls.map((value: string) => ["url", value])];
+  if (contact_values.length && required_columns_present(contact_columns, ["resource_entity_id", "canonical_id", "contact_type", "contact_value", "label", "is_primary", "contact_quality", "source_table", "source_pk", "source_hash", "metadata"])) {
+    for (const [contact_type, contact_value] of contact_values.slice(0, 10)) {
+      await client.query(`insert into public.luminari_resource_contact_points (resource_entity_id, canonical_id, contact_type, contact_value, label, is_primary, contact_quality, source_table, source_pk, source_hash, metadata) values ($1,$2,$3,$4,$3,false,'candidate_extracted','registry_entity_extraction_v4',$5,$6,$7::jsonb) on conflict do nothing`, [inserted.rows[0]?.resource_entity_id, inserted.rows[0]?.canonical_id, contact_type, contact_value, source_pk, row.content_hash, JSON.stringify({ source: "registry_entity_extraction_v4", content_hash: row.content_hash })]);
+    }
+  }
+  void location_columns;
+  return { action_type: "would_insert", canonical_record_id, bridge_record_id: null };
+}
+
+export async function promote_registry_entity_candidates_apply(input: promote_registry_entity_candidates_apply_input = {}) {
+  const pool = getPool();
+  const client = await pool.connect();
+  const dry_run = input.dry_run !== false;
+  const target_hint = input.target_hint ?? CANONICAL_PROMOTION_TARGET_HINT;
+  const limit = Math.min(Math.max(input.limit ?? 10, 1), 25);
+  const run_id = randomUUID();
+  const feature_flag_enabled = promotion_feature_flag_enabled();
+  const results: any[] = [];
+  if (target_hint !== CANONICAL_PROMOTION_TARGET_HINT) return { success: false, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: 0, error: "unsupported_promotion_lane", run_id, results };
+  if (!dry_run && !feature_flag_enabled) return { success: false, dry_run, canonical_promotion_enabled: false, feature_flag_enabled, target_hint, processed_count: 0, error: "canonical_promotion_feature_flag_disabled", run_id, results };
+  try {
+    await client.query("begin");
+    const entity_columns = await table_columns(client, "luminari_resource_entities");
+    const location_columns = await table_columns(client, "luminari_resource_locations");
+    const contact_columns = await table_columns(client, "luminari_resource_contact_points");
+    const accounting_columns = await table_columns(client, "conveyor_promotion_accounting");
+    if (!required_columns_present(entity_columns, ["source_table", "source_pk", "resource_name", "metadata"]) || !required_columns_present(accounting_columns, ["run_id", "lane", "action_type", "is_dry_run", "source_record_id", "status", "metadata"])) {
+      await client.query("rollback");
+      return { success: false, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: 0, error: "no_safe_canonical_target", run_id, results };
+    }
+    const columns = await registry_candidate_columns();
+    const candidate_type_sql = registry_candidate_type_expression(columns);
+    const document_family_sql = registry_document_family_expression(columns);
+    const promotion_lane_sql = registry_promotion_lane_expression(columns);
+    const confidence_sql = registry_confidence_expression(columns);
+    const source_citation_sql = registry_source_citation_expression(columns);
+    const candidate_type_filter = input.candidate_type ? "and candidate_type = $2" : "";
+    const source_queue_parts = [];
+    if (columns.source_queue_id) source_queue_parts.push("c.source_queue_id");
+    if (columns.corpus_import_queue_id) source_queue_parts.push("c.corpus_import_queue_id");
+    for (const json_source of ["payload", "raw_candidate_payload", "candidate_payload", "forensic_provenance"].filter((name) => columns[name])) source_queue_parts.push(`nullif(c.${json_source}->>'source_queue_id','')::bigint`);
+    const source_queue_sql = source_queue_parts.length ? `coalesce(${source_queue_parts.join(", ")})` : "null::bigint";
+    const rows = await client.query(
+      `with candidates as (
+         select c.*, ${candidate_type_sql} as candidate_type, ${document_family_sql} as document_family, ${promotion_lane_sql} as promotion_lane, coalesce((${confidence_sql}), null) as confidence, nullif(${source_citation_sql}, '') as source_citation,
+                ${source_queue_sql} as resolved_source_queue_id
+           from public.registry_entity_extraction_v4 c
+       )
+       select candidates.*, q.id as source_queue_id, q.source_name as queue_source_name, q.storage_path as queue_storage_path, q.target_hint
+         from candidates
+         join public.corpus_import_queue q on q.id = candidates.resolved_source_queue_id
+        where q.target_hint = $1
+          and q.import_status = 'candidates_created'
+          ${candidate_type_filter}
+        order by candidates.extraction_timestamp desc nulls last, candidates.content_hash desc nulls last
+        limit $${input.candidate_type ? 3 : 2}`,
+      input.candidate_type ? [target_hint, input.candidate_type, limit] : [target_hint, limit],
+    );
+    for (const row of rows.rows) {
+      const verification_input = { ...row, promotion_lane: row.promotion_lane === "unclassified" ? "state_enriched_registry_docx_review" : row.promotion_lane, source_citation: row.source_citation ?? row.queue_storage_path ?? row.queue_source_name };
+      const verification = verify_registry_candidate(verification_input);
+      const material_scope = classify_candidate_material_scope(verification_input);
+      const material_hold_reason = hold_reason_for_material_scope(material_scope);
+      const dedupe_key = canonical_dedupe_key(row);
+      let action_type = "blocked";
+      let status = "blocked";
+      let reason = verification.blocked_reasons.join(",") || null;
+      let canonical_record_id = null;
+      let bridge_record_id = null;
+      try {
+        if (verification.verified && material_hold_reason) {
+          action_type = material_hold_reason;
+          status = "held_review";
+          reason = material_hold_reason;
+        } else if (verification.verified && material_scope === "official_public_law_or_authority" && !candidate_is_resource_like(row)) {
+          action_type = "no_safe_legal_authority_target";
+          status = "held_review";
+          reason = "no_safe_legal_authority_target";
+        } else if (verification.verified) {
+          const existing_row = await existing_resource_entity(client, row);
+          if (existing_row) {
+            const updates = blank_update_fields(existing_row, row, entity_columns);
+            action_type = Object.keys(updates).length ? "would_update_blank_fields" : "would_skip_duplicate";
+          } else action_type = "would_insert";
+          status = dry_run ? "validated_dry_run" : "applied";
+          if (!dry_run && action_type !== "would_skip_duplicate") {
+            const write_result = await write_canonical_candidate(client, row, entity_columns, location_columns, contact_columns);
+            action_type = write_result.action_type;
+            canonical_record_id = write_result.canonical_record_id;
+            bridge_record_id = write_result.bridge_record_id;
+          } else if (existing_row) canonical_record_id = String(existing_row.resource_entity_id ?? existing_row.canonical_id ?? "");
+        }
+      } catch (error: any) {
+        action_type = "error";
+        status = "error";
+        reason = error?.message ?? String(error);
+      }
+      const metadata = { source_queue_id: candidate_source_queue_id(row), source_file: row.queue_source_name ?? row.source_file ?? null, storage_path: row.queue_storage_path ?? row.storage_path ?? null, content_hash: row.content_hash ?? null, candidate_type: row.candidate_type ?? null, target_hint, dedupe_behavior: "enrich_blank_fields_only", verification_lane: verification.verification_lane, blocked_reasons: verification.blocked_reasons, material_scope, candidate_payload: candidate_payload_from_row(row), forensic_provenance: row.forensic_provenance ?? {} };
+      await insert_accounting_row(client, { run_id, lane: target_hint, action_type, is_dry_run: dry_run, source_record_id: row.content_hash ?? row.program_id, canonical_record_id, bridge_record_id, status, reason, dedupe_key, metadata });
+      results.push({ source_record_id: row.content_hash ?? row.program_id, canonical_record_id, bridge_record_id, action_type, status, reason, dedupe_key, blocked_reasons: verification.blocked_reasons, candidate_type: row.candidate_type ?? null, source_queue_id: metadata.source_queue_id, material_scope });
+    }
+    await client.query("commit");
+    const count = (name: string) => results.filter((row) => row.action_type === name).length;
+    const held_count = results.filter((row) => row.status === "held_review").length;
+    return { success: true, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: results.length, would_insert_count: count("would_insert"), would_update_blank_fields_count: count("would_update_blank_fields"), skipped_count: count("would_skip_duplicate") + count("no_safe_legal_authority_target"), blocked_count: count("blocked") + held_count, error_count: count("error"), run_id, results };
+  } catch (error: any) {
+    try { await client.query("rollback"); } catch {}
+    return { success: false, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: results.length, would_insert_count: 0, would_update_blank_fields_count: 0, skipped_count: 0, blocked_count: results.filter((row) => row.action_type === "blocked").length, error_count: results.filter((row) => row.action_type === "error").length + 1, run_id, error: "canonical_promotion_apply_failed", message: error?.message ?? String(error), results };
+  } finally {
+    client.release();
+  }
 }
 
 export async function set_corpus_import_queue_target_hint(input: { id: number; target_hint: TargetHintValue }) {
