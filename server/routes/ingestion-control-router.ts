@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Router } from "express";
-import { allowed_target_hints, create_candidates_from_ready_queue, list_corpus_import_queue, get_corpus_import_queue_row, get_registry_entity_candidates_summary, list_registry_entity_candidates, set_corpus_import_queue_target_hint, verify_registry_entity_candidates_dry_run } from "../engines/ingestion-control";
+import { allowed_target_hints, create_candidates_from_ready_queue, list_corpus_import_queue, get_corpus_import_queue_row, get_registry_entity_candidates_summary, list_registry_entity_candidates, set_corpus_import_queue_target_hint, verify_registry_entity_candidates_dry_run, promote_registry_entity_candidates_apply } from "../engines/ingestion-control";
 import { getPool } from "../db";
 
 const execFileAsync = promisify(execFile);
@@ -86,6 +86,22 @@ ingestionControlRestRouter.post("/registry-entity-candidates/verify-dry-run", as
     return res.json(result);
   } catch (error: any) {
     return res.status(500).json({ success: false, error: "registry_entity_candidates_verify_dry_run_failed", message: error?.message ?? String(error) });
+  }
+});
+
+ingestionControlRestRouter.post("/registry-entity-candidates/promote-apply", async (req, res) => {
+  try {
+    const limit = clamp_integer(req.body?.limit, 10, 1, 25);
+    const result = await promote_registry_entity_candidates_apply({
+      limit,
+      dry_run: req.body?.dry_run !== false,
+      target_hint: typeof req.body?.target_hint === "string" ? req.body.target_hint : "state_enriched_registry_docx_review",
+      candidate_type: typeof req.body?.candidate_type === "string" ? req.body.candidate_type : "benefit_program",
+      promotion_lane: typeof req.body?.promotion_lane === "string" ? req.body.promotion_lane : "state_enriched_registry_docx_review",
+    });
+    return res.status(result.success ? 200 : 409).json(result);
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: "registry_entity_candidates_promote_apply_failed", message: error?.message ?? String(error) });
   }
 });
 
