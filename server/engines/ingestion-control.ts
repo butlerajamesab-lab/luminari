@@ -562,11 +562,7 @@ function is_protected_document_family(document_family: string) {
 }
 
 function dry_run_lane_for_candidate(candidate: any) {
-  const document_family = candidate.document_family || "unclassified";
   const promotion_lane = candidate.promotion_lane || "unclassified";
-  const candidate_type = String(candidate.candidate_type || "unknown").toLowerCase();
-  const protected_material = document_family === "tribal" || candidate_type.includes("tribal") || candidate_type.includes("recognition");
-  if (protected_material && promotion_lane === "resource_lane") return "hold_review_lane";
   if (promotion_lane === "unclassified") return "hold_review_lane";
   return promotion_lane;
 }
@@ -575,15 +571,12 @@ function verify_registry_candidate(candidate: any) {
   const blocked_reasons: string[] = [];
   const document_family = candidate.document_family || "unclassified";
   const promotion_lane = candidate.promotion_lane || "unclassified";
-  const candidate_type = String(candidate.candidate_type || "unknown").toLowerCase();
-  const protected_material = document_family === "tribal" || candidate_type.includes("tribal") || candidate_type.includes("recognition");
   if (!candidate.name) blocked_reasons.push("name_required");
   if (!candidate.source_file) blocked_reasons.push("source_file_required");
   if (candidate.confidence !== null && candidate.confidence !== undefined && Number(candidate.confidence) < 0.6) blocked_reasons.push("confidence_below_threshold");
   if (!candidate.jurisdiction && !is_protected_document_family(document_family)) blocked_reasons.push("jurisdiction_required");
   if (!candidate.source_citation) blocked_reasons.push("source_provenance_required");
   if (promotion_lane === "unclassified") blocked_reasons.push("promotion_lane_unclassified");
-  if (protected_material && promotion_lane === "resource_lane") blocked_reasons.push("protected_material_wrong_lane");
   const verification_lane = dry_run_lane_for_candidate(candidate);
   return { verified: blocked_reasons.length === 0, blocked_reasons, verification_lane };
 }
@@ -698,6 +691,57 @@ function canonical_dedupe_key(row: any) {
 function text_or_null(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
+
+function candidate_material_text(candidate: any) {
+  const payload = candidate_payload_from_row(candidate);
+  return [
+    candidate.candidate_type,
+    candidate.document_family,
+    candidate.promotion_lane,
+    candidate.source_file,
+    candidate.source_citation,
+    candidate.name,
+    candidate.normalized_excerpt,
+    payload?.resource_type,
+    payload?.description,
+    payload?.eligibility_summary,
+    payload?.normalized_excerpt,
+    payload?.source_name,
+    candidate.forensic_provenance?.source_file,
+    candidate.forensic_provenance?.source_url,
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
+function candidate_has_source_backing(candidate: any) {
+  const payload = candidate_payload_from_row(candidate);
+  return Boolean(candidate.source_citation || candidate.source_file || candidate.content_hash || payload?.source_name || payload?.storage_path || candidate.forensic_provenance?.source_file || candidate.forensic_provenance?.source_url);
+}
+
+function classify_candidate_material_scope(candidate: any) {
+  const text = candidate_material_text(candidate);
+  const candidate_type = String(candidate.candidate_type || "unknown").toLowerCase();
+  const source_backed = candidate_has_source_backing(candidate);
+  if (/recognition|federal acknowledgment|acknowledgement|tribal card|enrollment|sovereignty status|status packet|governance packet|recognition packet/.test(text)) return "recognition_sensitive_material";
+  if (/ceremon|sacred|cultural property|language material|oral history|identity record|internal communit|tribe-specific history|private cultural|own words|traditional knowledge/.test(text)) return "tribe_specific_private_or_cultural_material";
+  if (!source_backed) return "unclear_source_or_unverified_material";
+  if (candidate_type === "statute" || /\b(statute|regulation|ordinance|code section|public rule|court authority|public legal authority|federal indian law|state-tribal consultation|bia rule|ihs regulation|u\.s\.c\.|c\.f\.r\.|§)\b/.test(text)) return "official_public_law_or_authority";
+  if (/\b(bia|ihs|agency|department|benefit|health service|legal aid|tribal liaison|court resource|nonprofit|public program|hotline|resource|assistance|snap|medicaid|tanf|ssi|contact|website|public service)\b/.test(text)) return "public_service_or_agency_resource";
+  if (["benefit_program", "agency", "legal_aid", "court", "contact", "resource"].includes(candidate_type)) return "public_service_or_agency_resource";
+  return "unclear_source_or_unverified_material";
+}
+
+function hold_reason_for_material_scope(material_scope: string) {
+  if (material_scope === "tribe_specific_private_or_cultural_material") return "tribe_specific_material_hold_review";
+  if (material_scope === "recognition_sensitive_material") return "recognition_sensitive_material_hold_review";
+  if (material_scope === "unclear_source_or_unverified_material") return "unclear_source_or_unverified_material_hold_review";
+  return null;
+}
+
+function candidate_is_resource_like(candidate: any) {
+  const candidate_type = String(candidate.candidate_type || "unknown").toLowerCase();
+  return ["benefit_program", "agency", "legal_aid", "court", "contact", "resource"].includes(candidate_type);
+}
+
 
 async function existing_resource_entity(client: any, row: any) {
   const source_pk = row.content_hash ?? row.program_id ?? null;
@@ -833,7 +877,10 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
       input.candidate_type ? [target_hint, input.candidate_type, limit] : [target_hint, limit],
     );
     for (const row of rows.rows) {
-      const verification = verify_registry_candidate({ ...row, promotion_lane: row.promotion_lane === "unclassified" ? "state_enriched_registry_docx_review" : row.promotion_lane, source_citation: row.source_citation ?? row.queue_storage_path ?? row.queue_source_name });
+      const verification_input = { ...row, promotion_lane: row.promotion_lane === "unclassified" ? "state_enriched_registry_docx_review" : row.promotion_lane, source_citation: row.source_citation ?? row.queue_storage_path ?? row.queue_source_name };
+      const verification = verify_registry_candidate(verification_input);
+      const material_scope = classify_candidate_material_scope(verification_input);
+      const material_hold_reason = hold_reason_for_material_scope(material_scope);
       const dedupe_key = canonical_dedupe_key(row);
       let action_type = "blocked";
       let status = "blocked";
@@ -841,7 +888,15 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
       let canonical_record_id = null;
       let bridge_record_id = null;
       try {
-        if (verification.verified) {
+        if (verification.verified && material_hold_reason) {
+          action_type = material_hold_reason;
+          status = "held_review";
+          reason = material_hold_reason;
+        } else if (verification.verified && material_scope === "official_public_law_or_authority" && !candidate_is_resource_like(row)) {
+          action_type = "no_safe_legal_authority_target";
+          status = "held_review";
+          reason = "no_safe_legal_authority_target";
+        } else if (verification.verified) {
           const existing_row = await existing_resource_entity(client, row);
           if (existing_row) {
             const updates = blank_update_fields(existing_row, row, entity_columns);
@@ -860,13 +915,14 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
         status = "error";
         reason = error?.message ?? String(error);
       }
-      const metadata = { source_queue_id: candidate_source_queue_id(row), source_file: row.queue_source_name ?? row.source_file ?? null, storage_path: row.queue_storage_path ?? row.storage_path ?? null, content_hash: row.content_hash ?? null, candidate_type: row.candidate_type ?? null, target_hint, dedupe_behavior: "enrich_blank_fields_only", verification_lane: verification.verification_lane, blocked_reasons: verification.blocked_reasons, candidate_payload: candidate_payload_from_row(row), forensic_provenance: row.forensic_provenance ?? {} };
+      const metadata = { source_queue_id: candidate_source_queue_id(row), source_file: row.queue_source_name ?? row.source_file ?? null, storage_path: row.queue_storage_path ?? row.storage_path ?? null, content_hash: row.content_hash ?? null, candidate_type: row.candidate_type ?? null, target_hint, dedupe_behavior: "enrich_blank_fields_only", verification_lane: verification.verification_lane, blocked_reasons: verification.blocked_reasons, material_scope, candidate_payload: candidate_payload_from_row(row), forensic_provenance: row.forensic_provenance ?? {} };
       await insert_accounting_row(client, { run_id, lane: target_hint, action_type, is_dry_run: dry_run, source_record_id: row.content_hash ?? row.program_id, canonical_record_id, bridge_record_id, status, reason, dedupe_key, metadata });
-      results.push({ source_record_id: row.content_hash ?? row.program_id, canonical_record_id, bridge_record_id, action_type, status, reason, dedupe_key, blocked_reasons: verification.blocked_reasons, candidate_type: row.candidate_type ?? null, source_queue_id: metadata.source_queue_id });
+      results.push({ source_record_id: row.content_hash ?? row.program_id, canonical_record_id, bridge_record_id, action_type, status, reason, dedupe_key, blocked_reasons: verification.blocked_reasons, candidate_type: row.candidate_type ?? null, source_queue_id: metadata.source_queue_id, material_scope });
     }
     await client.query("commit");
     const count = (name: string) => results.filter((row) => row.action_type === name).length;
-    return { success: true, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: results.length, would_insert_count: count("would_insert"), would_update_blank_fields_count: count("would_update_blank_fields"), skipped_count: count("would_skip_duplicate"), blocked_count: count("blocked"), error_count: count("error"), run_id, results };
+    const held_count = results.filter((row) => row.status === "held_review").length;
+    return { success: true, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: results.length, would_insert_count: count("would_insert"), would_update_blank_fields_count: count("would_update_blank_fields"), skipped_count: count("would_skip_duplicate") + count("no_safe_legal_authority_target"), blocked_count: count("blocked") + held_count, error_count: count("error"), run_id, results };
   } catch (error: any) {
     try { await client.query("rollback"); } catch {}
     return { success: false, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: results.length, would_insert_count: 0, would_update_blank_fields_count: 0, skipped_count: 0, blocked_count: results.filter((row) => row.action_type === "blocked").length, error_count: results.filter((row) => row.action_type === "error").length + 1, run_id, error: "canonical_promotion_apply_failed", message: error?.message ?? String(error), results };
