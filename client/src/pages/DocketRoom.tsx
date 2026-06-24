@@ -488,6 +488,187 @@ function MySubmissions() {
   );
 }
 
+
+// ── LegiScan Docket Bill Feed ───────────────────────────────────────
+
+type docket_bill = {
+  bill_id: number;
+  number?: string;
+  title?: string;
+  status?: string | number;
+  status_date?: string;
+  last_action_date?: string;
+  last_action?: string;
+  source_url?: string;
+  url?: string;
+};
+
+type docket_state_payload = {
+  ok: boolean;
+  state?: string;
+  source?: string;
+  session_id?: number;
+  session_title?: string | null;
+  bill_count?: number;
+  fetched_at?: string;
+  bills?: docket_bill[];
+  message?: string;
+};
+
+type docket_bill_detail_payload = {
+  ok: boolean;
+  source?: string;
+  bill_id?: number;
+  fetched_at?: string;
+  bill?: Record<string, unknown>;
+  message?: string;
+};
+
+const docket_states = [
+  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+  "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+  "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+  "DC",
+];
+
+function DocketBillFeed() {
+  const [selected_state, set_selected_state] = useState("WA");
+  const [state_data, set_state_data] = useState<docket_state_payload | null>(null);
+  const [state_error, set_state_error] = useState<string | null>(null);
+  const [state_loading, set_state_loading] = useState(false);
+  const [selected_bill_id, set_selected_bill_id] = useState<number | null>(null);
+  const [bill_detail, set_bill_detail] = useState<docket_bill_detail_payload | null>(null);
+  const [bill_detail_error, set_bill_detail_error] = useState<string | null>(null);
+  const [bill_detail_loading, set_bill_detail_loading] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const load_state = async () => {
+      set_state_loading(true);
+      set_state_error(null);
+      set_state_data(null);
+      set_selected_bill_id(null);
+      set_bill_detail(null);
+      set_bill_detail_error(null);
+
+      try {
+        const response = await fetch(`/api/docket/state?state=${encodeURIComponent(selected_state)}`, {
+          signal: controller.signal,
+        });
+        const payload = await response.json().catch(() => ({
+          ok: false,
+          message: `api_docket_state_failed_http_${response.status}`,
+        })) as docket_state_payload;
+
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.message || `api_docket_state_failed_http_${response.status}`);
+        }
+
+        set_state_data(payload);
+      } catch (error: any) {
+        if (error?.name !== "AbortError") {
+          set_state_error(error?.message || "api_docket_state_failed");
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          set_state_loading(false);
+        }
+      }
+    };
+
+    load_state();
+
+    return () => controller.abort();
+  }, [selected_state]);
+
+  const load_bill_detail = async (bill_id: number) => {
+    set_selected_bill_id(bill_id);
+    set_bill_detail(null);
+    set_bill_detail_error(null);
+    set_bill_detail_loading(true);
+
+    try {
+      const response = await fetch(`/api/docket/bill/${bill_id}`);
+      const payload = await response.json().catch(() => ({
+        ok: false,
+        message: `api_docket_bill_failed_http_${response.status}`,
+      })) as docket_bill_detail_payload;
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.message || `api_docket_bill_failed_http_${response.status}`);
+      }
+
+      set_bill_detail(payload);
+    } catch (error: any) {
+      set_bill_detail_error(error?.message || "api_docket_bill_failed");
+    } finally {
+      set_bill_detail_loading(false);
+    }
+  };
+
+  const bills = state_data?.bills ?? [];
+
+  return (
+    <div style={{ background: dk.sectionBg, border: `1px solid ${dk.steelBorder}`, borderRadius: "8px", padding: "1rem 1.25rem", marginBottom: "1.5rem" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
+        <div>
+          <div style={{ fontFamily: fontMono, fontSize: "0.75rem", color: dk.steelBright, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase" }}>live_bill_feed</div>
+          <p style={{ fontFamily: fontSans, fontSize: "0.82rem", color: dk.muted, margin: "0.25rem 0 0" }}>backend_cache_source_only_no_vendor_frontend_calls</p>
+        </div>
+        <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>
+          selected_state
+          <select value={selected_state} onChange={event => set_selected_state(event.target.value)} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, fontFamily: fontMono, fontSize: "0.78rem", padding: "0.35rem 0.5rem" }}>
+            {docket_states.map(state => <option key={state} value={state}>{state}</option>)}
+          </select>
+        </label>
+      </div>
+
+      {state_loading ? (
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: dk.muted, fontFamily: fontMono, fontSize: "0.75rem" }}><Loader2 size={14} className="animate-spin" /> loading_state_bills</div>
+      ) : state_error ? (
+        <div style={{ color: dk.red, fontFamily: fontMono, fontSize: "0.75rem" }}>error {state_error}</div>
+      ) : state_data ? (
+        <>
+          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.7rem", color: dk.muted, marginBottom: "0.85rem" }}>
+            <span>source {state_data.source || "unknown"}</span>
+            <span>fetched_at {state_data.fetched_at || "unknown"}</span>
+            <span>bill_count {state_data.bill_count ?? bills.length}</span>
+            <span>session_id {state_data.session_id ?? "unknown"}</span>
+            {state_data.session_title && <span>session_title {state_data.session_title}</span>}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.75rem" }}>
+            {bills.map(bill => {
+              const bill_url = bill.source_url || bill.url;
+              return (
+                <button key={bill.bill_id} onClick={() => load_bill_detail(bill.bill_id)} style={{ textAlign: "left", background: dk.cardBg, border: `1px solid ${selected_bill_id === bill.bill_id ? dk.steel : dk.cardBorder}`, borderRadius: "8px", padding: "0.85rem", cursor: "pointer" }}>
+                  <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.steelBright, marginBottom: "0.35rem" }}>bill_id {bill.bill_id} · number {bill.number || "unknown"}</div>
+                  <div style={{ fontFamily: fontSerif, fontSize: "1rem", color: dk.paper, lineHeight: 1.25, marginBottom: "0.5rem" }}>{bill.title || "title_unavailable"}</div>
+                  <div style={{ display: "grid", gap: "0.25rem", fontFamily: fontMono, fontSize: "0.66rem", color: dk.muted }}>
+                    <span>status {bill.status ?? "unknown"}</span>
+                    <span>status_date {bill.status_date || "unknown"}</span>
+                    <span>last_action_date {bill.last_action_date || "unknown"}</span>
+                    <span>last_action {bill.last_action || "unknown"}</span>
+                    {bill_url && <span>source_url <a href={bill_url} target="_blank" rel="noopener noreferrer" onClick={event => event.stopPropagation()} style={{ color: dk.steelBright }}>{bill_url}</a></span>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          {selected_bill_id && (
+            <div style={{ marginTop: "1rem", background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "0.85rem" }}>
+              <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.steelBright, marginBottom: "0.5rem" }}>bill_detail_click_through bill_id {selected_bill_id}</div>
+              {bill_detail_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>loading_bill_detail</div> : bill_detail_error ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.red }}>error {bill_detail_error}</div> : bill_detail ? <pre style={{ whiteSpace: "pre-wrap", margin: 0, color: dk.cream, fontFamily: fontMono, fontSize: "0.68rem", maxHeight: 320, overflow: "auto" }}>{JSON.stringify({ source: bill_detail.source, fetched_at: bill_detail.fetched_at, bill: bill_detail.bill }, null, 2)}</pre> : null}
+            </div>
+          )}
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 // ── Legistar Live Feed ──────────────────────────────────────────────
 
 function LegistarLiveFeed({ keyword }: { keyword?: string }) {
@@ -855,6 +1036,11 @@ function DocketList({ onSelect }: { onSelect: (id: number) => void }) {
       {/* My Submissions (if logged in) */}
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 1.5rem" }}>
         {user && <MySubmissions />}
+      </div>
+
+      {/* LegiScan Docket Bill Feed */}
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 1.5rem" }}>
+        <DocketBillFeed />
       </div>
 
       {/* Seattle Legistar Live Feed */}
