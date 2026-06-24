@@ -18,7 +18,9 @@
     "audit:snake-case": "node scripts/audit-runtime-camelcase.mjs",
     "smoke:docket:wa": "tsx scripts/smoke-docket-wa.mjs",
     "check:contracts": "node scripts/check-owned-contracts-snake-case.mjs && node scripts/check-health-contracts.mjs",
-    "check:health-contracts": "node scripts/check-health-contracts.mjs"
+    "check:health-contracts": "node scripts/check-health-contracts.mjs",
+    "warm:docket:wa": "node scripts/warm-docket-state-cache.mjs --state=WA",
+    "warm:docket:all": "node scripts/warm-docket-state-cache.mjs --all"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
