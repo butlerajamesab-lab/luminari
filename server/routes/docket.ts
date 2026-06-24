@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { createClient } from "@supabase/supabase-js";
 import {
   get_bill,
   get_master_list,
@@ -60,7 +59,7 @@ const normalize_bill_id = (bill_id: unknown): number => {
   return normalized;
 };
 
-const supabase = () => {
+const get_supabase_cache_config = () => {
   const supabase_url = process.env.LIGHTHOUSE_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "";
   const supabase_service_role_key = process.env.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
@@ -68,12 +67,106 @@ const supabase = () => {
     throw new Error("supabase_not_configured_for_docket_room_cache_access");
   }
 
-  return createClient(supabase_url, supabase_service_role_key, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
+  return {
+    supabase_url: supabase_url.replace(/\/$/, ""),
+    supabase_service_role_key,
+  };
+};
+
+const supabase_cache_headers = (include_body = false): Record<string, string> => {
+  const { supabase_service_role_key } = get_supabase_cache_config();
+  const headers: Record<string, string> = {
+    apikey: supabase_service_role_key,
+    authorization: `Bearer ${supabase_service_role_key}`,
+  };
+
+  if (include_body) {
+    headers["content-type"] = "application/json";
+    headers.prefer = "resolution=merge-duplicates,return=minimal";
+  }
+
+  return headers;
+};
+
+const supabase_cache_url = (path: string, query: Record<string, string>): string => {
+  const { supabase_url } = get_supabase_cache_config();
+  const search_params = new URLSearchParams(query);
+
+  return `${supabase_url}/rest/v1/${path}?${search_params.toString()}`;
+};
+
+const parse_supabase_cache_response = async <row_type>(response: Response): Promise<row_type | null> => {
+  if (!response.ok) {
+    throw new Error(`supabase_cache_request_failed_http_${response.status}`);
+  }
+
+  const rows = (await response.json()) as row_type[];
+
+  return rows[0] ?? null;
+};
+
+const read_state_cache = async (state: string): Promise<docket_state_cache_row | null> => {
+  const response = await fetch(
+    supabase_cache_url("docket_bill_state_cache", {
+      state: `eq.${state}`,
+      select: "*",
+    }),
+    {
+      method: "GET",
+      headers: supabase_cache_headers(),
     },
-  });
+  );
+
+  return parse_supabase_cache_response<docket_state_cache_row>(response);
+};
+
+const upsert_state_cache = async (row: docket_state_cache_row): Promise<void> => {
+  const response = await fetch(
+    supabase_cache_url("docket_bill_state_cache", {
+      on_conflict: "state",
+    }),
+    {
+      method: "POST",
+      headers: supabase_cache_headers(true),
+      body: JSON.stringify(row),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`supabase_cache_request_failed_http_${response.status}`);
+  }
+};
+
+const read_bill_detail_cache = async (bill_id: number): Promise<docket_bill_detail_cache_row | null> => {
+  const response = await fetch(
+    supabase_cache_url("docket_bill_detail_cache", {
+      bill_id: `eq.${bill_id}`,
+      select: "*",
+    }),
+    {
+      method: "GET",
+      headers: supabase_cache_headers(),
+    },
+  );
+
+  return parse_supabase_cache_response<docket_bill_detail_cache_row>(response);
+};
+
+const upsert_bill_detail_cache = async (row: docket_bill_detail_cache_row): Promise<void> => {
+  const response = await fetch(
+    supabase_cache_url("docket_bill_detail_cache", {
+      on_conflict: "bill_id",
+    }),
+    {
+      method: "POST",
+      headers: supabase_cache_headers(true),
+      body: JSON.stringify(row),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`supabase_cache_request_failed_http_${response.status}`);
+  }
 };
 
 const is_fresh = (fetched_at: string, ttl_ms = cache_ttl_ms): boolean => {
@@ -119,17 +212,7 @@ docket_router.get("/jurisdictions", (_req, res) => {
 docket_router.get("/state", async (req, res) => {
   try {
     const state = normalize_state_code(req.query.state);
-    const db = supabase();
-
-    const { data: cached, error: cache_error } = await db
-      .from("docket_bill_state_cache")
-      .select("*")
-      .eq("state", state)
-      .maybeSingle<docket_state_cache_row>();
-
-    if (cache_error) {
-      throw cache_error;
-    }
+    const cached = await read_state_cache(state);
 
     if (cached && is_fresh(cached.fetched_at)) {
       return res.json({
@@ -162,16 +245,10 @@ docket_router.get("/state", async (req, res) => {
       bills,
       bill_count: bills.length,
       fetched_at: new Date().toISOString(),
-      source: "legiscan.get_master_list",
+      source: "legiscan_get_master_list",
     };
 
-    const { error: upsert_error } = await db
-      .from("docket_bill_state_cache")
-      .upsert(row, { onConflict: "state" });
-
-    if (upsert_error) {
-      throw upsert_error;
-    }
+    await upsert_state_cache(row);
 
     return res.json({
       ok: true,
@@ -194,17 +271,7 @@ docket_router.get("/state", async (req, res) => {
 docket_router.get("/bill/:bill_id", async (req, res) => {
   try {
     const bill_id = normalize_bill_id(req.params.bill_id);
-    const db = supabase();
-
-    const { data: cached, error: cache_error } = await db
-      .from("docket_bill_detail_cache")
-      .select("*")
-      .eq("bill_id", bill_id)
-      .maybeSingle<docket_bill_detail_cache_row>();
-
-    if (cache_error && cache_error.code !== "PGRST205") {
-      throw cache_error;
-    }
+    const cached = await read_bill_detail_cache(bill_id);
 
     if (cached && is_fresh(cached.fetched_at, bill_detail_cache_ttl_ms)) {
       return res.json({
@@ -221,16 +288,10 @@ docket_router.get("/bill/:bill_id", async (req, res) => {
       bill_id,
       bill,
       fetched_at: new Date().toISOString(),
-      source: "legiscan.get_bill",
+      source: "legiscan_get_bill",
     };
 
-    const { error: upsert_error } = await db
-      .from("docket_bill_detail_cache")
-      .upsert(row, { onConflict: "bill_id" });
-
-    if (upsert_error) {
-      throw upsert_error;
-    }
+    await upsert_bill_detail_cache(row);
 
     return res.json({
       ok: true,
