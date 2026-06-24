@@ -10,6 +10,9 @@ import {
 
 const cache_ttl_ms = 8 * 60 * 60 * 1000;
 const bill_detail_cache_ttl_ms = 24 * 60 * 60 * 1000;
+const warm_state_delay_ms = 750;
+const warm_next_batch_default_limit = 5;
+const warm_next_batch_max_limit = 10;
 
 export const docket_router = Router();
 
@@ -29,6 +32,15 @@ type docket_bill_detail_cache_row = {
   bill: legiscan_bill_detail;
   fetched_at: string;
   source: string;
+};
+
+type docket_warm_state_result = {
+  state: string;
+  ok: boolean;
+  bill_count: number;
+  source: string;
+  fetched_at: string | null;
+  error?: string;
 };
 
 const normalize_state_code = (state: unknown): string => {
@@ -120,6 +132,25 @@ const read_state_cache = async (state: string): Promise<docket_state_cache_row |
   return parse_supabase_cache_response<docket_state_cache_row>(response);
 };
 
+const read_all_state_cache = async (): Promise<docket_state_cache_row[]> => {
+  const response = await fetch(
+    supabase_cache_url("docket_bill_state_cache", {
+      state: `in.(${LEGISCAN_ROLLOUT_STATES.join(",")})`,
+      select: "*",
+    }),
+    {
+      method: "GET",
+      headers: supabase_cache_headers(),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`supabase_cache_request_failed_http_${response.status}`);
+  }
+
+  return (await response.json()) as docket_state_cache_row[];
+};
+
 const upsert_state_cache = async (row: docket_state_cache_row): Promise<void> => {
   const response = await fetch(
     supabase_cache_url("docket_bill_state_cache", {
@@ -193,6 +224,82 @@ const pick_active_session = async (state: string) => {
   return current ?? sessions[0];
 };
 
+const age_minutes = (fetched_at: string | null): number | null => {
+  if (!fetched_at) {
+    return null;
+  }
+
+  const fetched_ms = new Date(fetched_at).getTime();
+
+  if (!Number.isFinite(fetched_ms)) {
+    return null;
+  }
+
+  return Math.max(0, Math.floor((Date.now() - fetched_ms) / 60000));
+};
+
+const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+
+const normalize_batch_limit = (limit: unknown): number => {
+  if (limit === undefined || limit === null) {
+    return warm_next_batch_default_limit;
+  }
+
+  const normalized = Number(limit);
+
+  if (!Number.isSafeInteger(normalized) || normalized <= 0) {
+    throw new Error("invalid_warm_next_batch_limit");
+  }
+
+  return Math.min(normalized, warm_next_batch_max_limit);
+};
+
+const format_cache_status = (state: string, cached: docket_state_cache_row | null) => ({
+  state,
+  has_cache: Boolean(cached),
+  bill_count: cached?.bill_count ?? 0,
+  session_id: cached?.session_id ?? null,
+  session_title: cached?.session_title ?? null,
+  fetched_at: cached?.fetched_at ?? null,
+  age_minutes: age_minutes(cached?.fetched_at ?? null),
+  is_fresh: cached ? is_fresh(cached.fetched_at) : false,
+});
+
+const refresh_state_cache = async (state: string) => {
+  const cached = await read_state_cache(state);
+
+  if (cached && is_fresh(cached.fetched_at)) {
+    return {
+      source: "cache",
+      row: cached,
+    };
+  }
+
+  const session = await pick_active_session(state);
+
+  if (!session?.session_id) {
+    throw new Error(`no_legiscan_sessions_found_for_${state}`);
+  }
+
+  const bills = await get_master_list(session.session_id);
+  const row: docket_state_cache_row = {
+    state,
+    session_id: session.session_id,
+    session_title: session.session_title ?? session.session_name ?? session.name ?? null,
+    bills,
+    bill_count: bills.length,
+    fetched_at: new Date().toISOString(),
+    source: "legiscan_get_master_list",
+  };
+
+  await upsert_state_cache(row);
+
+  return {
+    source: cached ? "legiscan_refresh_stale_cache" : "legiscan_refresh_empty_cache",
+    row,
+  };
+};
+
 const serialize_error = (error: unknown): string => {
   if (error instanceof Error) {
     return error.message.replace(/key=[^&\s]+/gi, "key=[redacted]");
@@ -209,56 +316,113 @@ docket_router.get("/jurisdictions", (_req, res) => {
   });
 });
 
-docket_router.get("/state", async (req, res) => {
+docket_router.get("/cache-status", async (_req, res) => {
   try {
-    const state = normalize_state_code(req.query.state);
-    const cached = await read_state_cache(state);
-
-    if (cached && is_fresh(cached.fetched_at)) {
-      return res.json({
-        ok: true,
-        source: "cache",
-        state,
-        session_id: cached.session_id,
-        session_title: cached.session_title,
-        bill_count: cached.bill_count,
-        fetched_at: cached.fetched_at,
-        bills: cached.bills,
-      });
-    }
-
-    const session = await pick_active_session(state);
-
-    if (!session?.session_id) {
-      return res.status(404).json({
-        ok: false,
-        state,
-        message: `no_legiscan_sessions_found_for_${state}`,
-      });
-    }
-
-    const bills = await get_master_list(session.session_id);
-    const row: docket_state_cache_row = {
-      state,
-      session_id: session.session_id,
-      session_title: session.session_title ?? session.session_name ?? session.name ?? null,
-      bills,
-      bill_count: bills.length,
-      fetched_at: new Date().toISOString(),
-      source: "legiscan_get_master_list",
-    };
-
-    await upsert_state_cache(row);
+    const rows = await read_all_state_cache();
+    const rows_by_state = new Map(rows.map(row => [row.state, row]));
 
     return res.json({
       ok: true,
-      source: cached ? "legiscan_refresh_stale_cache" : "legiscan_refresh_empty_cache",
+      states: LEGISCAN_ROLLOUT_STATES.map(state => format_cache_status(state, rows_by_state.get(state) ?? null)),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      message: serialize_error(error),
+    });
+  }
+});
+
+docket_router.post("/warm-state", async (req, res) => {
+  try {
+    const state = normalize_state_code(req.body?.state);
+    const refreshed = await refresh_state_cache(state);
+
+    return res.json({
+      ok: true,
       state,
-      session_id: row.session_id,
-      session_title: row.session_title,
-      bill_count: row.bill_count,
-      fetched_at: row.fetched_at,
-      bills: row.bills,
+      source: refreshed.source,
+      bill_count: refreshed.row.bill_count,
+      session_id: refreshed.row.session_id,
+      session_title: refreshed.row.session_title,
+      fetched_at: refreshed.row.fetched_at,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      error: serialize_error(error),
+      message: serialize_error(error),
+    });
+  }
+});
+
+docket_router.post("/warm-next-batch", async (req, res) => {
+  try {
+    const limit = normalize_batch_limit(req.body?.limit);
+    const rows = await read_all_state_cache();
+    const rows_by_state = new Map(rows.map(row => [row.state, row]));
+    const pending_states = LEGISCAN_ROLLOUT_STATES
+      .filter(state => {
+        const cached = rows_by_state.get(state);
+        return !cached || !is_fresh(cached.fetched_at);
+      });
+    const states_to_warm = pending_states.slice(0, limit);
+    const results: docket_warm_state_result[] = [];
+
+    for (const state of states_to_warm) {
+      try {
+        const refreshed = await refresh_state_cache(state);
+        results.push({
+          state,
+          ok: true,
+          bill_count: refreshed.row.bill_count,
+          source: refreshed.source,
+          fetched_at: refreshed.row.fetched_at,
+        });
+      } catch (error) {
+        results.push({
+          state,
+          ok: false,
+          bill_count: 0,
+          source: "warm_next_batch_error",
+          fetched_at: null,
+          error: serialize_error(error),
+        });
+      }
+
+      await sleep(warm_state_delay_ms);
+    }
+
+    return res.json({
+      ok: true,
+      limit,
+      warmed_count: results.length,
+      remaining_count: Math.max(0, pending_states.length - results.filter(result => result.ok).length),
+      results,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      error: serialize_error(error),
+      message: serialize_error(error),
+    });
+  }
+});
+
+docket_router.get("/state", async (req, res) => {
+  try {
+    const state = normalize_state_code(req.query.state);
+    const refreshed = await refresh_state_cache(state);
+
+    return res.json({
+      ok: true,
+      source: refreshed.source,
+      state,
+      session_id: refreshed.row.session_id,
+      session_title: refreshed.row.session_title,
+      bill_count: refreshed.row.bill_count,
+      fetched_at: refreshed.row.fetched_at,
+      bills: refreshed.row.bills,
     });
   } catch (error) {
     return res.status(500).json({

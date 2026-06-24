@@ -524,6 +524,55 @@ type docket_bill_detail_payload = {
   message?: string;
 };
 
+type docket_cache_status = {
+  state: string;
+  has_cache: boolean;
+  bill_count: number;
+  session_id: number | null;
+  session_title: string | null;
+  fetched_at: string | null;
+  age_minutes: number | null;
+  is_fresh: boolean;
+};
+
+type docket_cache_status_payload = {
+  ok: boolean;
+  states?: docket_cache_status[];
+  message?: string;
+  error?: string;
+};
+
+type docket_warm_state_payload = {
+  ok: boolean;
+  state?: string;
+  source?: string;
+  bill_count?: number;
+  session_id?: number;
+  session_title?: string | null;
+  fetched_at?: string;
+  message?: string;
+  error?: string;
+};
+
+type docket_warm_batch_result = {
+  state: string;
+  ok: boolean;
+  bill_count: number;
+  source: string;
+  fetched_at: string | null;
+  error?: string;
+};
+
+type docket_warm_batch_payload = {
+  ok: boolean;
+  limit?: number;
+  warmed_count?: number;
+  remaining_count?: number;
+  results?: docket_warm_batch_result[];
+  message?: string;
+  error?: string;
+};
+
 const docket_states = [
   "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
   "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
@@ -542,6 +591,12 @@ function DocketBillFeed() {
   const [bill_detail, set_bill_detail] = useState<docket_bill_detail_payload | null>(null);
   const [bill_detail_error, set_bill_detail_error] = useState<string | null>(null);
   const [bill_detail_loading, set_bill_detail_loading] = useState(false);
+  const [cache_statuses, set_cache_statuses] = useState<docket_cache_status[]>([]);
+  const [cache_status_error, set_cache_status_error] = useState<string | null>(null);
+  const [cache_status_loading, set_cache_status_loading] = useState(false);
+  const [warm_results, set_warm_results] = useState<docket_warm_batch_result[]>([]);
+  const [warm_error, set_warm_error] = useState<string | null>(null);
+  const [warm_loading, set_warm_loading] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -609,7 +664,97 @@ function DocketBillFeed() {
     }
   };
 
+  const refresh_cache_status = useCallback(async () => {
+    set_cache_status_loading(true);
+    set_cache_status_error(null);
+
+    try {
+      const response = await fetch("/api/docket/cache-status");
+      const payload = await response.json().catch(() => ({
+        ok: false,
+        message: `api_docket_cache_status_failed_http_${response.status}`,
+      })) as docket_cache_status_payload;
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || payload.message || `api_docket_cache_status_failed_http_${response.status}`);
+      }
+
+      set_cache_statuses(payload.states ?? []);
+    } catch (error: any) {
+      set_cache_status_error(error?.message || "api_docket_cache_status_failed");
+    } finally {
+      set_cache_status_loading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh_cache_status();
+  }, [refresh_cache_status]);
+
+  const warm_selected_state = async () => {
+    set_warm_loading(true);
+    set_warm_error(null);
+
+    try {
+      const response = await fetch("/api/docket/warm-state", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ state: selected_state }),
+      });
+      const payload = await response.json().catch(() => ({
+        ok: false,
+        message: `api_docket_warm_state_failed_http_${response.status}`,
+      })) as docket_warm_state_payload;
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || payload.message || `api_docket_warm_state_failed_http_${response.status}`);
+      }
+
+      set_warm_results([{
+        state: payload.state || selected_state,
+        ok: true,
+        bill_count: payload.bill_count ?? 0,
+        source: payload.source || "unknown",
+        fetched_at: payload.fetched_at || null,
+      }]);
+      await refresh_cache_status();
+    } catch (error: any) {
+      set_warm_error(error?.message || "api_docket_warm_state_failed");
+    } finally {
+      set_warm_loading(false);
+    }
+  };
+
+  const warm_next_batch = async () => {
+    set_warm_loading(true);
+    set_warm_error(null);
+
+    try {
+      const response = await fetch("/api/docket/warm-next-batch", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ limit: 5 }),
+      });
+      const payload = await response.json().catch(() => ({
+        ok: false,
+        message: `api_docket_warm_next_batch_failed_http_${response.status}`,
+      })) as docket_warm_batch_payload;
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || payload.message || `api_docket_warm_next_batch_failed_http_${response.status}`);
+      }
+
+      set_warm_results(payload.results ?? []);
+      await refresh_cache_status();
+    } catch (error: any) {
+      set_warm_error(error?.message || "api_docket_warm_next_batch_failed");
+    } finally {
+      set_warm_loading(false);
+    }
+  };
+
   const bills = state_data?.bills ?? [];
+  const selected_cache_status = cache_statuses.find(status => status.state === selected_state);
 
   return (
     <div style={{ background: dk.sectionBg, border: `1px solid ${dk.steelBorder}`, borderRadius: "8px", padding: "1rem 1.25rem", marginBottom: "1.5rem" }}>
@@ -624,6 +769,41 @@ function DocketBillFeed() {
             {docket_states.map(state => <option key={state} value={state}>{state}</option>)}
           </select>
         </label>
+      </div>
+
+      <div style={{ background: dk.bg, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "0.85rem", marginBottom: "0.9rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem", flexWrap: "wrap", marginBottom: "0.65rem" }}>
+          <div>
+            <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.copper, fontWeight: 700 }}>docket_cache_control</div>
+            <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>selected_state {selected_state}</div>
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <button type="button" onClick={warm_selected_state} disabled={warm_loading} style={{ background: dk.copperSoft, border: `1px solid ${dk.copper}`, borderRadius: "6px", color: dk.paper, cursor: warm_loading ? "wait" : "pointer", fontFamily: fontMono, fontSize: "0.68rem", padding: "0.4rem 0.55rem" }}>warm_selected_state</button>
+            <button type="button" onClick={refresh_cache_status} disabled={cache_status_loading} style={{ background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "6px", color: dk.paper, cursor: cache_status_loading ? "wait" : "pointer", fontFamily: fontMono, fontSize: "0.68rem", padding: "0.4rem 0.55rem" }}>refresh_cache_status</button>
+            <button type="button" onClick={warm_next_batch} disabled={warm_loading} style={{ background: dk.steelSoft, border: `1px solid ${dk.steelBorder}`, borderRadius: "6px", color: dk.paper, cursor: warm_loading ? "wait" : "pointer", fontFamily: fontMono, fontSize: "0.68rem", padding: "0.4rem 0.55rem" }}>warm_next_batch</button>
+          </div>
+        </div>
+        {cache_status_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>loading_cache_status</div> : cache_status_error ? <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.red }}>cache_status_error {cache_status_error}</div> : selected_cache_status ? (
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>
+            <span>has_cache {String(selected_cache_status.has_cache)}</span>
+            <span>is_fresh {String(selected_cache_status.is_fresh)}</span>
+            <span>bill_count {selected_cache_status.bill_count}</span>
+            <span>session_id {selected_cache_status.session_id ?? "unknown"}</span>
+            <span>fetched_at {selected_cache_status.fetched_at ?? "unknown"}</span>
+            <span>age_minutes {selected_cache_status.age_minutes ?? "unknown"}</span>
+            {selected_cache_status.session_title && <span>session_title {selected_cache_status.session_title}</span>}
+          </div>
+        ) : <div style={{ fontFamily: fontMono, fontSize: "0.68rem", color: dk.muted }}>cache_status_unavailable</div>}
+        {warm_error && <div style={{ marginTop: "0.55rem", fontFamily: fontMono, fontSize: "0.68rem", color: dk.red }}>warm_error {warm_error}</div>}
+        {warm_results.length > 0 && (
+          <div style={{ display: "grid", gap: "0.35rem", marginTop: "0.65rem" }}>
+            {warm_results.map(result => (
+              <div key={`${result.state}_${result.source}_${result.fetched_at ?? "none"}`} style={{ fontFamily: fontMono, fontSize: "0.66rem", color: result.ok ? dk.cream : dk.red }}>
+                state {result.state} ok {String(result.ok)} bill_count {result.bill_count} source {result.source} fetched_at {result.fetched_at ?? "unknown"}{result.error ? ` error ${result.error}` : ""}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {state_loading ? (
