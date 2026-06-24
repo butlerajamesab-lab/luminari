@@ -778,6 +778,33 @@ async function insert_accounting_row(client: any, row: Record<string, unknown>) 
   );
 }
 
+async function insert_conveyor_run_row(client: any, input: Record<string, unknown>) {
+  await client.query(
+    `insert into public.conveyor_runs
+       (run_id, lane, action_type, is_dry_run, status, candidate_count, passed_count, failed_count, promoted_count, skipped_duplicate_count, bridged_count, metadata)
+     values ($1,$2,'registry_entity_candidates_promote_apply',$3,'started',0,0,0,0,0,0,$4::jsonb)`,
+    [input.run_id, input.lane, input.is_dry_run, JSON.stringify(input.metadata ?? {})],
+  );
+}
+
+async function update_conveyor_run_row(client: any, input: Record<string, unknown>) {
+  await client.query(
+    `update public.conveyor_runs
+        set status = 'completed',
+            candidate_count = $2,
+            passed_count = $3,
+            failed_count = $4,
+            promoted_count = $5,
+            skipped_duplicate_count = $6,
+            bridged_count = $7,
+            finished_at = now(),
+            metadata = coalesce(metadata, '{}'::jsonb) || $8::jsonb
+      where run_id = $1`,
+    [input.run_id, input.candidate_count, input.passed_count, input.failed_count, input.promoted_count, input.skipped_duplicate_count, input.bridged_count, JSON.stringify(input.metadata ?? {})],
+  );
+}
+
+
 async function write_canonical_candidate(client: any, row: any, entity_columns: Set<string>, location_columns: Set<string>, contact_columns: Set<string>) {
   const existing_row = await existing_resource_entity(client, row);
   const source_pk = row.content_hash ?? row.program_id;
@@ -844,10 +871,21 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
     const location_columns = await table_columns(client, "luminari_resource_locations");
     const contact_columns = await table_columns(client, "luminari_resource_contact_points");
     const accounting_columns = await table_columns(client, "conveyor_promotion_accounting");
+    const run_columns = await table_columns(client, "conveyor_runs");
+    if (!required_columns_present(run_columns, ["run_id", "lane", "action_type", "is_dry_run", "status", "candidate_count", "passed_count", "failed_count", "promoted_count", "skipped_duplicate_count", "bridged_count", "finished_at", "metadata"])) {
+      await client.query("rollback");
+      return { success: false, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: 0, error: "no_safe_conveyor_run_target", run_id, results };
+    }
     if (!required_columns_present(entity_columns, ["source_table", "source_pk", "resource_name", "metadata"]) || !required_columns_present(accounting_columns, ["run_id", "lane", "action_type", "is_dry_run", "source_record_id", "status", "metadata"])) {
       await client.query("rollback");
       return { success: false, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: 0, error: "no_safe_canonical_target", run_id, results };
     }
+    await insert_conveyor_run_row(client, {
+      run_id,
+      lane: target_hint,
+      is_dry_run: dry_run,
+      metadata: { target_hint, feature_flag_enabled, canonical_promotion_enabled: feature_flag_enabled, limit, candidate_type: input.candidate_type ?? null, promotion_lane: input.promotion_lane ?? target_hint },
+    });
     const columns = await registry_candidate_columns();
     const candidate_type_sql = registry_candidate_type_expression(columns);
     const document_family_sql = registry_document_family_expression(columns);
@@ -919,10 +957,27 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
       await insert_accounting_row(client, { run_id, lane: target_hint, action_type, is_dry_run: dry_run, source_record_id: row.content_hash ?? row.program_id, canonical_record_id, bridge_record_id, status, reason, dedupe_key, metadata });
       results.push({ source_record_id: row.content_hash ?? row.program_id, canonical_record_id, bridge_record_id, action_type, status, reason, dedupe_key, blocked_reasons: verification.blocked_reasons, candidate_type: row.candidate_type ?? null, source_queue_id: metadata.source_queue_id, material_scope });
     }
-    await client.query("commit");
     const count = (name: string) => results.filter((row) => row.action_type === name).length;
     const held_count = results.filter((row) => row.status === "held_review").length;
-    return { success: true, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: results.length, would_insert_count: count("would_insert"), would_update_blank_fields_count: count("would_update_blank_fields"), skipped_count: count("would_skip_duplicate") + count("no_safe_legal_authority_target"), blocked_count: count("blocked") + held_count, error_count: count("error"), run_id, results };
+    const would_insert_count = count("would_insert");
+    const would_update_blank_fields_count = count("would_update_blank_fields");
+    const skipped_count = count("would_skip_duplicate") + count("no_safe_legal_authority_target");
+    const blocked_count = count("blocked") + held_count;
+    const error_count = count("error");
+    const promoted_count = dry_run ? 0 : would_insert_count + would_update_blank_fields_count;
+    const bridged_count = results.filter((row) => row.bridge_record_id).length;
+    await update_conveyor_run_row(client, {
+      run_id,
+      candidate_count: results.length,
+      passed_count: would_insert_count + would_update_blank_fields_count + skipped_count,
+      failed_count: blocked_count + error_count,
+      promoted_count,
+      skipped_duplicate_count: skipped_count,
+      bridged_count,
+      metadata: { processed_count: results.length, would_insert_count, would_update_blank_fields_count, skipped_count, blocked_count, error_count, promoted_count, bridged_count },
+    });
+    await client.query("commit");
+    return { success: true, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: results.length, would_insert_count, would_update_blank_fields_count, skipped_count, blocked_count, error_count, run_id, results };
   } catch (error: any) {
     try { await client.query("rollback"); } catch {}
     return { success: false, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: results.length, would_insert_count: 0, would_update_blank_fields_count: 0, skipped_count: 0, blocked_count: results.filter((row) => row.action_type === "blocked").length, error_count: results.filter((row) => row.action_type === "error").length + 1, run_id, error: "canonical_promotion_apply_failed", message: error?.message ?? String(error), results };
