@@ -28,7 +28,7 @@ function row_status_kind(row:visible_queue_row){ if(row.import_status === "revie
 function StatusChip({row}:{row:visible_queue_row}){ const kind=row_status_kind(row); if(kind==="failed") return <Badge variant="destructive">failed</Badge>; if(kind==="review_required") return <Badge className="bg-amber-600 text-white">review_required</Badge>; if(kind==="running") return <Badge className="bg-cyan-600 text-white">leased</Badge>; if(kind==="waiting") return <Badge variant="secondary">waiting</Badge>; return <Badge variant="outline">idle</Badge>; }
 function lane_for(row:visible_queue_row):lane_key{ if(row.import_status === "ready_for_review") return "review"; if(row.next_action === "extract_docx_queue_row") return "extract"; if(row.next_action === "normalize_docx_queue_row") return "normalize"; if(row.next_action === "route_corpus_queue_dry_run") return "route"; return "other"; }
 
-export default function IngestionControl(){
+export default function ingestion_control(){
   const [status_filter,set_status_filter]=useState<status_filter_value>("all");
   const [rows,set_rows]=useState<visible_queue_row[]>([]);
   const [summary_counts,set_summary_counts]=useState<Record<string,number>>({});

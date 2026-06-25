@@ -11,7 +11,7 @@ import { systemVisibilityRouter } from "../routes/system-visibility-router";
 import { conveyorRouter } from "../routes/conveyor-router";
 import { civicMapRouter } from "../routes/civic-map-router";
 import { atlasProxyRouter } from "../routes/atlas-proxy-router";
-import { ingestionControlRestRouter } from "../routes/ingestion-control-router";
+import { ingestion_control_rest_router } from "../routes/ingestion_control_router";
 import { docket_router } from "../routes/docket";
 import { registerExecutorRoutes } from "../executor-routes";
 import { loadPipelineRegistry } from "../pipeline-resolver";
@@ -129,7 +129,7 @@ async function startServer() {
   // Atlas API proxy — same-origin bridge to the Atlas service
   app.use("/api/atlas", atlasProxyRouter);
   // Ingestion Control API — server-side queue visibility, before static fallback
-  app.use("/api/ingestion-control", ingestionControlRestRouter);
+  app.use("/api/ingestion-control", ingestion_control_rest_router);
   // Docket Room API — LegiScan-backed state bill cache
   app.use("/api/docket", docket_router);
   // Sovereign Control executor API — must be mounted before Vite/static fallback

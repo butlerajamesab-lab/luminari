@@ -1,12 +1,12 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Router } from "express";
-import { allowed_target_hints, create_candidates_from_ready_queue, list_corpus_import_queue, get_corpus_import_queue_row, get_registry_entity_candidates_summary, list_registry_entity_candidates, set_corpus_import_queue_target_hint, verify_registry_entity_candidates_dry_run, promote_registry_entity_candidates_apply } from "../engines/ingestion-control";
+import { allowed_target_hints, create_candidates_from_ready_queue, list_corpus_import_queue, get_corpus_import_queue_row, get_registry_entity_candidates_summary, list_registry_entity_candidates, set_corpus_import_queue_target_hint, verify_registry_entity_candidates_dry_run, promote_registry_entity_candidates_apply } from "../engines/ingestion_control";
 import { getPool } from "../db";
 
 const execFileAsync = promisify(execFile);
 
-export const ingestionControlRestRouter = Router();
+export const ingestion_control_rest_router = Router();
 
 
 function clamp_integer(value: unknown, fallback: number, min: number, max: number) {
@@ -55,7 +55,7 @@ async function persist_extract_command_diagnostic(id: number, diagnostic: Record
   );
 }
 
-ingestionControlRestRouter.get("/registry-entity-candidates", async (req, res) => {
+ingestion_control_rest_router.get("/registry-entity-candidates", async (req, res) => {
   try {
     const limit = clamp_integer(req.query.limit, 25, 1, 100);
     const result = await list_registry_entity_candidates({ limit });
@@ -65,7 +65,7 @@ ingestionControlRestRouter.get("/registry-entity-candidates", async (req, res) =
   }
 });
 
-ingestionControlRestRouter.get("/registry-entity-candidates/summary", async (_req, res) => {
+ingestion_control_rest_router.get("/registry-entity-candidates/summary", async (_req, res) => {
   try {
     const result = await get_registry_entity_candidates_summary();
     return res.json(result);
@@ -74,7 +74,7 @@ ingestionControlRestRouter.get("/registry-entity-candidates/summary", async (_re
   }
 });
 
-ingestionControlRestRouter.post("/registry-entity-candidates/verify-dry-run", async (req, res) => {
+ingestion_control_rest_router.post("/registry-entity-candidates/verify-dry-run", async (req, res) => {
   try {
     const limit = clamp_integer(req.body?.limit, 100, 1, 500);
     const result = await verify_registry_entity_candidates_dry_run({
@@ -89,7 +89,7 @@ ingestionControlRestRouter.post("/registry-entity-candidates/verify-dry-run", as
   }
 });
 
-ingestionControlRestRouter.post("/registry-entity-candidates/promote-apply", async (req, res) => {
+ingestion_control_rest_router.post("/registry-entity-candidates/promote-apply", async (req, res) => {
   try {
     const limit = clamp_integer(req.body?.limit, 10, 1, 25);
     const result = await promote_registry_entity_candidates_apply({
@@ -106,7 +106,7 @@ ingestionControlRestRouter.post("/registry-entity-candidates/promote-apply", asy
 });
 
 
-ingestionControlRestRouter.get("/corpus-import-queue", async (req, res) => {
+ingestion_control_rest_router.get("/corpus-import-queue", async (req, res) => {
   try {
     const status_filter = typeof req.query.status_filter === "string" ? req.query.status_filter : "all";
     const limit = clamp_integer(req.query.limit, 100, 1, 250);
@@ -118,7 +118,7 @@ ingestionControlRestRouter.get("/corpus-import-queue", async (req, res) => {
   }
 });
 
-ingestionControlRestRouter.get("/corpus-import-queue/:id", async (req, res) => {
+ingestion_control_rest_router.get("/corpus-import-queue/:id", async (req, res) => {
   try {
     const id = read_queue_row_id(req.params.id);
     if (!id) return res.status(400).json({ success: false, error: "invalid_queue_row_id" });
@@ -130,7 +130,7 @@ ingestionControlRestRouter.get("/corpus-import-queue/:id", async (req, res) => {
   }
 });
 
-ingestionControlRestRouter.post("/corpus-import-queue/:id/set-target-hint", async (req, res) => {
+ingestion_control_rest_router.post("/corpus-import-queue/:id/set-target-hint", async (req, res) => {
   try {
     const id = read_queue_row_id(req.params.id);
     const target_hint = typeof req.body?.target_hint === "string" ? req.body.target_hint : "";
@@ -144,7 +144,7 @@ ingestionControlRestRouter.post("/corpus-import-queue/:id/set-target-hint", asyn
   }
 });
 
-ingestionControlRestRouter.post("/corpus-import-queue/extract-docx-drain", async (req, res) => {
+ingestion_control_rest_router.post("/corpus-import-queue/extract-docx-drain", async (req, res) => {
   const started_at = Date.now();
   try {
     const dry_run = Boolean(req.body?.dry_run);
@@ -187,7 +187,7 @@ ingestionControlRestRouter.post("/corpus-import-queue/extract-docx-drain", async
   }
 });
 
-ingestionControlRestRouter.post("/corpus-import-queue/create-candidates-from-ready", async (_req, res) => {
+ingestion_control_rest_router.post("/corpus-import-queue/create-candidates-from-ready", async (_req, res) => {
   try {
     const result = await create_candidates_from_ready_queue();
     return res.json(result);
@@ -196,7 +196,7 @@ ingestionControlRestRouter.post("/corpus-import-queue/create-candidates-from-rea
   }
 });
 
-ingestionControlRestRouter.post("/promote-staged-resources-to-readable", async (req, res) => {
+ingestion_control_rest_router.post("/promote-staged-resources-to-readable", async (req, res) => {
   const started_at = Date.now();
   try {
     const dry_run = req.body?.dry_run !== false;
@@ -212,7 +212,7 @@ ingestionControlRestRouter.post("/promote-staged-resources-to-readable", async (
   }
 });
 
-ingestionControlRestRouter.post("/corpus-import-queue/normalize-docx-drain", async (_req, res) => {
+ingestion_control_rest_router.post("/corpus-import-queue/normalize-docx-drain", async (_req, res) => {
   const started_at = Date.now();
   try {
     const pool = getPool();
@@ -240,7 +240,7 @@ ingestionControlRestRouter.post("/corpus-import-queue/normalize-docx-drain", asy
   }
 });
 
-ingestionControlRestRouter.post("/corpus-import-queue/:id/extract-docx", async (req, res) => {
+ingestion_control_rest_router.post("/corpus-import-queue/:id/extract-docx", async (req, res) => {
   const started_at = Date.now();
   try {
     const id = read_queue_row_id(req.params.id);

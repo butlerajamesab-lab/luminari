@@ -104,7 +104,7 @@ import EvidenceLab from "./pages/EvidenceLab";
 import ShopOffice from "./pages/ShopOffice";
 import ResourceDirectory from "./pages/ResourceDirectory";
 import SovereignControl from "./pages/SovereignControl";
-import IngestionControl from "./pages/IngestionControl";
+import ingestion_control from "./pages/ingestion_control";
 import GovernanceDashboard from "./pages/GovernanceDashboard";
 import Verify from "./pages/Verify";
 import ExtractionDashboard from "./pages/ExtractionDashboard";
@@ -241,7 +241,7 @@ function App() {
                 <Route path="/import-bundle" component={ImportBundle} />
                 <Route path="/mission-control" component={MissionControl} />
                 <Route path="/sovereign-control" component={SovereignControl} />
-                <Route path="/ingestion-control" component={IngestionControl} />
+                <Route path="/ingestion-control" component={ingestion_control} />
                 <Route path="/" component={HomeOrWelcome} />
                 <Route path="/lighthouse" component={Lighthouse} />
                 <Route path="/civic-map" component={CivicMap} />
