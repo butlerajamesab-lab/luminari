@@ -1010,6 +1010,11 @@ function text_value(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+function uuid_or_null(value: unknown) {
+  const text = text_value(value);
+  return text && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text) ? text : null;
+}
+
 function edited_text(edited_fields: Record<string, unknown>, keys: string[]) {
   for (const key of keys) {
     const value = text_value(edited_fields[key]);
@@ -1165,8 +1170,10 @@ async function load_selected_registry_candidate(client: any, input: promote_sele
 async function write_selected_accounting(client: any, row: any, result: any, input: promote_selected_registry_candidate_input) {
   const action_type = input.operator_decision === "reject" ? "operator_reject_selected" : "operator_promote_selected";
   const status = result.decision === "reject" ? "rejected" : result.decision === "promote" ? "applied" : result.decision === "needs_fix" ? "held_review" : result.decision === "held_review" ? "held_review" : "error";
-  const metadata = { operator_decision: input.operator_decision ?? null, operator_verified: input.operator_verified === true, target_table: input.target_table ?? null, edited_fields: result.edited_fields, operator_note: input.operator_note ?? null, source_file: result.source_file, source_citation: result.source_citation, source_text_hash: result.source_text_hash, confidence: result.confidence, confidence_scores: result.confidence_scores, reason_detail: result.reason_detail, promotion_ready: result.promotion_ready, operator_context: input.operator_context ?? null };
-  await insert_accounting_row(client, { run_id: result.accounting_run_id, lane: "operator_selected_registry_candidate", action_type, is_dry_run: false, source_record_id: result.source_record_id, canonical_record_id: result.promoted_record_id, bridge_record_id: null, status, reason: result.reason, dedupe_key: `${result.intended_target_table ?? "unknown"}:${result.source_record_id ?? "unknown"}`, metadata });
+  const promoted_record_id = text_value(result.promoted_record_id);
+  const canonical_record_id = uuid_or_null(promoted_record_id);
+  const metadata = { operator_decision: input.operator_decision ?? null, operator_verified: input.operator_verified === true, target_table: input.target_table ?? null, edited_fields: result.edited_fields, operator_note: input.operator_note ?? null, source_file: result.source_file, source_citation: result.source_citation, source_text_hash: result.source_text_hash, confidence: result.confidence, confidence_scores: result.confidence_scores, reason_detail: result.reason_detail, promotion_ready: result.promotion_ready, promoted_record_id, canonical_record_id_is_uuid: Boolean(canonical_record_id), operator_context: input.operator_context ?? null };
+  await insert_accounting_row(client, { run_id: result.accounting_run_id, lane: "operator_selected_registry_candidate", action_type, is_dry_run: false, source_record_id: result.source_record_id, canonical_record_id, bridge_record_id: null, status, reason: result.reason, dedupe_key: `${result.intended_target_table ?? "unknown"}:${result.source_record_id ?? "unknown"}`, metadata });
   return status;
 }
 
