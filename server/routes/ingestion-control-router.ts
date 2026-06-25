@@ -1,13 +1,21 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Router } from "express";
-import { allowed_target_hints, create_candidates_from_ready_queue, list_corpus_import_queue, get_corpus_import_queue_row, get_registry_entity_candidates_summary, list_registry_entity_candidates, set_corpus_import_queue_target_hint, verify_registry_entity_candidates_dry_run, promote_registry_entity_candidates_apply } from "../engines/ingestion-control";
+import { allowed_target_hints, create_candidates_from_ready_queue, list_corpus_import_queue, get_corpus_import_queue_row, get_registry_entity_candidates_summary, list_registry_entity_candidates, set_corpus_import_queue_target_hint, verify_registry_entity_candidates_dry_run, promote_registry_entity_candidates_apply, promote_selected_registry_entity_candidate } from "../engines/ingestion-control";
 import { getPool } from "../db";
 
 const execFileAsync = promisify(execFile);
 
 export const ingestionControlRestRouter = Router();
 
+
+function operator_context_from_request(req: any) {
+  const user = req.user ?? req.session?.user ?? null;
+  const role = user?.role ?? user?.app_role ?? user?.user_role ?? null;
+  const is_operator = Boolean(user && ["admin", "operator"].includes(String(role)));
+  if (!is_operator && process.env.NODE_ENV === "production") return null;
+  return { operator_id: user?.id ?? user?.sub ?? "local_operator", operator_role: role ?? "local_operator" };
+}
 
 function clamp_integer(value: unknown, fallback: number, min: number, max: number) {
   const parsed = typeof value === "string" || typeof value === "number" ? Number(value) : fallback;
@@ -105,6 +113,26 @@ ingestionControlRestRouter.post("/registry-entity-candidates/promote-apply", asy
   }
 });
 
+ingestionControlRestRouter.post("/registry-entity-candidates/promote-selected", async (req, res) => {
+  try {
+    const operator_context = operator_context_from_request(req);
+    if (!operator_context) return res.status(403).json({ success: false, error: "operator_context_required" });
+    const result = await promote_selected_registry_entity_candidate({
+      candidate_row_id: req.body?.candidate_row_id ?? null,
+      source_record_id: typeof req.body?.source_record_id === "string" ? req.body.source_record_id : null,
+      content_hash: typeof req.body?.content_hash === "string" ? req.body.content_hash : null,
+      target_table: typeof req.body?.target_table === "string" ? req.body.target_table : null,
+      operator_verified: req.body?.operator_verified === true,
+      operator_decision: ["promote", "reject", "needs_fix"].includes(req.body?.operator_decision) ? req.body.operator_decision : "needs_fix",
+      edited_fields: req.body?.edited_fields && typeof req.body.edited_fields === "object" && !Array.isArray(req.body.edited_fields) ? req.body.edited_fields : {},
+      operator_note: typeof req.body?.operator_note === "string" ? req.body.operator_note : null,
+      operator_context,
+    });
+    return res.status(result.success ? 200 : 409).json(result);
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: "registry_entity_candidates_promote_selected_failed", message: error?.message ?? String(error) });
+  }
+});
 
 ingestionControlRestRouter.get("/corpus-import-queue", async (req, res) => {
   try {

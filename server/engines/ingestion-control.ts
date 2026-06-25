@@ -525,11 +525,14 @@ export async function list_registry_entity_candidates(input?: { limit?: number }
         promotion_ready,
         confidence_scores,
         coalesce((${confidence_sql}), null) as confidence,
+        nullif(${registry_source_citation_expression(columns)}, '') as source_citation,
         ${candidate_type_sql} as candidate_type,
         extraction_timestamp,
         extraction_version,
         program_id,
-        content_hash
+        content_hash,
+        normalized_excerpt,
+        section_index
        from public.registry_entity_extraction_v4
       order by extraction_timestamp desc nulls last, content_hash desc nulls last
       limit $1`,
@@ -548,11 +551,15 @@ export async function list_registry_entity_candidates(input?: { limit?: number }
       name: row.name ?? null,
       confidence: row.confidence === null || row.confidence === undefined ? null : Number(row.confidence),
       promotion_ready: row.promotion_ready ?? null,
+      confidence_scores: row.confidence_scores ?? null,
       candidate_type: row.candidate_type ?? "unknown",
       extraction_timestamp: row.extraction_timestamp ? String(row.extraction_timestamp) : null,
       extraction_version: row.extraction_version ?? null,
       program_id: row.program_id ?? null,
       content_hash: row.content_hash ?? null,
+      source_citation: row.source_citation ?? null,
+      section_index: row.section_index ?? null,
+      normalized_excerpt: row.normalized_excerpt ?? null,
     })),
   };
 }
@@ -981,6 +988,230 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
   } catch (error: any) {
     try { await client.query("rollback"); } catch {}
     return { success: false, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: results.length, would_insert_count: 0, would_update_blank_fields_count: 0, skipped_count: 0, blocked_count: results.filter((row) => row.action_type === "blocked").length, error_count: results.filter((row) => row.action_type === "error").length + 1, run_id, error: "canonical_promotion_apply_failed", message: error?.message ?? String(error), results };
+  } finally {
+    client.release();
+  }
+}
+
+
+type promote_selected_registry_candidate_input = {
+  candidate_row_id?: string | number | null;
+  source_record_id?: string | null;
+  content_hash?: string | null;
+  target_table?: string | null;
+  operator_verified?: boolean;
+  operator_decision?: "promote" | "reject" | "needs_fix";
+  edited_fields?: Record<string, unknown> | null;
+  operator_note?: string | null;
+  operator_context?: Record<string, unknown> | null;
+};
+
+function text_value(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function edited_text(edited_fields: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = text_value(edited_fields[key]);
+    if (value) return value;
+  }
+  return null;
+}
+
+function candidate_text(row: any, keys: string[]) {
+  const payload = candidate_payload_from_row(row);
+  for (const key of keys) {
+    const value = text_value(row[key]) ?? text_value(payload?.[key]) ?? text_value(payload?.extracted?.[key]);
+    if (value) return value;
+  }
+  return null;
+}
+
+function selected_candidate_name(row: any, edited_fields: Record<string, unknown>) {
+  return edited_text(edited_fields, ["name", "program_name", "entity_name"]) ?? candidate_text(row, ["name", "program_name", "entity_name"]);
+}
+
+function selected_candidate_target_table(row: any, requested_target_table?: string | null) {
+  const promotion_ready = row.promotion_ready ?? {};
+  const value = text_value(requested_target_table) ?? text_value(promotion_ready.target_table) ?? text_value(promotion_ready.write_target_table) ?? null;
+  return value === "public.registry_programs" ? "registry_programs" : value;
+}
+
+function selected_candidate_result_base(row: any, input: promote_selected_registry_candidate_input, target_table: string | null, run_id: string) {
+  const edited_fields = input.edited_fields && typeof input.edited_fields === "object" && !Array.isArray(input.edited_fields) ? input.edited_fields : {};
+  const confidence = row.confidence === null || row.confidence === undefined ? null : Number(row.confidence);
+  return {
+    candidate_row_id: row.candidate_row_id ?? null,
+    source_record_id: row.content_hash ?? row.program_id ?? input.source_record_id ?? null,
+    candidate_name: selected_candidate_name(row, edited_fields),
+    candidate_type: row.candidate_type ?? "unknown",
+    intended_target_table: target_table,
+    write_target_table: null as string | null,
+    write_adapter_status: "not_started",
+    promoted_record_id: null as string | null,
+    decision: input.operator_decision ?? "needs_fix",
+    reason: null as string | null,
+    reason_detail: null as string | null,
+    confidence,
+    confidence_threshold: 0.6,
+    confidence_scores: row.confidence_scores ?? null,
+    promotion_ready: row.promotion_ready ?? null,
+    source_file: row.source_file ?? null,
+    source_citation: row.source_citation ?? null,
+    jurisdiction: row.jurisdiction ?? null,
+    section_index: row.section_index ?? null,
+    source_text_hash: row.content_hash ?? row.forensic_hash ?? null,
+    edited_fields,
+    accounting_run_id: run_id,
+    accounting_status: "not_written",
+  };
+}
+
+function registry_program_field_values(row: any, edited_fields: Record<string, unknown>, target_table: string) {
+  const name = selected_candidate_name(row, edited_fields);
+  const category = edited_text(edited_fields, ["category", "candidate_type", "service_type"]) ?? candidate_text(row, ["category", "candidate_type", "service_type"]);
+  const agency = edited_text(edited_fields, ["agency"]) ?? candidate_text(row, ["agency"]);
+  const eligibility = edited_text(edited_fields, ["eligibility", "purpose", "description"]) ?? candidate_text(row, ["eligibility", "purpose", "description", "normalized_excerpt"]);
+  const contact = edited_text(edited_fields, ["contact", "contact_raw_text"]) ?? candidate_text(row, ["contact", "contact_raw_text"]);
+  const website = edited_text(edited_fields, ["website", "url", "portal"]) ?? candidate_text(row, ["website", "url", "portal"]);
+  const source_citation = text_value(row.source_citation) ?? text_value(row.queue_storage_path) ?? text_value(row.source_file);
+  const source_hash = text_value(row.content_hash) ?? text_value(row.program_id) ?? "unknown_source";
+  const normalized_name = (name ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+  const fingerprint = createHash("sha256").update([target_table, source_hash, normalized_name, source_citation ?? ""].join("|")).digest("hex");
+  return { name, category, agency, eligibility, contact, contact_raw_text: contact, website, contact_website_norm: website, source_citation, fingerprint };
+}
+
+async function find_existing_registry_program(client: any, columns: Set<string>, values: Record<string, unknown>) {
+  if (columns.has("fingerprint") && values.fingerprint) {
+    const result = await client.query(`select * from public.registry_programs where fingerprint = $1 limit 1`, [values.fingerprint]);
+    if (result.rows[0]) return result.rows[0];
+  }
+  if (columns.has("name") && values.name) {
+    const result = await client.query(`select * from public.registry_programs where lower(name) = lower($1) limit 1`, [values.name]);
+    if (result.rows[0]) return result.rows[0];
+  }
+  return null;
+}
+
+async function write_registry_program_selected_candidate(client: any, row: any, result: any) {
+  const columns = await table_columns(client, "registry_programs");
+  if (!columns.has("name")) return { ...result, decision: "held_review", reason: "no_safe_target_table_adapter", reason_detail: "registry_programs_name_column_missing", write_adapter_status: "blocked" };
+  const values = registry_program_field_values(row, result.edited_fields, "registry_programs");
+  if (!values.name) return { ...result, decision: "needs_fix", reason: "name_required", reason_detail: "usable_name_or_program_name_required", write_adapter_status: "needs_fix" };
+  if (columns.has("jurisdiction_id") && !columns.has("jurisdiction")) {
+    const nullable_result = await client.query(`select is_nullable from information_schema.columns where table_schema = 'public' and table_name = 'registry_programs' and column_name = 'jurisdiction_id' limit 1`);
+    if (nullable_result.rows[0]?.is_nullable === "NO") return { ...result, decision: "held_review", reason: "jurisdiction_id_required", reason_detail: "jurisdiction_id_required_and_not_safely_resolved", write_adapter_status: "blocked" };
+  }
+  const existing_row = await find_existing_registry_program(client, columns, values);
+  const writable: Record<string, unknown> = {
+    name: values.name,
+    category: values.category,
+    agency: values.agency,
+    eligibility: values.eligibility,
+    apply_notes: values.eligibility,
+    contact: values.contact,
+    contact_raw_text: values.contact_raw_text,
+    website: values.website,
+    contact_website_norm: values.contact_website_norm,
+    fingerprint: values.fingerprint,
+    source_citation: values.source_citation,
+    source_file: row.source_file ?? null,
+    source_text_hash: row.content_hash ?? row.forensic_hash ?? null,
+    jurisdiction: row.jurisdiction ?? null,
+    metadata: { source: "registry_entity_extraction_v4", content_hash: row.content_hash ?? null, program_id: row.program_id ?? null, promotion_ready: row.promotion_ready ?? null, edited_fields: result.edited_fields },
+  };
+  const overwrite_confirmed = result.edited_fields.overwrite_confirmed === true;
+  if (existing_row) {
+    const updates: Record<string, unknown> = {};
+    for (const [name, value] of Object.entries(writable)) {
+      if (!columns.has(name) || value === null || value === undefined) continue;
+      if (overwrite_confirmed || !text_value(existing_row[name])) updates[name] = value;
+    }
+    delete updates.metadata;
+    if (!Object.keys(updates).length) return { ...result, decision: "promote", reason: "would_skip_duplicate", reason_detail: "existing_record_has_no_blank_fields", write_target_table: "registry_programs", write_adapter_status: "skipped_duplicate", promoted_record_id: String(existing_row.id ?? existing_row.registry_program_id ?? existing_row.program_id ?? values.fingerprint) };
+    const names = Object.keys(updates);
+    await client.query(`update public.registry_programs set ${names.map((name, index) => `${name} = $${index + 2}`).join(", ")} where ${existing_row.id !== undefined ? "id" : columns.has("registry_program_id") ? "registry_program_id" : "fingerprint"} = $1`, [existing_row.id ?? existing_row.registry_program_id ?? existing_row.fingerprint, ...names.map((name) => updates[name])]);
+    return { ...result, decision: "promote", reason: "updated_blank_fields", reason_detail: "enrich_blank_fields_only", write_target_table: "registry_programs", write_adapter_status: "updated_blank_fields", promoted_record_id: String(existing_row.id ?? existing_row.registry_program_id ?? existing_row.program_id ?? values.fingerprint) };
+  }
+  const names = Object.keys(writable).filter((name) => columns.has(name) && writable[name] !== null && writable[name] !== undefined);
+  const placeholders = names.map((name, index) => typeof writable[name] === "object" ? `$${index + 1}::jsonb` : `$${index + 1}`);
+  const return_column = columns.has("id") ? "id" : columns.has("registry_program_id") ? "registry_program_id" : columns.has("program_id") ? "program_id" : null;
+  const inserted = await client.query(`insert into public.registry_programs (${names.join(", ")}) values (${placeholders.join(", ")}) ${return_column ? `returning ${return_column} as promoted_record_id` : "returning fingerprint as promoted_record_id"}`, names.map((name) => typeof writable[name] === "object" ? JSON.stringify(writable[name]) : writable[name]));
+  return { ...result, decision: "promote", reason: "inserted", reason_detail: "operator_verified_registry_program_insert", write_target_table: "registry_programs", write_adapter_status: "inserted", promoted_record_id: String(inserted.rows[0]?.promoted_record_id ?? values.fingerprint) };
+}
+
+async function load_selected_registry_candidate(client: any, input: promote_selected_registry_candidate_input) {
+  const columns = await table_columns(client, "registry_entity_extraction_v4");
+  const candidate_type_sql = registry_candidate_type_expression(Object.fromEntries([...columns].map((column_name) => [column_name, true])));
+  const confidence_sql = registry_confidence_expression(Object.fromEntries([...columns].map((column_name) => [column_name, true])));
+  const source_citation_sql = registry_source_citation_expression(Object.fromEntries([...columns].map((column_name) => [column_name, true])));
+  const filters: string[] = [];
+  const params: any[] = [];
+  if (input.candidate_row_id && columns.has("id")) { params.push(input.candidate_row_id); filters.push(`id = $${params.length}`); }
+  if (input.content_hash || input.source_record_id) { params.push(input.content_hash ?? input.source_record_id); filters.push(`content_hash = $${params.length}`); }
+  if (input.source_record_id) { params.push(input.source_record_id); filters.push(`program_id = $${params.length}`); }
+  if (!filters.length) return null;
+  const result = await client.query(
+    `select *, ctid::text as candidate_row_id, ${candidate_type_sql} as candidate_type, coalesce((${confidence_sql}), null) as confidence, nullif(${source_citation_sql}, '') as source_citation
+       from public.registry_entity_extraction_v4
+      where ${filters.join(" or ")}
+      order by extraction_timestamp desc nulls last
+      limit 1`,
+    params,
+  );
+  return result.rows[0] ?? null;
+}
+
+async function write_selected_accounting(client: any, row: any, result: any, input: promote_selected_registry_candidate_input) {
+  const action_type = input.operator_decision === "reject" ? "operator_reject_selected" : "operator_promote_selected";
+  const status = result.decision === "reject" ? "rejected" : result.decision === "promote" ? "applied" : result.decision === "needs_fix" ? "held_review" : result.decision === "held_review" ? "held_review" : "error";
+  const metadata = { operator_decision: input.operator_decision ?? null, operator_verified: input.operator_verified === true, target_table: input.target_table ?? null, edited_fields: result.edited_fields, operator_note: input.operator_note ?? null, source_file: result.source_file, source_citation: result.source_citation, source_text_hash: result.source_text_hash, confidence: result.confidence, confidence_scores: result.confidence_scores, reason_detail: result.reason_detail, promotion_ready: result.promotion_ready, operator_context: input.operator_context ?? null };
+  await insert_accounting_row(client, { run_id: result.accounting_run_id, lane: "operator_selected_registry_candidate", action_type, is_dry_run: false, source_record_id: result.source_record_id, canonical_record_id: result.promoted_record_id, bridge_record_id: null, status, reason: result.reason, dedupe_key: `${result.intended_target_table ?? "unknown"}:${result.source_record_id ?? "unknown"}`, metadata });
+  return status;
+}
+
+export async function promote_selected_registry_entity_candidate(input: promote_selected_registry_candidate_input) {
+  const pool = getPool();
+  const client = await pool.connect();
+  const run_id = randomUUID();
+  try {
+    await client.query("begin");
+    const run_columns = await table_columns(client, "conveyor_runs");
+    const accounting_columns = await table_columns(client, "conveyor_promotion_accounting");
+    if (!required_columns_present(run_columns, ["run_id", "lane", "action_type", "is_dry_run", "status", "candidate_count", "passed_count", "failed_count", "promoted_count", "skipped_duplicate_count", "bridged_count", "finished_at", "metadata"]) || !required_columns_present(accounting_columns, ["run_id", "lane", "action_type", "is_dry_run", "source_record_id", "status", "metadata"])) {
+      await client.query("rollback");
+      return { success: false, error: "no_safe_accounting_target", accounting_run_id: run_id };
+    }
+    const row = await load_selected_registry_candidate(client, input);
+    if (!row) {
+      await client.query("rollback");
+      return { success: false, error: "registry_candidate_not_found", accounting_run_id: run_id };
+    }
+    const target_table = selected_candidate_target_table(row, input.target_table);
+    let result = selected_candidate_result_base(row, input, target_table, run_id);
+    await insert_conveyor_run_row(client, { run_id, lane: "operator_selected_registry_candidate", is_dry_run: false, metadata: { target_table, operator_decision: input.operator_decision ?? null, operator_verified: input.operator_verified === true, candidate_row_id: result.candidate_row_id, source_record_id: result.source_record_id } });
+    if (input.operator_decision === "reject") {
+      result = { ...result, decision: "reject", reason: "operator_rejected", reason_detail: input.operator_note ?? "operator_rejected_candidate", write_adapter_status: "not_written" };
+    } else if (input.operator_decision === "needs_fix") {
+      result = { ...result, decision: "needs_fix", reason: "operator_requested_fix", reason_detail: "operator_requested_candidate_field_fix", write_adapter_status: "needs_fix" };
+    } else if (input.operator_decision !== "promote") {
+      result = { ...result, decision: "needs_fix", reason: "operator_decision_required", reason_detail: "operator_decision_must_be_promote_reject_or_needs_fix", write_adapter_status: "needs_fix" };
+    } else if (input.operator_verified !== true) {
+      result = { ...result, decision: "held_review", reason: "operator_verified_required", reason_detail: "operator_verified_true_required_for_promote", write_adapter_status: "blocked" };
+    } else if (!target_table) {
+      result = { ...result, decision: "held_review", reason: "target_table_required", reason_detail: "target_table_or_promotion_ready_target_table_required", write_adapter_status: "blocked" };
+    } else if (target_table !== "registry_programs") {
+      result = { ...result, decision: "held_review", reason: "no_safe_target_table_adapter", reason_detail: "adapter_not_available_for_target_table", write_adapter_status: "blocked" };
+    } else {
+      result = await write_registry_program_selected_candidate(client, row, result);
+    }
+    result.accounting_status = await write_selected_accounting(client, row, result, input);
+    await update_conveyor_run_row(client, { run_id, candidate_count: 1, passed_count: result.decision === "promote" || result.decision === "reject" ? 1 : 0, failed_count: result.decision === "promote" || result.decision === "reject" ? 0 : 1, promoted_count: result.decision === "promote" && result.promoted_record_id ? 1 : 0, skipped_duplicate_count: result.write_adapter_status === "skipped_duplicate" ? 1 : 0, bridged_count: 0, metadata: { decision: result.decision, reason: result.reason, reason_detail: result.reason_detail, promoted_record_id: result.promoted_record_id, accounting_status: result.accounting_status } });
+    await client.query("commit");
+    return { success: result.decision === "promote" || result.decision === "reject", ...result };
+  } catch (error: any) {
+    try { await client.query("rollback"); } catch {}
+    return { success: false, accounting_run_id: run_id, decision: "error", reason: "operator_selected_promotion_failed", reason_detail: error?.message ?? String(error), accounting_status: "rolled_back" };
   } finally {
     client.release();
   }
