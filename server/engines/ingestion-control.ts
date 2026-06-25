@@ -1259,10 +1259,10 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
           action_type = material_hold_reason;
           status = "held_review";
           reason = material_hold_reason;
-        } else if (verification.verified && adapter.write_adapter_status === "no_safe_target_table_adapter") {
-          action_type = "no_safe_target_table_adapter";
+        } else if (verification.verified && !adapter.write_target_table) {
+          action_type = adapter.write_adapter_status;
           status = "held_review";
-          reason = "no_safe_target_table_adapter";
+          reason = adapter.write_adapter_status;
         } else if (verification.verified && material_scope === "official_public_law_or_authority" && !candidate_is_resource_like(row)) {
           action_type = "no_safe_legal_authority_target";
           status = "held_review";
