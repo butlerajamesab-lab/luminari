@@ -1012,7 +1012,7 @@ function text_value(value: unknown) {
 
 function uuid_or_null(value: unknown) {
   const text = text_value(value);
-  return text && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text) ? text : null;
+  return text && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(text) ? text : null;
 }
 
 function edited_text(edited_fields: Record<string, unknown>, keys: string[]) {
