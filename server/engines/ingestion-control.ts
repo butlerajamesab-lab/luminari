@@ -862,8 +862,6 @@ async function write_canonical_candidate(client: any, row: any, entity_columns: 
 }
 
 export async function promote_registry_entity_candidates_apply(input: promote_registry_entity_candidates_apply_input = {}) {
-  const pool = getPool();
-  const client = await pool.connect();
   const dry_run = input.dry_run !== false;
   const target_hint = input.target_hint ?? CANONICAL_PROMOTION_TARGET_HINT;
   const limit = Math.min(Math.max(input.limit ?? 10, 1), 25);
@@ -872,6 +870,8 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
   const results: any[] = [];
   if (target_hint !== CANONICAL_PROMOTION_TARGET_HINT) return { success: false, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: 0, error: "unsupported_promotion_lane", run_id, results };
   if (!dry_run && !feature_flag_enabled) return { success: false, dry_run, canonical_promotion_enabled: false, feature_flag_enabled, target_hint, processed_count: 0, error: "canonical_promotion_feature_flag_disabled", run_id, results };
+  const pool = getPool();
+  const client = await pool.connect();
   try {
     await client.query("begin");
     const entity_columns = await table_columns(client, "luminari_resource_entities");
@@ -968,7 +968,7 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
     const held_count = results.filter((row) => row.status === "held_review").length;
     const would_insert_count = count("would_insert");
     const would_update_blank_fields_count = count("would_update_blank_fields");
-    const skipped_count = count("would_skip_duplicate") + count("no_safe_legal_authority_target");
+    const skipped_count = count("would_skip_duplicate");
     const blocked_count = count("blocked") + held_count;
     const error_count = count("error");
     const promoted_count = dry_run ? 0 : would_insert_count + would_update_blank_fields_count;
