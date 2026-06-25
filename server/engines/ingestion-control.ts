@@ -335,7 +335,7 @@ function build_candidates(row: ReadyQueueRow) {
 
 async function registry_entity_extraction_v4_columns(client: any) {
   const result = await client.query(`select column_name from information_schema.columns where table_schema = 'public' and table_name = 'registry_entity_extraction_v4'`);
-  return new Set(result.rows.map((row: any) => row.column_name));
+  return new Set(result.rows.map((row: any) => String(row.column_name)));
 }
 
 async function insert_candidate(client: any, columns: Set<string>, row: ReadyQueueRow, candidate: ExtractionCandidate) {
@@ -567,13 +567,17 @@ function dry_run_lane_for_candidate(candidate: any) {
   return promotion_lane;
 }
 
+const CANDIDATE_PROMOTION_CONFIDENCE_THRESHOLD = 0.6;
+const PROMOTION_SOURCE_PREVIEW_CHAR_LIMIT = 750;
+const SAFE_PROMOTION_WRITE_TARGETS = new Set(["luminari_resource_entities"]);
+
 function verify_registry_candidate(candidate: any) {
   const blocked_reasons: string[] = [];
   const document_family = candidate.document_family || "unclassified";
   const promotion_lane = candidate.promotion_lane || "unclassified";
   if (!candidate.name) blocked_reasons.push("name_required");
   if (!candidate.source_file) blocked_reasons.push("source_file_required");
-  if (candidate.confidence !== null && candidate.confidence !== undefined && Number(candidate.confidence) < 0.6) blocked_reasons.push("confidence_below_threshold");
+  if (candidate.confidence !== null && candidate.confidence !== undefined && Number(candidate.confidence) < CANDIDATE_PROMOTION_CONFIDENCE_THRESHOLD) blocked_reasons.push("confidence_below_threshold");
   if (!candidate.jurisdiction && !is_protected_document_family(document_family)) blocked_reasons.push("jurisdiction_required");
   if (!candidate.source_citation) blocked_reasons.push("source_provenance_required");
   if (promotion_lane === "unclassified") blocked_reasons.push("promotion_lane_unclassified");
@@ -643,7 +647,7 @@ type promote_registry_entity_candidates_apply_input = registry_candidate_filter_
 const CANONICAL_PROMOTION_TARGET_HINT = "state_enriched_registry_docx_review";
 const CANONICAL_PROMOTION_FLAG = "ENABLE_CANONICAL_PROMOTION_FOR_STATE_ENRICHED_REGISTRY_DOCX_REVIEW";
 
-async function table_columns(client: any, table_name: string) {
+async function table_columns(client: any, table_name: string): Promise<Set<string>> {
   const result = await client.query(
     `select column_name
        from information_schema.columns
@@ -651,7 +655,7 @@ async function table_columns(client: any, table_name: string) {
         and table_name = $1`,
     [table_name],
   );
-  return new Set(result.rows.map((row: any) => row.column_name));
+  return new Set(result.rows.map((row: any) => String(row.column_name)));
 }
 
 function required_columns_present(columns: Set<string>, required_columns: string[]) {
@@ -664,6 +668,157 @@ function promotion_feature_flag_enabled() {
 
 function candidate_payload_from_row(row: any) {
   return row.candidate_payload ?? row.raw_candidate_payload ?? row.payload ?? row.promotion_ready ?? {};
+}
+
+function first_text_value(...values: unknown[]) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  }
+  return null;
+}
+
+function nested_value(source: any, path: string[]) {
+  let current = source;
+  for (const key of path) {
+    if (current === null || current === undefined || typeof current !== "object") return null;
+    current = current[key];
+  }
+  return current ?? null;
+}
+
+function first_array_text(source: any, paths: string[][]) {
+  for (const path of paths) {
+    const value = nested_value(source, path);
+    if (Array.isArray(value)) {
+      const found = value.find((item) => typeof item === "string" && item.trim());
+      if (found) return found.trim();
+    }
+  }
+  return null;
+}
+
+function promotion_ready_value(row: any, field: string) {
+  return row.promotion_ready && typeof row.promotion_ready === "object" ? row.promotion_ready[field] ?? null : null;
+}
+
+function resolved_candidate_type(row: any) {
+  return first_text_value(promotion_ready_value(row, "candidate_type"), row.candidate_type) ?? "unknown";
+}
+
+function resolved_intended_target_table(row: any) {
+  return first_text_value(promotion_ready_value(row, "target_table"), promotion_ready_value(row, "intended_target_table"), row.intended_target_table, row.target_table);
+}
+
+function resolved_promotion_lane(row: any) {
+  return first_text_value(promotion_ready_value(row, "promotion_lane"), row.promotion_lane) ?? "unclassified";
+}
+
+function resolved_document_family(row: any) {
+  return first_text_value(promotion_ready_value(row, "document_family"), row.document_family) ?? "unclassified";
+}
+
+function resolved_promotion_status(row: any) {
+  return first_text_value(promotion_ready_value(row, "promotion_status"), row.promotion_status);
+}
+
+function resolved_source_citation(row: any) {
+  return first_text_value(promotion_ready_value(row, "source_citation"), row.source_citation, row.queue_storage_path, row.queue_source_name, row.forensic_provenance?.source_url, row.forensic_provenance?.source_file);
+}
+
+function truncate_preview(value: unknown, limit = PROMOTION_SOURCE_PREVIEW_CHAR_LIMIT) {
+  const text = first_text_value(value);
+  if (!text) return null;
+  return text.length > limit ? `${text.slice(0, limit).trimEnd()}…` : text;
+}
+
+function candidate_payload_text(row: any, keys: string[]) {
+  const payload = candidate_payload_from_row(row);
+  const extracted = payload?.extracted ?? {};
+  return first_text_value(...keys.map((key) => payload?.[key]), ...keys.map((key) => extracted?.[key]));
+}
+
+function promotion_write_adapter_status(row: any) {
+  const intended_target_table = resolved_intended_target_table(row);
+  if (intended_target_table) {
+    return SAFE_PROMOTION_WRITE_TARGETS.has(intended_target_table) ? { write_target_table: intended_target_table, write_adapter_status: "safe_target_table_adapter" } : { write_target_table: null, write_adapter_status: "no_safe_target_table_adapter" };
+  }
+  if (candidate_is_resource_like(row)) return { write_target_table: "luminari_resource_entities", write_adapter_status: "safe_resource_like_default_adapter" };
+  return { write_target_table: null, write_adapter_status: "no_safe_target_table_adapter" };
+}
+
+function promotion_reason_detail(row: any, verification: { blocked_reasons: string[] }, write_adapter_status: string, material_hold_reason: string | null, material_scope: string) {
+  const details: string[] = [];
+  const confidence = row.confidence === null || row.confidence === undefined ? null : Number(row.confidence);
+  if (verification.blocked_reasons.includes("confidence_below_threshold") && confidence !== null) details.push(`confidence ${confidence} below threshold ${CANDIDATE_PROMOTION_CONFIDENCE_THRESHOLD}`);
+  if (verification.blocked_reasons.includes("name_required")) details.push("candidate name is required");
+  if (verification.blocked_reasons.includes("source_file_required")) details.push("source file is required");
+  if (verification.blocked_reasons.includes("jurisdiction_required")) details.push("jurisdiction is required for this document family");
+  if (verification.blocked_reasons.includes("source_provenance_required")) details.push("source citation or provenance is required");
+  if (verification.blocked_reasons.includes("promotion_lane_unclassified")) details.push("promotion lane is unclassified");
+  if (row.promotion_ready === false || row.promotion_ready?.promotion_ready === false) details.push("promotion_ready false");
+  const intended_target_table = resolved_intended_target_table(row);
+  if (write_adapter_status === "no_safe_target_table_adapter") details.push(`no safe adapter for intended target_table ${intended_target_table ?? "unspecified"}`);
+  if (material_hold_reason) details.push(`held for review because material_scope is ${material_scope}`);
+  return details.join("; ") || null;
+}
+
+function operator_promotion_result(row: any, input: { action_type: string; status: string; reason: string | null; verification: { blocked_reasons: string[] }; material_scope: string; material_hold_reason: string | null; canonical_record_id: string | null; bridge_record_id: string | null; dedupe_key: string; metadata: any }) {
+  const payload = candidate_payload_from_row(row);
+  const extracted = payload?.extracted ?? {};
+  const forensic = row.forensic_provenance ?? {};
+  const adapter = promotion_write_adapter_status(row);
+  const reason_detail = promotion_reason_detail(row, input.verification, adapter.write_adapter_status, input.material_hold_reason, input.material_scope);
+  const candidate_name = first_text_value(row.name, payload?.name, payload?.program_name, payload?.entity_name);
+  const website = candidate_payload_text(row, ["website", "site", "homepage"]);
+  const url = candidate_payload_text(row, ["url", "source_url", "link"]) ?? first_array_text(payload, [["urls"], ["extracted", "urls"]]);
+  return {
+    candidate_row_id: row.content_hash ?? row.program_id ?? row.id ?? null,
+    candidate_name,
+    candidate_type: resolved_candidate_type(row),
+    jurisdiction: row.jurisdiction ?? payload?.jurisdiction ?? null,
+    source_file: first_text_value(row.queue_source_name, row.source_file, forensic.source_file, payload?.source_name),
+    source_citation: resolved_source_citation(row),
+    storage_path: first_text_value(row.queue_storage_path, row.storage_path, forensic.storage_path, payload?.storage_path),
+    section_index: row.section_index ?? forensic.section_index ?? payload?.section_index ?? null,
+    source_text_hash: first_text_value(row.source_text_hash, forensic.source_text_hash, payload?.source_text_hash),
+    content_hash: row.content_hash ?? null,
+    confidence: row.confidence === null || row.confidence === undefined ? null : Number(row.confidence),
+    confidence_threshold: CANDIDATE_PROMOTION_CONFIDENCE_THRESHOLD,
+    confidence_scores: row.confidence_scores ?? null,
+    promotion_ready: row.promotion_ready ?? null,
+    promotion_status: resolved_promotion_status(row),
+    intended_target_table: resolved_intended_target_table(row),
+    promotion_lane: resolved_promotion_lane(row),
+    document_family: resolved_document_family(row),
+    material_scope: input.material_scope,
+    write_target_table: adapter.write_target_table,
+    write_adapter_status: adapter.write_adapter_status,
+    decision: input.action_type,
+    reason: input.reason,
+    reason_detail,
+    program_name: first_text_value(payload?.program_name, extracted.program_name, candidate_name),
+    entity_name: first_text_value(payload?.entity_name, extracted.entity_name, candidate_name),
+    agency: candidate_payload_text(row, ["agency", "agency_name", "department"]),
+    purpose: candidate_payload_text(row, ["purpose", "description", "normalized_excerpt"]),
+    eligibility: candidate_payload_text(row, ["eligibility", "eligibility_summary", "eligibility_criteria"]),
+    contact: candidate_payload_text(row, ["contact", "contact_name", "contact_summary"]),
+    phone: candidate_payload_text(row, ["phone", "telephone"]) ?? first_array_text(payload, [["phones"], ["extracted", "phones"]]),
+    email: candidate_payload_text(row, ["email"]) ?? first_array_text(payload, [["emails"], ["extracted", "emails"]]),
+    website,
+    portal: candidate_payload_text(row, ["portal", "application_portal", "benefits_portal"]),
+    url,
+    address: candidate_payload_text(row, ["address", "mailing_address", "physical_address"]),
+    source_excerpt: truncate_preview(first_text_value(payload?.source_excerpt, payload?.excerpt, payload?.normalized_excerpt, payload?.description, row.normalized_excerpt, row.source_excerpt, forensic.source_excerpt)),
+    source_record_id: row.content_hash ?? row.program_id,
+    canonical_record_id: input.canonical_record_id,
+    bridge_record_id: input.bridge_record_id,
+    action_type: input.action_type,
+    status: input.status,
+    dedupe_key: input.dedupe_key,
+    blocked_reasons: input.verification.blocked_reasons,
+    source_queue_id: input.metadata.source_queue_id,
+  };
 }
 
 function candidate_source_queue_id(row: any) {
@@ -915,21 +1070,27 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
       input.candidate_type ? [target_hint, input.candidate_type, limit] : [target_hint, limit],
     );
     for (const row of rows.rows) {
-      const verification_input = { ...row, promotion_lane: row.promotion_lane === "unclassified" ? "state_enriched_registry_docx_review" : row.promotion_lane, source_citation: row.source_citation ?? row.queue_storage_path ?? row.queue_source_name };
+      const promotion_lane = resolved_promotion_lane(row);
+      const verification_input = { ...row, candidate_type: resolved_candidate_type(row), document_family: resolved_document_family(row), promotion_lane: promotion_lane === "unclassified" ? "state_enriched_registry_docx_review" : promotion_lane, source_file: first_text_value(row.source_file, row.queue_source_name, row.forensic_provenance?.source_file), source_citation: resolved_source_citation(row) };
       const verification = verify_registry_candidate(verification_input);
       const material_scope = classify_candidate_material_scope(verification_input);
       const material_hold_reason = hold_reason_for_material_scope(material_scope);
-      const dedupe_key = canonical_dedupe_key(row);
+      const dedupe_key = canonical_dedupe_key(verification_input);
       let action_type = "blocked";
       let status = "blocked";
       let reason = verification.blocked_reasons.join(",") || null;
       let canonical_record_id = null;
       let bridge_record_id = null;
+      const adapter = promotion_write_adapter_status(verification_input);
       try {
         if (verification.verified && material_hold_reason) {
           action_type = material_hold_reason;
           status = "held_review";
           reason = material_hold_reason;
+        } else if (verification.verified && adapter.write_adapter_status === "no_safe_target_table_adapter") {
+          action_type = "no_safe_target_table_adapter";
+          status = "held_review";
+          reason = "no_safe_target_table_adapter";
         } else if (verification.verified && material_scope === "official_public_law_or_authority" && !candidate_is_resource_like(row)) {
           action_type = "no_safe_legal_authority_target";
           status = "held_review";
@@ -953,15 +1114,15 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
         status = "error";
         reason = error?.message ?? String(error);
       }
-      const metadata = { source_queue_id: candidate_source_queue_id(row), source_file: row.queue_source_name ?? row.source_file ?? null, storage_path: row.queue_storage_path ?? row.storage_path ?? null, content_hash: row.content_hash ?? null, candidate_type: row.candidate_type ?? null, target_hint, dedupe_behavior: "enrich_blank_fields_only", verification_lane: verification.verification_lane, blocked_reasons: verification.blocked_reasons, material_scope, candidate_payload: candidate_payload_from_row(row), forensic_provenance: row.forensic_provenance ?? {} };
+      const metadata = { source_queue_id: candidate_source_queue_id(row), source_file: row.queue_source_name ?? row.source_file ?? null, storage_path: row.queue_storage_path ?? row.storage_path ?? null, content_hash: row.content_hash ?? null, candidate_type: resolved_candidate_type(row), intended_target_table: resolved_intended_target_table(row), write_target_table: adapter.write_target_table, write_adapter_status: adapter.write_adapter_status, target_hint, dedupe_behavior: "enrich_blank_fields_only", verification_lane: verification.verification_lane, blocked_reasons: verification.blocked_reasons, material_scope, candidate_payload: candidate_payload_from_row(row), forensic_provenance: row.forensic_provenance ?? {} };
       await insert_accounting_row(client, { run_id, lane: target_hint, action_type, is_dry_run: dry_run, source_record_id: row.content_hash ?? row.program_id, canonical_record_id, bridge_record_id, status, reason, dedupe_key, metadata });
-      results.push({ source_record_id: row.content_hash ?? row.program_id, canonical_record_id, bridge_record_id, action_type, status, reason, dedupe_key, blocked_reasons: verification.blocked_reasons, candidate_type: row.candidate_type ?? null, source_queue_id: metadata.source_queue_id, material_scope });
+      results.push(operator_promotion_result(verification_input, { action_type, status, reason, verification, material_scope, material_hold_reason, canonical_record_id, bridge_record_id, dedupe_key, metadata }));
     }
     const count = (name: string) => results.filter((row) => row.action_type === name).length;
     const held_count = results.filter((row) => row.status === "held_review").length;
     const would_insert_count = count("would_insert");
     const would_update_blank_fields_count = count("would_update_blank_fields");
-    const skipped_count = count("would_skip_duplicate") + count("no_safe_legal_authority_target");
+    const skipped_count = count("would_skip_duplicate") + count("no_safe_legal_authority_target") + count("no_safe_target_table_adapter");
     const blocked_count = count("blocked") + held_count;
     const error_count = count("error");
     const promoted_count = dry_run ? 0 : would_insert_count + would_update_blank_fields_count;
