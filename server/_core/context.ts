@@ -4,6 +4,7 @@ import {
   getUserByOpenIdSnake,
   type RuntimeUser,
 } from "./user-resolver";
+import { classify_db_error } from "../db";
 
 export type AuthStatus =
   | "unauthenticated"
@@ -127,7 +128,13 @@ function errorDetail(error: unknown): string {
 }
 
 function isTimeoutError(error: unknown): boolean {
-  return errorDetail(error).toLowerCase().includes("timed out");
+  return errorDetail(error).toLowerCase().includes("timed out") || classify_db_error(error) !== "db_error";
+}
+
+function profile_lookup_error_code(error: unknown): "pool_acquire_timeout" | "query_timeout" | "profile_lookup_timeout" | "profile_lookup_error" {
+  const db_code = classify_db_error(error);
+  if (db_code === "pool_acquire_timeout" || db_code === "query_timeout") return db_code;
+  return isTimeoutError(error) ? "profile_lookup_timeout" : "profile_lookup_error";
 }
 
 function createUnauthenticatedAuth(): ContextAuth {
@@ -419,6 +426,7 @@ async function resolveProfileFromSupabaseAuthUser(
           supabase_user_id: authOpenId,
           timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
           error: first_error,
+          diagnostic_code: profile_lookup_error_code(error),
         },
       );
       return {
@@ -459,6 +467,7 @@ async function resolveProfileFromSupabaseAuthUser(
           supabase_email: authEmail,
           timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
           error: detail,
+          diagnostic_code: profile_lookup_error_code(error),
         },
       );
       return {
@@ -541,6 +550,7 @@ export async function createContext(
             supabase_email,
             timeout_ms: USER_LOOKUP_TIMEOUT_MS,
             error: detail,
+            diagnostic_code: profile_lookup_error_code(error),
           },
         );
         return {

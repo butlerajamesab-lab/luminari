@@ -1,4 +1,4 @@
-import { getPool } from "../db";
+import { query_with_diagnostics } from "../db";
 import { dedupeUserLookup, getCachedUser, setCachedUser } from "./user-cache";
 
 export type RuntimeUser = {
@@ -32,6 +32,24 @@ function mapUser(row: any): RuntimeUser | null {
 
 const USER_SELECT = `select id, open_id, name, email, login_method, role, plan, created_at, updated_at, last_signed_in from public.users`;
 
+function read_positive_integer_env(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const PROFILE_POOL_ACQUIRE_TIMEOUT_MS = read_positive_integer_env("CONTEXT_PROFILE_POOL_ACQUIRE_TIMEOUT_MS", 250);
+const PROFILE_QUERY_TIMEOUT_MS = read_positive_integer_env("CONTEXT_PROFILE_QUERY_TIMEOUT_MS", 750);
+
+async function query_user_profile(label: string, text: string, values: unknown[]) {
+  return query_with_diagnostics(text, values, {
+    label,
+    pool_acquire_timeout_ms: PROFILE_POOL_ACQUIRE_TIMEOUT_MS,
+    query_timeout_ms: PROFILE_QUERY_TIMEOUT_MS,
+  });
+}
+
 function cacheUser(user: RuntimeUser | null) {
   setCachedUser([user?.email, user?.open_id], user);
 }
@@ -43,7 +61,7 @@ export async function getUserByEmailSnake(email: string): Promise<RuntimeUser | 
 
   try {
     return await dedupeUserLookup(normalized, async () => {
-      const result = await getPool().query(`${USER_SELECT} where lower(email) = $1 limit 1`, [normalized]);
+      const result = await query_user_profile("profile_email_lookup", `${USER_SELECT} where lower(email) = $1 limit 1`, [normalized]);
       const user = mapUser(result.rows[0]);
       setCachedUser([normalized, user?.open_id], user);
       return user;
@@ -64,7 +82,7 @@ export async function getUserByOpenIdSnake(openId: string): Promise<RuntimeUser 
 
   try {
     return await dedupeUserLookup(openId, async () => {
-      const result = await getPool().query(`${USER_SELECT} where open_id = $1 limit 1`, [openId]);
+      const result = await query_user_profile("profile_open_id_lookup", `${USER_SELECT} where open_id = $1 limit 1`, [openId]);
       const user = mapUser(result.rows[0]);
       cacheUser(user);
       return user;

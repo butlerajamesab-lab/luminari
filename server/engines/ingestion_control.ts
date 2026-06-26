@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { getPool } from "../db";
+import { getPool, query_with_diagnostics } from "../db";
 
 export type CorpusImportQueueStatusFilter =
   | "all"
@@ -137,8 +137,6 @@ function map_queue_row(row: any): CorpusImportQueueRow {
 export async function list_corpus_import_queue(input?: { status_filter?: CorpusImportQueueStatusFilter; limit?: number }) {
   const status_filter = input?.status_filter ?? "all";
   const limit = Math.min(Math.max(input?.limit ?? 100, 1), 500);
-  const pool = getPool();
-
   const values: unknown[] = [];
   let where_sql = "";
 
@@ -152,10 +150,10 @@ export async function list_corpus_import_queue(input?: { status_filter?: CorpusI
   values.push(limit);
   const limit_placeholder = `$${values.length}`;
 
-  const summary_result = await pool.query(`select import_status, count(*)::int as count from public.corpus_import_queue group by import_status`);
+  const summary_result = await query_with_diagnostics(`select import_status, count(*)::int as count from public.corpus_import_queue group by import_status`, [], { label: "ingestion_control_queue_summary", pool_acquire_timeout_ms: 1000, query_timeout_ms: 10000 });
   const status_counts = Object.fromEntries(summary_result.rows.map((row: any) => [row.import_status ?? "unknown", Number(row.count ?? 0)]));
 
-  const result = await pool.query(
+  const result = await query_with_diagnostics(
     `select
        id,
        source_name,
@@ -185,6 +183,7 @@ export async function list_corpus_import_queue(input?: { status_filter?: CorpusI
        id desc
      limit ${limit_placeholder}`,
     values,
+    { label: "ingestion_control_queue_rows", pool_acquire_timeout_ms: 1000, query_timeout_ms: 10000 },
   );
 
   const rows = result.rows.map(map_queue_row);

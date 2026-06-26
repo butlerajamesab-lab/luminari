@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Router } from "express";
 import { allowed_target_hints, create_candidates_from_ready_queue, list_corpus_import_queue, get_corpus_import_queue_row, get_registry_entity_candidates_summary, list_registry_entity_candidates, set_corpus_import_queue_target_hint, verify_registry_entity_candidates_dry_run, promote_registry_entity_candidates_apply } from "../engines/ingestion_control";
-import { getPool } from "../db";
+import { classify_db_error, getPool } from "../db";
 
 const execFileAsync = promisify(execFile);
 
@@ -114,7 +114,8 @@ ingestion_control_rest_router.get("/corpus-import-queue", async (req, res) => {
     const result = await list_corpus_import_queue({ status_filter: allowed_status_filters.has(status_filter) ? status_filter as any : "all", limit });
     res.json({ ...result, allowed_target_hints });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: "ingestion_control_queue_read_failed", message: error?.message ?? String(error) });
+    const diagnostic_code = classify_db_error(error);
+    res.status(500).json({ success: false, error: diagnostic_code === "db_error" ? "ingestion_control_queue_read_failed" : diagnostic_code, diagnostic_code, message: error?.message ?? String(error) });
   }
 });
 
