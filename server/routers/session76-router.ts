@@ -311,7 +311,7 @@ const dataStreamRouter = router({
 
   getStreamTypes: adminProcedure.query(async () => {
     const { STREAM_TYPES, UPDATE_FREQUENCIES } = await import("../engines/data-stream-manager");
-    return { stream_types: STREAM_TYPES, updateFrequencies: UPDATE_FREQUENCIES };
+    return { stream_types: STREAM_TYPES, update_frequencies: UPDATE_FREQUENCIES };
   }),
 });
 
@@ -528,7 +528,7 @@ const executionBridgeRouter = router({
         new Promise<null>((resolve) => setTimeout(() => resolve(null), 120_000)),
       ]);
       if (!result) {
-        return { success: true, message: "Ingestion started (running in background)", status: "running" as const, recordsProcessed: 0, signals_generated: 0, errors: [] as string[] };
+        return { success: true, message: "Ingestion started (running in background)", status: "running" as const, records_processed: 0, signals_generated: 0, errors: [] as string[] };
       }
       return {
         success: result.success,
@@ -536,12 +536,12 @@ const executionBridgeRouter = router({
           ? `Processed ${result.recordsProcessed} records, ${result.signalsGenerated} signals generated`
           : `Failed: ${result.errors.join(", ")}`,
         status: (result.success ? "completed" : "failed") as "completed" | "failed",
-        recordsProcessed: result.recordsProcessed,
-        recordsInserted: result.recordsInserted,
-        recordsUpdated: result.recordsUpdated,
+        records_processed: result.recordsProcessed,
+        records_inserted: result.recordsInserted,
+        records_updated: result.recordsUpdated,
         signals_generated: result.signalsGenerated,
         errors: result.errors,
-        runId: result.runId,
+        run_id: result.runId,
       };
     }),
 
@@ -581,7 +581,7 @@ const executionBridgeRouter = router({
       }
     }
     return {
-      totalStreams: streams.length,
+      total_streams: streams.length,
       succeeded: results.filter(r => r.success).length,
       failed: results.filter(r => !r.success).length,
       results,
@@ -630,8 +630,8 @@ const executionBridgeRouter = router({
         }
       }
       return {
-        failedRunsFound: failedRuns.length,
-        uniqueStreamsRetried: uniqueStreams.length,
+        failed_runs_found: failedRuns.length,
+        unique_streams_retried: uniqueStreams.length,
         succeeded: results.filter(r => r.success).length,
         failed: results.filter(r => !r.success).length,
         results,
@@ -829,18 +829,18 @@ const executionBridgeRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { resetStreamCheckpoint } = await import("../engines/executor-service");
       const resetResult = await resetStreamCheckpoint(input.stream_id, ctx.user.id.toString(), ctx.user.name ?? undefined);
-      if (!resetResult.success) return { ...resetResult, recordsProcessed: 0, signals_generated: 0 };
+      if (!resetResult.success) return { ...resetResult, records_processed: 0, signals_generated: 0 };
       // Now run the stream
       const { triggerManualIngestion } = await import("../ingestion/scheduler");
       const result = await Promise.race([
         triggerManualIngestion(input.stream_id, input.maxRecords),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), 120_000)),
       ]);
-      if (!result) return { success: true, summary: "Checkpoint reset + ingestion started (running in background)", recordsProcessed: 0, signals_generated: 0 };
+      if (!result) return { success: true, summary: "Checkpoint reset + ingestion started (running in background)", records_processed: 0, signals_generated: 0 };
       return {
         success: result.success,
         summary: `Checkpoint reset + ${result.success ? `ingested ${result.recordsProcessed} records, ${result.signalsGenerated} signals` : `failed: ${result.errors.join(", ")}`}`,
-        recordsProcessed: result.recordsProcessed,
+        records_processed: result.recordsProcessed,
         signals_generated: result.signalsGenerated,
         errors: result.errors,
       };

@@ -103,7 +103,7 @@ export const casePatternBridgeRouter = router({
         signals: {
           total: signalStats?.totalSignals || 0,
           active: signalStats?.activeSignals || 0,
-          uniqueCases: signalStats?.uniqueCases || 0,
+          unique_cases: signalStats?.uniqueCases || 0,
         },
         candidates: {
           total: candidateStats?.totalCandidates || 0,
@@ -114,7 +114,7 @@ export const casePatternBridgeRouter = router({
         },
         links: {
           total: linkStats?.totalLinks || 0,
-          uniqueCases: linkStats?.uniqueLinkedCases || 0,
+          unique_cases: linkStats?.uniqueLinkedCases || 0,
         },
       };
     }),
@@ -145,7 +145,7 @@ export const casePatternBridgeRouter = router({
       }
 
       return {
-        casesProcessed: userCases.length,
+        cases_processed: userCases.length,
         totalSignals,
         totalCandidates,
         totalPromoted,

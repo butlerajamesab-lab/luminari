@@ -82,10 +82,10 @@ export const businessRouter = router({
       const expenseBaselines = baselines.filter(b => b.entityType === 'expense_category');
 
       return {
-        totalBaselines: baselines.length,
-        productCount: productBaselines.length,
-        expenseCategoryCount: expenseBaselines.length,
-        lastUpdated: baselines.length > 0 
+        total_baselines: baselines.length,
+        product_count: productBaselines.length,
+        expense_category_count: expenseBaselines.length,
+        last_updated: baselines.length > 0 
           ? Math.max(...baselines.map(b => b.lastUpdated || 0))
           : null,
       };

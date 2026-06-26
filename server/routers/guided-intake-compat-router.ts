@@ -29,8 +29,8 @@ export const guidedIntakeCompatRouter = router({
         },
       ],
       deterministic: activation.deterministic,
-      convergenceStage: activation.convergenceStage,
-      readyNamespaces: activation.readyNamespaces,
+      convergence_stage: activation.convergenceStage,
+      ready_namespaces: activation.readyNamespaces,
     };
   }),
 });

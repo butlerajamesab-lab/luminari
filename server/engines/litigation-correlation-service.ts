@@ -13,7 +13,7 @@ import { updateGovernedSignal } from "../signal-governance";
 
 export interface LitigationMatch {
   entityName: string;
-  litigationId: number;
+  litigation_id: number;
   caseName: string | null;
   caseNumber: string | null;
   court: string | null;
@@ -45,7 +45,7 @@ export async function runLitigationCorrelation(): Promise<CorrelationResult> {
   try {
     // Get all repeat_entity signals
     const signals = await db.execute(sql`
-      SELECT signal_id as id, entity_id as entity, confidence_score as confidence, entity_role as entityType, confidence_score as entityConfidenceScore
+      SELECT signal_id as id, entity_id as entity, confidence_score as confidence, entity_role as entity_type, confidence_score as entity_confidence_score
       FROM detected_signals 
       WHERE signal_type = 'repeat_entity'
       ORDER BY detection_timestamp DESC
@@ -134,7 +134,7 @@ export async function getEntityLitigationMatches(entityName: string): Promise<Li
 
   return (results[0] as unknown as any[]).map(r => ({
     entityName: r.entity_name,
-    litigationId: r.litigation_id,
+    litigation_id: r.litigation_id,
     caseName: r.case_name,
     caseNumber: r.case_number,
     court: r.court,
@@ -180,8 +180,8 @@ export async function getLitigationCorrelationSummary(): Promise<{
     totalLinks: Number((totalLinks[0] as unknown as any[])[0]?.cnt) || 0,
     topCorrelatedEntities: (topCorrelated[0] as unknown as any[]).map(r => ({
       entityName: r.entity_name,
-      linkCount: Number(r.link_count),
-      maxConfidence: Number(r.max_confidence),
+      link_count: Number(r.link_count),
+      max_confidence: Number(r.max_confidence),
     })),
     recentCorrelations: (recentCorrelations[0] as unknown as any[]).map(r => ({
       entityName: r.entity_name,

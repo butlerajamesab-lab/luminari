@@ -269,9 +269,9 @@ export const knowledgeIngestionRouter = router({
       summary: {
         totalPopulated,
         totalTarget,
-        overallCoverage: totalTarget ? Math.round((totalPopulated / totalTarget) * 100) : 0,
-        criticallyLow: criticallyLow.map((r) => r.label),
-        underPopulated: underPopulated.map((r) => r.label),
+        overall_coverage: totalTarget ? Math.round((totalPopulated / totalTarget) * 100) : 0,
+        critically_low: criticallyLow.map((r) => r.label),
+        under_populated: underPopulated.map((r) => r.label),
       },
     };
   }),

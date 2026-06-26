@@ -49,7 +49,7 @@ export const patternEngineRouter = router({
         allEntities = await db.select().from(entities).limit(500);
       }
 
-      if (allEntities.length === 0) return { clustersCreated: 0, message: "No entities found." };
+      if (allEntities.length === 0) return { clusters_created: 0, message: "No entities found." };
 
       const entitySummary = allEntities.slice(0, 100).map(e =>
         `${e.id}|case:${e.caseId}|${e.name}|${e.type}|${e.description?.slice(0, 60) ?? ""}`
@@ -105,7 +105,7 @@ Only create clusters for entities appearing in 2+ cases or with notable risk ind
         created++;
       }
 
-      return { clustersCreated: created };
+      return { clusters_created: created };
     }),
 
   // ─── P2: Cluster Conduct ────────────────────────────────────────────
@@ -124,7 +124,7 @@ Only create clusters for entities appearing in 2+ cases or with notable risk ind
         allClaims = await db.select().from(claims).limit(500);
       }
 
-      if (allClaims.length === 0) return { clustersCreated: 0, message: "No claims found." };
+      if (allClaims.length === 0) return { clusters_created: 0, message: "No claims found." };
 
       const claimSummary = allClaims.slice(0, 80).map(c =>
         `case:${c.caseId}|${c.claimType}|${c.claimText?.slice(0, 100) ?? ""}`
@@ -184,7 +184,7 @@ Focus on patterns that repeat across multiple cases.`
         created++;
       }
 
-      return { clustersCreated: created };
+      return { clusters_created: created };
     }),
 
   // ─── P3: Detect Case Links ─────────────────────────────────────────
@@ -247,7 +247,7 @@ Focus on patterns that repeat across multiple cases.`
         created++;
       }
 
-      return { linksCreated: created };
+      return { links_created: created };
     }),
 
   // ─── P4: Generate Systemic Inferences ───────────────────────────────
@@ -259,7 +259,7 @@ Focus on patterns that repeat across multiple cases.`
       const caseLinks = await db.select().from(patternCaseLinks);
 
       if (entityClusters.length === 0 && conductClusters.length === 0) {
-        return { inferencesGenerated: 0, message: "No clusters found. Run P1 and P2 first." };
+        return { inferences_generated: 0, message: "No clusters found. Run P1 and P2 first." };
       }
 
       const ecSummary = entityClusters.map(e =>
@@ -321,7 +321,7 @@ Focus on actionable inferences that strengthen individual cases.`
         created++;
       }
 
-      return { inferencesGenerated: created };
+      return { inferences_generated: created };
     }),
 
   // ─── P5: Apply Feedback Loop ────────────────────────────────────────
@@ -333,7 +333,7 @@ Focus on actionable inferences that strengthen individual cases.`
       const paths = await db.select().from(strategyPaths)
         .where(eq(strategyPaths.caseId, input.caseId));
 
-      if (paths.length === 0) return { feedbackApplied: 0, message: "No strategy paths found." };
+      if (paths.length === 0) return { feedback_applied: 0, message: "No strategy paths found." };
 
       // Get relevant pattern data
       const entityClusters = await db.select().from(patternEntityClusters);

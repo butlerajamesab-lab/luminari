@@ -90,8 +90,8 @@ export const signalExtractionRouter = router({
 
       return {
         id: row.id,
-        docId: row.docId,
-        caseId: row.caseId,
+        doc_id: row.docId,
+        case_id: row.caseId,
         entities: {
           people: JSON.parse(row.entitiesPeople || "[]"),
           companies: JSON.parse(row.entitiesCompanies || "[]"),
@@ -120,7 +120,7 @@ export const signalExtractionRouter = router({
           source_id: row.sourceId || "",
           dataset: row.dataset || "",
         },
-        extractedAt: row.extractedAt,
+        extracted_at: row.extractedAt,
       };
     }),
 
@@ -143,9 +143,9 @@ export const signalExtractionRouter = router({
       const r = (rows as unknown as any[])[0] || {};
       return {
         total: Number(r.total || 0),
-        uniqueFingerprints: Number(r.unique_fingerprints || 0),
-        statesCovered: Number(r.states_covered || 0),
-        byCategory: {
+        unique_fingerprints: Number(r.unique_fingerprints || 0),
+        states_covered: Number(r.states_covered || 0),
+        by_category: {
           financial: Number(r.financial || 0),
           medical: Number(r.medical || 0),
           housing: Number(r.housing || 0),

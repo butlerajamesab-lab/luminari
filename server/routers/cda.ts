@@ -8,8 +8,8 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
-import * as cdaDb from "../cda-db";
-import * as dbHelpers from "../db";
+import * as cda_db from "../cda-db";
+import * as db_helpers from "../db";
 import { buildRunBundle } from "../cda-bundle";
 import { runCdaPipeline, type CdaInputDocument } from "../cda-orchestrator";
 import { createHash } from "crypto";
@@ -18,22 +18,22 @@ import { assertActionAllowed } from "../gate-helpers";
 export const cdaRouter = router({
   /** List all CDA runs for the authenticated user */
   listRuns: protectedProcedure.query(async ({ ctx }) => {
-    return cdaDb.listRunsForUser(ctx.user.id);
+    return cda_db.listRunsForUser(ctx.user.id);
   }),
 
   /** List CDA runs for a specific case */
   listRunsForCase: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return cdaDb.listRunsForCase(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return cda_db.listRunsForCase(input.caseId);
     }),
 
   /** Get a single run with full detail */
   getRun: protectedProcedure
     .input(z.object({ runId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const run = await cdaDb.getRun(input.runId);
+      const run = await cda_db.getRun(input.runId);
       if (!run) return null;
       if (run.userId !== ctx.user.id) return null;
       return run;
@@ -43,16 +43,16 @@ export const cdaRouter = router({
   getRunCounts: protectedProcedure
     .input(z.object({ runId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const run = await cdaDb.getRun(input.runId);
+      const run = await cda_db.getRun(input.runId);
       if (!run || run.userId !== ctx.user.id) return null;
-      return cdaDb.getRunRowCounts(input.runId);
+      return cda_db.getRunRowCounts(input.runId);
     }),
 
   /** Get the full run bundle with O1-O4 markdown artifacts */
   getRunBundle: protectedProcedure
     .input(z.object({ runId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const run = await cdaDb.getRun(input.runId);
+      const run = await cda_db.getRun(input.runId);
       if (!run || run.userId !== ctx.user.id) return null;
 
       try {
@@ -74,10 +74,10 @@ export const cdaRouter = router({
   getT7Stats: protectedProcedure
     .input(z.object({ runId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const run = await cdaDb.getRun(input.runId);
+      const run = await cda_db.getRun(input.runId);
       if (!run || run.userId !== ctx.user.id) return null;
 
-      const matrix = await cdaDb.getComparisonMatrix(input.runId);
+      const matrix = await cda_db.getComparisonMatrix(input.runId);
       const total = matrix.length;
       const byMatchType: Record<string, number> = {};
       const byResolutionMethod: Record<string, number> = {};
@@ -90,7 +90,7 @@ export const cdaRouter = router({
       }
 
       return {
-        totalComparisons: total,
+        total_comparisons: total,
         byMatchType,
         byResolutionMethod,
       };
@@ -100,20 +100,20 @@ export const cdaRouter = router({
   getFramingSummary: protectedProcedure
     .input(z.object({ runId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const run = await cdaDb.getRun(input.runId);
+      const run = await cda_db.getRun(input.runId);
       if (!run || run.userId !== ctx.user.id) return null;
 
       const [matrix, gaps] = await Promise.all([
-        cdaDb.getComparisonMatrix(input.runId),
-        cdaDb.getEvidenceGaps(input.runId),
+        cda_db.getComparisonMatrix(input.runId),
+        cda_db.getEvidenceGaps(input.runId),
       ]);
 
       const clauseIds = new Set(matrix.filter(r => r.clauseId).map(r => r.clauseId));
 
       return {
-        clauseCount: clauseIds.size,
-        gapCount: gaps.length,
-        criticalGapCount: gaps.filter(g => g.priorityLevel === "critical").length,
+        clause_count: clauseIds.size,
+        gap_count: gaps.length,
+        critical_gap_count: gaps.filter(g => g.priorityLevel === "critical").length,
       };
     }),
 
@@ -142,10 +142,10 @@ export const cdaRouter = router({
       const { caseId, policyDocId, denialDocId, claimSummaryDocId } = input;
 
       // 1. Verify case write access (owner or WRITE collaborator)
-      await dbHelpers.verifyCaseWriteAccess(caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(caseId, ctx.user.id);
 
       // Gate B: explicit snapshot resolution — use getOpenSnapshot instead of listSnapshots[0]
-      const cdaSnapshot = await dbHelpers.getOpenSnapshot(caseId);
+      const cdaSnapshot = await db_helpers.getOpenSnapshot(caseId);
       if (cdaSnapshot) await assertActionAllowed(caseId, cdaSnapshot.id, 'runCDA');
 
       // 2. Ensure all three doc IDs are distinct
@@ -159,9 +159,9 @@ export const cdaRouter = router({
 
       // 3. Fetch all three documents and validate
       const [policyDoc, denialDoc, claimDoc] = await Promise.all([
-        dbHelpers.getDocument(policyDocId),
-        dbHelpers.getDocument(denialDocId),
-        dbHelpers.getDocument(claimSummaryDocId),
+        db_helpers.getDocument(policyDocId),
+        db_helpers.getDocument(denialDocId),
+        db_helpers.getDocument(claimSummaryDocId),
       ]);
 
       // Existence check
@@ -191,7 +191,7 @@ export const cdaRouter = router({
       }
 
       // 4. Duplicate run prevention — block if active run exists for same docs
-      const activeRun = await cdaDb.findActiveRunForDocs(caseId, policyDocId, denialDocId, claimSummaryDocId);
+      const activeRun = await cda_db.findActiveRunForDocs(caseId, policyDocId, denialDocId, claimSummaryDocId);
       if (activeRun) {
         throw new TRPCError({
           code: "CONFLICT",
@@ -200,13 +200,13 @@ export const cdaRouter = router({
       }
 
       // 5. Build CDA input with lock snapshot (sha256 hashes frozen at this moment)
-      function buildInputDoc(doc: NonNullable<Awaited<ReturnType<typeof dbHelpers.getDocument>>>): CdaInputDocument {
+      function buildInputDoc(doc: NonNullable<Awaited<ReturnType<typeof db_helpers.getDocument>>>): CdaInputDocument {
         const textHash = createHash("sha256").update(doc.textContent!).digest("hex");
         return {
-          sourceDocumentId: doc.id,
-          textContent: doc.textContent!,
-          fileName: doc.filename,
-          pageCount: doc.pageCount ?? undefined,
+          source_document_id: doc.id,
+          text_content: doc.textContent!,
+          file_name: doc.filename,
+          page_count: doc.pageCount ?? undefined,
           hash: textHash,
         };
       }
@@ -220,7 +220,7 @@ export const cdaRouter = router({
       };
 
       // 6. Audit log
-      await dbHelpers.logAudit({
+      await db_helpers.logAudit({
         caseId,
         userId: ctx.user.id,
         action: "start_cda_run",
@@ -244,7 +244,7 @@ export const cdaRouter = router({
       const result = await resultPromise;
 
       return {
-        runId: result.runId,
+        run_id: result.runId,
         status: result.status,
       };
     }),

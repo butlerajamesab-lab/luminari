@@ -14,7 +14,7 @@ export const lighthouseOperationsRouter = router({
     return {
       operations,
       count: operations.length,
-      criticalCount: operations.filter((row) =>
+      critical_count: operations.filter((row) =>
         row.health_classification === "stalled" || row.health_classification === "quarantined"
       ).length,
     };

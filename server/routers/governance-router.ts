@@ -293,8 +293,8 @@ export const governanceRouter = router({
 
       return {
         ...entry,
-        previousState: normalizeJson(entry.previousState),
-        newState: normalizeJson(entry.newState),
+        previous_state: normalizeJson(entry.previousState),
+        new_state: normalizeJson(entry.newState),
       };
     }),
 
@@ -314,9 +314,9 @@ export const governanceRouter = router({
 
     return {
       ...verification,
-      totalEntries: countResult.count,
-      lastEntryAt: latestEntry?.createdAt ?? null,
-      lastSeqNo: latestEntry?.seqNo ?? 0,
+      total_entries: countResult.count,
+      last_entry_at: latestEntry?.createdAt ?? null,
+      last_seq_no: latestEntry?.seqNo ?? 0,
     };
   }),
 

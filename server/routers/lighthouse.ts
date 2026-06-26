@@ -12,7 +12,7 @@ import { router, publicProcedure, protectedProcedure, adminProcedure } from "../
 import * as db from "../db";
 import { TRPCError } from "@trpc/server";
 import { compileRegistry, validateCompiledRegistry, type CompilerInput } from "../registry-compiler";
-import { validateRegistry as validateManifestRegistry, getRegisteredStates, getManifestStats, compareRegistries } from "../registry-manifest";
+import { validateRegistry as validate_manifest_registry, getRegisteredStates, getManifestStats, compareRegistries } from "../registry-manifest";
 import { existsSync, readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -374,15 +374,15 @@ const registryRouter = router({
       const workflows = loadStateFile<any>(sc, "workflow_overrides");
       if (!manifest) throw new TRPCError({ code: "NOT_FOUND", message: `State ${sc} not found in registry` });
       return {
-        stateCode: sc,
-        stateName: manifest.state_name || sc,
+        state_code: sc,
+        state_name: manifest.state_name || sc,
         manifest,
-        layer0Flags: layer0?.flags || [],
-        helpContacts: help?.routing_index || help?.contacts || [],
-        oversightBodies: oversight?.oversight_chains || oversight?.chains || [],
-        programCount: programs?.programs?.length || 0,
-        tribalOverrides: tribal || null,
-        workflowCount: workflows?.workflows?.length || 0,
+        layer0_flags: layer0?.flags || [],
+        help_contacts: help?.routing_index || help?.contacts || [],
+        oversight_bodies: oversight?.oversight_chains || oversight?.chains || [],
+        program_count: programs?.programs?.length || 0,
+        tribal_overrides: tribal || null,
+        workflow_count: workflows?.workflows?.length || 0,
       };
     }),
 
@@ -400,7 +400,7 @@ const registryRouter = router({
   validate: publicProcedure
     .input(z.object({ stateCode: z.string().length(2) }))
     .query(async ({ input }) => {
-      const manifestResult = validateManifestRegistry(input.stateCode.toUpperCase());
+      const manifestResult = validate_manifest_registry(input.stateCode.toUpperCase());
       const compilerResult = validateCompiledRegistry(input.stateCode.toUpperCase());
       return { manifest: manifestResult, layers: compilerResult };
     }),
@@ -823,7 +823,7 @@ const mapIntakeRouter = router({
       });
 
       return {
-        sessionId: id,
+        session_id: id,
         ...context,
         createdAt,
       };
@@ -882,8 +882,8 @@ const mapIntakeRouter = router({
       return {
         detectedState,
         suggestions,
-        resourceCount: nearbyResources.length,
-        signalCount: nearbySignals.length,
+        resource_count: nearbyResources.length,
+        signal_count: nearbySignals.length,
       };
     }),
 });
