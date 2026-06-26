@@ -4,13 +4,13 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
-  createPool,
-  getTableColumns,
-  repoRoot,
-  tableExists,
+  create_pool,
+  get_table_columns,
+  repo_root,
+  table_exists,
 } from "./lib/corpus-audit-utils.mjs";
 
-const artifactDir = path.join(repoRoot, "artifacts", "corpus-audit");
+const artifactDir = path.join(repo_root, "artifacts", "corpus-audit");
 const jsonReportPath = path.join(artifactDir, "state-registry-docx-normalization-report.json");
 const csvReportPath = path.join(artifactDir, "state-registry-docx-normalization-report.csv");
 const EXTRACTION_VERSION = "state_registry_docx_full_normalizer_v1";
@@ -129,7 +129,7 @@ function extractUrls(textValue) {
     .filter((url) => /\.(gov|org|com|net|edu)\b/i.test(url));
 }
 
-function extractCitations(textValue) {
+function extract_citations(textValue) {
   const patterns = [
     /\b\d+\s+U\.S\.C\.\s*§+\s*[\w.-]+/gi,
     /\b\d+\s+USC\s*§+\s*[\w.-]+/gi,
@@ -164,7 +164,7 @@ function makeCandidate({ row, stateName, stateCode, type, name, textBody, sectio
   const displayName = compact(name || body.slice(0, 140));
   const phones = extractPhones(textBody);
   const urls = extractUrls(textBody);
-  const citations = extractCitations(textBody);
+  const citations = extract_citations(textBody);
   const category = resourceType || lineCategory(`${name ?? ""} ${textBody ?? ""}`);
   const contentHash = md5([sourceFile, type, stateName, section, ordinal, displayName, body].join("|"));
   const programId = `${slug(stateName)}_${slug(type)}_${slug(displayName).slice(0, 42)}_${contentHash.slice(0, 8)}`;
@@ -282,7 +282,7 @@ function extractDeadlineCandidates(row, stateName, stateCode, rawText) {
 
 function extractCitationCandidates(row, stateName, stateCode, rawText) {
   const result = [];
-  const citationSet = extractCitations(rawText);
+  const citationSet = extract_citations(rawText);
   citationSet.forEach((citation, index) => {
     const idx = rawText.indexOf(citation);
     const context = idx >= 0 ? rawText.slice(Math.max(0, idx - 240), Math.min(rawText.length, idx + citation.length + 240)) : citation;
@@ -407,7 +407,7 @@ async function writeReports(report) {
 
 async function main() {
   const args = parseArgs();
-  const { pool, databaseStatus } = createPool("state-registry-docx-normalizer");
+  const { pool, databaseStatus } = create_pool("state-registry-docx-normalizer");
   const report = {
     generatedAt: new Date().toISOString(),
     mode: args.apply ? "apply" : "dry-run",
@@ -420,9 +420,9 @@ async function main() {
 
   try {
     if (!pool) throw new Error(databaseStatus);
-    if (!(await tableExists(pool, "corpus_import_queue"))) throw new Error("missing public.corpus_import_queue");
-    if (!(await tableExists(pool, "registry_entity_extraction_v4"))) throw new Error("missing public.registry_entity_extraction_v4");
-    const columns = await getTableColumns(pool, "registry_entity_extraction_v4");
+    if (!(await table_exists(pool, "corpus_import_queue"))) throw new Error("missing public.corpus_import_queue");
+    if (!(await table_exists(pool, "registry_entity_extraction_v4"))) throw new Error("missing public.registry_entity_extraction_v4");
+    const columns = await get_table_columns(pool, "registry_entity_extraction_v4");
     const required = ["source_file", "jurisdiction", "extraction_timestamp", "extraction_version", "program_id", "name", "promotion_ready", "forensic_provenance", "forensic_hash", "confidence_scores", "geocoding_hints", "content_hash"];
     const missing = required.filter((column) => !columns.includes(column));
     if (missing.length) throw new Error(`registry_entity_extraction_v4 missing required columns: ${missing.join(", ")}`);

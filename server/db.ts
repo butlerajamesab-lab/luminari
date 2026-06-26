@@ -86,6 +86,102 @@ export function getPool(): Pool {
   return initializePool();
 }
 
+
+export type DbTimeoutCode = "pool_acquire_timeout" | "query_timeout";
+
+export class DbTimeoutDiagnosticError extends Error {
+  code: DbTimeoutCode;
+  detail: string;
+  timeout_ms: number;
+
+  constructor(code: DbTimeoutCode, message: string, timeout_ms: number, detail?: string) {
+    super(message);
+    this.name = "DbTimeoutDiagnosticError";
+    this.code = code;
+    this.detail = detail ?? message;
+    this.timeout_ms = timeout_ms;
+  }
+}
+
+function normalize_error_message(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function is_query_timeout_error(error: unknown): boolean {
+  const err = error as any;
+  const message = normalize_error_message(error).toLowerCase();
+  return (
+    err?.code === "57014" ||
+    message.includes("statement timeout") ||
+    message.includes("query read timeout") ||
+    message.includes("query timeout")
+  );
+}
+
+export function classify_db_error(error: unknown): "pool_acquire_timeout" | "query_timeout" | "db_error" {
+  const err = error as any;
+  const message = normalize_error_message(error).toLowerCase();
+  if (err?.code === "pool_acquire_timeout") return "pool_acquire_timeout";
+  if (err?.code === "query_timeout" || is_query_timeout_error(error)) return "query_timeout";
+  if (message.includes("timeout exceeded when trying to connect")) return "pool_acquire_timeout";
+  if (message.includes("connection terminated due to connection timeout")) return "pool_acquire_timeout";
+  return "db_error";
+}
+
+export async function connect_with_pool_timeout(timeout_ms: number, label = "db"): Promise<any> {
+  const pool = getPool();
+  let timed_out = false;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const connect_promise = pool.connect().then((client) => {
+    if (timed_out) {
+      client.release();
+      return Promise.reject(new DbTimeoutDiagnosticError("pool_acquire_timeout", `${label} pool acquire timed out after ${timeout_ms}ms`, timeout_ms));
+    }
+    return client;
+  });
+
+  const timeout_promise = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => {
+      timed_out = true;
+      reject(new DbTimeoutDiagnosticError("pool_acquire_timeout", `${label} pool acquire timed out after ${timeout_ms}ms`, timeout_ms));
+    }, timeout_ms);
+  });
+
+  try {
+    return await Promise.race([connect_promise, timeout_promise]);
+  } catch (error) {
+    if (classify_db_error(error) === "pool_acquire_timeout") {
+      throw error instanceof DbTimeoutDiagnosticError
+        ? error
+        : new DbTimeoutDiagnosticError("pool_acquire_timeout", `${label} pool acquire failed or timed out`, timeout_ms, normalize_error_message(error));
+    }
+    throw error;
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
+export async function query_with_diagnostics<T = any>(
+  text: string,
+  values: unknown[] = [],
+  options: { label?: string; pool_acquire_timeout_ms?: number; query_timeout_ms?: number } = {},
+): Promise<{ rows: T[]; rowCount: number | null }> {
+  const label = options.label ?? "db_query";
+  const pool_acquire_timeout_ms = options.pool_acquire_timeout_ms ?? 1000;
+  const query_timeout_ms = options.query_timeout_ms ?? 10000;
+  const client = await connect_with_pool_timeout(pool_acquire_timeout_ms, label);
+  try {
+    return await client.query({ text, values, query_timeout: query_timeout_ms });
+  } catch (error) {
+    if (is_query_timeout_error(error)) {
+      throw new DbTimeoutDiagnosticError("query_timeout", `${label} query timed out after ${query_timeout_ms}ms`, query_timeout_ms, normalize_error_message(error));
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export const pool = new Proxy({} as any, {
   get: (target, prop) => {
     return initializePool()[prop as any];

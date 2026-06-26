@@ -1,9 +1,10 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import {
-  getUserByEmailSnake,
-  getUserByOpenIdSnake,
+  get_user_by_email_snake,
+  get_user_by_open_id_snake,
   type RuntimeUser,
 } from "./user-resolver";
+import { classify_db_error } from "../db";
 
 export type AuthStatus =
   | "unauthenticated"
@@ -127,7 +128,13 @@ function errorDetail(error: unknown): string {
 }
 
 function isTimeoutError(error: unknown): boolean {
-  return errorDetail(error).toLowerCase().includes("timed out");
+  return errorDetail(error).toLowerCase().includes("timed out") || classify_db_error(error) !== "db_error";
+}
+
+function profile_lookup_error_code(error: unknown): "pool_acquire_timeout" | "query_timeout" | "profile_lookup_timeout" | "profile_lookup_error" {
+  const db_code = classify_db_error(error);
+  if (db_code === "pool_acquire_timeout" || db_code === "query_timeout") return db_code;
+  return isTimeoutError(error) ? "profile_lookup_timeout" : "profile_lookup_error";
 }
 
 function createUnauthenticatedAuth(): ContextAuth {
@@ -396,7 +403,7 @@ async function resolveProfileFromSupabaseAuthUser(
       const user = await timeRequiredDbUserPhase(
         "supabase_open_id_lookup",
         phases,
-        () => getUserByOpenIdSnake(authOpenId),
+        () => get_user_by_open_id_snake(authOpenId),
       );
       if (user) {
         logContextAuthEvent("profile_lookup_succeeded", {
@@ -419,6 +426,7 @@ async function resolveProfileFromSupabaseAuthUser(
           supabase_user_id: authOpenId,
           timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
           error: first_error,
+          diagnostic_code: profile_lookup_error_code(error),
         },
       );
       return {
@@ -434,7 +442,7 @@ async function resolveProfileFromSupabaseAuthUser(
       const user = await timeRequiredDbUserPhase(
         "supabase_email_lookup",
         phases,
-        () => getUserByEmailSnake(authEmail),
+        () => get_user_by_email_snake(authEmail),
       );
       if (user) {
         logContextAuthEvent("profile_lookup_succeeded", {
@@ -459,6 +467,7 @@ async function resolveProfileFromSupabaseAuthUser(
           supabase_email: authEmail,
           timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
           error: detail,
+          diagnostic_code: profile_lookup_error_code(error),
         },
       );
       return {
@@ -489,12 +498,12 @@ async function resolveUserFromLegacySession(
     dbUser = await timeOptionalDbUserPhase(
       "session_open_id_lookup",
       phases,
-      () => getUserByOpenIdSnake(String(session.openId)),
+      () => get_user_by_open_id_snake(String(session.openId)),
     );
   }
   if (!dbUser && session?.user?.email) {
     dbUser = await timeOptionalDbUserPhase("session_email_lookup", phases, () =>
-      getUserByEmailSnake(String(session.user.email)),
+      get_user_by_email_snake(String(session.user.email)),
     );
   }
   return dbUser;
@@ -541,6 +550,7 @@ export async function createContext(
             supabase_email,
             timeout_ms: USER_LOOKUP_TIMEOUT_MS,
             error: detail,
+            diagnostic_code: profile_lookup_error_code(error),
           },
         );
         return {
