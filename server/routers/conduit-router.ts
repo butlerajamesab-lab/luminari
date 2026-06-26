@@ -55,16 +55,16 @@ export const conduitRouter = router({
       tables: {
         total: (totalTables as unknown as Record<string, any>)[0]?.cnt || 0,
         // @ts-ignore - cast is valid at runtime
-        byCategory: tableRows as any[],
+        by_category: tableRows as any[],
       },
       fields: {
         total: (totalFields as unknown as Record<string, any>)[0]?.cnt || 0,
-        stats: (fieldStats as unknown as Record<string, any>)[0] || { totalFields: 0, pkFields: 0, indexedFields: 0 },
+        stats: (fieldStats as unknown as Record<string, any>)[0] || { total_fields: 0, pk_fields: 0, indexed_fields: 0 },
       },
       drift: {
-        orphanFields: drift.orphanFields,
-        unknownTables: drift.unknownTables,
-        unknownTableNames: drift.unknownTableNames.slice(0, 20),
+        orphan_fields: drift.orphanFields,
+        unknown_tables: drift.unknownTables,
+        unknown_table_names: drift.unknownTableNames.slice(0, 20),
         coverage: drift.totalDbTables > 0
           ? Math.round((drift.registeredTables / drift.totalDbTables) * 100)
           : 0,
@@ -131,10 +131,10 @@ export const conduitRouter = router({
 
     return {
       // @ts-ignore - cast is valid at runtime
-      recentRuns: recentRuns as any[],
+      recent_runs: recentRuns as any[],
       enforcement: ruleResults,
       backboneCounts,
-      formatDistribution: (formatDist as unknown as Record<string, any>)[0] || { total: 0, no_refs: 0, deterministic: 0, legacy: 0 },
+      format_distribution: (formatDist as unknown as Record<string, any>)[0] || { total: 0, no_refs: 0, deterministic: 0, legacy: 0 },
     };
   }),
 
@@ -150,8 +150,8 @@ export const conduitRouter = router({
     // Snapshots with bound runs
     const [snapshots] = await db.execute(sql`
       SELECT s.id, s.caseId, s.status, s.createdAt,
-             COUNT(er.run_id) as boundRuns,
-             SUM(CASE WHEN er.status = 'success' THEN 1 ELSE 0 END) as successRuns
+             COUNT(er.run_id) as bound_runs,
+             SUM(CASE WHEN er.status = 'success' THEN 1 ELSE 0 END) as success_runs
       FROM case_snapshots s
       LEFT JOIN engine_runs er ON er.snapshot_id = s.id
       GROUP BY s.id
@@ -191,7 +191,7 @@ export const conduitRouter = router({
       // @ts-ignore - cast is valid at runtime
       exports: exports as any[],
       readySnapshots,
-      totalAlphaExports: (exportEvents as unknown as Record<string, any>)[0]?.cnt || 0,
+      total_alpha_exports: (exportEvents as unknown as Record<string, any>)[0]?.cnt || 0,
     };
   }),
 

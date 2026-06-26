@@ -107,12 +107,12 @@ export const adminBackfillRouter = router({
           distribution: {
             total: dist.total,
             high: dist.high_confidence,
-            mediumHigh: dist.medium_high,
+            medium_high: dist.medium_high,
             medium: dist.medium,
             low: dist.low_confidence,
-            avgScore: parseFloat(dist.avg_score || 0).toFixed(1),
-            minScore: dist.min_score,
-            maxScore: dist.max_score,
+            avg_score: parseFloat(dist.avg_score || 0).toFixed(1),
+            min_score: dist.min_score,
+            max_score: dist.max_score,
           },
         };
       } catch (error) {
@@ -151,13 +151,13 @@ export const adminBackfillRouter = router({
       return {
         total: s.total,
         high: s.high_confidence,
-        mediumHigh: s.medium_high,
+        medium_high: s.medium_high,
         medium: s.medium,
         low: s.low_confidence,
-        nullOrZero: s.null_or_zero,
-        avgScore: parseFloat(s.avg_score || 0).toFixed(1),
-        minScore: s.min_score,
-        maxScore: s.max_score,
+        null_or_zero: s.null_or_zero,
+        avg_score: parseFloat(s.avg_score || 0).toFixed(1),
+        min_score: s.min_score,
+        max_score: s.max_score,
       };
     }),
 });

@@ -52,7 +52,7 @@ export const lighthouseStrategiesRouter = router({
         (byJurisdiction[s.jurisdiction_scope ?? "unknown"] ?? 0) + 1;
     }
     return {
-      totalStrategies: strategies.length,
+      total_strategies: strategies.length,
       byUrgency,
       byScope,
       byJurisdiction,

@@ -372,7 +372,7 @@ export async function getPipelineCompletionState(): Promise<{
   // Recent pipeline events — actual columns: id, userId, pipelineType, eventType, stateCode, createdAt
   // Use pool.query (text protocol) to avoid TiDB prepared-statement LIMIT restriction
   const [eventRows] = await pool.query(
-    `SELECT id, eventType, pipelineType as pipelineId, stateCode, createdAt
+    `SELECT id, eventType, pipelineType as pipeline_id, stateCode, createdAt
      FROM pipeline_events
      ORDER BY createdAt DESC
      LIMIT 50`
@@ -380,21 +380,21 @@ export async function getPipelineCompletionState(): Promise<{
 
   // Engine run summary — group by engine_id (actual column name)
   const [engineRows] = await pool.query(
-    `SELECT engine_id as engineName,
-            COUNT(*) as totalRuns,
-            MAX(completedAt) as lastRun,
-            MAX(status) as lastStatus
+    `SELECT engine_id as engine_name,
+            COUNT(*) as total_runs,
+            MAX(completedAt) as last_run,
+            MAX(status) as last_status
      FROM engine_runs
      GROUP BY engine_id`
   );
 
   // Ingest run summary
   const [ingestRows] = await pool.query(
-    `SELECT datasetId_run as datasetId,
-            COUNT(*) as totalRuns,
-            MAX(endTime) as lastRun,
-            (SELECT ingestStatus FROM ingest_runs i2 WHERE i2.datasetId_run = ingest_runs.datasetId_run ORDER BY endTime DESC LIMIT 1) as lastStatus,
-            SUM(recordsInserted) as totalRecords
+    `SELECT datasetId_run as dataset_id,
+            COUNT(*) as total_runs,
+            MAX(endTime) as last_run,
+            (SELECT ingestStatus FROM ingest_runs i2 WHERE i2.datasetId_run = ingest_runs.datasetId_run ORDER BY endTime DESC LIMIT 1) as last_status,
+            SUM(recordsInserted) as total_records
      FROM ingest_runs
      GROUP BY datasetId_run`
   );

@@ -16,6 +16,8 @@ The human voice is:
 
 This matters for recovery because Luminari is not one interchangeable application database. It is a coordinated civic-forensic system with distinct substrate ownership, provenance boundaries, and action authority.
 
+Naming and ownership across these substrates are governed by `docs/LUMINARI_NAMING_OWNERSHIP_DOCTRINE.md`: everything owned by Lighthouse, Prism, Rosetta, Esquire, or Atlas uses `snake_case`; only externally required identifiers may remain `camelCase`.
+
 ---
 
 ## The Five Substrates

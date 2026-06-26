@@ -82,11 +82,11 @@ export const canonicalSpineRouter = router({
     const { rows: rpRows } = await pool.query(`SELECT COUNT(*) as cnt FROM remedy_paths WHERE signal_id_rp IS NOT NULL`);
 
     return {
-      ingestedRecords: (irRows as any[])[0]?.cnt ?? 0,
-      detectedSignals: (dsRows as any[])[0]?.cnt ?? 0,
-      signalFlowLogs: (sflRows as any[])[0]?.cnt ?? 0,
-      worldNodes: (wnRows as any[])[0]?.cnt ?? 0,
-      canonicalRemedyPaths: (rpRows as any[])[0]?.cnt ?? 0,
+      ingested_records: (irRows as any[])[0]?.cnt ?? 0,
+      detected_signals: (dsRows as any[])[0]?.cnt ?? 0,
+      signal_flow_logs: (sflRows as any[])[0]?.cnt ?? 0,
+      world_nodes: (wnRows as any[])[0]?.cnt ?? 0,
+      canonical_remedy_paths: (rpRows as any[])[0]?.cnt ?? 0,
       timestamp: Date.now(),
     };
   }),
@@ -154,7 +154,7 @@ export const canonicalSpineRouter = router({
         },
       });
 
-      return { signalId: input.signalId, flowLogged: true };
+      return { signal_id: input.signalId, flow_logged: true };
     }),
 
   // ─── Flow Logs ───
@@ -234,7 +234,7 @@ export const canonicalSpineRouter = router({
         if (!node) return null;
         return {
           ...node,
-          metadataL10: typeof node.metadata_l10 === 'string' ? JSON.parse(node.metadata_l10) : node.metadata_l10,
+          metadata_l10: typeof node.metadata_l10 === 'string' ? JSON.parse(node.metadata_l10) : node.metadata_l10,
         };
       }),
 
@@ -316,7 +316,7 @@ export const canonicalSpineRouter = router({
           [input.caseId, input.userId, input.title, input.description ?? null, input.pathType, now, now, input.signalId, input.routeDirection ?? null, input.targetNodeId ?? null, input.blockReason ?? null, status]
         );
 
-        return { id: (result as any).insertId, status, integrityCheck: integrityCheck.passed };
+        return { id: (result as any).insertId, status, integrity_check: integrityCheck.passed };
       }),
 
     bySignal: publicProcedure

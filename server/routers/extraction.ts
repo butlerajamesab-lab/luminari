@@ -87,8 +87,8 @@ export const extractionRouter = router({
             id: document.id,
             filename: document.filename,
             status: document.status,
-            caseId: document.caseId,
-            createdAt: document.createdAt,
+            case_id: document.caseId,
+            created_at: document.createdAt,
           },
           stats: {
             entities: (entityCount as any)[0]?.count || 0,
@@ -127,7 +127,7 @@ export const extractionRouter = router({
         return {
           success: true,
           message: "Extraction started",
-          documentId: input.documentId,
+          document_id: input.documentId,
         };
       } catch (error: any) {
         return {
@@ -284,10 +284,10 @@ export const extractionRouter = router({
         return {
           success: true,
           stats: {
-            totalEntities: (entityCount as any)[0]?.count || 0,
-            totalRelationships: (relationshipCount as any)[0]?.count || 0,
-            totalDocuments: documentCount.length,
-            entitiesByType: typeBreakdown,
+            total_entities: (entityCount as any)[0]?.count || 0,
+            total_relationships: (relationshipCount as any)[0]?.count || 0,
+            total_documents: documentCount.length,
+            entities_by_type: typeBreakdown,
           },
         };
       } catch (error: any) {
@@ -295,10 +295,10 @@ export const extractionRouter = router({
           success: false,
           error: error.message,
           stats: {
-            totalEntities: 0,
-            totalRelationships: 0,
-            totalDocuments: 0,
-            entitiesByType: [],
+            total_entities: 0,
+            total_relationships: 0,
+            total_documents: 0,
+            entities_by_type: [],
           },
         };
       }

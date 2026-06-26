@@ -8,8 +8,8 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
-import * as cdaDb from "../cda-db";
-import * as dbHelpers from "../db";
+import * as cda_db from "../cda-db";
+import * as db_helpers from "../db";
 import { buildRunBundle } from "../cda-bundle";
 import { runCdaPipeline, type CdaInputDocument } from "../cda-orchestrator";
 import { createHash } from "crypto";
@@ -90,7 +90,7 @@ export const cdaRouter = router({
       }
 
       return {
-        totalComparisons: total,
+        total_comparisons: total,
         byMatchType,
         byResolutionMethod,
       };
@@ -111,9 +111,9 @@ export const cdaRouter = router({
       const clauseIds = new Set(matrix.filter(r => r.clauseId).map(r => r.clauseId));
 
       return {
-        clauseCount: clauseIds.size,
-        gapCount: gaps.length,
-        criticalGapCount: gaps.filter(g => g.priorityLevel === "critical").length,
+        clause_count: clauseIds.size,
+        gap_count: gaps.length,
+        critical_gap_count: gaps.filter(g => g.priorityLevel === "critical").length,
       };
     }),
 
@@ -203,10 +203,10 @@ export const cdaRouter = router({
       function buildInputDoc(doc: NonNullable<Awaited<ReturnType<typeof dbHelpers.getDocument>>>): CdaInputDocument {
         const textHash = createHash("sha256").update(doc.textContent!).digest("hex");
         return {
-          sourceDocumentId: doc.id,
-          textContent: doc.textContent!,
-          fileName: doc.filename,
-          pageCount: doc.pageCount ?? undefined,
+          source_document_id: doc.id,
+          text_content: doc.textContent!,
+          file_name: doc.filename,
+          page_count: doc.pageCount ?? undefined,
           hash: textHash,
         };
       }
@@ -244,7 +244,7 @@ export const cdaRouter = router({
       const result = await resultPromise;
 
       return {
-        runId: result.runId,
+        run_id: result.runId,
         status: result.status,
       };
     }),

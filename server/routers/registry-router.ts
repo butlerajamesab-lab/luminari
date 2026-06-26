@@ -18,7 +18,7 @@
 import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import * as registryDb from "../registry-db";
+import * as registry_db from "../registry-db";
 import { pool } from "../db";
 
 export const registryRouter = router({
@@ -42,12 +42,12 @@ export const registryRouter = router({
       return {
         ...jurisdiction,
         programs,
-        policyAlerts: alerts,
+        policy_alerts: alerts,
         workflows,
-        oversightBodies: oversight,
+        oversight_bodies: oversight,
         signals,
-        sourceTraceability: traceability,
-        programCategories: categories,
+        source_traceability: traceability,
+        program_categories: categories,
       };
     }),
 
@@ -178,16 +178,16 @@ export const registryRouter = router({
 
       return {
         program,
-        oversightBodies: oversightRows as any[],
+        oversight_bodies: oversightRows as any[],
         workflows: workflowRows as any[],
-        relatedPrograms: crossRows as any[],
+        related_programs: crossRows as any[],
         chain: {
           program: program.name,
           jurisdiction: program.jurisdiction_name || program.jurisdiction_id,
           state_code: program.state_code,
-          oversightCount: (oversightRows as any[]).length,
-          workflowCount: (workflowRows as any[]).length,
-          relatedProgramCount: (crossRows as any[]).length,
+          oversight_count: (oversightRows as any[]).length,
+          workflow_count: (workflowRows as any[]).length,
+          related_program_count: (crossRows as any[]).length,
         },
       };
     }),
@@ -226,7 +226,7 @@ export const registryRouter = router({
       };
 
       const adjacent = ADJACENT_CATEGORIES[input.category] || [];
-      if (adjacent.length === 0) return { programs: [], adjacentCategories: [] };
+      if (adjacent.length === 0) return { programs: [], adjacent_categories: [] };
 
       const placeholders = adjacent.map(() => '?').join(', ');
       const params: any[] = [...adjacent];
@@ -252,7 +252,7 @@ export const registryRouter = router({
 
       return {
         programs: rows as any[],
-        adjacentCategories: adjacent,
+        adjacent_categories: adjacent,
       };
     }),
 

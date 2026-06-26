@@ -74,9 +74,9 @@ export interface TrendFromDataset {
 
 export async function listDatasets(): Promise<DatasetStats[]> {
   const [rows]: any = await db.execute(sql.raw(
-    `SELECT stream_id_dsr as datasetId, stream_name_dsr as datasetName, source_dsr as source, jurisdiction_dsr as jurisdiction, domain_dsr as domain, 
-            records_ingested_dsr as recordCount, last_ingested_at_dsr as lastIngested,
-            enabled_dsr as enabled, update_freq_dsr as updateFrequency
+    `SELECT stream_id_dsr as dataset_id, stream_name_dsr as dataset_name, source_dsr as source, jurisdiction_dsr as jurisdiction, domain_dsr as domain, 
+            records_ingested_dsr as record_count, last_ingested_at_dsr as last_ingested,
+            enabled_dsr as enabled, update_freq_dsr as update_frequency
      FROM data_stream_registry ORDER BY stream_name_dsr`
   ));
   return (rows as any[]).map(r => ({
@@ -94,9 +94,9 @@ export async function listDatasets(): Promise<DatasetStats[]> {
 
 export async function getDatasetById(datasetId: string): Promise<DatasetStats | null> {
   const [rows]: any = await db.execute(sql.raw(
-    `SELECT stream_id_dsr as datasetId, stream_name_dsr as datasetName, source_dsr as source, jurisdiction_dsr as jurisdiction, domain_dsr as domain,
-            records_ingested_dsr as recordCount, last_ingested_at_dsr as lastIngested,
-            enabled_dsr as enabled, update_freq_dsr as updateFrequency
+    `SELECT stream_id_dsr as dataset_id, stream_name_dsr as dataset_name, source_dsr as source, jurisdiction_dsr as jurisdiction, domain_dsr as domain,
+            records_ingested_dsr as record_count, last_ingested_at_dsr as last_ingested,
+            enabled_dsr as enabled, update_freq_dsr as update_frequency
      FROM data_stream_registry WHERE stream_id_dsr = '${datasetId.replace(/'/g, "''")}'`
   ));
   if (!(rows as any[]).length) return null;
@@ -196,7 +196,7 @@ export async function extractSignalsFromEnforcement(
 
   const [enfSignals]: any = await db.execute(sql.raw(
     `SELECT respondent_name, violation_type, agency_name, jurisdiction, 
-            COUNT(*) as cnt, SUM(penalty_amount) as totalPenalty
+            COUNT(*) as cnt, SUM(penalty_amount) as total_penalty
      FROM enforcement_records ${whereClause}
      GROUP BY respondent_name, violation_type, agency_name, jurisdiction
      HAVING cnt >= 2
@@ -342,7 +342,7 @@ export async function analyzeEnforcementTrends(
             SUM(CASE WHEN action_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH) THEN 1 ELSE 0 END) as recent,
             SUM(CASE WHEN action_date < DATE_SUB(CURDATE(), INTERVAL 6 MONTH) THEN 1 ELSE 0 END) as older,
             COUNT(*) as total,
-            SUM(penalty_amount) as totalPenalty
+            SUM(penalty_amount) as total_penalty
      FROM enforcement_records ${whereClause}
      GROUP BY jurisdiction, violation_type, agency_name
      HAVING total >= 3
@@ -523,7 +523,7 @@ export async function analyzeCampaignFinance(
 
 export async function getIngestionJobs(): Promise<IngestionJobConfig[]> {
   const [rows]: any = await db.execute(sql.raw(
-    `SELECT stream_id_dsr as datasetId, update_freq_dsr as updateFrequency, cron_expression_dsr as cronExpression, enabled_dsr as enabled
+    `SELECT stream_id_dsr as dataset_id, update_freq_dsr as update_frequency, cron_expression_dsr as cron_expression, enabled_dsr as enabled
      FROM data_stream_registry ORDER BY stream_name_dsr`
   ));
   return (rows as any[]).map(r => ({

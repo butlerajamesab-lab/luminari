@@ -85,7 +85,7 @@ export const strategyEngineRouter = router({
         updatedAt: now,
       });
 
-      return { matterProfileId: inserted.insertId, profile };
+      return { matter_profile_id: inserted.insertId, profile };
     }),
 
   // ─── S2: Build Fact Matrix ──────────────────────────────────────────
@@ -104,7 +104,7 @@ export const strategyEngineRouter = router({
       ];
 
       if (evidenceItems.length === 0) {
-        return { factsInserted: 0, message: "No evidence found. Upload and analyze documents first." };
+        return { facts_inserted: 0, message: "No evidence found. Upload and analyze documents first." };
       }
 
       const evidenceText = evidenceItems.map((e, i) =>
@@ -158,7 +158,7 @@ Extract only explicitly stated facts. Maximum 50 facts.`
         inserted++;
       }
 
-      return { factsInserted: inserted };
+      return { facts_inserted: inserted };
     }),
 
   // ─── S3: Generate Claim Candidates ──────────────────────────────────
@@ -239,7 +239,7 @@ Be conservative. Maximum 8 candidates.`
         inserted++;
       }
 
-      return { candidatesGenerated: inserted };
+      return { candidates_generated: inserted };
     }),
 
   // ─── S4: Evaluate Viability ─────────────────────────────────────────
@@ -253,7 +253,7 @@ Be conservative. Maximum 8 candidates.`
           eq(strategyClaimCandidates.matterProfileId, input.matterProfileId),
         ));
 
-      if (candidates.length === 0) return { assessmentsCreated: 0, message: "No candidates found. Run S3 first." };
+      if (candidates.length === 0) return { assessments_created: 0, message: "No candidates found. Run S3 first." };
 
       const facts = await db.select().from(strategyFactMatrix)
         .where(and(
@@ -428,7 +428,7 @@ Be conservative. Maximum 8 candidates.`
 
       const weakLinks = links.filter(l => l.linkStrength === "weak" || l.linkStrength === "absent");
 
-      if (weakLinks.length === 0) return { tasksCreated: 0, message: "No missing evidence identified." };
+      if (weakLinks.length === 0) return { tasks_created: 0, message: "No missing evidence identified." };
 
       const byCand: Record<number, typeof weakLinks> = {};
       for (const link of weakLinks) {

@@ -34,18 +34,18 @@ export const enforcementIntelRouter = router({
       if (workflows.length === 0) {
         return {
           workflow: {
-            immediateActions: [],
-            recordsToRequest: [],
-            witnessTargets: [],
-            timelineTasks: [],
-            agencySteps: [],
-            riskFlags: [],
+            immediate_actions: [],
+            records_to_request: [],
+            witness_targets: [],
+            timeline_tasks: [],
+            agency_steps: [],
+            risk_flags: [],
           },
           metadata: {
-            weakJointsConsidered: 0,
-            signalsConsidered: 0,
-            contradictionTemplatesConsidered: 0,
-            barriersConsidered: 0,
+            weak_joints_considered: 0,
+            signals_considered: 0,
+            contradiction_templates_considered: 0,
+            barriers_considered: 0,
           },
         };
       }
@@ -135,18 +135,18 @@ export const enforcementIntelRouter = router({
       if (workflows.length === 0) {
         return {
           workflow: {
-            immediateActions: [],
-            recordsToRequest: [],
-            witnessTargets: [],
-            timelineTasks: [],
-            agencySteps: [],
-            riskFlags: [],
+            immediate_actions: [],
+            records_to_request: [],
+            witness_targets: [],
+            timeline_tasks: [],
+            agency_steps: [],
+            risk_flags: [],
           },
           metadata: {
-            weakJointsConsidered: 0,
-            signalsConsidered: 0,
-            contradictionTemplatesConsidered: 0,
-            barriersConsidered: 0,
+            weak_joints_considered: 0,
+            signals_considered: 0,
+            contradiction_templates_considered: 0,
+            barriers_considered: 0,
           },
         };
       }
@@ -161,10 +161,10 @@ export const enforcementIntelRouter = router({
           riskFlags,
         },
         metadata: {
-          weakJointsConsidered: claimElements.length,
-          signalsConsidered: steps.length,
-          contradictionTemplatesConsidered: proofFws.length,
-          barriersConsidered: 0,
+          weak_joints_considered: claimElements.length,
+          signals_considered: steps.length,
+          contradiction_templates_considered: proofFws.length,
+          barriers_considered: 0,
         },
       };
     }),

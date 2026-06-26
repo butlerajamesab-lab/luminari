@@ -17,7 +17,7 @@
  */
 
 import { createHash } from "crypto";
-import { db as drizzleDb } from "./db";
+import { db as drizzle_db } from "./db";
 import { signalExtractions } from "../drizzle/schema";
 import { eq, sql } from "drizzle-orm";
 
@@ -485,7 +485,7 @@ export async function extractSignals(documentId: number, caseId: number): Promis
     sql`SELECT id, name, domain, container FROM cases WHERE id = ${caseId} LIMIT 1`
   );
   const [rolesRows] = await drizzleDb.execute(
-    sql`SELECT er.entityId, e.name as entityName, er.role, er.description 
+    sql`SELECT er.entityId, e.name as entity_name, er.role, er.description 
         FROM entity_roles er 
         JOIN entities e ON e.id = er.entityId 
         WHERE e.documentId = ${documentId}`

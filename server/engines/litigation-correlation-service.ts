@@ -45,7 +45,7 @@ export async function runLitigationCorrelation(): Promise<CorrelationResult> {
   try {
     // Get all repeat_entity signals
     const signals = await db.execute(sql`
-      SELECT signal_id as id, entity_id as entity, confidence_score as confidence, entity_role as entityType, confidence_score as entityConfidenceScore
+      SELECT signal_id as id, entity_id as entity, confidence_score as confidence, entity_role as entity_type, confidence_score as entity_confidence_score
       FROM detected_signals 
       WHERE signal_type = 'repeat_entity'
       ORDER BY detection_timestamp DESC
