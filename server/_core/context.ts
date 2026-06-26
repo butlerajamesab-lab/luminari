@@ -1,7 +1,7 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import {
-  getUserByEmailSnake,
-  getUserByOpenIdSnake,
+  get_user_by_email_snake,
+  get_user_by_open_id_snake,
   type RuntimeUser,
 } from "./user-resolver";
 import { classify_db_error } from "../db";
@@ -403,7 +403,7 @@ async function resolveProfileFromSupabaseAuthUser(
       const user = await timeRequiredDbUserPhase(
         "supabase_open_id_lookup",
         phases,
-        () => getUserByOpenIdSnake(authOpenId),
+        () => get_user_by_open_id_snake(authOpenId),
       );
       if (user) {
         logContextAuthEvent("profile_lookup_succeeded", {
@@ -442,7 +442,7 @@ async function resolveProfileFromSupabaseAuthUser(
       const user = await timeRequiredDbUserPhase(
         "supabase_email_lookup",
         phases,
-        () => getUserByEmailSnake(authEmail),
+        () => get_user_by_email_snake(authEmail),
       );
       if (user) {
         logContextAuthEvent("profile_lookup_succeeded", {
@@ -498,12 +498,12 @@ async function resolveUserFromLegacySession(
     dbUser = await timeOptionalDbUserPhase(
       "session_open_id_lookup",
       phases,
-      () => getUserByOpenIdSnake(String(session.openId)),
+      () => get_user_by_open_id_snake(String(session.openId)),
     );
   }
   if (!dbUser && session?.user?.email) {
     dbUser = await timeOptionalDbUserPhase("session_email_lookup", phases, () =>
-      getUserByEmailSnake(String(session.user.email)),
+      get_user_by_email_snake(String(session.user.email)),
     );
   }
   return dbUser;

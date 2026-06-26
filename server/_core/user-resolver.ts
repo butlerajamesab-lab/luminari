@@ -1,5 +1,5 @@
 import { query_with_diagnostics } from "../db";
-import { dedupeUserLookup, getCachedUser, setCachedUser } from "./user-cache";
+import { dedupe_user_lookup, get_cached_user, set_cached_user } from "./user-cache";
 
 export type RuntimeUser = {
   id: number;
@@ -14,7 +14,7 @@ export type RuntimeUser = {
   last_signed_in: number;
 };
 
-function mapUser(row: any): RuntimeUser | null {
+function map_user(row: any): RuntimeUser | null {
   if (!row) return null;
   return {
     id: Number(row.id),
@@ -50,24 +50,24 @@ async function query_user_profile(label: string, text: string, values: unknown[]
   });
 }
 
-function cacheUser(user: RuntimeUser | null) {
-  setCachedUser([user?.email, user?.open_id], user);
+function cache_user(user: RuntimeUser | null) {
+  set_cached_user([user?.email, user?.open_id], user);
 }
 
-export async function getUserByEmailSnake(email: string): Promise<RuntimeUser | null> {
+export async function get_user_by_email_snake(email: string): Promise<RuntimeUser | null> {
   const normalized = email.trim().toLowerCase();
-  const cached = getCachedUser(normalized);
+  const cached = get_cached_user(normalized);
   if (cached) return cached;
 
   try {
-    return await dedupeUserLookup(normalized, async () => {
+    return await dedupe_user_lookup(normalized, async () => {
       const result = await query_user_profile("profile_email_lookup", `${USER_SELECT} where lower(email) = $1 limit 1`, [normalized]);
-      const user = mapUser(result.rows[0]);
-      setCachedUser([normalized, user?.open_id], user);
+      const user = map_user(result.rows[0]);
+      set_cached_user([normalized, user?.open_id], user);
       return user;
     });
   } catch (error) {
-    const stale = getCachedUser(normalized, true);
+    const stale = get_cached_user(normalized, true);
     if (stale) {
       console.warn("[CONTEXT] Using stale cached user after DB lookup failure", error instanceof Error ? error.message : String(error));
       return stale;
@@ -76,19 +76,19 @@ export async function getUserByEmailSnake(email: string): Promise<RuntimeUser | 
   }
 }
 
-export async function getUserByOpenIdSnake(openId: string): Promise<RuntimeUser | null> {
-  const cached = getCachedUser(openId);
+export async function get_user_by_open_id_snake(open_id: string): Promise<RuntimeUser | null> {
+  const cached = get_cached_user(open_id);
   if (cached) return cached;
 
   try {
-    return await dedupeUserLookup(openId, async () => {
-      const result = await query_user_profile("profile_open_id_lookup", `${USER_SELECT} where open_id = $1 limit 1`, [openId]);
-      const user = mapUser(result.rows[0]);
-      cacheUser(user);
+    return await dedupe_user_lookup(open_id, async () => {
+      const result = await query_user_profile("profile_open_id_lookup", `${USER_SELECT} where open_id = $1 limit 1`, [open_id]);
+      const user = map_user(result.rows[0]);
+      cache_user(user);
       return user;
     });
   } catch (error) {
-    const stale = getCachedUser(openId, true);
+    const stale = get_cached_user(open_id, true);
     if (stale) {
       console.warn("[CONTEXT] Using stale cached user after DB lookup failure", error instanceof Error ? error.message : String(error));
       return stale;
