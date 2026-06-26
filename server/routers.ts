@@ -4293,6 +4293,9 @@ import { worldRouter } from "./routers/world";
 import { canonicalCoreRouter } from "./routers/canonical-core-router";
 import { canonicalSpineRouter } from "./routers/canonical-spine-router";
 
+const canonicalRegistryRouter = canonical_registry_router;
+const legalRegistryRouter = legal_registry_router;
+
 // ─── Enforcement Action Paths Router ───
 const actionPathsRouter = router({
   /** Get structured filing paths for a pipeline type (immediate, no documents needed) */
@@ -4932,7 +4935,7 @@ export const appRouter = router({
   benefits: benefitsRouter,
   benefitApps: benefitAppsRouter,
   discovery: discoveryRouter,
-  legalRegistry: legal_registry_router,
+  legalRegistry: legalRegistryRouter,
   lighthouse: lighthouseRouter,
   lighthouseLineage: lighthouseLineageRouter,
   lighthousePatterns: lighthousePatternsRouter,
@@ -5053,7 +5056,7 @@ export const appRouter = router({
       return await runIntegrityLockdown(false);
     }),
   }),
-  canonicalRegistry: canonical_registry_router,
+  canonicalRegistry: canonicalRegistryRouter,
   issueReports: issueReportsRouter,
   world: worldRouter,
   canonicalCore: canonicalCoreRouter,
