@@ -515,7 +515,12 @@ export async function list_registry_entity_candidates(input?: { limit?: number }
   const columns = await registry_candidate_columns();
   const limit = Math.min(Math.max(input?.limit ?? 25, 1), 100);
   const candidate_type_sql = registry_candidate_type_expression(columns);
+  const document_family_sql = registry_document_family_expression(columns);
+  const promotion_lane_sql = registry_promotion_lane_expression(columns);
   const confidence_sql = registry_confidence_expression(columns);
+  const detail_sql = (field: string, keys: string[] = [field]) => `nullif(${registry_json_text_expression(columns, field, keys, "")}, '')`;
+  const intended_target_table_sql = detail_sql("intended_target_table", ["intended_target_table", "target_table"]);
+  const candidate_type_detail_sql = registry_candidate_type_expression(columns);
 
   const recent_result = await pool.query(
     `select
@@ -526,10 +531,26 @@ export async function list_registry_entity_candidates(input?: { limit?: number }
         confidence_scores,
         coalesce((${confidence_sql}), null) as confidence,
         ${candidate_type_sql} as candidate_type,
+        ${document_family_sql} as document_family,
+        ${promotion_lane_sql} as promotion_lane,
         extraction_timestamp,
         extraction_version,
         program_id,
-        content_hash
+        content_hash,
+        ${detail_sql("agency", ["agency", "agency_name", "department"])} as agency,
+        ${detail_sql("eligibility", ["eligibility", "eligibility_summary", "eligibility_criteria"])} as eligibility,
+        ${detail_sql("contact", ["contact", "contact_name", "contact_summary"])} as contact,
+        ${detail_sql("phone", ["phone", "telephone"])} as phone,
+        ${detail_sql("email", ["email"])} as email,
+        ${detail_sql("website", ["website", "site", "homepage"])} as website,
+        ${detail_sql("apply_notes", ["apply_notes", "application_notes", "how_to_apply"])} as apply_notes,
+        ${detail_sql("source_excerpt", ["source_excerpt", "excerpt", "normalized_excerpt", "description"])} as source_excerpt,
+        ${detail_sql("source_citation", ["source_citation", "source_url", "citation"])} as source_citation,
+        ${intended_target_table_sql} as intended_target_table,
+        case when coalesce(${intended_target_table_sql}, case when ${candidate_type_detail_sql} = 'benefit_program' then 'registry_programs' end) in ('luminari_resource_entities', 'registry_programs') then coalesce(${intended_target_table_sql}, case when ${candidate_type_detail_sql} = 'benefit_program' then 'registry_programs' end) else null end as write_target_table,
+        case when coalesce(${intended_target_table_sql}, case when ${candidate_type_detail_sql} = 'benefit_program' then 'registry_programs' end) in ('luminari_resource_entities', 'registry_programs') then 'safe_target_table_adapter' else 'no_safe_target_table_adapter' end as write_adapter_status,
+        array[]::text[] as blocked_reasons,
+        null::text as material_scope
        from public.registry_entity_extraction_v4
       order by extraction_timestamp desc nulls last, content_hash desc nulls last
       limit $1`,
@@ -542,7 +563,13 @@ export async function list_registry_entity_candidates(input?: { limit?: number }
     canonical_promotion_enabled: process.env.ENABLE_CANONICAL_PROMOTION_FOR_STATE_ENRICHED_REGISTRY_DOCX_REVIEW === "true",
     total_candidate_count: Number((await pool.query(`select coalesce(reltuples, 0)::bigint as total from pg_class where oid = 'public.registry_entity_extraction_v4'::regclass`)).rows[0]?.total ?? 0),
     candidate_type_breakdown: [],
-    recent_candidates: recent_result.rows.map((row: any) => ({
+    recent_candidates: recent_result.rows.map((row: any) => {
+      const verification_input = { ...row, candidate_type: resolved_candidate_type(row), document_family: resolved_document_family(row), promotion_lane: resolved_promotion_lane(row) === "unclassified" ? "state_enriched_registry_docx_review" : resolved_promotion_lane(row), source_citation: resolved_source_citation(row) };
+      const verification = verify_registry_candidate(verification_input);
+      const material_scope = classify_candidate_material_scope(verification_input);
+      const material_hold_reason = hold_reason_for_material_scope(material_scope);
+      const adapter = promotion_write_adapter_status(verification_input);
+      return {
       source_file: row.source_file ?? null,
       jurisdiction: row.jurisdiction ?? null,
       name: row.name ?? null,
@@ -553,7 +580,22 @@ export async function list_registry_entity_candidates(input?: { limit?: number }
       extraction_version: row.extraction_version ?? null,
       program_id: row.program_id ?? null,
       content_hash: row.content_hash ?? null,
-    })),
+      agency: row.agency ?? null,
+      eligibility: row.eligibility ?? null,
+      contact: row.contact ?? null,
+      phone: row.phone ?? null,
+      email: row.email ?? null,
+      website: row.website ?? null,
+      apply_notes: row.apply_notes ?? null,
+      source_excerpt: row.source_excerpt ?? null,
+      source_citation: row.source_citation ?? null,
+      intended_target_table: row.intended_target_table ?? null,
+      write_target_table: adapter.write_target_table,
+      write_adapter_status: adapter.write_adapter_status,
+      blocked_reasons: [...verification.blocked_reasons, ...(material_hold_reason ? [material_hold_reason] : [])],
+      material_scope,
+    };
+    }),
   };
 }
 
@@ -569,7 +611,7 @@ function dry_run_lane_for_candidate(candidate: any) {
 
 const CANDIDATE_PROMOTION_CONFIDENCE_THRESHOLD = 0.6;
 const PROMOTION_SOURCE_PREVIEW_CHAR_LIMIT = 750;
-const SAFE_PROMOTION_WRITE_TARGETS = new Set(["luminari_resource_entities"]);
+const SAFE_PROMOTION_WRITE_TARGETS = new Set(["luminari_resource_entities", "registry_programs"]);
 
 function verify_registry_candidate(candidate: any) {
   const blocked_reasons: string[] = [];
@@ -740,9 +782,13 @@ function candidate_payload_text(row: any, keys: string[]) {
 
 function promotion_write_adapter_status(row: any) {
   const intended_target_table = resolved_intended_target_table(row);
+  if (intended_target_table === "registry_programs") {
+    return resolved_candidate_type(row) === "benefit_program" ? { write_target_table: "registry_programs", write_adapter_status: "safe_registry_programs_benefit_program_adapter" } : { write_target_table: null, write_adapter_status: "no_safe_registry_programs_adapter_for_candidate_type" };
+  }
   if (intended_target_table) {
     return SAFE_PROMOTION_WRITE_TARGETS.has(intended_target_table) ? { write_target_table: intended_target_table, write_adapter_status: "safe_target_table_adapter" } : { write_target_table: null, write_adapter_status: "no_safe_target_table_adapter" };
   }
+  if (resolved_candidate_type(row) === "benefit_program") return { write_target_table: "registry_programs", write_adapter_status: "safe_registry_programs_benefit_program_adapter" };
   if (candidate_is_resource_like(row)) return { write_target_table: "luminari_resource_entities", write_adapter_status: "safe_resource_like_default_adapter" };
   return { write_target_table: null, write_adapter_status: "no_safe_target_table_adapter" };
 }
@@ -924,6 +970,129 @@ function blank_update_fields(existing_row: any, candidate_row: any, columns: Set
   return updates;
 }
 
+
+const REGISTRY_PROGRAM_COLUMN_ALIASES: Record<string, string[]> = {
+  id: ["id"],
+  jurisdiction_id: ["jurisdiction_id", "jurisdiction_id_rp"],
+  category: ["category", "category_rp"],
+  name: ["name", "name_rp"],
+  agency: ["agency", "agency_rp"],
+  eligibility: ["eligibility", "eligibility_rp"],
+  contact: ["contact", "contact_rp"],
+  website: ["website", "website_rp"],
+  apply_notes: ["apply_notes", "apply_notes_rp"],
+  fingerprint: ["fingerprint", "fingerprint_rp"],
+  contact_raw_text: ["contact_raw_text"],
+  contact_email_norm: ["contact_email_norm"],
+  contact_phone_norm: ["contact_phone_norm"],
+  contact_website_norm: ["contact_website_norm"],
+};
+
+function registry_program_column(columns: Set<string>, logical_name: string) {
+  return (REGISTRY_PROGRAM_COLUMN_ALIASES[logical_name] ?? [logical_name]).find((column_name) => columns.has(column_name)) ?? null;
+}
+
+function registry_program_column_map(columns: Set<string>) {
+  return Object.fromEntries(Object.keys(REGISTRY_PROGRAM_COLUMN_ALIASES).map((logical_name) => [logical_name, registry_program_column(columns, logical_name)])) as Record<string, string | null>;
+}
+
+function sql_identifier(name: string) {
+  return `"${name.replace(/"/g, '""')}"`;
+}
+
+function source_identity(row: any) {
+  return first_text_value(row.content_hash, row.program_id, row.forensic_hash, row.id);
+}
+
+function registry_program_id(row: any) {
+  const identity = source_identity(row);
+  return identity ? `reev4_${sha256(identity).slice(0, 24)}` : null;
+}
+
+function normal_email(row: any) {
+  return candidate_payload_text(row, ["email"])?.toLowerCase() ?? first_array_text(candidate_payload_from_row(row), [["emails"], ["extracted", "emails"]])?.toLowerCase() ?? null;
+}
+
+function normal_phone(row: any) {
+  const phone = candidate_payload_text(row, ["phone", "telephone"]) ?? first_array_text(candidate_payload_from_row(row), [["phones"], ["extracted", "phones"]]);
+  return phone ? phone.replace(/[^0-9+]/g, "") : null;
+}
+
+function normal_website(row: any) {
+  const website = candidate_payload_text(row, ["website", "site", "homepage", "url", "source_url", "link"]) ?? first_array_text(candidate_payload_from_row(row), [["urls"], ["extracted", "urls"]]);
+  return website ? website.trim().toLowerCase() : null;
+}
+
+function registry_program_values(row: any, columns: Set<string>) {
+  const map = registry_program_column_map(columns);
+  const identity = source_identity(row);
+  const program_id = registry_program_id(row);
+  const payload = candidate_payload_from_row(row);
+  const values: Record<string, unknown> = {
+    id: program_id,
+    jurisdiction_id: first_text_value(row.jurisdiction, payload?.jurisdiction, "unknown"),
+    category: first_text_value(payload?.category, payload?.benefit_category, row.candidate_type, "benefit_program"),
+    name: first_text_value(payload?.program_name, row.name, payload?.name),
+    agency: candidate_payload_text(row, ["agency", "agency_name", "department"]),
+    eligibility: candidate_payload_text(row, ["eligibility", "eligibility_summary", "eligibility_criteria"]),
+    contact: candidate_payload_text(row, ["contact", "contact_name", "contact_summary"]),
+    website: normal_website(row),
+    apply_notes: candidate_payload_text(row, ["apply_notes", "application_notes", "how_to_apply", "portal", "application_portal"]),
+    fingerprint: identity ? sha256(identity) : null,
+    contact_raw_text: candidate_payload_text(row, ["contact", "contact_raw_text", "contact_summary"]),
+    contact_email_norm: normal_email(row),
+    contact_phone_norm: normal_phone(row),
+    contact_website_norm: normal_website(row),
+  };
+  return Object.fromEntries(Object.entries(values).filter(([logical_name, value]) => map[logical_name] && value !== null && value !== undefined && value !== ""));
+}
+
+async function existing_registry_program(client: any, row: any, program_columns: Set<string>) {
+  const map = registry_program_column_map(program_columns);
+  const id = registry_program_id(row);
+  const fingerprint = source_identity(row) ? sha256(source_identity(row) as string) : null;
+  const clauses: string[] = [];
+  const params: unknown[] = [];
+  if (id && map.id) { params.push(id); clauses.push(`${sql_identifier(map.id)} = $${params.length}`); }
+  if (fingerprint && map.fingerprint) { params.push(fingerprint); clauses.push(`${sql_identifier(map.fingerprint)} = $${params.length}`); }
+  if (!clauses.length) return null;
+  const result = await client.query(`select * from public.registry_programs where ${clauses.join(" or ")} limit 1`, params);
+  return result.rows[0] ?? null;
+}
+
+function registry_program_blank_updates(existing_row: any, candidate_row: any, columns: Set<string>) {
+  const map = registry_program_column_map(columns);
+  const values = registry_program_values(candidate_row, columns);
+  const updates: Record<string, unknown> = {};
+  for (const [logical_name, value] of Object.entries(values)) {
+    if (logical_name === "id") continue;
+    const column_name = map[logical_name];
+    if (column_name && value && !text_or_null(existing_row[column_name])) updates[column_name] = value;
+  }
+  return updates;
+}
+
+async function write_registry_program_candidate(client: any, row: any, program_columns: Set<string>) {
+  if (resolved_candidate_type(row) !== "benefit_program") throw new Error("registry_programs_adapter_requires_benefit_program");
+  const map = registry_program_column_map(program_columns);
+  if (!map.id || !map.jurisdiction_id || !map.name) throw new Error("registry_programs_missing_required_adapter_columns");
+  const existing_row = await existing_registry_program(client, row, program_columns);
+  const source_pk = source_identity(row) ?? registry_program_id(row);
+  if (existing_row) {
+    const updates = registry_program_blank_updates(existing_row, row, program_columns);
+    if (!Object.keys(updates).length) return { action_type: "would_skip_duplicate", canonical_record_id: String(existing_row[map.id ?? "id"] ?? source_pk), bridge_record_id: null };
+    const names = Object.keys(updates);
+    await client.query(`update public.registry_programs set ${names.map((name, index) => `${sql_identifier(name)} = $${index + 2}`).join(", ")} where ${sql_identifier(map.id ?? "id")} = $1`, [existing_row[map.id ?? "id"], ...names.map((name) => updates[name])]);
+    return { action_type: "would_update_blank_fields", canonical_record_id: String(existing_row[map.id ?? "id"] ?? source_pk), bridge_record_id: null };
+  }
+  const values = registry_program_values(row, program_columns);
+  const names = Object.keys(values).map((logical_name) => map[logical_name]).filter(Boolean) as string[];
+  const params = Object.keys(values).map((logical_name) => values[logical_name]);
+  const placeholders = names.map((_, index) => `$${index + 1}`);
+  const inserted = await client.query(`insert into public.registry_programs (${names.map(sql_identifier).join(", ")}) values (${placeholders.join(", ")}) returning ${sql_identifier(map.id ?? "id")}`, params);
+  return { action_type: "would_insert", canonical_record_id: String(inserted.rows[0]?.[map.id ?? "id"] ?? source_pk), bridge_record_id: null };
+}
+
 async function insert_accounting_row(client: any, row: Record<string, unknown>) {
   await client.query(
     `insert into public.conveyor_promotion_accounting
@@ -1025,13 +1194,16 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
     const entity_columns = await table_columns(client, "luminari_resource_entities");
     const location_columns = await table_columns(client, "luminari_resource_locations");
     const contact_columns = await table_columns(client, "luminari_resource_contact_points");
+    const program_columns = await table_columns(client, "registry_programs");
     const accounting_columns = await table_columns(client, "conveyor_promotion_accounting");
     const run_columns = await table_columns(client, "conveyor_runs");
     if (!required_columns_present(run_columns, ["run_id", "lane", "action_type", "is_dry_run", "status", "candidate_count", "passed_count", "failed_count", "promoted_count", "skipped_duplicate_count", "bridged_count", "finished_at", "metadata"])) {
       await client.query("rollback");
       return { success: false, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: 0, error: "no_safe_conveyor_run_target", run_id, results };
     }
-    if (!required_columns_present(entity_columns, ["source_table", "source_pk", "resource_name", "metadata"]) || !required_columns_present(accounting_columns, ["run_id", "lane", "action_type", "is_dry_run", "source_record_id", "status", "metadata"])) {
+    const program_column_map = registry_program_column_map(program_columns);
+    const registry_programs_adapter_ready = Boolean(program_column_map.id && program_column_map.jurisdiction_id && program_column_map.name);
+    if ((!required_columns_present(entity_columns, ["source_table", "source_pk", "resource_name", "metadata"]) && !registry_programs_adapter_ready) || !required_columns_present(accounting_columns, ["run_id", "lane", "action_type", "is_dry_run", "source_record_id", "status", "metadata"])) {
       await client.query("rollback");
       return { success: false, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: 0, error: "no_safe_canonical_target", run_id, results };
     }
@@ -1087,27 +1259,43 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
           action_type = material_hold_reason;
           status = "held_review";
           reason = material_hold_reason;
-        } else if (verification.verified && adapter.write_adapter_status === "no_safe_target_table_adapter") {
-          action_type = "no_safe_target_table_adapter";
+        } else if (verification.verified && !adapter.write_target_table) {
+          action_type = adapter.write_adapter_status;
           status = "held_review";
-          reason = "no_safe_target_table_adapter";
+          reason = adapter.write_adapter_status;
         } else if (verification.verified && material_scope === "official_public_law_or_authority" && !candidate_is_resource_like(row)) {
           action_type = "no_safe_legal_authority_target";
           status = "held_review";
           reason = "no_safe_legal_authority_target";
         } else if (verification.verified) {
-          const existing_row = await existing_resource_entity(client, row);
-          if (existing_row) {
-            const updates = blank_update_fields(existing_row, row, entity_columns);
-            action_type = Object.keys(updates).length ? "would_update_blank_fields" : "would_skip_duplicate";
-          } else action_type = "would_insert";
-          status = dry_run ? "validated_dry_run" : "applied";
-          if (!dry_run && action_type !== "would_skip_duplicate") {
-            const write_result = await write_canonical_candidate(client, row, entity_columns, location_columns, contact_columns);
-            action_type = write_result.action_type;
-            canonical_record_id = write_result.canonical_record_id;
-            bridge_record_id = write_result.bridge_record_id;
-          } else if (existing_row) canonical_record_id = String(existing_row.resource_entity_id ?? existing_row.canonical_id ?? "");
+          if (adapter.write_target_table === "registry_programs") {
+            const existing_row = await existing_registry_program(client, row, program_columns);
+            if (existing_row) {
+              const updates = registry_program_blank_updates(existing_row, row, program_columns);
+              action_type = Object.keys(updates).length ? "would_update_blank_fields" : "would_skip_duplicate";
+              canonical_record_id = String(existing_row[program_column_map.id ?? "id"] ?? "");
+            } else action_type = "would_insert";
+            status = dry_run ? "validated_dry_run" : "applied";
+            if (!dry_run && action_type !== "would_skip_duplicate") {
+              const write_result = await write_registry_program_candidate(client, row, program_columns);
+              action_type = write_result.action_type;
+              canonical_record_id = write_result.canonical_record_id;
+              bridge_record_id = write_result.bridge_record_id;
+            }
+          } else {
+            const existing_row = await existing_resource_entity(client, row);
+            if (existing_row) {
+              const updates = blank_update_fields(existing_row, row, entity_columns);
+              action_type = Object.keys(updates).length ? "would_update_blank_fields" : "would_skip_duplicate";
+            } else action_type = "would_insert";
+            status = dry_run ? "validated_dry_run" : "applied";
+            if (!dry_run && action_type !== "would_skip_duplicate") {
+              const write_result = await write_canonical_candidate(client, row, entity_columns, location_columns, contact_columns);
+              action_type = write_result.action_type;
+              canonical_record_id = write_result.canonical_record_id;
+              bridge_record_id = write_result.bridge_record_id;
+            } else if (existing_row) canonical_record_id = String(existing_row.resource_entity_id ?? existing_row.canonical_id ?? "");
+          }
         }
       } catch (error: any) {
         action_type = "error";
@@ -1140,8 +1328,15 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
     await client.query("commit");
     return { success: true, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: results.length, would_insert_count, would_update_blank_fields_count, skipped_count, blocked_count, error_count, run_id, results };
   } catch (error: any) {
+    let conveyor_run_exists_in_transaction: boolean | null = null;
+    if (String(error?.message ?? error).toLowerCase().includes("conveyor_promotion_accounting") || String(error?.code ?? "") === "23503") {
+      try {
+        const run_check = await client.query(`select exists(select 1 from public.conveyor_runs where run_id = $1) as exists`, [run_id]);
+        conveyor_run_exists_in_transaction = Boolean(run_check.rows[0]?.exists);
+      } catch {}
+    }
     try { await client.query("rollback"); } catch {}
-    return { success: false, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: results.length, would_insert_count: 0, would_update_blank_fields_count: 0, skipped_count: 0, blocked_count: results.filter((row) => row.action_type === "blocked").length, error_count: results.filter((row) => row.action_type === "error").length + 1, run_id, error: "canonical_promotion_apply_failed", message: error?.message ?? String(error), results };
+    return { success: false, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: results.length, would_insert_count: 0, would_update_blank_fields_count: 0, skipped_count: 0, blocked_count: results.filter((row) => row.action_type === "blocked").length, error_count: results.filter((row) => row.action_type === "error").length + 1, run_id, error: "canonical_promotion_apply_failed", message: error?.message ?? String(error), accounting_fk_diagnostic: conveyor_run_exists_in_transaction === null ? null : { run_id, conveyor_run_exists_in_transaction }, results };
   } finally {
     client.release();
   }
