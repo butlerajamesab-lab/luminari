@@ -3,20 +3,20 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   asArray,
-  createPool,
-  extractCitations,
-  inferDomainTags,
-  inferPipelineContext,
+  create_pool,
+  extract_citations,
+  infer_domain_tags,
+  infer_pipeline_context,
   normalizeIdentifier,
   normalizeName,
   normalizeText,
   parseArgs,
   quoteIdent,
-  repoRoot,
-  stringifyCsv,
-  tableExists,
+  repo_root,
+  stringify_csv,
+  table_exists,
   uniqueBy,
-  getTableColumns,
+  get_table_columns,
 } from "./lib/corpus-audit-utils.mjs";
 
 const args = parseArgs();
@@ -30,8 +30,8 @@ const doctrinePhraseRules = [
 ];
 
 async function readRows(pool, tableName, fallbackColumns = ["*"]) {
-  if (!pool || !(await tableExists(pool, tableName))) return { exists: false, columns: [], rows: [] };
-  const columns = await getTableColumns(pool, tableName);
+  if (!pool || !(await table_exists(pool, tableName))) return { exists: false, columns: [], rows: [] };
+  const columns = await get_table_columns(pool, tableName);
   const selected = fallbackColumns[0] === "*" ? "*" : fallbackColumns.filter((column) => columns.includes(column)).map(quoteIdent).join(", ");
   if (!selected) return { exists: true, columns, rows: [] };
   const result = await pool.query(`select ${selected} from public.${quoteIdent(tableName)}`);
@@ -77,7 +77,7 @@ function normalizeArrayField(value) {
 }
 
 function citationKeys(...values) {
-  return extractCitations(...values).map(normalizeIdentifier).filter(Boolean);
+  return extract_citations(...values).map(normalizeIdentifier).filter(Boolean);
 }
 
 function statuteForCitation(statutesByCitation, citation) {
@@ -90,8 +90,8 @@ function statuteForCitation(statutesByCitation, citation) {
 }
 
 function makeCandidate(fields) {
-  const pipelineContext = fields.pipelineContext?.length ? fields.pipelineContext : inferPipelineContext(fields.notes, fields.evidenceText);
-  const domainTags = fields.domainTags?.length ? fields.domainTags : inferDomainTags(fields.notes, fields.evidenceText);
+  const pipelineContext = fields.pipelineContext?.length ? fields.pipelineContext : infer_pipeline_context(fields.notes, fields.evidenceText);
+  const domainTags = fields.domainTags?.length ? fields.domainTags : infer_domain_tags(fields.notes, fields.evidenceText);
   const confidence = fields.confidence ?? (fields.strength === "strong" ? "high" : fields.strength === "moderate" ? "medium" : "low");
   return {
     fromType: fields.fromType,
@@ -134,7 +134,7 @@ function findDoctrine(doctrines, wantedName) {
 }
 
 async function generate() {
-  const { pool, databaseStatus } = createPool("doctrine-graph-candidate-generator");
+  const { pool, databaseStatus } = create_pool("doctrine-graph-candidate-generator");
   if (!pool) {
     console.warn(databaseStatus);
     const output = {
@@ -257,7 +257,7 @@ async function generate() {
   for (const row of agencyAuthority.rows) {
     const authorityValue = getAny(row, ["statutoryAuthority", "statutory_authority", "statutory_authorities", "statute", "authority"]);
     const authorities = [...asArray(authorityValue), row.statute].filter(Boolean);
-    const citations = extractCitations(...authorities);
+    const citations = extract_citations(...authorities);
     for (const citation of citations) {
       const statute = statuteForCitation(statutesByCitation, citation);
       if (!statute) continue;
@@ -274,15 +274,15 @@ async function generate() {
         sourceId: idOf(row),
         evidenceText: authorities.join("; "),
         jurisdiction: row.jurisdiction ?? null,
-        pipelineContext: inferPipelineContext(row.domain, row.domains, row.complaintTypes, row.complaint_types, authorities),
-        domainTags: inferDomainTags(row.domain, row.domains, row.complaintTypes, row.complaint_types, authorities),
+        pipelineContext: infer_pipeline_context(row.domain, row.domains, row.complaintTypes, row.complaint_types, authorities),
+        domainTags: infer_domain_tags(row.domain, row.domains, row.complaintTypes, row.complaint_types, authorities),
         confidence: "high",
       }));
     }
   }
 
   for (const row of enforcement.rows) {
-    const citations = extractCitations(row.statuteCitation, row.statute_citation, row.statutoryRequirement, row.statutory_requirement, row.statutory_authority);
+    const citations = extract_citations(row.statuteCitation, row.statute_citation, row.statutoryRequirement, row.statutory_requirement, row.statutory_authority);
     for (const citation of citations) {
       const statute = statuteForCitation(statutesByCitation, citation);
       const agencyName = getAny(row, ["agencyName", "agency_name", "agency"]);
@@ -300,8 +300,8 @@ async function generate() {
         sourceId: idOf(row),
         evidenceText: [row.statuteCitation, row.statute_citation, row.statutoryRequirement, row.statutory_requirement, row.statutory_authority, row.patternDescription, row.pattern_description].filter(Boolean).join("; "),
         jurisdiction: row.jurisdiction ?? null,
-        pipelineContext: inferPipelineContext(row.domains, row.complaintType, row.complaint_type, row.patternDescription, row.pattern_description),
-        domainTags: inferDomainTags(row.domains, row.complaintType, row.complaint_type, row.patternDescription, row.pattern_description),
+        pipelineContext: infer_pipeline_context(row.domains, row.complaintType, row.complaint_type, row.patternDescription, row.pattern_description),
+        domainTags: infer_domain_tags(row.domains, row.complaintType, row.complaint_type, row.patternDescription, row.pattern_description),
         confidence: "high",
       }));
     }
@@ -309,7 +309,7 @@ async function generate() {
 
   for (const weakJoint of weakJoints.rows) {
     const evidence = [weakJoint.title, weakJoint.description, weakJoint.metadata].map(normalizeText).join("\n");
-    const citations = extractCitations(evidence);
+    const citations = extract_citations(evidence);
     for (const citation of citations) {
       const statute = statuteForCitation(statutesByCitation, citation);
       if (!statute) continue;
@@ -352,7 +352,7 @@ async function generate() {
 
   for (const claim of claimElements.rows) {
     const evidence = Object.fromEntries(Object.entries(claim).filter(([key]) => /statute|citation|authority|metadata|description|claim|domain/i.test(key)));
-    const citations = extractCitations(evidence);
+    const citations = extract_citations(evidence);
     for (const citation of citations) {
       const statute = statuteForCitation(statutesByCitation, citation);
       if (!statute) continue;
@@ -369,8 +369,8 @@ async function generate() {
         sourceId: idOf(claim),
         evidenceText: evidence,
         jurisdiction: claim.jurisdiction ?? statute.jurisdiction ?? null,
-        pipelineContext: inferPipelineContext(claim.domain, claim.claimType, evidence),
-        domainTags: inferDomainTags(claim.domain, claim.claimType, evidence),
+        pipelineContext: infer_pipeline_context(claim.domain, claim.claimType, evidence),
+        domainTags: infer_domain_tags(claim.domain, claim.claimType, evidence),
         confidence: "high",
       }));
     }
@@ -408,8 +408,8 @@ async function generate() {
           sourceId: idOf(route),
           evidenceText: evidence,
           jurisdiction: route.jurisdiction ?? route.jurisdiction_id_rob ?? agency.jurisdiction ?? null,
-          pipelineContext: inferPipelineContext(evidence, name),
-          domainTags: inferDomainTags(evidence, name),
+          pipelineContext: infer_pipeline_context(evidence, name),
+          domainTags: infer_domain_tags(evidence, name),
           confidence: "high",
         }));
       }
@@ -419,8 +419,8 @@ async function generate() {
   // Deliberately isolated low-confidence review bucket: shared domains only, no exact citation/name/phrase.
   for (const statute of statutes.rows) {
     for (const weakJoint of weakJoints.rows) {
-      const domains = new Set(inferDomainTags(statute.domains, statute.summary, statute.title));
-      const weakDomains = inferDomainTags(weakJoint.metadata, weakJoint.description, weakJoint.title);
+      const domains = new Set(infer_domain_tags(statute.domains, statute.summary, statute.title));
+      const weakDomains = infer_domain_tags(weakJoint.metadata, weakJoint.description, weakJoint.title);
       if (!weakDomains.some((domain) => domains.has(domain))) continue;
       reviewBucket.push(makeCandidate({
         fromType: "weak_joint",
@@ -487,7 +487,7 @@ async function generate() {
 
   fs.mkdirSync(args.outDir, { recursive: true });
   fs.writeFileSync(path.join(args.outDir, "doctrine-graph-candidates.json"), JSON.stringify(output, null, 2));
-  fs.writeFileSync(path.join(args.outDir, "doctrine-graph-candidates.csv"), stringifyCsv(dedupedCandidates));
+  fs.writeFileSync(path.join(args.outDir, "doctrine-graph-candidates.csv"), stringify_csv(dedupedCandidates));
   fs.writeFileSync(path.join(args.outDir, "doctrine-graph-review-bucket.json"), JSON.stringify(dedupedReview, null, 2));
 
   return { pool, output };
@@ -503,6 +503,6 @@ console.log(JSON.stringify({
   countsByFromToEdgeStrength: output.countsByFromToEdgeStrength,
   stagedCandidateEdgeCount: output.stagedCandidateEdgeCount,
   stagedCountsByFromToEdgeStrength: output.stagedCountsByFromToEdgeStrength,
-  outputDir: path.relative(repoRoot, args.outDir),
+  outputDir: path.relative(repo_root, args.outDir),
 }, null, 2));
 if (pool) await pool.end();

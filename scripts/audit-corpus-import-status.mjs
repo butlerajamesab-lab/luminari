@@ -3,20 +3,20 @@ import fs from "node:fs";
 import path from "node:path";
 import * as corpus_audit_utils from "./lib/corpus-audit-utils.mjs";
 
-const count_csv_records = corpus_audit_utils["count" + "Csv" + "Records"];
-const count_jsonl_records = corpus_audit_utils["count" + "Jsonl" + "Records"];
-const create_pool = corpus_audit_utils["create" + "Pool"];
-const extract_corpus_import_queue_rows_from_sql = corpus_audit_utils["extract" + "Corpus" + "Import" + "Queue" + "Rows" + "From" + "Sql"];
-const extract_json_record_count = corpus_audit_utils["extract" + "Json" + "Record" + "Count"];
-const find_data_directories = corpus_audit_utils["find" + "Data" + "Directories"];
-const find_files_by_basename = corpus_audit_utils["find" + "Files" + "By" + "Basename"];
-const get_table_columns = corpus_audit_utils["get" + "Table" + "Columns"];
-const infer_domain_tags = corpus_audit_utils["infer" + "Domain" + "Tags"];
-const infer_pipeline_context = corpus_audit_utils["infer" + "Pipeline" + "Context"];
-const parse_args = corpus_audit_utils["parse" + "Args"];
-const repo_root = corpus_audit_utils["repo" + "Root"];
-const safe_count = corpus_audit_utils["safe" + "Count"];
-const table_exists = corpus_audit_utils["table" + "Exists"];
+const count_csv_records = corpus_audit_utils.count_csv_records;
+const count_jsonl_records = corpus_audit_utils.count_jsonl_records;
+const create_pool = corpus_audit_utils.create_pool;
+const extract_corpus_import_queue_rows_from_sql = corpus_audit_utils.extract_corpus_import_queue_rows_from_sql;
+const extract_json_record_count = corpus_audit_utils.extract_json_record_count;
+const find_data_directories = corpus_audit_utils.find_data_directories;
+const find_files_by_basename = corpus_audit_utils.find_files_by_basename;
+const get_table_columns = corpus_audit_utils.get_table_columns;
+const infer_domain_tags = corpus_audit_utils.infer_domain_tags;
+const infer_pipeline_context = corpus_audit_utils.infer_pipeline_context;
+const parse_args = corpus_audit_utils.parse_args;
+const repo_root = corpus_audit_utils.repo_root;
+const safe_count = corpus_audit_utils.safe_count;
+const table_exists = corpus_audit_utils.table_exists;
 
 const args = parse_args();
 

@@ -3,14 +3,14 @@ import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
 import {
-  createPool,
-  getTableColumns,
-  repoRoot,
-  tableExists,
+  create_pool,
+  get_table_columns,
+  repo_root,
+  table_exists,
 } from "./lib/corpus-audit-utils.mjs";
 import { classifyIngestionPolicy } from "./lib/ingestion-policy.mjs";
 
-const artifactDir = path.join(repoRoot, "artifacts", "corpus-audit");
+const artifactDir = path.join(repo_root, "artifacts", "corpus-audit");
 const jsonReportPath = path.join(artifactDir, "corpus-queue-gate-routing-report.json");
 const csvReportPath = path.join(artifactDir, "corpus-queue-gate-routing-report.csv");
 
@@ -311,8 +311,8 @@ async function inspectTables(pool) {
   }
   for (const tableName of inspectedTables) {
     try {
-      const exists = await tableExists(pool, tableName);
-      const columns = exists ? await getTableColumns(pool, tableName) : [];
+      const exists = await table_exists(pool, tableName);
+      const columns = exists ? await get_table_columns(pool, tableName) : [];
       tables.push({ tableName, status: exists ? "available" : "missing", exists, columns });
     } catch (error) {
       tables.push({ tableName, status: "inspection-error", exists: null, columns: [], error: error.message });
@@ -322,9 +322,9 @@ async function inspectTables(pool) {
 }
 
 async function readQueueRows(pool) {
-  const exists = await tableExists(pool, "corpus_import_queue");
+  const exists = await table_exists(pool, "corpus_import_queue");
   if (!exists) return { exists: false, columns: [], rows: [] };
-  const columns = await getTableColumns(pool, "corpus_import_queue");
+  const columns = await get_table_columns(pool, "corpus_import_queue");
   const wanted = [
     "id",
     "source_name",
@@ -369,7 +369,7 @@ function summarize(rows) {
 
 async function main() {
   const args = parseArgs();
-  const { pool, databaseStatus } = createPool("corpus-queue-gate-router");
+  const { pool, databaseStatus } = create_pool("corpus-queue-gate-router");
   const report = {
     generatedAt: new Date().toISOString(),
     mode: "dry-run",
@@ -401,7 +401,7 @@ async function main() {
       report.status = "database-unavailable";
       report.message = databaseStatus;
       writeReports(report);
-      if (!args.jsonOnly) console.log(JSON.stringify({ status: report.status, summary: report.summary, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2));
+      if (!args.jsonOnly) console.log(JSON.stringify({ status: report.status, summary: report.summary, report: path.relative(repo_root, jsonReportPath), csv: path.relative(repo_root, csvReportPath) }, null, 2));
       return;
     }
 
@@ -410,7 +410,7 @@ async function main() {
       report.status = "queue-unavailable";
       report.message = "public.corpus_import_queue does not exist; no routing classifications generated.";
       writeReports(report);
-      if (!args.jsonOnly) console.log(JSON.stringify({ status: report.status, summary: report.summary, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2));
+      if (!args.jsonOnly) console.log(JSON.stringify({ status: report.status, summary: report.summary, report: path.relative(repo_root, jsonReportPath), csv: path.relative(repo_root, csvReportPath) }, null, 2));
       return;
     }
 
@@ -424,7 +424,7 @@ async function main() {
       .filter((group) => group.intendedDestination === "blocked_needs_parser" || group.intendedDestination === "blocked_unknown_type")
       .map((group) => ({ parser: group.parser, rowCount: group.rowCount, blockedReason: group.blockedReason, nextStep: group.nextStep }));
     writeReports(report);
-    if (!args.jsonOnly) console.log(JSON.stringify({ status: report.status, summary: report.summary, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2));
+    if (!args.jsonOnly) console.log(JSON.stringify({ status: report.status, summary: report.summary, report: path.relative(repo_root, jsonReportPath), csv: path.relative(repo_root, csvReportPath) }, null, 2));
   } finally {
     if (pool) await pool.end();
   }

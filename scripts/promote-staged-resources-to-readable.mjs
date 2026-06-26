@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import "dotenv/config";
-import { createPool } from "./lib/corpus-audit-utils.mjs";
+import { create_pool } from "./lib/corpus-audit-utils.mjs";
 
 function parseArgs(argv = process.argv.slice(2)) {
   const args = { apply: false, dryRun: true, limit: null };
@@ -165,7 +165,7 @@ async function insertAndCount(pool, sql, limit) {
 
 async function main() {
   const args = parseArgs();
-  const { pool, databaseStatus } = createPool("promote-staged-resources");
+  const { pool, databaseStatus } = create_pool("promote-staged-resources");
   if (!pool) throw new Error(databaseStatus);
 
   const startedAt = Date.now();

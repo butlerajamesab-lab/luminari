@@ -6,14 +6,14 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
-  createPool,
-  getTableColumns,
-  repoRoot,
-  tableExists,
+  create_pool,
+  get_table_columns,
+  repo_root,
+  table_exists,
 } from "./lib/corpus-audit-utils.mjs";
 
 const execFileAsync = promisify(execFile);
-const artifactDir = path.join(repoRoot, "artifacts", "corpus-audit");
+const artifactDir = path.join(repo_root, "artifacts", "corpus-audit");
 const jsonReportPath = path.join(artifactDir, "docx-extraction-report.json");
 const csvReportPath = path.join(artifactDir, "docx-extraction-report.csv");
 
@@ -225,9 +225,9 @@ function mergePayload(row, extraction) {
 }
 
 async function inspectSchema(pool) {
-  if (!pool) return { tableExists: null, columns: [] };
-  const exists = await tableExists(pool, "corpus_import_queue");
-  return { tableExists: exists, columns: exists ? await getTableColumns(pool, "corpus_import_queue") : [] };
+  if (!pool) return { table_exists: null, columns: [] };
+  const exists = await table_exists(pool, "corpus_import_queue");
+  return { table_exists: exists, columns: exists ? await get_table_columns(pool, "corpus_import_queue") : [] };
 }
 
 function buildDocxWhere(columns) {
@@ -295,7 +295,7 @@ function summarize(rows, mode) {
 
 async function main() {
   const args = parseArgs();
-  const { pool, databaseStatus } = createPool("docx-corpus-queue-extractor");
+  const { pool, databaseStatus } = create_pool("docx-corpus-queue-extractor");
   const report = {
     generatedAt: new Date().toISOString(), mode: args.apply ? "apply" : "dry-run", status: "started",
     parser: { name: "wordprocessingml-xml-fallback", version: "unzip+xml-text-v1", dependencyAttempt: "controlled WordprocessingML XML fallback" },
@@ -305,8 +305,8 @@ async function main() {
   };
   try {
     const schema = await inspectSchema(pool); report.schema = schema;
-    if (!pool) { report.status = "database-unavailable"; report.message = databaseStatus; await writeReports(report); console.log(JSON.stringify({ status: report.status, summary: report.summary, rows: report.rows, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2)); return; }
-    if (!schema.tableExists) { report.status = "queue-unavailable"; report.message = "public.corpus_import_queue does not exist."; await writeReports(report); console.log(JSON.stringify({ status: report.status, summary: report.summary, rows: report.rows, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2)); return; }
+    if (!pool) { report.status = "database-unavailable"; report.message = databaseStatus; await writeReports(report); console.log(JSON.stringify({ status: report.status, summary: report.summary, rows: report.rows, report: path.relative(repo_root, jsonReportPath), csv: path.relative(repo_root, csvReportPath) }, null, 2)); return; }
+    if (!schema.table_exists) { report.status = "queue-unavailable"; report.message = "public.corpus_import_queue does not exist."; await writeReports(report); console.log(JSON.stringify({ status: report.status, summary: report.summary, rows: report.rows, report: path.relative(repo_root, jsonReportPath), csv: path.relative(repo_root, csvReportPath) }, null, 2)); return; }
     const rows = await readDocxRows(pool, schema.columns, args.id);
     for (const row of rows) {
       const rowReport = { id: row.id ?? null, source_name: row.source_name ?? null, storage_bucket: row.storage_bucket ?? null, storage_path: row.storage_path ?? null, byte_size: row.byte_size ?? null, sha256: row.sha256 ?? null, content_type: row.content_type ?? null, source_ext: row.source_ext ?? null, target_hint: row.target_hint ?? null, previous_status: row.import_status ?? null, action: args.apply ? "pending" : "would-extract", status: null, character_count: 0, line_count: 0, parser_name: report.parser.name, parser_version: report.parser.version, extracted_at: null, error: null, binary_source: null, binary_source_attempts: [], public_storage_url: buildPublicStorageUrl(row), next_step: "Extract raw text first; then run Form Signal Extraction v3 and route candidates through existing gates." };
@@ -327,7 +327,7 @@ async function main() {
       report.rows.push(rowReport);
     }
     report.status = "completed"; report.summary = summarize(report.rows, report.mode); await writeReports(report);
-    console.log(JSON.stringify({ status: report.status, summary: report.summary, rows: report.rows, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2));
+    console.log(JSON.stringify({ status: report.status, summary: report.summary, rows: report.rows, report: path.relative(repo_root, jsonReportPath), csv: path.relative(repo_root, csvReportPath) }, null, 2));
   } finally { if (pool) await pool.end(); }
 }
 
