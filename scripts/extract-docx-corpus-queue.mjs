@@ -159,13 +159,13 @@ function decodeXmlEntities(text) {
 
 function textFromWordXml(xml) {
   const out = [];
-  const tokenPattern = /<w:t\b[^>]*>([\s\S]*?)<\/w:t>|<w:tab\b[^>]*\/?>|<w:br\b[^>]*\/?>|<\/w:p>|<\/w:tr>/g;
+  const tokenPattern = /<w:t\b[^>]*>([\s\S]*?)<\/w:t>|<w:tab\b[^>]*\/?>|<w:br\b[^>]*\/?>|<\/w:tc>|<\/w:p>|<\/w:tr>/g;
   for (const match of xml.matchAll(tokenPattern)) {
     if (match[1] !== undefined) out.push(decodeXmlEntities(match[1]));
-    else if (match[0].startsWith("<w:tab")) out.push("\t");
+    else if (match[0].startsWith("<w:tab") || match[0].startsWith("</w:tc")) out.push("\t");
     else out.push("\n");
   }
-  return out.join("").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  return out.join("").replace(/\t+\n/g, "\n").replace(/[ ]+\t/g, "\t").replace(/\t[ ]+/g, "\t").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 async function extractDocxText(buffer) {

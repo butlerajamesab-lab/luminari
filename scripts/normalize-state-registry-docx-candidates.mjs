@@ -20,6 +20,49 @@ const STATE_BY_ABBR = {
 };
 const ABBR_BY_STATE = Object.fromEntries(Object.entries(STATE_BY_ABBR).map(([abbr, name]) => [name.toLowerCase(), abbr]));
 
+const STANDALONE_LABEL_DENYLIST = new Set([
+  "phone", "address", "service type", "statutory authority", "what it does for people",
+  "email", "website", "contact", "fax", "hours", "eligibility", "application", "notes",
+]);
+
+const LABEL_ALIASES = new Map([
+  ["phone", "phone"], ["telephone", "phone"], ["email", "email"], ["e-mail", "email"],
+  ["website", "website"], ["web site", "website"], ["url", "website"],
+  ["address", "address"], ["contact", "contact"], ["fax", "fax"], ["hours", "hours"],
+  ["eligibility", "eligibility"], ["application", "application"], ["apply notes", "notes"],
+  ["apply / notes", "notes"], ["notes", "notes"], ["service type", "service_type"],
+  ["statutory authority", "statutory_authority"], ["what it does for people", "description"],
+]);
+
+function normalizedLabel(value) {
+  return compact(value).toLowerCase().replace(/[:：]+$/g, "").replace(/\s+/g, " ");
+}
+
+function labelKey(value) {
+  return LABEL_ALIASES.get(normalizedLabel(value)) ?? null;
+}
+
+function isStandaloneLabel(value) {
+  return STANDALONE_LABEL_DENYLIST.has(normalizedLabel(value));
+}
+
+function looksLikeEmail(value) { return /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(String(value ?? "")); }
+function looksLikeAddress(value) { return /\b\d{2,6}\s+[A-Z][A-Za-z0-9 .'-]+\s+(?:St|Street|Ave|Avenue|Rd|Road|Blvd|Boulevard|Dr|Drive|Pkwy|Parkway|Way|Ln|Lane|Suite|Ste)\b/i.test(String(value ?? "")) || /\b[A-Z][A-Za-z .'-]+,\s*[A-Z]{2}\s+\d{5}(?:-\d{4})?\b/.test(String(value ?? "")); }
+
+function hasValueSignal(candidate) {
+  const provenance = candidate.forensic_provenance ?? {};
+  return extractPhones(provenance.phone).length > 0
+    || looksLikeEmail(provenance.email)
+    || extractUrls(provenance.website).length > 0
+    || looksLikeAddress(provenance.address)
+    || Boolean(text(provenance.contact));
+}
+
+function hasProvenance(candidate) {
+  const provenance = candidate.forensic_provenance ?? {};
+  return Boolean(text(provenance.source_excerpt) || text(provenance.text));
+}
+
 function parseArgs(argv = process.argv.slice(2)) {
   const args = {
     apply: false,
@@ -158,12 +201,13 @@ function inferSection(line, current) {
   return current;
 }
 
-function makeCandidate({ row, stateName, stateCode, type, name, textBody, section, ordinal, resourceType, extra = {} }) {
+function makeCandidate({ row, stateName, stateCode, type, name, textBody, section, ordinal, resourceType, structuredBlock = null, extra = {} }) {
   const sourceFile = row.source_name ?? row.storage_path ?? `corpus_import_queue:${row.id}`;
   const body = compact(textBody);
   const displayName = compact(name || body.slice(0, 140));
   const phones = extractPhones(textBody);
   const urls = extractUrls(textBody);
+  const sourceExcerpt = compact(structuredBlock?.source_excerpt || textBody).slice(0, 1200);
   const citations = extract_citations(textBody);
   const category = resourceType || lineCategory(`${name ?? ""} ${textBody ?? ""}`);
   const contentHash = md5([sourceFile, type, stateName, section, ordinal, displayName, body].join("|"));
@@ -195,6 +239,20 @@ function makeCandidate({ row, stateName, stateCode, type, name, textBody, sectio
       candidate_type: type,
       resource_type: category,
       text: body,
+      source_excerpt: sourceExcerpt,
+      source_line_start: structuredBlock?.source_line_start ?? null,
+      source_line_end: structuredBlock?.source_line_end ?? null,
+      source_queue_id: row.id ?? null,
+      block_type: structuredBlock?.block_type ?? type,
+      section_title: structuredBlock?.section_title ?? section ?? null,
+      label: structuredBlock?.label ?? null,
+      value: structuredBlock?.value ?? null,
+      phone: structuredBlock?.phone ?? phones[0] ?? "",
+      email: structuredBlock?.email ?? "",
+      website: structuredBlock?.website ?? urls[0] ?? "",
+      address: structuredBlock?.address ?? "",
+      contact: structuredBlock?.contact ?? "",
+      field_metadata: structuredBlock?.field_metadata ?? {},
       phones,
       urls,
       citations,
@@ -214,6 +272,87 @@ function makeCandidate({ row, stateName, stateCode, type, name, textBody, sectio
     },
     content_hash: contentHash,
   };
+}
+
+function splitLabelValue(line) {
+  const trimmed = compact(line);
+  const colon = trimmed.match(/^([^:：]{2,80})[:：]\s*(.*)$/);
+  if (colon && labelKey(colon[1])) return { label: compact(colon[1]), value: compact(colon[2]) };
+  const cells = trimmed.split(/\t+/).map(compact).filter(Boolean);
+  if (cells.length >= 2 && labelKey(cells[0])) return { label: cells[0], value: cells.slice(1).join(" ") };
+  if (cells.length === 1 && labelKey(cells[0])) return { label: cells[0], value: "" };
+  return null;
+}
+
+function buildStructuredBlocks(row, rawText) {
+  const sourceQueueId = row.id ?? null;
+  const lineList = String(rawText ?? "").split(/\r?\n/);
+  const blocks = [];
+  let sectionTitle = "document_start";
+  let currentResource = null;
+  const flushResource = () => { if (currentResource?.text.length) blocks.push(currentResource); currentResource = null; };
+  for (let i = 0; i < lineList.length; i += 1) {
+    const line = compact(lineList[i]);
+    if (!line) continue;
+    const inferred = inferSection(line, sectionTitle);
+    if (inferred !== sectionTitle || /^LAYER\s+\d+/i.test(line)) { flushResource(); sectionTitle = inferred; }
+    const pair = splitLabelValue(line);
+    if (pair) {
+      let value = pair.value;
+      const key = labelKey(pair.label);
+      const context = [line];
+      let endLine = i + 1;
+      if (!value) {
+        for (let j = i + 1; j < Math.min(lineList.length, i + 5); j += 1) {
+          const next = compact(lineList[j]);
+          if (!next) continue;
+          if (splitLabelValue(next) || inferSection(next, sectionTitle) !== sectionTitle) break;
+          value = value ? `${value} ${next}` : next;
+          context.push(next);
+          endLine = j + 1;
+          if (key && ["phone", "email", "website", "address", "contact"].includes(key)) break;
+        }
+      }
+      const fieldMetadata = { [key ?? normalizedLabel(pair.label)]: value };
+      const structured = {
+        block_type: "label_value", section_title: sectionTitle, label: pair.label, value, text: line,
+        source_excerpt: context.join(" | "), source_line_start: i + 1, source_line_end: endLine, source_queue_id: sourceQueueId,
+        field_metadata: fieldMetadata,
+      };
+      if (key === "phone" && extractPhones(value).length) structured.phone = value;
+      if (key === "email" && looksLikeEmail(value)) structured.email = value;
+      if (key === "website" && extractUrls(value).length) structured.website = value;
+      if (key === "address" && looksLikeAddress(value)) structured.address = value;
+      if (key === "contact" && text(value)) structured.contact = value;
+      blocks.push(structured);
+      if (currentResource && key) currentResource.field_metadata[key] = value;
+      continue;
+    }
+    const isHeading = /^[A-Z][A-Za-z0-9 &/'().,-]{3,120}$/.test(line) && !hasSignal(line);
+    if (isHeading || !currentResource) {
+      flushResource();
+      currentResource = { block_type: "resource_context", section_title: sectionTitle, label: null, value: null, text: [line], source_excerpt: line, source_line_start: i + 1, source_line_end: i + 1, source_queue_id: sourceQueueId, field_metadata: {} };
+    } else {
+      currentResource.text.push(line);
+      currentResource.source_excerpt = currentResource.text.join(" | ").slice(0, 1200);
+      currentResource.source_line_end = i + 1;
+    }
+  }
+  flushResource();
+  return blocks.map((block) => ({ ...block, text: Array.isArray(block.text) ? block.text.join("\n") : block.text }));
+}
+
+function extractStructuredCandidates(row, stateName, stateCode, rawText) {
+  return buildStructuredBlocks(row, rawText)
+    .filter((block) => compact(block.value || block.text).length >= 4)
+    .filter((block) => hasSignal(`${block.label ?? ""} ${block.value ?? ""} ${block.text ?? ""}`) || block.block_type === "resource_context")
+    .map((block, index) => makeCandidate({
+      row, stateName, stateCode, type: block.block_type,
+      name: block.block_type === "label_value" ? `${block.label}: ${block.value}`.slice(0, 150) : block.text.split(/\n/)[0].slice(0, 150),
+      textBody: [block.text, block.value].filter(Boolean).join("\n"), section: block.section_title, ordinal: index + 1,
+      resourceType: lineCategory(`${block.label ?? ""} ${block.value ?? ""} ${block.text ?? ""}`), structuredBlock: block,
+      extra: { parser_rule: "structured_docx_block_preservation" },
+    }));
 }
 
 function extractResourceBlocks(row, stateName, stateCode, rawText) {
@@ -318,6 +457,7 @@ function normalizeCandidates(row, args) {
   const rawText = text(row.raw_text);
   const { stateName, stateCode } = deriveState(row);
   const candidates = [
+    ...extractStructuredCandidates(row, stateName, stateCode, rawText),
     ...extractPolicyAlerts(row, stateName, stateCode, rawText),
     ...extractResourceBlocks(row, stateName, stateCode, rawText),
     ...extractWorkflowBlocks(row, stateName, stateCode, rawText),
@@ -332,6 +472,38 @@ function normalizeCandidates(row, args) {
     seen.add(candidate.content_hash);
     return true;
   });
+}
+
+function filterMalformedCandidates(candidates) {
+  const stats = {
+    label_only_candidates_suppressed: 0,
+    candidates_with_source_excerpt: 0,
+    contact_candidates_with_value: 0,
+    candidates_missing_provenance: 0,
+    candidate_count_before_filter: candidates.length,
+    candidate_count_after_filter: 0,
+  };
+  const filtered = candidates.filter((candidate) => {
+    const provenance = candidate.forensic_provenance ?? {};
+    const labelOnlyName = isStandaloneLabel(candidate.name);
+    const labelOnlyStructured = isStandaloneLabel(provenance.label) && !text(provenance.value);
+    const contactCandidate = /^contact_/i.test(provenance.resource_type ?? "") || ["contact_phone", "contact_website", "address"].includes(provenance.resource_type);
+    if (hasProvenance(candidate)) stats.candidates_with_source_excerpt += 1;
+    else stats.candidates_missing_provenance += 1;
+    if (contactCandidate && hasValueSignal(candidate)) stats.contact_candidates_with_value += 1;
+    if ((labelOnlyName || labelOnlyStructured) && !hasValueSignal(candidate)) {
+      stats.label_only_candidates_suppressed += 1;
+      return false;
+    }
+    if (contactCandidate && !hasValueSignal(candidate)) {
+      stats.label_only_candidates_suppressed += 1;
+      return false;
+    }
+    if (!hasProvenance(candidate)) return false;
+    return true;
+  });
+  stats.candidate_count_after_filter = filtered.length;
+  return { candidates: filtered, stats };
 }
 
 async function readRows(pool, args) {
@@ -430,7 +602,8 @@ async function main() {
     const rows = await readRows(pool, args);
     for (const row of rows) {
       const { stateName } = deriveState(row);
-      const candidates = normalizeCandidates(row, args);
+      const normalized = normalizeCandidates(row, args);
+      const { candidates, stats } = filterMalformedCandidates(normalized);
       let applyResult = { inserted: 0, skipped: 0 };
       if (args.apply) applyResult = await insertCandidates(pool, candidates);
       report.rows.push({
@@ -438,6 +611,12 @@ async function main() {
         source_name: row.source_name,
         jurisdiction: stateName,
         candidate_count: candidates.length,
+        label_only_candidates_suppressed: stats.label_only_candidates_suppressed,
+        candidates_with_source_excerpt: stats.candidates_with_source_excerpt,
+        contact_candidates_with_value: stats.contact_candidates_with_value,
+        candidates_missing_provenance: stats.candidates_missing_provenance,
+        candidate_count_before_filter: stats.candidate_count_before_filter,
+        candidate_count_after_filter: stats.candidate_count_after_filter,
         inserted: applyResult.inserted,
         skipped: applyResult.skipped,
         mode: report.mode,
@@ -447,6 +626,12 @@ async function main() {
     report.summary = {
       rowsDiscovered: rows.length,
       totalCandidates: report.rows.reduce((sum, row) => sum + row.candidate_count, 0),
+      label_only_candidates_suppressed: report.rows.reduce((sum, row) => sum + row.label_only_candidates_suppressed, 0),
+      candidates_with_source_excerpt: report.rows.reduce((sum, row) => sum + row.candidates_with_source_excerpt, 0),
+      contact_candidates_with_value: report.rows.reduce((sum, row) => sum + row.contact_candidates_with_value, 0),
+      candidates_missing_provenance: report.rows.reduce((sum, row) => sum + row.candidates_missing_provenance, 0),
+      candidate_count_before_filter: report.rows.reduce((sum, row) => sum + row.candidate_count_before_filter, 0),
+      candidate_count_after_filter: report.rows.reduce((sum, row) => sum + row.candidate_count_after_filter, 0),
       totalInserted: report.rows.reduce((sum, row) => sum + row.inserted, 0),
       totalSkipped: report.rows.reduce((sum, row) => sum + row.skipped, 0),
       includeLines: args.includeLines,
