@@ -430,7 +430,7 @@ export const registryRouter = router({
             jurisdiction: r.jurisdiction,
             phone: null,
             website: r.website,
-            description: r.servicesProvided || '',
+            description: r.services_provided || '',
             availability: "Check website",
           })),
         };

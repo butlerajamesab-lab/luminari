@@ -400,7 +400,7 @@ const registryRouter = router({
   validate: publicProcedure
     .input(z.object({ stateCode: z.string().length(2) }))
     .query(async ({ input }) => {
-      const manifestResult = validateManifestRegistry(input.stateCode.toUpperCase());
+      const manifestResult = validate_manifest_registry(input.stateCode.toUpperCase());
       const compilerResult = validateCompiledRegistry(input.stateCode.toUpperCase());
       return { manifest: manifestResult, layers: compilerResult };
     }),

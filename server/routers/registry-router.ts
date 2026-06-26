@@ -23,22 +23,22 @@ import { pool } from "../db";
 
 export const registryRouter = router({
   listJurisdictions: publicProcedure.query(async () => {
-    return registryDb.listJurisdictions();
+    return registry_db.listJurisdictions();
   }),
 
   getJurisdiction: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
-      const jurisdiction = await registryDb.getJurisdiction(input.id);
+      const jurisdiction = await registry_db.getJurisdiction(input.id);
       if (!jurisdiction) return null;
       // Enrich with related data
-      const programs = await registryDb.listPrograms(input.id);
-      const alerts = await registryDb.listPolicyAlerts(input.id);
-      const workflows = await registryDb.listWorkflows(input.id);
-      const oversight = await registryDb.listOversightBodies(input.id);
-      const signals = await registryDb.getSignals(input.id);
-      const traceability = await registryDb.getSourceTraceability(input.id);
-      const categories = await registryDb.getProgramCategories(input.id);
+      const programs = await registry_db.listPrograms(input.id);
+      const alerts = await registry_db.listPolicyAlerts(input.id);
+      const workflows = await registry_db.listWorkflows(input.id);
+      const oversight = await registry_db.listOversightBodies(input.id);
+      const signals = await registry_db.getSignals(input.id);
+      const traceability = await registry_db.getSourceTraceability(input.id);
+      const categories = await registry_db.getProgramCategories(input.id);
       return {
         ...jurisdiction,
         programs,
@@ -57,7 +57,7 @@ export const registryRouter = router({
       category: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
-      return registryDb.listPrograms(input?.jurisdictionId, input?.category);
+      return registry_db.listPrograms(input?.jurisdictionId, input?.category);
     }),
 
   /**
@@ -261,7 +261,7 @@ export const registryRouter = router({
       jurisdictionId: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
-      return registryDb.listPolicyAlerts(input?.jurisdictionId);
+      return registry_db.listPolicyAlerts(input?.jurisdictionId);
     }),
 
   listWorkflows: publicProcedure
@@ -269,7 +269,7 @@ export const registryRouter = router({
       jurisdictionId: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
-      return registryDb.listWorkflows(input?.jurisdictionId);
+      return registry_db.listWorkflows(input?.jurisdictionId);
     }),
 
   listOversightBodies: publicProcedure
@@ -277,7 +277,7 @@ export const registryRouter = router({
       jurisdictionId: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
-      return registryDb.listOversightBodies(input?.jurisdictionId);
+      return registry_db.listOversightBodies(input?.jurisdictionId);
     }),
 
   /**
@@ -334,11 +334,11 @@ export const registryRouter = router({
       signalType: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
-      return registryDb.getSignals(input?.jurisdictionId, input?.signalType);
+      return registry_db.getSignals(input?.jurisdictionId, input?.signalType);
     }),
 
   getCounts: publicProcedure.query(async () => {
-    return registryDb.getCounts();
+    return registry_db.getCounts();
   }),
 });
 

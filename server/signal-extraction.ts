@@ -247,7 +247,7 @@ function extractLegalReferences(text: string): { statutes: string[]; violations:
  */
 function classifyInvolvement(
   entities: { name: string; type: string }[],
-  roles: { entityId: number; entityName: string; role: string; description: string }[],
+  roles: { entityId: number; entity_name: string; role: string; description: string }[],
   text: string
 ): {
   complainants: string[];
@@ -263,7 +263,7 @@ function classifyInvolvement(
   // From explicit roles in entity_roles table
   for (const r of roles) {
     const role = (r.role || "").toLowerCase();
-    const name = r.entityName || "";
+    const name = r.entity_name || "";
     if (!name) continue;
 
     if (/complainant|plaintiff|petitioner|victim|claimant|reporter|filer/.test(role)) {
@@ -469,22 +469,22 @@ export interface SignalExtractionRecord {
  */
 export async function extractSignals(documentId: number, caseId: number): Promise<SignalExtractionRecord> {
   // Fetch Pass 1+2 data from existing tables
-  const [entitiesRows] = await drizzleDb.execute(
+  const [entitiesRows] = await drizzle_db.execute(
     sql`SELECT id, name, type FROM entities WHERE documentId = ${documentId}`
   );
-  const [claimsRows] = await drizzleDb.execute(
+  const [claimsRows] = await drizzle_db.execute(
     sql`SELECT id, claimText, claimType FROM claims WHERE caseId = ${caseId} AND JSON_CONTAINS(entitiesInvolved, CAST(${documentId} AS JSON), '$')`
   );
-  const [flagsRows] = await drizzleDb.execute(
+  const [flagsRows] = await drizzle_db.execute(
     sql`SELECT id, flagType, description FROM signal_flags WHERE documentId = ${documentId}`
   );
-  const [docRow] = await drizzleDb.execute(
+  const [docRow] = await drizzle_db.execute(
     sql`SELECT id, filename, caseId, textContent, createdAt FROM documents WHERE id = ${documentId} LIMIT 1`
   );
-  const [caseRow] = await drizzleDb.execute(
+  const [caseRow] = await drizzle_db.execute(
     sql`SELECT id, name, domain, container FROM cases WHERE id = ${caseId} LIMIT 1`
   );
-  const [rolesRows] = await drizzleDb.execute(
+  const [rolesRows] = await drizzle_db.execute(
     sql`SELECT er.entityId, e.name as entity_name, er.role, er.description 
         FROM entity_roles er 
         JOIN entities e ON e.id = er.entityId 
@@ -593,10 +593,10 @@ export async function extractAndPersist(documentId: number, caseId: number): Pro
   const record = await extractSignals(documentId, caseId);
 
   // Delete existing extraction for this doc (idempotent)
-  await drizzleDb.delete(signalExtractions).where(eq(signalExtractions.docId, documentId));
+  await drizzle_db.delete(signalExtractions).where(eq(signalExtractions.docId, documentId));
 
   // Persist all 11 field groups
-  await drizzleDb.insert(signalExtractions).values({
+  await drizzle_db.insert(signalExtractions).values({
     docId: record.doc_id,
     caseId,
     // Entities
@@ -654,7 +654,7 @@ export async function extractAndPersist(documentId: number, caseId: number): Pro
  * Batch extract all documents in a case.
  */
 export async function extractCase(caseId: number): Promise<{ total: number; extracted: number; errors: number }> {
-  const [rows] = await drizzleDb.execute(
+  const [rows] = await drizzle_db.execute(
     sql`SELECT id FROM documents WHERE caseId = ${caseId} AND status = 'ready'`
   );
   const docs = Array.isArray(rows) ? rows as any[] : [];

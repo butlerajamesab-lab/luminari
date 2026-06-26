@@ -49,7 +49,7 @@ export const conduitRouter = router({
 
     // Total tables in registry
     const [totalTables] = await db.execute(sql`SELECT COUNT(*) as cnt FROM table_registry`);
-    const [totalFields] = await db.execute(sql`SELECT COUNT(*) as cnt FROM field_dictionary`);
+    const [total_fields] = await db.execute(sql`SELECT COUNT(*) as cnt FROM field_dictionary`);
 
     return {
       tables: {
@@ -58,7 +58,7 @@ export const conduitRouter = router({
         by_category: tableRows as any[],
       },
       fields: {
-        total: (totalFields as unknown as Record<string, any>)[0]?.cnt || 0,
+        total: (total_fields as unknown as Record<string, any>)[0]?.cnt || 0,
         stats: (fieldStats as unknown as Record<string, any>)[0] || { total_fields: 0, pk_fields: 0, indexed_fields: 0 },
       },
       drift: {
@@ -102,12 +102,12 @@ export const conduitRouter = router({
     `);
 
     // Enforcement rule summary across recent successful runs
-    const [successRuns] = await db.execute(sql`
+    const [success_runs] = await db.execute(sql`
       SELECT run_id FROM engine_runs WHERE status = 'success' ORDER BY completedAt DESC LIMIT 10
     `);
 
     const ruleResults: any[] = [];
-    for (const r of (successRuns as unknown as Record<string, any>).slice(0, 5)) {
+    for (const r of (success_runs as unknown as Record<string, any>).slice(0, 5)) {
       const enforcement = await enforceAllRules(r.run_id);
       ruleResults.push({
         run_id: r.run_id,
@@ -170,11 +170,11 @@ export const conduitRouter = router({
     // Readiness check: how many snapshots have all runs passing enforcement
     const readySnapshots: any[] = [];
     for (const snap of (snapshots as unknown as Record<string, any>).slice(0, 5)) {
-      if (snap.boundRuns > 0 && snap.successRuns === snap.boundRuns) {
+      if (snap.bound_runs > 0 && snap.success_runs === snap.bound_runs) {
         readySnapshots.push({
           snapshotId: snap.id,
           caseId: snap.caseId,
-          boundRuns: snap.boundRuns,
+          bound_runs: snap.bound_runs,
           ready: true,
         });
       }

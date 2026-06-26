@@ -55,15 +55,15 @@ async function getOrCreateBackboneModule(category: string): Promise<number> {
   const rows = existing as unknown as any[];
   if (rows.length > 0) return rows[0].id;
 
-  const [maxRow] = await db.execute(sql`SELECT MAX(id) as max_id FROM knowledge_modules`);
-  const maxId = ((maxRow as unknown as any[])[0]?.maxId || 0) + 1;
+  const [max_row] = await db.execute(sql`SELECT MAX(id) as max_id FROM knowledge_modules`);
+  const max_id = ((max_row as unknown as any[])[0]?.max_id || 0) + 1;
 
   await db.execute(sql`
     INSERT INTO knowledge_modules (id, moduleName, moduleType, description, version, isActive, createdAt, updatedAt, entryCount)
-    VALUES (${maxId}, ${`backbone_${category}`}, ${"backbone"}, ${`Canonical engine output: ${category}`}, ${"1.0.0"}, 1, ${Date.now()}, ${Date.now()}, 0)
+    VALUES (${max_id}, ${`backbone_${category}`}, ${"backbone"}, ${`Canonical engine output: ${category}`}, ${"1.0.0"}, 1, ${Date.now()}, ${Date.now()}, 0)
   `);
 
-  return maxId;
+  return max_id;
 }
 
 // ─── Source Data Fetcher (canonical tables only) ───

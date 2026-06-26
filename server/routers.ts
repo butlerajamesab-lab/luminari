@@ -2596,7 +2596,7 @@ const snapshotsRouter = router({
       const snapshotFindings = allEnrichedFindings.filter(f => f.snapshotId === input.snapshotId);
 
       // 4. Fetch Phase-2 runs and structured notes for this snapshot
-      const p2Runs = await phase2Db.listPhase2RunsBySnapshot(input.snapshotId);
+      const p2Runs = await phase2_db.listPhase2RunsBySnapshot(input.snapshotId);
       let allStructuredNotes: Array<{
         id: number;
         runId: number;
@@ -2604,7 +2604,7 @@ const snapshotsRouter = router({
         payload: Record<string, unknown>;
         temporalAnchors: string[] | null;
         createdAt: number;
-        temporalOrdering: ReturnType<typeof resolveTemporalOrderForSpine>;
+        temporalOrdering: ReturnType<typeof resolve_temporal_order_for_spine>;
       }> = [];
       let allEvidenceRequirements: Array<{
         id: number;
@@ -2615,16 +2615,16 @@ const snapshotsRouter = router({
       }> = [];
 
       for (const run of p2Runs) {
-        const notes = await phase2Db.listStructuredNotes(run.id);
+        const notes = await phase2_db.listStructuredNotes(run.id);
         const enrichedNotes = notes.map(note => ({
           ...note,
-          temporalOrdering: resolveTemporalOrderForSpine(
+          temporalOrdering: resolve_temporal_order_for_spine(
             Array.isArray(note.temporalAnchors) ? note.temporalAnchors as string[] : [],
           ),
         }));
         allStructuredNotes = allStructuredNotes.concat(enrichedNotes);
 
-        const reqs = await phase2Db.listEvidenceRequirements(run.id);
+        const reqs = await phase2_db.listEvidenceRequirements(run.id);
         allEvidenceRequirements = allEvidenceRequirements.concat(reqs);
       }
 
@@ -2645,7 +2645,7 @@ const snapshotsRouter = router({
 
       // Add temporal findings
       for (const f of snapshotFindings) {
-        const fTemporal = resolveTemporalOrderForSpine(f.temporalAnchors);
+        const fTemporal = resolve_temporal_order_for_spine(f.temporalAnchors);
         if (fTemporal.hasTemporalData && fTemporal.primaryAnchor) {
           chronoItems.push({
             type: 'finding',
@@ -2731,7 +2731,7 @@ const snapshotsRouter = router({
 
       // Non-temporal findings
       for (const f of snapshotFindings) {
-        const fTemporal2 = resolveTemporalOrderForSpine(f.temporalAnchors);
+        const fTemporal2 = resolve_temporal_order_for_spine(f.temporalAnchors);
         if (!fTemporal2.hasTemporalData) {
           structuralItems.push({
             type: f.findingType,
@@ -2873,7 +2873,7 @@ const phase2Router = router({
     .mutation(async ({ ctx, input }) => {
       // Gate enforcement: Phase-2 requires sealed snapshot
       await assertActionAllowed(input.caseId, input.snapshotId, 'runPhase2Analysis');
-      const run = await phase2Db.createPhase2Run(input.caseId, input.snapshotId, ctx.user.id);
+      const run = await phase2_db.createPhase2Run(input.caseId, input.snapshotId, ctx.user.id);
       await db_helpers.logAudit({
         caseId: input.caseId,
         userId: ctx.user.id,
@@ -2889,9 +2889,9 @@ const phase2Router = router({
   getRun: protectedProcedure
     .input(z.object({ runId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const run = await phase2Db.getPhase2Run(input.runId);
+      const run = await phase2_db.getPhase2Run(input.runId);
       if (!run) throw new TRPCError({ code: "NOT_FOUND", message: `Phase-2 run ${input.runId} not found.` });
-      await phase2Db.verifyTenantAccess(run.caseId, ctx.user.id);
+      await phase2_db.verifyTenantAccess(run.caseId, ctx.user.id);
       return run;
     }),
 
@@ -2899,20 +2899,20 @@ const phase2Router = router({
   listRuns: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await phase2Db.verifyTenantAccess(input.caseId, ctx.user.id);
-      return phase2Db.listPhase2Runs(input.caseId);
+      await phase2_db.verifyTenantAccess(input.caseId, ctx.user.id);
+      return phase2_db.listPhase2Runs(input.caseId);
     }),
 
   /** Complete a Phase-2 run (mark as done) */
   completeRun: protectedProcedure
     .input(z.object({ runId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const run = await phase2Db.getPhase2Run(input.runId);
+      const run = await phase2_db.getPhase2Run(input.runId);
       if (!run) throw new TRPCError({ code: "NOT_FOUND", message: `Phase-2 run ${input.runId} not found.` });
-      await phase2Db.verifyTenantAccess(run.caseId, ctx.user.id);
+      await phase2_db.verifyTenantAccess(run.caseId, ctx.user.id);
       // Gate enforcement: Phase-2 requires sealed snapshot
       await assertActionAllowed(run.caseId, run.snapshotId, 'runPhase2Analysis');
-      await phase2Db.completePhase2Run(input.runId);
+      await phase2_db.completePhase2Run(input.runId);
       await db_helpers.logAudit({
         caseId: run.caseId,
         userId: ctx.user.id,
@@ -2927,35 +2927,35 @@ const phase2Router = router({
   addEvidenceRequirement: protectedProcedure
     .input(z.object({ runId: z.number(), payload: z.record(z.string(), z.unknown()) }))
     .mutation(async ({ ctx, input }) => {
-      const run = await phase2Db.getPhase2Run(input.runId);
+      const run = await phase2_db.getPhase2Run(input.runId);
       if (!run) throw new TRPCError({ code: "NOT_FOUND", message: `Phase-2 run ${input.runId} not found.` });
-      await phase2Db.verifyTenantAccess(run.caseId, ctx.user.id);
+      await phase2_db.verifyTenantAccess(run.caseId, ctx.user.id);
       // Gate enforcement: Phase-2 requires sealed snapshot
       await assertActionAllowed(run.caseId, run.snapshotId, 'runPhase2Analysis');
-      return phase2Db.createEvidenceRequirement(input.runId, input.payload);
+      return phase2_db.createEvidenceRequirement(input.runId, input.payload);
     }),
 
   /** Add a structured note artifact to an open run */
   addStructuredNote: protectedProcedure
     .input(z.object({ runId: z.number(), payload: z.record(z.string(), z.unknown()) }))
     .mutation(async ({ ctx, input }) => {
-      const run = await phase2Db.getPhase2Run(input.runId);
+      const run = await phase2_db.getPhase2Run(input.runId);
       if (!run) throw new TRPCError({ code: "NOT_FOUND", message: `Phase-2 run ${input.runId} not found.` });
-      await phase2Db.verifyTenantAccess(run.caseId, ctx.user.id);
+      await phase2_db.verifyTenantAccess(run.caseId, ctx.user.id);
       // Gate enforcement: Phase-2 requires sealed snapshot
       await assertActionAllowed(run.caseId, run.snapshotId, 'runPhase2Analysis');
-      return phase2Db.createStructuredNote(input.runId, input.payload);
+      return phase2_db.createStructuredNote(input.runId, input.payload);
     }),
 
   /** List artifacts for a run */
   listArtifacts: protectedProcedure
     .input(z.object({ runId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const run = await phase2Db.getPhase2Run(input.runId);
+      const run = await phase2_db.getPhase2Run(input.runId);
       if (!run) throw new TRPCError({ code: "NOT_FOUND", message: `Phase-2 run ${input.runId} not found.` });
-      await phase2Db.verifyTenantAccess(run.caseId, ctx.user.id);
-      const evidenceRequirements = await phase2Db.listEvidenceRequirements(input.runId);
-      const structuredNotes = await phase2Db.listStructuredNotes(input.runId);
+      await phase2_db.verifyTenantAccess(run.caseId, ctx.user.id);
+      const evidenceRequirements = await phase2_db.listEvidenceRequirements(input.runId);
+      const structuredNotes = await phase2_db.listStructuredNotes(input.runId);
       const enrichedNotes = structuredNotes.map(note => ({
         ...note,
         temporalOrdering: resolveTemporalOrder(
@@ -3057,10 +3057,10 @@ const phase2Router = router({
   snapshotSummary: protectedProcedure
     .input(z.object({ caseId: z.number(), snapshotId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await phase2Db.verifyTenantAccess(input.caseId, ctx.user.id);
-      await phase2Db.verifySealedSnapshot(input.snapshotId, input.caseId);
-      const summary = await phase2Db.getSnapshotExtractionSummary(input.snapshotId);
-      const metadata = await phase2Db.getSnapshotMetadata(input.snapshotId);
+      await phase2_db.verifyTenantAccess(input.caseId, ctx.user.id);
+      await phase2_db.verifySealedSnapshot(input.snapshotId, input.caseId);
+      const summary = await phase2_db.getSnapshotExtractionSummary(input.snapshotId);
+      const metadata = await phase2_db.getSnapshotMetadata(input.snapshotId);
       return { summary, metadata };
     }),
 });
@@ -3263,7 +3263,7 @@ const invitesRouter = router({
       expires_in_days: z.number().min(1).max(365).default(7),
     }))
     .mutation(async ({ ctx, input }) => {
-      const token = cryptoRandomBytes(32).toString("hex");
+      const token = crypto_random_bytes(32).toString("hex");
       const expires_at = Date.now() + input.expires_in_days * 24 * 60 * 60 * 1000;
       const result = await db_helpers.createAdminInvite({
         token,
@@ -4737,7 +4737,7 @@ const supportMatcherRouter = router({
       total: Number(row?.total || 0),
       active: Number(row?.active || 0),
       domains: Number(row?.domains || 0),
-      resource_types: Number(row?.resourceTypes || 0),
+      resource_types: Number(row?.resource_types || 0),
       states: Number(row?.states || 0),
     };
   }),
@@ -4932,7 +4932,7 @@ export const appRouter = router({
   benefits: benefitsRouter,
   benefitApps: benefitAppsRouter,
   discovery: discoveryRouter,
-  legalRegistry: legalRegistryRouter,
+  legalRegistry: legal_registry_router,
   lighthouse: lighthouseRouter,
   lighthouseLineage: lighthouseLineageRouter,
   lighthousePatterns: lighthousePatternsRouter,
@@ -5053,7 +5053,7 @@ export const appRouter = router({
       return await runIntegrityLockdown(false);
     }),
   }),
-  canonicalRegistry: canonicalRegistryRouter,
+  canonicalRegistry: canonical_registry_router,
   issueReports: issueReportsRouter,
   world: worldRouter,
   canonicalCore: canonicalCoreRouter,

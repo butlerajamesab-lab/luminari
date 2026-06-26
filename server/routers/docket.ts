@@ -98,21 +98,21 @@ export const docketRouter = router({
       offset: z.number().min(0).default(0),
     }).optional())
     .query(async ({ input }) => {
-      return docketDb.listDocketEntries(input);
+      return docket_db.listDocketEntries(input);
     }),
 
   /** Search actors by name across all docket entries */
   searchActors: publicProcedure
     .input(z.object({ term: z.string().min(1) }))
     .query(async ({ input }) => {
-      return docketDb.searchActorsByName(input.term);
+      return docket_db.searchActorsByName(input.term);
     }),
 
   /** Get a single docket entry by ID */
   getById: publicProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const entry = await docketDb.getDocketEntry(input.id);
+      const entry = await docket_db.getDocketEntry(input.id);
       if (!entry) throw new TRPCError({ code: "NOT_FOUND", message: "Docket entry not found" });
       return entry;
     }),
@@ -121,7 +121,7 @@ export const docketRouter = router({
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {
-      const entry = await docketDb.getDocketEntryBySlug(input.slug);
+      const entry = await docket_db.getDocketEntryBySlug(input.slug);
       if (!entry) throw new TRPCError({ code: "NOT_FOUND", message: "Docket entry not found" });
       return entry;
     }),
@@ -130,14 +130,14 @@ export const docketRouter = router({
   getFullAnalysis: publicProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const analysis = await docketDb.getFullDocketAnalysis(input.id);
+      const analysis = await docket_db.getFullDocketAnalysis(input.id);
       if (!analysis) throw new TRPCError({ code: "NOT_FOUND", message: "Docket entry not found" });
       return analysis;
     }),
 
   /** Get docket statistics */
   stats: publicProcedure.query(async () => {
-    return docketDb.getDocketStats();
+    return docket_db.getDocketStats();
   }),
 
   /** Create a new docket entry (admin only) */
@@ -145,7 +145,7 @@ export const docketRouter = router({
     .input(docketEntryInput)
     .mutation(async ({ input }) => {
       const now = Date.now();
-      const id = await docketDb.createDocketEntry({
+      const id = await docket_db.createDocketEntry({
         ...input,
         createdAt: now,
         updatedAt: now,
@@ -158,9 +158,9 @@ export const docketRouter = router({
     .input(z.object({ id: z.number() }).merge(docketEntryInput.partial()))
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
-      const existing = await docketDb.getDocketEntry(id);
+      const existing = await docket_db.getDocketEntry(id);
       if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
-      await docketDb.updateDocketEntry(id, data);
+      await docket_db.updateDocketEntry(id, data);
       return { success: true };
     }),
 
@@ -176,42 +176,42 @@ export const docketRouter = router({
       const now = Date.now();
 
       // Check if slug already exists
-      const existing = await docketDb.getDocketEntryBySlug(input.entry.slug);
+      const existing = await docket_db.getDocketEntryBySlug(input.entry.slug);
       if (existing) {
         // Update existing entry
-        await docketDb.updateDocketEntry(existing.id, input.entry);
-        await docketDb.deleteActorsForDocket(existing.id);
-        await docketDb.deleteImpactsForDocket(existing.id);
-        await docketDb.deleteSourcesForDocket(existing.id);
+        await docket_db.updateDocketEntry(existing.id, input.entry);
+        await docket_db.deleteActorsForDocket(existing.id);
+        await docket_db.deleteImpactsForDocket(existing.id);
+        await docket_db.deleteSourcesForDocket(existing.id);
 
         if (input.actors.length > 0) {
-          await docketDb.bulkCreateActors(input.actors.map(a => ({ ...a, docketId: existing.id, createdAt: now })));
+          await docket_db.bulkCreateActors(input.actors.map(a => ({ ...a, docketId: existing.id, createdAt: now })));
         }
         if (input.impacts.length > 0) {
-          await docketDb.bulkCreateImpacts(input.impacts.map(i => ({ ...i, docketId: existing.id, createdAt: now })));
+          await docket_db.bulkCreateImpacts(input.impacts.map(i => ({ ...i, docketId: existing.id, createdAt: now })));
         }
         if (input.sources.length > 0) {
-          await docketDb.bulkCreateSources(input.sources.map(s => ({ ...s, docketId: existing.id, createdAt: now })));
+          await docket_db.bulkCreateSources(input.sources.map(s => ({ ...s, docketId: existing.id, createdAt: now })));
         }
 
         return { id: existing.id, updated: true };
       }
 
       // Create new entry
-      const id = await docketDb.createDocketEntry({
+      const id = await docket_db.createDocketEntry({
         ...input.entry,
         createdAt: now,
         updatedAt: now,
       });
 
       if (input.actors.length > 0) {
-        await docketDb.bulkCreateActors(input.actors.map(a => ({ ...a, docketId: id, createdAt: now })));
+        await docket_db.bulkCreateActors(input.actors.map(a => ({ ...a, docketId: id, createdAt: now })));
       }
       if (input.impacts.length > 0) {
-        await docketDb.bulkCreateImpacts(input.impacts.map(i => ({ ...i, docketId: id, createdAt: now })));
+        await docket_db.bulkCreateImpacts(input.impacts.map(i => ({ ...i, docketId: id, createdAt: now })));
       }
       if (input.sources.length > 0) {
-        await docketDb.bulkCreateSources(input.sources.map(s => ({ ...s, docketId: id, createdAt: now })));
+        await docket_db.bulkCreateSources(input.sources.map(s => ({ ...s, docketId: id, createdAt: now })));
       }
 
       return { id, updated: false };
@@ -223,14 +223,14 @@ export const docketRouter = router({
     list: publicProcedure
       .input(z.object({ docketId: z.number() }))
       .query(async ({ input }) => {
-        return docketDb.listActorsForDocket(input.docketId);
+        return docket_db.listActorsForDocket(input.docketId);
       }),
 
     create: adminProcedure
       .input(z.object({ docketId: z.number() }).merge(actorInput))
       .mutation(async ({ input }) => {
         const { docketId, ...data } = input;
-        const id = await docketDb.createDocketActor({ ...data, docketId, createdAt: Date.now() });
+        const id = await docket_db.createDocketActor({ ...data, docketId, createdAt: Date.now() });
         return { id };
       }),
   }),
@@ -241,14 +241,14 @@ export const docketRouter = router({
     list: publicProcedure
       .input(z.object({ docketId: z.number() }))
       .query(async ({ input }) => {
-        return docketDb.listImpactsForDocket(input.docketId);
+        return docket_db.listImpactsForDocket(input.docketId);
       }),
 
     create: adminProcedure
       .input(z.object({ docketId: z.number() }).merge(impactInput))
       .mutation(async ({ input }) => {
         const { docketId, ...data } = input;
-        const id = await docketDb.createDocketImpact({ ...data, docketId, createdAt: Date.now() });
+        const id = await docket_db.createDocketImpact({ ...data, docketId, createdAt: Date.now() });
         return { id };
       }),
   }),
@@ -259,14 +259,14 @@ export const docketRouter = router({
     list: publicProcedure
       .input(z.object({ docketId: z.number() }))
       .query(async ({ input }) => {
-        return docketDb.listSourcesForDocket(input.docketId);
+        return docket_db.listSourcesForDocket(input.docketId);
       }),
 
     create: adminProcedure
       .input(z.object({ docketId: z.number() }).merge(sourceInput))
       .mutation(async ({ input }) => {
         const { docketId, ...data } = input;
-        const id = await docketDb.createDocketSource({ ...data, docketId, createdAt: Date.now() });
+        const id = await docket_db.createDocketSource({ ...data, docketId, createdAt: Date.now() });
         return { id };
       }),
   }),
@@ -287,7 +287,7 @@ export const docketRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const now = Date.now();
-        const id = await docketDb.createDocketSubmission({
+        const id = await docket_db.createDocketSubmission({
           userId: ctx.user.id,
           userName: ctx.user.name ?? undefined,
           userEmail: ctx.user.email ?? undefined,
@@ -320,7 +320,7 @@ export const docketRouter = router({
         offset: z.number().min(0).default(0),
       }).optional())
       .query(async ({ ctx, input }) => {
-        return docketDb.listDocketSubmissions({
+        return docket_db.listDocketSubmissions({
           userId: ctx.user.id,
           limit: input?.limit,
           offset: input?.offset,
@@ -335,7 +335,7 @@ export const docketRouter = router({
         offset: z.number().min(0).default(0),
       }).optional())
       .query(async ({ input }) => {
-        return docketDb.listDocketSubmissions(input);
+        return docket_db.listDocketSubmissions(input);
       }),
 
     /** Update submission status (admin only) */
@@ -347,9 +347,9 @@ export const docketRouter = router({
         docketEntryId: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
-        const existing = await docketDb.getDocketSubmission(input.id);
+        const existing = await docket_db.getDocketSubmission(input.id);
         if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
-        await docketDb.updateDocketSubmission(input.id, {
+        await docket_db.updateDocketSubmission(input.id, {
           status: input.status,
           adminNotes: input.adminNotes,
           docketEntryId: input.docketEntryId,

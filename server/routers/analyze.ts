@@ -133,7 +133,7 @@ export const analyzeRouter = router({
         `SELECT COUNT(*) as count FROM claims WHERE case_id = $1`,
         [input.caseId]
       );
-      const { rows: findingCount } = await getPool().query(
+      const { rows: finding_count } = await getPool().query(
         `SELECT COUNT(*) as count FROM findings WHERE case_id = $1`,
         [input.caseId]
       );
@@ -148,7 +148,7 @@ export const analyzeRouter = router({
 
       return {
         claim_elements: claimCount[0]?.count || 0,
-        findings: findingCount[0]?.count || 0,
+        findings: finding_count[0]?.count || 0,
         signals: signalCount[0]?.count || 0,
         documents: documentCount[0]?.count || 0,
       };

@@ -249,7 +249,7 @@ export async function finalizePipelineRun(
  */
 export async function getCanonicalCoreHealth(): Promise<{
   tables: Array<{ table: string; category: string; count: number }>;
-  totalRecords: number;
+  total_records: number;
   populatedTables: number;
   emptyTables: number;
 }> {
@@ -321,7 +321,7 @@ export async function getCanonicalCoreHealth(): Promise<{
   ];
 
   const results: Array<{ table: string; category: string; count: number }> = [];
-  let totalRecords = 0;
+  let total_records = 0;
   let populatedTables = 0;
   let emptyTables = 0;
 
@@ -331,7 +331,7 @@ export async function getCanonicalCoreHealth(): Promise<{
       const rows = (result as any).rows ?? result;
       const count = Number(rows?.[0]?.c) || 0;
       results.push({ table, category, count });
-      totalRecords += count;
+      total_records += count;
       if (count > 0) populatedTables++;
       else emptyTables++;
     } catch {
@@ -340,7 +340,7 @@ export async function getCanonicalCoreHealth(): Promise<{
     }
   }
 
-  return { tables: results, totalRecords, populatedTables, emptyTables };
+  return { tables: results, total_records, populatedTables, emptyTables };
 }
 
 /**
@@ -351,22 +351,22 @@ export async function getPipelineCompletionState(): Promise<{
   recentEvents: Array<{
     id: number;
     eventType: string;
-    pipelineId: string;
+    pipeline_id: string;
     payload: any;
     createdAt: number;
   }>;
   engineRunSummary: Array<{
-    engineName: string;
-    totalRuns: number;
-    lastRun: number | null;
-    lastStatus: string | null;
+    engine_name: string;
+    total_runs: number;
+    last_run: number | null;
+    last_status: string | null;
   }>;
   ingestRunSummary: Array<{
-    datasetId: string;
-    totalRuns: number;
-    lastRun: number | null;
-    lastStatus: string | null;
-    totalRecords: number;
+    dataset_id: string;
+    total_runs: number;
+    last_run: number | null;
+    last_status: string | null;
+    total_records: number;
   }>;
 }> {
   // Recent pipeline events — actual columns: id, userId, pipelineType, eventType, stateCode, createdAt
@@ -403,22 +403,22 @@ export async function getPipelineCompletionState(): Promise<{
     recentEvents: (eventRows as unknown as any[]).map((r: any) => ({
       id: r.id,
       eventType: r.eventType,
-      pipelineId: r.pipelineId || r.pipelineType || '',
+      pipeline_id: r.pipeline_id || r.pipelineType || '',
       payload: r.payload ? (typeof r.payload === "string" ? JSON.parse(r.payload) : r.payload) : { stateCode: r.stateCode },
       createdAt: Number(r.createdAt),
     })),
     engineRunSummary: (engineRows as unknown as any[]).map((r: any) => ({
-      engineName: r.engineName,
-      totalRuns: Number(r.totalRuns),
-      lastRun: r.lastRun ? Number(r.lastRun) : null,
-      lastStatus: r.lastStatus,
+      engine_name: r.engine_name,
+      total_runs: Number(r.total_runs),
+      last_run: r.last_run ? Number(r.last_run) : null,
+      last_status: r.last_status,
     })),
     ingestRunSummary: (ingestRows as unknown as any[]).map((r: any) => ({
-      datasetId: r.datasetId,
-      totalRuns: Number(r.totalRuns),
-      lastRun: r.lastRun ? Number(r.lastRun) : null,
-      lastStatus: r.lastStatus,
-      totalRecords: Number(r.totalRecords) || 0,
+      dataset_id: r.dataset_id,
+      total_runs: Number(r.total_runs),
+      last_run: r.last_run ? Number(r.last_run) : null,
+      last_status: r.last_status,
+      total_records: Number(r.total_records) || 0,
     })),
   };
 }
