@@ -1048,7 +1048,7 @@ function registry_program_values(row: any, columns: Set<string>) {
     contact_email_norm: normal_email(row),
     contact_phone_norm: normal_phone(row),
     contact_website_norm: normal_website(row),
-    created_at: Date.now(),
+    created_at: new Date().toISOString(),
   };
   return Object.fromEntries(Object.entries(values).filter(([logical_name, value]) => map[logical_name] && value !== null && value !== undefined && value !== ""));
 }
