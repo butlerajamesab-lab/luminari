@@ -54,6 +54,29 @@ const source_mappings = [
   { source_name: "accountability_routes_full.txt", targets: ["accountability_routes", "registry_oversight_bodies", "escalation_routes"] },
 ];
 
+
+const ingestion_lane_tables = [
+  { table_name: "corpus_import_queue", lane_stage: "staged", read_or_write: "read_write", code_file: "scripts/stage-registry-bucket-files.mjs; scripts/extract-docx-corpus-queue.mjs; server/engines/ingestion_control.ts", function_or_script: "stage_registry_bucket_files; extract_docx_corpus_queue; list_corpus_import_queue", fields_expected: ["source_name", "source_type", "target_hint", "import_status", "record_count_estimate"], fields_written: ["source_name", "source_type", "source_ext", "storage_bucket", "storage_path", "target_hint", "payload", "raw_text", "import_status"], camelcase_findings: [], fix_status: "owned_output_snake_case" },
+  { table_name: "registry_entity_extraction_v4", lane_stage: "candidate", read_or_write: "read_write", code_file: "scripts/normalize-state-registry-docx-candidates.mjs; server/engines/ingestion_control.ts", function_or_script: "normalize_state_registry_docx_candidates; create_candidates_from_ready_queue", fields_expected: ["source_file", "jurisdiction", "extraction_timestamp", "extraction_version", "program_id", "name", "content_hash"], fields_written: ["source_file", "jurisdiction", "extraction_timestamp", "extraction_version", "program_id", "name", "promotion_ready", "forensic_provenance", "content_hash"], camelcase_findings: [], fix_status: "owned_output_snake_case" },
+  { table_name: "conveyor_runs", lane_stage: "accounting", read_or_write: "read_write", code_file: "server/engines/ingestion_control.ts", function_or_script: "promote_registry_entity_candidates_apply", fields_expected: ["run_id", "lane", "action_type", "is_dry_run", "status", "candidate_count"], fields_written: ["run_id", "lane", "action_type", "is_dry_run", "status", "candidate_count", "finished_at", "metadata"], camelcase_findings: [], fix_status: "owned_output_snake_case" },
+  { table_name: "conveyor_promotion_accounting", lane_stage: "accounting", read_or_write: "write", code_file: "server/engines/ingestion_control.ts", function_or_script: "insert_accounting_row", fields_expected: ["run_id", "lane", "action_type", "is_dry_run", "source_record_id", "status", "metadata"], fields_written: ["run_id", "lane", "action_type", "is_dry_run", "source_record_id", "status", "metadata"], camelcase_findings: [], fix_status: "owned_output_snake_case" },
+  { table_name: "luminari_resource_entities", lane_stage: "canonical", read_or_write: "read_write", code_file: "server/engines/ingestion_control.ts", function_or_script: "insert_resource_entity", fields_expected: ["source_table", "source_pk", "resource_name", "metadata"], fields_written: ["canonical_id", "source_table", "source_pk", "resource_name", "metadata", "verification_status", "promotion_status"], camelcase_findings: [], fix_status: "owned_output_snake_case" },
+  { table_name: "luminari_resource_contact_points", lane_stage: "canonical", read_or_write: "write", code_file: "server/engines/ingestion_control.ts", function_or_script: "insert_resource_entity", fields_expected: ["resource_entity_id", "canonical_id", "contact_type", "contact_value", "metadata"], fields_written: ["resource_entity_id", "canonical_id", "contact_type", "contact_value", "label", "is_primary", "contact_quality", "source_table", "source_pk", "source_hash", "metadata"], camelcase_findings: [], fix_status: "owned_output_snake_case" },
+  { table_name: "registry_programs", lane_stage: "canonical", read_or_write: "read_write", code_file: "server/engines/ingestion_control.ts", function_or_script: "upsert_registry_program", fields_expected: ["id", "jurisdiction_id", "name"], fields_written: ["jurisdiction_id", "name"], camelcase_findings: [], fix_status: "owned_output_snake_case" },
+];
+
+async function build_ingestion_lane_table_report(pool) {
+  const rows = [];
+  for (const table of ingestion_lane_tables) {
+    rows.push({
+      ...table,
+      table: `public.${table.table_name}`,
+      row_count: (await safe_count(pool, table.table_name)).count,
+    });
+  }
+  return rows;
+}
+
 const batch_source_names = [
   "batch_009.zip",
   "batch_011.zip",
@@ -64,8 +87,8 @@ const batch_source_names = [
 
 function read_source_count(file_path, selector) {
   const basename = path.basename(file_path);
-  const ext = path.extname(file_path)["to" + "Lower" + "Case"]();
-  const text = fs["read" + "File" + "Sync"](file_path, "utf8");
+  const ext = path.extname(file_path).toLowerCase();
+  const text = fs.readFileSync(file_path, "utf8");
   if (ext === ".json") {
     const parsed = JSON.parse(text);
     return extract_json_record_count(parsed, selector);
@@ -74,7 +97,7 @@ function read_source_count(file_path, selector) {
   if (ext === ".csv") return count_csv_records(text);
   if (ext === ".txt") return text.split(/\r?\n/).filter((line) => line.trim()).length;
   if (ext === ".sql") return (text.match(/\binsert\s+into\b/gi) ?? []).length;
-  if (basename["ends" + "With"](".zip")) return null;
+  if (basename.endsWith(".zip")) return null;
   return null;
 }
 
@@ -88,18 +111,18 @@ function find_local_staging_sql_files(data_dirs) {
     if (depth < 0) return;
     let entries = [];
     try {
-      entries = fs["readdir" + "Sync"](dir, { ["with" + "File" + "Types"]: true });
+      entries = fs.readdirSync(dir, { withFileTypes: true });
     } catch {
       return;
     }
     for (const entry of entries) {
       if (["node_modules", ".git", "dist"].includes(entry.name)) continue;
       const full = path.join(dir, entry.name);
-      if (entry["is" + "Directory"]()) {
+      if (entry.isDirectory()) {
         scan(full, depth - 1);
         continue;
       }
-      if (!entry.name["ends" + "With"](".sql")) continue;
+      if (!entry.name.endsWith(".sql")) continue;
       if (!/(cream|substrate|import_queue|corpus)/i.test(entry.name) && !/data\/import_queue|scripts\/sql/.test(full)) continue;
       if (seen.has(full)) continue;
       seen.add(full);
@@ -115,7 +138,7 @@ function read_local_staging_sql_rows(data_dirs) {
   for (const file of files) {
     const relative_path = path.relative(repo_root, file);
     try {
-      const text = fs["read" + "File" + "Sync"](file, "utf8");
+      const text = fs.readFileSync(file, "utf8");
       const parsed_rows = extract_corpus_import_queue_rows_from_sql(text, relative_path);
       const raw_insert_count = (text.match(/insert\s+into\s+public\.corpus_import_queue/gi) ?? []).length;
       const parse_error_count = parsed_rows.filter((row) => row.import_status === "parse_error").length;
@@ -157,7 +180,7 @@ async function read_queue_rows(pool) {
   const columns = await get_table_columns(pool, "corpus_import_queue");
   const result = await pool.query(`select * from public.corpus_import_queue order by source_name`);
   const display_columns = ["source_name", "source_type", "target_hint", "record_count_estimate", "byte_size", "import_status"].filter((column) => columns.includes(column));
-  const display_rows = result.rows.map((row) => Object["from" + "Entries"](display_columns.map((column) => [column, row[column]])));
+  const display_rows = result.rows.map((row) => Object.fromEntries(display_columns.map((column) => [column, row[column]])));
   return { exists, rows: result.rows, display_rows, columns };
 }
 
@@ -165,10 +188,10 @@ function estimate_queue_record_count(row) {
   const explicit = read_normalized_value(row, "record_count_estimate", ["record", "Count", "Estimate"]) ?? row.record_count;
   if (explicit !== undefined && explicit !== null && explicit !== "") return Number(explicit);
   const payload = row.payload ?? row.source_payload ?? row.raw_payload ?? row.content ?? row.body;
-  if (Array["is" + "Array"](payload)) return payload.length;
+  if (Array.isArray(payload)) return payload.length;
   if (payload && typeof payload === "object") {
     for (const key of ["statutes", "weak_joints", "enforcement_records_state", "records", "items", "data"]) {
-      if (Array["is" + "Array"](payload[key])) return payload[key].length;
+      if (Array.isArray(payload[key])) return payload[key].length;
     }
     return Object.keys(payload).length;
   }
@@ -201,8 +224,8 @@ function add_count(map, key, count) {
 function transform_disposition(row) {
   const source_name = normalize_source_name(row.source_name);
   const payload = row.payload ?? {};
-  const target_hint = String(row.target_hint ?? "")["to" + "Lower" + "Case"]();
-  const source_type = String(row.source_type ?? "")["to" + "Lower" + "Case"]();
+  const target_hint = String(row.target_hint ?? "").toLowerCase();
+  const source_type = String(row.source_type ?? "").toLowerCase();
   const domains = payload.domains ?? payload.domain_tags ?? payload.oversight_domains ?? payload.benefit_categories ?? [];
   const raw_payload_text = payload.raw_text ?? row.raw_text;
   const inference_values = [
@@ -227,9 +250,9 @@ function transform_disposition(row) {
     target_hint,
   ];
   const contexts = infer_pipeline_context(...inference_values);
-  const domain_tags = Array["is" + "Array"](domains) && domains.length ? domains : infer_domain_tags(...inference_values);
+  const domain_tags = Array.isArray(domains) && domains.length ? domains : infer_domain_tags(...inference_values);
 
-  if (!source_name["starts" + "With"]("cream:") && !target_hint.includes("cream of crop")) {
+  if (!source_name.startsWith("cream:") && !target_hint.includes("cream of crop")) {
     return { ready_for_canonical_import: false, requires_transformation: true, reason: "not_cream_starter_row", pipeline_context: contexts, domain_tags: domain_tags };
   }
 
@@ -265,7 +288,7 @@ function transform_disposition(row) {
     return { ready_for_canonical_import: Boolean(payload.full_entity_name && payload.record_type === "government_benefit_program"), requires_transformation: true, transform_profile: "government_benefit_payload_to_public_government_benefits_registry", reason: "benefit registry payload must normalize official source URLs, related statutes, workflow deadlines, and escalation pathways before canonical import", pipeline_context: contexts, domain_tags: domain_tags };
   }
   if (/workflow_registry\.jsonl/.test(source_name)) {
-    return { ready_for_canonical_import: Boolean(payload.workflow_uuid && payload.workflow_name && Array["is" + "Array"](payload.steps)), requires_transformation: true, transform_profile: "workflow_payload_to_public_workflow_registry", reason: "workflow payload requires target-table fit review and step/deadline normalization before canonical import", pipeline_context: contexts, domain_tags: domain_tags };
+    return { ready_for_canonical_import: Boolean(payload.workflow_uuid && payload.workflow_name && Array.isArray(payload.steps)), requires_transformation: true, transform_profile: "workflow_payload_to_public_workflow_registry", reason: "workflow payload requires target-table fit review and step/deadline normalization before canonical import", pipeline_context: contexts, domain_tags: domain_tags };
   }
   if (/escalation_registry\.jsonl/.test(source_name)) {
     return { ready_for_canonical_import: Boolean(payload.escalation_uuid && payload.pathway_name), requires_transformation: true, transform_profile: "escalation_payload_to_public_escalation_registry", reason: "escalation pathway payload must normalize destination entities and escalation steps before canonical import", pipeline_context: contexts, domain_tags: domain_tags };
@@ -293,12 +316,12 @@ async function read_staged_candidate_edges(pool) {
     current.count += 1;
     acc.set(key, current);
     return acc;
-  }, new Map()).values()].sort((a, b) => b.count - a.count || a.from_type["locale" + "Compare"](b.from_type));
+  }, new Map()).values()].sort((a, b) => b.count - a.count || a.from_type.localeCompare(b.from_type));
 
   const classify = (row) => {
     const confidence = Number(row.confidence ?? 0);
-    const approved = ["approved", "ready_for_promotion", "promote"].includes(String(row.review_status ?? "")["to" + "Lower" + "Case"]());
-    const strong = String(row.strength ?? "")["to" + "Lower" + "Case"]() === "strong";
+    const approved = ["approved", "ready_for_promotion", "promote"].includes(String(row.review_status ?? "").toLowerCase());
+    const strong = String(row.strength ?? "").toLowerCase() === "strong";
     return { ...row, promotion_blockers: [
       approved ? null : "review_status_not_approved",
       strong ? null : "strength_not_strong",
@@ -388,6 +411,8 @@ async function main() {
     });
   }
 
+  const ingestion_lane_table_report = await build_ingestion_lane_table_report(pool);
+
   const canonical_counts = [];
   for (const table of target_tables_inspected) {
     const table_name = table.split(".")[1];
@@ -396,7 +421,7 @@ async function main() {
 
   const output = {
     dry_run: read_normalized_value(args, "dry_run", ["dry", "Run"]),
-    generated_at: new Date()["to" + "ISO" + "String"](),
+    generated_at: new Date().toISOString(),
     database_status,
     queue: {
       exists: queue.exists,
@@ -404,13 +429,13 @@ async function main() {
       database_row_count: queue.rows.length,
       local_sql_row_count: local_staging_sql.rows.length,
       rows: [...(queue.display_rows ?? []), ...local_staging_sql.rows.map((row) => ({ source_name: row.source_name, source_type: row.source_type, target_hint: row.target_hint, record_count_estimate: row.record_count_estimate, import_status: row.import_status, local_sql_source: row._local_sql_source }))],
-      payload_record_counts: Object["from" + "Entries"](queue_counts_by_source),
-      canonical_payload_record_counts: Object["from" + "Entries"](queue_counts_by_canonical_source),
+      payload_record_counts: Object.fromEntries(queue_counts_by_source),
+      canonical_payload_record_counts: Object.fromEntries(queue_counts_by_canonical_source),
     },
     local_staging_sql: local_staging_sql.reports,
     cream_substrate: {
-      staged_record_count: staged_queue_rows.filter((row) => normalize_source_name(row.source_name)["starts" + "With"]("cream:")).reduce((sum, row) => sum + (estimate_queue_record_count(row) ?? 0), 0),
-      staged_rows: staged_queue_rows.filter((row) => normalize_source_name(row.source_name)["starts" + "With"]("cream:")).map((row) => ({
+      staged_record_count: staged_queue_rows.filter((row) => normalize_source_name(row.source_name).startsWith("cream:")).reduce((sum, row) => sum + (estimate_queue_record_count(row) ?? 0), 0),
+      staged_rows: staged_queue_rows.filter((row) => normalize_source_name(row.source_name).startsWith("cream:")).map((row) => ({
         source_name: row.source_name,
         source_type: row.source_type,
         import_status: row.import_status,
@@ -430,6 +455,7 @@ async function main() {
     },
     data_directories_searched: data_dirs.map((dir) => path.relative(repo_root, dir) || "."),
     target_tables_inspected: [...target_tables_inspected].sort(),
+    ingestion_lane_table_report,
     canonical_counts,
     source_comparisons: rows,
     dry_run_import_plan: rows
@@ -452,8 +478,9 @@ async function main() {
     status: row.status,
   }));
   console.table(table_rows);
-  console.log(`\n${"Queue"} rows: ${queue.exists ? queue.rows.length : "corpus_import_queue missing"}; local SQL queue rows: ${local_staging_sql.rows.length}`);
+  console.log(`\nQueue rows: ${queue.exists ? queue.rows.length : "corpus_import_queue missing"}; local SQL queue rows: ${local_staging_sql.rows.length}`);
   console.log(`Cream staged records: ${output.cream_substrate.staged_record_count}`);
+  console.table(ingestion_lane_table_report.map((row) => ({ lane_stage: row.lane_stage, table_name: row.table_name, read_or_write: row.read_or_write, row_count: row.row_count ?? "unavailable", fix_status: row.fix_status })));
   console.table(output.staged_candidate_edges.grouped_by_from_edge_to_strength);
   console.log(JSON.stringify(output, null, 2));
 
@@ -462,5 +489,5 @@ async function main() {
 
 main().catch(async (error) => {
   console.error(error);
-  process["exit" + "Code"] = 1;
+  process.exitCode = 1;
 });

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import * as node_url from "node:url";
-const file_url_to_path = node_url["file" + "URL" + "To" + "Path"];
+const file_url_to_path = node_url.fileURLToPath;
 import { Pool } from "pg";
 
 const __filename = file_url_to_path(import.meta.url);
@@ -34,9 +34,9 @@ export function parse_args(argv = process.argv.slice(2)) {
     const arg = argv[i];
     if (arg === "--dry-run") args.dry_run = true;
     else if (arg === "--data-dir") args.data_dir = argv[++i];
-    else if (arg["starts" + "With"]("--data-dir=")) args.data_dir = arg.slice("--data-dir=".length);
+    else if (arg.startsWith("--data-dir=")) args.data_dir = arg.slice("--data-dir=".length);
     else if (arg === "--out-dir") args.out_dir = argv[++i];
-    else if (arg["starts" + "With"]("--out-dir=")) args.out_dir = arg.slice("--out-dir=".length);
+    else if (arg.startsWith("--out-dir=")) args.out_dir = arg.slice("--out-dir=".length);
     else if (arg === "--json") args.json_only = true;
   }
   return args;
@@ -48,9 +48,9 @@ export function create_pool(label = "corpus-audit") {
     return { pool: null, database_status: "DATABASE_URL is not configured; database audit sections will be marked unavailable." };
   }
   const pool = new Pool({
-    connection_string,
-    connection_timeout_millis: 10000,
-    ssl: { reject_unauthorized: false },
+    connectionString: connection_string,
+    connectionTimeoutMillis: 10000,
+    ssl: { rejectUnauthorized: false },
     max: 3,
   });
   pool.on("error", (err) => console.error(`[${label}] unexpected postgres pool error`, err));
@@ -90,7 +90,7 @@ export async function safe_count(pool, table_name) {
 }
 
 export function quote_ident(identifier) {
-  return `"${String(identifier)["replace" + "All"]('"', '""')}"`;
+  return `"${String(identifier).replaceAll('"', '""')}"`;
 }
 
 export function normalize_text(value) {
@@ -104,19 +104,19 @@ export function normalize_text(value) {
 }
 
 export function normalize_name(value) {
-  return normalize_text(value)["to" + "Lower" + "Case"]().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+  return normalize_text(value).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
 }
 
 
 export function as_array(value) {
   if (value === null || value === undefined) return [];
-  if (Array["is" + "Array"](value)) return value;
+  if (Array.isArray(value)) return value;
   return [value];
 }
 
 export function normalize_identifier(value) {
   return normalize_text(value)
-    ["to" + "Lower" + "Case"]()
+    .toLowerCase()
     .replace(/[§–—-]/g, " ")
     .replace(/[^a-z0-9]+/g, " ")
     .trim()
@@ -141,10 +141,10 @@ export function unique_by(items, key_fn) {
 
 export function extract_json_record_count(parsed, selector) {
   const selected = select_path(parsed, selector);
-  if (Array["is" + "Array"](selected)) return selected.length;
+  if (Array.isArray(selected)) return selected.length;
   if (selected && typeof selected === "object") {
-    if (Array["is" + "Array"](selected.records)) return selected.records.length;
-    if (Array["is" + "Array"](selected.items)) return selected.items.length;
+    if (Array.isArray(selected.records)) return selected.records.length;
+    if (Array.isArray(selected.items)) return selected.items.length;
     return Object.keys(selected).length;
   }
   return selected === undefined ? null : 1;
@@ -156,7 +156,7 @@ export function select_path(value, selector) {
 }
 
 export function count_jsonl_records(text) {
-  return text.split(/\r?\n/).filter((line) => line.trim() && !line.trim()["starts" + "With"]("--")).length;
+  return text.split(/\r?\n/).filter((line) => line.trim() && !line.trim().startsWith("--")).length;
 }
 
 export function count_csv_records(text) {
@@ -176,12 +176,12 @@ export function parse_registry_bucket_names(env = process.env) {
 }
 
 export function detect_storage_file_extension(storage_path) {
-  const ext = path.extname(String(storage_path ?? ""))["to" + "Lower" + "Case"]();
+  const ext = path.extname(String(storage_path ?? "")).toLowerCase();
   return ext || "unknown";
 }
 
 export function storage_mode_for_extension(source_ext) {
-  const ext = String(source_ext ?? "")["to" + "Lower" + "Case"]();
+  const ext = String(source_ext ?? "").toLowerCase();
   if (ext === ".json") return "json_payload";
   if ([".jsonl", ".csv", ".txt", ".md", ".html", ".sql", ".ts", ".js"].includes(ext)) return "raw_text";
   if ([".zip", ".pdf"].includes(ext)) return "base64_payload";
@@ -189,11 +189,11 @@ export function storage_mode_for_extension(source_ext) {
 }
 
 export function is_text_storage_extension(source_ext) {
-  return [".json", ".jsonl", ".csv", ".txt", ".md", ".html", ".sql", ".ts", ".js"].includes(String(source_ext ?? "")["to" + "Lower" + "Case"]());
+  return [".json", ".jsonl", ".csv", ".txt", ".md", ".html", ".sql", ".ts", ".js"].includes(String(source_ext ?? "").toLowerCase());
 }
 
 export function estimate_storage_record_count({ source_ext, text, payload }) {
-  const ext = String(source_ext ?? "")["to" + "Lower" + "Case"]();
+  const ext = String(source_ext ?? "").toLowerCase();
   if (ext === ".json") return extract_json_record_count(payload);
   if (ext === ".jsonl") return count_jsonl_records(text ?? "");
   if (ext === ".csv") return count_csv_records(text ?? "");
@@ -205,7 +205,7 @@ export function estimate_storage_record_count({ source_ext, text, payload }) {
 }
 
 export function infer_storage_target_metadata(...values) {
-  const haystack = values.map(normalize_text).join(" ")["to" + "Lower" + "Case"]();
+  const haystack = values.map(normalize_text).join(" ").toLowerCase();
   const rules = [
     { hint: "legal_weak_joints", surfaces: ["legal_weak_joints", "weak_joint", "failure_layer", "doctrine_graph", "reform_graph"], pattern: /legal[_ -]?weak[_ -]?joints?|weak[_ -]?joint|failure[_ -]?layer/ },
     { hint: "legal_statutes", surfaces: ["legal_statutes", "authority_layer", "legal_library", "doctrine_graph"], pattern: /legal[_ -]?statutes?|statute[_ -]?key[_ -]?text|legal[_ -]?library|\bstatutes?\b|authority[_ -]?layer/ },
@@ -223,7 +223,7 @@ export function infer_storage_target_metadata(...values) {
   const matched = rules.filter((rule) => rule.pattern.test(haystack));
   const target_hint = matched[0]?.hint ?? "review_required";
   const target_surfaces = matched.length
-    ? [...new Set(matched["flat" + "Map"]((rule) => rule.surfaces))]
+    ? [...new Set(matched.flatMap((rule) => rule.surfaces))]
     : ["review_required"];
   const pipeline_context = infer_pipeline_context(haystack, target_hint, target_surfaces);
   const domain_tags = infer_domain_tags(haystack, target_hint, target_surfaces);
@@ -258,7 +258,7 @@ export function build_storage_staging_row({ bucket_name, storage_path, byte_size
     domain_tags: metadata.domain_tags,
     target_surfaces: metadata.target_surfaces,
     import_status: duplicate_risk ? "duplicate_risk_review" : "pending_storage_review",
-    created_at: new Date()["to" + "ISO" + "String"](),
+    created_at: new Date().toISOString(),
   };
 }
 
@@ -284,7 +284,7 @@ export function find_data_directories(cli_data_dir) {
     path.join(repo_root, "attached_assets"),
     repo_root,
   ].filter(Boolean);
-  return [...new Set(candidates.map((candidate) => path.resolve(candidate)))].filter((candidate) => fs["exists" + "Sync"](candidate));
+  return [...new Set(candidates.map((candidate) => path.resolve(candidate)))].filter((candidate) => fs.existsSync(candidate));
 }
 
 export function find_files_by_basename(data_dirs, basenames) {
@@ -297,14 +297,14 @@ export function find_files_by_basename(data_dirs, basenames) {
     if (depth < 0) return;
     let entries = [];
     try {
-      entries = fs["readdir" + "Sync"](dir, { ["with" + "File" + "Types"]: true });
+      entries = fs.readdirSync(dir, { withFileTypes: true });
     } catch {
       return;
     }
     for (const entry of entries) {
       if (entry.name === "node_modules" || entry.name === ".git" || entry.name === "dist") continue;
       const full = path.join(dir, entry.name);
-      if (entry["is" + "Directory"]()) {
+      if (entry.isDirectory()) {
         scan(full, depth - 1);
       } else if (basename_set.has(entry.name)) {
         if (!matches.has(entry.name)) matches.set(entry.name, []);
@@ -315,7 +315,7 @@ export function find_files_by_basename(data_dirs, basenames) {
 }
 
 export function infer_pipeline_context(...values) {
-  const haystack = values.map(normalize_text).join(" ")["to" + "Lower" + "Case"]();
+  const haystack = values.map(normalize_text).join(" ").toLowerCase();
   const matches = [];
   const rules = [
     ["benefits", /benefit|snap|medicaid|ssi|ssdi|tanf|unemployment/],
@@ -347,12 +347,12 @@ export function infer_domain_tags(...values) {
 }
 
 export function extract_citations(...values) {
-  const text = values["flat" + "Map"](as_array).map(normalize_text).join(" \n ");
+  const text = values.flatMap(as_array).map(normalize_text).join(" \n ");
   const section = "(?:§|§§|sections?|secs?\\.)?";
   const section_body = "[\\w.:()–—-]+(?:\\s*(?:,|and|or|–|—|-)\\s*[\\w.:()–—-]+)*[a-z]?";
   const patterns = [
-    new (Function("return Re" + "g" + "Exp")())(`\\b\\d+\\s+U\\.?S\\.?C\\.?\\s*${section}\\s*${section_body}`, "gi"),
-    new (Function("return Re" + "g" + "Exp")())(`\\b\\d+\\s+C\\.?F\\.?R\\.?\\s*(?:Part\\s+\\d+|${section}\\s*${section_body})`, "gi"),
+    new RegExp(`\\b\\d+\\s+U\\.?S\\.?C\\.?\\s*${section}\\s*${section_body}`, "gi"),
+    new RegExp(`\\b\\d+\\s+C\\.?F\\.?R\\.?\\s*(?:Part\\s+\\d+|${section}\\s*${section_body})`, "gi"),
     /\b[A-Z][a-z]+\.?\s+Stat\.?\s*§{1,2}\s*[\w.:()–—-]+/g,
     /\b[A-Z][a-z]+\.\s+[A-Z][A-Za-z.'’ &]+Code\s*§{1,2}\s*[\w.:()–—-]+/g,
     /\b[A-Z][a-z]+\s+Rev\.\s+Code\s*§{0,2}\s*[\w.:()–—-]+/g,
@@ -360,7 +360,7 @@ export function extract_citations(...values) {
     /\b[A-Z]{2,}\s+Code\s*§{0,2}\s*[\w.:()–—-]+/g,
   ];
   const citations = [];
-  for (const pattern of patterns) citations.push(...text["match" + "All"](pattern).map((match) => match[0].replace(/\s+/g, " ").trim().replace(/[.;:,]+$/, "")));
+  for (const pattern of patterns) citations.push(...text.matchAll(pattern).map((match) => match[0].replace(/\s+/g, " ").trim().replace(/[.;:,]+$/, "")));
   return [...new Set(citations)];
 }
 
@@ -368,8 +368,8 @@ export function extract_citations(...values) {
 export function extract_corpus_import_queue_rows_from_sql(text, source_path = null) {
   const rows = [];
   const pattern = /insert\s+into\s+public\.corpus_import_queue\s*\(([^)]*)\)\s*values\s*\((.*?)\)\s*;/gis;
-  for (const match of text["match" + "All"](pattern)) {
-    const columns = split_sql_csv(match[1]).map((column) => column.replace(/["\s]/g, "")["to" + "Lower" + "Case"]());
+  for (const match of text.matchAll(pattern)) {
+    const columns = split_sql_csv(match[1]).map((column) => column.replace(/["\s]/g, "").toLowerCase());
     const values = parse_sql_values(match[2]);
     if (!columns.length || columns.length !== values.length) {
       rows.push({
@@ -385,7 +385,7 @@ export function extract_corpus_import_queue_rows_from_sql(text, source_path = nu
       continue;
     }
     const row = { _local_sql_source: source_path, import_status: "local_sql_staged" };
-    columns["for" + "Each"]((column, index) => {
+    columns.forEach((column, index) => {
       row[column] = coerce_sql_literal(values[index]);
     });
     rows.push(row);
@@ -428,8 +428,8 @@ function parse_sql_values(text) {
   let current = "";
   let depth = 0;
   for (let index = 0; index < text.length; index += 1) {
-    if (text["starts" + "With"]("$lq$", index)) {
-      const end = text["index" + "Of"]("$lq$", index + 4);
+    if (text.startsWith("$lq$", index)) {
+      const end = text.indexOf("$lq$", index + 4);
       if (end === -1) {
         current += text.slice(index);
         break;
@@ -483,14 +483,14 @@ function coerce_sql_literal(value) {
   const single = trimmed.match(/^'(.*)'(?:::jsonb?)?$/is);
   if (single) return parse_maybe_json(single[1].replace(/''/g, "'"));
   const numeric = Number(trimmed);
-  if (Number["is" + "F" + "inite"](numeric)) return numeric;
+  if (Number.isFinite(numeric)) return numeric;
   return trimmed;
 }
 
 function parse_maybe_json(value) {
   const trimmed = value.trim();
   if (!trimmed) return "";
-  if (trimmed["starts" + "With"]("{") || trimmed["starts" + "With"]("[")) {
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
     try {
       return JSON.parse(trimmed);
     } catch {
@@ -504,8 +504,8 @@ export function stringify_csv(rows) {
   if (!rows.length) return "";
   const columns = Object.keys(rows[0]);
   const escape = (value) => {
-    const text = Array["is" + "Array"](value) || (value && typeof value === "object") ? JSON.stringify(value) : String(value ?? "");
-    return /[",\n\r]/.test(text) ? `"${text["replace" + "All"]('"', '""')}"` : text;
+    const text = Array.isArray(value) || (value && typeof value === "object") ? JSON.stringify(value) : String(value ?? "");
+    return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
   };
   return [columns.join(","), ...rows.map((row) => columns.map((column) => escape(row[column])).join(","))].join("\n");
 }
