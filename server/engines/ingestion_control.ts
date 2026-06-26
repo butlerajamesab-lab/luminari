@@ -793,6 +793,10 @@ function promotion_write_adapter_status(row: any) {
   return { write_target_table: null, write_adapter_status: "no_safe_target_table_adapter" };
 }
 
+function is_no_safe_write_adapter_status(write_adapter_status: string | null | undefined) {
+  return Boolean(write_adapter_status?.startsWith("no_safe_"));
+}
+
 function promotion_reason_detail(row: any, verification: { blocked_reasons: string[] }, write_adapter_status: string, material_hold_reason: string | null, material_scope: string) {
   const details: string[] = [];
   const confidence = row.confidence === null || row.confidence === undefined ? null : Number(row.confidence);
@@ -804,7 +808,7 @@ function promotion_reason_detail(row: any, verification: { blocked_reasons: stri
   if (verification.blocked_reasons.includes("promotion_lane_unclassified")) details.push("promotion lane is unclassified");
   if (row.promotion_ready === false || row.promotion_ready?.promotion_ready === false) details.push("promotion_ready false");
   const intended_target_table = resolved_intended_target_table(row);
-  if (write_adapter_status === "no_safe_target_table_adapter") details.push(`no safe adapter for intended target_table ${intended_target_table ?? "unspecified"}`);
+  if (is_no_safe_write_adapter_status(write_adapter_status)) details.push(`no safe adapter for intended target_table ${intended_target_table ?? "unspecified"}`);
   if (material_hold_reason) details.push(`held for review because material_scope is ${material_scope}`);
   return details.join("; ") || null;
 }
@@ -986,6 +990,7 @@ const REGISTRY_PROGRAM_COLUMN_ALIASES: Record<string, string[]> = {
   contact_email_norm: ["contact_email_norm"],
   contact_phone_norm: ["contact_phone_norm"],
   contact_website_norm: ["contact_website_norm"],
+  created_at: ["created_at", "created_at_rp"],
 };
 
 function registry_program_column(columns: Set<string>, logical_name: string) {
@@ -1043,6 +1048,7 @@ function registry_program_values(row: any, columns: Set<string>) {
     contact_email_norm: normal_email(row),
     contact_phone_norm: normal_phone(row),
     contact_website_norm: normal_website(row),
+    created_at: Date.now(),
   };
   return Object.fromEntries(Object.entries(values).filter(([logical_name, value]) => map[logical_name] && value !== null && value !== undefined && value !== ""));
 }
@@ -1065,7 +1071,7 @@ function registry_program_blank_updates(existing_row: any, candidate_row: any, c
   const values = registry_program_values(candidate_row, columns);
   const updates: Record<string, unknown> = {};
   for (const [logical_name, value] of Object.entries(values)) {
-    if (logical_name === "id") continue;
+    if (logical_name === "id" || logical_name === "created_at") continue;
     const column_name = map[logical_name];
     if (column_name && value && !text_or_null(existing_row[column_name])) updates[column_name] = value;
   }
@@ -1259,7 +1265,7 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
           action_type = material_hold_reason;
           status = "held_review";
           reason = material_hold_reason;
-        } else if (verification.verified && !adapter.write_target_table) {
+        } else if (verification.verified && (!adapter.write_target_table || is_no_safe_write_adapter_status(adapter.write_adapter_status))) {
           action_type = adapter.write_adapter_status;
           status = "held_review";
           reason = adapter.write_adapter_status;
@@ -1310,7 +1316,7 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
     const held_count = results.filter((row) => row.status === "held_review").length;
     const would_insert_count = count("would_insert");
     const would_update_blank_fields_count = count("would_update_blank_fields");
-    const skipped_count = count("would_skip_duplicate") + count("no_safe_legal_authority_target") + count("no_safe_target_table_adapter");
+    const skipped_count = count("would_skip_duplicate") + count("no_safe_legal_authority_target") + results.filter((row) => is_no_safe_write_adapter_status(row.action_type)).length;
     const blocked_count = count("blocked") + held_count;
     const error_count = count("error");
     const promoted_count = dry_run ? 0 : would_insert_count + would_update_blank_fields_count;
