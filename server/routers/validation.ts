@@ -71,7 +71,7 @@ export const validationRouter = router({
 
       // Mock implementation - would query database in production
       return {
-        caseId: input.caseId,
+        case_id: input.caseId,
         validations: [],
         total: 0,
       };
@@ -91,9 +91,9 @@ export const validationRouter = router({
 
       // Mock implementation - would query database in production
       return {
-        signalId: input.signalId,
+        signal_id: input.signalId,
         classification: 'VALIDATED_CLAIM',
-        validationScore: 0.96,
+        validation_score: 0.96,
       };
     }),
 
@@ -113,12 +113,12 @@ export const validationRouter = router({
 
       // Mock implementation - would query database in production
       return {
-        signalId: input.signalId,
-        enforcementAgency: 'Seattle Office of Inspector General',
-        primaryContact: 'seattle.gov/inspector-general',
+        signal_id: input.signalId,
+        enforcement_agency: 'Seattle Office of Inspector General',
+        primary_contact: 'seattle.gov/inspector-general',
         statute: 'SMC 20.42.050',
         deadline: '3 years from award',
-        actionType: 'RECOVERY',
+        action_type: 'RECOVERY',
         priority: 'HIGH',
       };
     }),
@@ -157,8 +157,8 @@ export const validationRouter = router({
       }
 
       return {
-        validatedCount: results.length,
-        errorCount: errors.length,
+        validated_count: results.length,
+        error_count: errors.length,
         results,
         errors,
       };

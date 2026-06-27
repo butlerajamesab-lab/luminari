@@ -177,9 +177,9 @@ export async function runFreshnessCheck(): Promise<{
       // Get latest update timestamp
       try {
         const [maxRows]: any = await db.execute(sql.raw(
-          `SELECT MAX("${config.timestampColumn}") as maxTs FROM "${config.tableName}"`
+          `SELECT MAX("${config.timestampColumn}") as max_ts FROM "${config.tableName}"`
         ));
-        const maxVal = (maxRows as any[])[0]?.maxTs;
+        const maxVal = (maxRows as any[])[0]?.max_ts;
         if (maxVal) {
           // Handle both bigint timestamps and date strings
           if (typeof maxVal === "number" || (typeof maxVal === "string" && /^\d{10,}$/.test(maxVal))) {

@@ -82,7 +82,7 @@ export const agencyMetricsRouter = router({
     return {
       agencies: agencyCount?.count ?? 0,
       years: yearCount?.count ?? 0,
-      totalDataPoints: totalRows?.count ?? 0,
+      total_data_points: totalRows?.count ?? 0,
     };
   }),
 });

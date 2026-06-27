@@ -1,15 +1,15 @@
 /**
  * Signal Extraction Layer (Expanded)
- * 
+ *
  * 11 field groups: entities, complaint, location, timeline, signals, source,
  *                  impact, legal, involvement, severity, evidence
- * 
+ *
  * Lightweight extraction only. No premature inference. No blocking.
  * Input: document with Pass 1+2 data (entities, claims, signal flags)
  * Output: one normalized structured record per document
- * 
+ *
  * Pipeline position: Evidence Lab → Signal Extraction → Tsunam Gate → detected_signals
- * 
+ *
  * SEVERITY RULE: integer 1–10, derived ONLY from victim_count * category_weight + amount_factor.
  *   Null if insufficient data. No estimation.
  * EVIDENCE RULE: verbatim quotes only, max 3 per document, max 200 chars each,
@@ -300,7 +300,7 @@ function classifyInvolvement(
  * Derived ONLY from: victim_count, impact_amount, and complaint_category_weight.
  * Returns null if insufficient data (no victim count AND no amount).
  * No estimation. No inference.
- * 
+ *
  * Formula:
  *   base = category_weight (1-4)
  *   victim_factor = log10(victim_count) clamped to [0, 3]
@@ -375,7 +375,7 @@ function extractEvidenceQuotes(
 
   // Split body into sentences
   const sentences = bodyText.match(/[^.!?]+[.!?]+/g) || [];
-  
+
   for (const sentence of sentences) {
     if (quotes.length >= 3) break;
     const trimmed = sentence.trim();
@@ -485,9 +485,9 @@ export async function extractSignals(documentId: number, caseId: number): Promis
     sql`SELECT id, name, domain, container FROM cases WHERE id = ${caseId} LIMIT 1`
   );
   const [rolesRows] = await drizzleDb.execute(
-    sql`SELECT er.entityId, e.name as entityName, er.role, er.description 
-        FROM entity_roles er 
-        JOIN entities e ON e.id = er.entityId 
+    sql`SELECT er.entityId, e.name as entity_name, er.role, er.description
+        FROM entity_roles er
+        JOIN entities e ON e.id = er.entityId
         WHERE e.documentId = ${documentId}`
   );
 

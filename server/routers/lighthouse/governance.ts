@@ -52,11 +52,11 @@ export const lighthouseGovernanceRouter = router({
       avgScore += d.composite_score;
     }
     return {
-      totalDecisions: decisions.length,
+      total_decisions: decisions.length,
       totalPromoted,
-      promotionRate:
+      promotion_rate:
         decisions.length > 0 ? Math.round((totalPromoted / decisions.length) * 100) : 0,
-      avgCompositeScore:
+      avg_composite_score:
         decisions.length > 0 ? Math.round((avgScore / decisions.length) * 100) / 100 : 0,
       byDecision,
       bySource,

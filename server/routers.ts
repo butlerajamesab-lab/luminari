@@ -215,7 +215,7 @@ Do NOT include the plan until you genuinely understand their situation. Ask at l
         return {
           summary: "We haven't found anything yet. Upload your documents and run the analysis first.",
           actions: [],
-          letterTemplate: null,
+          letter_template: null,
         };
       }
 
@@ -287,7 +287,7 @@ Respond in this exact JSON format:
       try {
         return JSON.parse(content);
       } catch {
-        return { summary: "Unable to generate action path. Please try again.", actions: [], letterTemplate: null };
+        return { summary: "Unable to generate action path. Please try again.", actions: [], letter_template: null };
       }
     }),
 
@@ -696,7 +696,7 @@ const casesRouter = router({
         force: input.force ?? false,
         cleanupStorage: true,
       });
-      return { success: true, auditHash: result.auditHash, cascadedEntities: result.cascadedEntities };
+      return { success: true, audit_hash: result.auditHash, cascaded_entities: result.cascadedEntities };
     }),
 
   stats: protectedProcedure
@@ -961,8 +961,8 @@ const documentsRouter = router({
 
       return {
         intent: 'analyze_new_uploads' as const,
-        totalQueued: uploadedDocs.length,
-        totalSkipped: docs.length - uploadedDocs.length,
+        total_queued: uploadedDocs.length,
+        total_skipped: docs.length - uploadedDocs.length,
         scope: 'uploaded_only',
       };
     }),
@@ -982,9 +982,9 @@ const documentsRouter = router({
       if (!rfSnapshot) {
         return {
           intent: 'retry_failed_only' as const,
-          totalQueued: 0,
-          totalSkipped: 0,
-          snapshotCreated: false,
+          total_queued: 0,
+          total_skipped: 0,
+          snapshot_created: false,
           scope: 'retryable_failures_only',
           error: 'No open snapshot found for this case',
         };
@@ -1001,10 +1001,10 @@ const documentsRouter = router({
 
       return {
         intent: 'retry_failed_only' as const,
-        totalQueued: result.totalQueued,
-        totalSkipped: result.totalSkipped,
-        snapshotCreated: result.snapshotCreated,
-        newSnapshotId: result.newSnapshotId,
+        total_queued: result.totalQueued,
+        total_skipped: result.totalSkipped,
+        snapshot_created: result.snapshotCreated,
+        new_snapshot_id: result.newSnapshotId,
         scope: 'retryable_failures_only',
       };
     }),
@@ -1051,9 +1051,9 @@ const documentsRouter = router({
       return {
         intent: 'full_snapshot_rebuild' as const,
         // @ts-ignore
-        totalDocs: result.totalDocs,
+        total_docs: result.totalDocs,
         // @ts-ignore
-        toneReports: result.toneReports,
+        tone_reports: result.toneReports,
         scope: 'all_documents',
       };
     }),
@@ -1082,13 +1082,13 @@ const documentsRouter = router({
       }
 
       return {
-        analyzeNewUploads: uploaded.length,
-        retryFailed: retryableCount,
-        retryFailedNonRetryable: nonRetryableCount,
-        fullRebuild: docs.length,
-        validComplete: readyDocs.length,
-        totalDocuments: docs.length,
-        processingFailed: errorDocs.length,
+        analyze_new_uploads: uploaded.length,
+        retry_failed: retryableCount,
+        retry_failed_non_retryable: nonRetryableCount,
+        full_rebuild: docs.length,
+        valid_complete: readyDocs.length,
+        total_documents: docs.length,
+        processing_failed: errorDocs.length,
       };
     }),
 
@@ -1109,7 +1109,7 @@ const documentsRouter = router({
         cleanupStorage: true,
       });
 
-      return { success: true, documentId: input.documentId };
+      return { success: true, document_id: input.documentId };
     }),
 
   // ─── Document Resolution Endpoints ───
@@ -1126,7 +1126,7 @@ const documentsRouter = router({
       // Gate enforcement: snapshot must be open
       if (originalDoc.snapshotId) await assertSnapshotMutationAllowed(originalDoc.snapshotId, 'replaceDocument');
       await dbHelpers.replaceDocument(input.originalDocumentId, input.replacementDocumentId, ctx.user.id, input.reason);
-      return { success: true, originalDocumentId: input.originalDocumentId, replacementDocumentId: input.replacementDocumentId };
+      return { success: true, original_document_id: input.originalDocumentId, replacement_document_id: input.replacementDocumentId };
     }),
 
   markCorrupted: protectedProcedure
@@ -1139,7 +1139,7 @@ const documentsRouter = router({
       await dbHelpers.verifyCaseWriteAccess(doc.caseId, ctx.user.id);
       if (doc.snapshotId) await assertSnapshotMutationAllowed(doc.snapshotId, 'markCorrupted');
       await dbHelpers.markDocumentCorrupted(input.documentId, ctx.user.id, input.reason);
-      return { success: true, documentId: input.documentId };
+      return { success: true, document_id: input.documentId };
     }),
 
   markExcluded: protectedProcedure
@@ -1152,7 +1152,7 @@ const documentsRouter = router({
       await dbHelpers.verifyCaseWriteAccess(doc.caseId, ctx.user.id);
       if (doc.snapshotId) await assertSnapshotMutationAllowed(doc.snapshotId, 'markExcluded');
       await dbHelpers.markDocumentExcluded(input.documentId, ctx.user.id, input.reason);
-      return { success: true, documentId: input.documentId };
+      return { success: true, document_id: input.documentId };
     }),
 
   replacementChain: protectedProcedure
@@ -1196,13 +1196,13 @@ const documentsRouter = router({
       }
       return {
         ...status,
-        retryingCount: retryingDocs.length,
+        retrying_count: retryingDocs.length,
         // Classifier-aligned counts (replaces legacy failedPermanentCount)
         autoRecoverableCount,
         manualReuploadCount,
-        systemErrorCount: systemErrorCount + retryingDocs.length,
+        system_error_count: systemErrorCount + retryingDocs.length,
         // Legacy field kept for backward compat but deprecated
-        failedPermanentCount: failedDocs.length,
+        failed_permanent_count: failedDocs.length,
       };
     }),
 
@@ -1216,16 +1216,16 @@ const documentsRouter = router({
       const queueStatus = getQueueStatus();
       return {
         ...dbMetrics,
-        fallbackMatcherHitRate: queueStatus.fallbackMatcherHitRate,
-        avgProcessingTimeMs: queueStatus.averageProcessingTime,
+        fallback_matcher_hit_rate: queueStatus.fallbackMatcherHitRate,
+        avg_processing_time_ms: queueStatus.averageProcessingTime,
         // Runtime counters (since server restart)
         runtime: {
-          fallbackAttempts: queueStatus.fallbackMatcherAttempts,
-          fallbackHits: queueStatus.fallbackMatcherHits,
-          fallbackMisses: queueStatus.fallbackMatcherMisses,
-          docsProcessed: queueStatus.totalProcessed,
-          docsFailed: queueStatus.totalFailed,
-          processingRate: queueStatus.processingRate,
+          fallback_attempts: queueStatus.fallbackMatcherAttempts,
+          fallback_hits: queueStatus.fallbackMatcherHits,
+          fallback_misses: queueStatus.fallbackMatcherMisses,
+          docs_processed: queueStatus.totalProcessed,
+          docs_failed: queueStatus.totalFailed,
+          processing_rate: queueStatus.processingRate,
         },
       };
     }),
@@ -1285,7 +1285,7 @@ const dedupRouter = router({
         targetId: input.caseId,
         details: { suggestionsFound: count },
       });
-      return { suggestionsFound: count };
+      return { suggestions_found: count };
     }),
 
   review: protectedProcedure
@@ -1762,7 +1762,7 @@ Respond in this exact JSON format:
       // Pipeline event: export_created (presentation generated)
       dbHelpers.logPipelineEventByCase(input.caseId, "export_created").catch(() => {});
 
-      return { slideCount: insertedIds.length, slideIds: insertedIds };
+      return { slide_count: insertedIds.length, slide_ids: insertedIds };
     }),
 
   // Refine a single slide's content with LLM
@@ -1889,7 +1889,7 @@ Respond in this exact JSON format:
 </body>
 </html>`;
 
-      return { html, title: pres.title, slideCount: slides.length };
+      return { html, title: pres.title, slide_count: slides.length };
     }),
 });
 
@@ -2025,7 +2025,7 @@ const provenanceRouter = router({
           newStatus: finding.provenanceStatus,
           metadata: { candidateClaims: 0, result: "no_candidate_claims" },
         });
-        return { success: true, matchedClaimIds: [], candidateCount: 0 };
+        return { success: true, matched_claim_ids: [], candidate_count: 0 };
       }
 
       // Run the fallback matcher (deterministic, document-scoped)
@@ -2062,7 +2062,7 @@ const provenanceRouter = router({
         metadata: matchMetadata,
       });
 
-      return { success: true, matchedClaimIds: result.matchedIds, candidateCount: caseClaims.length };
+      return { success: true, matched_claim_ids: result.matchedIds, candidate_count: caseClaims.length };
     }),
 
   // Action B: Mark as valid synthesis (mandatory reason)
@@ -2137,7 +2137,7 @@ const provenanceRouter = router({
       // The underlying startBatchRerun function handles per-finding validation
       try {
         const result = await startBatchRerun(ctx.user.id);
-        return { success: true, batchId: result.batchId, totalFindings: result.totalFindings };
+        return { success: true, batch_id: result.batchId, total_findings: result.totalFindings };
       } catch (err) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -2163,7 +2163,7 @@ const provenanceRouter = router({
       // The underlying resumeBatchRerun function handles per-finding validation
       try {
         const result = await resumeBatchRerun(input.batchId, ctx.user.id);
-        return { success: true, totalRemaining: result.totalRemaining };
+        return { success: true, total_remaining: result.totalRemaining };
       } catch (err) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -2176,9 +2176,9 @@ const provenanceRouter = router({
     .query(async () => {
       // Return active batch or latest completed
       const active = await dbHelpers.getActiveBatchRun();
-      if (active) return { ...active, isActive: true };
+      if (active) return { ...active, is_active: true };
       const latest = await dbHelpers.getLatestBatchRun();
-      if (latest) return { ...latest, isActive: false };
+      if (latest) return { ...latest, is_active: false };
       return null;
     }),
 
@@ -2331,26 +2331,26 @@ const snapshotsRouter = router({
       if (snapshot.status !== 'sealed') {
         return {
           valid: false,
-          manifestHashMatch: false,
-          signatureValid: false,
-          fingerprintMatch: false,
-          recomputedManifestHash: '',
-          storedSignature: '',
-          currentFingerprint: getPublicKeyFingerprint(),
-          storedFingerprint: '',
+          manifest_hash_match: false,
+          signature_valid: false,
+          fingerprint_match: false,
+          recomputed_manifest_hash: '',
+          stored_signature: '',
+          current_fingerprint: getPublicKeyFingerprint(),
+          stored_fingerprint: '',
           details: 'Snapshot is not sealed — no signature to verify.',
         };
       }
       if (!snapshot.signature || !snapshot.signatureAlgorithm || !snapshot.publicKeyFingerprint) {
         return {
           valid: false,
-          manifestHashMatch: false,
-          signatureValid: false,
-          fingerprintMatch: false,
-          recomputedManifestHash: '',
-          storedSignature: '',
-          currentFingerprint: getPublicKeyFingerprint(),
-          storedFingerprint: '',
+          manifest_hash_match: false,
+          signature_valid: false,
+          fingerprint_match: false,
+          recomputed_manifest_hash: '',
+          stored_signature: '',
+          current_fingerprint: getPublicKeyFingerprint(),
+          stored_fingerprint: '',
           details: 'Snapshot is sealed but has no cryptographic signature (pre-Gate 9 snapshot).',
         };
       }
@@ -2374,7 +2374,7 @@ const snapshotsRouter = router({
   /** Get the current signing public key and fingerprint */
   publicKey: publicProcedure.query(() => {
     return {
-      publicKeyPem: getPublicKeyPem(),
+      public_key_pem: getPublicKeyPem(),
       fingerprint: getPublicKeyFingerprint(),
       algorithm: 'Ed25519',
     };
@@ -2388,16 +2388,16 @@ const snapshotsRouter = router({
       const snapshot = await dbHelpers.getLatestSnapshot(input.caseId);
       if (!snapshot) {
         return {
-          hasSnapshot: false as const,
-          snapshotId: null,
+          has_snapshot: false as const,
+          snapshot_id: null,
           version: null,
           status: null,
           signature: null,
-          lastUpdatedAt: null,
+          last_updated_at: null,
           stages: null,
-          canSeal: false,
-          gateStage: null,
-          extractionIntegrity: null,
+          can_seal: false,
+          gate_stage: null,
+          extraction_integrity: null,
         };
       }
 
@@ -2516,12 +2516,12 @@ const snapshotsRouter = router({
       }
 
       return {
-        hasSnapshot: true as const,
-        snapshotId: snapshot.id,
+        has_snapshot: true as const,
+        snapshot_id: snapshot.id,
         version: snapshot.version,
         status: snapshot.status,
         signature: signatureStatus,
-        lastUpdatedAt: snapshot.sealedAt ?? snapshot.createdAt,
+        last_updated_at: snapshot.sealedAt ?? snapshot.createdAt,
         stages,
         canSeal,
         gateStage,
@@ -2550,7 +2550,7 @@ const snapshotsRouter = router({
         action: 'snapshot_sealed_manual',
         details: { snapshotId: snapshot.id, version: snapshot.version },
       });
-      return { sealed: true, snapshotId: snapshot.id, version: snapshot.version };
+      return { sealed: true, snapshot_id: snapshot.id, version: snapshot.version };
     }),
 
   /** Spine Viewer — read-only aggregated view of a sealed snapshot */
@@ -2810,50 +2810,50 @@ const snapshotsRouter = router({
 
       return {
         header: {
-          caseName: caseRow.name,
-          caseId: input.caseId,
-          snapshotId: snapshot.id,
-          snapshotVersion: snapshot.version,
-          sealedAt: snapshot.sealedAt,
-          engineVersion: snapshot.engineVersion,
+          case_name: caseRow.name,
+          case_id: input.caseId,
+          snapshot_id: snapshot.id,
+          snapshot_version: snapshot.version,
+          sealed_at: snapshot.sealedAt,
+          engine_version: snapshot.engineVersion,
           signatureStatus,
           signatureDetails,
           lane,
         },
         chronological: {
-          totalItems: chronoItems.length,
-          dayGroups: Object.keys(chronoByDay).sort().map(day => ({
+          total_items: chronoItems.length,
+          day_groups: Object.keys(chronoByDay).sort().map(day => ({
             date: day,
             items: chronoByDay[day],
           })),
         },
         structural: {
-          totalItems: structuralItems.length,
-          typeGroups: Object.entries(structuralByType).map(([type, items]) => ({
+          total_items: structuralItems.length,
+          type_groups: Object.entries(structuralByType).map(([type, items]) => ({
             type,
             count: items.length,
             items,
           })),
         },
-        temporalGaps: {
-          anchorsAnalyzed: gapResult.anchorsAnalyzed,
-          gapsDetected: gapResult.gapsDetected,
-          thresholdDays: gapResult.thresholdDays,
+        temporal_gaps: {
+          anchors_analyzed: gapResult.anchorsAnalyzed,
+          gaps_detected: gapResult.gapsDetected,
+          threshold_days: gapResult.thresholdDays,
           gaps: gapResult.gaps.map(g => ({
-            gapStart: g.gapStart,
-            gapEnd: g.gapEnd,
-            gapDays: g.gapDays,
+            gap_start: g.gapStart,
+            gap_end: g.gapEnd,
+            gap_days: g.gapDays,
             confidence: g.confidence,
           })),
         },
-        ingestionIntegrity: {
-          totalIntendedUploads: ingestionAudit.summary.totalIntendedFiles,
-          totalDocumentsCreated: ingestionAudit.summary.totalDocumentsCreated,
-          totalDuplicatesLinked: ingestionAudit.summary.totalDuplicatesLinked,
-          totalFailedFiles: ingestionAudit.summary.totalFailedFiles,
-          totalExpiredUnprocessed: ingestionAudit.summary.totalExpiredUnprocessed,
-          totalExtractionFailures: ingestionAudit.summary.totalExtractionFailures,
-          totalMissingDocuments: ingestionAudit.summary.totalMissing,
+        ingestion_integrity: {
+          total_intended_uploads: ingestionAudit.summary.totalIntendedFiles,
+          total_documents_created: ingestionAudit.summary.totalDocumentsCreated,
+          total_duplicates_linked: ingestionAudit.summary.totalDuplicatesLinked,
+          total_failed_files: ingestionAudit.summary.totalFailedFiles,
+          total_expired_unprocessed: ingestionAudit.summary.totalExpiredUnprocessed,
+          total_extraction_failures: ingestionAudit.summary.totalExtractionFailures,
+          total_missing_documents: ingestionAudit.summary.totalMissing,
         },
       };
     }),
@@ -2962,7 +2962,7 @@ const phase2Router = router({
           Array.isArray(note.temporalAnchors) ? note.temporalAnchors as string[] : [],
         ),
       }));
-      return { evidenceRequirements, structuredNotes: enrichedNotes };
+      return { evidenceRequirements, structured_notes: enrichedNotes };
     }),
 
   /** Run evidence requirement detection against a sealed snapshot (Domain Logic v1) */
@@ -2988,12 +2988,12 @@ const phase2Router = router({
         },
       });
       return {
-        runId: result.runId,
+        run_id: result.runId,
         status: result.status,
-        requirementsInserted: result.requirementsInserted,
-        documentsScanned: result.detection.documentsScanned,
-        quotesScanned: result.detection.quotesScanned,
-        matchCount: result.detection.matches.length,
+        requirements_inserted: result.requirementsInserted,
+        documents_scanned: result.detection.documentsScanned,
+        quotes_scanned: result.detection.quotesScanned,
+        match_count: result.detection.matches.length,
         requirements: result.detection.requirements,
         error: result.error,
       };
@@ -3020,11 +3020,11 @@ const phase2Router = router({
         },
       });
       return {
-        runId: result.runId,
+        run_id: result.runId,
         status: result.status,
-        notesGenerated: result.notesGenerated,
+        notes_generated: result.notesGenerated,
         notes: result.notes,
-        dataStats: result.dataStats,
+        data_stats: result.dataStats,
         error: result.error,
       };
     }),
@@ -3220,7 +3220,7 @@ const shareRouter = router({
       return {
         ...data,
         permissions: link.permissions,
-        expiresAt: link.expiresAt,
+        expires_at: link.expiresAt,
         label: link.label,
       };
     }),
@@ -3358,7 +3358,7 @@ const missingRecordsRouter = router({
       const domains = getDomainsWithRules();
       return domains.map(d => {
         const rules = getDomainRules(d);
-        return { domain: d, displayName: rules?.displayName || d, ruleCount: rules?.rules.length || 0 };
+        return { domain: d, display_name: rules?.displayName || d, rule_count: rules?.rules.length || 0 };
       });
     }),
 
@@ -3374,7 +3374,7 @@ const missingRecordsRouter = router({
 
       // Check if AKB has coverage for this domain
       const hasCoverage = await hasAKBCoverage(pipelineType);
-      if (!hasCoverage) return { hasCoverage: false, records: [] };
+      if (!hasCoverage) return { has_coverage: false, records: [] };
 
       // Get missing records and resolve agencies
       const missing = await getMissingRecordsForCase(input.caseId, ["detected", "acknowledged"]);
@@ -3382,7 +3382,7 @@ const missingRecordsRouter = router({
         pipelineType,
         missing.map(m => ({ recordType: m.recordType, description: m.description, severity: m.severity })),
       );
-      return { hasCoverage: true, records: withAgencies };
+      return { has_coverage: true, records: withAgencies };
     }),
 
   akbStatutes: protectedProcedure
@@ -3624,9 +3624,9 @@ const testScenariosRouter = router({
       return {
         caseId,
         caseName,
-        pipelineType: bundle.pipelineType,
-        documentsUploaded: uploadedDocs.length,
-        documentsTotal: bundle.documents.length,
+        pipeline_type: bundle.pipelineType,
+        documents_uploaded: uploadedDocs.length,
+        documents_total: bundle.documents.length,
         documents: uploadedDocs,
         snapshotId,
       };
@@ -3841,15 +3841,15 @@ const foiaRequestsRouter = router({
       const overdue = await dbHelpers.findOverdueFoiaRequests(ctx.user.id);
       const approaching = await dbHelpers.findApproachingDeadlineFoiaRequests(ctx.user.id);
       return {
-        overdueCount: overdue.length,
-        approachingCount: approaching.length,
+        overdue_count: overdue.length,
+        approaching_count: approaching.length,
         overdue: overdue.map(r => ({
           ...r,
-          daysOverdue: r.responseDueAt ? Math.ceil((Date.now() - r.responseDueAt) / (24 * 60 * 60 * 1000)) : 0,
+          days_overdue: r.responseDueAt ? Math.ceil((Date.now() - r.responseDueAt) / (24 * 60 * 60 * 1000)) : 0,
         })),
         approaching: approaching.map(r => ({
           ...r,
-          daysRemaining: r.responseDueAt ? Math.ceil((r.responseDueAt - Date.now()) / (24 * 60 * 60 * 1000)) : 0,
+          days_remaining: r.responseDueAt ? Math.ceil((r.responseDueAt - Date.now()) / (24 * 60 * 60 * 1000)) : 0,
         })),
       };
     }),
@@ -3862,8 +3862,8 @@ const foiaRequestsRouter = router({
       const result = await checkUserDeadlines(ctx.user.id);
       return {
         notified: result.notified,
-        overdueCount: result.overdue,
-        approachingCount: result.approaching,
+        overdue_count: result.overdue,
+        approaching_count: result.approaching,
       };
     }),
 
@@ -3893,7 +3893,7 @@ const caseNarrativeRouter = router({
       const items = await dbHelpers.getCaseTimelineData(input.caseId);
       const { groupByDateRange } = await import("./narrative-generator");
       const groups = groupByDateRange(items);
-      return { items, groups, totalCount: items.length };
+      return { items, groups, total_count: items.length };
     }),
 
   // Check staleness (has evidence changed since last generation?)
@@ -3965,8 +3965,8 @@ const lensesRouter = router({
 
       return {
         lensContext,
-        signalCount: flags.length,
-        mappedSignals: evidenceSignals,
+        signal_count: flags.length,
+        mapped_signals: evidenceSignals,
       };
     }),
 
@@ -4006,7 +4006,7 @@ const lensesRouter = router({
         .set({ manualLensOverrides: input.lensIds, updatedAt: Date.now() })
         .where(eq(cases.id, input.caseId));
 
-      return { success: true, lensIds: input.lensIds };
+      return { success: true, lens_ids: input.lensIds };
     }),
 
   /**
@@ -4033,9 +4033,9 @@ const lensesRouter = router({
         loaded: true as const,
         version: registry.version,
         hash,
-        lensCount: allLenses.length,
+        lens_count: allLenses.length,
         byCategory,
-        mutualExclusionGroups: registry.mutual_exclusion_groups?.length || 0,
+        mutual_exclusion_groups: registry.mutual_exclusion_groups?.length || 0,
       };
     }),
 
@@ -4078,9 +4078,9 @@ const lensesRouter = router({
 
       return {
         trace,
-        signalCount: flags.length,
-        rawFlagTypes: flagTypes,
-        mappedSignals: evidenceSignals,
+        signal_count: flags.length,
+        raw_flag_types: flagTypes,
+        mapped_signals: evidenceSignals,
       };
     }),
 
@@ -4175,16 +4175,16 @@ const registryRouter = router({
   stats: protectedProcedure.query(() => {
     const raw = getActivationStats();
     return {
-      totalStates: raw.total_states + 3, // +3 for FL/NY/TX (not ingested)
-      activeStates: raw.active_states.length,
-      totalPrograms: raw.total_programs,
-      totalOversight: raw.total_oversight_bodies,
-      totalPipelines: raw.total_pipeline_mappings,
-      totalLenses: raw.total_lens_mappings,
-      totalFlags: raw.total_layer0_flags,
-      totalCards: raw.total_layer1_cards,
-      totalTests: 4605,
-      popCoverage: "54.7%",
+      total_states: raw.total_states + 3, // +3 for FL/NY/TX (not ingested)
+      active_states: raw.active_states.length,
+      total_programs: raw.total_programs,
+      total_oversight: raw.total_oversight_bodies,
+      total_pipelines: raw.total_pipeline_mappings,
+      total_lenses: raw.total_lens_mappings,
+      total_flags: raw.total_layer0_flags,
+      total_cards: raw.total_layer1_cards,
+      total_tests: 4605,
+      pop_coverage: "54.7%",
     };
   }),
 });
@@ -4428,8 +4428,8 @@ const resourceVerificationRouter = router({
         resources: rows as any[],
         total,
         page: input.page,
-        pageSize: input.pageSize,
-        totalPages: Math.ceil(total / input.pageSize),
+        page_size: input.pageSize,
+        total_pages: Math.ceil(total / input.pageSize),
       };
     }),
 
@@ -4444,7 +4444,7 @@ const resourceVerificationRouter = router({
         `UPDATE unified_resources SET verificationStatus = 'verified', lastVerifiedAt = ?, verifiedBy = ?, flaggedReason = NULL, updatedAt = ? WHERE id = ?`,
         [now, verifiedBy, now, input.resourceId]
       );
-      return { success: true, resourceId: input.resourceId, verifiedAt: now, verifiedBy };
+      return { success: true, resource_id: input.resourceId, verified_at: now, verifiedBy };
     }),
 
   // Bulk verify multiple resources
@@ -4459,7 +4459,7 @@ const resourceVerificationRouter = router({
         `UPDATE unified_resources SET verificationStatus = 'verified', lastVerifiedAt = ?, verifiedBy = ?, flaggedReason = NULL, updatedAt = ? WHERE id IN (${placeholders})`,
         [now, verifiedBy, now, ...input.resourceIds]
       );
-      return { success: true, count: input.resourceIds.length, verifiedAt: now };
+      return { success: true, count: input.resourceIds.length, verified_at: now };
     }),
 
   // Flag a resource with a reason
@@ -4493,7 +4493,7 @@ const resourceVerificationRouter = router({
           sourceTimestamp: now,
         });
       } catch { /* non-fatal: signal emission failure should not block the flag action */ }
-      return { success: true, resourceId: input.resourceId, reason: input.reason };
+      return { success: true, resource_id: input.resourceId, reason: input.reason };
     }),
 
   // Deactivate a resource
@@ -4523,7 +4523,7 @@ const resourceVerificationRouter = router({
           sourceTimestamp: now,
         });
       } catch { /* non-fatal */ }
-      return { success: true, resourceId: input.resourceId };
+      return { success: true, resource_id: input.resourceId };
     }),
 
   // Reactivate a resource
@@ -4540,7 +4540,7 @@ const resourceVerificationRouter = router({
       try {
         await resolveSignalsForTarget("unified_resources", input.resourceId, "RESOURCE_STALE");
       } catch { /* non-fatal */ }
-      return { success: true, resourceId: input.resourceId };
+      return { success: true, resource_id: input.resourceId };
     }),
 
   // Audit dashboard: stale, flagged, stats breakdown
@@ -4609,23 +4609,23 @@ const resourceVerificationRouter = router({
         unverified: Number(stats.unverified),
         flagged: Number(stats.flagged),
         stale: Number(stats.stale),
-        healthScore: stats.total > 0 ? Math.round((Number(stats.verified) / Number(stats.total)) * 100) : 0,
+        health_score: stats.total > 0 ? Math.round((Number(stats.verified) / Number(stats.total)) * 100) : 0,
       },
-      byDomain: (domainRows as any[]).map(r => ({
+      by_domain: (domainRows as any[]).map(r => ({
         domain: r.domain,
         total: Number(r.total),
         verified: Number(r.verified),
         flagged: Number(r.flagged),
         stale: Number(r.stale),
       })),
-      byType: (typeRows as any[]).map(r => ({
-        resourceType: r.resourceType,
+      by_type: (typeRows as any[]).map(r => ({
+        resource_type: r.resourceType,
         total: Number(r.total),
         verified: Number(r.verified),
         flagged: Number(r.flagged),
       })),
-      staleResources: staleRows as any[],
-      flaggedResources: flaggedRows as any[],
+      stale_resources: staleRows as any[],
+      flagged_resources: flaggedRows as any[],
     };
   }),
 
@@ -4650,7 +4650,7 @@ const resourceVerificationRouter = router({
     const [types] = await rawPool.query(`SELECT DISTINCT resourceType FROM unified_resources ORDER BY resourceType`);
     return {
       domains: (domains as any[]).map(r => r.domain),
-      resourceTypes: (types as any[]).map(r => r.resourceType),
+      resource_types: (types as any[]).map(r => r.resourceType),
     };
   }),
 });
@@ -4713,7 +4713,7 @@ const supportMatcherRouter = router({
       });
 
       return {
-        caseId: input.caseId,
+        case_id: input.caseId,
         pipeline_type,
         jurisdiction: jurisdiction || null,
         urgency,
@@ -4737,7 +4737,7 @@ const supportMatcherRouter = router({
       total: Number(row?.total || 0),
       active: Number(row?.active || 0),
       domains: Number(row?.domains || 0),
-      resourceTypes: Number(row?.resourceTypes || 0),
+      resource_types: Number(row?.resourceTypes || 0),
       states: Number(row?.states || 0),
     };
   }),
@@ -4774,24 +4774,24 @@ function buildDshsOfficeProofPayload(rows: any[], endpoint = "benefitsDshsOffice
     hook: endpoint,
     source: "normalized_civic_resource",
     source_key: "wa_dshs_office_locator",
-    sourceKey: "wa_dshs_office_locator",
-    sourceName: "Washington DSHS Office Locator",
-    resourceType: "benefits_office",
+    source_key: "wa_dshs_office_locator",
+    source_name: "Washington DSHS Office Locator",
     resource_type: "benefits_office",
-    queryMode: "live_read",
+    resource_type: "benefits_office",
+    query_mode: "live_read",
     total,
     mapped,
     unmapped: Math.max(total - mapped, 0),
-    precisionBreakdown: {
+    precision_breakdown: {
       rooftop: rooftop || 53,
       street: street || 9,
     },
-    queriedAt: new Date().toISOString(),
-    privilegedKeyExposed: false,
+    queried_at: new Date().toISOString(),
+    privileged_key_exposed: false,
     geocode_precision: "rooftop/street",
-    mappingStatus: "GEOCODED_VALIDATION_LAYER",
+    mapping_status: "GEOCODED_VALIDATION_LAYER",
     status: "DSHS_OFFICE_GEOCODING_COMPLETE_PROVEN",
-    layerStatus: "GEOCODED_VALIDATION_LAYER",
+    layer_status: "GEOCODED_VALIDATION_LAYER",
     offices: rows,
     rows,
   };
@@ -4831,19 +4831,19 @@ async function buildDshsOfficeProof(endpoint = "benefitsDshsOfficeProof") {
       hook: endpoint,
       source: "normalized_civic_resource",
       source_key: "wa_dshs_office_locator",
-      sourceName: "Washington DSHS Office Locator",
-      resourceType: "benefits_office",
-      queryMode: "live_read",
+      source_name: "Washington DSHS Office Locator",
+      resource_type: "benefits_office",
+      query_mode: "live_read",
       total: 62,
       mapped: 62,
       unmapped: 0,
-      precisionBreakdown: { rooftop: 53, street: 9 },
-      queriedAt: new Date().toISOString(),
-      privilegedKeyExposed: false,
+      precision_breakdown: { rooftop: 53, street: 9 },
+      queried_at: new Date().toISOString(),
+      privileged_key_exposed: false,
       geocode_precision: "rooftop/street",
-      mappingStatus: "GEOCODED_VALIDATION_LAYER",
+      mapping_status: "GEOCODED_VALIDATION_LAYER",
       status: "DSHS_OFFICE_GEOCODING_COMPLETE_PROVEN",
-      layerStatus: "GEOCODED_VALIDATION_LAYER",
+      layer_status: "GEOCODED_VALIDATION_LAYER",
       offices: [],
       rows: [],
       warning: error?.message || "DSHS proof query unavailable; count proof preserved.",
@@ -4862,7 +4862,7 @@ async function buildCivicMapResourceProof() {
     return {
       endpoint: "civicMapResourceProof",
       source_key: "food_bank_bridge",
-      verifiedTotal: 268,
+      verified_total: 268,
       total: 268,
       status: "BENEFITS_FOOD_BANK_DIRECTORY_PROVEN",
       resources: rows,
@@ -4871,7 +4871,7 @@ async function buildCivicMapResourceProof() {
     return {
       endpoint: "civicMapResourceProof",
       source_key: "food_bank_bridge",
-      verifiedTotal: 268,
+      verified_total: 268,
       total: 268,
       status: "BENEFITS_FOOD_BANK_DIRECTORY_PROVEN",
       resources: [],

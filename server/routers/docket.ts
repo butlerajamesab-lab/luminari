@@ -389,7 +389,7 @@ export const docketRouter = router({
         const data = await res.json() as unknown as any[];
         return {
           source: "Seattle Legistar",
-          fetchedAt: Date.now(),
+          fetched_at: Date.now(),
           matters: data.map((m: any) => ({
             id: m.MatterId as number,
             file: m.MatterFile as string,
@@ -397,9 +397,9 @@ export const docketRouter = router({
             type: m.MatterTypeName as string,
             status: m.MatterStatusName as string,
             body: m.MatterBodyName as string,
-            introDate: m.MatterIntroDate as string | null,
-            passedDate: m.MatterPassedDate as string | null,
-            lastModified: m.MatterLastModifiedUtc as string,
+            intro_date: m.MatterIntroDate as string | null,
+            passed_date: m.MatterPassedDate as string | null,
+            last_modified: m.MatterLastModifiedUtc as string,
             url: `https://seattle.legistar.com/LegislationDetail.aspx?ID=${m.MatterId}&GUID=${m.MatterGuid}`,
           })),
         };
@@ -407,7 +407,7 @@ export const docketRouter = router({
         // Graceful degradation — return empty feed with error note
         return {
           source: "Seattle Legistar",
-          fetchedAt: Date.now(),
+          fetched_at: Date.now(),
           error: err.message || "Failed to fetch Legistar data",
           matters: [],
         };
@@ -433,18 +433,18 @@ export const docketRouter = router({
         if (!res.ok) throw new Error(`Legistar Events API error: ${res.status}`);
         const data = await res.json() as unknown as any[];
         return {
-          fetchedAt: Date.now(),
+          fetched_at: Date.now(),
           events: data.map((e: any) => ({
             id: e.EventId as number,
             body: e.EventBodyName as string,
             date: e.EventDate as string,
             location: e.EventLocation as string | null,
-            agendaUrl: e.EventAgendaFile as string | null,
+            agenda_url: e.EventAgendaFile as string | null,
           })),
         };
       } catch (err: any) {
         return {
-          fetchedAt: Date.now(),
+          fetched_at: Date.now(),
           error: err.message || "Failed to fetch Legistar events",
           events: [],
         };

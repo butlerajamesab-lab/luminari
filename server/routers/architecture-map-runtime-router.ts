@@ -16,12 +16,12 @@ export const architectureMapRuntimeRouter = router({
     const state = getArchitectureMapRuntimeState();
 
     return {
-      architectureStatus: state.architectureStatus,
-      runtimeState: state.runtimeState,
-      convergenceStage: state.convergenceStage,
+      architecture_status: state.architectureStatus,
+      runtime_state: state.runtimeState,
+      convergence_stage: state.convergenceStage,
       deterministic: state.deterministic,
-      readyNamespaces: state.readyNamespaces,
-      operationalSurfaceCount: state.operationalSurfaceCount,
+      ready_namespaces: state.readyNamespaces,
+      operational_surface_count: state.operationalSurfaceCount,
     };
   }),
 });

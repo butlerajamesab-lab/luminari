@@ -185,7 +185,7 @@ export const proceduralEngineRouter = router({
       const profile = workflow.evidenceProfileId
         ? (await db.select().from(evidenceProfiles).where(eq(evidenceProfiles.id, workflow.evidenceProfileId)))[0]
         : null;
-      return { ...workflow, steps, escalations, evidenceProfile: profile };
+      return { ...workflow, steps, escalations, evidence_profile: profile };
     }),
 
   resolveWorkflow: publicProcedure
@@ -301,16 +301,16 @@ export const proceduralEngineRouter = router({
 
       return {
         jurisdictions: jhCount.count,
-        nodeTimelines: ntCount.count,
-        timelineEvents: teCount.count,
-        timelineEdges: edgeCount.count,
+        node_timelines: ntCount.count,
+        timeline_events: teCount.count,
+        timeline_edges: edgeCount.count,
         workflows: wmCount.count,
-        workflowSteps: wsCount.count,
-        evidenceProfiles: epCount.count,
-        escalationRoutes: erCount.count,
-        deadlineRules: drCount.count,
-        weakJointTriggers: wjtCount.count,
-        claimDetectionRules: cdrCount.count,
+        workflow_steps: wsCount.count,
+        evidence_profiles: epCount.count,
+        escalation_routes: erCount.count,
+        deadline_rules: drCount.count,
+        weak_joint_triggers: wjtCount.count,
+        claim_detection_rules: cdrCount.count,
       };
     }),
 
@@ -340,7 +340,7 @@ export const proceduralEngineRouter = router({
         elements,
         evidence,
         weakJoints,
-        factClaims: factClaimsList,
+        fact_claims: factClaimsList,
         detectionResults,
       };
     }),
