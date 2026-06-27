@@ -70,10 +70,10 @@ export const publicAdminMaintenanceRouter = router({
           stats: {
             total: s.total,
             high: s.high,
-            mediumHigh: s.medium_high,
+            medium_high: s.medium_high,
             medium: s.medium,
             low: s.low,
-            avgScore: s.avg_score,
+            avg_score: s.avg_score,
           },
         };
       } catch (error) {
@@ -107,12 +107,12 @@ export const publicAdminMaintenanceRouter = router({
 
       return {
         total: s.total,
-        withScore: s.with_score,
-        nullScores: s.null_scores,
-        zeroScores: s.zero_scores,
+        with_score: s.with_score,
+        null_scores: s.null_scores,
+        zero_scores: s.zero_scores,
         distribution: {
           high: s.high,
-          mediumHigh: s.medium_high,
+          medium_high: s.medium_high,
           medium: s.medium,
           low: s.low,
         },

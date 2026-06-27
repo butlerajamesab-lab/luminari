@@ -82,7 +82,7 @@ export const ingestionRouter = router({
       // Refresh scheduler to pick up new dataset
       await refreshSchedules();
 
-      return { success: true, datasetId: input.datasetId };
+      return { success: true, dataset_id: input.datasetId };
     }),
 
   toggleDataset: adminProcedure
@@ -337,9 +337,9 @@ export const ingestionRouter = router({
         .limit(20);
 
       return {
-        totalRecords: totalResult?.count ?? 0,
-        topCategories: byCategory.filter(r => r.category),
-        topCities: byCity.filter(r => r.city),
+        total_records: totalResult?.count ?? 0,
+        top_categories: byCategory.filter(r => r.category),
+        top_cities: byCity.filter(r => r.city),
       };
     }),
 

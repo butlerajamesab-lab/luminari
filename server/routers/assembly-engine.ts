@@ -68,7 +68,7 @@ export const assemblyEngineRouter = router({
         updatedAt: now,
       });
 
-      return { packetId: inserted.insertId };
+      return { packet_id: inserted.insertId };
       }); // end withEngineTracking
     }),
 
@@ -79,7 +79,7 @@ export const assemblyEngineRouter = router({
       const now = Date.now();
       const caseEntities = await db.select().from(entities).where(eq(entities.caseId, input.caseId));
 
-      if (caseEntities.length === 0) return { partiesDesignated: 0, message: "No entities found." };
+      if (caseEntities.length === 0) return { parties_designated: 0, message: "No entities found." };
 
       const entitySummary = caseEntities.slice(0, 30).map(e =>
         `${e.id}. ${e.name} (type: ${e.type}, desc: ${e.description?.slice(0, 80) ?? "none"})`
@@ -127,7 +127,7 @@ Identify at least a plaintiff/complainant and defendant/respondent.`
         designated++;
       }
 
-      return { partiesDesignated: designated };
+      return { parties_designated: designated };
     }),
 
   // ─── A3: Build Exhibit Index ────────────────────────────────────────
@@ -138,7 +138,7 @@ Identify at least a plaintiff/complainant and defendant/respondent.`
       const caseDocs = await db.select().from(documents).where(eq(documents.caseId, input.caseId));
       const caseQuotes = await db.select().from(quotes).where(eq(quotes.caseId, input.caseId));
 
-      if (caseDocs.length === 0) return { exhibitsCreated: 0, message: "No documents found." };
+      if (caseDocs.length === 0) return { exhibits_created: 0, message: "No documents found." };
 
       const docSummary = caseDocs.slice(0, 30).map(d =>
         `${d.id}. ${d.filename} (type: ${d.documentType ?? "unknown"})`
@@ -192,7 +192,7 @@ Label exhibits sequentially. Include only relevant documents.`
         created++;
       }
 
-      return { exhibitsCreated: created };
+      return { exhibits_created: created };
     }),
 
   // ─── A4: Generate Fact Narrative Blocks ─────────────────────────────
@@ -212,7 +212,7 @@ Label exhibits sequentially. Include only relevant documents.`
           eq(assemblyExhibitIndex.packetId, input.packetId),
         ));
 
-      if (facts.length === 0) return { blocksCreated: 0, message: "No facts found. Run Strategy Engine first." };
+      if (facts.length === 0) return { blocks_created: 0, message: "No facts found. Run Strategy Engine first." };
 
       const factText = facts.slice(0, 40).map(f =>
         `[${f.id}] (${f.factType}) ${f.factText} — Actor: ${f.actor ?? "?"}, Date: ${f.dateOccurred ?? "?"}`
@@ -268,7 +268,7 @@ Write in formal legal style. Reference exhibits where applicable. Maintain chron
         created++;
       }
 
-      return { blocksCreated: created };
+      return { blocks_created: created };
     }),
 
   // ─── A5: Generate Legal Argument Blocks ─────────────────────────────
@@ -282,7 +282,7 @@ Write in formal legal style. Reference exhibits where applicable. Maintain chron
           eq(strategyClaimCandidates.matterProfileId, input.matterProfileId),
         ));
 
-      if (candidates.length === 0) return { argumentsCreated: 0, message: "No claim candidates found." };
+      if (candidates.length === 0) return { arguments_created: 0, message: "No claim candidates found." };
 
       let argumentsCreated = 0;
       for (const cand of candidates) {
@@ -368,7 +368,7 @@ Write in formal legal style. Reference exhibits where applicable. Maintain chron
         created++;
       }
 
-      return { citationsIndexed: created };
+      return { citations_indexed: created };
     }),
 
   // ─── A7: Generate Relief Requests ───────────────────────────────────
@@ -426,7 +426,7 @@ Write in formal legal style. Reference exhibits where applicable. Maintain chron
         created++;
       }
 
-      return { reliefsGenerated: created };
+      return { reliefs_generated: created };
     }),
 
   // ─── A8: Generate Document Sections ─────────────────────────────────
@@ -442,7 +442,7 @@ Write in formal legal style. Reference exhibits where applicable. Maintain chron
       const templates = await db.select().from(assemblyDocumentTemplates);
       const template = templates.find(t => t.documentType === packet.packetType) ?? templates[0];
 
-      if (!template) return { sectionsGenerated: 0, message: "No templates found." };
+      if (!template) return { sections_generated: 0, message: "No templates found." };
 
       const requiredSections = (template.requiredSections as string[]) ?? [];
       const parties = await db.select().from(assemblyPartyDesignations)
@@ -538,7 +538,7 @@ Write in formal legal style. Reference exhibits where applicable. Maintain chron
         }).where(eq(assemblyFilingPackets.id, input.packetId));
       }
 
-      return { checksRun: created, allPassed };
+      return { checks_run: created, allPassed };
     }),
 
   // ─── Read Endpoints ─────────────────────────────────────────────────

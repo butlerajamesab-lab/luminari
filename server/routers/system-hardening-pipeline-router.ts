@@ -78,10 +78,10 @@ export const systemHardeningPipelineRouter = router({
   missionControlSummary: protectedProcedure.query(async () => {
     const dashboard = await getPipelineDashboard();
     return {
-      totalRuns: dashboard.totalRuns,
-      avgConfidenceScore: dashboard.avgConfidenceScore,
-      verdictDistribution: dashboard.verdictDistribution,
-      recentRuns: dashboard.recentRuns,
+      total_runs: dashboard.totalRuns,
+      avg_confidence_score: dashboard.avgConfidenceScore,
+      verdict_distribution: dashboard.verdictDistribution,
+      recent_runs: dashboard.recentRuns,
     };
   }),
 });

@@ -147,7 +147,7 @@ export const analyzeRouter = router({
       );
 
       return {
-        claimElements: claimCount[0]?.count || 0,
+        claim_elements: claimCount[0]?.count || 0,
         findings: findingCount[0]?.count || 0,
         signals: signalCount[0]?.count || 0,
         documents: documentCount[0]?.count || 0,

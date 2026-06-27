@@ -95,9 +95,9 @@ export const pipelineOrchestrationRouter = router({
       });
 
       return {
-        strategyEngine: {
+        strategy_engine: {
           status: latestProfile ? "initialized" : "not_started",
-          matterProfileId: latestProfile?.id ?? null,
+          matter_profile_id: latestProfile?.id ?? null,
           stages: {
             S1_matterProfile: matterProfiles.length > 0,
             S2_factMatrix: factCount > 0,
@@ -110,14 +110,14 @@ export const pipelineOrchestrationRouter = router({
           },
           counts: { facts: factCount, candidates: candidateCount, assessments: assessmentCount, deadlines: deadlineCount, links: linkCount, tasks: taskCount, paths: pathCount },
         },
-        assemblyEngine: {
+        assembly_engine: {
           status: packets.length > 0 ? "initialized" : "not_started",
-          packetCount: packets.length,
+          packet_count: packets.length,
           sectionCount,
           packets: packets.map(p => ({ id: p.id, name: p.packetName, type: p.packetType, status: p.packetStatus })),
         },
-        patternEngine: {
-          feedbackCount: caseFeedback.length,
+        pattern_engine: {
+          feedback_count: caseFeedback.length,
         },
       };
     }),
