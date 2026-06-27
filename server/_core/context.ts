@@ -4,7 +4,11 @@ import {
   get_user_by_open_id_snake,
   type RuntimeUser,
 } from "./user-resolver";
-import { classify_db_error } from "../db";
+import { classify_db_error, get_pool_runtime_configuration } from "../db";
+import {
+  PROFILE_POOL_ACQUIRE_TIMEOUT_MS,
+  PROFILE_QUERY_TIMEOUT_MS,
+} from "./user-resolver";
 
 export type AuthStatus =
   | "unauthenticated"
@@ -54,6 +58,77 @@ type ProfileResolutionResult = {
   status: ProfileResolutionStatus;
   error: string | null;
 };
+
+type RequestProfileLookupRecord = {
+  promise?: Promise<ProfileResolutionResult>;
+  result?: ProfileResolutionResult;
+};
+
+type RequestProfileLookupState = {
+  lookups: Map<string, RequestProfileLookupRecord>;
+};
+
+const REQUEST_PROFILE_LOOKUP_STATE = Symbol.for(
+  "luminari.request_profile_lookup_state",
+);
+
+function getRequestProfileLookupState(
+  req: CreateExpressContextOptions["req"] | undefined,
+): RequestProfileLookupState {
+  const carrier = (req ?? {}) as any;
+  if (!carrier[REQUEST_PROFILE_LOOKUP_STATE]) {
+    carrier[REQUEST_PROFILE_LOOKUP_STATE] = {
+      lookups: new Map<string, RequestProfileLookupRecord>(),
+    };
+  }
+  return carrier[REQUEST_PROFILE_LOOKUP_STATE] as RequestProfileLookupState;
+}
+
+function profileLookupCacheKey(
+  kind: "open_id" | "email",
+  value: string,
+): string {
+  return `${kind}:${value.trim().toLowerCase()}`;
+}
+
+async function resolveProfileOncePerRequest(
+  req: CreateExpressContextOptions["req"] | undefined,
+  key: string,
+  lookup: () => Promise<ProfileResolutionResult>,
+): Promise<ProfileResolutionResult> {
+  const state = getRequestProfileLookupState(req);
+  const existing = state.lookups.get(key);
+  if (existing?.result) {
+    logContextAuthEvent("profile_lookup_request_cache_hit", {
+      cache_key: key,
+      duplicate_lookup_suppressed: true,
+      profile_resolution_status: existing.result.status,
+    });
+    return existing.result;
+  }
+  if (existing?.promise) {
+    logContextAuthEvent("profile_lookup_duplicate_suppressed", {
+      cache_key: key,
+      duplicate_lookup_suppressed: true,
+    });
+    return existing.promise;
+  }
+
+  logContextAuthEvent("profile_lookup_request_cache_miss", {
+    cache_key: key,
+    duplicate_lookup_suppressed: false,
+    pool_runtime_configuration: get_pool_runtime_configuration(),
+    profile_pool_acquire_timeout_ms: PROFILE_POOL_ACQUIRE_TIMEOUT_MS,
+    profile_query_timeout_ms: PROFILE_QUERY_TIMEOUT_MS,
+  });
+  const record: RequestProfileLookupRecord = {};
+  record.promise = lookup().then((result) => {
+    record.result = result;
+    return result;
+  });
+  state.lookups.set(key, record);
+  return record.promise;
+}
 
 function readPositiveIntegerEnv(name: string, fallback: number): number {
   const raw = process.env[name];
@@ -128,13 +203,25 @@ function errorDetail(error: unknown): string {
 }
 
 function isTimeoutError(error: unknown): boolean {
-  return errorDetail(error).toLowerCase().includes("timed out") || classify_db_error(error) !== "db_error";
+  return (
+    errorDetail(error).toLowerCase().includes("timed out") ||
+    classify_db_error(error) !== "db_error"
+  );
 }
 
-function profile_lookup_error_code(error: unknown): "pool_acquire_timeout" | "query_timeout" | "profile_lookup_timeout" | "profile_lookup_error" {
+function profile_lookup_error_code(
+  error: unknown,
+):
+  | "pool_acquire_timeout"
+  | "query_timeout"
+  | "profile_lookup_timeout"
+  | "profile_lookup_error" {
   const db_code = classify_db_error(error);
-  if (db_code === "pool_acquire_timeout" || db_code === "query_timeout") return db_code;
-  return isTimeoutError(error) ? "profile_lookup_timeout" : "profile_lookup_error";
+  if (db_code === "pool_acquire_timeout" || db_code === "query_timeout")
+    return db_code;
+  return isTimeoutError(error)
+    ? "profile_lookup_timeout"
+    : "profile_lookup_error";
 }
 
 function createUnauthenticatedAuth(): ContextAuth {
@@ -392,6 +479,7 @@ async function resolveSupabaseAuthUser(
 async function resolveProfileFromSupabaseAuthUser(
   authUser: SupabaseAuthUser,
   phases: ContextLookupPhase[],
+  req?: CreateExpressContextOptions["req"],
 ): Promise<ProfileResolutionResult> {
   const authEmail = authUser.email?.trim().toLowerCase() || null;
   const authOpenId = authUser.id?.trim() || null;
@@ -399,83 +487,109 @@ async function resolveProfileFromSupabaseAuthUser(
   let timed_out = false;
 
   if (authOpenId) {
-    try {
-      const user = await timeRequiredDbUserPhase(
-        "supabase_open_id_lookup",
-        phases,
-        () => get_user_by_open_id_snake(authOpenId),
-      );
-      if (user) {
-        logContextAuthEvent("profile_lookup_succeeded", {
-          lookup_key: "open_id",
-          supabase_user_id: authOpenId,
-        });
-        return { user, status: "resolved", error: null };
-      }
-      logContextAuthEvent("profile_lookup_missed", {
-        lookup_key: "open_id",
-        supabase_user_id: authOpenId,
-      });
-    } catch (error) {
-      first_error = errorDetail(error);
-      timed_out = isTimeoutError(error);
-      logContextAuthEvent(
-        timed_out ? "profile_lookup_timed_out" : "profile_lookup_threw",
-        {
-          lookup_key: "open_id",
-          supabase_user_id: authOpenId,
-          timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
-          error: first_error,
-          diagnostic_code: profile_lookup_error_code(error),
-        },
-      );
-      return {
-        user: null,
-        status: timed_out ? "timed_out" : "threw",
-        error: first_error,
-      };
-    }
+    return resolveProfileOncePerRequest(
+      req,
+      profileLookupCacheKey("open_id", authOpenId),
+      async () => {
+        try {
+          const user = await timeRequiredDbUserPhase(
+            "supabase_open_id_lookup",
+            phases,
+            () => get_user_by_open_id_snake(authOpenId),
+          );
+          if (user) {
+            logContextAuthEvent("profile_lookup_succeeded", {
+              lookup_key: "open_id",
+              supabase_user_id: authOpenId,
+            });
+            return { user, status: "resolved", error: null };
+          }
+          logContextAuthEvent("profile_lookup_missed", {
+            lookup_key: "open_id",
+            supabase_user_id: authOpenId,
+          });
+        } catch (error) {
+          first_error = errorDetail(error);
+          timed_out = isTimeoutError(error);
+          logContextAuthEvent(
+            timed_out ? "profile_lookup_timed_out" : "profile_lookup_threw",
+            {
+              lookup_key: "open_id",
+              supabase_user_id: authOpenId,
+              timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
+              error: first_error,
+              diagnostic_code: profile_lookup_error_code(error),
+            },
+          );
+          logContextAuthEvent("profile_lookup_fallback_activated", {
+            lookup_key: "open_id",
+            supabase_user_id: authOpenId,
+            fallback_activation: true,
+            profile_state: "unavailable",
+          });
+          return {
+            user: null,
+            status: timed_out ? "timed_out" : "threw",
+            error: first_error,
+          };
+        }
+        return { user: null, status: "missed", error: null };
+      },
+    );
   }
 
   if (authEmail) {
-    try {
-      const user = await timeRequiredDbUserPhase(
-        "supabase_email_lookup",
-        phases,
-        () => get_user_by_email_snake(authEmail),
-      );
-      if (user) {
-        logContextAuthEvent("profile_lookup_succeeded", {
-          lookup_key: "email",
-          supabase_email: authEmail,
-        });
-        return { user, status: "resolved", error: null };
-      }
-      logContextAuthEvent("profile_lookup_missed", {
-        lookup_key: "email",
-        supabase_email: authEmail,
-      });
-    } catch (error) {
-      const detail = errorDetail(error);
-      timed_out = timed_out || isTimeoutError(error);
-      logContextAuthEvent(
-        isTimeoutError(error)
-          ? "profile_lookup_timed_out"
-          : "profile_lookup_threw",
-        {
-          lookup_key: "email",
-          supabase_email: authEmail,
-          timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
-          error: detail,
-          diagnostic_code: profile_lookup_error_code(error),
-        },
-      );
-      return {
-        user: null,
-        status: isTimeoutError(error) ? "timed_out" : "threw",
-        error: detail,
-      };
-    }
+    return resolveProfileOncePerRequest(
+      req,
+      profileLookupCacheKey("email", authEmail),
+      async () => {
+        try {
+          const user = await timeRequiredDbUserPhase(
+            "supabase_email_lookup",
+            phases,
+            () => get_user_by_email_snake(authEmail),
+          );
+          if (user) {
+            logContextAuthEvent("profile_lookup_succeeded", {
+              lookup_key: "email",
+              supabase_email: authEmail,
+            });
+            return { user, status: "resolved", error: null };
+          }
+          logContextAuthEvent("profile_lookup_missed", {
+            lookup_key: "email",
+            supabase_email: authEmail,
+          });
+        } catch (error) {
+          const detail = errorDetail(error);
+          timed_out = timed_out || isTimeoutError(error);
+          logContextAuthEvent(
+            isTimeoutError(error)
+              ? "profile_lookup_timed_out"
+              : "profile_lookup_threw",
+            {
+              lookup_key: "email",
+              supabase_email: authEmail,
+              timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
+              error: detail,
+              diagnostic_code: profile_lookup_error_code(error),
+            },
+          );
+          logContextAuthEvent("profile_lookup_fallback_activated", {
+            lookup_key: "email",
+            supabase_email: authEmail,
+            fallback_activation: true,
+            profile_state: "unavailable",
+          });
+          return {
+            user: null,
+            status: isTimeoutError(error) ? "timed_out" : "threw",
+            error: detail,
+          };
+        }
+        return { user: null, status: "missed", error: null };
+      },
+    );
   }
 
   if (first_error) {
@@ -535,7 +649,7 @@ export async function createContext(
       const supabase_user_id = authUser.id?.trim() || null;
       const supabase_email = authUser.email?.trim().toLowerCase() || null;
       const profileResult = await withTimeout(
-        resolveProfileFromSupabaseAuthUser(authUser, phases),
+        resolveProfileFromSupabaseAuthUser(authUser, phases, opts.req),
         USER_LOOKUP_TIMEOUT_MS,
         "tRPC context supabase profile resolution",
       ).catch((error): ProfileResolutionResult => {

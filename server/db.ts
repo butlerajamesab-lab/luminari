@@ -4,7 +4,7 @@ import { compareDateOccurred, normalizeDateForSort, isPreModernDate } from "./da
 import { runPhoenixDetection, emitPhoenixSignal } from "./engines/phoenix-detector";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { create_database_pool } from "./pg-config";
+import { create_database_pool, get_database_host_label } from "./pg-config";
 import {
   users, cases, documents, quotes, entities, entityRoles,
   relationships, relationshipEvidence, claims, findings,
@@ -63,7 +63,25 @@ let dbInstance: ReturnType<typeof drizzle> | null = null;
 function initializePool(): Pool {
   if (pgPool) return pgPool;
   pgPool = create_database_pool({ label: "DB", connection_timeout_millis: 10000, max: 5 });
+  console.log("[DB] runtime pool configuration", get_pool_runtime_configuration());
   return pgPool;
+}
+
+export function get_pool_runtime_configuration() {
+  const pool = pgPool;
+  return {
+    host: get_database_host_label(),
+    pool_max: (pool as any)?.options?.max ?? 5,
+    connection_timeout_ms: (pool as any)?.options?.connectionTimeoutMillis ?? 10000,
+    idle_timeout_ms: (pool as any)?.options?.idleTimeoutMillis ?? 30000,
+    max_uses: (pool as any)?.options?.maxUses ?? 7500,
+    statement_timeout_ms: (pool as any)?.options?.statement_timeout ?? null,
+    query_timeout_ms: (pool as any)?.options?.query_timeout ?? null,
+    keep_alive: (pool as any)?.options?.keepAlive ?? true,
+    pool_total_count: pool?.totalCount ?? 0,
+    pool_idle_count: pool?.idleCount ?? 0,
+    pool_waiting_count: pool?.waitingCount ?? 0,
+  };
 }
 
 export function getDb() {
@@ -130,6 +148,7 @@ export function classify_db_error(error: unknown): "pool_acquire_timeout" | "que
 
 export async function connect_with_pool_timeout(timeout_ms: number, label = "db"): Promise<any> {
   const pool = getPool();
+  const wait_started_at = Date.now();
   let timed_out = false;
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const connect_promise = pool.connect().then((client) => {
@@ -137,12 +156,16 @@ export async function connect_with_pool_timeout(timeout_ms: number, label = "db"
       client.release();
       return Promise.reject(new DbTimeoutDiagnosticError("pool_acquire_timeout", `${label} pool acquire timed out after ${timeout_ms}ms`, timeout_ms));
     }
+    const pool_wait_ms = Date.now() - wait_started_at;
+    console.warn("[DB] pool_acquire_succeeded", { label, pool_wait_ms, acquisition_time_ms: pool_wait_ms, acquire_timeout_ms: timeout_ms, pool_total_count: pool.totalCount, pool_idle_count: pool.idleCount, pool_waiting_count: pool.waitingCount });
     return client;
   });
 
   const timeout_promise = new Promise<never>((_, reject) => {
     timeout = setTimeout(() => {
       timed_out = true;
+      const pool_wait_ms = Date.now() - wait_started_at;
+      console.warn("[DB] pool_acquire_timed_out", { label, pool_wait_ms, acquire_timeout_ms: timeout_ms, pool_total_count: pool.totalCount, pool_idle_count: pool.idleCount, pool_waiting_count: pool.waitingCount });
       reject(new DbTimeoutDiagnosticError("pool_acquire_timeout", `${label} pool acquire timed out after ${timeout_ms}ms`, timeout_ms));
     }, timeout_ms);
   });
@@ -171,7 +194,15 @@ export async function query_with_diagnostics<T = any>(
   const query_timeout_ms = options.query_timeout_ms ?? 10000;
   const client = await connect_with_pool_timeout(pool_acquire_timeout_ms, label);
   try {
-    return await client.query({ text, values, query_timeout: query_timeout_ms });
+    const query_started_at = Date.now();
+    try {
+      const result = await client.query({ text, values, query_timeout: query_timeout_ms });
+      console.warn("[DB] query_diagnostics", { label, query_execution_time_ms: Date.now() - query_started_at, query_timeout_ms, row_count: result.rowCount });
+      return result;
+    } catch (error) {
+      console.warn("[DB] query_diagnostics", { label, query_execution_time_ms: Date.now() - query_started_at, query_timeout_ms, status: "failed", error: normalize_error_message(error) });
+      throw error;
+    }
   } catch (error) {
     if (is_query_timeout_error(error)) {
       throw new DbTimeoutDiagnosticError("query_timeout", `${label} query timed out after ${query_timeout_ms}ms`, query_timeout_ms, normalize_error_message(error));
