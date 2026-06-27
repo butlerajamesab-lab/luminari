@@ -374,15 +374,15 @@ const registryRouter = router({
       const workflows = loadStateFile<any>(sc, "workflow_overrides");
       if (!manifest) throw new TRPCError({ code: "NOT_FOUND", message: `State ${sc} not found in registry` });
       return {
-        state_code: sc,
-        state_name: manifest.state_name || sc,
+        stateCode: sc,
+        stateName: manifest.state_name || sc,
         manifest,
-        layer0_flags: layer0?.flags || [],
-        help_contacts: help?.routing_index || help?.contacts || [],
-        oversight_bodies: oversight?.oversight_chains || oversight?.chains || [],
-        program_count: programs?.programs?.length || 0,
-        tribal_overrides: tribal || null,
-        workflow_count: workflows?.workflows?.length || 0,
+        layer0Flags: layer0?.flags || [],
+        helpContacts: help?.routing_index || help?.contacts || [],
+        oversightBodies: oversight?.oversight_chains || oversight?.chains || [],
+        programCount: programs?.programs?.length || 0,
+        tribalOverrides: tribal || null,
+        workflowCount: workflows?.workflows?.length || 0,
       };
     }),
 
@@ -823,7 +823,7 @@ const mapIntakeRouter = router({
       });
 
       return {
-        session_id: id,
+        sessionId: id,
         ...context,
         createdAt,
       };
@@ -882,8 +882,8 @@ const mapIntakeRouter = router({
       return {
         detectedState,
         suggestions,
-        resource_count: nearbyResources.length,
-        signal_count: nearbySignals.length,
+        resourceCount: nearbyResources.length,
+        signalCount: nearbySignals.length,
       };
     }),
 });

@@ -48,7 +48,7 @@ export const businessRouter = router({
     }))
     .mutation(async ({ input }) => {
       const now = Date.now();
-
+      
       const result = await db
         .insert(businessBaselines)
         .values({
@@ -77,15 +77,15 @@ export const businessRouter = router({
   getAnalyticsSummary: protectedProcedure
     .query(async () => {
       const baselines = await db.select().from(businessBaselines);
-
+      
       const productBaselines = baselines.filter(b => b.entityType === 'product');
       const expenseBaselines = baselines.filter(b => b.entityType === 'expense_category');
 
       return {
-        total_baselines: baselines.length,
-        product_count: productBaselines.length,
-        expense_category_count: expenseBaselines.length,
-        last_updated: baselines.length > 0
+        totalBaselines: baselines.length,
+        productCount: productBaselines.length,
+        expenseCategoryCount: expenseBaselines.length,
+        lastUpdated: baselines.length > 0 
           ? Math.max(...baselines.map(b => b.lastUpdated || 0))
           : null,
       };

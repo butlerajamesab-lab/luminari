@@ -47,14 +47,14 @@ export const adminDashboardRouter = router({
         completed: completedRuns,
         failed: failedRuns,
         running: runningNow,
-        success_rate: recentRuns ? Math.round((completedRuns / recentRuns) * 100) : 100,
+        successRate: recentRuns ? Math.round((completedRuns / recentRuns) * 100) : 100,
       },
-      engine_breakdown: engineBreakdownRows.rows.map((row: any) => ({
+      engineBreakdown: engineBreakdownRows.rows.map((row: any) => ({
         type: row.run_type,
         count: Number(row.cnt ?? 0),
       })),
-      server_uptime: process.uptime(),
-      memory_usage: process.memoryUsage(),
+      serverUptime: process.uptime(),
+      memoryUsage: process.memoryUsage(),
       timestamp: Date.now(),
     };
   }),
@@ -83,14 +83,14 @@ export const adminDashboardRouter = router({
     ]);
 
     return {
-      cases: { total: totalCases, today: casesToday, this_week: casesThisWeek },
+      cases: { total: totalCases, today: casesToday, thisWeek: casesThisWeek },
       documents: { total: totalDocs, today: docsToday },
       findings: { total: totalFindings, today: findingsToday },
       users: { total: totalUsers, today: usersToday },
-      recent_cases: recentCasesRows.rows.map((row: any) => ({
+      recentCases: recentCasesRows.rows.map((row: any) => ({
         id: row.id,
         name: row.name,
-        created_at: toMillis(row.created_at) ?? Date.now(),
+        createdAt: toMillis(row.created_at) ?? Date.now(),
       })),
     };
   }),
@@ -122,17 +122,17 @@ export const adminDashboardRouter = router({
     ]);
 
     return {
-      by_severity: severityRows.rows.map((row: any) => ({ severity: row.severity, count: Number(row.cnt ?? 0) })),
-      by_category: categoryRows.rows.map((row: any) => ({ category: row.category, count: Number(row.cnt ?? 0) })),
-      critical_findings: criticalRows.rows.map((row: any) => ({
+      bySeverity: severityRows.rows.map((row: any) => ({ severity: row.severity, count: Number(row.cnt ?? 0) })),
+      byCategory: categoryRows.rows.map((row: any) => ({ category: row.category, count: Number(row.cnt ?? 0) })),
+      criticalFindings: criticalRows.rows.map((row: any) => ({
         id: row.id,
-        case_id: row.case_id,
+        caseId: row.case_id,
         title: row.title,
         severity: row.severity,
         category: row.category,
-        created_at: toMillis(row.created_at) ?? Date.now(),
+        createdAt: toMillis(row.created_at) ?? Date.now(),
       })),
-      total_findings: totalSignals,
+      totalFindings: totalSignals,
     };
   }),
 
@@ -168,24 +168,24 @@ export const adminDashboardRouter = router({
     return {
       running: runningRows.rows.map((row: any) => ({
         id: row.id,
-        case_id: row.case_id,
-        run_type: row.run_type,
-        run_status: row.run_status,
-        created_at: toMillis(row.started_at) ?? Date.now(),
+        caseId: row.case_id,
+        runType: row.run_type,
+        runStatus: row.run_status,
+        createdAt: toMillis(row.started_at) ?? Date.now(),
       })),
       failed: failedRows.rows.map((row: any) => ({
         id: row.id,
-        case_id: row.case_id,
-        run_type: row.run_type,
-        run_status: row.run_status,
-        error_message: row.error_message,
-        created_at: toMillis(row.started_at) ?? Date.now(),
+        caseId: row.case_id,
+        runType: row.run_type,
+        runStatus: row.run_status,
+        errorMessage: row.error_message,
+        createdAt: toMillis(row.started_at) ?? Date.now(),
       })),
-      recently_completed: completedRows.rows.map((row: any) => ({
+      recentlyCompleted: completedRows.rows.map((row: any) => ({
         id: row.id,
-        case_id: row.case_id,
-        run_type: row.run_type,
-        completed_at: toMillis(row.completed_at) ?? toMillis(row.started_at),
+        caseId: row.case_id,
+        runType: row.run_type,
+        completedAt: toMillis(row.completed_at) ?? toMillis(row.started_at),
       })),
     };
   }),

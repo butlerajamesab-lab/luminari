@@ -37,11 +37,11 @@ export const sessionRouter = router({
       }
 
       return {
-        session_id: session.sessionId,
-        started_at: session.startedAt,
-        governance_anchor: session.governanceAnchor,
-        actor_type: session.actorType,
-        action_count: (JSON.parse(session.actionsTaken as unknown as string) as unknown[])
+        sessionId: session.sessionId,
+        startedAt: session.startedAt,
+        governanceAnchor: session.governanceAnchor,
+        actorType: session.actorType,
+        actionCount: (JSON.parse(session.actionsTaken as unknown as string) as unknown[])
           .length,
       };
     }),

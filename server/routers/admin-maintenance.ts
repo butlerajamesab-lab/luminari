@@ -70,10 +70,10 @@ export const adminMaintenanceRouter = router({
           stats: {
             total: s.total,
             high: s.high,
-            medium_high: s.medium_high,
+            mediumHigh: s.medium_high,
             medium: s.medium,
             low: s.low,
-            avg_score: s.avg_score,
+            avgScore: s.avg_score,
           },
         };
       } catch (error) {
@@ -111,12 +111,12 @@ export const adminMaintenanceRouter = router({
 
       return {
         total: s.total,
-        with_score: s.with_score,
-        null_scores: s.null_scores,
-        zero_scores: s.zero_scores,
+        withScore: s.with_score,
+        nullScores: s.null_scores,
+        zeroScores: s.zero_scores,
         distribution: {
           high: s.high,
-          medium_high: s.medium_high,
+          mediumHigh: s.medium_high,
           medium: s.medium,
           low: s.low,
         },

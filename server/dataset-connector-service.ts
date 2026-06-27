@@ -1,6 +1,6 @@
 /**
  * Dataset Connector Service
- *
+ * 
  * Bridges public dataset tables (consumer_complaints, campaign_finance_records,
  * enforcement_records, policy_change_registry) to system engines:
  * - Signal Engine: generates signals from complaints and enforcement actions
@@ -8,7 +8,7 @@
  * - Trend & Pressure Engine: tracks complaint growth, enforcement frequency
  * - Strategy Engine: intervention targeting from enforcement data
  * - Reform Package Engine: legislative change proposals from policy registry
- *
+ * 
  * Also provides scheduled ingestion job management and dataset statistics.
  */
 
@@ -74,27 +74,27 @@ export interface TrendFromDataset {
 
 export async function listDatasets(): Promise<DatasetStats[]> {
   const [rows]: any = await db.execute(sql.raw(
-    `SELECT stream_id_dsr as dataset_id, stream_name_dsr as dataset_name, source_dsr as source, jurisdiction_dsr as jurisdiction, domain_dsr as domain,
+    `SELECT stream_id_dsr as datasetId, stream_name_dsr as datasetName, source_dsr as source, jurisdiction_dsr as jurisdiction, domain_dsr as domain, 
             records_ingested_dsr as recordCount, last_ingested_at_dsr as lastIngested,
             enabled_dsr as enabled, update_freq_dsr as updateFrequency
      FROM data_stream_registry ORDER BY stream_name_dsr`
   ));
   return (rows as any[]).map(r => ({
-    datasetId: r.dataset_id,
-    datasetName: r.dataset_name,
+    datasetId: r.datasetId,
+    datasetName: r.datasetName,
     source: r.source,
     jurisdiction: r.jurisdiction,
     domain: r.domain,
     recordCount: Number(r.recordCount) || 0,
     lastIngested: r.lastIngested ? Number(r.lastIngested) : null,
     enabled: Boolean(r.enabled),
-    updateFrequency: r.update_frequency,
+    updateFrequency: r.updateFrequency,
   }));
 }
 
 export async function getDatasetById(datasetId: string): Promise<DatasetStats | null> {
   const [rows]: any = await db.execute(sql.raw(
-    `SELECT stream_id_dsr as dataset_id, stream_name_dsr as dataset_name, source_dsr as source, jurisdiction_dsr as jurisdiction, domain_dsr as domain,
+    `SELECT stream_id_dsr as datasetId, stream_name_dsr as datasetName, source_dsr as source, jurisdiction_dsr as jurisdiction, domain_dsr as domain,
             records_ingested_dsr as recordCount, last_ingested_at_dsr as lastIngested,
             enabled_dsr as enabled, update_freq_dsr as updateFrequency
      FROM data_stream_registry WHERE stream_id_dsr = '${datasetId.replace(/'/g, "''")}'`
@@ -102,15 +102,15 @@ export async function getDatasetById(datasetId: string): Promise<DatasetStats | 
   if (!(rows as any[]).length) return null;
   const r = (rows as any[])[0];
   return {
-    datasetId: r.dataset_id,
-    datasetName: r.dataset_name,
+    datasetId: r.datasetId,
+    datasetName: r.datasetName,
     source: r.source,
     jurisdiction: r.jurisdiction,
     domain: r.domain,
     recordCount: Number(r.recordCount) || 0,
     lastIngested: r.lastIngested ? Number(r.lastIngested) : null,
     enabled: Boolean(r.enabled),
-    updateFrequency: r.update_frequency,
+    updateFrequency: r.updateFrequency,
   };
 }
 
@@ -153,7 +153,7 @@ export async function extractSignalsFromComplaints(
   const whereClause = jurisdiction
     ? `WHERE jurisdiction = '${jurisdiction.replace(/'/g, "''")}'`
     : '';
-
+  
   // Detect high-frequency complaint patterns by company
   const [companySignals]: any = await db.execute(sql.raw(
     `SELECT company_name, claim_type, jurisdiction, COUNT(*) as cnt,
@@ -195,7 +195,7 @@ export async function extractSignalsFromEnforcement(
     : '';
 
   const [enfSignals]: any = await db.execute(sql.raw(
-    `SELECT respondent_name, violation_type, agency_name, jurisdiction,
+    `SELECT respondent_name, violation_type, agency_name, jurisdiction, 
             COUNT(*) as cnt, SUM(penalty_amount) as totalPenalty
      FROM enforcement_records ${whereClause}
      GROUP BY respondent_name, violation_type, agency_name, jurisdiction
@@ -523,13 +523,13 @@ export async function analyzeCampaignFinance(
 
 export async function getIngestionJobs(): Promise<IngestionJobConfig[]> {
   const [rows]: any = await db.execute(sql.raw(
-    `SELECT stream_id_dsr as dataset_id, update_freq_dsr as update_frequency, cron_expression_dsr as cron_expression, enabled_dsr as enabled
+    `SELECT stream_id_dsr as datasetId, update_freq_dsr as updateFrequency, cron_expression_dsr as cronExpression, enabled_dsr as enabled
      FROM data_stream_registry ORDER BY stream_name_dsr`
   ));
   return (rows as any[]).map(r => ({
-    datasetId: r.dataset_id,
-    frequency: r.update_frequency,
-    cronExpression: r.cron_expression,
+    datasetId: r.datasetId,
+    frequency: r.updateFrequency,
+    cronExpression: r.cronExpression,
     enabled: Boolean(r.enabled),
   }));
 }

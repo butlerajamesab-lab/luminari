@@ -55,16 +55,16 @@ export const conduitRouter = router({
       tables: {
         total: (totalTables as unknown as Record<string, any>)[0]?.cnt || 0,
         // @ts-ignore - cast is valid at runtime
-        by_category: tableRows as any[],
+        byCategory: tableRows as any[],
       },
       fields: {
         total: (totalFields as unknown as Record<string, any>)[0]?.cnt || 0,
-        stats: (fieldStats as unknown as Record<string, any>)[0] || { total_fields: 0, pk_fields: 0, indexed_fields: 0 },
+        stats: (fieldStats as unknown as Record<string, any>)[0] || { totalFields: 0, pkFields: 0, indexedFields: 0 },
       },
       drift: {
-        orphan_fields: drift.orphanFields,
-        unknown_tables: drift.unknownTables,
-        unknown_table_names: drift.unknownTableNames.slice(0, 20),
+        orphanFields: drift.orphanFields,
+        unknownTables: drift.unknownTables,
+        unknownTableNames: drift.unknownTableNames.slice(0, 20),
         coverage: drift.totalDbTables > 0
           ? Math.round((drift.registeredTables / drift.totalDbTables) * 100)
           : 0,
@@ -131,10 +131,10 @@ export const conduitRouter = router({
 
     return {
       // @ts-ignore - cast is valid at runtime
-      recent_runs: recentRuns as any[],
+      recentRuns: recentRuns as any[],
       enforcement: ruleResults,
       backboneCounts,
-      format_distribution: (formatDist as unknown as Record<string, any>)[0] || { total: 0, no_refs: 0, deterministic: 0, legacy: 0 },
+      formatDistribution: (formatDist as unknown as Record<string, any>)[0] || { total: 0, no_refs: 0, deterministic: 0, legacy: 0 },
     };
   }),
 
@@ -191,7 +191,7 @@ export const conduitRouter = router({
       // @ts-ignore - cast is valid at runtime
       exports: exports as any[],
       readySnapshots,
-      total_alpha_exports: (exportEvents as unknown as Record<string, any>)[0]?.cnt || 0,
+      totalAlphaExports: (exportEvents as unknown as Record<string, any>)[0]?.cnt || 0,
     };
   }),
 

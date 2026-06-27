@@ -314,21 +314,21 @@ export const enforcementIntelligenceRouter = router({
         }
 
         return {
-          form_id: f.id,
+          formId: f.id,
           agency: f.agency,
           agency_short: f.agency_short,
           form_name: f.form_name,
           filing_deadlineText: f.filing_deadline,
-          incident_date: input.incidentDate,
+          incidentDate: input.incidentDate,
           daysSinceIncident,
-          primary_deadline_days: rule.primaryDays,
-          primary_deadline_date: primaryDeadlineDate?.toISOString().split('T')[0] ?? null,
+          primaryDeadlineDays: rule.primaryDays,
+          primaryDeadlineDate: primaryDeadlineDate?.toISOString().split('T')[0] ?? null,
           primaryDaysRemaining,
-          extended_deadline_days: rule.extendedDays,
-          extended_deadline_date: extendedDeadlineDate?.toISOString().split('T')[0] ?? null,
+          extendedDeadlineDays: rule.extendedDays,
+          extendedDeadlineDate: extendedDeadlineDate?.toISOString().split('T')[0] ?? null,
           extendedDaysRemaining,
-          extended_condition: rule.extendedCondition,
-          no_deadline: rule.noDeadline,
+          extendedCondition: rule.extendedCondition,
+          noDeadline: rule.noDeadline,
           urgency,
         };
       });
@@ -390,13 +390,13 @@ export const enforcementIntelligenceRouter = router({
 
       return {
         domain: input.domain,
-        gap_type: input.gapType,
+        gapType: input.gapType,
         forms: matchingForms,
         guidance: matchingGuidance,
         penalties: matchingPenalties,
         viability_rules: matchingViability,
         barriers: matchingBarriers,
-        total_resources: matchingForms.length + matchingGuidance.length + matchingPenalties.length + matchingViability.length + matchingBarriers.length,
+        totalResources: matchingForms.length + matchingGuidance.length + matchingPenalties.length + matchingViability.length + matchingBarriers.length,
       };
     }),
 
@@ -446,10 +446,10 @@ export const enforcementIntelligenceRouter = router({
         gaps: gaps.map((g: any) => ({
           id: g.id,
           domain: g.domain,
-          record_type: g.recordType,
+          recordType: g.recordType,
           label: g.label,
           severity: g.severity,
-          agency_type: g.agencyType,
+          agencyType: g.agencyType,
         })),
         suggestions: {
           forms,
@@ -458,7 +458,7 @@ export const enforcementIntelligenceRouter = router({
           viability_rules,
         },
         domains,
-        pipeline_categories: allPipelineCategories,
+        pipelineCategories: allPipelineCategories,
       };
     }),
 
@@ -546,7 +546,7 @@ export const enforcementIntelligenceRouter = router({
       else severity = 'low';
 
       return {
-        contradiction_id: input.contradictionId ?? null,
+        contradictionId: input.contradictionId ?? null,
         title: contradiction?.title ?? `${input.doctrineA ?? 'Unknown'} vs. ${input.doctrineB ?? 'Unknown'}`,
         domain,
         total_score,
@@ -703,7 +703,7 @@ export const enforcementIntelligenceRouter = router({
       // If specific agency requested, return that model
       if (input.agency_short && pathwayModels[input.agency_short]) {
         return {
-          matched_by: 'agency',
+          matchedBy: 'agency',
           pathways: [{ agency_short: input.agency_short, ...pathwayModels[input.agency_short] }],
         };
       }
@@ -995,9 +995,9 @@ export const enforcementIntelligenceRouter = router({
         domain: input.domain,
         claim_type: input.claim_type,
         agency_short: input.agency_short,
-        generated_at: Date.now(),
+        generatedAt: Date.now(),
         workflow: {
-          immediate_actions: immediateActions.sort((a, b) => a.priority - b.priority),
+          immediateActions: immediateActions.sort((a, b) => a.priority - b.priority),
           recordsToRequest,
           witnessTargets,
           timelineTasks,
@@ -1006,10 +1006,10 @@ export const enforcementIntelligenceRouter = router({
           signalWatchList,
         },
         metadata: {
-          weak_joints_considered: weakJoints.length,
-          signals_considered: signals.length,
-          contradiction_templates_considered: templates.length,
-          barriers_considered: barriers.length,
+          weakJointsConsidered: weakJoints.length,
+          signalsConsidered: signals.length,
+          contradictionTemplatesConsidered: templates.length,
+          barriersConsidered: barriers.length,
         },
       };
     }),
@@ -1035,11 +1035,11 @@ export const enforcementIntelligenceRouter = router({
       penalties: counts[2][0]?.count ?? 0,
       viability_rules: counts[3][0]?.count ?? 0,
       doctrines: counts[4][0]?.count ?? 0,
-      doctrine_edges: counts[5][0]?.count ?? 0,
+      doctrineEdges: counts[5][0]?.count ?? 0,
       barriers: counts[6][0]?.count ?? 0,
       signals: counts[7][0]?.count ?? 0,
-      contradiction_templates: counts[8][0]?.count ?? 0,
-      narrative_templates: counts[9][0]?.count ?? 0,
+      contradictionTemplates: counts[8][0]?.count ?? 0,
+      narrativeTemplates: counts[9][0]?.count ?? 0,
       workflows: counts[10][0]?.count ?? 0,
     };
   }),
@@ -1086,8 +1086,8 @@ export const enforcementIntelligenceRouter = router({
     ]);
     return {
       total: total[0]?.count ?? 0,
-      by_severity: { critical: critical[0]?.count ?? 0, high: high[0]?.count ?? 0, medium: medium[0]?.count ?? 0, low: low[0]?.count ?? 0 },
-      by_dataset: byDataset.map((r: any) => ({ dataset_id: r.datasetId, count: r.count })),
+      bySeverity: { critical: critical[0]?.count ?? 0, high: high[0]?.count ?? 0, medium: medium[0]?.count ?? 0, low: low[0]?.count ?? 0 },
+      byDataset: byDataset.map((r: any) => ({ datasetId: r.datasetId, count: r.count })),
     };
   }),
 

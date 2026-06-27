@@ -56,8 +56,8 @@ export const sunamRouter = router({
 
         return {
           success: true,
-          signal_id: result[0]?.id,
-          proto_form_id: input.protoFormId,
+          signalId: result[0]?.id,
+          protoFormId: input.protoFormId,
         };
       } catch (error) {
         try {

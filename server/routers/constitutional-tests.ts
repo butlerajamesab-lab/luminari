@@ -106,13 +106,13 @@ export const constitutionalTestsRouter = router({
         await db.query.raw(
           sql`INSERT INTO constitutional_violations (violation_id, run_id, principle_name, target_layer, target_id, severity, violation_type, violation_payload, created_at)
           VALUES (${violationId}, ${runId}, ${testDef.principle_name}, ${testDef.target_layer}, ${input.targetId || null},
-          ${testDef.severity}, 'test_failure', ${JSON.stringify({ failureReason, test_name: testDef.test_name })}, ${timestamp})`
+          ${testDef.severity}, 'test_failure', ${JSON.stringify({ failureReason, testName: testDef.test_name })}, ${timestamp})`
         );
       }
 
       return {
         runId,
-        test_id: input.testId,
+        testId: input.testId,
         runStatus,
         failureReason,
         timestamp,
@@ -182,7 +182,7 @@ export const constitutionalTestsRouter = router({
           await db.query.raw(
             sql`INSERT INTO constitutional_violations (violation_id, run_id, principle_name, target_layer, severity, violation_type, violation_payload, created_at)
             VALUES (${violationId}, ${runId}, ${t.principle_name}, ${t.target_layer}, ${t.severity}, 'test_failure',
-            ${JSON.stringify({ failureReason, test_name: t.test_name })}, ${timestamp})`
+            ${JSON.stringify({ failureReason, testName: t.test_name })}, ${timestamp})`
           );
         }
 
@@ -190,7 +190,7 @@ export const constitutionalTestsRouter = router({
       }
     }
 
-    return { total_tests: results.length, results, timestamp };
+    return { totalTests: results.length, results, timestamp };
   }),
 
   /**
@@ -239,7 +239,7 @@ export const constitutionalTestsRouter = router({
         WHERE violation_id = ${input.violationId}`
       );
 
-      return { violation_id: input.violationId, resolved_at: timestamp };
+      return { violationId: input.violationId, resolved_at: timestamp };
     }),
 
   /**

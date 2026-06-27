@@ -75,14 +75,14 @@ export const lumensendRouter = router({
         contextId: input.programId || input.oversightBody || null,
         contextLabel: null,
         jurisdiction: input.stateCode,
-        related_actions: letter.relatedActions?.length ? JSON.stringify(letter.relatedActions) : null,
+        relatedActions: letter.relatedActions?.length ? JSON.stringify(letter.relatedActions) : null,
         status: "draft" as any,
         createdAt: now,
         updatedAt: now,
       });
 
       return {
-        draft_id: draft.id,
+        draftId: draft.id,
         letter,
       };
     }),

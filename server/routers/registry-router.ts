@@ -42,12 +42,12 @@ export const registryRouter = router({
       return {
         ...jurisdiction,
         programs,
-        policy_alerts: alerts,
+        policyAlerts: alerts,
         workflows,
-        oversight_bodies: oversight,
+        oversightBodies: oversight,
         signals,
-        source_traceability: traceability,
-        program_categories: categories,
+        sourceTraceability: traceability,
+        programCategories: categories,
       };
     }),
 
@@ -178,16 +178,16 @@ export const registryRouter = router({
 
       return {
         program,
-        oversight_bodies: oversightRows as any[],
+        oversightBodies: oversightRows as any[],
         workflows: workflowRows as any[],
-        related_programs: crossRows as any[],
+        relatedPrograms: crossRows as any[],
         chain: {
           program: program.name,
           jurisdiction: program.jurisdiction_name || program.jurisdiction_id,
           state_code: program.state_code,
-          oversight_count: (oversightRows as any[]).length,
-          workflow_count: (workflowRows as any[]).length,
-          related_program_count: (crossRows as any[]).length,
+          oversightCount: (oversightRows as any[]).length,
+          workflowCount: (workflowRows as any[]).length,
+          relatedProgramCount: (crossRows as any[]).length,
         },
       };
     }),
@@ -226,7 +226,7 @@ export const registryRouter = router({
       };
 
       const adjacent = ADJACENT_CATEGORIES[input.category] || [];
-      if (adjacent.length === 0) return { programs: [], adjacent_categories: [] };
+      if (adjacent.length === 0) return { programs: [], adjacentCategories: [] };
 
       const placeholders = adjacent.map(() => '?').join(', ');
       const params: any[] = [...adjacent];
@@ -252,7 +252,7 @@ export const registryRouter = router({
 
       return {
         programs: rows as any[],
-        adjacent_categories: adjacent,
+        adjacentCategories: adjacent,
       };
     }),
 

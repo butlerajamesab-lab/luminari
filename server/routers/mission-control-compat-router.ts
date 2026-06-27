@@ -6,17 +6,17 @@ export const missionControlCompatRouter = router({
     const convergence = getMissionControlRuntimeConvergence();
 
     return {
-      runtime_state: convergence.runtimeState,
-      convergence_stage: convergence.convergenceStage,
+      runtimeState: convergence.runtimeState,
+      convergenceStage: convergence.convergenceStage,
       deterministic: convergence.deterministic,
-      production_protected: convergence.productionProtected,
-      reconstruction_branch_only: convergence.reconstructionBranchOnly,
-      operational_surface_count: convergence.operationalSurfaceCount,
-      ready_namespaces: convergence.readyNamespaces,
-      governance_ready: convergence.governanceReady,
-      legal_ready: convergence.legalReady,
-      signal_ready: convergence.signalReady,
-      civic_map_ready: convergence.civicMapReady,
+      productionProtected: convergence.productionProtected,
+      reconstructionBranchOnly: convergence.reconstructionBranchOnly,
+      operationalSurfaceCount: convergence.operationalSurfaceCount,
+      readyNamespaces: convergence.readyNamespaces,
+      governanceReady: convergence.governanceReady,
+      legalReady: convergence.legalReady,
+      signalReady: convergence.signalReady,
+      civicMapReady: convergence.civicMapReady,
     };
   }),
 });

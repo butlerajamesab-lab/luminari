@@ -37,7 +37,7 @@ export const meaningLayerRouter = router({
         // If we already have a plain language explanation, use it
         if (input.plainLanguageExplanation) {
           return {
-            signal_type: input.signalType,
+            signalType: input.signalType,
             interpretation: input.plainLanguageExplanation,
             source: "provided",
           };
@@ -69,14 +69,14 @@ Generate a brief, clear explanation (2-3 sentences) of what this signal means an
         const interpretation = response.choices?.[0]?.message?.content || "Unable to interpret signal";
 
         return {
-          signal_type: input.signalType,
+          signalType: input.signalType,
           interpretation,
           source: "llm",
         };
       } catch (error) {
         console.error("Error interpreting signal:", error);
         return {
-          signal_type: input.signalType,
+          signalType: input.signalType,
           interpretation: `This signal indicates a potential ${input.signalType} issue that may require legal attention.`,
           source: "fallback",
         };
@@ -132,7 +132,7 @@ Generate a brief, clear explanation (2-3 sentences) of what this signal means an
           .limit(input.limit ?? 10);
 
         return {
-          signal_type: input.signalType,
+          signalType: input.signalType,
           statutes: statutes.map(s => ({
             id: s.id,
             citation: s.citation,
@@ -140,14 +140,14 @@ Generate a brief, clear explanation (2-3 sentences) of what this signal means an
             summary: s.summary,
             jurisdiction: s.jurisdiction,
             domains: s.domains,
-            source_url: (s as any).sourceUrl,
+            sourceUrl: (s as any).sourceUrl,
           })),
           count: statutes.length,
         };
       } catch (error) {
         console.error("Error finding statutes for signal:", error);
         return {
-          signal_type: input.signalType,
+          signalType: input.signalType,
           statutes: [],
           count: 0,
           error: "Unable to find related statutes",
@@ -201,7 +201,7 @@ Generate a brief, clear explanation (2-3 sentences) of what this signal means an
           .limit(input.limit ?? 10);
 
         return {
-          pattern_description: input.patternDescription,
+          patternDescription: input.patternDescription,
           statutes: statutes.map(s => ({
             id: s.id,
             citation: s.citation,
@@ -209,14 +209,14 @@ Generate a brief, clear explanation (2-3 sentences) of what this signal means an
             summary: s.summary,
             jurisdiction: s.jurisdiction,
             domains: s.domains,
-            source_url: (s as any).sourceUrl,
+            sourceUrl: (s as any).sourceUrl,
           })),
           count: statutes.length,
         };
       } catch (error) {
         console.error("Error finding statutes for pattern:", error);
         return {
-          pattern_description: input.patternDescription,
+          patternDescription: input.patternDescription,
           statutes: [],
           count: 0,
           error: "Unable to find related statutes",
@@ -270,25 +270,25 @@ Generate a brief, clear explanation (2-3 sentences) of what this signal means an
           .limit(input.limit ?? 10);
 
         return {
-          pattern_description: input.patternDescription,
+          patternDescription: input.patternDescription,
           precedents: cases.map(c => ({
             id: c.id,
             citation: c.citation,
-            case_name: c.caseName,
+            caseName: c.caseName,
             court: c.court,
-            year_decided: c.yearDecided,
+            yearDecided: c.yearDecided,
             holding: c.holding,
-            key_quotes: c.keyQuotes,
+            keyQuotes: c.keyQuotes,
             jurisdiction: c.jurisdiction,
             domains: c.domains,
-            source_url: (c as any).sourceUrl,
+            sourceUrl: (c as any).sourceUrl,
           })),
           count: cases.length,
         };
       } catch (error) {
         console.error("Error finding precedents for pattern:", error);
         return {
-          pattern_description: input.patternDescription,
+          patternDescription: input.patternDescription,
           precedents: [],
           count: 0,
           error: "Unable to find related precedents",
@@ -343,15 +343,15 @@ Generate a brief, clear explanation (2-3 sentences) of what this signal means an
           query: input.query,
           records: records.map(r => ({
             id: r.id,
-            agency_name: r.agencyName,
-            violation_type: (r as any).violationType,
+            agencyName: r.agencyName,
+            violationType: (r as any).violationType,
             jurisdiction: r.jurisdiction,
             outcome: r.outcome,
-            penalty_amount: (r as any).penaltyAmount,
+            penaltyAmount: (r as any).penaltyAmount,
         // @ts-ignore - dateEnforced is valid at runtime
-            date_enforced: r.dateEnforced,
+            dateEnforced: r.dateEnforced,
             domains: r.domains,
-            source_url: (r as any).sourceUrl,
+            sourceUrl: (r as any).sourceUrl,
           })),
           count: records.length,
         };

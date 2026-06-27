@@ -92,12 +92,12 @@ export const dualLensRouter = router({
 
         return {
           id: claim.id,
-          claim_type: claim.claimType,
+          claimType: claim.claimType,
           jurisdiction: claim.jurisdiction,
-          statute_citation: claim.statuteCitation,
-          standard_of_proof: claim.standardOfProof,
-          typical_forum: claim.typicalForum,
-          sol_years: claim.solYears,
+          statuteCitation: claim.statuteCitation,
+          standardOfProof: claim.standardOfProof,
+          typicalForum: claim.typicalForum,
+          solYears: claim.solYears,
           score,
           matchedKeywords,
           confidence: score > 4 ? "high" : score > 2 ? "medium" : score > 0 ? "low" : "none",
@@ -106,7 +106,7 @@ export const dualLensRouter = router({
 
       return {
         matches: scored,
-        total_claims: allClaims.length,
+        totalClaims: allClaims.length,
         query: input.problemDescription,
       };
     }),
@@ -135,15 +135,15 @@ export const dualLensRouter = router({
       return {
         frameworks: results.map(f => ({
           id: f.id,
-          claim_type: f.claimType,
+          claimType: f.claimType,
           domain: f.domain,
-          elements_of_proof: f.elementsOfProof,
-          burden_of_proof: f.burdenOfProof,
-          standard_of_review: f.standardOfReview,
-          required_causation: f.requiredCausation,
-          typical_evidence: f.typicalEvidence,
-          common_defenses: f.commonDefenses,
-          key_precedents: f.keyPrecedents,
+          elementsOfProof: f.elementsOfProof,
+          burdenOfProof: f.burdenOfProof,
+          standardOfReview: f.standardOfReview,
+          requiredCausation: f.requiredCausation,
+          typicalEvidence: f.typicalEvidence,
+          commonDefenses: f.commonDefenses,
+          keyPrecedents: f.keyPrecedents,
         })),
         count: results.length,
       };
@@ -183,15 +183,15 @@ export const dualLensRouter = router({
       return {
         barriers: relevant.slice(0, 10).map(b => ({
           id: b.id,
-          barrier_id: b.barrierId,
+          barrierId: b.barrierId,
           name: b.name,
-          barrier_type: b.barrierType,
+          barrierType: b.barrierType,
           description: b.description,
           severity: b.severity,
-          possible_workarounds: b.possibleWorkarounds,
-          what_it_blocks: b.whatItBlocks,
+          possibleWorkarounds: b.possibleWorkarounds,
+          whatItBlocks: b.whatItBlocks,
         })),
-        total_barriers: relevant.length,
+        totalBarriers: relevant.length,
       };
     }),
 
@@ -257,51 +257,51 @@ export const dualLensRouter = router({
         agencies: relevantAgencies.slice(0, 8).map(a => ({
           id: a.id,
           agency: a.agency,
-          agency_short: a.agencyShort,
+          agencyShort: a.agencyShort,
           domain: a.domain,
           statute: a.statute,
-          complaint_pathway: a.complaintPathway,
-          complaint_types: a.complaintTypes,
-          statutory_authority: a.statutoryAuthority,
-          response_timeline_days: a.responseTimelineDays,
+          complaintPathway: a.complaintPathway,
+          complaintTypes: a.complaintTypes,
+          statutoryAuthority: a.statutoryAuthority,
+          responseTimelineDays: a.responseTimelineDays,
         })),
         courts: relevantCourts.slice(0, 5).map(c => ({
           id: c.id,
-          court_id: c.courtId,
-          court_name: c.courtName,
-          court_type: c.courtType,
+          courtId: c.courtId,
+          courtName: c.courtName,
+          courtType: c.courtType,
           jurisdiction: c.jurisdiction,
-          filing_portal: c.filingPortal,
-          clerk_phone: c.clerkPhone,
+          filingPortal: c.filingPortal,
+          clerkPhone: c.clerkPhone,
           address: c.address,
-          filing_fee: c.filingFee,
-          pro_se_resources: c.proSeResources,
+          filingFee: c.filingFee,
+          proSeResources: c.proSeResources,
         })),
         workflows: domainWorkflows.slice(0, 3).map(w => ({
           id: w.id,
           title: w.title,
           domain: w.domain,
           jurisdiction: w.jurisdiction,
-          primary_agency: w.primaryAgency,
-          entry_forms: w.entryForms,
-          estimated_duration: w.estimatedDuration,
+          primaryAgency: w.primaryAgency,
+          entryForms: w.entryForms,
+          estimatedDuration: w.estimatedDuration,
           remedies: w.remedies,
         })),
         deadlines: relevantDeadlines.slice(0, 5).map(d => ({
           id: d.id,
-          claim_type: d.claimType,
+          claimType: d.claimType,
           jurisdiction: d.jurisdiction,
-          deadline_type: d.deadlineType,
-          time_limit_days: d.timeLimitDays,
-          trigger_event: d.triggerEvent,
+          deadlineType: d.deadlineType,
+          timeLimitDays: d.timeLimitDays,
+          triggerEvent: d.triggerEvent,
           authority: d.authority,
         })),
         escalations: relevantEscalations.slice(0, 3).map(e => ({
           id: e.id,
           title: e.title,
-          trigger_conditions: e.triggerConditions,
+          triggerConditions: e.triggerConditions,
           routes: e.routes,
-          escalation_priority: e.priority,
+          escalationPriority: e.priority,
         })),
       };
     }),
@@ -392,9 +392,9 @@ export const dualLensRouter = router({
 
       return {
         actions: actions.sort((a, b) => a.priority - b.priority),
-        has_urgent_deadline: urgent.length > 0 && (urgent[0].timeLimitDays ?? 999) < 180,
-        nearest_deadline_days: urgent[0]?.timeLimitDays ?? null,
-        workflow_available: !!matchedWorkflow,
+        hasUrgentDeadline: urgent.length > 0 && (urgent[0].timeLimitDays ?? 999) < 180,
+        nearestDeadlineDays: urgent[0]?.timeLimitDays ?? null,
+        workflowAvailable: !!matchedWorkflow,
       };
     }),
 
@@ -425,27 +425,27 @@ export const dualLensRouter = router({
         return {
           resolved: false,
           message: "No matching claim type found. Try describing your situation in more detail.",
-          claim_match: null,
-          proof_checklist: null,
+          claimMatch: null,
+          proofChecklist: null,
           barriers: null,
           agency: null,
-          next_action: null,
+          nextAction: null,
         };
       }
 
       return {
         resolved: true,
         message: `Matched to: ${topClaim.claimType}`,
-        claim_match: {
-          claim_type: topClaim.claimType,
+        claimMatch: {
+          claimType: topClaim.claimType,
           jurisdiction: topClaim.jurisdiction,
-          statute_citation: topClaim.statuteCitation,
-          standard_of_proof: topClaim.standardOfProof,
+          statuteCitation: topClaim.statuteCitation,
+          standardOfProof: topClaim.standardOfProof,
         },
-        proof_checklist: null,
+        proofChecklist: null,
         barriers: null,
         agency: null,
-        next_action: null,
+        nextAction: null,
       };
     }),
 
@@ -482,7 +482,7 @@ export const dualLensRouter = router({
 
       return {
         clusters: Object.values(clusters).sort((a, b) => b.count - a.count),
-        total_barriers: allBarriers.length,
+        totalBarriers: allBarriers.length,
       };
     }),
 
@@ -520,8 +520,8 @@ export const dualLensRouter = router({
 
       return {
         clusters: Object.values(clusters).sort((a, b) => b.count - a.count),
-        total_doctrines: allDoctrines.length,
-        doctrine_edges: edges.length,
+        totalDoctrines: allDoctrines.length,
+        doctrineEdges: edges.length,
       };
     }),
 
@@ -552,18 +552,18 @@ export const dualLensRouter = router({
         return {
           id: a.id,
           agency: a.agency,
-          agency_short: a.agencyShort,
+          agencyShort: a.agencyShort,
           domain: a.domain,
-          signal_count: relatedSignals.length,
-          barrier_count: relatedBarriers.length,
-          issue_score: relatedSignals.length + relatedBarriers.length * 2,
+          signalCount: relatedSignals.length,
+          barrierCount: relatedBarriers.length,
+          issueScore: relatedSignals.length + relatedBarriers.length * 2,
         };
       }).filter(i => i.issueScore > 0).sort((a, b) => b.issueScore - a.issueScore);
 
       return {
         institutions: institutions.slice(0, 20),
-        total_agencies: agencies.length,
-        total_signals: signals.length,
+        totalAgencies: agencies.length,
+        totalSignals: signals.length,
       };
     }),
 
@@ -613,14 +613,14 @@ export const dualLensRouter = router({
           severity: b.severity ?? "medium",
           doctrineLink: relatedDoctrine?.name ?? null,
           statuteLink: relatedStatute?.title ?? null,
-          reform_path: b.possibleWorkarounds ? JSON.stringify(b.possibleWorkarounds) : "Further analysis needed",
+          reformPath: b.possibleWorkarounds ? JSON.stringify(b.possibleWorkarounds) : "Further analysis needed",
         });
       }
 
       return {
         paths,
-        total_barriers: barriers.length,
-        total_doctrines: doctrines.length,
+        totalBarriers: barriers.length,
+        totalDoctrines: doctrines.length,
       };
     }),
 
@@ -652,7 +652,7 @@ export const dualLensRouter = router({
 
       return {
         patterns: Object.values(patterns).sort((a, b) => b.count - a.count),
-        total_signals: signals.length,
+        totalSignals: signals.length,
       };
     }),
 
@@ -681,19 +681,19 @@ export const dualLensRouter = router({
       await conn.end();
 
       return {
-        node_id: input.nodeId,
-        node_type: input.nodeType,
+        nodeId: input.nodeId,
+        nodeType: input.nodeType,
         outgoing: (outRows as any[]).map((e: any) => ({
-          target_id: e.targetNode,
+          targetId: e.targetNode,
           relationship: e.relationshipType,
           label: e.sourceReference,
         })),
         incoming: (inRows as any[]).map((e: any) => ({
-          source_id: e.sourceNode,
+          sourceId: e.sourceNode,
           relationship: e.relationshipType,
           label: e.sourceReference,
         })),
-        total_connections: outRows.length + inRows.length,
+        totalConnections: outRows.length + inRows.length,
       };
     }),
 
@@ -787,9 +787,9 @@ export const dualLensRouter = router({
 
       return {
         groups: Object.values(grouped).sort((a, b) => b.count - a.count),
-        total_signals: signals.length,
-        unique_types: Object.keys(grouped).length,
-        unique_datasets: datasetIds.length,
+        totalSignals: signals.length,
+        uniqueTypes: Object.keys(grouped).length,
+        uniqueDatasets: datasetIds.length,
       };
     }),
 
@@ -838,11 +838,11 @@ export const dualLensRouter = router({
       .limit(1);
 
     return {
-      total_active: totalResult?.count ?? 0,
-      by_severity: Object.fromEntries(bySeverity.map(r => [r.severity, r.count])),
-      by_domain: Object.fromEntries(byDomain.map(r => [r.domain, r.count])),
-      by_type: Object.fromEntries(byType.map(r => [r.signalType, r.count])),
-      last_detected_at: latest?.detectedAt ?? null,
+      totalActive: totalResult?.count ?? 0,
+      bySeverity: Object.fromEntries(bySeverity.map(r => [r.severity, r.count])),
+      byDomain: Object.fromEntries(byDomain.map(r => [r.domain, r.count])),
+      byType: Object.fromEntries(byType.map(r => [r.signalType, r.count])),
+      lastDetectedAt: latest?.detectedAt ?? null,
     };
   }),
 
@@ -877,21 +877,21 @@ export const dualLensRouter = router({
     .input(z.object({ datasetId: z.string() }))
     .query(async ({ input }) => {
       const pack = await loadInterpretationPack(input.datasetId);
-      if (!pack) return { available: false, dataset_id: input.datasetId };
+      if (!pack) return { available: false, datasetId: input.datasetId };
 
       return {
         available: true,
-        dataset_id: input.datasetId,
+        datasetId: input.datasetId,
         categories: pack.categories.size,
-        harm_mappings: pack.harmMappings.size,
+        harmMappings: pack.harmMappings.size,
         timelines: pack.timelines.size,
-        entity_rules: pack.entityRules.length,
-        geo_rules: pack.geoRules.length,
-        status_meanings: pack.statusMeanings.size,
-        signal_templates: pack.signalTemplates.size,
-        jurisdiction_scopes: pack.jurisdictionScopes.length,
+        entityRules: pack.entityRules.length,
+        geoRules: pack.geoRules.length,
+        statusMeanings: pack.statusMeanings.size,
+        signalTemplates: pack.signalTemplates.size,
+        jurisdictionScopes: pack.jurisdictionScopes.length,
         domains: [...new Set(Array.from(pack.categories.values()).map(c => c.domain))],
-        risk_types: [...new Set(Array.from(pack.harmMappings.values()).map(h => h.riskType))],
+        riskTypes: [...new Set(Array.from(pack.harmMappings.values()).map(h => h.riskType))],
       };
     }),
 
@@ -903,18 +903,18 @@ export const dualLensRouter = router({
     .input(z.object({ datasetId: z.string() }))
     .query(async ({ input }) => {
       const pack = await loadInterpretationPack(input.datasetId);
-      if (!pack) return { categories: [], harm_mappings: [], jurisdiction_scopes: [] };
+      if (!pack) return { categories: [], harmMappings: [], jurisdictionScopes: [] };
 
       return {
         categories: Array.from(pack.categories.entries()).map(([name, ctx]) => ({
-          category_name: name,
+          categoryName: name,
           ...ctx,
         })),
-        harm_mappings: Array.from(pack.harmMappings.entries()).map(([name, ctx]) => ({
-          category_name: name,
+        harmMappings: Array.from(pack.harmMappings.entries()).map(([name, ctx]) => ({
+          categoryName: name,
           ...ctx,
         })),
-        jurisdiction_scopes: pack.jurisdictionScopes,
+        jurisdictionScopes: pack.jurisdictionScopes,
       };
     }),
 
@@ -944,20 +944,20 @@ export const dualLensRouter = router({
     const [liveSignalCount] = await db.select({ c: sql<number>`count(*)` }).from(detectedSignals).where(isNotNull(detectedSignals.signalId));
 
     return {
-      case_resolution: {
+      caseResolution: {
         claims: Number(claimCount.c),
-        proof_frameworks: Number(proofCount.c),
+        proofFrameworks: Number(proofCount.c),
         barriers: Number(barrierCount.c),
         agencies: Number(agencyCount.c),
         workflows: Number(workflowCount.c),
         deadlines: Number(deadlineCount.c),
         courts: Number(courtCount.c),
       },
-      structural_diagnostics: {
+      structuralDiagnostics: {
         doctrines: Number(doctrineCount.c),
         signals: Number(signalCount.c),
         barriers: Number(barrierCount.c),
-        detected_signals: Number(liveSignalCount.c),
+        detectedSignals: Number(liveSignalCount.c),
       },
       graph: {
         edges: Number(edgeCount.c),

@@ -97,12 +97,12 @@ export const workbenchRouter = router({
           quotes: quoteCount.c,
           relationships: relationshipCount.c,
           evidence: evidenceCount.c,
-          proof_links: proofLinkCount.c,
-          event_links: eventLinkCount.c,
-          checklist_total: checklistTotal.c,
-          checklist_done: checklistDone.c,
-          missing_records: missingCount.c,
-          foia_requests: foiaCount.c,
+          proofLinks: proofLinkCount.c,
+          eventLinks: eventLinkCount.c,
+          checklistTotal: checklistTotal.c,
+          checklistDone: checklistDone.c,
+          missingRecords: missingCount.c,
+          foiaRequests: foiaCount.c,
         },
       };
     }),
@@ -155,8 +155,8 @@ export const workbenchRouter = router({
           ]);
           return {
             ...item,
-            proof_link_count: proofCount.c,
-            event_link_count: eventCount.c,
+            proofLinkCount: proofCount.c,
+            eventLinkCount: eventCount.c,
           };
         })
       );

@@ -11,17 +11,17 @@ export const legalLibraryCompatRouter = router({
 
     return {
       statutes: legalSurfaces.length * 100,
-      case_law: legalSurfaces.length * 50,
-      enforcement_records: legalSurfaces.length * 25,
+      caseLaw: legalSurfaces.length * 50,
+      enforcementRecords: legalSurfaces.length * 25,
       contradictions: legalSurfaces.length * 10,
       deterministic: visibility.deterministic,
-      operational_surface_count: visibility.operationalSurfaceCount,
-      ready_namespaces: visibility.readyNamespaces,
+      operationalSurfaceCount: visibility.operationalSurfaceCount,
+      readyNamespaces: visibility.readyNamespaces,
       surfaces: legalSurfaces.map(surface => ({
         namespace: surface.namespace,
-        runtime_view: surface.runtimeView,
-        activation_ready: surface.activationReady,
-        stabilization_state: surface.stabilizationState,
+        runtimeView: surface.runtimeView,
+        activationReady: surface.activationReady,
+        stabilizationState: surface.stabilizationState,
       })),
     };
   }),

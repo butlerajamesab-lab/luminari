@@ -149,10 +149,10 @@ export const architectureMapRouter = router({
       return {
         ready: true,
         template,
-        required_field_count: (template.requiredFields as string[]).length,
-        required_evidence_count: (template.requiredEvidence as string[]).length,
+        requiredFieldCount: (template.requiredFields as string[]).length,
+        requiredEvidenceCount: (template.requiredEvidence as string[]).length,
         deadline: template.filingDeadline,
-        submission_methods: template.submissionMethods,
+        submissionMethods: template.submissionMethods,
       };
     }),
 
@@ -380,12 +380,12 @@ export const architectureMapRouter = router({
       summary: {
         totalRecords,
         totalTables,
-        total_layers: layers.length,
+        totalLayers: layers.length,
         populatedLayers,
         seedCoveragePercent,
-        completion_percent: seedCoveragePercent,
-        completion_label: "Seed coverage",
-        completion_caveat: "Configured seed-layer coverage only. Not national/full-corpus completion.",
+        completionPercent: seedCoveragePercent,
+        completionLabel: "Seed coverage",
+        completionCaveat: "Configured seed-layer coverage only. Not national/full-corpus completion.",
       },
     };
   }),

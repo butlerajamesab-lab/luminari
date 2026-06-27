@@ -144,21 +144,21 @@ export const sunamGateRouter = router({
       return {
         items: (rows as any)[0].map((r: any) => ({
           id: r.id,
-          live_signal_id: r.live_signal_id,
-          signal_fingerprint: r.signal_fingerprint,
-          signal_type: r.signal_type,
-          dataset_id: r.dataset_id,
-          sunam_score: parseFloat(r.sunam_score),
-          threshold_used: parseFloat(r.threshold_used),
-          score_breakdown: typeof r.score_breakdown === "string"
+          liveSignalId: r.live_signal_id,
+          signalFingerprint: r.signal_fingerprint,
+          signalType: r.signal_type,
+          datasetId: r.dataset_id,
+          sunamScore: parseFloat(r.sunam_score),
+          thresholdUsed: parseFloat(r.threshold_used),
+          scoreBreakdown: typeof r.score_breakdown === "string"
             ? JSON.parse(r.score_breakdown)
             : r.score_breakdown,
           decision: r.decision,
-          decision_reason: r.decision_reason,
-          promoted_signal_id: r.promoted_signal_id,
-          staging_id: r.staging_id,
+          decisionReason: r.decision_reason,
+          promotedSignalId: r.promoted_signal_id,
+          stagingId: r.staging_id,
           actor: r.actor,
-          decided_at: Number(r.decided_at),
+          decidedAt: Number(r.decided_at),
         })),
         total,
         limit: input.limit,

@@ -222,7 +222,7 @@ Return a JSON array of fact objects. Extract ONLY what is explicitly stated. Do 
 
       return {
         detected,
-        claim_types: Object.keys(claimScores).filter(ct => {
+        claimTypes: Object.keys(claimScores).filter(ct => {
           const s = claimScores[ct];
           return Math.min(1, s.score / maxScore) >= 0.1;
         }),
@@ -273,12 +273,12 @@ Return a JSON array of fact objects. Extract ONLY what is explicitly stated. Do 
 
         if (!primaryRule || !primaryRule.timeLimitDays) {
           return {
-            claim_type: d.claimType,
-            confidence_score: d.confidenceScore,
-            sol_status: "unknown" as const,
-            sol_days_remaining: null,
-            deadline_type: null,
-            tolling_possible: false,
+            claimType: d.claimType,
+            confidenceScore: d.confidenceScore,
+            solStatus: "unknown" as const,
+            solDaysRemaining: null,
+            deadlineType: null,
+            tollingPossible: false,
             notes: "No deadline rule found for this claim type/jurisdiction.",
           };
         }
@@ -304,17 +304,17 @@ Return a JSON array of fact objects. Extract ONLY what is explicitly stated. Do 
         }
 
         return {
-          claim_type: d.claimType,
-          confidence_score: d.confidenceScore,
+          claimType: d.claimType,
+          confidenceScore: d.confidenceScore,
           solStatus,
-          sol_days_remaining: Math.max(0, daysRemaining),
-          deadline_type: primaryRule.deadlineType,
-          time_limit_days: primaryRule.timeLimitDays,
-          tolling_possible: primaryRule.tollingPossible,
-          tolling_conditions: primaryRule.tollingConditions,
+          solDaysRemaining: Math.max(0, daysRemaining),
+          deadlineType: primaryRule.deadlineType,
+          timeLimitDays: primaryRule.timeLimitDays,
+          tollingPossible: primaryRule.tollingPossible,
+          tollingConditions: primaryRule.tollingConditions,
           authority: primaryRule.authority,
           notes: `${daysRemaining} days since incident. Deadline: ${primaryRule.timeLimitDays} days.${extendedNote}`,
-          all_matching_deadlines: matchingRules.map(r => ({
+          allMatchingDeadlines: matchingRules.map(r => ({
             type: r.deadlineType,
             days: r.timeLimitDays,
             authority: r.authority,
@@ -559,7 +559,7 @@ Return ONLY genuine contradictions. Do not flag differences that are merely comp
 
       return {
         detected: inserted,
-        llm_contradictions: parsed.contradictions.length,
+        llmContradictions: parsed.contradictions.length,
         templateMatches,
         message: `Detected ${inserted} contradictions (${parsed.contradictions.length} from analysis, ${templateMatches} from templates).`,
       };
@@ -633,7 +633,7 @@ Return ONLY genuine contradictions. Do not flag differences that are merely comp
         const wj = weakJoints.find(w => w.id === h.weakJointId);
         return {
           ...h,
-          weak_joint_name: wj?.statuteCitation ?? "Unknown",
+          weakJointName: wj?.statuteCitation ?? "Unknown",
           severity: wj?.severity ?? "unknown",
           divergence: wj?.divergenceDescription ?? "",
         };
@@ -868,8 +868,8 @@ Return ONLY genuine contradictions. Do not flag differences that are merely comp
           t6_weakJointCheck: { complete: wjHitCount.c > 0, count: wjHitCount.c },
           t7_viabilityComputation: { complete: viabilityCount.c > 0, count: viabilityCount.c },
         },
-        evidence_records: evidenceCount.c,
-        pipeline_complete: viabilityCount.c > 0,
+        evidenceRecords: evidenceCount.c,
+        pipelineComplete: viabilityCount.c > 0,
       };
     }),
 });

@@ -49,10 +49,10 @@ export const lighthouseTrendsRouter = router({
         byClassification[t.trend_classification] = (byClassification[t.trend_classification] ?? 0) + 1;
       }
       return {
-        total_trends: trends.length,
-        top_by_pressure: top,
+        totalTrends: trends.length,
+        topByPressure: top,
         byClassification,
-        avg_pressure:
+        avgPressure:
           trends.length > 0
             ? Math.round(trends.reduce((s, t) => s + t.pressure_index, 0) / trends.length)
             : 0,

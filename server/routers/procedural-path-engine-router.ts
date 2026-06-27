@@ -66,7 +66,7 @@ async function getProceduralDashboard() {
     totalPaths,
     byClaimType,
     byJurisdiction,
-    recent_paths: recentRows as unknown as unknown as any[],
+    recentPaths: recentRows as unknown as unknown as any[],
   };
 }
 
@@ -97,7 +97,7 @@ async function resolveProceduralPath(claimType: string, jurisdiction: string) {
     claimType,
     jurisdiction,
     paths: parsed,
-    primary_path: parsed[0],
+    primaryPath: parsed[0],
   };
 }
 

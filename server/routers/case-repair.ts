@@ -83,13 +83,13 @@ async function countDependents(txOrDb: typeof db, caseId: number, entityIds: num
     .from(documentCorrelations).where(eq(documentCorrelations.caseId, caseId));
 
   return {
-    entity_roles: erCount,
+    entityRoles: erCount,
     relationships: relIds.length,
-    relationship_evidence: reCount,
+    relationshipEvidence: reCount,
     quotes: qCount.c,
     claims: clCount.c,
     events: evCount.c,
-    signal_flags: flCount.c,
+    signalFlags: flCount.c,
     findings: fiCount.c,
     correlations: corrCount.c,
     _relIds: relIds, // internal: used by execute path
@@ -135,7 +135,7 @@ const findOrphans = adminProcedure.query(async ({ ctx }) => {
   }
 
   return {
-    mismatched_cases: orphanDetails.length,
+    mismatchedCases: orphanDetails.length,
     orphanDetails,
   };
 });
@@ -166,7 +166,7 @@ const moveEntities = adminProcedure
     const entitiesToMove = await selectEntities(db, sourceCaseId, input.entityIds);
 
     if (entitiesToMove.length === 0) {
-      return { dryRun, moved: 0, entities: [], dependent_moves: {}, source_case_name: sourceCase.name, target_case_name: targetCase.name };
+      return { dryRun, moved: 0, entities: [], dependentMoves: {}, sourceCaseName: sourceCase.name, targetCaseName: targetCase.name };
     }
 
     const entityIds = entitiesToMove.map(e => e.id);
@@ -175,11 +175,11 @@ const moveEntities = adminProcedure
 
     if (dryRun) {
       return {
-        dry_run: true,
+        dryRun: true,
         moved: entitiesToMove.length,
         entities: entitiesToMove,
-        source_case_name: sourceCase.name,
-        target_case_name: targetCase.name,
+        sourceCaseName: sourceCase.name,
+        targetCaseName: targetCase.name,
         dependentMoves,
       };
     }
@@ -242,11 +242,11 @@ const moveEntities = adminProcedure
     });
 
     return {
-      dry_run: false,
+      dryRun: false,
       moved: entitiesToMove.length,
       entities: entitiesToMove,
-      source_case_name: sourceCase.name,
-      target_case_name: targetCase.name,
+      sourceCaseName: sourceCase.name,
+      targetCaseName: targetCase.name,
       dependentMoves,
     };
   });
@@ -277,7 +277,7 @@ const purgeEntities = adminProcedure
     const entitiesToPurge = await selectEntities(db, caseId, input.entityIds);
 
     if (entitiesToPurge.length === 0) {
-      return { dryRun, purged: 0, entities: [], dependent_deletes: {}, case_name: caseRow.name };
+      return { dryRun, purged: 0, entities: [], dependentDeletes: {}, caseName: caseRow.name };
     }
 
     const entityIds = entitiesToPurge.map(e => e.id);
@@ -286,10 +286,10 @@ const purgeEntities = adminProcedure
 
     if (dryRun) {
       return {
-        dry_run: true,
+        dryRun: true,
         purged: entitiesToPurge.length,
         entities: entitiesToPurge,
-        case_name: caseRow.name,
+        caseName: caseRow.name,
         dependentDeletes,
       };
     }
@@ -339,10 +339,10 @@ const purgeEntities = adminProcedure
     });
 
     return {
-      dry_run: false,
+      dryRun: false,
       purged: entitiesToPurge.length,
       entities: entitiesToPurge,
-      case_name: caseRow.name,
+      caseName: caseRow.name,
       dependentDeletes,
     };
   });
