@@ -53,9 +53,9 @@ export const lighthouseStrategiesRouter = router({
     }
     return {
       total_strategies: strategies.length,
-      byUrgency,
-      byScope,
-      byJurisdiction,
+      by_urgency: byUrgency,
+      by_scope: byScope,
+      by_jurisdiction: byJurisdiction,
     };
   }),
 });

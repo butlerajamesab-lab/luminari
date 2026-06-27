@@ -69,7 +69,7 @@ export function StrategyProjectionPanel() {
                 <Target className="h-4 w-4 text-slate-400" />
                 <span className="text-xs text-slate-400 uppercase tracking-wide">Active Strategies</span>
               </div>
-              <div className="text-2xl font-mono font-bold text-white">{summary.totalStrategies}</div>
+              <div className="text-2xl font-mono font-bold text-white">{summary.total_strategies}</div>
             </CardContent>
           </Card>
           <Card className="bg-red-950/40 border-red-700/30">
@@ -79,7 +79,7 @@ export function StrategyProjectionPanel() {
                 <span className="text-xs text-red-400 uppercase tracking-wide">Critical</span>
               </div>
               <div className="text-2xl font-mono font-bold text-red-300">
-                {(summary.byUrgency as Record<string, number>)?.["critical"] ?? 0}
+                {(summary.by_urgency as Record<string, number>)?.["critical"] ?? 0}
               </div>
             </CardContent>
           </Card>
@@ -90,7 +90,7 @@ export function StrategyProjectionPanel() {
                 <span className="text-xs text-orange-400 uppercase tracking-wide">High Urgency</span>
               </div>
               <div className="text-2xl font-mono font-bold text-orange-300">
-                {(summary.byUrgency as Record<string, number>)?.["high"] ?? 0}
+                {(summary.by_urgency as Record<string, number>)?.["high"] ?? 0}
               </div>
             </CardContent>
           </Card>
@@ -101,7 +101,7 @@ export function StrategyProjectionPanel() {
                 <span className="text-xs text-violet-400 uppercase tracking-wide">Jurisdictions</span>
               </div>
               <div className="text-2xl font-mono font-bold text-violet-300">
-                {Object.keys(summary.byJurisdiction ?? {}).length}
+                {Object.keys(summary.by_jurisdiction ?? {}).length}
               </div>
             </CardContent>
           </Card>

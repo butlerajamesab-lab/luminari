@@ -52,10 +52,10 @@ export const lighthousePatternsRouter = router({
     }
     return {
       total_patterns: patterns.length,
-      totalSignals,
+      total_signals: totalSignals,
       avg_confidence: patterns.length > 0 ? Math.round(avgConfidence / patterns.length) : 0,
-      byJurisdiction,
-      byPatternType,
+      by_jurisdiction: byJurisdiction,
+      by_pattern_type: byPatternType,
     };
   }),
 });

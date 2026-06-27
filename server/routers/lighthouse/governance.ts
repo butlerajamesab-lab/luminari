@@ -53,13 +53,13 @@ export const lighthouseGovernanceRouter = router({
     }
     return {
       total_decisions: decisions.length,
-      totalPromoted,
+      total_promoted: totalPromoted,
       promotion_rate:
         decisions.length > 0 ? Math.round((totalPromoted / decisions.length) * 100) : 0,
       avg_composite_score:
         decisions.length > 0 ? Math.round((avgScore / decisions.length) * 100) / 100 : 0,
-      byDecision,
-      bySource,
+      by_decision: byDecision,
+      by_source: bySource,
     };
   }),
 

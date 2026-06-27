@@ -78,7 +78,7 @@ export function SignalLineagePanel() {
               <span className="text-xs text-slate-400 uppercase tracking-wide">Total Signals</span>
             </div>
             <div className="text-2xl font-mono font-bold text-white">
-              {coverageLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (coverage?.totalSignals ?? 0)}
+              {coverageLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (coverage?.total_signals ?? 0)}
             </div>
           </CardContent>
         </Card>
@@ -92,8 +92,8 @@ export function SignalLineagePanel() {
             <div className="text-2xl font-mono font-bold text-emerald-300">
               {coverageLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (coverage?.promoted ?? 0)}
             </div>
-            {coverage && coverage.totalSignals > 0 && (
-              <div className="text-xs text-emerald-500 mt-0.5">{coverage.promotionRate}% rate</div>
+            {coverage && coverage.total_signals > 0 && (
+              <div className="text-xs text-emerald-500 mt-0.5">{coverage.promotion_rate}% rate</div>
             )}
           </CardContent>
         </Card>
@@ -105,7 +105,7 @@ export function SignalLineagePanel() {
               <span className="text-xs text-blue-400 uppercase tracking-wide">Pattern Linked</span>
             </div>
             <div className="text-2xl font-mono font-bold text-blue-300">
-              {coverageLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (coverage?.patternLinked ?? 0)}
+              {coverageLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (coverage?.pattern_linked ?? 0)}
             </div>
           </CardContent>
         </Card>
@@ -117,10 +117,10 @@ export function SignalLineagePanel() {
               <span className="text-xs text-violet-400 uppercase tracking-wide">Full Chain</span>
             </div>
             <div className="text-2xl font-mono font-bold text-violet-300">
-              {coverageLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (coverage?.fullChain ?? 0)}
+              {coverageLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (coverage?.full_chain ?? 0)}
             </div>
             {coverage && coverage.promoted > 0 && (
-              <div className="text-xs text-violet-500 mt-0.5">{coverage.fullChainRate}% of promoted</div>
+              <div className="text-xs text-violet-500 mt-0.5">{coverage.full_chain_rate}% of promoted</div>
             )}
           </CardContent>
         </Card>

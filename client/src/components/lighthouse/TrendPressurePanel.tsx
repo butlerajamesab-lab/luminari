@@ -84,7 +84,7 @@ export function TrendPressurePanel() {
                 <TrendingUp className="h-4 w-4 text-slate-400" />
                 <span className="text-xs text-slate-400 uppercase tracking-wide">Active Trends</span>
               </div>
-              <div className="text-2xl font-mono font-bold text-white">{summary.totalTrends}</div>
+              <div className="text-2xl font-mono font-bold text-white">{summary.total_trends}</div>
             </CardContent>
           </Card>
           <Card className="bg-red-950/40 border-red-700/30">
@@ -93,7 +93,7 @@ export function TrendPressurePanel() {
                 <Activity className="h-4 w-4 text-red-400" />
                 <span className="text-xs text-red-400 uppercase tracking-wide">Avg Pressure</span>
               </div>
-              <div className="text-2xl font-mono font-bold text-red-300">{summary.avgPressure}</div>
+              <div className="text-2xl font-mono font-bold text-red-300">{summary.avg_pressure}</div>
             </CardContent>
           </Card>
           <Card className="bg-emerald-950/40 border-emerald-700/30">
@@ -103,7 +103,7 @@ export function TrendPressurePanel() {
                 <span className="text-xs text-emerald-400 uppercase tracking-wide">Accelerating</span>
               </div>
               <div className="text-2xl font-mono font-bold text-emerald-300">
-                {(summary.byMomentum as Record<string, number>)?.["accelerating"] ?? 0}
+                {(summary.by_momentum as Record<string, number>)?.["accelerating"] ?? 0}
               </div>
             </CardContent>
           </Card>
@@ -113,7 +113,7 @@ export function TrendPressurePanel() {
                 <BarChart3 className="h-4 w-4 text-violet-400" />
                 <span className="text-xs text-violet-400 uppercase tracking-wide">Avg Confidence</span>
               </div>
-              <div className="text-2xl font-mono font-bold text-violet-300">{summary.avgConfidence}%</div>
+              <div className="text-2xl font-mono font-bold text-violet-300">{summary.avg_confidence}%</div>
             </CardContent>
           </Card>
         </div>

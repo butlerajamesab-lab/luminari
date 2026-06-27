@@ -62,7 +62,7 @@ export function PatternRegistryPanel() {
                 <GitBranch className="h-4 w-4 text-slate-400" />
                 <span className="text-xs text-slate-400 uppercase tracking-wide">Active Patterns</span>
               </div>
-              <div className="text-2xl font-mono font-bold text-white">{summary.totalPatterns}</div>
+              <div className="text-2xl font-mono font-bold text-white">{summary.total_patterns}</div>
             </CardContent>
           </Card>
           <Card className="bg-blue-950/40 border-blue-700/30">
@@ -71,7 +71,7 @@ export function PatternRegistryPanel() {
                 <Activity className="h-4 w-4 text-blue-400" />
                 <span className="text-xs text-blue-400 uppercase tracking-wide">Total Signals</span>
               </div>
-              <div className="text-2xl font-mono font-bold text-blue-300">{summary.totalSignals}</div>
+              <div className="text-2xl font-mono font-bold text-blue-300">{summary.total_signals}</div>
             </CardContent>
           </Card>
           <Card className="bg-violet-950/40 border-violet-700/30">
@@ -80,7 +80,7 @@ export function PatternRegistryPanel() {
                 <BarChart3 className="h-4 w-4 text-violet-400" />
                 <span className="text-xs text-violet-400 uppercase tracking-wide">Avg Confidence</span>
               </div>
-              <div className="text-2xl font-mono font-bold text-violet-300">{summary.avgConfidence}%</div>
+              <div className="text-2xl font-mono font-bold text-violet-300">{summary.avg_confidence}%</div>
             </CardContent>
           </Card>
           <Card className="bg-teal-950/40 border-teal-700/30">
@@ -90,7 +90,7 @@ export function PatternRegistryPanel() {
                 <span className="text-xs text-teal-400 uppercase tracking-wide">Jurisdictions</span>
               </div>
               <div className="text-2xl font-mono font-bold text-teal-300">
-                {Object.keys(summary.byJurisdiction ?? {}).length}
+                {Object.keys(summary.by_jurisdiction ?? {}).length}
               </div>
             </CardContent>
           </Card>

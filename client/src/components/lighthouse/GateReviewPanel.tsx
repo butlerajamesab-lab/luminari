@@ -74,10 +74,10 @@ export function GateReviewPanel() {
   const decisions = decisionsData?.decisions ?? [];
   const staged = stagedData?.staged ?? [];
   const summary = summaryData ? {
-    totalDecisions: summaryData.totalDecisions,
-    promoted: summaryData.totalPromoted,
-    staged: (summaryData.byDecision as Record<string, number>)["STAGE"] ?? 0,
-    rejected: (summaryData.byDecision as Record<string, number>)["REJECT"] ?? 0,
+    total_decisions: summaryData.total_decisions,
+    promoted: summaryData.total_promoted,
+    staged: (summaryData.by_decision as Record<string, number>)["STAGE"] ?? 0,
+    rejected: (summaryData.by_decision as Record<string, number>)["REJECT"] ?? 0,
   } : null;
 
   return (
@@ -91,7 +91,7 @@ export function GateReviewPanel() {
                 <Shield className="h-4 w-4 text-slate-400" />
                 <span className="text-xs text-slate-400 uppercase tracking-wide">Total Decisions</span>
               </div>
-              <div className="text-2xl font-mono font-bold text-white">{summary.totalDecisions}</div>
+              <div className="text-2xl font-mono font-bold text-white">{summary.total_decisions}</div>
             </CardContent>
           </Card>
           <Card className="bg-emerald-950/40 border-emerald-700/30">
@@ -101,9 +101,9 @@ export function GateReviewPanel() {
                 <span className="text-xs text-emerald-400 uppercase tracking-wide">Promoted</span>
               </div>
               <div className="text-2xl font-mono font-bold text-emerald-300">{summary.promoted}</div>
-              {summary.totalDecisions > 0 && (
+              {summary.total_decisions > 0 && (
                 <div className="text-xs text-emerald-500 mt-0.5">
-                  {Math.round((summary.promoted / summary.totalDecisions) * 100)}% rate
+                  {Math.round((summary.promoted / summary.total_decisions) * 100)}% rate
                 </div>
               )}
             </CardContent>

@@ -53,9 +53,9 @@ export const lighthouseLineageRouter = router({
     return {
       total_signals: lineage.length,
       promoted,
-      patternLinked,
-      trendLinked,
-      fullChain,
+      pattern_linked: patternLinked,
+      trend_linked: trendLinked,
+      full_chain: fullChain,
       promotion_rate: lineage.length > 0 ? Math.round((promoted / lineage.length) * 100) : 0,
       full_chain_rate: promoted > 0 ? Math.round((fullChain / promoted) * 100) : 0,
     };

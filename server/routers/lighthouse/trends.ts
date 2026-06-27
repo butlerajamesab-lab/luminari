@@ -51,7 +51,7 @@ export const lighthouseTrendsRouter = router({
       return {
         total_trends: trends.length,
         top_by_pressure: top,
-        byClassification,
+        by_classification: byClassification,
         avg_pressure:
           trends.length > 0
             ? Math.round(trends.reduce((s, t) => s + t.pressure_index, 0) / trends.length)
