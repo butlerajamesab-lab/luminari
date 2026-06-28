@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { pool } from './db-pool';
+import { getPool } from './db';
 
 interface Signal {
   signalType: string;
@@ -100,6 +100,7 @@ function detectAdSpendSpike(records: any[], datasetId: string, streamId: string)
 }
 
 export async function detectBusinessSignals(records: any[], datasetId: string, streamId: string) {
+  const pool = getPool();
   const signals: Signal[] = [];
 
   signals.push(...detectMissingInvoice(records, datasetId, streamId));
