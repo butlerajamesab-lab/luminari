@@ -1,8 +1,9 @@
-import { pool } from './db-pool';
+import { getPool } from './db';
 import { detectBusinessSignals } from './business-detector';
 
 export async function runDetection(datasetId: string) {
   try {
+    const pool = getPool();
     const res = await pool.query(`
       SELECT processed_data
       FROM ingested_records
