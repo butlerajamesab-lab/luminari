@@ -1,8 +1,9 @@
-import { pool } from './db-pool';
+import { getPool } from './db';
 import fs from 'fs';
 import path from 'path';
 
 export async function exportAll() {
+  const pool = getPool();
   const tables = [
     "resources",
     "resource_contacts",
@@ -38,6 +39,7 @@ export async function exportAll() {
 
 export async function exportResourcesExpanded() {
   try {
+    const pool = getPool();
     const res = await pool.query(`
       SELECT
         r.*,
@@ -66,6 +68,7 @@ export async function exportResourcesExpanded() {
 
 export async function exportWorkflowsExpanded() {
   try {
+    const pool = getPool();
     const res = await pool.query(`
       SELECT
         wp.*,
@@ -104,6 +107,7 @@ export async function exportWorkflowsExpanded() {
 
 export async function exportAccountabilityExpanded() {
   try {
+    const pool = getPool();
     const res = await pool.query(`
       SELECT
         ar.*,
@@ -131,6 +135,7 @@ export async function exportAccountabilityExpanded() {
 
 export async function exportStatutesExpanded() {
   try {
+    const pool = getPool();
     const res = await pool.query(`
       SELECT
         ls.*,
