@@ -1091,17 +1091,21 @@ function replaySignalDetection(
   }
 
   // T4. Status delay detection
+  // NOTE: ingestedRecords.status is a recordStatusEnum with values:
+  //   "received" | "normalized" | "processed" | "failed" | "rejected"
+  // The original code referenced a non-existent "normalizedStatus" column and compared against
+  // open-state strings ("open", "pending", etc.) that do not exist in this enum.
+  // Map the enum: "received" and "normalized" are in-flight (not yet processed) — treat as "open".
   const statusMap = new Map<string, number>();
   for (const r of records) {
-    // NOTE: ingestedRecords.status is a recordStatusEnum ("received"|"normalized"|"processed"|"failed"|"rejected"),
-    // not a free-form normalizedStatus. The status delay logic below maps known open-state values.
     const status = (r.status ?? "").toLowerCase();
     statusMap.set(status, (statusMap.get(status) ?? 0) + 1);
   }
-  const openStatuses = ["open", "pending", "in progress", "under review", "unresolved"];
+  // Map recordStatusEnum values to open/in-flight concept
+  const openStatuses: Array<typeof records[number]["status"]> = ["received", "normalized"];
   let openCount = 0;
   for (const s of openStatuses) openCount += statusMap.get(s) ?? 0;
-  const openPct = (openCount / records.length) * 100;
+  const openPct = records.length > 0 ? (openCount / records.length) * 100 : 0;
   if (openPct > 30 && openCount >= 5) {
     signals.push({
       signalType: "status_delay",
@@ -1110,7 +1114,7 @@ function replaySignalDetection(
       domain: "resolution_status",
       severity: openPct > 50 ? "high" : "medium",
       title: `Elevated Unresolved Record Rate`,
-      explanation: `${openPct.toFixed(1)}% of records (${openCount}) remain in open/pending status`,
+      explanation: `${openPct.toFixed(1)}% of records (${openCount}) remain in received/normalized status`,
       confidenceScore: Math.min(0.85, 0.4 + openPct * 0.01),
     });
   }
