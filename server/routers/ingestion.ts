@@ -97,7 +97,7 @@ export const ingestionRouter = router({
         datasetId: input.datasetId,
         enabled: input.enabled,
         rationale: input.rationale ?? `Data stream ${input.enabled ? "enabled" : "disabled"} via admin control panel`,
-        actorId: ctx.user.open_id,
+        actorId: ctx.user.open_id ?? "",
         actorRole: "admin",
       });
       await refreshSchedules();
@@ -114,7 +114,7 @@ export const ingestionRouter = router({
       await governedDataStreamDelete({
         datasetId: input.datasetId,
         rationale: input.rationale ?? `Data stream removed via admin control panel`,
-        actorId: ctx.user.open_id,
+        actorId: ctx.user.open_id ?? "",
         actorRole: "admin",
       });
       await refreshSchedules();

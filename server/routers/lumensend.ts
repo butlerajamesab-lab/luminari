@@ -75,7 +75,7 @@ export const lumensendRouter = router({
         contextId: input.programId || input.oversightBody || null,
         contextLabel: null,
         jurisdiction: input.stateCode,
-        related_actions: letter.relatedActions?.length ? JSON.stringify(letter.relatedActions) : null,
+        relatedActions: letter.relatedActions?.length ? JSON.stringify(letter.relatedActions) : null,
         status: "draft" as any,
         createdAt: now,
         updatedAt: now,
@@ -152,7 +152,7 @@ export const lumensendRouter = router({
             if (pathInvalidSignals.length > 0) {
               throw new TRPCError({
                 code: "PRECONDITION_FAILED",
-                message: `Transmission blocked: ${pathInvalidSignals[0].title}. The enforcement path for this document is no longer valid. Please regenerate with an updated path.`,
+                message: `Transmission blocked: ${(pathInvalidSignals as any[])[0]?.title}. The enforcement path for this document is no longer valid. Please regenerate with an updated path.`,
               });
             }
             if (staleSignals.length > 0) {
@@ -163,7 +163,7 @@ export const lumensendRouter = router({
                 // No deadline urgency — soft block with warning in response
                 // We still allow the send but attach the warning
                 const result = await markDraftSent(input.id, ctx.user.id, input.method);
-                return { ...result, warning: `Resource flagged as stale: ${staleSignals[0].title}. Verify the recipient information before acting on the response.` };
+                return { ...result, warning: `Resource flagged as stale: ${(staleSignals as any[])[0]?.title}. Verify the recipient information before acting on the response.` };
               }
             }
           }

@@ -35,10 +35,10 @@ async function selectEntities(
   if (entityIdFilter && entityIdFilter.length > 0) {
     return txOrDb.select({ id: entities.id, name: entities.name, type: entities.type })
       .from(entities)
-      .where(and(eq(entities.caseId, caseId), inArray(entities.id, entityIdFilter)));
+      .where(and(eq(entities.caseId, String(caseId)), inArray(entities.id, entityIdFilter.map(String))));
   }
   return txOrDb.select({ id: entities.id, name: entities.name, type: entities.type })
-    .from(entities).where(eq(entities.caseId, caseId));
+    .from(entities).where(eq(entities.caseId, String(caseId)));
 }
 
 async function countDependents(txOrDb: typeof db, caseId: number, entityIds: number[]) {
@@ -70,15 +70,15 @@ async function countDependents(txOrDb: typeof db, caseId: number, entityIds: num
   }
 
   const [qCount] = await txOrDb.select({ c: sql<number>`COUNT(*)` })
-    .from(quotes).where(eq(quotes.caseId, caseId));
+    .from(quotes).where(eq(quotes.caseId, String(caseId)));
   const [clCount] = await txOrDb.select({ c: sql<number>`COUNT(*)` })
-    .from(claims).where(eq(claims.caseId, caseId));
+    .from(claims).where(eq(claims.caseId, String(caseId)));
   const [evCount] = await txOrDb.select({ c: sql<number>`COUNT(*)` })
-    .from(events).where(eq(events.caseId, caseId));
+    .from(events).where(eq(events.caseId, String(caseId)));
   const [flCount] = await txOrDb.select({ c: sql<number>`COUNT(*)` })
     .from(signalFlags).where(eq(signalFlags.caseId, caseId));
   const [fiCount] = await txOrDb.select({ c: sql<number>`COUNT(*)` })
-    .from(findings).where(eq(findings.caseId, caseId));
+    .from(findings).where(eq(findings.caseId, String(caseId)));
   const [corrCount] = await txOrDb.select({ c: sql<number>`COUNT(*)` })
     .from(documentCorrelations).where(eq(documentCorrelations.caseId, caseId));
 
@@ -100,7 +100,7 @@ async function countDependents(txOrDb: typeof db, caseId: number, entityIds: num
 const findOrphans = adminProcedure.query(async ({ ctx }) => {
   const userCases = await db.select({ id: cases.id, name: cases.name })
     .from(cases)
-    .where(eq(cases.userId, ctx.user.id));
+    .where(eq(cases.userId, String(ctx.user.id)));
 
   const orphanDetails: {
     caseId: number;
@@ -153,11 +153,11 @@ const moveEntities = adminProcedure
 
     // Validate both cases exist and are owned by this user
     const [sourceCase] = await db.select({ id: cases.id, name: cases.name })
-      .from(cases).where(and(eq(cases.id, sourceCaseId), eq(cases.userId, ctx.user.id)));
+      .from(cases).where(and(eq(cases.id, String(sourceCaseId)), eq(cases.userId, String(ctx.user.id))));
     if (!sourceCase) throw new Error("Source case not found or not owned by you");
 
     const [targetCase] = await db.select({ id: cases.id, name: cases.name })
-      .from(cases).where(and(eq(cases.id, targetCaseId), eq(cases.userId, ctx.user.id)));
+      .from(cases).where(and(eq(cases.id, String(targetCaseId)), eq(cases.userId, String(ctx.user.id))));
     if (!targetCase) throw new Error("Target case not found or not owned by you");
 
     if (sourceCaseId === targetCaseId) throw new Error("Source and target case must be different");
@@ -209,7 +209,7 @@ const moveEntities = adminProcedure
         await tx.update(events).set({ caseId: targetCaseId })
           .where(eq(events.caseId, sourceCaseId));
       }
-      if (dependentMoves.signalFlags > 0) {
+      if (dependentMoves.signal_flags > 0) {
         await tx.update(signalFlags).set({ caseId: targetCaseId })
           .where(eq(signalFlags.caseId, sourceCaseId));
       }
@@ -263,12 +263,12 @@ const purgeEntities = adminProcedure
 
     // Validate case exists and is owned by user
     const [caseRow] = await db.select({ id: cases.id, name: cases.name })
-      .from(cases).where(and(eq(cases.id, caseId), eq(cases.userId, ctx.user.id)));
+      .from(cases).where(and(eq(cases.id, String(caseId)), eq(cases.userId, String(ctx.user.id))));
     if (!caseRow) throw new Error("Case not found or not owned by you");
 
     // Purge guardrail: doc_count must be 0
     const [docCount] = await db.select({ c: sql<number>`COUNT(*)` })
-      .from(documents).where(eq(documents.caseId, caseId));
+      .from(documents).where(eq(documents.caseId, String(caseId)));
     if (docCount.c > 0) {
       throw new Error(`Cannot purge: case has ${docCount.c} documents. Purge is only allowed on cases with 0 documents.`);
     }
@@ -309,15 +309,15 @@ const purgeEntities = adminProcedure
       // 4. Signal flags
       await tx.delete(signalFlags).where(eq(signalFlags.caseId, caseId));
       // 5. Claims
-      await tx.delete(claims).where(eq(claims.caseId, caseId));
+      await tx.delete(claims).where(eq(claims.caseId, String(caseId)));
       // 6. Findings
-      await tx.delete(findings).where(eq(findings.caseId, caseId));
+      await tx.delete(findings).where(eq(findings.caseId, String(caseId)));
       // 7. Events
-      await tx.delete(events).where(eq(events.caseId, caseId));
+      await tx.delete(events).where(eq(events.caseId, String(caseId)));
       // 8. Correlations
       await tx.delete(documentCorrelations).where(eq(documentCorrelations.caseId, caseId));
       // 9. Quotes
-      await tx.delete(quotes).where(eq(quotes.caseId, caseId));
+      await tx.delete(quotes).where(eq(quotes.caseId, String(caseId)));
       // 10. Entities (root)
       await tx.delete(entities).where(inArray(entities.id, entityIds));
     });

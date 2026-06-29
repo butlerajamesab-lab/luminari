@@ -45,13 +45,13 @@ export const assemblyEngineRouter = router({
     .mutation(async ({ input }) => {
       return withEngineTracking({ engineId: ENGINE_IDS.ASSEMBLY, caseId: input.caseId, runType: "assembly_only" }, async () => {
       const now = Date.now();
-      const [caseRow] = await db.select().from(cases).where(eq(cases.id, input.caseId));
+      const [caseRow] = await db.select().from(cases).where(eq(cases.id, String(input.caseId)));
       if (!caseRow) throw new Error("Case not found");
 
       // Get strategy path if provided
       let pathRow: any = null;
       if (input.strategyPathId) {
-        const [p] = await db.select().from(strategyPaths).where(eq(strategyPaths.id, input.strategyPathId));
+        const [p] = await db.select().from(strategyPaths).where(eq(strategyPaths.id, String(input.strategyPathId)));
         pathRow = p;
       }
 
@@ -77,7 +77,7 @@ export const assemblyEngineRouter = router({
     .input(z.object({ caseId: z.number(), packetId: z.number() }))
     .mutation(async ({ input }) => {
       const now = Date.now();
-      const caseEntities = await db.select().from(entities).where(eq(entities.caseId, input.caseId));
+      const caseEntities = await db.select().from(entities).where(eq(entities.caseId, String(input.caseId)));
 
       if (caseEntities.length === 0) return { parties_designated: 0, message: "No entities found." };
 
@@ -135,8 +135,8 @@ Identify at least a plaintiff/complainant and defendant/respondent.`
     .input(z.object({ caseId: z.number(), packetId: z.number() }))
     .mutation(async ({ input }) => {
       const now = Date.now();
-      const caseDocs = await db.select().from(documents).where(eq(documents.caseId, input.caseId));
-      const caseQuotes = await db.select().from(quotes).where(eq(quotes.caseId, input.caseId));
+      const caseDocs = await db.select().from(documents).where(eq(documents.caseId, String(input.caseId)));
+      const caseQuotes = await db.select().from(quotes).where(eq(quotes.caseId, String(input.caseId)));
 
       if (caseDocs.length === 0) return { exhibits_created: 0, message: "No documents found." };
 

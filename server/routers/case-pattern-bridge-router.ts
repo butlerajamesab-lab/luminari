@@ -71,7 +71,7 @@ export const casePatternBridgeRouter = router({
         candidateId: input.candidateId,
         status: input.status,
         rationale: input.rationale,
-        actorId: ctx.user.open_id,
+        actorId: ctx.user.open_id ?? "",
         actorRole: "admin",
       });
       return { success: true };
@@ -125,7 +125,7 @@ export const casePatternBridgeRouter = router({
       const { cases } = await import("../../drizzle/schema");
       const userCases = await db.select({ id: cases.id })
         .from(cases)
-        .where(eq(cases.userId, ctx.user.id));
+        .where(eq(cases.userId, String(ctx.user.id)));
 
       let totalSignals = 0;
       let totalCandidates = 0;

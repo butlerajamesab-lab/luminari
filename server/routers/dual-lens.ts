@@ -613,7 +613,7 @@ export const dualLensRouter = router({
           severity: b.severity ?? "medium",
           doctrineLink: relatedDoctrine?.name ?? null,
           statuteLink: relatedStatute?.title ?? null,
-          reform_path: b.possibleWorkarounds ? JSON.stringify(b.possibleWorkarounds) : "Further analysis needed",
+          reformPath: b.possibleWorkarounds ? JSON.stringify(b.possibleWorkarounds) : "Further analysis needed",
         });
       }
 
@@ -865,7 +865,7 @@ export const dualLensRouter = router({
       supportingStatistics: z.any(),
     }))
     .query(async ({ input }) => {
-      const enrichment = await enrichSignalWithInterpretation(input);
+      const enrichment = await enrichSignalWithInterpretation(input as any);
       return enrichment;
     }),
 

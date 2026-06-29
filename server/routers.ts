@@ -1968,10 +1968,10 @@ const provenanceRouter = router({
   getDetail: protectedProcedure
     .input(z.object({ findingId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const detail = await db_helpers.getFindingMatchDetail(input.findingId);
+      const detail = await db_helpers.getFindingMatchDetail(String(input.findingId));
       if (!detail) throw new TRPCError({ code: "NOT_FOUND", message: "Finding not found" });
       // Verify ownership through finding -> case chain
-      await db_helpers.verifyCaseOwnership(detail.finding.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(detail.finding.caseId as any, ctx.user.id);
       return detail;
     }),
 
@@ -1987,7 +1987,7 @@ const provenanceRouter = router({
     .input(z.object({ findingId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const [finding] = await db_helpers.db.select().from((await import("../drizzle/schema")).findings)
-        .where(eq((await import("../drizzle/schema")).findings.id, input.findingId));
+        .where(eq((await import("../drizzle/schema")).findings.id, String(input.findingId)));
       if (!finding) throw new TRPCError({ code: "NOT_FOUND", message: "Finding not found" });
       await db_helpers.verifyCaseWriteAccess(finding.caseId, ctx.user.id);
       // Gate A: use finding.snapshotId directly — no implicit listSnapshots[0]
@@ -2012,13 +2012,13 @@ const provenanceRouter = router({
 
       if (caseClaims.length === 0) {
         // No claims to match against
-        await db_helpers.updateFindingMatchMetadata(input.findingId, {
+        await db_helpers.updateFindingMatchMetadata(String(input.findingId), {
           candidateClaimCount: 0,
           fallbackTriggered: false,
           matchMetadata: { reRunResult: "no_candidate_claims", reRunBy: ctx.user.id, reRunAt: Date.now() },
         });
         await db_helpers.createProvenanceAuditLog({
-          findingId: input.findingId,
+          findingId: String(input.findingId),
           userId: ctx.user.id,
           actionType: "re_run_matching",
           previousStatus,
@@ -2043,10 +2043,10 @@ const provenanceRouter = router({
       };
 
       if (result.matchedIds.length > 0) {
-        await db_helpers.updateFindingClaimIds(input.findingId, result.matchedIds);
+        await db_helpers.updateFindingClaimIds(String(input.findingId), result.matchedIds);
       }
 
-      await db_helpers.updateFindingMatchMetadata(input.findingId, {
+      await db_helpers.updateFindingMatchMetadata(String(input.findingId), {
         candidateClaimCount: caseClaims.length,
         fallbackTriggered: true,
         matchMetadata,
@@ -2054,7 +2054,7 @@ const provenanceRouter = router({
 
       const newStatus = result.matchedIds.length > 0 ? "linked" : previousStatus;
       await db_helpers.createProvenanceAuditLog({
-        findingId: input.findingId,
+        findingId: String(input.findingId),
         userId: ctx.user.id,
         actionType: "re_run_matching",
         previousStatus,
@@ -2070,7 +2070,7 @@ const provenanceRouter = router({
     .input(z.object({ findingId: z.number(), reason: z.string().min(1, "Reason is mandatory") }))
     .mutation(async ({ ctx, input }) => {
       const [finding] = await db_helpers.db.select().from((await import("../drizzle/schema")).findings)
-        .where(eq((await import("../drizzle/schema")).findings.id, input.findingId));
+        .where(eq((await import("../drizzle/schema")).findings.id, String(input.findingId)));
       if (!finding) throw new TRPCError({ code: "NOT_FOUND", message: "Finding not found" });
       await db_helpers.verifyCaseWriteAccess(finding.caseId, ctx.user.id);
       // Gate A: use finding.snapshotId directly — no implicit listSnapshots[0]
@@ -2080,7 +2080,7 @@ const provenanceRouter = router({
       await db_helpers.markFindingAsSynthesis(input.findingId, input.reason);
 
       await db_helpers.createProvenanceAuditLog({
-        findingId: input.findingId,
+        findingId: String(input.findingId),
         userId: ctx.user.id,
         actionType: "mark_synthesis",
         reason: input.reason,
@@ -2096,14 +2096,14 @@ const provenanceRouter = router({
     .input(z.object({ findingId: z.number(), reason: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
       const [finding] = await db_helpers.db.select().from((await import("../drizzle/schema")).findings)
-        .where(eq((await import("../drizzle/schema")).findings.id, input.findingId));
+        .where(eq((await import("../drizzle/schema")).findings.id, String(input.findingId)));
       if (!finding) throw new TRPCError({ code: "NOT_FOUND", message: "Finding not found" });
       await db_helpers.verifyCaseWriteAccess(finding.caseId, ctx.user.id);
       // Gate A: use finding.snapshotId directly — no implicit listSnapshots[0]
       if (finding.snapshotId) await assertActionAllowed(finding.caseId, finding.snapshotId, 'runProvenanceDrilldown');
 
       await db_helpers.createProvenanceAuditLog({
-        findingId: input.findingId,
+        findingId: String(input.findingId),
         userId: ctx.user.id,
         actionType: "flag_for_review",
         reason: input.reason,
@@ -3368,7 +3368,7 @@ const missingRecordsRouter = router({
     .query(async ({ ctx, input }) => {
       await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { getMissingRecordsForCase } = await import("./gap-detection");
-      const { resolveAgenciesForMissingRecords, hasAKBCoverage } = await import("./akb-lookup");
+      const { resolveAgenciesForMissingRecords, hasAKBCoverage } = (await import("./akb-lookup")) as any;
       const caseRow = await db_helpers.getCaseInternal(input.caseId);
       const pipelineType = caseRow?.pipelineType || "general";
 
@@ -3388,21 +3388,21 @@ const missingRecordsRouter = router({
   akbStatutes: protectedProcedure
     .input(z.object({ stateCode: z.string().default("WA") }))
     .query(async ({ input }) => {
-      const { getStatutesForState } = await import("./akb-lookup");
+      const { getStatutesForState } = (await import("./akb-lookup")) as any;
       return getStatutesForState(input.stateCode);
     }),
 
   akbAgencies: protectedProcedure
     .input(z.object({ stateCode: z.string().default("WA") }))
     .query(async ({ input }) => {
-      const { getAgenciesForState } = await import("./akb-lookup");
+      const { getAgenciesForState } = (await import("./akb-lookup")) as any;
       return getAgenciesForState(input.stateCode);
     }),
 
   akbRecordTypes: protectedProcedure
     .input(z.object({ domain: z.string() }))
     .query(async ({ input }) => {
-      const { getRecordTypesForDomain } = await import("./akb-lookup");
+      const { getRecordTypesForDomain } = (await import("./akb-lookup")) as any;
       return getRecordTypesForDomain(input.domain);
     }),
 });
@@ -4004,7 +4004,7 @@ const lensesRouter = router({
       const { eq } = await import("drizzle-orm");
       await db_helpers.db.update(cases)
         .set({ manualLensOverrides: input.lensIds, updatedAt: Date.now() })
-        .where(eq(cases.id, input.caseId));
+        .where(eq(cases.id, String(input.caseId)));
 
       return { success: true, lens_ids: input.lensIds };
     }),
@@ -4439,7 +4439,7 @@ const resourceVerificationRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { pool: rawPool } = await import("./db");
       const now = Date.now();
-      const verifiedBy = ctx.user?.name || ctx.user?.openId || "admin";
+      const verifiedBy = ctx.user?.name || ctx.user?.open_id || "admin";
       await rawPool.query(
         `UPDATE unified_resources SET verificationStatus = 'verified', lastVerifiedAt = ?, verifiedBy = ?, flaggedReason = NULL, updatedAt = ? WHERE id = ?`,
         [now, verifiedBy, now, input.resourceId]
@@ -4453,7 +4453,7 @@ const resourceVerificationRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { pool: rawPool } = await import("./db");
       const now = Date.now();
-      const verifiedBy = ctx.user?.name || ctx.user?.openId || "admin";
+      const verifiedBy = ctx.user?.name || ctx.user?.open_id || "admin";
       const placeholders = input.resourceIds.map(() => "?").join(",");
       await rawPool.query(
         `UPDATE unified_resources SET verificationStatus = 'verified', lastVerifiedAt = ?, verifiedBy = ?, flaggedReason = NULL, updatedAt = ? WHERE id IN (${placeholders})`,
@@ -4471,7 +4471,7 @@ const resourceVerificationRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { pool: rawPool } = await import("./db");
       const now = Date.now();
-      const flaggedBy = ctx.user?.name || ctx.user?.openId || "admin";
+      const flaggedBy = ctx.user?.name || ctx.user?.open_id || "admin";
       await rawPool.query(
         `UPDATE unified_resources SET verificationStatus = 'flagged', flaggedReason = ?, verifiedBy = ?, updatedAt = ? WHERE id = ?`,
         [input.reason, flaggedBy, now, input.resourceId]
@@ -4774,9 +4774,7 @@ function buildDshsOfficeProofPayload(rows: any[], endpoint = "benefitsDshsOffice
     hook: endpoint,
     source: "normalized_civic_resource",
     source_key: "wa_dshs_office_locator",
-    source_key: "wa_dshs_office_locator",
     source_name: "Washington DSHS Office Locator",
-    resource_type: "benefits_office",
     resource_type: "benefits_office",
     query_mode: "live_read",
     total,

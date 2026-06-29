@@ -31,12 +31,12 @@ export const strategyEngineRouter = router({
     .input(z.object({ caseId: z.number() }))
     .mutation(async ({ input }) => {
       const now = Date.now();
-      const [caseRow] = await db.select().from(cases).where(eq(cases.id, input.caseId));
+      const [caseRow] = await db.select().from(cases).where(eq(cases.id, String(input.caseId)));
       if (!caseRow) throw new Error("Case not found");
 
-      const caseEntities = await db.select().from(entities).where(eq(entities.caseId, input.caseId));
-      const caseClaims = await db.select().from(claims).where(eq(claims.caseId, input.caseId));
-      const caseEvents = await db.select().from(events).where(eq(events.caseId, input.caseId));
+      const caseEntities = await db.select().from(entities).where(eq(entities.caseId, String(input.caseId)));
+      const caseClaims = await db.select().from(claims).where(eq(claims.caseId, String(input.caseId)));
+      const caseEvents = await db.select().from(events).where(eq(events.caseId, String(input.caseId)));
 
       const entitySummary = caseEntities.slice(0, 30).map((e: any) => `${e.name} (${e.type})`).join(", ");
       const claimSummary = caseClaims.slice(0, 20).map((c: any) => `${c.claimType}: ${c.claimText?.slice(0, 120)}`).join("\n");
@@ -93,9 +93,9 @@ export const strategyEngineRouter = router({
     .input(z.object({ caseId: z.number(), matterProfileId: z.number() }))
     .mutation(async ({ input }) => {
       const now = Date.now();
-      const caseQuotes = await db.select().from(quotes).where(eq(quotes.caseId, input.caseId));
-      const caseFindings = await db.select().from(findings).where(eq(findings.caseId, input.caseId));
-      const caseClaims = await db.select().from(claims).where(eq(claims.caseId, input.caseId));
+      const caseQuotes = await db.select().from(quotes).where(eq(quotes.caseId, String(input.caseId)));
+      const caseFindings = await db.select().from(findings).where(eq(findings.caseId, String(input.caseId)));
+      const caseClaims = await db.select().from(claims).where(eq(claims.caseId, String(input.caseId)));
 
       const evidenceItems = [
         ...caseQuotes.slice(0, 40).map((q: any) => ({ source: "quote", id: q.id, text: q.text?.slice(0, 200) ?? "" })),
@@ -600,7 +600,7 @@ Be conservative. Maximum 8 candidates.`
         },
       }, async () => {
         // Write to canonical_workflows — NO legacy table writes
-        const [caseRow] = await db.select().from(cases).where(eq(cases.id, input.caseId));
+        const [caseRow] = await db.select().from(cases).where(eq(cases.id, String(input.caseId)));
         if (!caseRow) throw new Error('Case not found');
         const canonicalEntity = await writeStrategyWorkflow({
           name: `Strategy: ${caseRow.name}`,
@@ -662,7 +662,7 @@ Be conservative. Maximum 8 candidates.`
     .input(z.object({ caseId: z.number() }))
     .query(async ({ input }) => {
       return db.select().from(strategyPaths)
-        .where(eq(strategyPaths.caseId, input.caseId))
+        .where(eq(strategyPaths.caseId, String(input.caseId)))
         .orderBy(strategyPaths.priorityRank);
     }),
 
@@ -703,7 +703,7 @@ Be conservative. Maximum 8 candidates.`
         pathId: input.pathId,
         status: input.status,
         rationale: input.rationale ?? `Strategy path status changed to ${input.status} via resolution interface`,
-        actorId: ctx.user?.openId ?? "SYSTEM:strategy-engine",
+        actorId: ctx.user?.open_id ?? "SYSTEM:strategy-engine",
         actorRole: "admin",
       });
       return { success: true };

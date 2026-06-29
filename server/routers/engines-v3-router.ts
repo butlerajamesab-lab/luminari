@@ -37,7 +37,7 @@ export const enginesV3Router = router({
         return runSimulation({
           ...input,
           createdBy: ctx.user?.name ?? "system",
-        });
+        } as any);
       });
     }),
 
@@ -49,7 +49,7 @@ export const enginesV3Router = router({
       offset: z.number().optional(),
     }).optional())
     .query(async ({ input }) => {
-      const { listSimulations } = await import("../engines/systemic-simulation");
+      const { listSimulations } = await import("../engines/systemic-simulation") as any;
       return listSimulations(input);
     }),
 
@@ -63,7 +63,7 @@ export const enginesV3Router = router({
   compareSimulations: protectedProcedure
     .input(z.object({ simulationIds: z.array(z.number()).min(2).max(5) }))
     .query(async ({ input }) => {
-      const { compareSimulations } = await import("../engines/systemic-simulation");
+      const { compareSimulations } = await import("../engines/systemic-simulation") as any;
       return compareSimulations(input.simulationIds);
     }),
 
@@ -101,7 +101,7 @@ export const enginesV3Router = router({
         return generatePatternExplainer({
           ...input,
           createdBy: ctx.user?.name ?? "system",
-        });
+        } as any);
       });
     }),
 
@@ -123,7 +123,7 @@ export const enginesV3Router = router({
     }))
     .mutation(async ({ input, ctx }) => {
       return withEngineTracking({ engineId: ENGINE_IDS.TRANSPARENCY, caseId: 0 }, async () => {
-        const { generatePublicBrief } = await import("../engines/public-transparency");
+        const { generatePublicBrief } = await import("../engines/public-transparency") as any;
         return generatePublicBrief({
           ...input,
           createdBy: ctx.user?.name ?? "system",
@@ -139,14 +139,14 @@ export const enginesV3Router = router({
       offset: z.number().optional(),
     }).optional())
     .query(async ({ input }) => {
-      const { listTransparencyDocuments } = await import("../engines/public-transparency");
+      const { listTransparencyDocuments } = await import("../engines/public-transparency") as any;
       return listTransparencyDocuments(input);
     }),
 
   transparencyDocument: protectedProcedure
     .input(z.object({ documentId: z.number() }))
     .query(async ({ input }) => {
-      const { getTransparencyDocumentById } = await import("../engines/public-transparency");
+      const { getTransparencyDocumentById } = await import("../engines/public-transparency") as any;
       return getTransparencyDocumentById(input.documentId);
     }),
 

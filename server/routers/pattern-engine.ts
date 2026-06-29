@@ -42,7 +42,7 @@ export const patternEngineRouter = router({
       if (input.caseIds && input.caseIds.length > 0) {
         allEntities = [];
         for (const caseId of input.caseIds) {
-          const ents = await db.select().from(entities).where(eq(entities.caseId, caseId));
+          const ents = await db.select().from(entities).where(eq(entities.caseId, String(caseId)));
           allEntities.push(...ents);
         }
       } else {
@@ -117,7 +117,7 @@ Only create clusters for entities appearing in 2+ cases or with notable risk ind
       if (input.caseIds && input.caseIds.length > 0) {
         allClaims = [];
         for (const caseId of input.caseIds) {
-          const cls = await db.select().from(claims).where(eq(claims.caseId, caseId));
+          const cls = await db.select().from(claims).where(eq(claims.caseId, String(caseId)));
           allClaims.push(...cls);
         }
       } else {
@@ -331,7 +331,7 @@ Focus on actionable inferences that strengthen individual cases.`
       const now = Date.now();
       // Get strategy paths for this case
       const paths = await db.select().from(strategyPaths)
-        .where(eq(strategyPaths.caseId, input.caseId));
+        .where(eq(strategyPaths.caseId, String(input.caseId)));
 
       if (paths.length === 0) return { feedback_applied: 0, message: "No strategy paths found." };
 
