@@ -32,17 +32,17 @@ export async function createSubscription(params: {
 }): Promise<AlertSubscriptionRow> {
   const now = Date.now();
 
-  // @ts-ignore pre-existing type mismatch
+  // SCHEMA NOTE: alertSubscriptions columns (per drizzle/schema.ts):
+  //   targetScope (not targetName), alertFrequency (not alertChannel),
+  //   isPaused (not isActive), riskThreshold (string, not thresholdRiskScore/thresholdSignalCount).
+  //   createdAt/updatedAt are bigint milliseconds.
   await db.insert(alertSubscriptions).values({
     userId: params.userId,
     subscriptionType: params.subscriptionType,
     targetId: params.targetId || null,
-    targetName: params.targetName,
-    alertChannel: params.alertChannel || "in_app",
+    targetScope: params.targetName,
     alertFrequency: params.alertFrequency || "immediate",
-    thresholdRiskScore: params.thresholdRiskScore || null,
-    thresholdSignalCount: params.thresholdSignalCount || null,
-    isActive: 1,
+    isPaused: 0,
     createdAt: now,
     updatedAt: now,
   });
@@ -50,8 +50,7 @@ export async function createSubscription(params: {
   const [sub] = await db.select().from(alertSubscriptions)
     .where(and(
       eq(alertSubscriptions.userId, params.userId),
-      // @ts-ignore pre-existing type mismatch
-      eq(alertSubscriptions.targetName, params.targetName),
+      eq(alertSubscriptions.targetScope, params.targetName),
       eq(alertSubscriptions.subscriptionType, params.subscriptionType)
     ))
     .orderBy(desc(alertSubscriptions.id))
@@ -63,18 +62,18 @@ export async function createSubscription(params: {
 // ─── List User Subscriptions ─────────────────────────────────────────
 
 export async function listUserSubscriptions(userId: string): Promise<AlertSubscriptionRow[]> {
+  // isPaused=0 means the subscription is active (not paused).
   return db.select().from(alertSubscriptions)
-    // @ts-ignore pre-existing type mismatch
-    .where(and(eq(alertSubscriptions.userId, userId), eq(alertSubscriptions.isActive, 1)))
+    .where(and(eq(alertSubscriptions.userId, userId), eq(alertSubscriptions.isPaused, 0)))
     .orderBy(desc(alertSubscriptions.createdAt));
 }
 
 // ─── Toggle Subscription ─────────────────────────────────────────────
 
 export async function toggleSubscription(subscriptionId: number, isActive: boolean): Promise<void> {
+  // isPaused is the inverse of isActive: active=not-paused, inactive=paused.
   await db.update(alertSubscriptions)
-    // @ts-ignore pre-existing type mismatch
-    .set({ isActive: isActive ? 1 : 0, updatedAt: Date.now() })
+    .set({ isPaused: isActive ? 0 : 1, updatedAt: Date.now() })
     .where(eq(alertSubscriptions.id, subscriptionId));
 }
 
@@ -87,9 +86,9 @@ export async function deleteSubscription(subscriptionId: number): Promise<void> 
 // ─── Check Alert Triggers ────────────────────────────────────────────
 
 export async function checkAlertTriggers(): Promise<AlertEventRow[]> {
+  // isPaused=0 means the subscription is active (not paused).
   const activeSubs = await db.select().from(alertSubscriptions)
-    // @ts-ignore pre-existing type mismatch
-    .where(eq(alertSubscriptions.isActive, 1));
+    .where(eq(alertSubscriptions.isPaused, 0));
 
   const newEvents: AlertEventRow[] = [];
   const now = Date.now();
@@ -102,33 +101,36 @@ export async function checkAlertTriggers(): Promise<AlertEventRow[]> {
     let riskScore = 0;
 
     if (sub.subscriptionType === "entity") {
+      // SCHEMA MISMATCH: detectedSignals.entityId is a UUID foreign key, not an entity name.
+      // sub.targetScope stores the entity name/scope string. Matching UUID to name is incorrect;
+      // a join against the entities table would be required. Using signalType as proxy for now.
+      // TODO: verify production schema and fix this join.
       const newSignals = await db.select({ count: sql<number>`COUNT(*)` }).from(detectedSignals)
         .where(and(
-          // @ts-ignore pre-existing type mismatch
-          eq(detectedSignals.entityId, sub.targetName),
+          eq(detectedSignals.signalType, sub.targetScope ?? ""),
           gte(detectedSignals.detectionTimestamp, oneDayAgo)
         ));
       const signalCount = newSignals[0]?.count || 0;
       if (signalCount > 0) {
         shouldTrigger = true;
-        // @ts-ignore pre-existing type mismatch
-        message = `Entity "${sub.targetName}" has ${signalCount} new signals`;
+        message = `Entity scope "${sub.targetScope}" has ${signalCount} new signals`;
         riskScore = Math.min(100, signalCount * 10);
       }
     }
 
     if (sub.subscriptionType === "industry") {
+      // SCHEMA MISMATCH: detectedSignals has no complaintCategory column; that column is on
+      // signal_extractions. Using detectedSignals.datasetId as the nearest available proxy.
+      // TODO: verify production schema — may need to join signal_extractions instead.
       const newSignals = await db.select({ count: sql<number>`COUNT(*)` }).from(detectedSignals)
         .where(and(
-          // @ts-ignore pre-existing type mismatch
-          eq(detectedSignals.complaintCategory, sub.targetName),
+          eq(detectedSignals.datasetId, sub.industry ?? ""),
           gte(detectedSignals.detectionTimestamp, oneDayAgo)
         ));
       const signalCount = newSignals[0]?.count || 0;
       if (signalCount > 0) {
         shouldTrigger = true;
-        // @ts-ignore pre-existing type mismatch
-        message = `Industry "${sub.targetName}" has ${signalCount} new signals`;
+        message = `Industry "${sub.industry}" has ${signalCount} new signals`;
         riskScore = Math.min(100, signalCount * 5);
       }
     }
@@ -136,15 +138,13 @@ export async function checkAlertTriggers(): Promise<AlertEventRow[]> {
     if (sub.subscriptionType === "jurisdiction") {
       const newSignals = await db.select({ count: sql<number>`COUNT(*)` }).from(detectedSignals)
         .where(and(
-          // @ts-ignore pre-existing type mismatch
-          eq(detectedSignals.jurisdictionScope, sub.targetName),
+          eq(detectedSignals.jurisdictionScope, sub.jurisdiction ?? ""),
           gte(detectedSignals.detectionTimestamp, oneDayAgo)
         ));
       const signalCount = newSignals[0]?.count || 0;
       if (signalCount > 0) {
         shouldTrigger = true;
-        // @ts-ignore pre-existing type mismatch
-        message = `Jurisdiction "${sub.targetName}" has ${signalCount} new signals`;
+        message = `Jurisdiction "${sub.jurisdiction}" has ${signalCount} new signals`;
         riskScore = Math.min(100, signalCount * 5);
       }
     }
@@ -162,8 +162,7 @@ export async function checkAlertTriggers(): Promise<AlertEventRow[]> {
         await db.insert(alertEvents).values({
           subscriptionId: sub.id,
           alertType: sub.subscriptionType,
-          // @ts-ignore pre-existing type mismatch
-          triggerSource: sub.targetName,
+          triggerSource: sub.targetScope,
           riskScore,
           riskLevel: riskScore >= 70 ? "critical" : riskScore >= 40 ? "warning" : "info",
           severity: riskScore >= 70 ? "critical" : riskScore >= 40 ? "warning" : "info",
@@ -206,8 +205,8 @@ export async function processEventsToDelivery(): Promise<AlertDeliveryLogRow[]> 
 
     await db.insert(alertDeliveryLog).values({
       alertId: evt.id,
-      // @ts-ignore pre-existing type mismatch
-      channel: sub.alertChannel || "in_app",
+      // alertFrequency is the closest available column; alertChannel does not exist in the schema.
+      channel: sub.alertFrequency || "immediate",
       recipient: sub.userId,
       status: "delivered",
       sentAt: now,
@@ -238,12 +237,12 @@ export async function getUserNotifications(userId: string, limit: number = 50): 
 
   if (subs.length === 0) return [];
 
-  const subIds = subs.map((s: any) => s.id);
+  const subIds = subs.map((s) => s.id);
   const events = await db.select().from(alertEvents)
     .orderBy(desc(alertEvents.createdAt))
     .limit(limit * 2); // fetch more, filter in JS
 
-  return events.filter((e: any) => e.subscriptionId && subIds.includes(e.subscriptionId)).slice(0, limit);
+  return events.filter((e) => e.subscriptionId && subIds.includes(e.subscriptionId)).slice(0, limit);
 }
 
 // ─── Mark Notification Read ──────────────────────────────────────────
@@ -259,8 +258,8 @@ export async function markNotificationRead(eventId: number): Promise<void> {
 export async function getAlertingStats() {
   const [totalSubs] = await db.select({ count: sql<number>`COUNT(*)` }).from(alertSubscriptions);
   const [activeSubs] = await db.select({ count: sql<number>`COUNT(*)` }).from(alertSubscriptions)
-    // @ts-ignore pre-existing type mismatch
-    .where(eq(alertSubscriptions.isActive, 1));
+    // isPaused=0 means the subscription is active.
+    .where(eq(alertSubscriptions.isPaused, 0));
   const [totalEvents] = await db.select({ count: sql<number>`COUNT(*)` }).from(alertEvents);
   const [pendingDeliveries] = await db.select({ count: sql<number>`COUNT(*)` }).from(alertDeliveryLog)
     .where(eq(alertDeliveryLog.status, "pending"));

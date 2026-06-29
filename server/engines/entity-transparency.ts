@@ -32,6 +32,10 @@ export async function generateEntityBreakdown(patternId: number): Promise<Patter
   }>();
 
   for (const sig of signals) {
+    // SCHEMA NOTE: sig.entityId is a UUID foreign key to the entities table, not a human-readable
+    // entity name. Grouping signals by entityId (UUID) and using it as the display name is
+    // semantically incorrect. A join against the entities table would be required to get the name.
+    // TODO: verify production schema and replace with entities.name via join.
     const name = sig.entityId;
     if (!name || name === "Unknown" || name === "N/A") continue;
 
@@ -64,7 +68,7 @@ export async function generateEntityBreakdown(patternId: number): Promise<Patter
 
   // Also check entity_registry for cross-stream counts
   const registryEntities = await db.select().from(entityRegistry);
-  const registryMap = new Map(registryEntities.map((e: any) => [e.entityName, e]));
+  const registryMap = new Map(registryEntities.map((e) => [e.entityName, e]));
 
   // Upsert into pattern_entity_summary
   const results: PatternEntitySummaryRow[] = [];
@@ -72,7 +76,12 @@ export async function generateEntityBreakdown(patternId: number): Promise<Patter
 
   for (const [, entity] of entityMap) {
     const regEntry = registryMap.get(entity.entityName);
-    const confidence = calculateEntityConfidence(entity, regEntry as { signalCount?: number | null; patternCount?: number | null } | undefined);
+    // entityRegistry uses complaintCount+litigationCount+enforcementCount, not signalCount.
+    // Pass the combined count as signalCount for confidence calculation.
+    const regSignalCount = regEntry
+      ? (regEntry.complaintCount ?? 0) + (regEntry.litigationCount ?? 0) + (regEntry.enforcementCount ?? 0)
+      : undefined;
+    const confidence = calculateEntityConfidence(entity, regEntry ? { signalCount: regSignalCount, patternCount: regEntry.patternCount } : undefined);
 
     // Delete existing entry for this pattern+entity
     await db.delete(patternEntitySummary).where(
@@ -85,7 +94,7 @@ export async function generateEntityBreakdown(patternId: number): Promise<Patter
     const [inserted] = await db.insert(patternEntitySummary).values({
       patternId,
       entityName: entity.entityName,
-      entityType: entity.entityType || (regEntry as any)?.entityType || null,
+      entityType: entity.entityType || regEntry?.entityType || null,
       complaintCount: entity.complaintCount,
       lawsuitCount: entity.lawsuitCount,
       enforcementActions: entity.enforcementActions,

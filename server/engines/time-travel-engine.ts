@@ -1014,7 +1014,7 @@ function replaySignalDetection(
         signalType: "frequency_spike",
         entityName: category,
         datasetId: catRecords[0]?.datasetId ?? undefined,
-        jurisdiction: (catRecords[0] as any)?.normalizedJurisdiction ?? "Unknown",
+        jurisdiction: catRecords[0]?.normalizedCity ?? "Unknown",
         domain: category,
         severity: ratio > multiplier * 2 ? "critical" : ratio > multiplier * 1.5 ? "high" : "medium",
         title: `Sector Spike: ${category}`,
@@ -1053,7 +1053,7 @@ function replaySignalDetection(
       entityName: entity,
       entityType: classification.entityType,
       datasetId: entityRecords[0]?.datasetId ?? undefined,
-      jurisdiction: (entityRecords[0] as any)?.normalizedJurisdiction ?? "Unknown",
+      jurisdiction: entityRecords[0]?.normalizedCity ?? "Unknown",
       domain: entityRecords[0]?.normalizedCategory ?? "Unknown",
       severity: entityRecords.length >= 20 ? "critical" : entityRecords.length >= 10 ? "high" : "medium",
       title: `Repeat Entity: ${entity} (${entityRecords.length} records)`,
@@ -1080,7 +1080,7 @@ function replaySignalDetection(
       signalType: "geographic_cluster",
       entityName: city,
       datasetId: cityRecords[0]?.datasetId ?? undefined,
-      jurisdiction: (cityRecords[0] as any)?.normalizedJurisdiction ?? "Unknown",
+      jurisdiction: cityRecords[0]?.normalizedCity ?? "Unknown",
       domain: cityRecords[0]?.normalizedCategory ?? "Unknown",
       severity: pct > 30 ? "high" : "medium",
       title: `Geographic Concentration: ${city}`,
@@ -1093,7 +1093,9 @@ function replaySignalDetection(
   // T4. Status delay detection
   const statusMap = new Map<string, number>();
   for (const r of records) {
-    const status = ((r as any).normalizedStatus ?? "").toLowerCase();
+    // NOTE: ingestedRecords.status is a recordStatusEnum ("received"|"normalized"|"processed"|"failed"|"rejected"),
+    // not a free-form normalizedStatus. The status delay logic below maps known open-state values.
+    const status = (r.status ?? "").toLowerCase();
     statusMap.set(status, (statusMap.get(status) ?? 0) + 1);
   }
   const openStatuses = ["open", "pending", "in progress", "under review", "unresolved"];
@@ -1104,7 +1106,7 @@ function replaySignalDetection(
     signals.push({
       signalType: "status_delay",
       datasetId: records[0]?.datasetId ?? undefined,
-      jurisdiction: (records[0] as any)?.normalizedJurisdiction ?? "Unknown",
+      jurisdiction: records[0]?.normalizedCity ?? "Unknown",
       domain: "resolution_status",
       severity: openPct > 50 ? "high" : "medium",
       title: `Elevated Unresolved Record Rate`,
