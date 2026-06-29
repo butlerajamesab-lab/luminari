@@ -1949,7 +1949,7 @@ export type FilingTemplates = typeof filingTemplates.$inferSelect;
 export type InsertFilingTemplates = typeof filingTemplates.$inferInsert;
 
 export const findings = pgTable("findings", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: serial("id").primaryKey(),
   caseId: uuid("case_id").notNull(),
   claimId: uuid("claim_id").notNull(),
   snapshotId: uuid("snapshot_id").notNull(),
@@ -3313,16 +3313,15 @@ export type UploadSession = typeof uploadSessions.$inferSelect;
 
 export const provenanceAuditLogs = pgTable("provenance_audit_logs", {
   id: serial("id").primaryKey(),
-  findingId: integer("target_id").notNull(),
-  userId: integer("userId").notNull(),
-  actionType: pgEnum("provenance_audit_logs_action_type_enum", ["re_run_matching", "mark_synthesis", "flag_for_review", "batch_rerun"])("actionType").notNull(),
-  reason: text("reason"), // mandatory for mark_synthesis
-  previousStatus: varchar("previousStatus", { length: 64 }).notNull(),
-  newStatus: varchar("newStatus", { length: 64 }).notNull(),
-  metadata: jsonb("metadata").$type<Record<string, unknown>>(), // action-specific details (match results, etc.)
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  userId: integer("user_id").notNull(),
+  caseId: integer("case_id").notNull(),
+  actionType: varchar("action_type", { length: 64 }).notNull(),
+  targetType: varchar("target_type", { length: 64 }).notNull(),
+  targetId: integer("target_id").notNull(),
+  details: jsonb("details").$type<Record<string, unknown>>(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
 }, (table) => [
-  index("idx_prov_audit_finding").on(table.findingId),
+  index("idx_prov_audit_target").on(table.targetType, table.targetId),
   index("idx_prov_audit_user").on(table.userId),
   index("idx_prov_audit_action").on(table.actionType),
 ]);
@@ -3338,7 +3337,7 @@ export const batchRerunRuns = pgTable("batch_rerun_runs", {
   resolvedCount: integer("resolvedCount").default(0).notNull(), // newly linked
   errorCount: integer("errorCount").default(0).notNull(),
   stillUnsupported: integer("stillUnsupported").default(0).notNull(),
-  lastProcessedFindingId: integer("lastProcessedFindingId"), // for resume
+  lastProcessedFindingId: integer("last_processed_finding_id"), // for resume
   fallbackUsageCount: integer("fallbackUsageCount").default(0).notNull(),
   startedAt: bigint("startedAt", { mode: "number" }).notNull(),
   completedAt: bigint("completedAt", { mode: "number" }),

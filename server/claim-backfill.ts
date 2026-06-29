@@ -60,7 +60,7 @@ export function extractDocumentRefs(description: string): number[] {
  * so this is always a single LLM call.
  */
 async function matchClaimsToFinding(
-  finding: { id: string; title: string | null; description: string | null; findingType: string | null },
+  finding: { id: number | string; title: string | null; description: string | null; findingType: string | null },
   candidateClaims: Array<{ id: string; claimText: string; claimType: string | null; documentId: string | null }>
 ): Promise<{ matchedIds: string[]; confidence: "high" | "medium" | "low" }> {
   if (candidateClaims.length === 0) {
@@ -86,7 +86,7 @@ async function matchClaimsToFinding(
 }
 
 async function matchClaimBatch(
-  finding: { id: string; title: string | null; description: string | null; findingType: string | null },
+  finding: { id: number | string; title: string | null; description: string | null; findingType: string | null },
   batch: Array<{ id: string; claimText: string; claimType: string | null; documentId: string | null }>
 ): Promise<string[]> {
   const claimList = batch.map(c => 
@@ -164,10 +164,10 @@ Return JSON: { "matched_claim_ids": [<ids>] }`
 
 // ─── Finding Linkage Updater ───
 
-async function linkFindingToClaims(findingId: string, claimIds: string[]): Promise<void> {
+async function linkFindingToClaims(findingId: number, claimIds: string[]): Promise<void> {
   await db.update(findings)
-    .set({ claimIds })
-    .where(eq(findings.id, String(findingId)));
+    .set({ claimIds: claimIds as unknown as number[] })
+    .where(eq(findings.id, findingId));
 }
 
 // ─── Test Stub Cleaner ───

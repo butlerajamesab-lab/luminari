@@ -357,11 +357,11 @@ export async function hardDeleteFinding(
   const cascaded: Array<{ type: string; count: number }> = [];
 
   // T1. Delete provenance audit logs for this finding
-  const [palResult] = await db.delete(provenanceAuditLogs).where(eq(provenanceAuditLogs.findingId, findingId as any));
+  const [palResult] = await db.delete(provenanceAuditLogs).where(eq(provenanceAuditLogs.targetId, findingId));
   cascaded.push({ type: "provenance_audit_log", count: (palResult as any)?.affectedRows ?? 0 });
 
   // T2. Delete the finding
-  await db.delete(findings).where(eq(findings.id, findingId as any));
+  await db.delete(findings).where(eq(findings.id, findingId));
 
   const auditHash = await logAudit({
     caseId, userId,
@@ -602,11 +602,11 @@ export async function hardDeleteCase(
   cascaded.push({ type: "phase2_run", count: (p2Result as any)?.affectedRows ?? 0 });
 
   // T2. Provenance artifacts
-  // provenanceAuditLogs are finding-scoped, delete via findings
+  // provenanceAuditLogs are finding-scoped, delete via targetId
   const caseFindings = await db.select({ id: findings.id }).from(findings).where(eq(findings.caseId, caseId as any));
-  const findingIds = caseFindings.map((f: any) => f.id);
+  const findingIds = caseFindings.map((f: any) => f.id as number);
   if (findingIds.length > 0) {
-    await db.delete(provenanceAuditLogs).where(inArray(provenanceAuditLogs.findingId, findingIds));
+    await db.delete(provenanceAuditLogs).where(inArray(provenanceAuditLogs.targetId, findingIds));
   }
 
   // T3. Presentation artifacts

@@ -1960,12 +1960,12 @@ const provenanceRouter = router({
           matchMetadata: { reRunResult: "no_candidate_claims", reRunBy: ctx.user.id, reRunAt: Date.now() },
         });
         await dbHelpers.createProvenanceAuditLog({
-          findingId: input.findingId,
+          caseId: finding.caseId,
           userId: ctx.user.id,
           actionType: "re_run_matching",
-          previousStatus,
-          newStatus: finding.provenanceStatus,
-          metadata: { candidateClaims: 0, result: "no_candidate_claims" },
+          targetType: "finding",
+          targetId: input.findingId,
+          details: { candidateClaims: 0, result: "no_candidate_claims", previousStatus, newStatus: finding.provenanceStatus },
         });
         return { success: true, matchedClaimIds: [], candidateCount: 0 };
       }
@@ -1985,7 +1985,7 @@ const provenanceRouter = router({
       };
 
       if (result.matchedIds.length > 0) {
-        await dbHelpers.updateFindingClaimIds(input.findingId, result.matchedIds);
+        await dbHelpers.updateFindingClaimIds(input.findingId, result.matchedIds as unknown as number[]);
       }
 
       await dbHelpers.updateFindingMatchMetadata(input.findingId, {
@@ -1996,12 +1996,12 @@ const provenanceRouter = router({
 
       const newStatus = result.matchedIds.length > 0 ? "linked" : previousStatus;
       await dbHelpers.createProvenanceAuditLog({
-        findingId: input.findingId,
+        caseId: finding.caseId,
         userId: ctx.user.id,
         actionType: "re_run_matching",
-        previousStatus,
-        newStatus,
-        metadata: matchMetadata,
+        targetType: "finding",
+        targetId: input.findingId,
+        details: { previousStatus, newStatus, ...matchMetadata },
       });
 
       return { success: true, matchedClaimIds: result.matchedIds, candidateCount: caseClaims.length };
@@ -2022,12 +2022,12 @@ const provenanceRouter = router({
       await dbHelpers.markFindingAsSynthesis(input.findingId, input.reason);
 
       await dbHelpers.createProvenanceAuditLog({
-        findingId: input.findingId,
+        caseId: finding.caseId,
         userId: ctx.user.id,
         actionType: "mark_synthesis",
-        reason: input.reason,
-        previousStatus,
-        newStatus: "unsupported_synthesis",
+        targetType: "finding",
+        targetId: input.findingId,
+        details: { previousStatus, newStatus: "unsupported_synthesis", reason: input.reason },
       });
 
       return { success: true };
@@ -2045,13 +2045,12 @@ const provenanceRouter = router({
       if (finding.snapshotId) await assertActionAllowed(finding.caseId, finding.snapshotId, 'runProvenanceDrilldown');
 
       await dbHelpers.createProvenanceAuditLog({
-        findingId: input.findingId,
+        caseId: finding.caseId,
         userId: ctx.user.id,
         actionType: "flag_for_review",
-        reason: input.reason,
-        previousStatus: finding.provenanceStatus,
-        newStatus: finding.provenanceStatus, // unchanged
-        metadata: { flaggedAt: Date.now() },
+        targetType: "finding",
+        targetId: input.findingId,
+        details: { previousStatus: finding.provenanceStatus, reason: input.reason, flaggedAt: Date.now() },
       });
 
       return { success: true };
@@ -2067,7 +2066,7 @@ const provenanceRouter = router({
       await dbHelpers.verifyCaseOwnership(finding.caseId, ctx.user.id);
       return dbHelpers.db.select()
         .from(provenanceAuditLogs)
-        .where(eq(provenanceAuditLogs.findingId, input.findingId))
+        .where(eq(provenanceAuditLogs.targetId, input.findingId))
         .orderBy(desc(provenanceAuditLogs.createdAt));
     }),
 
@@ -2162,14 +2161,13 @@ const provenanceRouter = router({
       if (input.caseId) await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const logs = await dbHelpers.listProvenanceAuditLogs(input.caseId, input.limit ?? 1000);
       // Build CSV rows
-      const headers = ["finding_id", "action_type", "previous_state", "new_state", "user_id", "reason", "timestamp"];
+      const headers = ["target_id", "target_type", "action_type", "user_id", "details", "timestamp"];
       const rows = logs.map(log => [
-        log.findingId,
+        log.targetId,
+        log.targetType,
         log.actionType,
-        log.previousStatus ?? "",
-        log.newStatus ?? "",
         log.userId,
-        (log.reason ?? "").replace(/"/g, '""'),
+        JSON.stringify(log.details ?? {}),
         new Date(log.createdAt).toISOString(),
       ]);
       const csv = [

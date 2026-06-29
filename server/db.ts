@@ -1163,7 +1163,7 @@ export async function createFinding(f: {
  * When claimIds become non-empty, status transitions to 'linked'.
  * When claimIds are empty, status stays as-is (caller must handle unsupported state).
  */
-export async function updateFindingClaimIds(findingId: string, claimIds: string[]) {
+export async function updateFindingClaimIds(findingId: number, claimIds: number[]) {
   const provenanceStatus = claimIds.length > 0 ? 'linked' as const : 'unsupported' as const;
   await db.update(findings).set({ claimIds, provenanceStatus, provenanceAttempted: true }).where(eq(findings.id, findingId));
 }
@@ -2135,7 +2135,7 @@ export interface FindingMatchDetail {
  * Get full match detail for a single finding: the finding itself, all candidate claims
  * from the same case, raw match metadata, and audit history.
  */
-export async function getFindingMatchDetail(findingId: string): Promise<FindingMatchDetail | null> {
+export async function getFindingMatchDetail(findingId: number): Promise<FindingMatchDetail | null> {
   const [finding] = await db.select().from(findings).where(eq(findings.id, findingId));
   if (!finding) return null;
 
@@ -2162,7 +2162,7 @@ export async function getFindingMatchDetail(findingId: string): Promise<FindingM
   // Get audit log for this finding
   const auditLog = await db.select()
     .from(provenanceAuditLogs)
-    .where(eq(provenanceAuditLogs.findingId, findingId as any)) // TODO: verify join key against production target_id semantics
+    .where(eq(provenanceAuditLogs.targetId, findingId))
     .orderBy(desc(provenanceAuditLogs.createdAt));
 
   return {
@@ -2177,18 +2177,20 @@ export async function getFindingMatchDetail(findingId: string): Promise<FindingM
  * Create an immutable audit log entry for a provenance action.
  */
 export async function createProvenanceAuditLog(entry: {
-  findingId: number;
+  caseId: number;
   userId: number;
-  actionType: "re_run_matching" | "mark_synthesis" | "flag_for_review" | "batch_rerun";
-  reason?: string;
-  previousStatus: string;
-  newStatus: string;
-  metadata?: Record<string, unknown>;
+  actionType: string;
+  targetType: string;
+  targetId: number;
+  details?: Record<string, unknown>;
 }): Promise<number> {
   const [result] = await db.insert(provenanceAuditLogs).values({
-    ...entry,
-    reason: entry.reason ?? null,
-    metadata: entry.metadata ?? null,
+    caseId: entry.caseId,
+    userId: entry.userId,
+    actionType: entry.actionType,
+    targetType: entry.targetType,
+    targetId: entry.targetId,
+    details: entry.details ?? null,
     createdAt: Date.now(),
   });
   return result.insertId;
@@ -2198,22 +2200,19 @@ export async function createProvenanceAuditLog(entry: {
  * List provenance audit log entries, optionally filtered by case.
  */
 export async function listProvenanceAuditLogs(caseId?: number, limit = 1000) {
-  // Join with findings to get caseId filter
   if (caseId) {
     return db.select({
       id: provenanceAuditLogs.id,
-      findingId: provenanceAuditLogs.findingId,
       userId: provenanceAuditLogs.userId,
+      caseId: provenanceAuditLogs.caseId,
       actionType: provenanceAuditLogs.actionType,
-      reason: provenanceAuditLogs.reason,
-      previousStatus: provenanceAuditLogs.previousStatus,
-      newStatus: provenanceAuditLogs.newStatus,
-      metadata: provenanceAuditLogs.metadata,
+      targetType: provenanceAuditLogs.targetType,
+      targetId: provenanceAuditLogs.targetId,
+      details: provenanceAuditLogs.details,
       createdAt: provenanceAuditLogs.createdAt,
     })
       .from(provenanceAuditLogs)
-      .innerJoin(findings, eq(provenanceAuditLogs.findingId, findings.id as any)) // TODO: verify join key — target_id (integer) vs findings.id (uuid)
-      .where(eq(findings.caseId, caseId))
+      .where(eq(provenanceAuditLogs.caseId, caseId))
       .orderBy(desc(provenanceAuditLogs.createdAt))
       .limit(limit);
   }
@@ -2239,7 +2238,7 @@ export async function markFindingAsSynthesis(findingId: number, reason: string) 
 /**
  * Update matching metadata on a finding after a re-run.
  */
-export async function updateFindingMatchMetadata(findingId: string, meta: {
+export async function updateFindingMatchMetadata(findingId: number, meta: {
   candidateClaimCount: number;
   fallbackTriggered: boolean;
   matchMetadata: Record<string, unknown>;

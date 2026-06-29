@@ -1968,7 +1968,7 @@ const provenanceRouter = router({
   getDetail: protectedProcedure
     .input(z.object({ findingId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const detail = await db_helpers.getFindingMatchDetail(String(input.findingId));
+      const detail = await db_helpers.getFindingMatchDetail(input.findingId);
       if (!detail) throw new TRPCError({ code: "NOT_FOUND", message: "Finding not found" });
       // Verify ownership through finding -> case chain
       await db_helpers.verifyCaseOwnership(detail.finding.caseId as any, ctx.user.id);
@@ -1987,7 +1987,7 @@ const provenanceRouter = router({
     .input(z.object({ findingId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const [finding] = await db_helpers.db.select().from((await import("../drizzle/schema")).findings)
-        .where(eq((await import("../drizzle/schema")).findings.id, String(input.findingId)));
+        .where(eq((await import("../drizzle/schema")).findings.id, input.findingId));
       if (!finding) throw new TRPCError({ code: "NOT_FOUND", message: "Finding not found" });
       await db_helpers.verifyCaseWriteAccess(finding.caseId, ctx.user.id);
       // Gate A: use finding.snapshotId directly — no implicit listSnapshots[0]
@@ -2012,18 +2012,18 @@ const provenanceRouter = router({
 
       if (caseClaims.length === 0) {
         // No claims to match against
-        await db_helpers.updateFindingMatchMetadata(String(input.findingId), {
+        await db_helpers.updateFindingMatchMetadata(input.findingId, {
           candidateClaimCount: 0,
           fallbackTriggered: false,
           matchMetadata: { reRunResult: "no_candidate_claims", reRunBy: ctx.user.id, reRunAt: Date.now() },
         });
         await db_helpers.createProvenanceAuditLog({
-          findingId: input.findingId,
+          caseId: finding.caseId,
           userId: ctx.user.id,
           actionType: "re_run_matching",
-          previousStatus,
-          newStatus: finding.provenanceStatus,
-          metadata: { candidateClaims: 0, result: "no_candidate_claims" },
+          targetType: "finding",
+          targetId: input.findingId,
+          details: { candidateClaims: 0, result: "no_candidate_claims", previousStatus, newStatus: finding.provenanceStatus },
         });
         return { success: true, matched_claim_ids: [], candidate_count: 0 };
       }
@@ -2043,10 +2043,10 @@ const provenanceRouter = router({
       };
 
       if (result.matchedIds.length > 0) {
-        await db_helpers.updateFindingClaimIds(String(input.findingId), result.matchedIds);
+        await db_helpers.updateFindingClaimIds(input.findingId, result.matchedIds as unknown as number[]);
       }
 
-      await db_helpers.updateFindingMatchMetadata(String(input.findingId), {
+      await db_helpers.updateFindingMatchMetadata(input.findingId, {
         candidateClaimCount: caseClaims.length,
         fallbackTriggered: true,
         matchMetadata,
@@ -2054,12 +2054,12 @@ const provenanceRouter = router({
 
       const newStatus = result.matchedIds.length > 0 ? "linked" : previousStatus;
       await db_helpers.createProvenanceAuditLog({
-        findingId: input.findingId,
+        caseId: finding.caseId,
         userId: ctx.user.id,
         actionType: "re_run_matching",
-        previousStatus,
-        newStatus,
-        metadata: matchMetadata,
+        targetType: "finding",
+        targetId: input.findingId,
+        details: { previousStatus, newStatus, ...matchMetadata },
       });
 
       return { success: true, matched_claim_ids: result.matchedIds, candidate_count: caseClaims.length };
@@ -2070,7 +2070,7 @@ const provenanceRouter = router({
     .input(z.object({ findingId: z.number(), reason: z.string().min(1, "Reason is mandatory") }))
     .mutation(async ({ ctx, input }) => {
       const [finding] = await db_helpers.db.select().from((await import("../drizzle/schema")).findings)
-        .where(eq((await import("../drizzle/schema")).findings.id, String(input.findingId)));
+        .where(eq((await import("../drizzle/schema")).findings.id, input.findingId));
       if (!finding) throw new TRPCError({ code: "NOT_FOUND", message: "Finding not found" });
       await db_helpers.verifyCaseWriteAccess(finding.caseId, ctx.user.id);
       // Gate A: use finding.snapshotId directly — no implicit listSnapshots[0]
@@ -2080,12 +2080,12 @@ const provenanceRouter = router({
       await db_helpers.markFindingAsSynthesis(input.findingId, input.reason);
 
       await db_helpers.createProvenanceAuditLog({
-        findingId: input.findingId,
+        caseId: finding.caseId,
         userId: ctx.user.id,
         actionType: "mark_synthesis",
-        reason: input.reason,
-        previousStatus,
-        newStatus: "unsupported_synthesis",
+        targetType: "finding",
+        targetId: input.findingId,
+        details: { previousStatus, newStatus: "unsupported_synthesis", reason: input.reason },
       });
 
       return { success: true };
@@ -2096,20 +2096,19 @@ const provenanceRouter = router({
     .input(z.object({ findingId: z.number(), reason: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
       const [finding] = await db_helpers.db.select().from((await import("../drizzle/schema")).findings)
-        .where(eq((await import("../drizzle/schema")).findings.id, String(input.findingId)));
+        .where(eq((await import("../drizzle/schema")).findings.id, input.findingId));
       if (!finding) throw new TRPCError({ code: "NOT_FOUND", message: "Finding not found" });
       await db_helpers.verifyCaseWriteAccess(finding.caseId, ctx.user.id);
       // Gate A: use finding.snapshotId directly — no implicit listSnapshots[0]
       if (finding.snapshotId) await assertActionAllowed(finding.caseId, finding.snapshotId, 'runProvenanceDrilldown');
 
       await db_helpers.createProvenanceAuditLog({
-        findingId: input.findingId,
+        caseId: finding.caseId,
         userId: ctx.user.id,
         actionType: "flag_for_review",
-        reason: input.reason,
-        previousStatus: finding.provenanceStatus,
-        newStatus: finding.provenanceStatus, // unchanged
-        metadata: { flaggedAt: Date.now() },
+        targetType: "finding",
+        targetId: input.findingId,
+        details: { previousStatus: finding.provenanceStatus, reason: input.reason, flaggedAt: Date.now() },
       });
 
       return { success: true };
@@ -2120,12 +2119,12 @@ const provenanceRouter = router({
     .query(async ({ ctx, input }) => {
       // Verify ownership through finding -> case chain
       const { findings: findingsTable, provenanceAuditLogs } = await import("../drizzle/schema");
-      const [finding] = await db_helpers.db.select().from(findingsTable).where(eq(findingsTable.id, String(input.findingId)));
+      const [finding] = await db_helpers.db.select().from(findingsTable).where(eq(findingsTable.id, input.findingId));
       if (!finding) throw new TRPCError({ code: "NOT_FOUND", message: "Finding not found" });
       await db_helpers.verifyCaseOwnership(finding.caseId, ctx.user.id);
       return db_helpers.db.select()
         .from(provenanceAuditLogs)
-        .where(eq(provenanceAuditLogs.findingId, input.findingId))
+        .where(eq(provenanceAuditLogs.targetId, input.findingId))
         .orderBy(desc(provenanceAuditLogs.createdAt));
     }),
 
@@ -2220,14 +2219,13 @@ const provenanceRouter = router({
       if (input.caseId) await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const logs = await db_helpers.listProvenanceAuditLogs(input.caseId, input.limit ?? 1000);
       // Build CSV rows
-      const headers = ["finding_id", "action_type", "previous_state", "new_state", "user_id", "reason", "timestamp"];
+      const headers = ["target_id", "target_type", "action_type", "user_id", "details", "timestamp"];
       const rows = logs.map((log: any) => [
-        log.findingId,
+        log.targetId,
+        log.targetType,
         log.actionType,
-        log.previousStatus ?? "",
-        log.newStatus ?? "",
         log.userId,
-        (log.reason ?? "").replace(/"/g, '""'),
+        JSON.stringify(log.details ?? {}),
         new Date(log.createdAt).toISOString(),
       ]);
       const csv = [
