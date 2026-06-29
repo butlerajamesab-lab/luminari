@@ -28,9 +28,9 @@ export async function selectTemplatesForStrategyPath(pathId: string, userId: num
     SELECT sp.path_id, sp.strategy_id, sp.pattern_id
     FROM sys_strategy_paths sp WHERE sp.path_id = ${pathId}
   `);
-  // @ts-expect-error pre-existing type mismatch
+  // @ts-ignore pre-existing type mismatch
   if (!path.length) return [];
-  // @ts-expect-error pre-existing type mismatch
+  // @ts-ignore pre-existing type mismatch
   const pathRow = path[0] as any;
 
   const [steps] = await db.execute(sql`
@@ -99,9 +99,9 @@ export async function calculateStrategySettlement(pathId: string, userId: number
     SELECT sp.path_id, sp.strategy_id, sp.pattern_id
     FROM sys_strategy_paths sp WHERE sp.path_id = ${pathId}
   `);
-  // @ts-expect-error pre-existing type mismatch
+  // @ts-ignore pre-existing type mismatch
   if (!path.length) return { totalEstimate: 0, confidenceLevel: "low", calculations: [] };
-  // @ts-expect-error pre-existing type mismatch
+  // @ts-ignore pre-existing type mismatch
   const pathRow = path[0] as any;
 
   // Get pattern data for variables

@@ -62,8 +62,9 @@ export const proceduralEngineRouter = router({
       const chain: (typeof jurisdictionHierarchy.$inferSelect)[] = [];
       let currentId: number | null = input.id;
       while (currentId) {
-        const [row] = await db.select().from(jurisdictionHierarchy)
+        const rows: (typeof jurisdictionHierarchy.$inferSelect)[] = await db.select().from(jurisdictionHierarchy)
           .where(eq(jurisdictionHierarchy.id, currentId));
+        const row: typeof jurisdictionHierarchy.$inferSelect | undefined = rows[0];
         if (!row) break;
         chain.unshift(row);
         currentId = row.parentId;
@@ -178,7 +179,7 @@ export const proceduralEngineRouter = router({
         .where(eq(workflowMaster.id, input.id));
       if (!workflow) return null;
       const steps = await db.select().from(workflowSteps)
-        .where(eq(workflowSteps.workflowId, input.id))
+        .where(eq(workflowSteps.workflowId, String(input.id)))
         .orderBy(workflowSteps.stepOrder);
       const escalations = await db.select().from(escalationRoutes)
         .where(eq(escalationRoutes.workflowId, input.id));
@@ -196,7 +197,7 @@ export const proceduralEngineRouter = router({
     .query(async ({ input }) => {
       const allWorkflows = await db.select().from(workflowMaster)
         .where(eq(workflowMaster.status, "active"));
-      return allWorkflows.filter(w => {
+      return allWorkflows.filter((w: any) => {
         const types = w.issueTypes as string[];
         const matchesIssue = types?.some(t =>
           t.toLowerCase().includes(input.issueType.toLowerCase())
@@ -213,7 +214,7 @@ export const proceduralEngineRouter = router({
     .input(z.object({ workflowId: z.number() }))
     .query(async ({ input }) => {
       return db.select().from(workflowSteps)
-        .where(eq(workflowSteps.workflowId, input.workflowId))
+        .where(eq(workflowSteps.workflowId, String(input.workflowId)))
         .orderBy(workflowSteps.stepOrder);
     }),
 

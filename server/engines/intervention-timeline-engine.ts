@@ -94,7 +94,7 @@ export async function getAllTimelines(limit = 50) {
   }
 
   const timelines = Array.from(grouped.entries()).map(([patternId, events]) => {
-    events.sort((a, b) => Number(a.timestamp) - Number(b.timestamp));
+    events.sort((a: any, b: any) => Number(a.timestamp) - Number(b.timestamp));
     const latestEvent = events[events.length - 1];
     const eventTypeOrder = EVENT_TYPES.map(t => t.id);
     const progressIndex = eventTypeOrder.indexOf(latestEvent.eventType);
@@ -128,17 +128,17 @@ export async function getRecentEvents(limit = 30) {
 export async function getTimelineStats() {
   const allEvents = await db.select().from(patternTimelineEvents);
   
-  const uniquePatterns = new Set(allEvents.map(e => e.patternId));
+  const uniquePatterns = new Set(allEvents.map((e: any) => e.patternId));
   const byType = EVENT_TYPES.map(t => ({
     type: t.id,
     label: t.label,
-    count: allEvents.filter(e => e.eventType === t.id).length,
+    count: allEvents.filter((e: any) => e.eventType === t.id).length,
     color: t.color,
   }));
 
   // Patterns that reached policy_change
   const patternsWithPolicyChange = new Set(
-    allEvents.filter(e => e.eventType === "policy_change").map(e => e.patternId)
+    allEvents.filter((e: any) => e.eventType === "policy_change").map((e: any) => e.patternId)
   );
 
   return {
@@ -147,7 +147,7 @@ export async function getTimelineStats() {
     patternsWithPolicyChange: patternsWithPolicyChange.size,
     byType,
     avgImpactScore: allEvents.length > 0
-      ? Math.round(allEvents.reduce((sum, e) => sum + (e.impactScore || 0), 0) / allEvents.length)
+      ? Math.round(allEvents.reduce((sum: any, e: any) => sum + (e.impactScore || 0), 0) / allEvents.length)
       : 0,
   };
 }

@@ -219,7 +219,7 @@ Do NOT include the plan until you genuinely understand their situation. Ask at l
         };
       }
 
-      const findingSummary = findings.slice(0, 10).map(f => {
+      const findingSummary = findings.slice(0, 10).map((f: any) => {
         let entry = `- ${f.title}: ${f.description}`;
         if (f.significance) entry += ` (Significance: ${f.significance})`;
         if (f.backingEvidence?.length) {
@@ -872,7 +872,7 @@ const documentsRouter = router({
       const snapshot = await db_helpers.getOpenSnapshot(input.caseId);
       if (snapshot) await assertActionAllowed(input.caseId, snapshot.id, 'analyzeNewUploads');
       const docs = await db_helpers.listDocuments(input.caseId);
-      const uploadedDocs = docs.filter(d => d.status === "uploaded" || d.status === "error");
+      const uploadedDocs = docs.filter((d: any) => d.status === "uploaded" || d.status === "error");
       for (const doc of uploadedDocs) {
         // Gate A: explicit snapshotId propagation
         // @ts-ignore
@@ -941,7 +941,7 @@ const documentsRouter = router({
       const anSnapshot = await db_helpers.getOpenSnapshot(input.caseId);
       if (anSnapshot) await assertActionAllowed(input.caseId, anSnapshot.id, 'analyzeNewUploads');
       const docs = await db_helpers.listDocuments(input.caseId);
-      const uploadedDocs = docs.filter(d => d.status === 'uploaded');
+      const uploadedDocs = docs.filter((d: any) => d.status === 'uploaded');
       for (const doc of uploadedDocs) {
         // Gate A: explicit snapshotId propagation
         // @ts-ignore
@@ -955,7 +955,7 @@ const documentsRouter = router({
         targetId: input.caseId,
         details: {
           totalQueued: uploadedDocs.length,
-          documentIds: uploadedDocs.map(d => d.id),
+          documentIds: uploadedDocs.map((d: any) => d.id),
         },
       });
 
@@ -1026,7 +1026,7 @@ const documentsRouter = router({
       const fsbSnapshot = await db_helpers.getOpenSnapshot(input.caseId);
       if (fsbSnapshot) await assertActionAllowed(input.caseId, fsbSnapshot.id, 'fullSnapshotRebuild');
       const docs = await db_helpers.listDocuments(input.caseId);
-      const allDocs = docs.filter(d => d.status === 'ready' || d.status === 'error' || d.status === 'uploaded' || d.status === 'failed_permanent');;
+      const allDocs = docs.filter((d: any) => d.status === 'ready' || d.status === 'error' || d.status === 'uploaded' || d.status === 'failed_permanent');;
 
       await db_helpers.logAudit({
         caseId: input.caseId,
@@ -1037,10 +1037,10 @@ const documentsRouter = router({
         details: {
           totalDocs: allDocs.length,
           statusBreakdown: {
-            ready: docs.filter(d => d.status === 'ready').length,
-            error: docs.filter(d => d.status === 'error').length,
-            uploaded: docs.filter(d => d.status === 'uploaded').length,
-            failed_permanent: docs.filter(d => d.status === 'failed_permanent').length,
+            ready: docs.filter((d: any) => d.status === 'ready').length,
+            error: docs.filter((d: any) => d.status === 'error').length,
+            uploaded: docs.filter((d: any) => d.status === 'uploaded').length,
+            failed_permanent: docs.filter((d: any) => d.status === 'failed_permanent').length,
           },
         },
       });
@@ -1068,9 +1068,9 @@ const documentsRouter = router({
       await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const docs = await db_helpers.listDocuments(input.caseId);
 
-      const uploaded = docs.filter(d => d.status === 'uploaded');
-      const errorDocs = docs.filter(d => d.status === 'error' || d.status === 'failed_permanent');
-      const readyDocs = docs.filter(d => d.status === 'ready');
+      const uploaded = docs.filter((d: any) => d.status === 'uploaded');
+      const errorDocs = docs.filter((d: any) => d.status === 'error' || d.status === 'failed_permanent');
+      const readyDocs = docs.filter((d: any) => d.status === 'ready');
 
       // Classify error docs to find retryable ones
       let retryableCount = 0;
@@ -1475,12 +1475,12 @@ TONE RULES:
 - Present what the documents state, not what they "show" or "prove"
 
 Case Statistics: ${JSON.stringify(stats)}
-Recent Documents: ${recentDocs.slice(0, 10).map(d => `[Doc #${d.id}] ${d.filename} (${d.documentType || d.fileType}) - ${d.documentPurpose || "No summary yet"}`).join("\n")}
-Recent Findings: ${recentFindings.slice(0, 5).map(f => `[Finding] ${f.title}: ${f.description}`).join("\n")}`;
+Recent Documents: ${recentDocs.slice(0, 10).map((d: any) => `[Doc #${d.id}] ${d.filename} (${d.documentType || d.fileType}) - ${d.documentPurpose || "No summary yet"}`).join("\n")}
+Recent Findings: ${recentFindings.slice(0, 5).map((f: any) => `[Finding] ${f.title}: ${f.description}`).join("\n")}`;
 
       const messages = [
         { role: "system" as const, content: systemPrompt },
-        ...chatHistory.reverse().slice(-10).map(m => ({
+        ...chatHistory.reverse().slice(-10).map((m: any) => ({
           role: m.role as "user" | "assistant",
           content: m.content,
         })),
@@ -1645,7 +1645,7 @@ const presentationsRouter = router({
         throw new TRPCError({ code: "PRECONDITION_FAILED", message: "No findings or documents to build a presentation from. Upload and analyze documents first." });
       }
 
-      const findingSummary = findings.slice(0, 15).map((f, i) => {
+      const findingSummary = findings.slice(0, 15).map((f: any, i: any) => {
         let entry = `${i + 1}. ${f.title}: ${f.description}`;
         if (f.significance) entry += ` [Significance: ${f.significance}]`;
         if (f.backingEvidence?.length) {
@@ -1654,8 +1654,8 @@ const presentationsRouter = router({
         return entry;
       }).join("\n");
 
-      const entitySummary = entities.slice(0, 20).map(e => `${e.name} (${e.type})`).join(", ");
-      const eventSummary = events.slice(0, 10).map(e => `${e.dateOccurred || "undated"}: ${e.description?.slice(0, 100)}`).join("\n");
+      const entitySummary = entities.slice(0, 20).map((e: any) => `${e.name} (${e.type})`).join(", ");
+      const eventSummary = events.slice(0, 10).map((e: any) => `${e.dateOccurred || "undated"}: ${e.description?.slice(0, 100)}`).join("\n");
 
       const systemPrompt = `You are a forensic presentation builder. Create a courtroom-ready slide deck from the case evidence below.
 
@@ -1821,7 +1821,7 @@ Respond in this exact JSON format:
         timeline: "TIMELINE", entity_map: "ENTITIES", summary: "SUMMARY", custom: "CUSTOM",
       };
 
-      const slidesHtml = slides.map((s, i) => {
+      const slidesHtml = slides.map((s: any, i: any) => {
         const citations = (s.sourceCitations as any[] || []).map((c: any) =>
           `<div class="citation"><strong>${c.documentName || "Document"}</strong>: &ldquo;${(c.quote || "").slice(0, 200)}${(c.quote || "").length > 200 ? "..." : ""}&rdquo;</div>`
         ).join("");
@@ -1971,7 +1971,7 @@ const provenanceRouter = router({
       const detail = await db_helpers.getFindingMatchDetail(input.findingId);
       if (!detail) throw new TRPCError({ code: "NOT_FOUND", message: "Finding not found" });
       // Verify ownership through finding -> case chain
-      await db_helpers.verifyCaseOwnership(detail.finding.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(detail.finding.caseId as any, ctx.user.id);
       return detail;
     }),
 
@@ -2018,12 +2018,12 @@ const provenanceRouter = router({
           matchMetadata: { reRunResult: "no_candidate_claims", reRunBy: ctx.user.id, reRunAt: Date.now() },
         });
         await db_helpers.createProvenanceAuditLog({
-          findingId: input.findingId,
+          caseId: finding.caseId,
           userId: ctx.user.id,
           actionType: "re_run_matching",
-          previousStatus,
-          newStatus: finding.provenanceStatus,
-          metadata: { candidateClaims: 0, result: "no_candidate_claims" },
+          targetType: "finding",
+          targetId: input.findingId,
+          details: { candidateClaims: 0, result: "no_candidate_claims", previousStatus, newStatus: finding.provenanceStatus },
         });
         return { success: true, matched_claim_ids: [], candidate_count: 0 };
       }
@@ -2032,7 +2032,7 @@ const provenanceRouter = router({
       const { matchClaimsToFinding } = await import("./claim-backfill.js");
       const result = await matchClaimsToFinding(
         { id: finding.id, description: finding.description, title: finding.title, findingType: finding.findingType },
-        caseClaims.map(c => ({ id: c.id, claimText: c.claimText, claimType: c.claimType, documentId: c.documentId }))
+        caseClaims.map((c: any) => ({ id: c.id, claimText: c.claimText, claimType: c.claimType, documentId: c.documentId }))
       );
 
       const matchMetadata: Record<string, unknown> = {
@@ -2043,7 +2043,7 @@ const provenanceRouter = router({
       };
 
       if (result.matchedIds.length > 0) {
-        await db_helpers.updateFindingClaimIds(input.findingId, result.matchedIds);
+        await db_helpers.updateFindingClaimIds(input.findingId, result.matchedIds as unknown as number[]);
       }
 
       await db_helpers.updateFindingMatchMetadata(input.findingId, {
@@ -2054,12 +2054,12 @@ const provenanceRouter = router({
 
       const newStatus = result.matchedIds.length > 0 ? "linked" : previousStatus;
       await db_helpers.createProvenanceAuditLog({
-        findingId: input.findingId,
+        caseId: finding.caseId,
         userId: ctx.user.id,
         actionType: "re_run_matching",
-        previousStatus,
-        newStatus,
-        metadata: matchMetadata,
+        targetType: "finding",
+        targetId: input.findingId,
+        details: { previousStatus, newStatus, ...matchMetadata },
       });
 
       return { success: true, matched_claim_ids: result.matchedIds, candidate_count: caseClaims.length };
@@ -2080,12 +2080,12 @@ const provenanceRouter = router({
       await db_helpers.markFindingAsSynthesis(input.findingId, input.reason);
 
       await db_helpers.createProvenanceAuditLog({
-        findingId: input.findingId,
+        caseId: finding.caseId,
         userId: ctx.user.id,
         actionType: "mark_synthesis",
-        reason: input.reason,
-        previousStatus,
-        newStatus: "unsupported_synthesis",
+        targetType: "finding",
+        targetId: input.findingId,
+        details: { previousStatus, newStatus: "unsupported_synthesis", reason: input.reason },
       });
 
       return { success: true };
@@ -2103,13 +2103,12 @@ const provenanceRouter = router({
       if (finding.snapshotId) await assertActionAllowed(finding.caseId, finding.snapshotId, 'runProvenanceDrilldown');
 
       await db_helpers.createProvenanceAuditLog({
-        findingId: input.findingId,
+        caseId: finding.caseId,
         userId: ctx.user.id,
         actionType: "flag_for_review",
-        reason: input.reason,
-        previousStatus: finding.provenanceStatus,
-        newStatus: finding.provenanceStatus, // unchanged
-        metadata: { flaggedAt: Date.now() },
+        targetType: "finding",
+        targetId: input.findingId,
+        details: { previousStatus: finding.provenanceStatus, reason: input.reason, flaggedAt: Date.now() },
       });
 
       return { success: true };
@@ -2125,7 +2124,7 @@ const provenanceRouter = router({
       await db_helpers.verifyCaseOwnership(finding.caseId, ctx.user.id);
       return db_helpers.db.select()
         .from(provenanceAuditLogs)
-        .where(eq(provenanceAuditLogs.findingId, input.findingId))
+        .where(eq(provenanceAuditLogs.targetId, input.findingId))
         .orderBy(desc(provenanceAuditLogs.createdAt));
     }),
 
@@ -2220,19 +2219,18 @@ const provenanceRouter = router({
       if (input.caseId) await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const logs = await db_helpers.listProvenanceAuditLogs(input.caseId, input.limit ?? 1000);
       // Build CSV rows
-      const headers = ["finding_id", "action_type", "previous_state", "new_state", "user_id", "reason", "timestamp"];
-      const rows = logs.map(log => [
-        log.findingId,
+      const headers = ["target_id", "target_type", "action_type", "user_id", "details", "timestamp"];
+      const rows = logs.map((log: any) => [
+        log.targetId,
+        log.targetType,
         log.actionType,
-        log.previousStatus ?? "",
-        log.newStatus ?? "",
         log.userId,
-        (log.reason ?? "").replace(/"/g, '""'),
+        JSON.stringify(log.details ?? {}),
         new Date(log.createdAt).toISOString(),
       ]);
       const csv = [
         headers.join(","),
-        ...rows.map(r => r.map(v => `"${v}"`).join(",")),
+        ...rows.map((r: any) => r.map((v: any) => `"${v}"`).join(",")),
       ].join("\n");
       return { csv, count: logs.length };
     }),
@@ -2420,16 +2418,16 @@ const snapshotsRouter = router({
         // Map gate result to UI stage format for backward compatibility
         const allDocs = await db_helpers.listDocuments(input.caseId);
         // Active documents only (not superseded/corrupted/excluded)
-        const activeDocs = allDocs.filter(d => !d.documentResolution || d.documentResolution === 'active');
+        const activeDocs = allDocs.filter((d: any) => !d.documentResolution || d.documentResolution === 'active');
         const totalDocs = allDocs.length;
-        const readyDocs = activeDocs.filter(d => d.status === 'ready').length;
-        const activeErrors = activeDocs.filter(d => d.status === 'error' || d.status === 'failed_permanent');
+        const readyDocs = activeDocs.filter((d: any) => d.status === 'ready').length;
+        const activeErrors = activeDocs.filter((d: any) => d.status === 'error' || d.status === 'failed_permanent');
         const errorDocs = activeErrors.length;
         // Resolution counts for banner breakdown
-        const resolvedDocs = allDocs.filter(d => d.documentResolution && d.documentResolution !== 'active');
-        const supersededCount = resolvedDocs.filter(d => d.documentResolution === 'superseded').length;
-        const corruptedCount = resolvedDocs.filter(d => d.documentResolution === 'corrupted').length;
-        const excludedCount = resolvedDocs.filter(d => d.documentResolution === 'excluded').length;
+        const resolvedDocs = allDocs.filter((d: any) => d.documentResolution && d.documentResolution !== 'active');
+        const supersededCount = resolvedDocs.filter((d: any) => d.documentResolution === 'superseded').length;
+        const corruptedCount = resolvedDocs.filter((d: any) => d.documentResolution === 'corrupted').length;
+        const excludedCount = resolvedDocs.filter((d: any) => d.documentResolution === 'excluded').length;
         const stats = await db_helpers.getCaseStats(input.caseId);
         const correlations = await db_helpers.listCorrelations(input.caseId);
 
@@ -2593,7 +2591,7 @@ const snapshotsRouter = router({
 
       // 3. Fetch enriched findings scoped to this snapshot
       const allEnrichedFindings = await db_helpers.listFindingsEnriched(input.caseId);
-      const snapshotFindings = allEnrichedFindings.filter(f => f.snapshotId === input.snapshotId);
+      const snapshotFindings = allEnrichedFindings.filter((f: any) => f.snapshotId === input.snapshotId);
 
       // 4. Fetch Phase-2 runs and structured notes for this snapshot
       const p2Runs = await phase2_db.listPhase2RunsBySnapshot(input.snapshotId);
@@ -2655,7 +2653,7 @@ const snapshotsRouter = router({
             primaryAnchor: fTemporal.primaryAnchor,
             additionalAnchors: f.temporalAnchors.slice(1),
             confidence: f.confidence,
-            sourceReferences: f.backingEvidence.map(e => ({
+            sourceReferences: f.backingEvidence.map((e: any) => ({
               documentId: e.documentId,
               page: e.pageNumber,
               quote: e.verbatimQuote,
@@ -2739,7 +2737,7 @@ const snapshotsRouter = router({
             title: f.title,
             description: f.description,
             confidence: f.confidence,
-            sourceReferences: f.backingEvidence.map(e => ({
+            sourceReferences: f.backingEvidence.map((e: any) => ({
               documentId: e.documentId,
               page: e.pageNumber,
               quote: e.verbatimQuote,
@@ -3130,7 +3128,7 @@ const feedbackRouter = router({
       if (input.status === "reviewed" || input.status === "resolved") {
         try {
           const allFeedback = await db_helpers.listFeedback(100);
-          const item = allFeedback.find((f) => f.id === input.feedbackId);
+          const item = allFeedback.find((f: any) => f.id === input.feedbackId);
           if (item?.userId) {
             await db_helpers.notifyFeedbackResponse(item.userId, input.feedbackId, input.status);
           }
@@ -3368,7 +3366,7 @@ const missingRecordsRouter = router({
     .query(async ({ ctx, input }) => {
       await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { getMissingRecordsForCase } = await import("./gap-detection");
-      const { resolveAgenciesForMissingRecords, hasAKBCoverage } = await import("./akb-lookup");
+      const { resolveAgenciesForMissingRecords, hasAKBCoverage } = (await import("./akb-lookup")) as any;
       const caseRow = await db_helpers.getCaseInternal(input.caseId);
       const pipelineType = caseRow?.pipelineType || "general";
 
@@ -3380,7 +3378,7 @@ const missingRecordsRouter = router({
       const missing = await getMissingRecordsForCase(input.caseId, ["detected", "acknowledged"]);
       const withAgencies = await resolveAgenciesForMissingRecords(
         pipelineType,
-        missing.map(m => ({ recordType: m.recordType, description: m.description, severity: m.severity })),
+        missing.map((m: any) => ({ recordType: m.recordType, description: m.description, severity: m.severity })),
       );
       return { has_coverage: true, records: withAgencies };
     }),
@@ -3388,21 +3386,21 @@ const missingRecordsRouter = router({
   akbStatutes: protectedProcedure
     .input(z.object({ stateCode: z.string().default("WA") }))
     .query(async ({ input }) => {
-      const { getStatutesForState } = await import("./akb-lookup");
+      const { getStatutesForState } = (await import("./akb-lookup")) as any;
       return getStatutesForState(input.stateCode);
     }),
 
   akbAgencies: protectedProcedure
     .input(z.object({ stateCode: z.string().default("WA") }))
     .query(async ({ input }) => {
-      const { getAgenciesForState } = await import("./akb-lookup");
+      const { getAgenciesForState } = (await import("./akb-lookup")) as any;
       return getAgenciesForState(input.stateCode);
     }),
 
   akbRecordTypes: protectedProcedure
     .input(z.object({ domain: z.string() }))
     .query(async ({ input }) => {
-      const { getRecordTypesForDomain } = await import("./akb-lookup");
+      const { getRecordTypesForDomain } = (await import("./akb-lookup")) as any;
       return getRecordTypesForDomain(input.domain);
     }),
 });
@@ -3451,7 +3449,7 @@ const usersAdminRouter = router({
     .query(async () => {
       const { users } = await import("../drizzle/schema");
       const allUsers = await db_helpers.db.select().from(users).orderBy(desc(users.lastSignedIn));
-      return allUsers.map(u => ({
+      return allUsers.map((u: any) => ({
         id: u.id,
         name: u.name,
         email: u.email,
@@ -3808,7 +3806,7 @@ const foiaRequestsRouter = router({
         limit: input?.limit,
       });
       // Enrich with deadline status
-      return rows.map(row => ({
+      return rows.map((row: any) => ({
         ...row,
         deadline: db_helpers.computeDeadlineStatus(row),
       }));
@@ -3843,11 +3841,11 @@ const foiaRequestsRouter = router({
       return {
         overdue_count: overdue.length,
         approaching_count: approaching.length,
-        overdue: overdue.map(r => ({
+        overdue: overdue.map((r: any) => ({
           ...r,
           days_overdue: r.responseDueAt ? Math.ceil((Date.now() - r.responseDueAt) / (24 * 60 * 60 * 1000)) : 0,
         })),
-        approaching: approaching.map(r => ({
+        approaching: approaching.map((r: any) => ({
           ...r,
           days_remaining: r.responseDueAt ? Math.ceil((r.responseDueAt - Date.now()) / (24 * 60 * 60 * 1000)) : 0,
         })),
@@ -3947,7 +3945,7 @@ const lensesRouter = router({
 
       // T2. Load signal flags
       const flags = await db_helpers.listSignalFlags(input.caseId);
-      const flagTypes = flags.map(f => f.flagType);
+      const flagTypes = flags.map((f: any) => f.flagType);
 
       // T3. Map to lens signals
       const evidenceSignals = mapSignalFlags(flagTypes);
@@ -4004,7 +4002,7 @@ const lensesRouter = router({
       const { eq } = await import("drizzle-orm");
       await db_helpers.db.update(cases)
         .set({ manualLensOverrides: input.lensIds, updatedAt: Date.now() })
-        .where(eq(cases.id, input.caseId));
+        .where(eq(cases.id, String(input.caseId)));
 
       return { success: true, lens_ids: input.lensIds };
     }),
@@ -4063,7 +4061,7 @@ const lensesRouter = router({
       }
 
       const flags = await db_helpers.listSignalFlags(input.caseId);
-      const flagTypes = flags.map(f => f.flagType);
+      const flagTypes = flags.map((f: any) => f.flagType);
       const evidenceSignals = mapSignalFlags(flagTypes);
 
       const trace = activateLensesWithResolutionAndTrace(
@@ -4439,7 +4437,7 @@ const resourceVerificationRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { pool: rawPool } = await import("./db");
       const now = Date.now();
-      const verifiedBy = ctx.user?.name || ctx.user?.openId || "admin";
+      const verifiedBy = ctx.user?.name || ctx.user?.open_id || "admin";
       await rawPool.query(
         `UPDATE unified_resources SET verificationStatus = 'verified', lastVerifiedAt = ?, verifiedBy = ?, flaggedReason = NULL, updatedAt = ? WHERE id = ?`,
         [now, verifiedBy, now, input.resourceId]
@@ -4453,7 +4451,7 @@ const resourceVerificationRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { pool: rawPool } = await import("./db");
       const now = Date.now();
-      const verifiedBy = ctx.user?.name || ctx.user?.openId || "admin";
+      const verifiedBy = ctx.user?.name || ctx.user?.open_id || "admin";
       const placeholders = input.resourceIds.map(() => "?").join(",");
       await rawPool.query(
         `UPDATE unified_resources SET verificationStatus = 'verified', lastVerifiedAt = ?, verifiedBy = ?, flaggedReason = NULL, updatedAt = ? WHERE id IN (${placeholders})`,
@@ -4471,7 +4469,7 @@ const resourceVerificationRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { pool: rawPool } = await import("./db");
       const now = Date.now();
-      const flaggedBy = ctx.user?.name || ctx.user?.openId || "admin";
+      const flaggedBy = ctx.user?.name || ctx.user?.open_id || "admin";
       await rawPool.query(
         `UPDATE unified_resources SET verificationStatus = 'flagged', flaggedReason = ?, verifiedBy = ?, updatedAt = ? WHERE id = ?`,
         [input.reason, flaggedBy, now, input.resourceId]
@@ -4774,9 +4772,7 @@ function buildDshsOfficeProofPayload(rows: any[], endpoint = "benefitsDshsOffice
     hook: endpoint,
     source: "normalized_civic_resource",
     source_key: "wa_dshs_office_locator",
-    source_key: "wa_dshs_office_locator",
     source_name: "Washington DSHS Office Locator",
-    resource_type: "benefits_office",
     resource_type: "benefits_office",
     query_mode: "live_read",
     total,

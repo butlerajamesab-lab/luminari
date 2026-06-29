@@ -95,7 +95,7 @@ export async function findActiveRunForDocs(
       eq(cdaRuns.denialDocId, denialDocId),
       eq(cdaRuns.claimSummaryDocId, claimSummaryDocId),
     ));
-  return runs.find(r => activeStatuses.includes(r.status)) ?? null;
+  return runs.find((r: any) => activeStatuses.includes(r.status)) ?? null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -273,6 +273,8 @@ export async function updateComparisonRow(
     supportingQuoteIds?: string[] | null;
     resolutionStatus?: string | null;
     resolutionNotes?: string | null;
+    resolutionMethod?: string | null;
+    t7TranscriptId?: string | null;
     notes?: string | null;
   },
 ): Promise<void> {
@@ -286,9 +288,14 @@ export async function updateComparisonRow(
 export async function insertEvidenceGap(data: {
   runId: string;
   gapType: string;
-  description: string;
+  description?: string;
+  requiredItem?: string | null;
+  whyRequired?: string | null;
+  howToObtain?: string | null;
+  priorityLevel?: string | null;
   linkedReasonIds?: string[] | null;
   linkedClauseIds?: string[] | null;
+  linkedTransformation?: string | null;
   severity?: string | null;
   failureFlag?: string | null;
 }): Promise<string> {

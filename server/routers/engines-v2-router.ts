@@ -46,7 +46,7 @@ export const enginesV2Router = router({
   entityRelationships: protectedProcedure
     .input(z.object({ entityId: z.number() }))
     .query(async ({ input }) => {
-      // @ts-expect-error pre-existing type mismatch
+      // @ts-ignore pre-existing type mismatch
       const { getEntityRelationships } = await import("../engines/entity-intelligence");
       return getEntityRelationships(input.entityId);
     }),
@@ -59,7 +59,7 @@ export const enginesV2Router = router({
     }))
     .mutation(async ({ input }) => {
       return withEngineTracking({ engineId: ENGINE_IDS.ENTITY_INTELLIGENCE, caseId: 0 }, async () => {
-        // @ts-expect-error pre-existing type mismatch
+        // @ts-ignore pre-existing type mismatch
         const { resolveEntity } = await import("../engines/entity-intelligence");
         return resolveEntity(input);
       });
@@ -68,7 +68,7 @@ export const enginesV2Router = router({
   extractEntitiesFromSignals: protectedProcedure
     .mutation(async () => {
       return withEngineTracking({ engineId: ENGINE_IDS.ENTITY_INTELLIGENCE, caseId: 0 }, async () => {
-        // @ts-expect-error pre-existing type mismatch
+        // @ts-ignore pre-existing type mismatch
         const { extractEntitiesFromSignals } = await import("../engines/entity-intelligence");
         return extractEntitiesFromSignals();
       });

@@ -730,7 +730,7 @@ const executionBridgeRouter = router({
         stream_id,
         changes,
         rationale: rationale ?? `Stream configuration updated via sovereign control: ${Object.keys(changes).join(", ")}`,
-        actorId: ctx.user.open_id,
+        actorId: ctx.user.open_id ?? "",
         actorRole: "admin",
       });
       // Refresh schedules if cron changed
@@ -772,7 +772,7 @@ const executionBridgeRouter = router({
         engineId: input.engineId,
         changes,
         rationale: input.rationale ?? `Engine configuration updated via sovereign control: ${Object.keys(changes).join(", ")}`,
-        actorId: ctx.user.open_id,
+        actorId: ctx.user.open_id ?? "",
         actorRole: "admin",
       });
       return { success: true };

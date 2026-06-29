@@ -45,13 +45,13 @@ export const assemblyEngineRouter = router({
     .mutation(async ({ input }) => {
       return withEngineTracking({ engineId: ENGINE_IDS.ASSEMBLY, caseId: input.caseId, runType: "assembly_only" }, async () => {
       const now = Date.now();
-      const [caseRow] = await db.select().from(cases).where(eq(cases.id, input.caseId));
+      const [caseRow] = await db.select().from(cases).where(eq(cases.id, String(input.caseId)));
       if (!caseRow) throw new Error("Case not found");
 
       // Get strategy path if provided
       let pathRow: any = null;
       if (input.strategyPathId) {
-        const [p] = await db.select().from(strategyPaths).where(eq(strategyPaths.id, input.strategyPathId));
+        const [p] = await db.select().from(strategyPaths).where(eq(strategyPaths.id, String(input.strategyPathId)));
         pathRow = p;
       }
 
@@ -77,11 +77,11 @@ export const assemblyEngineRouter = router({
     .input(z.object({ caseId: z.number(), packetId: z.number() }))
     .mutation(async ({ input }) => {
       const now = Date.now();
-      const caseEntities = await db.select().from(entities).where(eq(entities.caseId, input.caseId));
+      const caseEntities = await db.select().from(entities).where(eq(entities.caseId, String(input.caseId)));
 
       if (caseEntities.length === 0) return { parties_designated: 0, message: "No entities found." };
 
-      const entitySummary = caseEntities.slice(0, 30).map(e =>
+      const entitySummary = caseEntities.slice(0, 30).map((e: any) =>
         `${e.id}. ${e.name} (type: ${e.type}, desc: ${e.description?.slice(0, 80) ?? "none"})`
       ).join("\n");
 
@@ -135,12 +135,12 @@ Identify at least a plaintiff/complainant and defendant/respondent.`
     .input(z.object({ caseId: z.number(), packetId: z.number() }))
     .mutation(async ({ input }) => {
       const now = Date.now();
-      const caseDocs = await db.select().from(documents).where(eq(documents.caseId, input.caseId));
-      const caseQuotes = await db.select().from(quotes).where(eq(quotes.caseId, input.caseId));
+      const caseDocs = await db.select().from(documents).where(eq(documents.caseId, String(input.caseId)));
+      const caseQuotes = await db.select().from(quotes).where(eq(quotes.caseId, String(input.caseId)));
 
       if (caseDocs.length === 0) return { exhibits_created: 0, message: "No documents found." };
 
-      const docSummary = caseDocs.slice(0, 30).map(d =>
+      const docSummary = caseDocs.slice(0, 30).map((d: any) =>
         `${d.id}. ${d.filename} (type: ${d.documentType ?? "unknown"})`
       ).join("\n");
 
@@ -214,11 +214,11 @@ Label exhibits sequentially. Include only relevant documents.`
 
       if (facts.length === 0) return { blocks_created: 0, message: "No facts found. Run Strategy Engine first." };
 
-      const factText = facts.slice(0, 40).map(f =>
+      const factText = facts.slice(0, 40).map((f: any) =>
         `[${f.id}] (${f.factType}) ${f.factText} — Actor: ${f.actor ?? "?"}, Date: ${f.dateOccurred ?? "?"}`
       ).join("\n");
 
-      const exhibitRef = exhibits.map(e => `Exhibit ${e.exhibitLabel}: ${e.exhibitTitle}`).join(", ");
+      const exhibitRef = exhibits.map((e: any) => `Exhibit ${e.exhibitLabel}: ${e.exhibitTitle}`).join(", ");
 
       const response = await invokeLLMInteractive({
         messages: [
@@ -382,7 +382,7 @@ Write in formal legal style. Reference exhibits where applicable. Maintain chron
           eq(strategyClaimCandidates.matterProfileId, input.matterProfileId),
         ));
 
-      const claimSummary = candidates.map(c => `${c.claimType} (viability: ${c.viabilityScore})`).join(", ");
+      const claimSummary = candidates.map((c: any) => `${c.claimType} (viability: ${c.viabilityScore})`).join(", ");
 
       const response = await invokeLLMInteractive({
         messages: [
@@ -440,7 +440,7 @@ Write in formal legal style. Reference exhibits where applicable. Maintain chron
 
       // Find matching template
       const templates = await db.select().from(assemblyDocumentTemplates);
-      const template = templates.find(t => t.documentType === packet.packetType) ?? templates[0];
+      const template = templates.find((t: any) => t.documentType === packet.packetType) ?? templates[0];
 
       if (!template) return { sections_generated: 0, message: "No templates found." };
 
@@ -459,13 +459,13 @@ Write in formal legal style. Reference exhibits where applicable. Maintain chron
         let generatedContent = "";
 
         if (sectionName.toLowerCase().includes("caption") || sectionName.toLowerCase().includes("parties")) {
-          generatedContent = parties.map(p => `${p.partyName}, ${p.partyRole}`).join("\n");
+          generatedContent = parties.map((p: any) => `${p.partyName}, ${p.partyRole}`).join("\n");
         } else if (sectionName.toLowerCase().includes("fact")) {
-          generatedContent = factBlocks.map(b => b.narrativeText).join("\n\n");
+          generatedContent = factBlocks.map((b: any) => b.narrativeText).join("\n\n");
         } else if (sectionName.toLowerCase().includes("argument") || sectionName.toLowerCase().includes("cause")) {
-          generatedContent = argBlocks.map(a => `## ${a.argumentHeading}\n\n${a.argumentText}`).join("\n\n");
+          generatedContent = argBlocks.map((a: any) => `## ${a.argumentHeading}\n\n${a.argumentText}`).join("\n\n");
         } else if (sectionName.toLowerCase().includes("relief") || sectionName.toLowerCase().includes("prayer")) {
-          generatedContent = reliefs.map((r, i) => `${i + 1}. ${r.reliefDescription}`).join("\n");
+          generatedContent = reliefs.map((r: any, i: any) => `${i + 1}. ${r.reliefDescription}`).join("\n");
         } else {
           generatedContent = `[Section: ${sectionName} — content to be generated]`;
         }
@@ -509,12 +509,12 @@ Write in formal legal style. Reference exhibits where applicable. Maintain chron
 
       const checks = [
         { item: "Caption includes all parties", category: "formatting", passed: parties.length >= 2 },
-        { item: "Statement of facts present", category: "content", passed: sections.some(s => s.sectionName.toLowerCase().includes("fact")) },
-        { item: "Legal arguments present", category: "content", passed: sections.some(s => s.sectionName.toLowerCase().includes("argument") || s.sectionName.toLowerCase().includes("cause")) },
-        { item: "Prayer for relief present", category: "content", passed: sections.some(s => s.sectionName.toLowerCase().includes("relief") || s.sectionName.toLowerCase().includes("prayer")) },
+        { item: "Statement of facts present", category: "content", passed: sections.some((s: any) => s.sectionName.toLowerCase().includes("fact")) },
+        { item: "Legal arguments present", category: "content", passed: sections.some((s: any) => s.sectionName.toLowerCase().includes("argument") || s.sectionName.toLowerCase().includes("cause")) },
+        { item: "Prayer for relief present", category: "content", passed: sections.some((s: any) => s.sectionName.toLowerCase().includes("relief") || s.sectionName.toLowerCase().includes("prayer")) },
         { item: "Exhibit index created", category: "exhibits", passed: exhibits.length > 0 },
-        { item: "All sections generated", category: "completeness", passed: sections.every(s => s.sectionStatus === "generated" || s.sectionStatus === "approved") },
-        { item: "Verification/signature block", category: "formatting", passed: sections.some(s => s.sectionName.toLowerCase().includes("verification") || s.sectionName.toLowerCase().includes("signature")) },
+        { item: "All sections generated", category: "completeness", passed: sections.every((s: any) => s.sectionStatus === "generated" || s.sectionStatus === "approved") },
+        { item: "Verification/signature block", category: "formatting", passed: sections.some((s: any) => s.sectionName.toLowerCase().includes("verification") || s.sectionName.toLowerCase().includes("signature")) },
       ];
 
       let created = 0;

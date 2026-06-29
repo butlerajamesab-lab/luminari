@@ -28,7 +28,7 @@ export interface EndConditionResult {
  * Run all 11 end condition checks against a CDA run.
  * Returns structured result — no side effects.
  */
-export async function validateEndCondition(runId: number): Promise<EndConditionResult> {
+export async function validateEndCondition(runId: string): Promise<EndConditionResult> {
   const snapshot = await cdaDb.getFullRunSnapshot(runId);
   const counts = await cdaDb.getRunRowCounts(runId);
 
@@ -52,14 +52,14 @@ export async function validateEndCondition(runId: number): Promise<EndConditionR
   }
 
   // Count quotes per required input doc type
-  const docsByType = new Map<string, number[]>();
+  const docsByType = new Map<string, string[]>();
   for (const doc of snapshot.s1_documents) {
     const ids = docsByType.get(doc.docType) ?? [];
     ids.push(doc.id);
     docsByType.set(doc.docType, ids);
   }
 
-  const quotesPerDoc = new Map<number, number>();
+  const quotesPerDoc = new Map<string, number>();
   for (const q of snapshot.s2_quotes) {
     quotesPerDoc.set(q.docId, (quotesPerDoc.get(q.docId) ?? 0) + 1);
   }
@@ -77,9 +77,9 @@ export async function validateEndCondition(runId: number): Promise<EndConditionR
   }
 
   // Count S6 rows per S4 reason
-  const reasonsWithMatrixRows = new Set<number>();
+  const reasonsWithMatrixRows = new Set<string>();
   for (const row of snapshot.s6_comparison_matrix) {
-    reasonsWithMatrixRows.add(row.reasonId);
+    if (row.reasonId) reasonsWithMatrixRows.add(row.reasonId);
   }
 
   // Check S3 required fields populated or flagged
@@ -228,7 +228,7 @@ export async function validateEndCondition(runId: number): Promise<EndConditionR
 
   // 10. Every row in O2, O3, O4 includes ≥1 citation to S2 or is labeled [user-entered]
   const s6WithCitations = snapshot.s6_comparison_matrix.filter(r =>
-    (r.supportingQuoteIds && (r.supportingQuoteIds as number[]).length > 0) ||
+    (r.supportingQuoteIds && (r.supportingQuoteIds as string[]).length > 0) ||
     (r.notes && r.notes.includes("[user-entered]"))
   );
   const c10Pass = counts.s6_comparison_matrix === 0 || s6WithCitations.length === counts.s6_comparison_matrix;

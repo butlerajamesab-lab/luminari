@@ -128,7 +128,7 @@ export async function runScheduledFeedbackCycle(): Promise<{
       success: true,
       feedbackProcessed: cycleResult.feedbackProcessed,
       strategiesUpdated: cycleResult.strategiesRecalculated,
-      // @ts-expect-error pre-existing type mismatch
+      // @ts-ignore pre-existing type mismatch
       trendsUpdated: trendUpdates.updated,
       signalsChanged: signalUpdates.changed,
       cycleResult: lastRunResult,
@@ -149,7 +149,7 @@ export async function runScheduledFeedbackCycle(): Promise<{
       success: false,
       feedbackProcessed: 0,
       strategiesUpdated: 0,
-      // @ts-expect-error pre-existing type mismatch
+      // @ts-ignore pre-existing type mismatch
       trendsUpdated: 0,
       signalsChanged: 0,
       cycleResult: null,

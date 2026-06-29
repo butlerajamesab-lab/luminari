@@ -72,7 +72,7 @@ export const pipelineOrchestrationRouter = router({
         taskCount = tasks.length;
 
         const paths = await db.select().from(strategyPaths)
-          .where(eq(strategyPaths.caseId, input.caseId));
+          .where(eq(strategyPaths.caseId, String(input.caseId)));
         pathCount = paths.length;
       }
 
@@ -89,7 +89,7 @@ export const pipelineOrchestrationRouter = router({
 
       // Pattern Engine status
       const feedback = await db.select().from(patternFeedbackLoop);
-      const caseFeedback = feedback.filter(f => {
+      const caseFeedback = feedback.filter((f: any) => {
         // Check if any strategy path for this case has feedback
         return true; // simplified — all feedback is relevant
       });
@@ -114,7 +114,7 @@ export const pipelineOrchestrationRouter = router({
           status: packets.length > 0 ? "initialized" : "not_started",
           packet_count: packets.length,
           sectionCount,
-          packets: packets.map(p => ({ id: p.id, name: p.packetName, type: p.packetType, status: p.packetStatus })),
+          packets: packets.map((p: any) => ({ id: p.id, name: p.packetName, type: p.packetType, status: p.packetStatus })),
         },
         pattern_engine: {
           feedback_count: caseFeedback.length,

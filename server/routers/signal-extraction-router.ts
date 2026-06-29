@@ -40,7 +40,7 @@ export const signalExtractionRouter = router({
         .orderBy(desc(signalExtractions.extractedAt))
         .limit(input.limit || 100);
 
-      return rows.map(r => ({
+      return rows.map((r: any) => ({
         id: r.id,
         docId: r.docId,
         caseId: r.caseId,

@@ -37,7 +37,7 @@ import {
 
 export interface CdaInputDocument {
   /** Reference to the existing document ID in the main documents table */
-  sourceDocumentId: number;
+  sourceDocumentId: string;
   /** Full text content of the document */
   textContent: string;
   /** Original file name */
@@ -49,7 +49,7 @@ export interface CdaInputDocument {
 }
 
 export interface CdaRunInput {
-  caseId: number;
+  caseId: string;
   userId: number;
   policy: CdaInputDocument;
   denial: CdaInputDocument;
@@ -57,7 +57,7 @@ export interface CdaRunInput {
 }
 
 export interface CdaPipelineResult {
-  runId: number;
+  runId: string;
   status: string;
   endCondition: EndConditionResult;
   activeFailureFlags: string[];
@@ -167,8 +167,8 @@ export async function runCdaPipeline(input: CdaRunInput): Promise<CdaPipelineRes
     try {
       const { runPatternDetection } = await import("./pattern-detection");
       const patternResult = await runPatternDetection({
-        caseId: input.caseId,
-        cdaRunId: runId,
+        caseId: input.caseId as unknown as number,
+        cdaRunId: runId as unknown as number,
       });
       if (patternResult.totalRegistered > 0) {
         console.log(`[CDA] Pattern detection: ${patternResult.totalRegistered} new denial language patterns registered for run ${runId}`);
@@ -225,7 +225,7 @@ export async function runCdaPipeline(input: CdaRunInput): Promise<CdaPipelineRes
 
 export interface CdaRunBundle {
   meta: {
-    runId: number;
+    runId: string;
     specVersion: string;
     exportedAt: number;
     inputHashes: {
@@ -247,7 +247,7 @@ export interface CdaRunBundle {
   failure_flags: string[];
 }
 
-export async function exportRunBundle(runId: number, t7Transcripts?: any[]): Promise<CdaRunBundle> {
+export async function exportRunBundle(runId: string, t7Transcripts?: any[]): Promise<CdaRunBundle> {
   const snapshot = await cdaDb.getFullRunSnapshot(runId);
   const endCondition = await validateEndCondition(runId);
 
@@ -473,7 +473,7 @@ function stripT7Volatile(transcript: any): any {
 // ═══════════════════════════════════════════════════════════════════════
 
 export async function replayFromStage(
-  runId: number,
+  runId: string,
   input: CdaRunInput,
   fromStage: "T2" | "T3" | "T4" | "T5" | "T6" | "T7" | "T8" | "T9",
 ): Promise<CdaPipelineResult> {
@@ -482,7 +482,7 @@ export async function replayFromStage(
 
   const failureFlags: string[] = [];
   let t7Result: T7Result | undefined;
-  let replayDocIds: Map<string, number> | undefined;
+  let replayDocIds: Map<string, string> | undefined;
   const stageIdx = STAGE_ORDER.indexOf(fromStage);
 
   try {

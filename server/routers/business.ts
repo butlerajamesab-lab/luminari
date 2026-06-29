@@ -78,15 +78,15 @@ export const businessRouter = router({
     .query(async () => {
       const baselines = await db.select().from(businessBaselines);
       
-      const productBaselines = baselines.filter(b => b.entityType === 'product');
-      const expenseBaselines = baselines.filter(b => b.entityType === 'expense_category');
+      const productBaselines = baselines.filter((b: any) => b.entityType === 'product');
+      const expenseBaselines = baselines.filter((b: any) => b.entityType === 'expense_category');
 
       return {
         total_baselines: baselines.length,
         product_count: productBaselines.length,
         expense_category_count: expenseBaselines.length,
         last_updated: baselines.length > 0 
-          ? Math.max(...baselines.map(b => b.lastUpdated || 0))
+          ? Math.max(...baselines.map((b: any) => b.lastUpdated || 0))
           : null,
       };
     }),

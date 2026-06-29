@@ -2126,7 +2126,7 @@ export async function listUnsupportedFindings(caseId?: number): Promise<Unsuppor
 
 export interface FindingMatchDetail {
   finding: Finding;
-  candidateClaims: { id: number; claimText: string; claimType: string; documentId: number; documentLabel: string }[];
+  candidateClaims: { id: string; claimText: string; claimType: string | null; documentId: string | null; documentLabel: string }[];
   matchMetadata: Record<string, unknown> | null;
   auditLog: ProvenanceAuditLog[];
 }
@@ -2151,7 +2151,7 @@ export async function getFindingMatchDetail(findingId: number): Promise<FindingM
     .leftJoin(documents, eq(claims.documentId, documents.id))
     .where(eq(claims.caseId, finding.caseId));
 
-  const candidateClaims = caseClaims.map(c => ({
+  const candidateClaims = caseClaims.map((c: any) => ({
     id: c.id,
     claimText: c.claimText,
     claimType: c.claimType,
@@ -2162,7 +2162,7 @@ export async function getFindingMatchDetail(findingId: number): Promise<FindingM
   // Get audit log for this finding
   const auditLog = await db.select()
     .from(provenanceAuditLogs)
-    .where(eq(provenanceAuditLogs.findingId, findingId))
+    .where(eq(provenanceAuditLogs.targetId, findingId))
     .orderBy(desc(provenanceAuditLogs.createdAt));
 
   return {
@@ -2177,18 +2177,20 @@ export async function getFindingMatchDetail(findingId: number): Promise<FindingM
  * Create an immutable audit log entry for a provenance action.
  */
 export async function createProvenanceAuditLog(entry: {
-  findingId: number;
+  caseId: number;
   userId: number;
-  actionType: "re_run_matching" | "mark_synthesis" | "flag_for_review" | "batch_rerun";
-  reason?: string;
-  previousStatus: string;
-  newStatus: string;
-  metadata?: Record<string, unknown>;
+  actionType: string;
+  targetType: string;
+  targetId: number;
+  details?: Record<string, unknown>;
 }): Promise<number> {
   const [result] = await db.insert(provenanceAuditLogs).values({
-    ...entry,
-    reason: entry.reason ?? null,
-    metadata: entry.metadata ?? null,
+    caseId: entry.caseId,
+    userId: entry.userId,
+    actionType: entry.actionType,
+    targetType: entry.targetType,
+    targetId: entry.targetId,
+    details: entry.details ?? null,
     createdAt: Date.now(),
   });
   return result.insertId;
@@ -2198,22 +2200,19 @@ export async function createProvenanceAuditLog(entry: {
  * List provenance audit log entries, optionally filtered by case.
  */
 export async function listProvenanceAuditLogs(caseId?: number, limit = 1000) {
-  // Join with findings to get caseId filter
   if (caseId) {
     return db.select({
       id: provenanceAuditLogs.id,
-      findingId: provenanceAuditLogs.findingId,
       userId: provenanceAuditLogs.userId,
+      caseId: provenanceAuditLogs.caseId,
       actionType: provenanceAuditLogs.actionType,
-      reason: provenanceAuditLogs.reason,
-      previousStatus: provenanceAuditLogs.previousStatus,
-      newStatus: provenanceAuditLogs.newStatus,
-      metadata: provenanceAuditLogs.metadata,
+      targetType: provenanceAuditLogs.targetType,
+      targetId: provenanceAuditLogs.targetId,
+      details: provenanceAuditLogs.details,
       createdAt: provenanceAuditLogs.createdAt,
     })
       .from(provenanceAuditLogs)
-      .innerJoin(findings, eq(provenanceAuditLogs.findingId, findings.id))
-      .where(eq(findings.caseId, caseId))
+      .where(eq(provenanceAuditLogs.caseId, caseId))
       .orderBy(desc(provenanceAuditLogs.createdAt))
       .limit(limit);
   }

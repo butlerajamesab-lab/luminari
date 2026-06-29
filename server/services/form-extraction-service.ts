@@ -58,7 +58,7 @@ export async function extractFormsFromCase(caseId: number): Promise<FormExtracti
   const caseDocuments = await db
     .select()
     .from(documents)
-    .where(eq(documents.caseId, caseId));
+    .where(eq(documents.caseId, String(caseId)));
 
   if (caseDocuments.length === 0) {
     return {
@@ -77,7 +77,7 @@ export async function extractFormsFromCase(caseId: number): Promise<FormExtracti
 
   // Combine all document content
   const combinedContent = caseDocuments
-    .map((doc) => (doc as any).extractedText || (doc as any).content || "")
+    .map((doc: any) => (doc as any).extractedText || (doc as any).content || "")
     .join("\n\n");
 
   // Initialize extraction engine

@@ -97,7 +97,7 @@ export const ingestionRouter = router({
         datasetId: input.datasetId,
         enabled: input.enabled,
         rationale: input.rationale ?? `Data stream ${input.enabled ? "enabled" : "disabled"} via admin control panel`,
-        actorId: ctx.user.open_id,
+        actorId: ctx.user.open_id ?? "",
         actorRole: "admin",
       });
       await refreshSchedules();
@@ -114,7 +114,7 @@ export const ingestionRouter = router({
       await governedDataStreamDelete({
         datasetId: input.datasetId,
         rationale: input.rationale ?? `Data stream removed via admin control panel`,
-        actorId: ctx.user.open_id,
+        actorId: ctx.user.open_id ?? "",
         actorRole: "admin",
       });
       await refreshSchedules();
@@ -240,7 +240,7 @@ export const ingestionRouter = router({
       }
 
       return {
-        // @ts-expect-error pre-existing type mismatch
+        // @ts-ignore pre-existing type mismatch
         success: result.success,
         message: result.success
           ? `Processed ${result.recordsProcessed} records, ${result.signalsGenerated} signals generated`
@@ -338,8 +338,8 @@ export const ingestionRouter = router({
 
       return {
         total_records: totalResult?.count ?? 0,
-        top_categories: byCategory.filter(r => r.category),
-        top_cities: byCity.filter(r => r.city),
+        top_categories: byCategory.filter((r: any) => r.category),
+        top_cities: byCity.filter((r: any) => r.city),
       };
     }),
 
@@ -501,7 +501,7 @@ export const ingestionRouter = router({
         .where(sql`${liveSignals.signalType} = 'repeat_entity' AND ${liveSignals.active} = true`);
 
       const entityNames = entities
-        .map(e => e.title.replace(/^Repeat (Company|Agency|Entity):\s*/, "").replace(/^Repeat Entity:\s*/, "").trim())
+        .map((e: any) => e.title.replace(/^Repeat (Company|Agency|Entity):\s*/, "").replace(/^Repeat Entity:\s*/, "").trim())
         .filter(Boolean);
 
       return findMergeCandidates(entityNames, input.similarityThreshold);
@@ -544,7 +544,7 @@ export const ingestionRouter = router({
       .where(sql`${detectedSignals.signalType} = 'repeat_entity'`)
       .groupBy(detectedSignals.entityRole);
 
-    return distribution.map(d => ({
+    return distribution.map((d: any) => ({
       entityType: d.entityRole ?? "unclassified",
       count: d.count,
     }));

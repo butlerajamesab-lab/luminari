@@ -104,17 +104,17 @@ export const memoryStrategyOverlayRouter = router({
         const sampleSize = Number(r.sample_size) || 0;
         const avgSuccessScore = Number(r.avg_success_score) || 0;
         return {
-          strategy_id: r.strategy_id,
-          strategy_name: r.strategy_name || r.strategy_id,
-          success_rate: Number(r.success_rate) || 0,
-          avg_time_to_impact: Number(r.avg_time_to_impact) || 0,
-          avg_cost: Number(r.avg_cost) || 0,
-          avg_signal_reduction: avgSuccessScore, // success score approximates signal reduction
+          strategyId: r.strategy_id,
+          strategyName: r.strategy_name || r.strategy_id,
+          successRate: Number(r.success_rate) || 0,
+          avgTimeToImpact: Number(r.avg_time_to_impact) || 0,
+          avgCost: Number(r.avg_cost) || 0,
+          avgSignalReduction: avgSuccessScore, // success score approximates signal reduction
           sampleSize,
           jurisdiction: r.jurisdiction || "all",
-          confidence_score: avgSuccessScore,
+          confidenceScore: avgSuccessScore,
           reliability: reliabilityLevel(sampleSize),
-          reliability_label: reliabilityLabel(sampleSize),
+          reliabilityLabel: reliabilityLabel(sampleSize),
           recommendation: avgSuccessScore >= 70 ? "highly_recommended"
             : avgSuccessScore >= 50 ? "recommended"
             : avgSuccessScore >= 30 ? "use_with_caution"
@@ -145,14 +145,14 @@ export const memoryStrategyOverlayRouter = router({
 
       const path = (pathRows as unknown as any[])[0];
       if (!path) {
-        // @ts-expect-error pre-existing type mismatch
+        // @ts-ignore pre-existing type mismatch
         return {
-          current_strategy: null,
+          currentStrategy: null,
           memory_alternatives: [],
-          recommended_by_engine: false,
+          recommendedByEngine: false,
           supported_by_memory: false,
           memory_rank: null,
-          conflict_flag: false,
+          conflictFlag: false,
           conflict_message: null,
         } as StrategyComparison;
       }
@@ -176,17 +176,17 @@ export const memoryStrategyOverlayRouter = router({
         const sampleSize = Number(r.sample_size) || 0;
         const avgSuccessScore = Number(r.avg_success_score) || 0;
         return {
-          strategy_id: r.strategy_id,
-          strategy_name: r.strategy_name || r.strategy_id,
-          success_rate: Number(r.success_rate) || 0,
-          avg_time_to_impact: Number(r.avg_time_to_impact) || 0,
-          avg_cost: Number(r.avg_cost) || 0,
-          avg_signal_reduction: avgSuccessScore,
+          strategyId: r.strategy_id,
+          strategyName: r.strategy_name || r.strategy_id,
+          successRate: Number(r.success_rate) || 0,
+          avgTimeToImpact: Number(r.avg_time_to_impact) || 0,
+          avgCost: Number(r.avg_cost) || 0,
+          avgSignalReduction: avgSuccessScore,
           sampleSize,
           jurisdiction: r.jurisdiction || "all",
-          confidence_score: avgSuccessScore,
+          confidenceScore: avgSuccessScore,
           reliability: reliabilityLevel(sampleSize),
-          reliability_label: reliabilityLabel(sampleSize),
+          reliabilityLabel: reliabilityLabel(sampleSize),
           recommendation: avgSuccessScore >= 70 ? "highly_recommended"
             : avgSuccessScore >= 50 ? "recommended"
             : avgSuccessScore >= 30 ? "use_with_caution"
@@ -206,18 +206,18 @@ export const memoryStrategyOverlayRouter = router({
         : null;
 
       return {
-        current_strategy: {
-          strategy_id: path.strategy_id,
-          strategy_name: path.strategy_name,
-          success_probability: Number(path.success_probability) || 0,
-          estimated_cost: path.estimated_cost ? Number(path.estimated_cost) : null,
-          confidence_score: Number(path.pattern_confidence) || 0,
+        currentStrategy: {
+          strategyId: path.strategy_id,
+          strategyName: path.strategy_name,
+          successProbability: Number(path.success_probability) || 0,
+          estimatedCost: path.estimated_cost ? Number(path.estimated_cost) : null,
+          confidenceScore: Number(path.pattern_confidence) || 0,
         },
         memoryAlternatives,
-        recommended_by_engine: true,
+        recommendedByEngine: true,
         supportedByMemory,
         memoryRank,
-        conflict_flag: !!conflictFlag,
+        conflictFlag: !!conflictFlag,
         conflictMessage,
       } as StrategyComparison;
     }),
@@ -264,10 +264,10 @@ export const memoryStrategyOverlayRouter = router({
 
       return {
         top_strategies: (stratRows as unknown as any[]).map(r => ({
-          strategy_id: r.strategy_id,
-          strategy_name: r.strategy_name,
-          success_rate: Number(r.success_rate) || 0,
-          avg_cost: Number(r.avg_cost) || 0,
+          strategyId: r.strategy_id,
+          strategyName: r.strategy_name,
+          successRate: Number(r.success_rate) || 0,
+          avgCost: Number(r.avg_cost) || 0,
           sample_size: Number(r.sample_size) || 0,
           reliability: reliabilityLevel(Number(r.sample_size) || 0),
         })),
@@ -275,7 +275,7 @@ export const memoryStrategyOverlayRouter = router({
           jurisdiction: r.jurisdiction,
           avg_score: Number(r.avg_score) || 0,
           total_samples: Number(r.total_samples) || 0,
-          avg_cost: Number(r.avg_cost) || 0,
+          avgCost: Number(r.avg_cost) || 0,
           reliability: reliabilityLevel(Number(r.total_samples) || 0),
         })),
       };
@@ -348,10 +348,10 @@ export const memoryStrategyOverlayRouter = router({
       overall_avg_score: Number(totals.overall_avg) || 0,
       top_strategies_by_pattern: (topByPatternRows as unknown as any[]).map(r => ({
         pattern_type: r.pattern_type,
-        strategy_id: r.strategy_id,
-        strategy_name: r.strategy_name,
+        strategyId: r.strategy_id,
+        strategyName: r.strategy_name,
         avg_success_score: Number(r.avg_success_score) || 0,
-        success_rate: Number(r.success_rate) || 0,
+        successRate: Number(r.success_rate) || 0,
         sample_size: Number(r.sample_size) || 0,
         reliability: reliabilityLevel(Number(r.sample_size) || 0),
       })),
@@ -362,16 +362,16 @@ export const memoryStrategyOverlayRouter = router({
         reliability: reliabilityLevel(Number(r.total_samples) || 0),
       })),
       declining_strategies: (decliningRows as unknown as any[]).map(r => ({
-        strategy_id: r.strategy_id,
-        strategy_name: r.strategy_name,
+        strategyId: r.strategy_id,
+        strategyName: r.strategy_name,
         pattern_type: r.pattern_type,
         avg_success_score: Number(r.avg_success_score) || 0,
-        success_rate: Number(r.success_rate) || 0,
+        successRate: Number(r.success_rate) || 0,
         sample_size: Number(r.sample_size) || 0,
       })),
       low_confidence_recommendations: (lowConfRows as unknown as any[]).map(r => ({
-        strategy_id: r.strategy_id,
-        strategy_name: r.strategy_name,
+        strategyId: r.strategy_id,
+        strategyName: r.strategy_name,
         pattern_type: r.pattern_type,
         avg_success_score: Number(r.avg_success_score) || 0,
         sample_size: Number(r.sample_size) || 0,
@@ -397,6 +397,6 @@ export const memoryStrategyOverlayRouter = router({
             updated_at = NOW()
         WHERE path_id = ${input.pathId}
       `);
-      return { success: true, path_id: input.pathId, new_strategy_id: input.newStrategyId };
+      return { success: true, path_id: input.pathId, new_strategyId: input.newStrategyId };
     }),
 });

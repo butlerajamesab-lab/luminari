@@ -133,7 +133,7 @@ Generate a brief, clear explanation (2-3 sentences) of what this signal means an
 
         return {
           signal_type: input.signalType,
-          statutes: statutes.map(s => ({
+          statutes: statutes.map((s: any) => ({
             id: s.id,
             citation: s.citation,
             title: s.title,
@@ -202,7 +202,7 @@ Generate a brief, clear explanation (2-3 sentences) of what this signal means an
 
         return {
           pattern_description: input.patternDescription,
-          statutes: statutes.map(s => ({
+          statutes: statutes.map((s: any) => ({
             id: s.id,
             citation: s.citation,
             title: s.title,
@@ -271,7 +271,7 @@ Generate a brief, clear explanation (2-3 sentences) of what this signal means an
 
         return {
           pattern_description: input.patternDescription,
-          precedents: cases.map(c => ({
+          precedents: cases.map((c: any) => ({
             id: c.id,
             citation: c.citation,
             case_name: c.caseName,
@@ -341,7 +341,7 @@ Generate a brief, clear explanation (2-3 sentences) of what this signal means an
 
         return {
           query: input.query,
-          records: records.map(r => ({
+          records: records.map((r: any) => ({
             id: r.id,
             agency_name: r.agencyName,
             violation_type: (r as any).violationType,

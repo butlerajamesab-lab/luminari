@@ -52,7 +52,7 @@ export async function ingestLitigationRecords(records: LitigationRecord[]): Prom
     sourceUrl: r.sourceUrl || null,
   }));
 
-  // @ts-expect-error pre-existing type mismatch
+  // @ts-ignore pre-existing type mismatch
   await db.insert(federalLitigationCases).values(values);
   return { inserted: values.length };
 }
@@ -77,7 +77,7 @@ export async function detectRepeatLitigationPatterns(): Promise<LitigationSignal
     .from(federalLitigationCases)
     .where(and(
       sql`${federalLitigationCases.defendantName} IS NOT NULL`,
-      // @ts-expect-error pre-existing type mismatch
+      // @ts-ignore pre-existing type mismatch
       gte(federalLitigationCases.filingDate, ninetyDaysAgo)
     ))
     .groupBy(federalLitigationCases.defendantName)

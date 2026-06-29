@@ -115,19 +115,19 @@ export async function loadInterpretationPack(datasetId: string): Promise<Interpr
 
   const pack: InterpretationPack = {
     datasetId,
-    categories: new Map(cats.map(c => [c.categoryName, {
+    categories: new Map(cats.map((c: any) => [c.categoryName, {
       explanation: c.plainLanguageExplanation,
       domain: c.domain,
       relatedLaws: (c.relatedLaws ?? []) as string[],
       relatedAgencies: (c.relatedAgencies ?? []) as string[],
     }])),
-    harmMappings: new Map(harms.map(h => [h.categoryName, {
+    harmMappings: new Map(harms.map((h: any) => [h.categoryName, {
       riskType: h.riskType,
       riskDescription: h.riskDescription,
       detectionIndicators: (h.detectionIndicators ?? []) as string[],
       severityBase: h.severityBase,
     }])),
-    timelines: new Map(timelines.map(t => [t.categoryName, {
+    timelines: new Map(timelines.map((t: any) => [t.categoryName, {
       frequency: t.frequency,
       expectedMinDays: t.expectedMinDays,
       expectedMaxDays: t.expectedMaxDays,
@@ -135,7 +135,7 @@ export async function loadInterpretationPack(datasetId: string): Promise<Interpr
       notes: t.notes,
       electionCycleMultiplier: t.electionCycleMultiplier,
     }])),
-    entityRules: entityRules.map(e => ({
+    entityRules: entityRules.map((e: any) => ({
       signalType: e.signalType,
       entityType: e.entityType,
       thresholdCount: e.thresholdCount,
@@ -144,7 +144,7 @@ export async function loadInterpretationPack(datasetId: string): Promise<Interpr
       description: e.description,
       actionRecommendation: e.actionRecommendation,
     })),
-    geoRules: geoRules.map(g => ({
+    geoRules: geoRules.map((g: any) => ({
       signalType: g.signalType,
       geographicScope: g.geographicScope,
       thresholdCount: g.thresholdCount,
@@ -153,14 +153,14 @@ export async function loadInterpretationPack(datasetId: string): Promise<Interpr
       description: g.description,
       baselineComparison: g.baselineComparison,
     })),
-    statusMeanings: new Map(statuses.map(s => [s.status, {
+    statusMeanings: new Map(statuses.map((s: any) => [s.status, {
       meaning: s.meaning,
       transparencyImplication: s.transparencyImplication,
       signalInterpretation: s.signalInterpretation,
       warningThresholdPercentage: s.warningThresholdPercentage,
     }])),
     signalTemplates: new Map(),
-    jurisdictionScopes: jurisdictions.map(j => ({
+    jurisdictionScopes: jurisdictions.map((j: any) => ({
       scopeName: j.scopeName,
       description: j.description,
       detectionCriteria: j.detectionCriteria,

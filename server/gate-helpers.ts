@@ -37,30 +37,30 @@ export async function buildGateStageInput(caseId: number, snapshotId: number): P
   }
 
   const allDocs = await dbHelpers.listDocuments(caseId);
-  const snapshotDocs = allDocs.filter(d => d.snapshotId === snapshotId);
+  const snapshotDocs = allDocs.filter((d: any) => d.snapshotId === snapshotId);
 
   // Document Resolution Filter: only 'active' documents participate in gate computation.
   // Superseded, excluded, and corrupted documents are resolved — they do not block
   // extraction integrity, stage advancement, or seal readiness.
-  const activeDocs = snapshotDocs.filter(d => (d as any).documentResolution === 'active');
+  const activeDocs = snapshotDocs.filter((d: any) => (d as any).documentResolution === 'active');
 
-  const readyDocuments = activeDocs.filter(d => d.status === "ready").length;
+  const readyDocuments = activeDocs.filter((d: any) => d.status === "ready").length;
   const extractingDocuments = activeDocs.filter(
-    d => d.status === "extracting" || d.status === "uploaded" || d.status === "analyzing" || d.status === "retrying"
+    (d: any) => d.status === "extracting" || d.status === "uploaded" || d.status === "analyzing" || d.status === "retrying"
   ).length;
   const errorDocuments = activeDocs.filter(
-    d => d.status === "error" || d.status === "failed_permanent"
+    (d: any) => d.status === "error" || d.status === "failed_permanent"
   ).length;
 
   // Granular extraction integrity counts (active documents only)
-  const uploadedCount = activeDocs.filter(d => d.status === "uploaded").length;
-  const extractingCount = activeDocs.filter(d => d.status === "extracting").length;
-  const analyzingCount = activeDocs.filter(d => d.status === "analyzing").length;
-  const retryingCount = activeDocs.filter(d => d.status === "retrying").length;
-  const failedPermanentCount = activeDocs.filter(d => d.status === "failed_permanent").length;
+  const uploadedCount = activeDocs.filter((d: any) => d.status === "uploaded").length;
+  const extractingCount = activeDocs.filter((d: any) => d.status === "extracting").length;
+  const analyzingCount = activeDocs.filter((d: any) => d.status === "analyzing").length;
+  const retryingCount = activeDocs.filter((d: any) => d.status === "retrying").length;
+  const failedPermanentCount = activeDocs.filter((d: any) => d.status === "failed_permanent").length;
 
   // Classify error documents using remediation classifier (active documents only)
-  const errorDocs = activeDocs.filter(d => d.status === "error" || d.status === "failed_permanent");
+  const errorDocs = activeDocs.filter((d: any) => d.status === "error" || d.status === "failed_permanent");
   let autoRecoverableCount = 0;
   let manualReuploadCount = 0;
   for (const doc of errorDocs) {

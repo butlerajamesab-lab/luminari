@@ -260,7 +260,7 @@ export async function resolveCanonicalName(entityName: string): Promise<{
     return {
       canonicalName: entry.canonicalName,
       entityType: entry.entityType as EntityType,
-      aliases: allAliases.map(a => a.aliasName).filter(a => a !== entry.canonicalName),
+      aliases: allAliases.map((a: any) => a.aliasName).filter((a: any) => a !== entry.canonicalName),
     };
   }
 

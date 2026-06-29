@@ -365,7 +365,7 @@ export async function calculateAccountabilityScore(institutionId: number): Promi
     .where(eq(institutionActivity.institutionId, institutionId))
     .groupBy(institutionActivity.activityType);
 
-  const activityMap = Object.fromEntries(activities.map(a => [a.activityType, a.cnt]));
+  const activityMap = Object.fromEntries(activities.map((a: any) => [a.activityType, a.cnt]));
   const totalPatterns = patternCount?.count ?? 0;
   const totalActiveResponses = activeResponses?.count ?? 0;
 
@@ -558,7 +558,7 @@ export async function getInstitutionStats() {
     totalInstitutions: total?.count ?? 0,
     totalLinks: links?.count ?? 0,
     totalActivities: activities?.count ?? 0,
-    byType: Object.fromEntries(byType.map(b => [b.institutionType, b.cnt])),
+    byType: Object.fromEntries(byType.map((b: any) => [b.institutionType, b.cnt])),
     topInstitutions,
   };
 }

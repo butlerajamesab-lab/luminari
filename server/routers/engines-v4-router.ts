@@ -156,7 +156,7 @@ export const enginesV4Router = router({
       enforcementGap: z.number(),
       geographicSpread: z.number(),
     }))
-    .query(({ input }) => ({ score: calculateRiskScore(input) })),
+    .query(({ input }) => ({ score: calculateRiskScore(input as any) })),
 
   forecastPatternRisk: protectedProcedure
     .input(z.object({

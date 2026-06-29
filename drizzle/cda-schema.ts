@@ -137,6 +137,8 @@ export const cdaComparisonMatrix = pgTable("cda_comparison_matrix", {
   notes:               text("notes"),
   resolutionStatus:    text("resolution_status"),
   resolutionNotes:     text("resolution_notes"),
+  resolutionMethod:    text("resolution_method"),
+  t7TranscriptId:      text("t7_transcript_id"),
   createdAt:           timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 export type CdaComparisonRow = typeof cdaComparisonMatrix.$inferSelect;
@@ -148,8 +150,13 @@ export const cdaEvidenceGaps = pgTable("cda_evidence_gaps", {
   runId:            uuid("run_id").notNull(),
   gapType:          text("gap_type").notNull(),
   description:      text("description").notNull(),
+  requiredItem:     text("required_item"),
+  whyRequired:      text("why_required"),
+  howToObtain:      text("how_to_obtain"),
+  priorityLevel:    text("priority_level"),
   linkedReasonIds:  jsonb("linked_reason_ids").$type<string[]>(),
   linkedClauseIds:  jsonb("linked_clause_ids").$type<string[]>(),
+  linkedTransformation: text("linked_transformation"),
   severity:         text("severity"),
   failureFlag:      text("failure_flag"),
   createdAt:        timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

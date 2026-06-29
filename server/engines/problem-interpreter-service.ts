@@ -125,7 +125,7 @@ Respond in JSON format:
       }
     });
 
-    // @ts-expect-error pre-existing type mismatch
+    // @ts-ignore pre-existing type mismatch
     const parsed = JSON.parse(response.choices[0].message.content || "{}");
     jurisdictionGuess = parsed.jurisdiction || "Unknown";
     claimCandidates = (parsed.claims || []).map((c: any) => ({

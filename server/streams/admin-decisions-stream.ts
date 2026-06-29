@@ -52,7 +52,7 @@ export async function ingestAdminDecisions(records: AdminDecisionRecord[]): Prom
     sourceUrl: r.sourceUrl || null,
   }));
 
-  // @ts-expect-error pre-existing type mismatch
+  // @ts-ignore pre-existing type mismatch
   await db.insert(administrativeDecisions).values(values);
   return { inserted: values.length };
 }

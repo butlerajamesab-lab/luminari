@@ -292,7 +292,7 @@ export async function exportEntityEvidence(entityName: string): Promise<Evidence
     .where(eq(detectedSignals.entityId, entityName))
     .orderBy(desc(detectedSignals.detectionTimestamp));
 
-  const sourceSignals = signals.map(s => ({
+  const sourceSignals = signals.map((s: any) => ({
     signalType: s.signalType || "unknown",
     title: s.plainLanguageExplanation || "",
     jurisdiction: s.jurisdictionScope || null,

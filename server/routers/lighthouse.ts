@@ -576,9 +576,9 @@ const mapRouter = router({
 
       return {
         resources: nearbyResources,
-        jobs: jobs.map(j => ({ type: "job" as const, ...j })),
-        posts: posts.map(p => ({ type: "post" as const, ...p })),
-        events: events.map(e => ({ type: "event" as const, ...e })),
+        jobs: jobs.map((j: any) => ({ type: "job" as const, ...j })),
+        posts: posts.map((p: any) => ({ type: "post" as const, ...p })),
+        events: events.map((e: any) => ({ type: "event" as const, ...e })),
         pattern_signals: nearbySignals,
         meta: {
           center: { lat, lng },

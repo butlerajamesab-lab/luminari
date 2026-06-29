@@ -174,7 +174,7 @@ export async function exportConfig(): Promise<ConfigExport> {
   }
 
   return {
-    engines: engines.map(e => ({
+    engines: engines.map((e: any) => ({
       engineId: e.engineId,
       engineName: e.engineName,
       category: e.category,
@@ -183,7 +183,7 @@ export async function exportConfig(): Promise<ConfigExport> {
       config: e.configJson,
       version: e.version,
     })),
-    streams: streams.map(s => ({
+    streams: streams.map((s: any) => ({
       streamId: s.streamId,
       streamName: s.streamName,
       streamType: s.streamType,
@@ -194,7 +194,7 @@ export async function exportConfig(): Promise<ConfigExport> {
       enabled: s.enabled,
       fieldMapping: s.fieldMapping,
     })),
-    datasets: streams.map(s => ({
+    datasets: streams.map((s: any) => ({
       datasetId: s.streamId,
       datasetName: s.streamName,
       source: s.source ?? 'unknown',
@@ -205,7 +205,7 @@ export async function exportConfig(): Promise<ConfigExport> {
       fieldMapping: s.fieldMapping,
       enabled: s.enabled,
     })),
-    signals: signals.map(s => ({
+    signals: signals.map((s: any) => ({
       signalType: s.signalType,
       domain: s.domain,
       severity: s.severity,
@@ -493,20 +493,20 @@ export async function getExportRun(runId: number) {
 /** Get export stats */
 export async function getExportStats() {
   const allRuns = await db.select().from(exportSpineRuns);
-  const completed = allRuns.filter(r => r.status === "completed");
-  const totalSize = completed.reduce((sum, r) => sum + (Number(r.bundleSize) || 0), 0);
+  const completed = allRuns.filter((r: any) => r.status === "completed");
+  const totalSize = completed.reduce((sum: any, r: any) => sum + (Number(r.bundleSize) || 0), 0);
   
   return {
     totalExports: allRuns.length,
     completedExports: completed.length,
-    failedExports: allRuns.filter(r => r.status === "failed").length,
+    failedExports: allRuns.filter((r: any) => r.status === "failed").length,
     totalExportSize: totalSize,
-    lastExportAt: completed.length > 0 ? Math.max(...completed.map(r => Number(r.createdAt))) : null,
+    lastExportAt: completed.length > 0 ? Math.max(...completed.map((r: any) => Number(r.createdAt))) : null,
     exportsByType: {
-      full: allRuns.filter(r => r.exportType === "full").length,
-      schema: allRuns.filter(r => r.exportType === "schema").length,
-      config: allRuns.filter(r => r.exportType === "config").length,
-      deployment: allRuns.filter(r => r.exportType === "deployment").length,
+      full: allRuns.filter((r: any) => r.exportType === "full").length,
+      schema: allRuns.filter((r: any) => r.exportType === "schema").length,
+      config: allRuns.filter((r: any) => r.exportType === "config").length,
+      deployment: allRuns.filter((r: any) => r.exportType === "deployment").length,
     },
   };
 }
