@@ -172,8 +172,8 @@ export async function hardDeleteDocument(
   const storageResult: HardDeleteResult["storageCleanup"] = { deleted: [], archived: [], preserved: [] };
 
   // T1. Delete relationship_evidence via quoteIds
-  const docQuotes = await db.select({ id: quotes.id }).from(quotes).where(eq(quotes.documentId, documentId));
-  const quoteIds = docQuotes.map(q => q.id);
+  const docQuotes = await db.select({ id: quotes.id }).from(quotes).where(eq(quotes.documentId, documentId as any));
+  const quoteIds = docQuotes.map((q: any) => q.id);
   if (quoteIds.length > 0) {
     const [reResult] = await db.delete(relationshipEvidence).where(inArray(relationshipEvidence.quoteId, quoteIds));
     cascaded.push({ type: "relationship_evidence", count: (reResult as any)?.affectedRows ?? 0 });
@@ -198,7 +198,7 @@ export async function hardDeleteDocument(
   cascaded.push({ type: "entity_role", count: (erResult as any)?.affectedRows ?? 0 });
 
   // T4. Delete orphaned entities (no remaining roles or relationships)
-  const caseEntities = await db.select({ id: entities.id }).from(entities).where(eq(entities.caseId, caseId));
+  const caseEntities = await db.select({ id: entities.id }).from(entities).where(eq(entities.caseId, caseId as any));
   let orphanedEntityCount = 0;
   for (const entity of caseEntities) {
     const [roleCount] = await db.select({ c: sql<number>`COUNT(*)` })
@@ -221,11 +221,11 @@ export async function hardDeleteDocument(
   cascaded.push({ type: "signal_flag", count: (sfResult as any)?.affectedRows ?? 0 });
 
   // T6. Delete claims
-  const [clResult] = await db.delete(claims).where(eq(claims.documentId, documentId));
+  const [clResult] = await db.delete(claims).where(eq(claims.documentId, documentId as any));
   cascaded.push({ type: "claim", count: (clResult as any)?.affectedRows ?? 0 });
 
   // T7. Delete quotes
-  const [qResult] = await db.delete(quotes).where(eq(quotes.documentId, documentId));
+  const [qResult] = await db.delete(quotes).where(eq(quotes.documentId, documentId as any));
   cascaded.push({ type: "quote", count: (qResult as any)?.affectedRows ?? 0 });
 
   // T8. Delete document_correlations
@@ -235,7 +235,7 @@ export async function hardDeleteDocument(
   cascaded.push({ type: "correlation", count: (dcResult as any)?.affectedRows ?? 0 });
 
   // T9. Delete the document row
-  await db.delete(documents).where(eq(documents.id, documentId));
+  await db.delete(documents).where(eq(documents.id, documentId as any));
 
   // T10. Storage cleanup
   if (opts.cleanupStorage && doc.s3Key) {
@@ -294,7 +294,7 @@ export async function hardDeleteQuote(
   cascaded.push({ type: "relationship_evidence", count: (reResult as any)?.affectedRows ?? 0 });
 
   // T2. Delete the quote
-  await db.delete(quotes).where(eq(quotes.id, quoteId));
+  await db.delete(quotes).where(eq(quotes.id, quoteId as any));
 
   const auditHash = await logAudit({
     caseId, userId,
@@ -324,7 +324,7 @@ export async function hardDeleteClaim(
 ): Promise<HardDeleteResult> {
   if (snapshotId) await assertSnapshotMutable(snapshotId);
 
-  await db.delete(claims).where(eq(claims.id, claimId));
+  await db.delete(claims).where(eq(claims.id, claimId as any));
 
   const auditHash = await logAudit({
     caseId, userId,
@@ -357,11 +357,11 @@ export async function hardDeleteFinding(
   const cascaded: Array<{ type: string; count: number }> = [];
 
   // T1. Delete provenance audit logs for this finding
-  const [palResult] = await db.delete(provenanceAuditLogs).where(eq(provenanceAuditLogs.findingId, findingId));
+  const [palResult] = await db.delete(provenanceAuditLogs).where(eq(provenanceAuditLogs.findingId, findingId as any));
   cascaded.push({ type: "provenance_audit_log", count: (palResult as any)?.affectedRows ?? 0 });
 
   // T2. Delete the finding
-  await db.delete(findings).where(eq(findings.id, findingId));
+  await db.delete(findings).where(eq(findings.id, findingId as any));
 
   const auditHash = await logAudit({
     caseId, userId,
@@ -496,7 +496,7 @@ export async function hardDeleteSnapshot(
 
   // T1. Find all documents bound to this snapshot
   const snapshotDocs = await db.select().from(documents)
-    .where(and(eq(documents.caseId, caseId), eq(documents.snapshotId, snapshotId)));
+    .where(and(eq(documents.caseId, caseId as any), eq(documents.snapshotId, snapshotId as any)));
 
   // T2. Hard delete each document (with skipSnapshotCheck since we already verified)
   for (const doc of snapshotDocs) {
@@ -517,7 +517,7 @@ export async function hardDeleteSnapshot(
   cascaded.push({ type: "document", count: snapshotDocs.length });
 
   // T3. Delete findings for this snapshot
-  const [fResult] = await db.delete(findings).where(and(eq(findings.caseId, caseId), eq(findings.snapshotId, snapshotId)));
+  const [fResult] = await db.delete(findings).where(and(eq(findings.caseId, caseId as any), eq(findings.snapshotId, snapshotId as any)));
   cascaded.push({ type: "finding", count: (fResult as any)?.affectedRows ?? 0 });
 
   // T4. Delete correlations for this snapshot
@@ -603,15 +603,15 @@ export async function hardDeleteCase(
 
   // T2. Provenance artifacts
   // provenanceAuditLogs are finding-scoped, delete via findings
-  const caseFindings = await db.select({ id: findings.id }).from(findings).where(eq(findings.caseId, caseId));
-  const findingIds = caseFindings.map(f => f.id);
+  const caseFindings = await db.select({ id: findings.id }).from(findings).where(eq(findings.caseId, caseId as any));
+  const findingIds = caseFindings.map((f: any) => f.id);
   if (findingIds.length > 0) {
     await db.delete(provenanceAuditLogs).where(inArray(provenanceAuditLogs.findingId, findingIds));
   }
 
   // T3. Presentation artifacts
   const casePres = await db.select({ id: presentations.id }).from(presentations).where(eq(presentations.caseId, caseId));
-  const presIds = casePres.map(p => p.id);
+  const presIds = casePres.map((p: any) => p.id);
   if (presIds.length > 0) {
     await db.delete(presentationSlides).where(inArray(presentationSlides.presentationId, presIds));
   }
@@ -635,7 +635,7 @@ export async function hardDeleteCase(
   cascaded.push({ type: "collaborator", count: (collabResult as any)?.affectedRows ?? 0 });
 
   // T8. All documents (with full cascade)
-  const caseDocs = await db.select().from(documents).where(eq(documents.caseId, caseId));
+  const caseDocs = await db.select().from(documents).where(eq(documents.caseId, caseId as any));
   for (const doc of caseDocs) {
     const docResult = await hardDeleteDocument(doc.id, caseId, userId, `Cascade from case ${caseId} deletion: ${reason}`, {
       skipSnapshotCheck: true, // We already checked above
@@ -654,13 +654,13 @@ export async function hardDeleteCase(
   cascaded.push({ type: "document", count: caseDocs.length });
 
   // T9. Remaining findings and correlations (case-level, not document-scoped)
-  const [fResult] = await db.delete(findings).where(eq(findings.caseId, caseId));
+  const [fResult] = await db.delete(findings).where(eq(findings.caseId, caseId as any));
   cascaded.push({ type: "finding", count: (fResult as any)?.affectedRows ?? 0 });
   const [corrResult] = await db.delete(documentCorrelations).where(eq(documentCorrelations.caseId, caseId));
   cascaded.push({ type: "correlation", count: (corrResult as any)?.affectedRows ?? 0 });
 
   // T10. Remaining events
-  const [evResult] = await db.delete(events).where(eq(events.caseId, caseId));
+  const [evResult] = await db.delete(events).where(eq(events.caseId, caseId as any));
   cascaded.push({ type: "event", count: (evResult as any)?.affectedRows ?? 0 });
 
   // T11. Snapshots
@@ -668,7 +668,7 @@ export async function hardDeleteCase(
   cascaded.push({ type: "snapshot", count: (snapResult as any)?.affectedRows ?? 0 });
 
   // T12. Case row
-  await db.delete(cases).where(eq(cases.id, caseId));
+  await db.delete(cases).where(eq(cases.id, caseId as any));
 
   const auditHash = await logAudit({
     caseId, userId,
@@ -707,7 +707,7 @@ export async function hardDeleteEntity(
   // T2. Delete relationship_evidence for relationships involving this entity
   const entityRels = await db.select({ id: relationships.id }).from(relationships)
     .where(sql`${relationships.sourceEntityId} = ${entityId} OR ${relationships.targetEntityId} = ${entityId}`);
-  const relIds = entityRels.map(r => r.id);
+  const relIds = entityRels.map((r: any) => r.id);
   if (relIds.length > 0) {
     const [reResult] = await db.delete(relationshipEvidence).where(inArray(relationshipEvidence.relationshipId, relIds));
     cascaded.push({ type: "relationship_evidence", count: (reResult as any)?.affectedRows ?? 0 });
@@ -719,7 +719,7 @@ export async function hardDeleteEntity(
   cascaded.push({ type: "relationship", count: (relResult as any)?.affectedRows ?? 0 });
 
   // T4. Delete the entity
-  await db.delete(entities).where(eq(entities.id, entityId));
+  await db.delete(entities).where(eq(entities.id, entityId as any));
 
   const auditHash = await logAudit({
     caseId, userId,
@@ -786,7 +786,7 @@ export async function hardDeleteEvent(
 ): Promise<HardDeleteResult> {
   if (snapshotId) await assertSnapshotMutable(snapshotId);
 
-  await db.delete(events).where(eq(events.id, eventId));
+  await db.delete(events).where(eq(events.id, eventId as any));
 
   const auditHash = await logAudit({
     caseId, userId,

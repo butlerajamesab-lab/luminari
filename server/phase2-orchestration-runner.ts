@@ -56,12 +56,12 @@ async function getSnapshotDocumentsWithText(snapshotId: number) {
   return db.select({
     id: documents.id,
     caseId: documents.caseId,
-    filename: documents.filename,
+    fileName: documents.fileName,
     textContent: documents.textContent,
     documentType: documents.documentType,
     snapshotId: documents.snapshotId,
   }).from(documents)
-    .where(eq(documents.snapshotId, snapshotId));
+    .where(eq(documents.snapshotId, snapshotId as any));
 }
 
 /**
@@ -76,7 +76,7 @@ async function getSnapshotQuotes(snapshotId: number) {
     laneId: quotes.laneId,
     snapshotId: quotes.snapshotId,
   }).from(quotes)
-    .where(eq(quotes.snapshotId, snapshotId));
+    .where(eq(quotes.snapshotId, snapshotId as any));
 }
 
 /**
@@ -87,24 +87,24 @@ async function loadSnapshotDataForNotes(snapshotId: number, runId: number): Prom
     snapshotClaims, snapshotEvents, snapshotSignalFlags] = await Promise.all([
     db.select({
       id: documents.id,
-      filename: documents.filename,
+      fileName: documents.fileName,
       textContent: documents.textContent,
       documentType: documents.documentType,
-    }).from(documents).where(eq(documents.snapshotId, snapshotId)),
+    }).from(documents).where(eq(documents.snapshotId, snapshotId as any)),
 
     db.select({
       id: quotes.id,
       documentId: quotes.documentId,
       text: quotes.text,
       pageNumber: quotes.pageNumber,
-    }).from(quotes).where(eq(quotes.snapshotId, snapshotId)),
+    }).from(quotes).where(eq(quotes.snapshotId, snapshotId as any)),
 
     db.select({
       id: entities.id,
       name: entities.name,
       type: entities.type,
       description: entities.description,
-    }).from(entities).where(eq(entities.snapshotId, snapshotId)),
+    }).from(entities).where(eq(entities.snapshotId, snapshotId as any)),
 
     db.select({
       id: entityRoles.id,
@@ -121,7 +121,7 @@ async function loadSnapshotDataForNotes(snapshotId: number, runId: number): Prom
       claimType: claims.claimType,
       dateReferenced: claims.dateReferenced,
       entitiesInvolved: claims.entitiesInvolved,
-    }).from(claims).where(eq(claims.snapshotId, snapshotId)),
+    }).from(claims).where(eq(claims.snapshotId, snapshotId as any)),
 
     db.select({
       id: events.id,
@@ -131,7 +131,7 @@ async function loadSnapshotDataForNotes(snapshotId: number, runId: number): Prom
       dateOccurred: events.dateOccurred,
       entitiesInvolved: events.entitiesInvolved,
       quoteIds: events.quoteIds,
-    }).from(events).where(eq(events.snapshotId, snapshotId)),
+    }).from(events).where(eq(events.snapshotId, snapshotId as any)),
 
     db.select({
       id: signalFlags.id,
@@ -143,8 +143,8 @@ async function loadSnapshotDataForNotes(snapshotId: number, runId: number): Prom
   ]);
 
   // Filter entity roles to only those belonging to entities in this snapshot
-  const entityIds = new Set(snapshotEntities.map(e => e.id));
-  const filteredEntityRoles = snapshotEntityRoles.filter(er => entityIds.has(er.entityId));
+  const entityIds = new Set(snapshotEntities.map((e: any) => e.id));
+  const filteredEntityRoles = snapshotEntityRoles.filter((er: any) => entityIds.has(er.entityId));
 
   // Read evidence requirements from the CURRENT run (just inserted by v1 engine)
   const reqs = await db.select({
@@ -154,7 +154,7 @@ async function loadSnapshotDataForNotes(snapshotId: number, runId: number): Prom
   }).from(phase2EvidenceRequirements)
     .where(eq(phase2EvidenceRequirements.runId, runId));
 
-  const evidenceReqs = reqs.map(r => ({
+  const evidenceReqs = reqs.map((r: any) => ({
     id: r.id,
     runId: r.runId,
     payload: (r.payload ?? {}) as Record<string, unknown>,
@@ -166,11 +166,11 @@ async function loadSnapshotDataForNotes(snapshotId: number, runId: number): Prom
     quotes: snapshotQuotes,
     entities: snapshotEntities,
     entityRoles: filteredEntityRoles,
-    claims: snapshotClaims.map(c => ({
+    claims: snapshotClaims.map((c: any) => ({
       ...c,
       entitiesInvolved: (c.entitiesInvolved ?? null) as number[] | null,
     })),
-    events: snapshotEvents.map(e => ({
+    events: snapshotEvents.map((e: any) => ({
       ...e,
       entitiesInvolved: (e.entitiesInvolved ?? null) as number[] | null,
       quoteIds: (e.quoteIds ?? null) as number[] | null,

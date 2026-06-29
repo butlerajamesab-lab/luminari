@@ -57,7 +57,7 @@ export const viabilityEngineRouter = router({
         .where(eq(cases.id, input.caseId));
 
       // Build claim text for LLM extraction
-      const claimTexts = caseClaims.slice(0, 50).map((c, i) =>
+      const claimTexts = caseClaims.slice(0, 50).map((c: any, i: any) =>
         `[${i + 1}] (${c.claimType}, origin: ${c.statementOrigin}) ${c.claimText}`
       ).join("\n");
 
@@ -187,8 +187,8 @@ Return a JSON array of fact objects. Extract ONLY what is explicitly stated. Do 
         const factText = pattern.factText.toLowerCase();
         for (const rule of rules) {
           // Check if any trigger phrase appears in the fact text
-          const triggers = rule.triggerPhrase.toLowerCase().split("|").map(t => t.trim());
-          const matched = triggers.some(trigger => factText.includes(trigger));
+          const triggers = rule.triggerPhrase.toLowerCase().split("|").map((t: any) => t.trim());
+          const matched = triggers.some((trigger: any) => factText.includes(trigger));
           if (matched) {
             if (!claimScores[rule.claimType]) {
               claimScores[rule.claimType] = { score: 0, matchedRuleIds: [], matchCount: 0 };
@@ -256,17 +256,17 @@ Return a JSON array of fact objects. Extract ONLY what is explicitly stated. Do 
       const now = Date.now();
       const daysSinceIncident = Math.floor((now - input.incidentDate) / (1000 * 60 * 60 * 24));
 
-      const results = detected.map(d => {
+      const results = detected.map((d: any) => {
         // Find matching deadline rules for this claim type and jurisdiction
-        const matchingRules = allRules.filter(r =>
+        const matchingRules = allRules.filter((r: any) =>
           r.claimType.toLowerCase() === d.claimType.toLowerCase() &&
           (r.jurisdiction === input.jurisdiction || r.jurisdiction === "federal" || r.jurisdiction === "all")
         );
 
         // Find the SOL rule specifically
-        const solRule = matchingRules.find(r => r.deadlineType === "statute_of_limitations");
-        const filingRule = matchingRules.find(r => r.deadlineType === "filing");
-        const exhaustionRule = matchingRules.find(r => r.deadlineType === "administrative_exhaustion");
+        const solRule = matchingRules.find((r: any) => r.deadlineType === "statute_of_limitations");
+        const filingRule = matchingRules.find((r: any) => r.deadlineType === "filing");
+        const exhaustionRule = matchingRules.find((r: any) => r.deadlineType === "administrative_exhaustion");
 
         // Use the most restrictive deadline
         const primaryRule = solRule || filingRule || exhaustionRule;
@@ -314,7 +314,7 @@ Return a JSON array of fact objects. Extract ONLY what is explicitly stated. Do 
           tolling_conditions: primaryRule.tollingConditions,
           authority: primaryRule.authority,
           notes: `${daysRemaining} days since incident. Deadline: ${primaryRule.timeLimitDays} days.${extendedNote}`,
-          all_matching_deadlines: matchingRules.map(r => ({
+          all_matching_deadlines: matchingRules.map((r: any) => ({
             type: r.deadlineType,
             days: r.timeLimitDays,
             authority: r.authority,
@@ -361,33 +361,33 @@ Return a JSON array of fact objects. Extract ONLY what is explicitly stated. Do 
       let evaluated = 0;
       for (const detection of detected) {
         // Find matching proof framework
-        const framework = frameworks.find(f =>
+        const framework = frameworks.find((f: any) =>
           f.claimType.toLowerCase().includes(detection.claimType.toLowerCase()) ||
           detection.claimType.toLowerCase().includes(f.claimType.toLowerCase())
         );
 
         // Find matching elements from the matrix
-        const claimElements = elements.filter(e =>
+        const claimElements = elements.filter((e: any) =>
           e.claimType.toLowerCase().includes(detection.claimType.toLowerCase()) ||
           detection.claimType.toLowerCase().includes(e.claimType.toLowerCase())
         );
 
         // If we have elements from the matrix, evaluate each
         const elementsToEvaluate = claimElements.length > 0
-          ? claimElements.map(e => e.elementName)
+          ? claimElements.map((e: any) => e.elementName)
           : (framework?.elementsOfProof || ["Protected class membership", "Adverse action", "Causal connection", "Damages"]);
 
         for (const elementName of elementsToEvaluate) {
           // Score based on fact claim coverage
           const elementLower = elementName.toLowerCase();
-          const matchingFacts = facts.filter(f =>
+          const matchingFacts = facts.filter((f: any) =>
             f.factValue.toLowerCase().includes(elementLower) ||
-            elementLower.split(" ").some(word =>
+            elementLower.split(" ").some((word: any) =>
               word.length > 3 && f.factValue.toLowerCase().includes(word)
             )
           );
 
-          const matchingEvidence = evidence.filter(e =>
+          const matchingEvidence = evidence.filter((e: any) =>
             e.relatedElement?.toLowerCase().includes(elementLower) ||
             e.relatedClaim?.toLowerCase().includes(detection.claimType.toLowerCase())
           );
@@ -397,8 +397,8 @@ Return a JSON array of fact objects. Extract ONLY what is explicitly stated. Do 
           if (matchingFacts.length > 0) score += 0.3;
           if (matchingFacts.length > 2) score += 0.1;
           if (matchingEvidence.length > 0) score += 0.3;
-          if (matchingEvidence.some(e => e.reliabilityClass === "primary")) score += 0.2;
-          if (matchingEvidence.some(e => e.reliabilityClass === "secondary")) score += 0.1;
+          if (matchingEvidence.some((e: any) => e.reliabilityClass === "primary")) score += 0.2;
+          if (matchingEvidence.some((e: any) => e.reliabilityClass === "secondary")) score += 0.1;
           score = Math.min(1, score);
 
           let confidenceLevel: "high" | "medium" | "low" | "insufficient";
@@ -411,7 +411,7 @@ Return a JSON array of fact objects. Extract ONLY what is explicitly stated. Do 
             caseId: input.caseId,
             claimType: detection.claimType,
             element: elementName,
-            supportingEvidence: matchingEvidence.map(e => e.id),
+            supportingEvidence: matchingEvidence.map((e: any) => e.id),
             strengthScore: score.toFixed(2),
             confidenceLevel,
             createdAt: now,
@@ -443,7 +443,7 @@ Return a JSON array of fact objects. Extract ONLY what is explicitly stated. Do 
       const templates = await db.select().from(contradictionTemplates);
 
       // Build fact pairs for LLM analysis (limit to manageable size)
-      const factTexts = facts.slice(0, 30).map((f, i) =>
+      const factTexts = facts.slice(0, 30).map((f: any, i: any) =>
         `[F${f.id}] (${f.factType}, actor: ${f.actor || "unknown"}) ${f.factValue}`
       ).join("\n");
 
@@ -536,7 +536,7 @@ Return ONLY genuine contradictions. Do not flag differences that are merely comp
         const logic = template.contradictionLogic.toLowerCase();
         const indicators = (template.evidenceIndicators as string[]) || [];
         // Check if any fact patterns match the template's evidence indicators
-        const matchCount = facts.filter(f => {
+        const matchCount = facts.filter((f: any) => {
           const fv = f.factValue.toLowerCase();
           return indicators.some(ind => fv.includes(ind.toLowerCase()));
         }).length;
@@ -591,17 +591,17 @@ Return ONLY genuine contradictions. Do not flag differences that are merely comp
       await db.delete(weakJointHits).where(eq(weakJointHits.caseId, input.caseId));
 
       let hits = 0;
-      const allText = [...facts.map(f => f.factValue), ...patterns.map(p => p.factText)]
+      const allText = [...facts.map((f: any) => f.factValue), ...patterns.map((p: any) => p.factText)]
         .join(" ").toLowerCase();
 
       for (const trigger of triggers) {
         // Check if trigger condition matches any fact text
         const conditionWords = trigger.triggerCondition.toLowerCase()
           .split(/[,;|]/)
-          .map(w => w.trim())
-          .filter(w => w.length > 3);
+          .map((w: any) => w.trim())
+          .filter((w: any) => w.length > 3);
 
-        const matchCount = conditionWords.filter(word => allText.includes(word)).length;
+        const matchCount = conditionWords.filter((word: any) => allText.includes(word)).length;
         const matchRatio = conditionWords.length > 0 ? matchCount / conditionWords.length : 0;
 
         if (matchRatio >= 0.3) { // At least 30% of condition words match
@@ -609,8 +609,8 @@ Return ONLY genuine contradictions. Do not flag differences that are merely comp
 
           // Find matching fact pattern IDs
           const matchingPatternIds = patterns
-            .filter(p => conditionWords.some(w => p.factText.toLowerCase().includes(w)))
-            .map(p => p.id)
+            .filter((p: any) => conditionWords.some((w: any) => p.factText.toLowerCase().includes(w)))
+            .map((p: any) => p.id)
             .slice(0, 10);
 
           await db.insert(weakJointHits).values({
@@ -629,8 +629,8 @@ Return ONLY genuine contradictions. Do not flag differences that are merely comp
       const hitDetails = hits > 0 ? await db.select().from(weakJointHits)
         .where(eq(weakJointHits.caseId, input.caseId)) : [];
 
-      const enriched = hitDetails.map(h => {
-        const wj = weakJoints.find(w => w.id === h.weakJointId);
+      const enriched = hitDetails.map((h: any) => {
+        const wj = weakJoints.find((w: any) => w.id === h.weakJointId);
         return {
           ...h,
           weak_joint_name: wj?.statuteCitation ?? "Unknown",
@@ -686,12 +686,12 @@ Return ONLY genuine contradictions. Do not flag differences that are merely comp
       const results = [];
       for (const detection of detected) {
         // Element analysis
-        const claimElements = elements.filter(e => e.claimType === detection.claimType);
-        const satisfied = claimElements.filter(e => parseFloat(String(e.strengthScore)) >= 0.4);
-        const missing = claimElements.filter(e => parseFloat(String(e.strengthScore)) < 0.4);
+        const claimElements = elements.filter((e: any) => e.claimType === detection.claimType);
+        const satisfied = claimElements.filter((e: any) => parseFloat(String(e.strengthScore)) >= 0.4);
+        const missing = claimElements.filter((e: any) => parseFloat(String(e.strengthScore)) < 0.4);
 
         // SOL analysis
-        const solRule = allDeadlineRules.find(r =>
+        const solRule = allDeadlineRules.find((r: any) =>
           r.claimType.toLowerCase() === detection.claimType.toLowerCase() &&
           (r.jurisdiction === input.jurisdiction || r.jurisdiction === "federal") &&
           r.deadlineType === "statute_of_limitations"
@@ -706,11 +706,11 @@ Return ONLY genuine contradictions. Do not flag differences that are merely comp
         }
 
         // Evidence sufficiency
-        const claimEvidence = evidence.filter(e =>
+        const claimEvidence = evidence.filter((e: any) =>
           e.relatedClaim?.toLowerCase().includes(detection.claimType.toLowerCase())
         );
         let evidenceSufficiency: "strong" | "moderate" | "weak" | "insufficient";
-        const primaryCount = claimEvidence.filter(e => e.reliabilityClass === "primary").length;
+        const primaryCount = claimEvidence.filter((e: any) => e.reliabilityClass === "primary").length;
         const totalEvidence = claimEvidence.length;
         if (primaryCount >= 2 && totalEvidence >= 4) evidenceSufficiency = "strong";
         else if (primaryCount >= 1 && totalEvidence >= 2) evidenceSufficiency = "moderate";
@@ -742,7 +742,7 @@ Return ONLY genuine contradictions. Do not flag differences that are merely comp
         ));
 
         // Recommended evidence
-        const recommendedEvidence = missing.map(m => `Evidence needed for: ${m.element}`);
+        const recommendedEvidence = missing.map((m: any) => `Evidence needed for: ${m.element}`);
         if (evidenceSufficiency === "insufficient" || evidenceSufficiency === "weak") {
           recommendedEvidence.push("Gather primary source documents (sworn testimony, court filings)");
         }
@@ -763,15 +763,15 @@ Return ONLY genuine contradictions. Do not flag differences that are merely comp
 
         // Agency routing
         const frameworks = await db.select().from(proofFrameworks);
-        const framework = frameworks.find(f =>
+        const framework = frameworks.find((f: any) =>
           f.claimType.toLowerCase().includes(detection.claimType.toLowerCase())
         );
 
         await db.insert(claimViability).values({
           caseId: input.caseId,
           claimType: detection.claimType,
-          elementsSatisfied: satisfied.map(s => s.element),
-          elementsMissing: missing.map(m => m.element),
+          elementsSatisfied: satisfied.map((s: any) => s.element),
+          elementsMissing: missing.map((m: any) => m.element),
           confidenceScore: confidenceScore.toFixed(2),
           solStatus,
           solDaysRemaining: solDaysRemaining !== null ? Math.max(0, solDaysRemaining) : null,

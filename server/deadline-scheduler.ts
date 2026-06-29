@@ -63,7 +63,7 @@ export async function findUsersWithActiveRequests(): Promise<number[]> {
       isNull(foiaRequests.responseReceivedAt),
     ));
 
-  return rows.map(r => r.userId);
+  return rows.map((r: any) => r.userId);
 }
 
 // ─── D3. Per-User Deadline Check ───

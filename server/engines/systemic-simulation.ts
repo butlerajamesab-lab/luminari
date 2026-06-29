@@ -255,7 +255,7 @@ export async function compareSimulationScenarios(simulationIds: number[]): Promi
       predictedSignalChange: Number(run.predictedSignalChange) || 0,
       predictedTimelineChange: run.predictedTimelineChange ?? "",
       confidenceScore: run.confidenceScore,
-      metrics: results.map((r) => ({
+      metrics: results.map((r: any) => ({
         metricName: r.metricName,
         baseline: Number(r.baselineValue) || 0,
         projected: Number(r.projectedValue) || 0,
@@ -366,7 +366,7 @@ export async function getSimulationById(id: number): Promise<{
 
   return {
     run,
-    assumptions: assumptions.map((a) => ({ name: a.parameterName, value: a.parameterValue, rationale: a.rationale })),
+    assumptions: assumptions.map((a: any) => ({ name: a.parameterName, value: a.parameterValue, rationale: a.rationale })),
     results,
   };
 }

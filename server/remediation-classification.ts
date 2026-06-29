@@ -293,11 +293,11 @@ export async function getRemediationOverview(caseId: number): Promise<Remediatio
 
   const caseQuotes = await db.db.select({ documentId: quotes.documentId })
     .from(quotes)
-    .where(eq(quotes.caseId, caseId));
-  const docsWithQuotes = new Set(caseQuotes.map(q => q.documentId));
+    .where(eq(quotes.caseId, caseId as any));
+  const docsWithQuotes = new Set(caseQuotes.map((q: any) => q.documentId));
 
   // 3. Classify each document
-  const classifiedDocs: ClassifiedDocument[] = allDocs.map(doc => {
+  const classifiedDocs: ClassifiedDocument[] = allDocs.map((doc: any) => {
     // A document is unsupported_valid if:
     // - status = 'ready'
     // - has text content

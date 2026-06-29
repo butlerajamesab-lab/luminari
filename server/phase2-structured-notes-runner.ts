@@ -44,24 +44,24 @@ async function loadSnapshotData(snapshotId: number): Promise<SnapshotData> {
     snapshotClaims, snapshotEvents, snapshotSignalFlags] = await Promise.all([
     db.select({
       id: documents.id,
-      filename: documents.filename,
+      fileName: documents.fileName,
       textContent: documents.textContent,
       documentType: documents.documentType,
-    }).from(documents).where(eq(documents.snapshotId, snapshotId)),
+    }).from(documents).where(eq(documents.snapshotId, snapshotId as any)),
 
     db.select({
       id: quotes.id,
       documentId: quotes.documentId,
       text: quotes.text,
       pageNumber: quotes.pageNumber,
-    }).from(quotes).where(eq(quotes.snapshotId, snapshotId)),
+    }).from(quotes).where(eq(quotes.snapshotId, snapshotId as any)),
 
     db.select({
       id: entities.id,
       name: entities.name,
       type: entities.type,
       description: entities.description,
-    }).from(entities).where(eq(entities.snapshotId, snapshotId)),
+    }).from(entities).where(eq(entities.snapshotId, snapshotId as any)),
 
     // EntityRoles don't have snapshotId — join via entities
     db.select({
@@ -79,7 +79,7 @@ async function loadSnapshotData(snapshotId: number): Promise<SnapshotData> {
       claimType: claims.claimType,
       dateReferenced: claims.dateReferenced,
       entitiesInvolved: claims.entitiesInvolved,
-    }).from(claims).where(eq(claims.snapshotId, snapshotId)),
+    }).from(claims).where(eq(claims.snapshotId, snapshotId as any)),
 
     db.select({
       id: events.id,
@@ -89,7 +89,7 @@ async function loadSnapshotData(snapshotId: number): Promise<SnapshotData> {
       dateOccurred: events.dateOccurred,
       entitiesInvolved: events.entitiesInvolved,
       quoteIds: events.quoteIds,
-    }).from(events).where(eq(events.snapshotId, snapshotId)),
+    }).from(events).where(eq(events.snapshotId, snapshotId as any)),
 
     db.select({
       id: signalFlags.id,
@@ -101,8 +101,8 @@ async function loadSnapshotData(snapshotId: number): Promise<SnapshotData> {
   ]);
 
   // Filter entity roles to only those belonging to entities in this snapshot
-  const entityIds = new Set(snapshotEntities.map(e => e.id));
-  const filteredEntityRoles = snapshotEntityRoles.filter(er => entityIds.has(er.entityId));
+  const entityIds = new Set(snapshotEntities.map((e: any) => e.id));
+  const filteredEntityRoles = snapshotEntityRoles.filter((er: any) => entityIds.has(er.entityId));
 
   // T3. Read Phase-2 v1 evidence requirements (if any)
   const completedRuns = await db.select({ id: phase2Runs.id })
@@ -120,7 +120,7 @@ async function loadSnapshotData(snapshotId: number): Promise<SnapshotData> {
       payload: phase2EvidenceRequirements.payload,
     }).from(phase2EvidenceRequirements)
       .where(eq(phase2EvidenceRequirements.runId, run.id));
-    evidenceReqs.push(...reqs.map(r => ({
+    evidenceReqs.push(...reqs.map((r: any) => ({
       id: r.id,
       runId: r.runId,
       payload: (r.payload ?? {}) as Record<string, unknown>,
@@ -133,11 +133,11 @@ async function loadSnapshotData(snapshotId: number): Promise<SnapshotData> {
     quotes: snapshotQuotes,
     entities: snapshotEntities,
     entityRoles: filteredEntityRoles,
-    claims: snapshotClaims.map(c => ({
+    claims: snapshotClaims.map((c: any) => ({
       ...c,
       entitiesInvolved: (c.entitiesInvolved ?? null) as number[] | null,
     })),
-    events: snapshotEvents.map(e => ({
+    events: snapshotEvents.map((e: any) => ({
       ...e,
       entitiesInvolved: (e.entitiesInvolved ?? null) as number[] | null,
       quoteIds: (e.quoteIds ?? null) as number[] | null,

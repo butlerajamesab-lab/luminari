@@ -119,7 +119,7 @@ const findOrphans = adminProcedure.query(async ({ ctx }) => {
 
     if (entCount.c > 0 && docCount.c === 0) {
       const ents = await selectEntities(db, c.id);
-      const entityIds = ents.map(e => e.id);
+      const entityIds = ents.map((e: any) => e.id);
       const deps = await countDependents(db, c.id, entityIds);
       const { _relIds, ...dependentCounts } = deps;
 
@@ -169,7 +169,7 @@ const moveEntities = adminProcedure
       return { dryRun, moved: 0, entities: [], dependent_moves: {}, source_case_name: sourceCase.name, target_case_name: targetCase.name };
     }
 
-    const entityIds = entitiesToMove.map(e => e.id);
+    const entityIds = entitiesToMove.map((e: any) => e.id);
     const deps = await countDependents(db, sourceCaseId, entityIds);
     const { _relIds: relIds, ...dependentMoves } = deps;
 
@@ -185,7 +185,7 @@ const moveEntities = adminProcedure
     }
 
     // ── Execute move inside transaction ──
-    await db.transaction(async (tx) => {
+    await db.transaction(async (tx: any) => {
       // 1. Move entities
       await tx.update(entities).set({ caseId: targetCaseId })
         .where(inArray(entities.id, entityIds));
@@ -280,7 +280,7 @@ const purgeEntities = adminProcedure
       return { dryRun, purged: 0, entities: [], dependent_deletes: {}, case_name: caseRow.name };
     }
 
-    const entityIds = entitiesToPurge.map(e => e.id);
+    const entityIds = entitiesToPurge.map((e: any) => e.id);
     const deps = await countDependents(db, caseId, entityIds);
     const { _relIds: relIds, ...dependentDeletes } = deps;
 
@@ -295,7 +295,7 @@ const purgeEntities = adminProcedure
     }
 
     // ── Execute purge inside transaction (leaf → root) ──
-    await db.transaction(async (tx) => {
+    await db.transaction(async (tx: any) => {
       // 1. Relationship evidence (leaf)
       if (relIds.length > 0) {
         await tx.delete(relationshipEvidence).where(inArray(relationshipEvidence.relationshipId, relIds));

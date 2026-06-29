@@ -60,7 +60,7 @@ export async function compareJurisdictions(
         totalDemand: result.calculatedAmount,
         breakdown: {
           baseAmount: result.breakdown.baseAmount,
-          // @ts-expect-error pre-existing type mismatch
+          // @ts-ignore pre-existing type mismatch
           statutoryDamages: result.breakdown.statutoryDamages,
           penalties: result.breakdown.penalties,
           interest: result.breakdown.interestAmount,

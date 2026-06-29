@@ -99,7 +99,7 @@ export async function getEnforcementStats() {
 
   return {
     totalActions: total?.count ?? 0,
-    byAgency: byAgency.map(b => ({ agency: b.agency, count: b.cnt })) };
+    byAgency: byAgency.map((b: any) => ({ agency: b.agency, count: b.cnt })) };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -120,7 +120,7 @@ export async function ingestLitigationCase(params: {
   industry?: string;
   sourceUrl?: string;
 }) {
-  // @ts-expect-error pre-existing type mismatch
+  // @ts-ignore pre-existing type mismatch
   const [inserted] = await db.insert(litigationCases).values({
     courtName: params.courtName,
     jurisdiction: params.jurisdiction ?? null,
@@ -180,7 +180,7 @@ export async function getLitigationStats() {
 
   return {
     totalCases: total?.count ?? 0,
-    byStatus: Object.fromEntries(byStatus.map(b => [b.status, b.cnt])) };
+    byStatus: Object.fromEntries(byStatus.map((b: any) => [b.status, b.cnt])) };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -278,7 +278,7 @@ export async function getInvestigativeReportStats() {
 
   return {
     totalReports: total?.count ?? 0,
-    byPublication: byPublication.map(b => ({ publication: b.publication, count: b.cnt })) };
+    byPublication: byPublication.map((b: any) => ({ publication: b.publication, count: b.cnt })) };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -352,7 +352,7 @@ export async function getOversightReportStats() {
 
   return {
     totalReports: total?.count ?? 0,
-    byBody: byBody.map(b => ({ body: b.body, count: b.cnt })) };
+    byBody: byBody.map((b: any) => ({ body: b.body, count: b.cnt })) };
 }
 
 // ═══════════════════════════════════════════════════════════════

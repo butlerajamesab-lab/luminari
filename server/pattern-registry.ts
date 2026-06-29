@@ -117,7 +117,7 @@ export async function evaluateSignalsForPatterns(): Promise<{
       }
     } else {
       // Create new pattern
-      // @ts-expect-error pre-existing type mismatch
+      // @ts-ignore pre-existing type mismatch
       await createPatternFromSignals(threshold, signals, now);
       patternsCreated++;
     }
@@ -140,13 +140,13 @@ async function createPatternFromSignals(
 
   // Aggregate signal data
   const agg = aggregateSignalData(signals);
-  // @ts-expect-error pre-existing type mismatch
+  // @ts-ignore pre-existing type mismatch
   const confidence = await calculatePatternConfidence(threshold.patternType, signals, agg);
 
   // Generate pattern name and description
-  // @ts-expect-error pre-existing type mismatch
+  // @ts-ignore pre-existing type mismatch
   const patternName = generatePatternName(threshold.patternType, agg);
-  // @ts-expect-error pre-existing type mismatch
+  // @ts-ignore pre-existing type mismatch
   const patternDescription = generatePatternDescription(threshold.patternType, signals, agg);
 
   // Determine time span
@@ -159,13 +159,13 @@ async function createPatternFromSignals(
     patternId,
     patternName,
     patternDescription,
-    // @ts-expect-error pre-existing type mismatch
+    // @ts-ignore pre-existing type mismatch
     patternType: threshold.patternType,
-    // @ts-expect-error pre-existing type mismatch
+    // @ts-ignore pre-existing type mismatch
     signalType: threshold.signalType,
-    // @ts-expect-error pre-existing type mismatch
+    // @ts-ignore pre-existing type mismatch
     triggerThreshold: threshold.triggerThreshold,
-    // @ts-expect-error pre-existing type mismatch
+    // @ts-ignore pre-existing type mismatch
     confidenceThreshold: threshold.confidenceThreshold,
     confidenceScore: confidence,
     jurisdictionScope: agg.primaryJurisdiction,
@@ -225,7 +225,7 @@ async function updatePatternWithSignals(
   const existingLinks = await db.select({ signalId: patternSignalLinks.signalId })
     .from(patternSignalLinks)
     .where(eq(patternSignalLinks.patternId, pattern.patternId));
-  const existingIds = new Set(existingLinks.map(l => l.signalId));
+  const existingIds = new Set(existingLinks.map((l: any) => l.signalId));
 
   // Find new signals not yet linked
   const newSignals = signals.filter(s => !existingIds.has(s.signal_id));

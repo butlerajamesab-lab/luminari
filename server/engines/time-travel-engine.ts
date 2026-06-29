@@ -118,8 +118,8 @@ export async function createSnapshot(
 
   if (sourceTable === "ingested_records") {
     const conditions = [];
-    if (dateRange?.from) conditions.push(gte(ingestedRecords.ingestedAt, dateRange.from));
-    if (dateRange?.to) conditions.push(lte(ingestedRecords.ingestedAt, dateRange.to));
+    if (dateRange?.from) conditions.push(gte(ingestedRecords.ingestedAt, new Date(dateRange.from)));
+    if (dateRange?.to) conditions.push(lte(ingestedRecords.ingestedAt, new Date(dateRange.to)));
 
     const [result] = await db
       .select({ count: count() })
@@ -137,7 +137,7 @@ export async function createSnapshot(
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .groupBy(ingestedRecords.datasetId);
 
-    metadata.datasetIds = datasets.map(d => d.datasetId);
+    metadata.datasetIds = datasets.map((d: any) => d.datasetId);
     metadata.dateRange = dateRange;
     metadata.description = `Snapshot of ${recordCount} ingested records across ${datasets.length} datasets`;
   } else if (sourceTable === "detected_signals") {
@@ -219,8 +219,8 @@ export async function runHistoricalReplay(options: ReplayOptions) {
   try {
     // Load historical records
     const conditions = [];
-    if (options.startDate) conditions.push(gte(ingestedRecords.normalizedDate, options.startDate));
-    if (options.endDate) conditions.push(lte(ingestedRecords.normalizedDate, options.endDate));
+    if (options.startDate) conditions.push(gte(ingestedRecords.normalizedDate, new Date(options.startDate)));
+    if (options.endDate) conditions.push(lte(ingestedRecords.normalizedDate, new Date(options.endDate)));
     if (options.datasetIds?.length) {
       conditions.push(sql`${ingestedRecords.datasetId} IN (${sql.join(options.datasetIds.map(d => sql`${d}`), sql`, `)})`);
     }
@@ -345,7 +345,7 @@ export async function runHistoricalReplay(options: ReplayOptions) {
         completedAt: Date.now(),
         signalsDetected: signalCount,
         patternsDetected: patternCount,
-        // @ts-expect-error pre-existing type mismatch
+        // @ts-ignore pre-existing type mismatch
         summary,
       })
       .where(eq(timeTravelRuns.id, runId));
@@ -421,8 +421,8 @@ export async function runCounterfactualReplay(options: CounterfactualOptions) {
     const streamFilter = options.parameters.find(p => p.type === "stream_inclusion");
 
     const conditions = [];
-    if (options.startDate) conditions.push(gte(ingestedRecords.normalizedDate, options.startDate));
-    if (options.endDate) conditions.push(lte(ingestedRecords.normalizedDate, options.endDate));
+    if (options.startDate) conditions.push(gte(ingestedRecords.normalizedDate, new Date(options.startDate)));
+    if (options.endDate) conditions.push(lte(ingestedRecords.normalizedDate, new Date(options.endDate)));
     if (options.datasetIds?.length) {
       conditions.push(sql`${ingestedRecords.datasetId} IN (${sql.join(options.datasetIds.map(d => sql`${d}`), sql`, `)})`);
     }
@@ -441,11 +441,11 @@ export async function runCounterfactualReplay(options: CounterfactualOptions) {
     if (entityFilter) {
       const filterValue = entityFilter.value.toLowerCase();
       if (entityFilter.name === "exclude_entity_type") {
-        records = records.filter(r =>
+        records = records.filter((r: any) =>
           !classifyEntity(r.normalizedEntity ?? "", r.datasetId).entityType.toLowerCase().includes(filterValue)
         );
       } else if (entityFilter.name === "include_only_entity") {
-        records = records.filter(r =>
+        records = records.filter((r: any) =>
           (r.normalizedEntity ?? "").toLowerCase().includes(filterValue)
         );
       }
@@ -607,12 +607,12 @@ export async function compareAlgorithmVersions(
   const signalsB = await db.select().from(historicalSignals).where(eq(historicalSignals.runId, resultB.runId));
 
   // Calculate confidence comparison
-  const avgConfA = signalsA.length > 0 ? signalsA.reduce((s, sig) => s + Number(sig.confidenceScore), 0) / signalsA.length : 0;
-  const avgConfB = signalsB.length > 0 ? signalsB.reduce((s, sig) => s + Number(sig.confidenceScore), 0) / signalsB.length : 0;
+  const avgConfA = signalsA.length > 0 ? signalsA.reduce((s: any, sig: any) => s + Number(sig.confidenceScore), 0) / signalsA.length : 0;
+  const avgConfB = signalsB.length > 0 ? signalsB.reduce((s: any, sig: any) => s + Number(sig.confidenceScore), 0) / signalsB.length : 0;
 
   // Find signals unique to each version
-  const typesA = new Set(signalsA.map(s => `${s.signalType}|${s.entityName}`));
-  const typesB = new Set(signalsB.map(s => `${s.signalType}|${s.entityName}`));
+  const typesA = new Set(signalsA.map((s: any) => `${s.signalType}|${s.entityName}`));
+  const typesB = new Set(signalsB.map((s: any) => `${s.signalType}|${s.entityName}`));
   const onlyInA = [...typesA].filter(t => !typesB.has(t));
   const onlyInB = [...typesB].filter(t => !typesA.has(t));
 
@@ -682,7 +682,7 @@ export async function detectEarliestPatternDate(
     let contributingStreams: string[] = [];
 
     // Group records by month-sized windows
-    const sortedRecords = records.filter(r => r.normalizedDate != null).sort((a, b) => (a.normalizedDate ?? 0) - (b.normalizedDate ?? 0));
+    const sortedRecords = records.filter((r: any) => r.normalizedDate != null).sort((a: any, b: any) => (a.normalizedDate ?? 0) - (b.normalizedDate ?? 0));
     if (sortedRecords.length === 0) {
       await db.update(timeTravelRuns)
         .set({ status: "completed", completedAt: Date.now(), summary: { keyFindings: ["No dated records found"] } })
@@ -696,7 +696,7 @@ export async function detectEarliestPatternDate(
 
     for (let windowStart = firstDate; windowStart <= lastDate; windowStart += WINDOW_SIZE) {
       const windowEnd = windowStart + WINDOW_SIZE;
-      const windowRecords = sortedRecords.filter(r =>
+      const windowRecords = sortedRecords.filter((r: any) =>
         r.normalizedDate! >= firstDate && r.normalizedDate! <= windowEnd
       );
 
@@ -764,7 +764,7 @@ export async function detectEarliestPatternDate(
         status: "completed",
         completedAt: Date.now(),
         signalsDetected: signalsAtDetection.length,
-        // @ts-expect-error pre-existing type mismatch
+        // @ts-ignore pre-existing type mismatch
         summary,
       })
       .where(eq(timeTravelRuns.id, runId));
@@ -807,7 +807,7 @@ export async function generateReplayReport(runId: number): Promise<string> {
 
   let report = `# Time-Travel Analysis Report\n\n`;
   report += `**Run ID:** ${run.runId}\n`;
-  report += `**Type:** ${run.runType.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}\n`;
+  report += `**Type:** ${run.runType.replace(/_/g, " ").replace(/\b\w/g, (c: any) => c.toUpperCase())}\n`;
   report += `**Algorithm:** ${algoLabel}\n`;
   report += `**Status:** ${run.status}\n`;
   report += `**Created:** ${new Date(run.createdAt).toISOString()}\n`;
@@ -1013,14 +1013,14 @@ function replaySignalDetection(
       signals.push({
         signalType: "frequency_spike",
         entityName: category,
-        datasetId: catRecords[0]?.datasetId,
-        jurisdiction: catRecords[0]?.normalizedJurisdiction ?? "Unknown",
+        datasetId: catRecords[0]?.datasetId ?? undefined,
+        jurisdiction: (catRecords[0] as any)?.normalizedJurisdiction ?? "Unknown",
         domain: category,
         severity: ratio > multiplier * 2 ? "critical" : ratio > multiplier * 1.5 ? "high" : "medium",
         title: `Sector Spike: ${category}`,
         explanation: `Category "${category}" has ${catRecords.length} records (${ratio.toFixed(1)}x average)`,
         confidenceScore: confidence,
-        originalDetectedAt: catRecords[0]?.normalizedDate ?? undefined,
+        originalDetectedAt: catRecords[0]?.normalizedDate?.getTime() ?? undefined,
       });
     }
   }
@@ -1043,7 +1043,7 @@ function replaySignalDetection(
     if (entityRecords.length < thresholds.entityRepeatMin) continue;
 
     // Entity classification
-    const classification = classifyEntity(entity, entityRecords[0]?.datasetId);
+    const classification = classifyEntity(entity, entityRecords[0]?.datasetId ?? undefined);
     const signalDecision = shouldGenerateSignal(classification, entityRecords.length, false);
     if (!signalDecision.generate) continue;
 
@@ -1052,14 +1052,14 @@ function replaySignalDetection(
       signalType: "repeat_entity",
       entityName: entity,
       entityType: classification.entityType,
-      datasetId: entityRecords[0]?.datasetId,
-      jurisdiction: entityRecords[0]?.normalizedJurisdiction ?? "Unknown",
+      datasetId: entityRecords[0]?.datasetId ?? undefined,
+      jurisdiction: (entityRecords[0] as any)?.normalizedJurisdiction ?? "Unknown",
       domain: entityRecords[0]?.normalizedCategory ?? "Unknown",
       severity: entityRecords.length >= 20 ? "critical" : entityRecords.length >= 10 ? "high" : "medium",
       title: `Repeat Entity: ${entity} (${entityRecords.length} records)`,
       explanation: `Entity "${entity}" appears ${entityRecords.length} times across records`,
       confidenceScore: confidence * (signalDecision.priorityMultiplier || 1),
-      originalDetectedAt: entityRecords[0]?.normalizedDate ?? undefined,
+      originalDetectedAt: entityRecords[0]?.normalizedDate?.getTime() ?? undefined,
     });
   }
 
@@ -1079,21 +1079,21 @@ function replaySignalDetection(
     signals.push({
       signalType: "geographic_cluster",
       entityName: city,
-      datasetId: cityRecords[0]?.datasetId,
-      jurisdiction: cityRecords[0]?.normalizedJurisdiction ?? "Unknown",
+      datasetId: cityRecords[0]?.datasetId ?? undefined,
+      jurisdiction: (cityRecords[0] as any)?.normalizedJurisdiction ?? "Unknown",
       domain: cityRecords[0]?.normalizedCategory ?? "Unknown",
       severity: pct > 30 ? "high" : "medium",
       title: `Geographic Concentration: ${city}`,
       explanation: `${city} accounts for ${pct.toFixed(1)}% of records (${cityRecords.length} of ${records.length})`,
       confidenceScore: confidence,
-      originalDetectedAt: cityRecords[0]?.normalizedDate ?? undefined,
+      originalDetectedAt: cityRecords[0]?.normalizedDate?.getTime() ?? undefined,
     });
   }
 
   // T4. Status delay detection
   const statusMap = new Map<string, number>();
   for (const r of records) {
-    const status = (r.normalizedStatus ?? "").toLowerCase();
+    const status = ((r as any).normalizedStatus ?? "").toLowerCase();
     statusMap.set(status, (statusMap.get(status) ?? 0) + 1);
   }
   const openStatuses = ["open", "pending", "in progress", "under review", "unresolved"];
@@ -1103,8 +1103,8 @@ function replaySignalDetection(
   if (openPct > 30 && openCount >= 5) {
     signals.push({
       signalType: "status_delay",
-      datasetId: records[0]?.datasetId,
-      jurisdiction: records[0]?.normalizedJurisdiction ?? "Unknown",
+      datasetId: records[0]?.datasetId ?? undefined,
+      jurisdiction: (records[0] as any)?.normalizedJurisdiction ?? "Unknown",
       domain: "resolution_status",
       severity: openPct > 50 ? "high" : "medium",
       title: `Elevated Unresolved Record Rate`,

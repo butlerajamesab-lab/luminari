@@ -34,8 +34,8 @@ export function registerCdaExportRoute(app: Express): void {
       }
 
       // ── 2. Parse and validate runId ──
-      const runId = parseInt(req.params.runId, 10);
-      if (isNaN(runId) || runId <= 0) {
+      const runId = String(req.params.runId || "").trim();
+      if (!runId) {
         res.status(400).json({ error: "Invalid run ID" });
         return;
       }

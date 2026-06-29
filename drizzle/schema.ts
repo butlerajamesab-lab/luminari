@@ -1957,10 +1957,19 @@ export const findings = pgTable("findings", {
   title: text("title"),
   description: text("description"),
   findingText: text("finding_text").notNull(),
+  findingType: text("finding_type"),
+  significance: text("significance"),
   confidence: numeric("confidence"),
   confidenceScore: numeric("confidence_score"),
   evidentiaryWeight: numeric("evidentiary_weight"),
   confidenceLabel: confidenceLabelEnum("confidence_label"),
+  claimIds: jsonb("claim_ids").$type<number[]>(),
+  provenanceStatus: text("provenance_status"),
+  provenanceAttempted: boolean("provenance_attempted"),
+  fallbackTriggered: boolean("fallback_triggered"),
+  matchMetadata: jsonb("match_metadata"),
+  candidateClaimCount: integer("candidate_claim_count"),
+  matchAttemptTimestamp: bigint("match_attempt_timestamp", { mode: "number" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -3304,7 +3313,7 @@ export type UploadSession = typeof uploadSessions.$inferSelect;
 
 export const provenanceAuditLogs = pgTable("provenance_audit_logs", {
   id: serial("id").primaryKey(),
-  findingId: integer("findingId").notNull(),
+  findingId: uuid("findingId").notNull(),
   userId: integer("userId").notNull(),
   actionType: pgEnum("provenance_audit_logs_action_type_enum", ["re_run_matching", "mark_synthesis", "flag_for_review", "batch_rerun"])("actionType").notNull(),
   reason: text("reason"), // mandatory for mark_synthesis
@@ -3329,7 +3338,7 @@ export const batchRerunRuns = pgTable("batch_rerun_runs", {
   resolvedCount: integer("resolvedCount").default(0).notNull(), // newly linked
   errorCount: integer("errorCount").default(0).notNull(),
   stillUnsupported: integer("stillUnsupported").default(0).notNull(),
-  lastProcessedFindingId: integer("lastProcessedFindingId"), // for resume
+  lastProcessedFindingId: uuid("lastProcessedFindingId"), // for resume
   fallbackUsageCount: integer("fallbackUsageCount").default(0).notNull(),
   startedAt: bigint("startedAt", { mode: "number" }).notNull(),
   completedAt: bigint("completedAt", { mode: "number" }),

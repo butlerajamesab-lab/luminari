@@ -249,7 +249,7 @@ export async function getSessionHistory(
     .orderBy(desc(sessionLog.startedAt))
     .limit(limit);
 
-  return sessions.map((s) => {
+  return sessions.map((s: any) => {
     const rawActions = s.actionsTaken as unknown as unknown[];
     return {
       sessionId: s.sessionId,

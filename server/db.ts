@@ -1163,7 +1163,7 @@ export async function createFinding(f: {
  * When claimIds become non-empty, status transitions to 'linked'.
  * When claimIds are empty, status stays as-is (caller must handle unsupported state).
  */
-export async function updateFindingClaimIds(findingId: number, claimIds: number[]) {
+export async function updateFindingClaimIds(findingId: string, claimIds: string[]) {
   const provenanceStatus = claimIds.length > 0 ? 'linked' as const : 'unsupported' as const;
   await db.update(findings).set({ claimIds, provenanceStatus, provenanceAttempted: true }).where(eq(findings.id, findingId));
 }
@@ -2126,7 +2126,7 @@ export async function listUnsupportedFindings(caseId?: number): Promise<Unsuppor
 
 export interface FindingMatchDetail {
   finding: Finding;
-  candidateClaims: { id: number; claimText: string; claimType: string; documentId: number; documentLabel: string }[];
+  candidateClaims: { id: string; claimText: string; claimType: string | null; documentId: string | null; documentLabel: string }[];
   matchMetadata: Record<string, unknown> | null;
   auditLog: ProvenanceAuditLog[];
 }
@@ -2135,7 +2135,7 @@ export interface FindingMatchDetail {
  * Get full match detail for a single finding: the finding itself, all candidate claims
  * from the same case, raw match metadata, and audit history.
  */
-export async function getFindingMatchDetail(findingId: number): Promise<FindingMatchDetail | null> {
+export async function getFindingMatchDetail(findingId: string): Promise<FindingMatchDetail | null> {
   const [finding] = await db.select().from(findings).where(eq(findings.id, findingId));
   if (!finding) return null;
 
@@ -2151,7 +2151,7 @@ export async function getFindingMatchDetail(findingId: number): Promise<FindingM
     .leftJoin(documents, eq(claims.documentId, documents.id))
     .where(eq(claims.caseId, finding.caseId));
 
-  const candidateClaims = caseClaims.map(c => ({
+  const candidateClaims = caseClaims.map((c: any) => ({
     id: c.id,
     claimText: c.claimText,
     claimType: c.claimType,
@@ -2177,7 +2177,7 @@ export async function getFindingMatchDetail(findingId: number): Promise<FindingM
  * Create an immutable audit log entry for a provenance action.
  */
 export async function createProvenanceAuditLog(entry: {
-  findingId: number;
+  findingId: string;
   userId: number;
   actionType: "re_run_matching" | "mark_synthesis" | "flag_for_review" | "batch_rerun";
   reason?: string;
@@ -2239,7 +2239,7 @@ export async function markFindingAsSynthesis(findingId: number, reason: string) 
 /**
  * Update matching metadata on a finding after a re-run.
  */
-export async function updateFindingMatchMetadata(findingId: number, meta: {
+export async function updateFindingMatchMetadata(findingId: string, meta: {
   candidateClaimCount: number;
   fallbackTriggered: boolean;
   matchMetadata: Record<string, unknown>;
@@ -2312,7 +2312,7 @@ export async function updateBatchProgress(id: number, data: {
   resolvedCount?: number;
   errorCount?: number;
   stillUnsupported?: number;
-  lastProcessedFindingId?: number;
+  lastProcessedFindingId?: string;
   fallbackUsageCount?: number;
 }) {
   await db.update(batchRerunRuns).set(data).where(eq(batchRerunRuns.id, id));

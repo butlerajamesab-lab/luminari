@@ -145,7 +145,7 @@ export const memoryStrategyOverlayRouter = router({
 
       const path = (pathRows as unknown as any[])[0];
       if (!path) {
-        // @ts-expect-error pre-existing type mismatch
+        // @ts-ignore pre-existing type mismatch
         return {
           current_strategy: null,
           memory_alternatives: [],

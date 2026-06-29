@@ -73,33 +73,33 @@ export async function loadCaseData(caseId: number, userId: number): Promise<Case
     domain: cases.domain,
     container: cases.container,
     pipelineType: cases.pipelineType,
-  }).from(cases).where(and(eq(cases.id, caseId), eq(cases.userId, userId)));
+  }).from(cases).where(and(eq(cases.id, String(caseId)), eq(cases.userId, String(userId))));
 
   if (!caseRow) throw new Error("Case not found or access denied");
 
   const [caseEntities, caseClaims, caseFindings, caseFlags, caseEvents, caseRoles] = await Promise.all([
     db.select({ id: entities.id, name: entities.name, type: entities.type, description: entities.description })
-      .from(entities).where(eq(entities.caseId, caseId)),
+      .from(entities).where(eq(entities.caseId, String(caseId))),
     db.select({
       id: claims.id, claimType: claims.claimType, claimText: claims.claimText,
       entitiesInvolved: claims.entitiesInvolved, statementOrigin: claims.statementOrigin,
       evidentiaryWeight: claims.evidentiaryWeight,
-    }).from(claims).where(eq(claims.caseId, caseId)),
+    }).from(claims).where(eq(claims.caseId, String(caseId))),
     db.select({
       id: findings.id, findingType: findings.findingType, title: findings.title,
       description: findings.description, confidence: findings.confidence,
       evidentiaryWeight: findings.evidentiaryWeight, claimIds: findings.claimIds,
-    }).from(findings).where(eq(findings.caseId, caseId)),
+    }).from(findings).where(eq(findings.caseId, String(caseId))),
     db.select({ id: signalFlags.id, flagType: signalFlags.flagType, description: signalFlags.description })
       .from(signalFlags).where(eq(signalFlags.caseId, caseId)),
     db.select({
       id: events.id, eventType: events.eventType, description: events.description,
       dateOccurred: events.dateOccurred,
-    }).from(events).where(eq(events.caseId, caseId)),
+    }).from(events).where(eq(events.caseId, String(caseId))),
     db.select({ entityId: entityRoles.entityId, role: entityRoles.role })
       .from(entityRoles)
       .innerJoin(entities, eq(entityRoles.entityId, entities.id))
-      .where(eq(entities.caseId, caseId)),
+      .where(eq(entities.caseId, String(caseId))),
   ]);
 
   return {
@@ -593,10 +593,10 @@ export async function getPatternCandidateDashboard(): Promise<{
     .limit(100);
 
   const total = items.length;
-  const candidates = items.filter(i => i.patternStatus === "candidate").length;
-  const active = items.filter(i => i.patternStatus === "active").length;
-  const dormant = items.filter(i => i.patternStatus === "dormant").length;
-  const rejected = items.filter(i => i.patternStatus === "rejected").length;
+  const candidates = items.filter((i: any) => i.patternStatus === "candidate").length;
+  const active = items.filter((i: any) => i.patternStatus === "active").length;
+  const dormant = items.filter((i: any) => i.patternStatus === "dormant").length;
+  const rejected = items.filter((i: any) => i.patternStatus === "rejected").length;
 
   return { total, candidates, active, dormant, rejected, items };
 }

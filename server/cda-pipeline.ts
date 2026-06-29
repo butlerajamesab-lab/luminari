@@ -187,16 +187,16 @@ function isBoilerplate(phrase: string): boolean {
 // ═══════════════════════════════════════════════════════════════════════
 
 export async function executeT1(
-  runId: number,
+  runId: string,
   input: CdaRunInput,
-): Promise<{ docIds: Map<string, number> }> {
+): Promise<{ docIds: Map<string, string> }> {
   const docs: Array<{ doc: CdaInputDocument; docType: string; source: string }> = [
     { doc: input.policy, docType: "policy", source: "insurer" },
     { doc: input.denial, docType: "denial", source: "insurer" },
     { doc: input.claimSummary, docType: "claim_summary", source: "insured" },
   ];
 
-  const docIds = new Map<string, number>();
+  const docIds = new Map<string, string>();
 
   for (const { doc, docType, source } of docs) {
     // Verify classification using patterns (audit trail)
@@ -234,7 +234,7 @@ export async function executeT1(
 // ═══════════════════════════════════════════════════════════════════════
 
 interface ExtractedQuote {
-  docId: number;
+  docId: string;
   docType: string;
   page: number;
   locationHint: string;
@@ -249,7 +249,7 @@ interface ExtractedQuote {
  */
 function extractQuotesFromDocument(
   text: string,
-  docId: number,
+  docId: string,
   docType: string,
 ): ExtractedQuote[] {
   const quotes: ExtractedQuote[] = [];
@@ -590,7 +590,7 @@ function extractQuotesFromDocument(
 
   // Deterministic ordering: doc_id ASC, page ASC, startOffset ASC, categoryTag ASC
   quotes.sort((a, b) => {
-    if (a.docId !== b.docId) return a.docId - b.docId;
+    if (a.docId !== b.docId) return a.docId.localeCompare(b.docId);
     if (a.page !== b.page) return a.page - b.page;
     if (a.startOffset !== b.startOffset) return a.startOffset - b.startOffset;
     return a.categoryTag.localeCompare(b.categoryTag);
@@ -600,11 +600,11 @@ function extractQuotesFromDocument(
 }
 
 export async function executeT2(
-  runId: number,
+  runId: string,
   input: CdaRunInput,
-  docIds: Map<string, number>,
-): Promise<{ quoteIds: Map<number, number[]> }> {
-  const quoteIds = new Map<number, number[]>();
+  docIds: Map<string, string>,
+): Promise<{ quoteIds: Map<string, string[]> }> {
+  const quoteIds = new Map<string, string[]>();
 
   const docsToProcess = [
     { docType: "policy", doc: input.policy },
@@ -615,7 +615,7 @@ export async function executeT2(
   for (const { docType, doc } of docsToProcess) {
     const docId = docIds.get(docType)!;
     const extracted = extractQuotesFromDocument(doc.textContent, docId, docType);
-    const ids: number[] = [];
+    const ids: string[] = [];
 
     for (const q of extracted) {
       const id = await cdaDb.insertQuote({
@@ -642,18 +642,18 @@ export async function executeT2(
 // T3: Entity Normalization
 // ═══════════════════════════════════════════════════════════════════════
 
-export async function executeT3(runId: number): Promise<void> {
+export async function executeT3(runId: string): Promise<void> {
   const quotes = await cdaDb.getQuotes(runId);
   const docs = await cdaDb.getDocuments(runId);
 
   // Build doc type lookup
-  const docTypeMap = new Map<number, string>();
+  const docTypeMap = new Map<string, string>();
   for (const d of docs) {
     docTypeMap.set(d.id, d.docType);
   }
 
   // Entity extraction helpers
-  const sourceQuotes: Array<{ field: string; quoteId: number; label?: string }> = [];
+  const sourceQuotes: Array<{ field: string; quoteId: string; label?: string }> = [];
 
   // E1: Claim ID — from party_reference quotes
   let claimId: string | null = null;
@@ -968,7 +968,7 @@ function parseDateToISO(dateStr: string): string {
 // T4: Denial Reason Parsing
 // ═══════════════════════════════════════════════════════════════════════
 
-export async function executeT4(runId: number): Promise<string[]> {
+export async function executeT4(runId: string): Promise<string[]> {
   const quotes = await cdaDb.getQuotes(runId);
   const docs = await cdaDb.getDocuments(runId);
   const claimLedger = await cdaDb.getClaimLedger(runId);
@@ -1015,7 +1015,7 @@ export async function executeT4(runId: number): Promise<string[]> {
     code: string;
     citedRefs: string | null;
     citedFacts: string | null;
-    sourceQuoteIds: number[];
+    sourceQuoteIds: string[];
   }> = [];
 
   for (const q of denialReasonQuotes) {
@@ -1167,7 +1167,7 @@ export async function executeT4(runId: number): Promise<string[]> {
 // T5: Policy Clause Parsing
 // ═══════════════════════════════════════════════════════════════════════
 
-export async function executeT5(runId: number): Promise<string[]> {
+export async function executeT5(runId: string): Promise<string[]> {
   const quotes = await cdaDb.getQuotes(runId);
   const docs = await cdaDb.getDocuments(runId);
   const failureFlags: string[] = [];
@@ -1217,7 +1217,7 @@ export async function executeT5(runId: number): Promise<string[]> {
     clauseType: string;
     definedTerms: string[] | null;
     scopeNote: string | null;
-    sourceQuoteIds: number[];
+    sourceQuoteIds: string[];
     precedenceIdx: number;
   }> = [];
 
@@ -1289,7 +1289,7 @@ export async function executeT5(runId: number): Promise<string[]> {
   // Sort by clause_type precedence, then by source quote id
   clauses.sort((a, b) => {
     if (a.precedenceIdx !== b.precedenceIdx) return a.precedenceIdx - b.precedenceIdx;
-    return a.sourceQuoteIds[0] - b.sourceQuoteIds[0];
+    return (a.sourceQuoteIds[0] ?? "").localeCompare(b.sourceQuoteIds[0] ?? "");
   });
 
   // Insert into S5
@@ -1313,7 +1313,7 @@ export async function executeT5(runId: number): Promise<string[]> {
 // T6: Policy-to-Denial Linking
 // ═══════════════════════════════════════════════════════════════════════
 
-export async function executeT6(runId: number): Promise<string[]> {
+export async function executeT6(runId: string): Promise<string[]> {
   const reasons = await cdaDb.getDenialReasons(runId);
   const clauses = await cdaDb.getPolicyClauses(runId);
   const failureFlags: string[] = [];
@@ -1336,8 +1336,8 @@ export async function executeT6(runId: number): Promise<string[]> {
             clauseId: clause.id,
             linkingBasis: "explicit_citation",
             supportingQuoteIds: [
-              ...(reason.sourceQuoteIds as number[] ?? []),
-              ...(clause.sourceQuoteIds as number[] ?? []),
+              ...((reason.sourceQuoteIds as string[]) ?? []),
+              ...((clause.sourceQuoteIds as string[]) ?? []),
             ],
           });
           linked = true;
@@ -1363,8 +1363,8 @@ export async function executeT6(runId: number): Promise<string[]> {
           linkingBasis: "verbatim_language_overlap",
           notes: `Overlapping phrases: ${overlaps.join("; ")}`,
           supportingQuoteIds: [
-            ...(reason.sourceQuoteIds as number[] ?? []),
-            ...(clause.sourceQuoteIds as number[] ?? []),
+            ...((reason.sourceQuoteIds as string[]) ?? []),
+            ...((clause.sourceQuoteIds as string[]) ?? []),
           ],
         });
         linked = true;
@@ -1391,8 +1391,8 @@ export async function executeT6(runId: number): Promise<string[]> {
           linkingBasis: "defined_term_overlap",
           notes: `Matched defined terms: ${matchedTerms.join(", ")}`,
           supportingQuoteIds: [
-            ...(reason.sourceQuoteIds as number[] ?? []),
-            ...(clause.sourceQuoteIds as number[] ?? []),
+            ...((reason.sourceQuoteIds as string[]) ?? []),
+            ...((clause.sourceQuoteIds as string[]) ?? []),
           ],
         });
         linked = true;
@@ -1413,8 +1413,8 @@ export async function executeT6(runId: number): Promise<string[]> {
             linkingBasis: "heading_overlap",
             notes: `Heading overlap: ${reason.normalizedReasonCode} → ${clause.clauseType}`,
             supportingQuoteIds: [
-              ...(reason.sourceQuoteIds as number[] ?? []),
-              ...(clause.sourceQuoteIds as number[] ?? []),
+              ...((reason.sourceQuoteIds as string[]) ?? []),
+              ...((clause.sourceQuoteIds as string[]) ?? []),
             ],
           });
           linked = true;
@@ -1431,7 +1431,7 @@ export async function executeT6(runId: number): Promise<string[]> {
       reasonId: reason.id,
       clauseId: null,
       linkingBasis: "none",
-      supportingQuoteIds: [...(reason.sourceQuoteIds as number[] ?? [])],
+      supportingQuoteIds: [...((reason.sourceQuoteIds as string[]) ?? [])],
     });
 
     if (!failureFlags.includes("F3")) {
@@ -1471,9 +1471,9 @@ export async function executeT6(runId: number): Promise<string[]> {
 
 /** T7 transcript entry for audit trail */
 export interface T7Transcript {
-  rowId: number;
-  reasonId: number;
-  clauseId: number | null;
+  rowId: string;
+  reasonId: string | null;
+  clauseId: string | null;
   resolutionMethod: "deterministic" | "llm_assisted" | "fallback_ambiguous";
   deterministicRule?: string;
   llmPrompt?: string;
@@ -1503,7 +1503,7 @@ export interface T7Result {
   fallbackAmbiguousCount: number;
 }
 
-export async function executeT7(runId: number): Promise<T7Result> {
+export async function executeT7(runId: string): Promise<T7Result> {
   const s6Rows = await cdaDb.getComparisonMatrix(runId);
   const reasons = await cdaDb.getDenialReasons(runId);
   const clauses = await cdaDb.getPolicyClauses(runId);
@@ -1527,15 +1527,15 @@ export async function executeT7(runId: number): Promise<T7Result> {
 
   // Sort S6 rows deterministically: by reasonId ASC, then clauseId ASC (nulls last)
   const sortedRows = [...s6Rows].sort((a, b) => {
-    if (a.reasonId !== b.reasonId) return a.reasonId - b.reasonId;
+    if ((a.reasonId ?? "") !== (b.reasonId ?? "")) return (a.reasonId ?? "").localeCompare(b.reasonId ?? "");
     if (a.clauseId === null && b.clauseId === null) return 0;
     if (a.clauseId === null) return 1;
     if (b.clauseId === null) return -1;
-    return a.clauseId - b.clauseId;
+    return a.clauseId.localeCompare(b.clauseId);
   });
 
   for (const row of sortedRows) {
-    const reason = reasonMap.get(row.reasonId);
+    const reason = row.reasonId ? reasonMap.get(row.reasonId) : undefined;
     const clause = row.clauseId ? clauseMap.get(row.clauseId) : null;
 
     // ─── Deterministic First-Pass ───
@@ -1592,8 +1592,8 @@ export async function executeT7(runId: number): Promise<T7Result> {
 
     // Check for relevant T8 conflicts
     const relevantConflicts = contradictions.filter((c) => {
-      const linkedQuotes = (c.linkedQuoteIds as number[]) ?? [];
-      const reasonQuotes = (reason?.sourceQuoteIds as number[]) ?? [];
+      const linkedQuotes = (c.linkedQuoteIds as string[]) ?? [];
+      const reasonQuotes = (reason?.sourceQuoteIds as string[]) ?? [];
       // A conflict is relevant if it shares quotes with this reason
       return linkedQuotes.some((qid) => reasonQuotes.includes(qid)) ||
         c.conflictType === "fact_conflict";
@@ -1709,7 +1709,7 @@ export async function executeT7(runId: number): Promise<T7Result> {
     // Heading overlap and defined_term_overlap with no verbatim match land here
 
     // Collect valid supporting quote IDs for this row
-    const validQuoteIds = (row.supportingQuoteIds as number[] ?? []).filter(
+    const validQuoteIds = ((row.supportingQuoteIds as string[]) ?? []).filter(
       (qid) => quotes.some((q) => q.id === qid)
     );
 
@@ -1913,7 +1913,7 @@ function buildT7LlmPrompt(input: {
   clauseType: string;
   sectionHeading: string;
   definedTerms: string[];
-  supportingQuoteSpans: Array<{ quoteId: number; text: string }>;
+  supportingQuoteSpans: Array<{ quoteId: string; text: string }>;
   relevantConflicts: Array<{ conflictType: string; explanation: string }>;
 }): string {
   let prompt = `You are analyzing a claim denial. Compare the denial reason against the policy clause and determine if the clause supports the insurer's stated denial reason.
@@ -2006,7 +2006,7 @@ const T7_OUTPUT_SCHEMA = {
       },
       supporting_quote_ids: {
         type: "array" as const,
-        items: { type: "number" as const },
+        items: { type: "string" as const },
         description: "Quote IDs from the provided quotes that support this assessment",
       },
     },
@@ -2018,7 +2018,7 @@ const T7_OUTPUT_SCHEMA = {
 /** Validate LLM output against schema and constraints */
 function validateT7LlmOutput(
   rawContent: string,
-  validQuoteIds: number[],
+  validQuoteIds: string[],
 ): { valid: boolean; parsed?: any; rejectionReason?: string } {
   // Parse JSON
   let parsed: any;
@@ -2056,7 +2056,7 @@ function validateT7LlmOutput(
 
   // Validate all quote IDs are from the provided set
   const invalidQuotes = parsed.supporting_quote_ids.filter(
-    (qid: number) => !validQuoteIds.includes(qid)
+    (qid: string) => !validQuoteIds.includes(qid)
   );
   if (invalidQuotes.length > 0) {
     return { valid: false, rejectionReason: "rejected_quotes" };
@@ -2069,12 +2069,12 @@ function validateT7LlmOutput(
 // T8: Contradiction Detection
 // ═══════════════════════════════════════════════════════════════════════
 
-export async function executeT8(runId: number): Promise<void> {
+export async function executeT8(runId: string): Promise<void> {
   const quotes = await cdaDb.getQuotes(runId);
   const docs = await cdaDb.getDocuments(runId);
 
   // Group quotes by doc type
-  const docTypeMap = new Map<number, string>();
+  const docTypeMap = new Map<string, string>();
   for (const d of docs) docTypeMap.set(d.id, d.docType);
 
   const claimQuotes = quotes.filter((q) => docTypeMap.get(q.docId) === "claim_summary");
@@ -2178,8 +2178,8 @@ export async function executeT8(runId: number): Promise<void> {
   // ─── Party Identity Conflicts ───
   // Check for name/policy number discrepancies across documents
   const partyQuotes = quotes.filter((q) => q.categoryTag === "party_reference");
-  const policyNumbers = new Map<number, string>();
-  const claimNumbers = new Map<number, string>();
+  const policyNumbers = new Map<string, string>();
+  const claimNumbers = new Map<string, string>();
 
   for (const q of partyQuotes) {
     const polMatch = q.quoteText.match(/Policy\s+No\.?\s*:?\s*([A-Z0-9-]+)/i);
@@ -2204,10 +2204,10 @@ export async function executeT8(runId: number): Promise<void> {
 }
 
 // T8 helpers
-function extractDates(quotes: Array<{ quoteText: string; id: number; locationHint: string | null; categoryTag: string }>): Array<{
-  raw: string; normalized: string; quoteId: number; context: string;
+function extractDates(quotes: Array<{ quoteText: string; id: string; locationHint: string | null; categoryTag: string }>): Array<{
+  raw: string; normalized: string; quoteId: string; context: string;
 }> {
-  const results: Array<{ raw: string; normalized: string; quoteId: number; context: string }> = [];
+  const results: Array<{ raw: string; normalized: string; quoteId: string; context: string }> = [];
   // Date patterns to find embedded dates in any quote
   const datePatterns = [
     /\b((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})\b/gi,
@@ -2245,10 +2245,10 @@ function extractDates(quotes: Array<{ quoteText: string; id: number; locationHin
   return results;
 }
 
-function extractAmounts(quotes: Array<{ quoteText: string; id: number; categoryTag: string }>): Array<{
-  raw: string; value: number; quoteId: number;
+function extractAmounts(quotes: Array<{ quoteText: string; id: string; categoryTag: string }>): Array<{
+  raw: string; value: number; quoteId: string;
 }> {
-  const results: Array<{ raw: string; value: number; quoteId: number }> = [];
+  const results: Array<{ raw: string; value: number; quoteId: string }> = [];
   for (const q of quotes) {
     if (q.categoryTag !== "amount_reference") continue;
     const value = parseFloat(q.quoteText.replace(/[$,]/g, ""));
@@ -2270,7 +2270,7 @@ export interface CdaArtifacts {
   o4: any; // Advocacy Packet Draft Outline
 }
 
-export async function executeT9(runId: number): Promise<CdaArtifacts> {
+export async function executeT9(runId: string): Promise<CdaArtifacts> {
   const snapshot = await cdaDb.getFullRunSnapshot(runId);
 
   // O1: Structured Claim Ledger (from S3)
@@ -2334,7 +2334,7 @@ export async function executeT9(runId: number): Promise<CdaArtifacts> {
   // Sort O3 by priority: critical first, then important, then supplementary
   const priorityOrder: Record<string, number> = { critical: 0, important: 1, supplementary: 2 };
   const o3 = [
-    ...gaps.sort((a, b) => (priorityOrder[a.priorityLevel] ?? 3) - (priorityOrder[b.priorityLevel] ?? 3)),
+    ...gaps.sort((a, b) => (priorityOrder[a.priorityLevel ?? ""] ?? 3) - (priorityOrder[b.priorityLevel ?? ""] ?? 3)),
     ...contradictions,
   ];
 

@@ -61,7 +61,7 @@ export async function startBatchRerun(userId: number): Promise<{ batchId: number
   activeBatchId = batchId;
 
   // Process in background (non-blocking)
-  processBatch(batchId, userId, eligible.map(f => f.id)).catch(err => {
+  processBatch(batchId, userId, eligible.map((f) => String(f.id))).catch(err => {
     console.error(`[BatchRerun] Fatal error in batch ${batchId}:`, err);
     db.updateBatchProgress(batchId, {}).then(() => {
       // Mark as error if not already completed/aborted
@@ -95,7 +95,7 @@ export async function resumeBatchRerun(batchId: number, userId: number): Promise
 
   // Filter to only findings not yet processed (after lastProcessedFindingId)
   const remaining = run.lastProcessedFindingId
-    ? eligible.filter(f => f.id > run.lastProcessedFindingId!)
+    ? eligible.filter((f) => String(f.id) > String(run.lastProcessedFindingId!))
     : eligible;
 
   if (remaining.length === 0) {
@@ -114,7 +114,7 @@ export async function resumeBatchRerun(batchId: number, userId: number): Promise
   activeBatchId = batchId;
 
   // Process in background
-  processBatch(batchId, userId, remaining.map(f => f.id), run.processedCount, run.resolvedCount, run.errorCount, run.fallbackUsageCount).catch(err => {
+  processBatch(batchId, userId, remaining.map((f) => String(f.id)), run.processedCount, run.resolvedCount, run.errorCount, run.fallbackUsageCount).catch(err => {
     console.error(`[BatchRerun] Fatal error resuming batch ${batchId}:`, err);
     activeBatchId = null;
     clearAbortFlag(batchId);
@@ -129,7 +129,7 @@ export async function resumeBatchRerun(batchId: number, userId: number): Promise
 async function processBatch(
   batchId: number,
   userId: number,
-  findingIds: number[],
+  findingIds: string[],
   startProcessed = 0,
   startResolved = 0,
   startErrors = 0,
@@ -191,7 +191,7 @@ async function processBatch(
  */
 async function processSingleFinding(
   batchId: number,
-  findingId: number,
+  findingId: string,
   userId: number,
 ): Promise<"resolved" | "error" | "unsupported"> {
   try {
@@ -205,7 +205,7 @@ async function processSingleFinding(
     const previousStatus = finding.provenanceStatus;
 
     // Gather candidate claims for this finding (document-scoped)
-    const candidateClaims = detail.candidateClaims.map(c => ({
+    const candidateClaims = detail.candidateClaims.map((c: any) => ({
       id: c.id,
       claimText: c.claimText,
       claimType: c.claimType,
@@ -268,7 +268,7 @@ async function processSingleFinding(
           error: err instanceof Error ? err.message : String(err),
           errorAt: Date.now(),
         },
-      }).where(eq(findingsTable.id, findingId));
+      }).where(eq(findingsTable.id, String(findingId)));
 
       // Write error audit log
       await db.createProvenanceAuditLog({

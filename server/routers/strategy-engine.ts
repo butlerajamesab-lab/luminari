@@ -38,9 +38,9 @@ export const strategyEngineRouter = router({
       const caseClaims = await db.select().from(claims).where(eq(claims.caseId, input.caseId));
       const caseEvents = await db.select().from(events).where(eq(events.caseId, input.caseId));
 
-      const entitySummary = caseEntities.slice(0, 30).map(e => `${e.name} (${e.type})`).join(", ");
-      const claimSummary = caseClaims.slice(0, 20).map(c => `${c.claimType}: ${c.claimText?.slice(0, 120)}`).join("\n");
-      const eventSummary = caseEvents.slice(0, 20).map(e => `${e.eventType}: ${e.description?.slice(0, 120)}`).join("\n");
+      const entitySummary = caseEntities.slice(0, 30).map((e: any) => `${e.name} (${e.type})`).join(", ");
+      const claimSummary = caseClaims.slice(0, 20).map((c: any) => `${c.claimType}: ${c.claimText?.slice(0, 120)}`).join("\n");
+      const eventSummary = caseEvents.slice(0, 20).map((e: any) => `${e.eventType}: ${e.description?.slice(0, 120)}`).join("\n");
 
       const response = await invokeLLMInteractive({
         messages: [
@@ -98,9 +98,9 @@ export const strategyEngineRouter = router({
       const caseClaims = await db.select().from(claims).where(eq(claims.caseId, input.caseId));
 
       const evidenceItems = [
-        ...caseQuotes.slice(0, 40).map(q => ({ source: "quote", id: q.id, text: q.text?.slice(0, 200) ?? "" })),
-        ...caseFindings.slice(0, 20).map(f => ({ source: "finding", id: f.id, text: f.description?.slice(0, 200) ?? "" })),
-        ...caseClaims.slice(0, 20).map(c => ({ source: "claim", id: c.id, text: c.claimText?.slice(0, 200) ?? "" })),
+        ...caseQuotes.slice(0, 40).map((q: any) => ({ source: "quote", id: q.id, text: q.text?.slice(0, 200) ?? "" })),
+        ...caseFindings.slice(0, 20).map((f: any) => ({ source: "finding", id: f.id, text: f.description?.slice(0, 200) ?? "" })),
+        ...caseClaims.slice(0, 20).map((c: any) => ({ source: "claim", id: c.id, text: c.claimText?.slice(0, 200) ?? "" })),
       ];
 
       if (evidenceItems.length === 0) {
@@ -178,11 +178,11 @@ Extract only explicitly stated facts. Maximum 50 facts.`
 
       const catalog = await db.select().from(strategyClaimCatalog);
 
-      const factSummary = facts.slice(0, 40).map(f =>
+      const factSummary = facts.slice(0, 40).map((f: any) =>
         `[${f.factType}] ${f.factText} (relevance: ${f.relevanceScore})`
       ).join("\n");
 
-      const catalogSummary = catalog.map(c =>
+      const catalogSummary = catalog.map((c: any) =>
         `${c.id}. ${c.claimType} (${c.jurisdiction}) — Elements: ${JSON.stringify(c.elementsRequired)}`
       ).join("\n");
 
@@ -263,7 +263,7 @@ Be conservative. Maximum 8 candidates.`
 
       let assessmentsCreated = 0;
       for (const cand of candidates) {
-        const factText = facts.slice(0, 20).map(f => `[${f.factType}] ${f.factText}`).join("\n");
+        const factText = facts.slice(0, 20).map((f: any) => `[${f.factType}] ${f.factText}`).join("\n");
 
         const response = await invokeLLMInteractive({
           messages: [
@@ -392,12 +392,12 @@ Be conservative. Maximum 8 candidates.`
 
       let linksCreated = 0;
       for (const cand of candidates) {
-        const assessment = assessments.find(a => a.candidateId === cand.id);
+        const assessment = assessments.find((a: any) => a.candidateId === cand.id);
         const details = (assessment?.assessmentDetails as any) ?? {};
         const elementAnalysis = details.elementAnalysis ?? [];
 
         for (const elem of elementAnalysis) {
-          const matchingFact = facts.find(f =>
+          const matchingFact = facts.find((f: any) =>
             f.factText.toLowerCase().includes(elem.element?.toLowerCase()?.split("_").join(" ") ?? "")
           );
 
@@ -426,7 +426,7 @@ Be conservative. Maximum 8 candidates.`
       const links = await db.select().from(strategyElementFactLinks)
         .where(eq(strategyElementFactLinks.caseId, input.caseId));
 
-      const weakLinks = links.filter(l => l.linkStrength === "weak" || l.linkStrength === "absent");
+      const weakLinks = links.filter((l: any) => l.linkStrength === "weak" || l.linkStrength === "absent");
 
       if (weakLinks.length === 0) return { tasks_created: 0, message: "No missing evidence identified." };
 
@@ -438,7 +438,7 @@ Be conservative. Maximum 8 candidates.`
 
       let tasksCreated = 0;
       for (const [candId, candLinks] of Object.entries(byCand)) {
-        const elemList = candLinks.map(l => `${l.element} (${l.linkStrength})`).join(", ");
+        const elemList = candLinks.map((l: any) => `${l.element} (${l.linkStrength})`).join(", ");
 
         const response = await invokeLLMInteractive({
           messages: [
@@ -470,7 +470,7 @@ Be conservative. Maximum 8 candidates.`
             caseId: input.caseId,
             candidateId: Number(candId),
             element: task.element ?? "unknown",
-            currentStrength: (candLinks.find(l => l.element === task.element)?.linkStrength as any) ?? "absent",
+            currentStrength: (candLinks.find((l: any) => l.element === task.element)?.linkStrength as any) ?? "absent",
             suggestedEvidenceType: task.suggestedEvidenceType ?? null,
             suggestedSource: task.suggestedSource ?? null,
             taskPriority: task.taskPriority ?? "medium",
@@ -510,13 +510,13 @@ Be conservative. Maximum 8 candidates.`
           eq(strategyDeadlineEngine.matterProfileId, input.matterProfileId),
         ));
 
-      const candSummary = candidates.map(c => {
-        const assess = assessments.find(a => a.candidateId === c.id);
-        const dl = deadlines.find(d => d.claimType === c.claimType);
+      const candSummary = candidates.map((c: any) => {
+        const assess = assessments.find((a: any) => a.candidateId === c.id);
+        const dl = deadlines.find((d: any) => d.claimType === c.claimType);
         return `- ${c.claimType} (viability: ${c.viabilityScore}, overall: ${assess?.overallScore ?? "?"}, SOL days: ${dl?.daysRemaining ?? "?"})`;
       }).join("\n");
 
-      const forumSummary = forumRulesList.map(f =>
+      const forumSummary = forumRulesList.map((f: any) =>
         `${f.id}. ${f.forumName} (${f.forumType}) — Timeline: ${f.typicalTimeline}, Cost: ${f.costEstimate}`
       ).join("\n");
 

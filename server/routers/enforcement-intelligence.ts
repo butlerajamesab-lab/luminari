@@ -1057,18 +1057,18 @@ export const enforcementIntelligenceRouter = router({
       const opts = input ?? {};
       const conditions = [];
       // detected_signals has no 'active' column — all rows are approved
-      // @ts-expect-error pre-existing type mismatch
+      // @ts-ignore pre-existing type mismatch
       if (opts.severity) conditions.push(eq((detectedSignals as any).severityLevel, opts.severity));
-      // @ts-expect-error pre-existing type mismatch
+      // @ts-ignore pre-existing type mismatch
       if (opts.datasetId) conditions.push(eq((detectedSignals as any).datasetId, opts.datasetId));
       const rows = await db
         .select()
         .from(detectedSignals)
         .where(conditions.length > 0 ? and(...conditions) : undefined)
         .orderBy(desc((detectedSignals as any).detectionTimestamp))
-        // @ts-expect-error pre-existing type mismatch
+        // @ts-ignore pre-existing type mismatch
         .limit(opts.limit ?? 100)
-        // @ts-expect-error pre-existing type mismatch
+        // @ts-ignore pre-existing type mismatch
         .offset(opts.offset ?? 0);
       return rows;
     }),

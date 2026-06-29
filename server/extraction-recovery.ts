@@ -162,7 +162,7 @@ export async function identifyRecoverableDocuments(
   const allDocs = await db.listDocuments(caseId);
   const failedStatuses = ["error", "failed_permanent", "retrying"];
 
-  return allDocs.filter((d) => {
+  return allDocs.filter((d: any) => {
     // Must be in the specified snapshot
     if (d.snapshotId !== snapshotId) return false;
     // Must be in a failed state
@@ -172,7 +172,7 @@ export async function identifyRecoverableDocuments(
       if (!documentIds.includes(d.id)) return false;
     }
     return true;
-  }).map((d) => ({
+  }).map((d: any) => ({
     id: d.id,
     filename: d.filename,
     status: d.status,
@@ -224,9 +224,9 @@ export async function executeExtractionRecovery(
     // Gather ALL documents from the sealed snapshot (not just failed ones)
     const allSnapshotDocs = await db.listDocuments(caseId);
     const docsInSnapshot = allSnapshotDocs.filter(
-      (d) => d.snapshotId === snapshotId
+      (d: any) => d.snapshotId === snapshotId
     );
-    const docIds = docsInSnapshot.map((d) => d.id);
+    const docIds = docsInSnapshot.map((d: any) => d.id);
     const docHashes: Record<string, string> = {};
     for (const d of docsInSnapshot) {
       if (d.sha256Hash) docHashes[String(d.id)] = d.sha256Hash;

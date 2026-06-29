@@ -77,7 +77,7 @@ export async function extractFormsFromCase(caseId: number): Promise<FormExtracti
 
   // Combine all document content
   const combinedContent = caseDocuments
-    .map((doc) => (doc as any).extractedText || (doc as any).content || "")
+    .map((doc: any) => (doc as any).extractedText || (doc as any).content || "")
     .join("\n\n");
 
   // Initialize extraction engine

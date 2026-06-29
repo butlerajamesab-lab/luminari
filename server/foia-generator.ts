@@ -73,7 +73,7 @@ export interface FoiaGenerationResult {
  */
 export async function evaluateCaseReadiness(caseId: number): Promise<CaseReadiness> {
   // Fetch case metadata
-  const [caseRow] = await db.select().from(cases).where(eq(cases.id, caseId));
+  const [caseRow] = await db.select().from(cases).where(eq(cases.id, caseId as any));
   if (!caseRow) {
     return {
       ready: false,
@@ -100,7 +100,7 @@ export async function evaluateCaseReadiness(caseId: number): Promise<CaseReadine
       analyzed: sql<number>`sum(case when status = 'ready' then 1 else 0 end)`,
     })
     .from(documents)
-    .where(eq(documents.caseId, caseId));
+    .where(eq(documents.caseId, caseId as any));
 
   const documentCount = docCounts[0]?.total ?? 0;
   const analyzedDocumentCount = docCounts[0]?.analyzed ?? 0;
@@ -116,9 +116,9 @@ export async function evaluateCaseReadiness(caseId: number): Promise<CaseReadine
       )
     );
 
-  const criticalGapCount = gaps.filter(g => g.severity === "critical").length;
-  const importantGapCount = gaps.filter(g => g.severity === "important").length;
-  const foiaEligibleGaps = gaps.filter(g => g.foiaEligible);
+  const criticalGapCount = gaps.filter((g: any) => g.severity === "critical").length;
+  const importantGapCount = gaps.filter((g: any) => g.severity === "important").length;
+  const foiaEligibleGaps = gaps.filter((g: any) => g.foiaEligible);
 
   // Check existing FOIA requests to avoid duplicates
   const existingRequests = await db
@@ -126,10 +126,10 @@ export async function evaluateCaseReadiness(caseId: number): Promise<CaseReadine
     .from(foiaRequests)
     .where(eq(foiaRequests.caseId, caseId));
 
-  const existingFingerprints = new Set(existingRequests.map(r => r.fingerprint));
+  const existingFingerprints = new Set(existingRequests.map((r: any) => r.fingerprint));
 
   // Filter eligible records: critical/important, FOIA-eligible, no existing request
-  const eligibleRecords = foiaEligibleGaps.filter(g => {
+  const eligibleRecords = foiaEligibleGaps.filter((g: any) => {
     if (g.severity !== "critical" && g.severity !== "important") return false;
     // Generate fingerprint to check for duplicates
     const fp = generateFingerprint(
@@ -397,7 +397,7 @@ export async function generateFoiaRequest(
   }
 
   // 2. Fetch case metadata
-  const [caseRow] = await db.select().from(cases).where(eq(cases.id, caseId));
+  const [caseRow] = await db.select().from(cases).where(eq(cases.id, caseId as any));
   if (!caseRow) {
     return { success: false, warmHandoff: false, warmHandoffReasons: [], error: "Case not found" };
   }
@@ -407,7 +407,7 @@ export async function generateFoiaRequest(
     missingRecord.domain,
     missingRecord.recordType,
     "WA" // TODO: derive from case metadata when multi-state support is added
-  );
+  ) as any[];
 
   // Use the highest-confidence agency match, or fall back to generic info
   const primaryAgency = agencyMatches.sort((a, b) => {

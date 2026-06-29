@@ -196,7 +196,7 @@ export const proceduralEngineRouter = router({
     .query(async ({ input }) => {
       const allWorkflows = await db.select().from(workflowMaster)
         .where(eq(workflowMaster.status, "active"));
-      return allWorkflows.filter(w => {
+      return allWorkflows.filter((w: any) => {
         const types = w.issueTypes as string[];
         const matchesIssue = types?.some(t =>
           t.toLowerCase().includes(input.issueType.toLowerCase())

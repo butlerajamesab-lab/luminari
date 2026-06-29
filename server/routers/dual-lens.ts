@@ -66,7 +66,7 @@ export const dualLensRouter = router({
       const allClaims = await db.select().from(strategyClaimCatalog);
       const keywords = input.problemDescription.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
 
-      const scored = allClaims.map(claim => {
+      const scored = allClaims.map((claim: any) => {
         const searchText = [
           claim.claimType,
           claim.jurisdiction,
@@ -102,7 +102,7 @@ export const dualLensRouter = router({
           matchedKeywords,
           confidence: score > 4 ? "high" : score > 2 ? "medium" : score > 0 ? "low" : "none",
         };
-      }).filter(c => c.score > 0).sort((a, b) => b.score - a.score).slice(0, 10);
+      }).filter((c: any) => c.score > 0).sort((a: any, b: any) => b.score - a.score).slice(0, 10);
 
       return {
         matches: scored,
@@ -133,7 +133,7 @@ export const dualLensRouter = router({
       }
 
       return {
-        frameworks: results.map(f => ({
+        frameworks: results.map((f: any) => ({
           id: f.id,
           claim_type: f.claimType,
           domain: f.domain,
@@ -164,7 +164,7 @@ export const dualLensRouter = router({
 
       // Filter barriers relevant to the claim type
       const keywords = input.claimType.toLowerCase().split(/[\s_-]+/);
-      const relevant = allBarriers.filter(b => {
+      const relevant = allBarriers.filter((b: any) => {
         const text = [
           b.barrierType,
           b.name,
@@ -176,12 +176,12 @@ export const dualLensRouter = router({
 
       // Sort by severity
       const severityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-      relevant.sort((a, b) =>
+      relevant.sort((a: any, b: any) =>
         (severityOrder[a.severity ?? "low"] ?? 3) - (severityOrder[b.severity ?? "low"] ?? 3)
       );
 
       return {
-        barriers: relevant.slice(0, 10).map(b => ({
+        barriers: relevant.slice(0, 10).map((b: any) => ({
           id: b.id,
           barrier_id: b.barrierId,
           name: b.name,
@@ -211,7 +211,7 @@ export const dualLensRouter = router({
       // Find matching agencies — agency_authority_map has: statute, agency, agencyShort, domain
       const allAgencies = await db.select().from(agencyAuthorityMap);
       const domainKeywords = (input.domain || input.claimType).toLowerCase().split(/[\s_-]+/);
-      const relevantAgencies = allAgencies.filter(a => {
+      const relevantAgencies = allAgencies.filter((a: any) => {
         const text = [a.agency, a.agencyShort, a.domain, a.statute, a.complaintPathway,
           a.statutoryAuthority ? JSON.stringify(a.statutoryAuthority) : ""]
           .join(" ").toLowerCase();
@@ -220,7 +220,7 @@ export const dualLensRouter = router({
 
       // Find matching courts — court_directory has: court_id, court_name, jurisdiction, court_type
       const courts = await db.select().from(courtDirectory);
-      const relevantCourts = courts.filter(c => {
+      const relevantCourts = courts.filter((c: any) => {
         const text = [c.jurisdiction, c.courtName, c.courtType].join(" ").toLowerCase();
         return text.includes(jur.toLowerCase());
       });
@@ -232,14 +232,14 @@ export const dualLensRouter = router({
           eq(workflowMaster.jurisdiction, "Federal"),
         ));
 
-      const domainWorkflows = workflows.filter(w => {
+      const domainWorkflows = workflows.filter((w: any) => {
         const text = [w.domain, w.primaryAgency, w.title].join(" ").toLowerCase();
         return domainKeywords.some((kw: string) => text.includes(kw));
       });
 
       // Find deadlines — deadline_rules has: claimType, jurisdiction, triggerEvent, deadlineType, timeLimitDays
       const deadlines = await db.select().from(deadlineRules);
-      const relevantDeadlines = deadlines.filter(d => {
+      const relevantDeadlines = deadlines.filter((d: any) => {
         const text = [d.claimType, d.jurisdiction, d.triggerEvent].join(" ").toLowerCase();
         return domainKeywords.some((kw: string) => text.includes(kw)) ||
           (d.jurisdiction && d.jurisdiction.toUpperCase().includes(jur));
@@ -247,14 +247,14 @@ export const dualLensRouter = router({
 
       // Find escalation routes — escalation_routes has: workflowId, title, triggerConditions, routes
       const escalations = await db.select().from(escalationRoutes);
-      const relevantEscalations = escalations.filter(e => {
+      const relevantEscalations = escalations.filter((e: any) => {
         const text = [e.title, JSON.stringify(e.routes)].join(" ").toLowerCase();
         return text.includes(jur.toLowerCase()) ||
           domainKeywords.some((kw: string) => text.includes(kw));
       });
 
       return {
-        agencies: relevantAgencies.slice(0, 8).map(a => ({
+        agencies: relevantAgencies.slice(0, 8).map((a: any) => ({
           id: a.id,
           agency: a.agency,
           agency_short: a.agencyShort,
@@ -265,7 +265,7 @@ export const dualLensRouter = router({
           statutory_authority: a.statutoryAuthority,
           response_timeline_days: a.responseTimelineDays,
         })),
-        courts: relevantCourts.slice(0, 5).map(c => ({
+        courts: relevantCourts.slice(0, 5).map((c: any) => ({
           id: c.id,
           court_id: c.courtId,
           court_name: c.courtName,
@@ -277,7 +277,7 @@ export const dualLensRouter = router({
           filing_fee: c.filingFee,
           pro_se_resources: c.proSeResources,
         })),
-        workflows: domainWorkflows.slice(0, 3).map(w => ({
+        workflows: domainWorkflows.slice(0, 3).map((w: any) => ({
           id: w.id,
           title: w.title,
           domain: w.domain,
@@ -287,7 +287,7 @@ export const dualLensRouter = router({
           estimated_duration: w.estimatedDuration,
           remedies: w.remedies,
         })),
-        deadlines: relevantDeadlines.slice(0, 5).map(d => ({
+        deadlines: relevantDeadlines.slice(0, 5).map((d: any) => ({
           id: d.id,
           claim_type: d.claimType,
           jurisdiction: d.jurisdiction,
@@ -296,7 +296,7 @@ export const dualLensRouter = router({
           trigger_event: d.triggerEvent,
           authority: d.authority,
         })),
-        escalations: relevantEscalations.slice(0, 3).map(e => ({
+        escalations: relevantEscalations.slice(0, 3).map((e: any) => ({
           id: e.id,
           title: e.title,
           trigger_conditions: e.triggerConditions,
@@ -321,11 +321,11 @@ export const dualLensRouter = router({
 
       // Gather deadlines for urgency
       const deadlines = await db.select().from(deadlineRules);
-      const urgent = deadlines.filter(d => {
+      const urgent = deadlines.filter((d: any) => {
         const text = [d.claimType, d.jurisdiction].join(" ").toLowerCase();
         const keywords = input.claimType.toLowerCase().split(/[\s_-]+/);
         return keywords.some((kw: string) => text.includes(kw));
-      }).sort((a, b) => (a.timeLimitDays ?? 999) - (b.timeLimitDays ?? 999));
+      }).sort((a: any, b: any) => (a.timeLimitDays ?? 999) - (b.timeLimitDays ?? 999));
 
       // Gather workflows for steps
       const workflows = await db.select().from(workflowMaster)
@@ -335,7 +335,7 @@ export const dualLensRouter = router({
         ));
 
       const domainKeywords = (input.domain || input.claimType).toLowerCase().split(/[\s_-]+/);
-      const matchedWorkflow = workflows.find(w => {
+      const matchedWorkflow = workflows.find((w: any) => {
         const text = [w.domain, w.primaryAgency, w.title].join(" ").toLowerCase();
         return domainKeywords.some((kw: string) => text.includes(kw));
       });
@@ -413,13 +413,13 @@ export const dualLensRouter = router({
       const keywords = input.problemDescription.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
 
       const topClaim = allClaims
-        .map(c => {
+        .map((c: any) => {
           const text = [c.claimType, c.jurisdiction, c.statuteCitation, c.notes].filter(Boolean).join(" ").toLowerCase();
           const score = keywords.filter((kw: string) => text.includes(kw)).length;
           return { ...c, score };
         })
-        .filter(c => c.score > 0)
-        .sort((a, b) => b.score - a.score)[0];
+        .filter((c: any) => c.score > 0)
+        .sort((a: any, b: any) => b.score - a.score)[0];
 
       if (!topClaim) {
         return {
@@ -538,13 +538,13 @@ export const dualLensRouter = router({
       const barriers = await db.select().from(litigationBarriers);
 
       // Build institution profiles
-      const institutions = agencies.map(a => {
+      const institutions = agencies.map((a: any) => {
         const agencyText = (a.agency ?? "").toLowerCase();
-        const relatedSignals = signals.filter(s => {
+        const relatedSignals = signals.filter((s: any) => {
           const text = [s.signalType, s.explanation].join(" ").toLowerCase();
           return agencyText.split(" ").some((w: string) => w.length > 3 && text.includes(w));
         });
-        const relatedBarriers = barriers.filter(b => {
+        const relatedBarriers = barriers.filter((b: any) => {
           const text = [b.barrierType, b.description].join(" ").toLowerCase();
           return agencyText.split(" ").some((w: string) => w.length > 3 && text.includes(w));
         });
@@ -558,7 +558,7 @@ export const dualLensRouter = router({
           barrier_count: relatedBarriers.length,
           issue_score: relatedSignals.length + relatedBarriers.length * 2,
         };
-      }).filter(i => i.issueScore > 0).sort((a, b) => b.issueScore - a.issueScore);
+      }).filter((i: any) => i.issueScore > 0).sort((a: any, b: any) => b.issueScore - a.issueScore);
 
       return {
         institutions: institutions.slice(0, 20),
@@ -590,20 +590,20 @@ export const dualLensRouter = router({
       }> = [];
 
       const relevantBarriers = input.barrierType
-        ? barriers.filter(b => b.barrierType === input.barrierType)
-        : barriers.filter(b => b.severity === "critical" || b.severity === "high");
+        ? barriers.filter((b: any) => b.barrierType === input.barrierType)
+        : barriers.filter((b: any) => b.severity === "critical" || b.severity === "high");
 
       for (const b of relevantBarriers.slice(0, 15)) {
         const barrierText = (b.barrierType ?? "").toLowerCase();
 
         // Find related doctrine
-        const relatedDoctrine = doctrines.find(d => {
+        const relatedDoctrine = doctrines.find((d: any) => {
           const text = [d.name, d.description].join(" ").toLowerCase();
           return barrierText.split("_").some((w: string) => w.length > 3 && text.includes(w));
         });
 
         // Find related statute
-        const relatedStatute = statutes.find(s => {
+        const relatedStatute = statutes.find((s: any) => {
           const text = [s.title, s.summary ?? ""].join(" ").toLowerCase();
           return barrierText.split("_").some((w: string) => w.length > 3 && text.includes(w));
         });
@@ -727,17 +727,17 @@ export const dualLensRouter = router({
         .limit(input.limit);
 
       // Enrich with dataset names
-      const datasetIds = [...new Set(signals.map(s => s.datasetId))];
+      const datasetIds = [...new Set(signals.map((s: any) => s.datasetId))];
       const datasets = datasetIds.length > 0
         ? await db.select({ datasetId: dataStreamRegistry.streamId, datasetName: dataStreamRegistry.streamName })
             .from(dataStreamRegistry)
             .where(inArray(dataStreamRegistry.streamId, datasetIds))
         : [];
-      const datasetNameMap = Object.fromEntries(datasets.map(d => [d.datasetId, d.datasetName]));
+      const datasetNameMap = Object.fromEntries(datasets.map((d: any) => [d.datasetId, d.datasetName]));
 
       // Cross-reference with signal_registry for known pattern matching
       const knownSignals = await db.select().from(signalRegistry);
-      const knownTypes = new Set(knownSignals.map(s => s.signalType?.toLowerCase()));
+      const knownTypes = new Set(knownSignals.map((s: any) => s.signalType?.toLowerCase()));
 
       // Group by signal type
       const grouped: Record<string, {
@@ -839,9 +839,9 @@ export const dualLensRouter = router({
 
     return {
       total_active: totalResult?.count ?? 0,
-      by_severity: Object.fromEntries(bySeverity.map(r => [r.severity, r.count])),
-      by_domain: Object.fromEntries(byDomain.map(r => [r.domain, r.count])),
-      by_type: Object.fromEntries(byType.map(r => [r.signalType, r.count])),
+      by_severity: Object.fromEntries(bySeverity.map((r: any) => [r.severity, r.count])),
+      by_domain: Object.fromEntries(byDomain.map((r: any) => [r.domain, r.count])),
+      by_type: Object.fromEntries(byType.map((r: any) => [r.signalType, r.count])),
       last_detected_at: latest?.detectedAt ?? null,
     };
   }),

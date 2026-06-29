@@ -76,7 +76,7 @@ export async function governedThresholdUpdate(input: GovernedThresholdUpdateInpu
   const table = tableMap[input.tableName];
   if (!table) throw new Error(`Unknown governed table: ${input.tableName}`);
   
-  return await db.transaction(async (tx) => {
+  return await db.transaction(async (tx: any) => {
     // T1. Read current state
     const [currentState] = await tx.select().from(table).where(eq(table.id, input.recordId));
     if (!currentState) throw new Error(`Record ${input.recordId} not found in ${input.tableName}`);
@@ -118,7 +118,7 @@ export async function governedDataStreamToggle(input: GovernedDataStreamToggleIn
   seqNo: number;
   entryHash: string;
 }> {
-  return await db.transaction(async (tx) => {
+  return await db.transaction(async (tx: any) => {
     // T1. Read current state
     const [currentState] = await tx.select().from(dataStreamRegistry)
       .where(eq(dataStreamRegistry.streamId, input.datasetId));
@@ -168,7 +168,7 @@ export async function governedSignalSuppression(input: GovernedSignalSuppression
   seqNo: number;
   entryHash: string;
 }> {
-  return await db.transaction(async (tx) => {
+  return await db.transaction(async (tx: any) => {
     // T1. Read current state
     const [currentState] = await tx.select().from(liveSignals)
       .where(eq(liveSignals.id, input.signalId));
@@ -232,7 +232,7 @@ export async function governedEngineToggle(input: GovernedEngineToggleInput): Pr
   seqNo: number;
   entryHash: string;
 }> {
-  return await db.transaction(async (tx) => {
+  return await db.transaction(async (tx: any) => {
     const eventType: GovernanceEventType = input.enabled
       ? "engine_activation"
       : "engine_deactivation";
@@ -269,7 +269,7 @@ export async function governedEngineConfigChange(input: GovernedEngineConfigInpu
   seqNo: number;
   entryHash: string;
 }> {
-  return await db.transaction(async (tx) => {
+  return await db.transaction(async (tx: any) => {
     const result = await writeGovernanceLog(tx, {
       eventType: "engine_config_change",
       component: `engine:${input.engineId}`,
@@ -302,7 +302,7 @@ export async function governedCategoryReclassification(input: GovernedCategoryRe
   seqNo: number;
   entryHash: string;
 }> {
-  return await db.transaction(async (tx) => {
+  return await db.transaction(async (tx: any) => {
     const result = await writeGovernanceLog(tx, {
       eventType: "category_reclassification",
       component: `${input.targetType}_category`,
@@ -341,7 +341,7 @@ export async function governedVersionChange(input: GovernedVersionChangeInput): 
     signal_taxonomy: "signal_taxonomy_update",
   };
   
-  return await db.transaction(async (tx) => {
+  return await db.transaction(async (tx: any) => {
     const result = await writeGovernanceLog(tx, {
       eventType: eventTypeMap[input.versionType],
       component: input.versionType,
@@ -384,7 +384,7 @@ export async function governedDataStreamCreate(input: GovernedDataStreamCreateIn
   seqNo: number;
   entryHash: string;
 }> {
-  return await db.transaction(async (tx) => {
+  return await db.transaction(async (tx: any) => {
     const now = Date.now();
     // T1. Insert the new stream
     await tx.insert(dataStreamRegistry).values({
@@ -437,7 +437,7 @@ export async function governedDataStreamDelete(input: GovernedDataStreamDeleteIn
   seqNo: number;
   entryHash: string;
 }> {
-  return await db.transaction(async (tx) => {
+  return await db.transaction(async (tx: any) => {
     // T1. Read current state (capture before deletion)
     const [currentState] = await tx.select().from(dataStreamRegistry)
       .where(eq(dataStreamRegistry.streamId, input.datasetId));
@@ -485,7 +485,7 @@ export async function governedDataStreamConfigChange(input: GovernedDataStreamCo
   seqNo: number;
   entryHash: string;
 }> {
-  return await db.transaction(async (tx) => {
+  return await db.transaction(async (tx: any) => {
     // T1. Read current state
     const [currentState] = await tx.select().from(dataStreamRegistry)
       .where(eq(dataStreamRegistry.streamId, input.stream_id));
@@ -543,20 +543,20 @@ export async function governedStrategyPathUpdate(input: GovernedStrategyPathUpda
   entryHash: string;
 }> {
   const { strategyPaths } = await import("../drizzle/schema");
-  return await db.transaction(async (tx) => {
+  return await db.transaction(async (tx: any) => {
     // T1. Read current state
     const [currentState] = await tx.select().from(strategyPaths)
-      .where(eq(strategyPaths.id, input.pathId));
+      .where(eq(strategyPaths.id, input.pathId as any));
     if (!currentState) throw new Error(`Strategy path ${input.pathId} not found`);
 
     // T2. Apply update
     await tx.update(strategyPaths)
       .set({ pathStatus: input.status as any, updatedAt: Date.now() })
-      .where(eq(strategyPaths.id, input.pathId));
+      .where(eq(strategyPaths.id, input.pathId as any));
 
     // T3. Read new state
     const [newState] = await tx.select().from(strategyPaths)
-      .where(eq(strategyPaths.id, input.pathId));
+      .where(eq(strategyPaths.id, input.pathId as any));
 
     // T4. Write governance log
     const result = await writeGovernanceLog(tx, {
@@ -590,7 +590,7 @@ export async function governedEngineConfigDB(input: GovernedEngineConfigDBInput)
   entryHash: string;
 }> {
   const { engineRegistry } = await import("../drizzle/schema");
-  return await db.transaction(async (tx) => {
+  return await db.transaction(async (tx: any) => {
     // T1. Read current state
     const [currentState] = await tx.select().from(engineRegistry)
       .where(eq(engineRegistry.engineId, input.engineId));
@@ -648,7 +648,7 @@ export async function governedPatternCandidateStatus(input: GovernedPatternCandi
   entryHash: string;
 }> {
   const { patternCandidates } = await import("../drizzle/schema");
-  return await db.transaction(async (tx) => {
+  return await db.transaction(async (tx: any) => {
     // T1. Read current state
     const [currentState] = await tx.select().from(patternCandidates)
       .where(eq(patternCandidates.id, input.candidateId));
@@ -694,10 +694,10 @@ export async function governedPatternStrategyBoost(input: GovernedPatternStrateg
   entryHash: string;
 }> {
   const { strategyPaths } = await import("../drizzle/schema");
-  return await db.transaction(async (tx) => {
+  return await db.transaction(async (tx: any) => {
     // T1. Read current state
     const [currentState] = await tx.select().from(strategyPaths)
-      .where(eq(strategyPaths.id, input.pathId));
+      .where(eq(strategyPaths.id, input.pathId as any));
     if (!currentState) throw new Error(`Strategy path ${input.pathId} not found`);
 
     // T2. Apply update
@@ -709,7 +709,7 @@ export async function governedPatternStrategyBoost(input: GovernedPatternStrateg
         patternNotes: input.patternNotes,
         updatedAt: Date.now(),
       })
-      .where(eq(strategyPaths.id, input.pathId));
+      .where(eq(strategyPaths.id, input.pathId as any));
 
     // T3. Write governance log
     const result = await writeGovernanceLog(tx, {
