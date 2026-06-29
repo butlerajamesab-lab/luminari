@@ -3313,7 +3313,7 @@ export type UploadSession = typeof uploadSessions.$inferSelect;
 
 export const provenanceAuditLogs = pgTable("provenance_audit_logs", {
   id: serial("id").primaryKey(),
-  findingId: uuid("findingId").notNull(),
+  findingId: integer("target_id").notNull(),
   userId: integer("userId").notNull(),
   actionType: pgEnum("provenance_audit_logs_action_type_enum", ["re_run_matching", "mark_synthesis", "flag_for_review", "batch_rerun"])("actionType").notNull(),
   reason: text("reason"), // mandatory for mark_synthesis
@@ -3338,7 +3338,7 @@ export const batchRerunRuns = pgTable("batch_rerun_runs", {
   resolvedCount: integer("resolvedCount").default(0).notNull(), // newly linked
   errorCount: integer("errorCount").default(0).notNull(),
   stillUnsupported: integer("stillUnsupported").default(0).notNull(),
-  lastProcessedFindingId: uuid("lastProcessedFindingId"), // for resume
+  lastProcessedFindingId: integer("lastProcessedFindingId"), // for resume
   fallbackUsageCount: integer("fallbackUsageCount").default(0).notNull(),
   startedAt: bigint("startedAt", { mode: "number" }).notNull(),
   completedAt: bigint("completedAt", { mode: "number" }),

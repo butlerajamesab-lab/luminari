@@ -2018,7 +2018,7 @@ const provenanceRouter = router({
           matchMetadata: { reRunResult: "no_candidate_claims", reRunBy: ctx.user.id, reRunAt: Date.now() },
         });
         await db_helpers.createProvenanceAuditLog({
-          findingId: String(input.findingId),
+          findingId: input.findingId,
           userId: ctx.user.id,
           actionType: "re_run_matching",
           previousStatus,
@@ -2054,7 +2054,7 @@ const provenanceRouter = router({
 
       const newStatus = result.matchedIds.length > 0 ? "linked" : previousStatus;
       await db_helpers.createProvenanceAuditLog({
-        findingId: String(input.findingId),
+        findingId: input.findingId,
         userId: ctx.user.id,
         actionType: "re_run_matching",
         previousStatus,
@@ -2080,7 +2080,7 @@ const provenanceRouter = router({
       await db_helpers.markFindingAsSynthesis(input.findingId, input.reason);
 
       await db_helpers.createProvenanceAuditLog({
-        findingId: String(input.findingId),
+        findingId: input.findingId,
         userId: ctx.user.id,
         actionType: "mark_synthesis",
         reason: input.reason,
@@ -2103,7 +2103,7 @@ const provenanceRouter = router({
       if (finding.snapshotId) await assertActionAllowed(finding.caseId, finding.snapshotId, 'runProvenanceDrilldown');
 
       await db_helpers.createProvenanceAuditLog({
-        findingId: String(input.findingId),
+        findingId: input.findingId,
         userId: ctx.user.id,
         actionType: "flag_for_review",
         reason: input.reason,
@@ -2125,7 +2125,7 @@ const provenanceRouter = router({
       await db_helpers.verifyCaseOwnership(finding.caseId, ctx.user.id);
       return db_helpers.db.select()
         .from(provenanceAuditLogs)
-        .where(eq(provenanceAuditLogs.findingId, String(input.findingId)))
+        .where(eq(provenanceAuditLogs.findingId, input.findingId))
         .orderBy(desc(provenanceAuditLogs.createdAt));
     }),
 

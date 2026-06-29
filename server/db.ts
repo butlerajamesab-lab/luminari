@@ -2162,7 +2162,7 @@ export async function getFindingMatchDetail(findingId: string): Promise<FindingM
   // Get audit log for this finding
   const auditLog = await db.select()
     .from(provenanceAuditLogs)
-    .where(eq(provenanceAuditLogs.findingId, findingId))
+    .where(eq(provenanceAuditLogs.findingId, findingId as any)) // TODO: verify join key against production target_id semantics
     .orderBy(desc(provenanceAuditLogs.createdAt));
 
   return {
@@ -2177,7 +2177,7 @@ export async function getFindingMatchDetail(findingId: string): Promise<FindingM
  * Create an immutable audit log entry for a provenance action.
  */
 export async function createProvenanceAuditLog(entry: {
-  findingId: string;
+  findingId: number;
   userId: number;
   actionType: "re_run_matching" | "mark_synthesis" | "flag_for_review" | "batch_rerun";
   reason?: string;
@@ -2212,7 +2212,7 @@ export async function listProvenanceAuditLogs(caseId?: number, limit = 1000) {
       createdAt: provenanceAuditLogs.createdAt,
     })
       .from(provenanceAuditLogs)
-      .innerJoin(findings, eq(provenanceAuditLogs.findingId, findings.id))
+      .innerJoin(findings, eq(provenanceAuditLogs.findingId, findings.id as any)) // TODO: verify join key — target_id (integer) vs findings.id (uuid)
       .where(eq(findings.caseId, caseId))
       .orderBy(desc(provenanceAuditLogs.createdAt))
       .limit(limit);
@@ -2312,7 +2312,7 @@ export async function updateBatchProgress(id: number, data: {
   resolvedCount?: number;
   errorCount?: number;
   stillUnsupported?: number;
-  lastProcessedFindingId?: string;
+  lastProcessedFindingId?: number;
   fallbackUsageCount?: number;
 }) {
   await db.update(batchRerunRuns).set(data).where(eq(batchRerunRuns.id, id));

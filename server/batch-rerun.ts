@@ -173,7 +173,7 @@ async function processBatch(
       resolvedCount,
       errorCount,
       stillUnsupported: findingIds.length + startProcessed - processedCount - resolvedCount - errorCount + startResolved + startErrors,
-      lastProcessedFindingId: findingId,
+      lastProcessedFindingId: Number(findingId),
       fallbackUsageCount,
     });
   }
@@ -240,7 +240,7 @@ async function processSingleFinding(
 
     // Write audit log
     await db.createProvenanceAuditLog({
-      findingId,
+      findingId: Number(findingId),
       userId,
       actionType: "batch_rerun",
       previousStatus: previousStatus ?? "unknown",
@@ -272,7 +272,7 @@ async function processSingleFinding(
 
       // Write error audit log
       await db.createProvenanceAuditLog({
-        findingId,
+        findingId: Number(findingId),
         userId,
         actionType: "batch_rerun",
         previousStatus: "unsupported",
