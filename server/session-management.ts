@@ -161,13 +161,16 @@ export async function endSession(
     governanceEntriesEnd = entriesAfterAnchor[entriesAfterAnchor.length - 1].seqNo;
 
     // Verify no gaps in the range
-    for (let i = 0; i < entriesAfterAnchor.length; i++) {
-      const expected = (governanceEntriesStart as number) + i;
-      const actual = entriesAfterAnchor[i].seqNo;
-      if (expected !== actual) {
-        throw new Error(
-          `Gap in governance entries: expected seq_no ${expected}, got ${actual}`
-        );
+    const startSeq = governanceEntriesStart;
+    if (startSeq !== null) {
+      for (let i = 0; i < entriesAfterAnchor.length; i++) {
+        const expected = startSeq + i;
+        const actual = entriesAfterAnchor[i].seqNo;
+        if (expected !== actual) {
+          throw new Error(
+            `Gap in governance entries: expected seq_no ${expected}, got ${actual}`
+          );
+        }
       }
     }
   }
