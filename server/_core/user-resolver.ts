@@ -36,11 +36,16 @@ function map_user(row: any): RuntimeUser | null {
 
 const USER_SELECT = `select id, open_id, name, email, login_method, role, plan, created_at, updated_at, last_signed_in from public.users`;
 
-function read_positive_integer_env(name: string, fallback: number): number {
+function read_positive_integer_env(
+  name: string,
+  fallback: number,
+  minimum = 1,
+): number {
   const raw = process.env[name];
   if (!raw) return fallback;
   const parsed = Number(raw);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.max(Math.floor(parsed), minimum);
 }
 
 // Profile lookup is part of the request-context critical path. Its pool wait
@@ -49,11 +54,13 @@ function read_positive_integer_env(name: string, fallback: number): number {
 // still has ample time remaining.
 export const PROFILE_POOL_ACQUIRE_TIMEOUT_MS = read_positive_integer_env(
   "CONTEXT_PROFILE_POOL_ACQUIRE_TIMEOUT_MS",
+  5000,
   1000,
 );
 export const PROFILE_QUERY_TIMEOUT_MS = read_positive_integer_env(
   "CONTEXT_PROFILE_QUERY_TIMEOUT_MS",
-  750,
+  5000,
+  1000,
 );
 
 async function query_user_profile(

@@ -134,16 +134,16 @@ function readPositiveIntegerEnv(name: string, fallback: number): number {
   const raw = process.env[name];
   if (!raw) return fallback;
   const parsed = Number(raw);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
 }
 
 const USER_LOOKUP_TIMEOUT_MS = readPositiveIntegerEnv(
   "CONTEXT_USER_LOOKUP_TIMEOUT_MS",
   5000,
 );
-const USER_DB_LOOKUP_TIMEOUT_MS = readPositiveIntegerEnv(
-  "CONTEXT_USER_DB_LOOKUP_TIMEOUT_MS",
-  1000,
+const USER_DB_LOOKUP_TIMEOUT_MS = Math.max(
+  readPositiveIntegerEnv("CONTEXT_USER_DB_LOOKUP_TIMEOUT_MS", 5000),
+  PROFILE_POOL_ACQUIRE_TIMEOUT_MS + 250,
 );
 const CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS = readPositiveIntegerEnv(
   "CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS",
