@@ -58,7 +58,7 @@ export async function extractFormsFromCase(caseId: number): Promise<FormExtracti
   const caseDocuments = await db
     .select()
     .from(documents)
-    .where(eq(documents.caseId, caseId));
+    .where(eq(documents.caseId, String(caseId)));
 
   if (caseDocuments.length === 0) {
     return {

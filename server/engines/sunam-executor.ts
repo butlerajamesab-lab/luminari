@@ -575,7 +575,7 @@ export async function dispatchTool(
         for (const sid of unique) {
           try {
             const r = await Promise.race([
-              triggerManualIngestion(sid),
+              triggerManualIngestion(sid as string),
               new Promise<null>((res) => setTimeout(() => res(null), 120_000)),
             ]);
             results.push({ stream_id: sid, success: r?.success ?? true, records: r?.recordsProcessed ?? 0 });

@@ -237,7 +237,7 @@ export async function getRecentCorrelations(limit = 20) {
   return db
     .select()
     .from(crossStreamCorrelations)
-    .orderBy(desc(crossStreamCorrelations.correlationLevel), desc(crossStreamCorrelations.streamCount))
+    .orderBy(desc(crossStreamCorrelations.correlationKey), desc(crossStreamCorrelations.streamCount))
     .limit(limit);
 }
 
@@ -246,5 +246,5 @@ export async function getCorrelationsByEntity(entity: string) {
     .select()
     .from(crossStreamCorrelations)
     .where(sql`LOWER(${crossStreamCorrelations.entity}) LIKE ${`%${entity.toLowerCase()}%`}`)
-    .orderBy(desc(crossStreamCorrelations.correlationLevel));
+    .orderBy(desc(crossStreamCorrelations.correlationKey));
 }

@@ -2120,12 +2120,12 @@ const provenanceRouter = router({
     .query(async ({ ctx, input }) => {
       // Verify ownership through finding -> case chain
       const { findings: findingsTable, provenanceAuditLogs } = await import("../drizzle/schema");
-      const [finding] = await db_helpers.db.select().from(findingsTable).where(eq(findingsTable.id, input.findingId));
+      const [finding] = await db_helpers.db.select().from(findingsTable).where(eq(findingsTable.id, String(input.findingId)));
       if (!finding) throw new TRPCError({ code: "NOT_FOUND", message: "Finding not found" });
       await db_helpers.verifyCaseOwnership(finding.caseId, ctx.user.id);
       return db_helpers.db.select()
         .from(provenanceAuditLogs)
-        .where(eq(provenanceAuditLogs.findingId, input.findingId))
+        .where(eq(provenanceAuditLogs.findingId, String(input.findingId)))
         .orderBy(desc(provenanceAuditLogs.createdAt));
     }),
 

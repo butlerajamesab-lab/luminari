@@ -731,7 +731,7 @@ export const dualLensRouter = router({
       const datasets = datasetIds.length > 0
         ? await db.select({ datasetId: dataStreamRegistry.streamId, datasetName: dataStreamRegistry.streamName })
             .from(dataStreamRegistry)
-            .where(inArray(dataStreamRegistry.streamId, datasetIds))
+            .where(inArray(dataStreamRegistry.streamId, datasetIds as string[]))
         : [];
       const datasetNameMap = Object.fromEntries(datasets.map((d: any) => [d.datasetId, d.datasetName]));
 

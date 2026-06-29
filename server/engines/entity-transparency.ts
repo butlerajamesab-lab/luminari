@@ -72,7 +72,7 @@ export async function generateEntityBreakdown(patternId: number): Promise<Patter
 
   for (const [, entity] of entityMap) {
     const regEntry = registryMap.get(entity.entityName);
-    const confidence = calculateEntityConfidence(entity, regEntry);
+    const confidence = calculateEntityConfidence(entity, regEntry as { signalCount?: number | null; patternCount?: number | null } | undefined);
 
     // Delete existing entry for this pattern+entity
     await db.delete(patternEntitySummary).where(
@@ -85,7 +85,7 @@ export async function generateEntityBreakdown(patternId: number): Promise<Patter
     const [inserted] = await db.insert(patternEntitySummary).values({
       patternId,
       entityName: entity.entityName,
-      entityType: entity.entityType || regEntry?.entityType || null,
+      entityType: entity.entityType || (regEntry as any)?.entityType || null,
       complaintCount: entity.complaintCount,
       lawsuitCount: entity.lawsuitCount,
       enforcementActions: entity.enforcementActions,

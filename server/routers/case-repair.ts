@@ -198,24 +198,24 @@ const moveEntities = adminProcedure
 
       // 3. Move case-level data
       if (dependentMoves.quotes > 0) {
-        await tx.update(quotes).set({ caseId: targetCaseId })
-          .where(eq(quotes.caseId, sourceCaseId));
+        await tx.update(quotes).set({ caseId: String(targetCaseId) })
+          .where(eq(quotes.caseId, String(sourceCaseId)));
       }
       if (dependentMoves.claims > 0) {
-        await tx.update(claims).set({ caseId: targetCaseId })
-          .where(eq(claims.caseId, sourceCaseId));
+        await tx.update(claims).set({ caseId: String(targetCaseId) })
+          .where(eq(claims.caseId, String(sourceCaseId)));
       }
       if (dependentMoves.events > 0) {
-        await tx.update(events).set({ caseId: targetCaseId })
-          .where(eq(events.caseId, sourceCaseId));
+        await tx.update(events).set({ caseId: String(targetCaseId) })
+          .where(eq(events.caseId, String(sourceCaseId)));
       }
       if (dependentMoves.signal_flags > 0) {
         await tx.update(signalFlags).set({ caseId: targetCaseId })
           .where(eq(signalFlags.caseId, sourceCaseId));
       }
       if (dependentMoves.findings > 0) {
-        await tx.update(findings).set({ caseId: targetCaseId })
-          .where(eq(findings.caseId, sourceCaseId));
+        await tx.update(findings).set({ caseId: String(targetCaseId) })
+          .where(eq(findings.caseId, String(sourceCaseId)));
       }
       if (dependentMoves.correlations > 0) {
         await tx.update(documentCorrelations).set({ caseId: targetCaseId })

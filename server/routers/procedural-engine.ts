@@ -62,9 +62,9 @@ export const proceduralEngineRouter = router({
       const chain: (typeof jurisdictionHierarchy.$inferSelect)[] = [];
       let currentId: number | null = input.id;
       while (currentId) {
-        const rows = await db.select().from(jurisdictionHierarchy)
+        const rows: (typeof jurisdictionHierarchy.$inferSelect)[] = await db.select().from(jurisdictionHierarchy)
           .where(eq(jurisdictionHierarchy.id, currentId));
-        const row = rows[0];
+        const row: typeof jurisdictionHierarchy.$inferSelect | undefined = rows[0];
         if (!row) break;
         chain.unshift(row);
         currentId = row.parentId;

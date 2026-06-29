@@ -72,7 +72,7 @@ export const pipelineOrchestrationRouter = router({
         taskCount = tasks.length;
 
         const paths = await db.select().from(strategyPaths)
-          .where(eq(strategyPaths.caseId, input.caseId));
+          .where(eq(strategyPaths.caseId, String(input.caseId)));
         pathCount = paths.length;
       }
 

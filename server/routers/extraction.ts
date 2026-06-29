@@ -169,7 +169,7 @@ export const extractionRouter = router({
         sql_query += ` LIMIT ?`;
         params.push(input.limit);
         
-        const results = ((await queryForensicMetadata(sql_query, params)) as any[]) ?? [];
+        const results = ((await queryForensicMetadata(sql_query, params)) as unknown as any[]) ?? [];
         
         return {
           success: true,
@@ -198,7 +198,7 @@ export const extractionRouter = router({
         const results = ((await queryForensicMetadata(
           'SELECT id, caseId, name, type, description FROM entities WHERE id = ?',
           [input.entityId]
-        )) as any[]) ?? [];
+        )) as unknown as any[]) ?? [];
         
         if (results.length === 0) {
           return {
@@ -240,7 +240,7 @@ export const extractionRouter = router({
         const results = ((await queryForensicMetadata(
           'SELECT DISTINCT type FROM entities WHERE caseId = ? ORDER BY type',
           [input.caseId]
-        )) as any[]) ?? [];
+        )) as unknown as any[]) ?? [];
         
         return {
           success: true,

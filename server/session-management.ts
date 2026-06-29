@@ -162,7 +162,7 @@ export async function endSession(
 
     // Verify no gaps in the range
     for (let i = 0; i < entriesAfterAnchor.length; i++) {
-      const expected = governanceEntriesStart + i;
+      const expected = (governanceEntriesStart as number) + i;
       const actual = entriesAfterAnchor[i].seqNo;
       if (expected !== actual) {
         throw new Error(

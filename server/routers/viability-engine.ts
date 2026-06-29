@@ -46,7 +46,7 @@ export const viabilityEngineRouter = router({
       const now = Date.now();
       // Get all claims from the case
       const caseClaims = await db.select().from(claims)
-        .where(eq(claims.caseId, input.caseId));
+        .where(eq(claims.caseId, String(input.caseId)));
 
       if (caseClaims.length === 0) {
         return { extracted: 0, message: "No claims found in case. Upload and analyze documents first." };
@@ -54,7 +54,7 @@ export const viabilityEngineRouter = router({
 
       // Get case metadata for context
       const [caseRow] = await db.select().from(cases)
-        .where(eq(cases.id, input.caseId));
+        .where(eq(cases.id, String(input.caseId)));
 
       // Build claim text for LLM extraction
       const claimTexts = caseClaims.slice(0, 50).map((c: any, i: any) =>

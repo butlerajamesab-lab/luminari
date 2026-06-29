@@ -243,7 +243,7 @@ async function processSingleFinding(
       findingId,
       userId,
       actionType: "batch_rerun",
-      previousStatus,
+      previousStatus: previousStatus ?? "unknown",
       newStatus,
       metadata: {
         batchId,

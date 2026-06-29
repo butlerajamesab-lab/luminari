@@ -191,7 +191,7 @@ export const cdaRouter = router({
       }
 
       // 4. Duplicate run prevention — block if active run exists for same docs
-      const activeRun = await cda_db.findActiveRunForDocs(String(caseId), policyDocId, denialDocId, claimSummaryDocId);
+      const activeRun = await cda_db.findActiveRunForDocs(String(caseId), String(policyDocId), String(denialDocId), String(claimSummaryDocId));
       if (activeRun) {
         throw new TRPCError({
           code: "CONFLICT",
@@ -221,7 +221,7 @@ export const cdaRouter = router({
 
       // 6. Audit log
       await db_helpers.logAudit({
-        caseId: String(caseId),
+        caseId: caseId,
         userId: ctx.user.id,
         action: "start_cda_run",
         targetType: "case",

@@ -93,7 +93,8 @@ export async function checkAlertTriggers(): Promise<AlertEventRow[]> {
 
   const newEvents: AlertEventRow[] = [];
   const now = Date.now();
-  const oneDayAgo = now - 86400000;
+  const oneDayAgo = new Date(now - 86400000);
+  const oneDayAgoMs = now - 86400000;
 
   for (const sub of activeSubs) {
     let shouldTrigger = false;
@@ -153,7 +154,7 @@ export async function checkAlertTriggers(): Promise<AlertEventRow[]> {
       const recentEvent = await db.select().from(alertEvents)
         .where(and(
           eq(alertEvents.subscriptionId, sub.id),
-          gte(alertEvents.createdAt, oneDayAgo)
+          gte(alertEvents.createdAt, oneDayAgoMs)
         ))
         .limit(1);
 
