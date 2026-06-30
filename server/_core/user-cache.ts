@@ -48,8 +48,24 @@ export function set_cached_user(keys: Array<string | null | undefined>, user: Ru
 export async function dedupe_user_lookup(key: string, lookup: () => Promise<RuntimeUser | null>): Promise<RuntimeUser | null> {
   const normalized = normalize_key(key);
   const existing = in_flight.get(normalized);
-  if (existing) return existing;
-  const promise = lookup().finally(() => in_flight.delete(normalized));
+  if (existing) {
+    console.warn("[CONTEXT] profile_lookup_in_flight_dedupe_hit", {
+      cache_key: normalized,
+      duplicate_lookup_suppressed: true,
+      in_flight_count: in_flight.size,
+    });
+    return existing;
+  }
+
+  const promise = Promise.resolve()
+    .then(lookup)
+    .finally(() => in_flight.delete(normalized));
+
   in_flight.set(normalized, promise);
+  console.warn("[CONTEXT] profile_lookup_in_flight_registered", {
+    cache_key: normalized,
+    duplicate_lookup_suppressed: false,
+    in_flight_count: in_flight.size,
+  });
   return promise;
 }
