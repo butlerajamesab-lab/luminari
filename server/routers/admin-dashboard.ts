@@ -40,6 +40,14 @@ export const adminDashboardRouter = router({
       ),
     ]);
 
+    const memoryUsage = process.memoryUsage();
+    const engineBreakdown = engineBreakdownRows.rows.map((row: any) => ({
+      type: row.run_type,
+      count: Number(row.cnt ?? 0),
+    }));
+    const successRate = recentRuns ? Math.round((completedRuns / recentRuns) * 100) : 100;
+    const serverUptime = process.uptime();
+
     return {
       totalRuns,
       last24h: {
@@ -47,14 +55,15 @@ export const adminDashboardRouter = router({
         completed: completedRuns,
         failed: failedRuns,
         running: runningNow,
-        success_rate: recentRuns ? Math.round((completedRuns / recentRuns) * 100) : 100,
+        success_rate: successRate,
+        successRate,
       },
-      engine_breakdown: engineBreakdownRows.rows.map((row: any) => ({
-        type: row.run_type,
-        count: Number(row.cnt ?? 0),
-      })),
-      server_uptime: process.uptime(),
-      memory_usage: process.memoryUsage(),
+      engine_breakdown: engineBreakdown,
+      engineBreakdown,
+      server_uptime: serverUptime,
+      serverUptime,
+      memory_usage: memoryUsage,
+      memoryUsage,
       timestamp: Date.now(),
     };
   }),
