@@ -15,7 +15,7 @@
  */
 
 import { sql } from "drizzle-orm";
-import { db as canonicalDb } from "../db";
+import { db as canonicalDb, query_with_diagnostics } from "../db";
 
 /**
  * Shared read-only database connection for the registry service.
@@ -25,19 +25,55 @@ function getLuminariDb() {
   return canonicalDb;
 }
 
+type JurisdictionRow = {
+  id: number;
+  name: string;
+  code: string;
+};
+
+const JURISDICTIONS_CACHE_TTL_MS = 5 * 60 * 1000;
+let jurisdictions_cache: { expires_at: number; rows: JurisdictionRow[] } | null = null;
+
+function map_jurisdiction_rows(rows: unknown[]): JurisdictionRow[] {
+  return rows.map((row: any) => ({
+    id: Number(row.id),
+    name: String(row.name),
+    code: String(row.code),
+  }));
+}
+
 /**
  * Get all jurisdictions
  */
 export async function getJurisdictions() {
-  const db = await getLuminariDb();
-  const result = await db.execute(
-    sql`SELECT id, name, code FROM jurisdictions ORDER BY name`
-  );
-  return result.rows as Array<{
-    id: number;
-    name: string;
-    code: string;
-  }>;
+  const now = Date.now();
+  if (jurisdictions_cache && jurisdictions_cache.expires_at > now) {
+    return jurisdictions_cache.rows;
+  }
+
+  try {
+    const result = await query_with_diagnostics<JurisdictionRow>(
+      "SELECT id, name, code FROM jurisdictions ORDER BY name",
+      [],
+      {
+        label: "registry_get_jurisdictions",
+        pool_acquire_timeout_ms: 1000,
+        query_timeout_ms: 4000,
+      },
+    );
+    const rows = map_jurisdiction_rows(result.rows);
+    jurisdictions_cache = { expires_at: now + JURISDICTIONS_CACHE_TTL_MS, rows };
+    return rows;
+  } catch (error) {
+    if (jurisdictions_cache) {
+      console.warn("[Registry] using stale jurisdictions cache after DB failure", {
+        error: error instanceof Error ? error.message : String(error),
+        stale_count: jurisdictions_cache.rows.length,
+      });
+      return jurisdictions_cache.rows;
+    }
+    throw error;
+  }
 }
 
 /**
