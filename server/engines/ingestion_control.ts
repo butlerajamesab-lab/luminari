@@ -237,7 +237,7 @@ export async function get_corpus_import_queue_row(input: { id: number }) {
   };
 }
 
-const CANDIDATE_EXTRACTOR_VERSION = "candidate_conveyor_v1";
+const CANDIDATE_EXTRACTOR_VERSION = "candidate_field_binding_v2";
 const CANDIDATE_TYPES = ["policy_alert", "agency", "legal_aid", "court", "tribal_entity", "benefit_program", "workflow", "deadline", "statute", "contact", "resource"] as const;
 
 type CandidateType = typeof CANDIDATE_TYPES[number];
@@ -305,36 +305,211 @@ function extract_obvious_values(section: string) {
   };
 }
 
+type AssembledBenefitProgram = {
+  name: string | null;
+  fields: Record<string, string>;
+  field_labels: Record<string, string>;
+  start_line: number;
+  end_line: number;
+  source_excerpt: string;
+};
+
+const FIELD_LABELS: Array<{ key: string; pattern: RegExp }> = [
+  { key: "phone", pattern: /^(?:phone|telephone)$/i },
+  { key: "email", pattern: /^email$/i },
+  { key: "website", pattern: /^(?:website|url)$/i },
+  { key: "address", pattern: /^address$/i },
+  { key: "agency", pattern: /^(?:agency|department)$/i },
+  { key: "eligibility", pattern: /^(?:eligibility|who qualifies)$/i },
+  { key: "application_method", pattern: /^(?:how to apply|application)$/i },
+  { key: "benefit_summary", pattern: /^(?:what it does for people|description|purpose)$/i },
+  { key: "service_type", pattern: /^service type$/i },
+];
+
+const USEFUL_BENEFIT_FIELDS = ["phone", "email", "website", "url", "address", "eligibility", "application_method", "benefit_summary", "agency"];
+
+function parse_ordered_lines(text: string) {
+  return text
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .map((line, index) => ({ text: line.trim().replace(/^[-*•]\s+/, "").trim(), index }))
+    .filter((line) => line.text.length > 0);
+}
+
+function normalize_label(label: string) {
+  return label.toLowerCase().replace(/[\s_]+/g, " ").replace(/[：:–—-]+$/g, "").trim();
+}
+
+function detect_field_label(line: string): { key: string; label: string; value: string | null } | null {
+  const cleaned = line.trim();
+  const inline = cleaned.match(/^(.{1,60}?)(?:\s*[:：]\s*|\s+[–—-]\s+)(.+)$/);
+  const raw_label = normalize_label(inline ? inline[1] : cleaned);
+  const found = FIELD_LABELS.find((entry) => entry.pattern.test(raw_label));
+  if (!found) return null;
+  const value = inline?.[2]?.trim() || null;
+  return { key: found.key, label: raw_label, value };
+}
+
+function looks_like_resource_name(line: string) {
+  if (detect_field_label(line)) return false;
+  if (line.length < 3 || line.length > 180) return false;
+  if (/^(?:layer\s+\d+|page\s+\d+|table of contents)$/i.test(line)) return false;
+  if (/^(?:https?:\/\/|www\.)/i.test(line)) return false;
+  if (/^[\d\W]+$/.test(line)) return false;
+  return /(?:program|benefit|assistance|services?|clinic|center|department|agency|office|division|authority|fund|grant|support|care|housing|food|snap|medicaid|tanf|ssi)/i.test(line) || /^[A-Z][\w'’&(),.\-/ ]+$/.test(line);
+}
+
+function merge_field(fields: Record<string, string>, key: string, value: string) {
+  const normalized_value = value.trim();
+  if (!normalized_value) return;
+  if (!fields[key]) fields[key] = normalized_value;
+  else if (!fields[key].toLowerCase().includes(normalized_value.toLowerCase())) fields[key] = `${fields[key]}\n${normalized_value}`;
+  if (key === "website" && !fields.url) fields.url = normalized_value;
+}
+
+function assemble_benefit_programs(text: string) {
+  const lines = parse_ordered_lines(text).slice(0, 3000);
+  const records: AssembledBenefitProgram[] = [];
+  let current: AssembledBenefitProgram | null = null;
+  const source_lines: string[] = [];
+
+  const flush = () => {
+    if (!current) return;
+    current.source_excerpt = source_lines.join("\n").slice(0, 2500);
+    records.push(current);
+    current = null;
+    source_lines.length = 0;
+  };
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i].text;
+    const label = detect_field_label(line);
+    if (!label && looks_like_resource_name(line)) {
+      if (current && (Object.keys(current.fields).length > 0 || current.name)) flush();
+      current = { name: line.slice(0, 240), fields: {}, field_labels: {}, start_line: i, end_line: i, source_excerpt: "" };
+      source_lines.push(line);
+      continue;
+    }
+    if (!label) {
+      if (current) {
+        current.end_line = i;
+        source_lines.push(line);
+      }
+      continue;
+    }
+
+    let value = label.value;
+    let end_line = i;
+    if (!value) {
+      for (let j = i + 1; j < lines.length; j += 1) {
+        const next_label = detect_field_label(lines[j].text);
+        if (next_label) break;
+        if (!lines[j].text) continue;
+        value = lines[j].text;
+        end_line = j;
+        break;
+      }
+    }
+    if (!value) continue;
+    if (!current) current = { name: null, fields: {}, field_labels: {}, start_line: i, end_line, source_excerpt: "" };
+    merge_field(current.fields, label.key, value);
+    current.field_labels[label.key] = label.label;
+    current.end_line = Math.max(current.end_line, end_line);
+    source_lines.push(line);
+    if (!label.value && end_line !== i) {
+      source_lines.push(lines[end_line].text);
+      i = end_line;
+    }
+    if (!current.name && ["agency", "department"].includes(label.label) && looks_like_resource_name(value)) current.name = value.slice(0, 240);
+  }
+  flush();
+  return records;
+}
+
+function has_useful_benefit_field(fields: Record<string, string>) {
+  return USEFUL_BENEFIT_FIELDS.some((key) => Boolean(fields[key]?.trim()));
+}
+
+function infer_candidate_name(record: AssembledBenefitProgram, row: ReadyQueueRow) {
+  if (record.name && !detect_field_label(record.name)) return record.name;
+  const agency = record.fields.agency?.split("\n").find(Boolean);
+  if (agency && looks_like_resource_name(agency)) return agency.slice(0, 240);
+  const source_name = row.source_name?.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
+  return source_name && !detect_field_label(source_name) ? source_name.slice(0, 240) : null;
+}
+
+function benefit_confidence(record: AssembledBenefitProgram, jurisdiction: string | null) {
+  let score = 0.45;
+  if (record.source_excerpt.trim()) score += 0.1;
+  if (jurisdiction) score += 0.05;
+  if (record.name) score += 0.05;
+  if (has_useful_benefit_field(record.fields)) score += 0.1;
+  if (["phone", "email", "website", "url", "address"].some((key) => record.fields[key])) score += 0.05;
+  return Math.min(score, 0.75);
+}
+
 function build_candidates(row: ReadyQueueRow) {
   const jurisdiction = infer_jurisdiction(row, row.normalized_text);
   const source_hash = row.sha256 ?? sha256(row.normalized_text);
   const candidates: ExtractionCandidate[] = [];
-  logical_sections(row.normalized_text).slice(0, 400).forEach((section, index) => {
-    if (section.length < 40) return;
-    const types = detect_types(section);
-    if (!types.length) return;
-    const first_line = section.split("\n").map((line) => line.trim()).find(Boolean) ?? `candidate_${index + 1}`;
-    const excerpt = section.slice(0, 2500);
-    for (const candidate_type of types) {
-      const content_hash = sha256(`${row.id}:${candidate_type}:${excerpt}`);
-      candidates.push({
-        candidate_type,
-        name: first_line.slice(0, 240),
-        excerpt,
+  const benefit_records = assemble_benefit_programs(row.normalized_text).slice(0, 400);
+
+  benefit_records.forEach((record, index) => {
+    const name = infer_candidate_name(record, row);
+    const source_excerpt = record.source_excerpt.trim();
+    if (!name || !jurisdiction || !source_excerpt || !has_useful_benefit_field(record.fields)) return;
+    const confidence = benefit_confidence({ ...record, name }, jurisdiction);
+    if (confidence < 0.6) return;
+    const extracted = extract_obvious_values(source_excerpt);
+    const content_hash = sha256(`${row.id}:benefit_program:${source_hash}:${name}:${source_excerpt}`);
+    candidates.push({
+      candidate_type: "benefit_program",
+      name,
+      excerpt: source_excerpt,
+      jurisdiction,
+      content_hash,
+      payload: {
+        candidate_type: "benefit_program",
+        document_family: "state_enriched_registry_docx_review",
+        promotion_lane: "state_enriched_registry_docx_review",
+        intended_target_table: "registry_programs",
+        target_table: "registry_programs",
+        source_queue_id: row.id,
+        source_name: row.source_name,
+        storage_path: row.storage_path,
+        source_citation: row.storage_path ?? row.source_name ?? `corpus_import_queue:${row.id}`,
+        source_text_hash: source_hash,
+        name,
         jurisdiction,
-        content_hash,
-        payload: { candidate_type, source_queue_id: row.id, source_name: row.source_name, storage_path: row.storage_path, source_text_hash: source_hash, normalized_excerpt: excerpt, extracted: extract_obvious_values(section), extraction_status: "candidate_created" },
-        provenance: { action: "create_candidates_from_ready", extractor_version: CANDIDATE_EXTRACTOR_VERSION, source_queue_id: row.id, source_name: row.source_name, storage_path: row.storage_path, source_text_hash: source_hash, section_index: index, deterministic_rules: true, canonical_promotion: false },
-        confidence_scores: { overall: 0.35, deterministic_candidate: true, promotion_ready: false, candidate_type },
-      });
-    }
+        source_excerpt,
+        normalized_excerpt: source_excerpt,
+        agency: record.fields.agency ?? null,
+        phone: record.fields.phone ?? null,
+        email: record.fields.email ?? null,
+        website: record.fields.website ?? record.fields.url ?? null,
+        url: record.fields.url ?? record.fields.website ?? null,
+        address: record.fields.address ?? null,
+        eligibility: record.fields.eligibility ?? null,
+        application_method: record.fields.application_method ?? null,
+        apply_notes: record.fields.application_method ?? null,
+        benefit_summary: record.fields.benefit_summary ?? null,
+        service_type: record.fields.service_type ?? null,
+        fields: record.fields,
+        field_labels: record.field_labels,
+        extracted,
+        extraction_status: "candidate_created",
+      },
+      provenance: { action: "create_candidates_from_ready", extractor_version: CANDIDATE_EXTRACTOR_VERSION, source_queue_id: row.id, source_name: row.source_name, storage_path: row.storage_path, source_text_hash: source_hash, section_index: index, start_line: record.start_line, end_line: record.end_line, deterministic_rules: true, canonical_promotion: false },
+      confidence_scores: { overall: confidence, deterministic_candidate: true, promotion_ready: false, candidate_type: "benefit_program", source_backed: true, value_bearing: true },
+    });
   });
+
   return candidates;
 }
 
 async function registry_entity_extraction_v4_columns(client: any) {
   const result = await client.query(`select column_name from information_schema.columns where table_schema = 'public' and table_name = 'registry_entity_extraction_v4'`);
-  return new Set(result.rows.map((row: any) => String(row.column_name)));
+  return new Set<string>(result.rows.map((row: any) => String(row.column_name)));
 }
 
 async function insert_candidate(client: any, columns: Set<string>, row: ReadyQueueRow, candidate: ExtractionCandidate) {
@@ -347,7 +522,7 @@ async function insert_candidate(client: any, columns: Set<string>, row: ReadyQue
     extraction_version: CANDIDATE_EXTRACTOR_VERSION,
     program_id: `${row.id}:${candidate.candidate_type}:${candidate.content_hash.slice(0, 12)}`,
     name: candidate.name,
-    promotion_ready: { ready: false, status: "candidate_created", candidate_type: candidate.candidate_type },
+    promotion_ready: { ready: false, status: "candidate_created", candidate_type: candidate.candidate_type, document_family: candidate.payload.document_family, promotion_lane: candidate.payload.promotion_lane, target_table: candidate.payload.target_table, intended_target_table: candidate.payload.intended_target_table, source_citation: candidate.payload.source_citation },
     forensic_provenance: candidate.provenance,
     forensic_hash: candidate.content_hash,
     confidence_scores: candidate.confidence_scores,
@@ -356,6 +531,9 @@ async function insert_candidate(client: any, columns: Set<string>, row: ReadyQue
   };
   for (const [key, value] of Object.entries({ source_queue_id: row.id, corpus_import_queue_id: row.id, storage_path: row.storage_path, source_path: row.storage_path, source_name: row.source_name, source_text_hash: row.sha256 ?? sha256(row.normalized_text), raw_candidate_payload: candidate.payload, candidate_payload: candidate.payload, payload: candidate.payload, normalized_excerpt: candidate.excerpt, extraction_status: "candidate_created" })) {
     if (columns.has(key)) insertable[key] = value;
+  }
+  for (const key of ["candidate_type", "document_family", "promotion_lane", "intended_target_table", "target_table", "source_citation", "agency", "phone", "email", "website", "url", "address", "eligibility", "application_method", "apply_notes", "benefit_summary", "service_type", "source_excerpt"]) {
+    if (columns.has(key) && candidate.payload[key] !== undefined) insertable[key] = candidate.payload[key];
   }
   const names = Object.keys(insertable).filter((name) => columns.has(name));
   const placeholders = names.map((name, index) => columns.has(name) && typeof insertable[name] === "object" && !(insertable[name] instanceof Date) ? `$${index + 1}::jsonb` : `$${index + 1}`);
