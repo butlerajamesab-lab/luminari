@@ -42,25 +42,20 @@ function read_positive_integer_env(
   minimum = 1,
 ): number {
   const raw = process.env[name];
-  if (!raw) return fallback;
-  const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
-  return Math.max(Math.floor(parsed), minimum);
+  const parsed = raw ? Number(raw) : fallback;
+  const value = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+  return Math.max(value, minimum);
 }
 
-// Profile lookup is part of the request-context critical path. Its pool wait
-// budget must therefore align with the context DB phase budget (default 1000ms)
-// instead of a hidden 250ms micro-timeout that can fail while the outer request
-// still has ample time remaining.
 export const PROFILE_POOL_ACQUIRE_TIMEOUT_MS = read_positive_integer_env(
   "CONTEXT_PROFILE_POOL_ACQUIRE_TIMEOUT_MS",
-  5000,
   1000,
+  250,
 );
 export const PROFILE_QUERY_TIMEOUT_MS = read_positive_integer_env(
   "CONTEXT_PROFILE_QUERY_TIMEOUT_MS",
-  5000,
-  1000,
+  2500,
+  500,
 );
 
 async function query_user_profile(
