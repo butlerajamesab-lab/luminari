@@ -237,8 +237,8 @@ export async function get_corpus_import_queue_row(input: { id: number }) {
   };
 }
 
-const CANDIDATE_EXTRACTOR_VERSION = "candidate_field_binding_v2";
-const CANDIDATE_TYPES = ["policy_alert", "agency", "legal_aid", "court", "tribal_entity", "benefit_program", "workflow", "deadline", "statute", "contact", "resource"] as const;
+const CANDIDATE_EXTRACTOR_VERSION = "candidate_field_binding_v3_fragment_classification";
+const CANDIDATE_TYPES = ["policy_alert", "agency", "legal_aid", "court", "tribal_entity", "benefit_program", "workflow", "deadline", "statute", "contact", "resource", "review_fragment", "context_fragment"] as const;
 
 type CandidateType = typeof CANDIDATE_TYPES[number];
 
@@ -255,6 +255,8 @@ type ExtractionCandidate = {
   name: string;
   excerpt: string;
   jurisdiction: string | null;
+  classification_outcome?: FragmentClassificationOutcome;
+  review_reason?: string | null;
   content_hash: string;
   payload: Record<string, unknown>;
   provenance: Record<string, unknown>;
@@ -265,12 +267,43 @@ function sha256(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function infer_jurisdiction(row: Pick<ReadyQueueRow, "source_name" | "storage_path">, text: string) {
-  const haystack = `${row.source_name ?? ""} ${row.storage_path ?? ""} ${text.slice(0, 2000)}`.toLowerCase();
-  const states: Record<string, string[]> = {
-    Alabama: ["alabama", "_al_", "-al-"], Alaska: ["alaska", "_ak_", "-ak-"], Arizona: ["arizona", "_az_", "-az-"], Arkansas: ["arkansas", "_ar_", "-ar-"], California: ["california", "_ca_", "-ca-"], Colorado: ["colorado", "_co_", "-co-"], Connecticut: ["connecticut", "_ct_", "-ct-"], Delaware: ["delaware", "_de_", "-de-"], Florida: ["florida", "_fl_", "-fl-"], Georgia: ["georgia", "_ga_", "-ga-"], Hawaii: ["hawaii", "_hi_", "-hi-"], Idaho: ["idaho", "_id_", "-id-"], Illinois: ["illinois", "_il_", "-il-"], Indiana: ["indiana", "_in_", "-in-"], Iowa: ["iowa", "_ia_", "-ia-"], Kansas: ["kansas", "_ks_", "-ks-"], Kentucky: ["kentucky", "_ky_", "-ky-"], Louisiana: ["louisiana", "_la_", "-la-"], Maine: ["maine", "_me_", "-me-"], Maryland: ["maryland", "_md_", "-md-"], Massachusetts: ["massachusetts", "_ma_", "-ma-"], Michigan: ["michigan", "_mi_", "-mi-"], Minnesota: ["minnesota", "_mn_", "-mn-"], Mississippi: ["mississippi", "_ms_", "-ms-"], Missouri: ["missouri", "_mo_", "-mo-"], Montana: ["montana", "_mt_", "-mt-"], Nebraska: ["nebraska", "_ne_", "-ne-"], Nevada: ["nevada", "_nv_", "-nv-"], "New Hampshire": ["new hampshire", "_nh_", "-nh-"], "New Jersey": ["new jersey", "_nj_", "-nj-"], "New Mexico": ["new mexico", "_nm_", "-nm-"], "New York": ["new york", "_ny_", "-ny-"], "North Carolina": ["north carolina", "_nc_", "-nc-"], "North Dakota": ["north dakota", "_nd_", "-nd-"], Ohio: ["ohio", "_oh_", "-oh-"], Oklahoma: ["oklahoma", "_ok_", "-ok-"], Oregon: ["oregon", "_or_", "-or-"], Pennsylvania: ["pennsylvania", "_pa_", "-pa-"], "Rhode Island": ["rhode island", "_ri_", "-ri-"], "South Carolina": ["south carolina", "_sc_", "-sc-"], "South Dakota": ["south dakota", "_sd_", "-sd-"], Tennessee: ["tennessee", "_tn_", "-tn-"], Texas: ["texas", "_tx_", "-tx-"], Utah: ["utah", "_ut_", "-ut-"], Vermont: ["vermont", "_vt_", "-vt-"], Virginia: ["virginia", "_va_", "-va-"], Washington: ["washington", "_wa_", "-wa-"], "West Virginia": ["west virginia", "_wv_", "-wv-"], Wisconsin: ["wisconsin", "_wi_", "-wi-"], Wyoming: ["wyoming", "_wy_", "-wy-"],
-  };
-  return Object.entries(states).find(([, needles]) => needles.some((needle) => haystack.includes(needle)))?.[0] ?? null;
+const STATE_NEEDLES: Record<string, string[]> = {
+  Alabama: ["alabama", "_al_", "-al-"], Alaska: ["alaska", "_ak_", "-ak-"], Arizona: ["arizona", "_az_", "-az-"], Arkansas: ["arkansas", "_ar_", "-ar-"], California: ["california", "_ca_", "-ca-"], Colorado: ["colorado", "_co_", "-co-"], Connecticut: ["connecticut", "_ct_", "-ct-"], Delaware: ["delaware", "_de_", "-de-"], Florida: ["florida", "_fl_", "-fl-"], Georgia: ["georgia", "_ga_", "-ga-"], Hawaii: ["hawaii", "_hi_", "-hi-"], Idaho: ["idaho", "_id_", "-id-"], Illinois: ["illinois", "_il_", "-il-"], Indiana: ["indiana", "_in_", "-in-"], Iowa: ["iowa", "_ia_", "-ia-"], Kansas: ["kansas", "_ks_", "-ks-"], Kentucky: ["kentucky", "_ky_", "-ky-"], Louisiana: ["louisiana", "_la_", "-la-"], Maine: ["maine", "_me_", "-me-"], Maryland: ["maryland", "_md_", "-md-"], Massachusetts: ["massachusetts", "_ma_", "-ma-"], Michigan: ["michigan", "_mi_", "-mi-"], Minnesota: ["minnesota", "_mn_", "-mn-"], Mississippi: ["mississippi", "_ms_", "-ms-"], Missouri: ["missouri", "_mo_", "-mo-"], Montana: ["montana", "_mt_", "-mt-"], Nebraska: ["nebraska", "_ne_", "-ne-"], Nevada: ["nevada", "_nv_", "-nv-"], "New Hampshire": ["new hampshire", "_nh_", "-nh-"], "New Jersey": ["new jersey", "_nj_", "-nj-"], "New Mexico": ["new mexico", "_nm_", "-nm-"], "New York": ["new york", "_ny_", "-ny-"], "North Carolina": ["north carolina", "_nc_", "-nc-"], "North Dakota": ["north dakota", "_nd_", "-nd-"], Ohio: ["ohio", "_oh_", "-oh-"], Oklahoma: ["oklahoma", "_ok_", "-ok-"], Oregon: ["oregon", "_or_", "-or-"], Pennsylvania: ["pennsylvania", "_pa_", "-pa-"], "Rhode Island": ["rhode island", "_ri_", "-ri-"], "South Carolina": ["south carolina", "_sc_", "-sc-"], "South Dakota": ["south dakota", "_sd_", "-sd-"], Tennessee: ["tennessee", "_tn_", "-tn-"], Texas: ["texas", "_tx_", "-tx-"], Utah: ["utah", "_ut_", "-ut-"], Vermont: ["vermont", "_vt_", "-vt-"], Virginia: ["virginia", "_va_", "-va-"], Washington: ["washington", "_wa_", "-wa-"], "West Virginia": ["west virginia", "_wv_", "-wv-"], Wisconsin: ["wisconsin", "_wi_", "-wi-"], Wyoming: ["wyoming", "_wy_", "-wy-"],
+};
+
+function infer_state_from_text(text: string, allow_abbreviations: boolean) {
+  const haystack = text.toLowerCase();
+  for (const [state, needles] of Object.entries(STATE_NEEDLES)) {
+    const state_name = needles[0];
+    if (new RegExp(`\\b${state_name.replace(/ /g, "\\s+")}\\b`, "i").test(haystack)) return state;
+    if (allow_abbreviations && needles.slice(1).some((needle) => haystack.includes(needle))) return state;
+  }
+  return null;
+}
+
+function has_strong_local_jurisdiction_signal(text: string, jurisdiction: string | null) {
+  if (!jurisdiction) return false;
+  const state = jurisdiction.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\ /g, "\\s+");
+  return new RegExp(`\\b(?:state\\s+of\\s+${state}|${state}\\s+(?:department|division|office|agency|program|benefits?|portal|resource|services?|court|authority)|(?:department|division|office|agency|program|benefits?|portal|resource|services?|court|authority)\\s+of\\s+${state})\\b`, "i").test(text);
+}
+
+type JurisdictionAttribution = {
+  document_jurisdiction: string | null;
+  extracted_jurisdiction: string | null;
+  final_jurisdiction: string | null;
+  jurisdiction_source: "document_source" | "extracted_local_strong_signal" | "none";
+  jurisdiction_mismatch_reason: string | null;
+};
+
+function infer_jurisdiction(row: Pick<ReadyQueueRow, "source_name" | "storage_path">, local_excerpt = ""): JurisdictionAttribution {
+  const document_jurisdiction = infer_state_from_text(`${row.source_name ?? ""} ${row.storage_path ?? ""}`, true);
+  const extracted_jurisdiction = infer_state_from_text(local_excerpt.slice(0, 2500), false);
+  const strong_local = has_strong_local_jurisdiction_signal(local_excerpt, extracted_jurisdiction);
+  if (document_jurisdiction && extracted_jurisdiction && document_jurisdiction !== extracted_jurisdiction) {
+    if (strong_local) return { document_jurisdiction, extracted_jurisdiction, final_jurisdiction: extracted_jurisdiction, jurisdiction_source: "extracted_local_strong_signal", jurisdiction_mismatch_reason: null };
+    return { document_jurisdiction, extracted_jurisdiction, final_jurisdiction: document_jurisdiction, jurisdiction_source: "document_source", jurisdiction_mismatch_reason: `document_jurisdiction_${document_jurisdiction}_conflicts_with_unconfirmed_local_${extracted_jurisdiction}` };
+  }
+  return { document_jurisdiction, extracted_jurisdiction, final_jurisdiction: document_jurisdiction ?? extracted_jurisdiction, jurisdiction_source: document_jurisdiction ? "document_source" : (extracted_jurisdiction && strong_local ? "extracted_local_strong_signal" : "none"), jurisdiction_mismatch_reason: null };
 }
 
 function logical_sections(text: string) {
@@ -309,6 +342,7 @@ type AssembledBenefitProgram = {
   name: string | null;
   fields: Record<string, string>;
   field_labels: Record<string, string>;
+  section_context?: string | null;
   start_line: number;
   end_line: number;
   source_excerpt: string;
@@ -328,7 +362,19 @@ const FIELD_LABELS: Array<{ key: string; pattern: RegExp }> = [
   { key: "service_type", pattern: /^service type$/i },
 ];
 
-const USEFUL_BENEFIT_FIELDS = ["phone", "email", "website", "url", "address", "eligibility", "application_method", "benefit_summary", "agency"];
+const USEFUL_BENEFIT_FIELDS = ["phone", "email", "website", "url", "address", "eligibility", "application_method", "benefit_summary", "agency", "service_type"];
+
+type FragmentClassificationOutcome = "promotable_candidate" | "human_review_required" | "context_fragment" | "provenance_mismatch" | "parser_artifact_empty";
+
+const GENERIC_HEADER_LABELS = new Set([
+  "information", "filing / complaint portal", "filing complaint portal", "complaint portal", "portal", "notes", "apply / notes", "apply notes", "contact", "address / website", "address website", "phone / website", "phone website", "eligibility", "how to apply", "agency / contact", "agency contact", "organization", "oversight body",
+]);
+
+function is_generic_header_text(value: string | null | undefined) {
+  if (!value) return false;
+  return GENERIC_HEADER_LABELS.has(normalize_label(value).replace(/\s*\/\s*/g, " / ")) || GENERIC_HEADER_LABELS.has(normalize_label(value).replace(/[\/]+/g, " "));
+}
+
 
 function parse_ordered_lines(text: string) {
   return text
@@ -371,13 +417,15 @@ function merge_mixed_field_values(fields: Record<string, string>, value: string)
 }
 
 function looks_like_resource_name(line: string) {
-  if (detect_field_label(line)) return false;
+  if (detect_field_label(line) || is_generic_header_text(line)) return false;
   if (line.length < 3 || line.length > 180) return false;
   if (/^(?:phone|telephone|email|website|url|portal|address|address\s*\/?\s*website|phone\s*\/?\s*website|service type|what it does for people|description|purpose|eligibility|who qualifies|how to apply|application|apply\s*\/\s*notes|apply|notes|apply notes|agency|department|agency\s*\/\s*contact|contact|organization|oversight body)$/i.test(normalize_label(line))) return false;
   if (/^(?:layer\s+\d+|page\s+\d+|table of contents)$/i.test(line)) return false;
   if (/^(?:https?:\/\/|www\.)/i.test(line)) return false;
   if (/^[\d\W]+$/.test(line)) return false;
-  return /(?:program|benefit|assistance|services?|clinic|center|department|agency|office|division|authority|fund|grant|support|care|housing|food|snap|medicaid|tanf|ssi)/i.test(line) || /^[A-Z][\w'’&(),.\-/ ]+$/.test(line);
+  const has_resource_keyword = /(?:program|benefit|assistance|services?|clinic|center|department|agency|office|division|authority|fund|grant|support|care|housing|food|snap|medicaid|tanf|ssi)/i.test(line);
+  if (!has_resource_keyword && /[.!?]$/.test(line)) return false;
+  return has_resource_keyword || /^[A-Z][\w'’&(),.\-/ ]+$/.test(line);
 }
 
 function merge_field(fields: Record<string, string>, key: string, value: string) {
@@ -405,9 +453,21 @@ function assemble_benefit_programs(text: string) {
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i].text;
     const label = detect_field_label(line);
+    if (label && !label.value && is_generic_header_text(label.label)) {
+      if (current && (Object.keys(current.fields).length > 0 || current.name || current.section_context)) flush();
+      current = { name: null, fields: {}, field_labels: {}, section_context: line.slice(0, 240), start_line: i, end_line: i, source_excerpt: "" };
+      source_lines.push(line);
+      continue;
+    }
     if (!label && looks_like_resource_name(line)) {
-      if (current && (Object.keys(current.fields).length > 0 || current.name)) flush();
-      current = { name: line.slice(0, 240), fields: {}, field_labels: {}, start_line: i, end_line: i, source_excerpt: "" };
+      if (current && (Object.keys(current.fields).length > 0 || current.name || current.section_context)) flush();
+      current = { name: line.slice(0, 240), fields: {}, field_labels: {}, section_context: null, start_line: i, end_line: i, source_excerpt: "" };
+      source_lines.push(line);
+      continue;
+    }
+    if (!label && is_generic_header_text(line)) {
+      if (current && (Object.keys(current.fields).length > 0 || current.name || current.section_context)) flush();
+      current = { name: null, fields: {}, field_labels: {}, section_context: line.slice(0, 240), start_line: i, end_line: i, source_excerpt: "" };
       source_lines.push(line);
       continue;
     }
@@ -434,11 +494,11 @@ function assemble_benefit_programs(text: string) {
       value = continuation_lines.join("\n").trim() || null;
     }
     if (!value) continue;
-    if (!current) current = { name: null, fields: {}, field_labels: {}, start_line: i, end_line, source_excerpt: "" };
+    if (!current) current = { name: null, fields: {}, field_labels: {}, section_context: null, start_line: i, end_line, source_excerpt: "" };
     if (label.key === "phone_website") {
       merge_mixed_field_values(current.fields, value);
       const remaining = value.replace(/(?:\+1[-.\s]?)?\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}/g, "").replace(URL_PATTERN, "").trim();
-      if (remaining) merge_field(current.fields, "phone", remaining);
+      if (remaining) merge_field(current.fields, is_generic_header_text(current.section_context) ? "contact_notes" : "apply_notes", remaining);
     } else if (label.key === "address_website") {
       merge_mixed_field_values(current.fields, value);
       const remaining = value.replace(URL_PATTERN, "").trim();
@@ -482,39 +542,74 @@ function benefit_confidence(record: AssembledBenefitProgram, jurisdiction: strin
   return Math.min(score, 0.75);
 }
 
+function classify_extracted_fragment(record: AssembledBenefitProgram, row: ReadyQueueRow, jurisdiction: JurisdictionAttribution): { outcome: FragmentClassificationOutcome; review_reason: string | null } {
+  const text = record.source_excerpt.trim();
+  if (!text || !/[A-Za-z0-9]/.test(text)) return { outcome: "parser_artifact_empty", review_reason: null };
+  if (jurisdiction.jurisdiction_mismatch_reason) return { outcome: "provenance_mismatch", review_reason: "provenance_mismatch" };
+  const inferred_name = infer_candidate_name(record, row);
+  const generic = is_generic_header_text(record.name) || is_generic_header_text(record.section_context) || (inferred_name ? is_generic_header_text(inferred_name) : false);
+  if (generic) return { outcome: has_useful_benefit_field(record.fields) ? "human_review_required" : "context_fragment", review_reason: "generic_header_candidate" };
+  if (!inferred_name) return { outcome: "human_review_required", review_reason: "missing_name_but_source_backed" };
+  if (!jurisdiction.final_jurisdiction) return { outcome: "human_review_required", review_reason: "low_information_fragment" };
+  if (!has_useful_benefit_field(record.fields)) return { outcome: "human_review_required", review_reason: "missing_useful_bound_fields" };
+  return { outcome: "promotable_candidate", review_reason: null };
+}
+
+function review_fragment_name(row: ReadyQueueRow, record: AssembledBenefitProgram, content_hash: string) {
+  return `review_fragment:${row.id}:${record.start_line}:${content_hash.slice(0, 12)}`;
+}
+
 function build_candidates(row: ReadyQueueRow) {
-  const jurisdiction = infer_jurisdiction(row, row.normalized_text);
   const source_hash = row.sha256 ?? sha256(row.normalized_text);
   const candidates: ExtractionCandidate[] = [];
   const benefit_records = assemble_benefit_programs(row.normalized_text).slice(0, 400);
 
   benefit_records.forEach((record, index) => {
-    const name = infer_candidate_name(record, row);
     const source_excerpt = record.source_excerpt.trim();
-    if (!name || !jurisdiction || !source_excerpt || !has_useful_benefit_field(record.fields)) return;
-    const confidence = benefit_confidence({ ...record, name }, jurisdiction);
-    if (confidence < 0.6) return;
+    const jurisdiction_info = infer_jurisdiction(row, source_excerpt);
+    const classification = classify_extracted_fragment(record, row, jurisdiction_info);
+    if (classification.outcome === "parser_artifact_empty") return;
+    const inferred_name = infer_candidate_name(record, row);
+    const promotion_ready = classification.outcome === "promotable_candidate";
+    const candidate_type: CandidateType = promotion_ready ? "benefit_program" : (classification.outcome === "context_fragment" ? "context_fragment" : "review_fragment");
+    const content_hash = sha256(`${row.id}:${candidate_type}:${source_hash}:${inferred_name ?? record.section_context ?? "fragment"}:${source_excerpt}`);
+    const name = promotion_ready ? (inferred_name as string) : review_fragment_name(row, record, content_hash);
     const extracted = extract_obvious_values(source_excerpt);
-    const content_hash = sha256(`${row.id}:benefit_program:${source_hash}:${name}:${source_excerpt}`);
+    const confidence = promotion_ready ? benefit_confidence({ ...record, name }, jurisdiction_info.final_jurisdiction) : 0.25;
+    const target_table = promotion_ready ? "registry_programs" : null;
     candidates.push({
-      candidate_type: "benefit_program",
+      candidate_type,
       name,
       excerpt: source_excerpt,
-      jurisdiction,
+      jurisdiction: jurisdiction_info.final_jurisdiction,
+      classification_outcome: classification.outcome,
+      review_reason: classification.review_reason,
       content_hash,
       payload: {
-        candidate_type: "benefit_program",
+        candidate_type,
         document_family: "state_enriched_registry_docx_review",
-        promotion_lane: "state_enriched_registry_docx_review",
-        intended_target_table: "registry_programs",
-        target_table: "registry_programs",
+        promotion_lane: promotion_ready ? "state_enriched_registry_docx_review" : "human_review_lane",
+        intended_target_table: target_table,
+        target_table,
         source_queue_id: row.id,
+        source_file: row.source_name ?? row.storage_path,
         source_name: row.source_name,
         storage_path: row.storage_path,
         source_citation: row.storage_path ?? row.source_name ?? `corpus_import_queue:${row.id}`,
         source_text_hash: source_hash,
+        content_hash,
         name,
-        jurisdiction,
+        raw_fragment_text: source_excerpt,
+        section_context: record.section_context ?? null,
+        review_reason: classification.review_reason,
+        extraction_status: promotion_ready ? "promotable_candidate" : classification.outcome,
+        classification_outcome: classification.outcome,
+        jurisdiction: jurisdiction_info.final_jurisdiction,
+        document_jurisdiction: jurisdiction_info.document_jurisdiction,
+        extracted_jurisdiction: jurisdiction_info.extracted_jurisdiction,
+        final_jurisdiction: jurisdiction_info.final_jurisdiction,
+        jurisdiction_source: jurisdiction_info.jurisdiction_source,
+        jurisdiction_mismatch_reason: jurisdiction_info.jurisdiction_mismatch_reason,
         source_excerpt,
         normalized_excerpt: source_excerpt,
         agency: record.fields.agency ?? null,
@@ -525,16 +620,16 @@ function build_candidates(row: ReadyQueueRow) {
         address: record.fields.address ?? null,
         eligibility: record.fields.eligibility ?? null,
         application_method: record.fields.application_method ?? null,
-        apply_notes: record.fields.application_method ?? null,
+        apply_notes: record.fields.apply_notes ?? record.fields.application_method ?? null,
+        contact_notes: record.fields.contact_notes ?? null,
         benefit_summary: record.fields.benefit_summary ?? null,
         service_type: record.fields.service_type ?? null,
         fields: record.fields,
         field_labels: record.field_labels,
         extracted,
-        extraction_status: "candidate_created",
       },
-      provenance: { action: "create_candidates_from_ready", extractor_version: CANDIDATE_EXTRACTOR_VERSION, source_queue_id: row.id, source_name: row.source_name, storage_path: row.storage_path, source_text_hash: source_hash, section_index: index, start_line: record.start_line, end_line: record.end_line, deterministic_rules: true, canonical_promotion: false },
-      confidence_scores: { overall: confidence, deterministic_candidate: true, promotion_ready: false, candidate_type: "benefit_program", source_backed: true, value_bearing: true },
+      provenance: { action: "create_candidates_from_ready", extractor_version: CANDIDATE_EXTRACTOR_VERSION, source_queue_id: row.id, source_file: row.source_name ?? row.storage_path, source_name: row.source_name, storage_path: row.storage_path, source_text_hash: source_hash, content_hash, section_index: index, start_line: record.start_line, end_line: record.end_line, source_excerpt, raw_fragment_text: source_excerpt, field_labels: record.field_labels, fields: record.fields, document_jurisdiction: jurisdiction_info.document_jurisdiction, extracted_jurisdiction: jurisdiction_info.extracted_jurisdiction, final_jurisdiction: jurisdiction_info.final_jurisdiction, jurisdiction_source: jurisdiction_info.jurisdiction_source, jurisdiction_mismatch_reason: jurisdiction_info.jurisdiction_mismatch_reason, deterministic_rules: true, canonical_promotion: false },
+      confidence_scores: { overall: confidence, deterministic_candidate: true, promotion_ready, candidate_type, classification_outcome: classification.outcome, review_reason: classification.review_reason, source_backed: true, value_bearing: has_useful_benefit_field(record.fields) },
     });
   });
 
@@ -556,17 +651,17 @@ async function insert_candidate(client: any, columns: Set<string>, row: ReadyQue
     extraction_version: CANDIDATE_EXTRACTOR_VERSION,
     program_id: `${row.id}:${candidate.candidate_type}:${candidate.content_hash.slice(0, 12)}`,
     name: candidate.name,
-    promotion_ready: { ready: false, status: "candidate_created", candidate_type: candidate.candidate_type, document_family: candidate.payload.document_family, promotion_lane: candidate.payload.promotion_lane, target_table: candidate.payload.target_table, intended_target_table: candidate.payload.intended_target_table, source_citation: candidate.payload.source_citation },
+    promotion_ready: { ready: candidate.classification_outcome === "promotable_candidate", status: candidate.payload.extraction_status, candidate_type: candidate.candidate_type, document_family: candidate.payload.document_family, promotion_lane: candidate.payload.promotion_lane, target_table: candidate.payload.target_table, intended_target_table: candidate.payload.intended_target_table, source_citation: candidate.payload.source_citation },
     forensic_provenance: candidate.provenance,
     forensic_hash: candidate.content_hash,
     confidence_scores: candidate.confidence_scores,
     geocoding_hints: { jurisdiction: candidate.jurisdiction, source_queue_id: row.id },
     content_hash: candidate.content_hash,
   };
-  for (const [key, value] of Object.entries({ source_queue_id: row.id, corpus_import_queue_id: row.id, storage_path: row.storage_path, source_path: row.storage_path, source_name: row.source_name, source_text_hash: row.sha256 ?? sha256(row.normalized_text), raw_candidate_payload: candidate.payload, candidate_payload: candidate.payload, payload: candidate.payload, normalized_excerpt: candidate.excerpt, extraction_status: "candidate_created" })) {
+  for (const [key, value] of Object.entries({ source_queue_id: row.id, corpus_import_queue_id: row.id, storage_path: row.storage_path, source_path: row.storage_path, source_name: row.source_name, source_text_hash: row.sha256 ?? sha256(row.normalized_text), raw_candidate_payload: candidate.payload, candidate_payload: candidate.payload, payload: candidate.payload, normalized_excerpt: candidate.excerpt, extraction_status: candidate.payload.extraction_status })) {
     if (columns.has(key)) insertable[key] = value;
   }
-  for (const key of ["candidate_type", "document_family", "promotion_lane", "intended_target_table", "target_table", "source_citation", "agency", "phone", "email", "website", "url", "address", "eligibility", "application_method", "apply_notes", "benefit_summary", "service_type", "source_excerpt"]) {
+  for (const key of ["candidate_type", "document_family", "promotion_lane", "intended_target_table", "target_table", "source_citation", "review_reason", "raw_fragment_text", "agency", "phone", "email", "website", "url", "address", "eligibility", "application_method", "apply_notes", "benefit_summary", "service_type", "source_excerpt"]) {
     if (columns.has(key) && candidate.payload[key] !== undefined) insertable[key] = candidate.payload[key];
   }
   const names = Object.keys(insertable).filter((name) => columns.has(name));
@@ -824,16 +919,30 @@ const CANDIDATE_PROMOTION_CONFIDENCE_THRESHOLD = 0.6;
 const PROMOTION_SOURCE_PREVIEW_CHAR_LIMIT = 750;
 const SAFE_PROMOTION_WRITE_TARGETS = new Set(["luminari_resource_entities", "registry_programs"]);
 
+function has_useful_bound_value(candidate: any) {
+  const payload = candidate_payload_from_row(candidate);
+  return ["phone", "email", "website", "url", "address", "eligibility", "application_method", "apply_notes", "benefit_summary", "agency", "service_type"].some((key) => first_text_value(candidate[key], payload?.[key], payload?.fields?.[key], payload?.extracted?.[key]));
+}
+
 function verify_registry_candidate(candidate: any) {
   const blocked_reasons: string[] = [];
   const document_family = candidate.document_family || "unclassified";
   const promotion_lane = candidate.promotion_lane || "unclassified";
-  if (!candidate.name) blocked_reasons.push("name_required");
-  if (!candidate.source_file) blocked_reasons.push("source_file_required");
+  const payload = candidate_payload_from_row(candidate);
+  const candidate_type = resolved_candidate_type(candidate);
+  const name = first_text_value(candidate.name, payload?.name);
+  if (payload?.jurisdiction_mismatch_reason || payload?.classification_outcome === "provenance_mismatch") blocked_reasons.push("provenance_mismatch");
+  if (candidate_type !== "benefit_program") blocked_reasons.push("benefit_program_candidate_type_required");
+  if (!name) blocked_reasons.push("name_required");
+  else if (is_generic_header_text(name) || name.startsWith("review_fragment:")) blocked_reasons.push("non_generic_real_name_required");
+  if (!first_text_value(candidate.source_file, payload?.source_file, payload?.source_name)) blocked_reasons.push("source_file_required");
   if (candidate.confidence !== null && candidate.confidence !== undefined && Number(candidate.confidence) < CANDIDATE_PROMOTION_CONFIDENCE_THRESHOLD) blocked_reasons.push("confidence_below_threshold");
-  if (!candidate.jurisdiction && !is_protected_document_family(document_family)) blocked_reasons.push("jurisdiction_required");
-  if (!candidate.source_citation) blocked_reasons.push("source_provenance_required");
-  if (promotion_lane === "unclassified") blocked_reasons.push("promotion_lane_unclassified");
+  if (!first_text_value(candidate.jurisdiction, payload?.final_jurisdiction, payload?.jurisdiction) && !is_protected_document_family(document_family)) blocked_reasons.push("jurisdiction_required");
+  if (!first_text_value(candidate.source_citation, payload?.source_citation)) blocked_reasons.push("source_provenance_required");
+  if (!first_text_value(candidate.content_hash, payload?.content_hash)) blocked_reasons.push("content_hash_required");
+  if (!first_text_value(candidate.source_excerpt, candidate.normalized_excerpt, payload?.source_excerpt, payload?.normalized_excerpt)) blocked_reasons.push("source_excerpt_required");
+  if (!has_useful_bound_value(candidate)) blocked_reasons.push("missing_useful_bound_fields");
+  if (promotion_lane === "unclassified" || promotion_lane === "human_review_lane") blocked_reasons.push("promotion_lane_unclassified");
   const verification_lane = dry_run_lane_for_candidate(candidate);
   return { verified: blocked_reasons.length === 0, blocked_reasons, verification_lane };
 }
@@ -847,6 +956,7 @@ export async function verify_registry_entity_candidates_dry_run(input: registry_
   const promotion_lane_sql = registry_promotion_lane_expression(columns);
   const confidence_sql = registry_confidence_expression(columns);
   const source_citation_sql = registry_source_citation_expression(columns);
+  const detail_sql = (field: string, keys: string[] = [field]) => `nullif(${registry_json_text_expression(columns, field, keys, "")}, '')`;
   const { where_sql, params } = registry_filter_sql(input, columns);
   const limit_param = params.length + 1;
   const result = await pool.query(
@@ -862,7 +972,17 @@ export async function verify_registry_entity_candidates_dry_run(input: registry_
         nullif(${source_citation_sql}, '') as source_citation,
         extraction_timestamp,
         program_id,
-        content_hash
+        content_hash,
+        ${detail_sql("source_excerpt", ["source_excerpt", "normalized_excerpt"])} as source_excerpt,
+        ${detail_sql("phone", ["phone"])} as phone,
+        ${detail_sql("email", ["email"])} as email,
+        ${detail_sql("website", ["website", "url"])} as website,
+        ${detail_sql("address", ["address"])} as address,
+        ${detail_sql("eligibility", ["eligibility"])} as eligibility,
+        ${detail_sql("application_method", ["application_method", "apply_notes"])} as application_method,
+        ${detail_sql("benefit_summary", ["benefit_summary"])} as benefit_summary,
+        ${detail_sql("agency", ["agency"])} as agency,
+        ${detail_sql("service_type", ["service_type"])} as service_type
        from public.registry_entity_extraction_v4
        ${where_sql}
       order by extraction_timestamp desc nulls last, content_hash desc nulls last
@@ -873,6 +993,10 @@ export async function verify_registry_entity_candidates_dry_run(input: registry_
   const blocked_reasons: Record<string, number> = {};
   const sample_verified: any[] = [];
   const sample_blocked: any[] = [];
+  const sample_promotable: any[] = [];
+  const sample_human_review: any[] = [];
+  const sample_provenance_mismatch: any[] = [];
+  const sample_context_fragments: any[] = [];
   let verified_count = 0;
   let blocked_count = 0;
   for (const row of result.rows) {
@@ -883,12 +1007,16 @@ export async function verify_registry_entity_candidates_dry_run(input: registry_
     if (verification.verified) {
       verified_count += 1;
       if (sample_verified.length < 10) sample_verified.push(sample);
+      if (sample_promotable.length < 10) sample_promotable.push(sample);
     } else {
       blocked_count += 1;
       if (sample_blocked.length < 10) sample_blocked.push(sample);
     }
+    if (row.candidate_type === "review_fragment" && sample_human_review.length < 10) sample_human_review.push(sample);
+    if (row.candidate_type === "context_fragment" && sample_context_fragments.length < 10) sample_context_fragments.push(sample);
+    if (verification.blocked_reasons.includes("provenance_mismatch") && sample_provenance_mismatch.length < 10) sample_provenance_mismatch.push(sample);
   }
-  return { success: true, dry_run: true, processed_count: result.rows.length, verified_count, blocked_count, lane_counts, blocked_reasons, sample_verified, sample_blocked };
+  return { success: true, dry_run: true, processed_count: result.rows.length, promotable_count: verified_count, human_review_count: result.rows.filter((row: any) => row.candidate_type === "review_fragment").length, context_fragment_count: result.rows.filter((row: any) => row.candidate_type === "context_fragment").length, provenance_mismatch_count: result.rows.filter((row: any) => row.promotion_ready?.status === "provenance_mismatch" || row.promotion_ready?.status === "human_review_required" && row.promotion_ready?.reason === "provenance_mismatch").length, parser_artifact_empty_count: 0, would_insert_count: verified_count, would_update_blank_fields_count: 0, would_skip_duplicate_count: 0, blocked_count, error_count: 0, verified_count, lane_counts, blocked_reasons, sample_verified, sample_blocked, sample_promotable, sample_human_review, sample_provenance_mismatch, sample_context_fragments };
 }
 
 
@@ -1466,7 +1594,11 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
       let bridge_record_id = null;
       const adapter = promotion_write_adapter_status(verification_input);
       try {
-        if (verification.verified && material_hold_reason) {
+        if (!verification.verified) {
+          action_type = verification.blocked_reasons.includes("missing_useful_bound_fields") ? "low_information_fragment" : "human_review_required";
+          status = "held_review";
+          reason = verification.blocked_reasons.join(",") || action_type;
+        } else if (verification.verified && material_hold_reason) {
           action_type = material_hold_reason;
           status = "held_review";
           reason = material_hold_reason;
@@ -1521,11 +1653,21 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
     const held_count = results.filter((row) => row.status === "held_review").length;
     const would_insert_count = count("would_insert");
     const would_update_blank_fields_count = count("would_update_blank_fields");
-    const skipped_count = count("would_skip_duplicate") + count("no_safe_legal_authority_target") + count("no_safe_target_table_adapter");
+    const would_skip_duplicate_count = count("would_skip_duplicate");
+    const skipped_count = would_skip_duplicate_count + count("no_safe_legal_authority_target") + count("no_safe_target_table_adapter");
     const blocked_count = count("blocked") + held_count;
     const error_count = count("error");
     const promoted_count = dry_run ? 0 : would_insert_count + would_update_blank_fields_count;
     const bridged_count = results.filter((row) => row.bridge_record_id).length;
+    const promotable_count = results.filter((row) => row.status === "validated_dry_run" || row.status === "applied").length;
+    const human_review_count = results.filter((row) => row.status === "held_review" && ["human_review_required", "low_information_fragment"].includes(row.action_type)).length;
+    const context_fragment_count = results.filter((row) => row.candidate_type === "context_fragment" || row.reason === "generic_header_candidate").length;
+    const provenance_mismatch_count = results.filter((row) => String(row.reason ?? "").includes("provenance_mismatch") || row.blocked_reasons?.includes("provenance_mismatch")).length;
+    const parser_artifact_empty_count = 0;
+    const sample_promotable = results.filter((row) => row.status === "validated_dry_run" || row.status === "applied").slice(0, 10);
+    const sample_human_review = results.filter((row) => row.status === "held_review").slice(0, 10);
+    const sample_provenance_mismatch = results.filter((row) => String(row.reason ?? "").includes("provenance_mismatch") || row.blocked_reasons?.includes("provenance_mismatch")).slice(0, 10);
+    const sample_context_fragments = results.filter((row) => row.candidate_type === "context_fragment" || row.reason === "generic_header_candidate").slice(0, 10);
     await update_conveyor_run_row(client, {
       run_id,
       candidate_count: results.length,
@@ -1534,10 +1676,10 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
       promoted_count,
       skipped_duplicate_count: skipped_count,
       bridged_count,
-      metadata: { processed_count: results.length, would_insert_count, would_update_blank_fields_count, skipped_count, blocked_count, error_count, promoted_count, bridged_count },
+      metadata: { processed_count: results.length, promotable_count, human_review_count, context_fragment_count, provenance_mismatch_count, parser_artifact_empty_count, would_insert_count, would_update_blank_fields_count, would_skip_duplicate_count, skipped_count, blocked_count, error_count, promoted_count, bridged_count },
     });
     await client.query("commit");
-    return { success: true, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: results.length, would_insert_count, would_update_blank_fields_count, skipped_count, blocked_count, error_count, run_id, results };
+    return { success: true, dry_run, canonical_promotion_enabled: feature_flag_enabled, feature_flag_enabled, target_hint, processed_count: results.length, promotable_count, human_review_count, context_fragment_count, provenance_mismatch_count, parser_artifact_empty_count, would_insert_count, would_update_blank_fields_count, would_skip_duplicate_count, skipped_count, blocked_count, error_count, run_id, sample_promotable, sample_human_review, sample_provenance_mismatch, sample_context_fragments, results };
   } catch (error: any) {
     let conveyor_run_exists_in_transaction: boolean | null = null;
     if (String(error?.message ?? error).toLowerCase().includes("conveyor_promotion_accounting") || String(error?.code ?? "") === "23503") {
@@ -1589,3 +1731,12 @@ export async function set_corpus_import_queue_target_hint(input: { id: number; t
 
   return { success: true, row: map_queue_row(row) };
 }
+
+export const __testing = {
+  infer_jurisdiction,
+  looks_like_resource_name,
+  classify_extracted_fragment,
+  build_candidates,
+  extract_obvious_values,
+  verify_registry_candidate,
+};
