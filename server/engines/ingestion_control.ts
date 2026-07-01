@@ -299,7 +299,7 @@ function extract_obvious_values(section: string) {
   return {
     phones: section.match(/(?:\+1[-.\s]?)?\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}/g) ?? [],
     emails: section.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) ?? [],
-    urls: section.match(/https?:\/\/[^\s)]+|www\.[^\s)]+/gi) ?? [],
+    urls: extract_urls(section),
     statutes: section.match(/(?:\d+\s+U\.S\.C\.\s+§?\s*[\w.-]+|\d+\s+C\.F\.R\.\s+§?\s*[\w.-]+|§\s*[\w.-]+|section\s+[\w.-]+)/gi) ?? [],
     deadlines: section.match(/(?:within\s+\d+\s+(?:day|days|month|months)|deadline[^.\n]*|due\s+(?:by|date)?[^.\n]*|\b\d{1,2}\/\d{1,2}\/\d{2,4}\b)/gi) ?? [],
   };
@@ -315,13 +315,15 @@ type AssembledBenefitProgram = {
 };
 
 const FIELD_LABELS: Array<{ key: string; pattern: RegExp }> = [
+  { key: "phone_website", pattern: /^phone\s*\/?\s*website$/i },
+  { key: "address_website", pattern: /^address\s*\/?\s*website$/i },
   { key: "phone", pattern: /^(?:phone|telephone)$/i },
   { key: "email", pattern: /^email$/i },
-  { key: "website", pattern: /^(?:website|url)$/i },
+  { key: "website", pattern: /^(?:website|url|portal)$/i },
   { key: "address", pattern: /^address$/i },
-  { key: "agency", pattern: /^(?:agency|department)$/i },
+  { key: "agency", pattern: /^(?:agency|department|agency\s*\/\s*contact|contact|organization|oversight body)$/i },
   { key: "eligibility", pattern: /^(?:eligibility|who qualifies)$/i },
-  { key: "application_method", pattern: /^(?:how to apply|application)$/i },
+  { key: "application_method", pattern: /^(?:how to apply|application|apply\s*\/\s*notes|apply|notes|apply notes|complaint path\s*\/\s*sol)$/i },
   { key: "benefit_summary", pattern: /^(?:what it does for people|description|purpose)$/i },
   { key: "service_type", pattern: /^service type$/i },
 ];
@@ -345,14 +347,33 @@ function detect_field_label(line: string): { key: string; label: string; value: 
   const inline = cleaned.match(/^(.{1,60}?)(?:\s*[:：]\s*|\s+[–—-]\s+)(.+)$/);
   const raw_label = normalize_label(inline ? inline[1] : cleaned);
   const found = FIELD_LABELS.find((entry) => entry.pattern.test(raw_label));
-  if (!found) return null;
-  const value = inline?.[2]?.trim() || null;
-  return { key: found.key, label: raw_label, value };
+  if (found) return { key: found.key, label: raw_label, value: inline?.[2]?.trim() || null };
+  if (!inline) {
+    for (const entry of FIELD_LABELS) {
+      const prefixed = cleaned.match(new RegExp(`^(${entry.pattern.source.replace(/^\^|\$$/g, "")})\\s+(.+)$`, "i"));
+      if (prefixed) return { key: entry.key, label: normalize_label(prefixed[1]), value: prefixed[2].trim() || null };
+    }
+  }
+  return null;
+}
+
+const URL_PATTERN = /(?:https?:\/\/|www\.)[^\s),;]+|(?<!@)\b(?:[a-z0-9-]+\.)+(?:gov|org|com|net|edu|us|info|health|care|io)(?:\/[^\s),;]*)?/gi;
+
+function extract_urls(value: string) {
+  return [...new Set(value.match(URL_PATTERN)?.map((match) => match.replace(/[.,;:]+$/g, "")) ?? [])];
+}
+
+function merge_mixed_field_values(fields: Record<string, string>, value: string) {
+  const obvious = extract_obvious_values(value);
+  for (const phone of obvious.phones) merge_field(fields, "phone", phone);
+  for (const email of obvious.emails) merge_field(fields, "email", email);
+  for (const url of obvious.urls) merge_field(fields, "website", url);
 }
 
 function looks_like_resource_name(line: string) {
   if (detect_field_label(line)) return false;
   if (line.length < 3 || line.length > 180) return false;
+  if (/^(?:phone|telephone|email|website|url|portal|address|address\s*\/?\s*website|phone\s*\/?\s*website|service type|what it does for people|description|purpose|eligibility|who qualifies|how to apply|application|apply\s*\/\s*notes|apply|notes|apply notes|agency|department|agency\s*\/\s*contact|contact|organization|oversight body)$/i.test(normalize_label(line))) return false;
   if (/^(?:layer\s+\d+|page\s+\d+|table of contents)$/i.test(line)) return false;
   if (/^(?:https?:\/\/|www\.)/i.test(line)) return false;
   if (/^[\d\W]+$/.test(line)) return false;
@@ -401,23 +422,36 @@ function assemble_benefit_programs(text: string) {
     let value = label.value;
     let end_line = i;
     if (!value) {
+      const continuation_lines: string[] = [];
       for (let j = i + 1; j < lines.length; j += 1) {
         const next_label = detect_field_label(lines[j].text);
         if (next_label) break;
+        if (current && looks_like_resource_name(lines[j].text) && continuation_lines.length > 0) break;
         if (!lines[j].text) continue;
-        value = lines[j].text;
+        continuation_lines.push(lines[j].text);
         end_line = j;
-        break;
       }
+      value = continuation_lines.join("\n").trim() || null;
     }
     if (!value) continue;
     if (!current) current = { name: null, fields: {}, field_labels: {}, start_line: i, end_line, source_excerpt: "" };
-    merge_field(current.fields, label.key, value);
+    if (label.key === "phone_website") {
+      merge_mixed_field_values(current.fields, value);
+      const remaining = value.replace(/(?:\+1[-.\s]?)?\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}/g, "").replace(URL_PATTERN, "").trim();
+      if (remaining) merge_field(current.fields, "phone", remaining);
+    } else if (label.key === "address_website") {
+      merge_mixed_field_values(current.fields, value);
+      const remaining = value.replace(URL_PATTERN, "").trim();
+      if (remaining) merge_field(current.fields, "address", remaining);
+    } else {
+      merge_field(current.fields, label.key, value);
+      merge_mixed_field_values(current.fields, value);
+    }
     current.field_labels[label.key] = label.label;
     current.end_line = Math.max(current.end_line, end_line);
     source_lines.push(line);
     if (!label.value && end_line !== i) {
-      source_lines.push(lines[end_line].text);
+      for (let j = i + 1; j <= end_line; j += 1) source_lines.push(lines[j].text);
       i = end_line;
     }
     if (!current.name && ["agency", "department"].includes(label.label) && looks_like_resource_name(value)) current.name = value.slice(0, 240);
