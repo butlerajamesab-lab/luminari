@@ -68,7 +68,7 @@ export async function generateEntityBreakdown(patternId: number): Promise<Patter
 
   // Also check entity_registry for cross-stream counts
   const registryEntities = await db.select().from(entityRegistry);
-  const registryMap = new Map(registryEntities.map((e) => [e.entityName, e]));
+  const registryMap = new Map<string, any>(registryEntities.map((e: any) => [e.entityName, e]));
 
   // Upsert into pattern_entity_summary
   const results: PatternEntitySummaryRow[] = [];

@@ -237,12 +237,12 @@ export async function getUserNotifications(userId: string, limit: number = 50): 
 
   if (subs.length === 0) return [];
 
-  const subIds = subs.map((s) => s.id);
+  const subIds = subs.map((s: any) => s.id);
   const events = await db.select().from(alertEvents)
     .orderBy(desc(alertEvents.createdAt))
     .limit(limit * 2); // fetch more, filter in JS
 
-  return events.filter((e) => e.subscriptionId && subIds.includes(e.subscriptionId)).slice(0, limit);
+  return events.filter((e: any) => e.subscriptionId && subIds.includes(e.subscriptionId)).slice(0, limit);
 }
 
 // ─── Mark Notification Read ──────────────────────────────────────────
