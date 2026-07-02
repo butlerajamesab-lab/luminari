@@ -20,7 +20,8 @@
     "check:contracts": "node scripts/check-owned-contracts-snake-case.mjs && node scripts/check-health-contracts.mjs",
     "check:health-contracts": "node scripts/check-health-contracts.mjs",
     "warm:docket:wa": "node scripts/warm-docket-state-cache.mjs --state=WA",
-    "warm:docket:all": "node scripts/warm-docket-state-cache.mjs --all"
+    "warm:docket:all": "node scripts/warm-docket-state-cache.mjs --all",
+    "audit:ui-data-guards": "node scripts/audit-ui-data-guards.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
