@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, BarChart3, Shield, Target, Clock, Users, ChevronRight, ArrowLeft, Wrench } from "lucide-react";
 import { useLocation } from "wouter";
+import { safeArray, safeText } from "@/lib/data-guard";
 
 const severityColor: Record<string, string> = {
   critical: "bg-red-500/10 text-red-400 border-red-500/30",
@@ -53,6 +54,7 @@ export default function ContradictionScoring() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const allScores = trpc.enforcementIntel.scoreAllContradictions.useQuery();
+  const scoreRows = safeArray<any>(allScores.data);
 
   const singleScore = trpc.enforcementIntel.scoreContradiction.useQuery({
     contradictionId: selectedId ?? undefined,
@@ -96,12 +98,12 @@ export default function ContradictionScoring() {
         {/* Library Scores Tab */}
         <TabsContent value="library" className="space-y-4">
           {allScores.isLoading && <p className="text-muted-foreground">Loading contradiction scores...</p>}
-          {allScores.data && (
+          {scoreRows.length > 0 ? (
             <>
               {/* Summary Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {(["critical", "high", "medium", "low"] as const).map(sev => {
-                  const count = allScores.data.filter(s => s.severity === sev).length;
+                  const count = scoreRows.filter((s: any) => s.severity === sev).length;
                   return (
                     <Card key={sev} className="border-0 bg-card/50">
                       <CardContent className="p-4">
@@ -119,7 +121,7 @@ export default function ContradictionScoring() {
               <Card className="border-0 bg-card/50">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">All Contradictions — Ranked by Score</CardTitle>
-                  <CardDescription>{allScores.data.length} contradictions scored</CardDescription>
+                  <CardDescription>{scoreRows.length} contradictions scored</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="overflow-x-auto">
@@ -139,10 +141,10 @@ export default function ContradictionScoring() {
                         </tr>
                       </thead>
                       <tbody>
-                        {allScores.data.map(s => (
+                        {scoreRows.map((s: any) => (
                           <tr key={s.id} className="border-b border-border/20 hover:bg-muted/30 transition-colors">
                             <td className="py-2.5 pr-3 max-w-[250px] truncate font-medium">{s.title}</td>
-                            <td className="py-2.5 px-3 text-muted-foreground">{s.domain.replace(/_/g, " ")}</td>
+                            <td className="py-2.5 px-3 text-muted-foreground">{safeText(s.domain, "unavailable").replace(/_/g, " ")}</td>
                             <td className="py-2.5 px-2 text-center font-mono font-bold">{s.total_score}</td>
                             <td className="py-2.5 px-2 text-center font-mono text-xs">{s.legal_severity}/25</td>
                             <td className="py-2.5 px-2 text-center font-mono text-xs">{s.evidence_strength}/25</td>
@@ -150,7 +152,7 @@ export default function ContradictionScoring() {
                             <td className="py-2.5 px-2 text-center font-mono text-xs">{s.corroboration}/20</td>
                             <td className="py-2.5 px-2 text-center font-mono text-xs">{s.systemic_risk}/10</td>
                             <td className="py-2.5 px-2 text-center">
-                              <Badge variant="outline" className={`text-xs ${severityColor[s.severity]}`}>{s.severity}</Badge>
+                              <Badge variant="outline" className={`text-xs ${severityColor[s.severity] ?? ""}`}>{safeText(s.severity, "unavailable")}</Badge>
                             </td>
                             <td className="py-2.5 pl-3">
                               <Button variant="ghost" size="sm" onClick={() => { setSelectedId(s.id); setTab("adhoc"); }}>
@@ -165,7 +167,9 @@ export default function ContradictionScoring() {
                 </CardContent>
               </Card>
             </>
-          )}
+          ) : !allScores.isLoading ? (
+            <Card className="py-12 text-center"><p className="text-muted-foreground">empty</p></Card>
+          ) : null}
         </TabsContent>
 
         {/* Ad-Hoc Scoring Tab */}
