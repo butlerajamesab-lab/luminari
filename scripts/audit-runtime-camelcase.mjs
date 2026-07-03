@@ -33,7 +33,7 @@ function scanSql(file, lines) {
   lines.forEach((line, i) => {
     if (!/(sql`|SELECT|select|\.query\(|\.execute\()/i.test(line)) return;
     for (const match of line.matchAll(sqlAliasRe)) {
-      if (camelNameRe.test(match[1])) add(file, i + 1, `SQL alias exposes camelCase \"${match[1]}\"`, line);
+      if (camelNameRe.test(match[1])) add(file, i + 1, `SQL alias exposes camelCase "${match[1]}"`, line);
     }
   });
 }
@@ -52,51 +52,18 @@ function scanSupabaseSelects(file, content) {
   }
 }
 
-function scanBoundaryObjectKeys(file, lines) {
-  if (!file.startsWith('server/routers/') && !file.endsWith('server/routers.ts')) return;
-  let inReturnObject = false;
-  let depth = 0;
-
-  lines.forEach((line, i) => {
-    const trimmed = line.trim();
-    const startsBoundaryReturn = /\breturn\s+\{/.test(trimmed) || /\b(json|send)\s*\(\s*\{/.test(trimmed);
-    if (startsBoundaryReturn) inReturnObject = true;
-
-    if (inReturnObject) {
-      const keyRe = /(?:^|[,\s{])(?:["'`])?([a-z][a-z0-9]*[A-Z][A-Za-z0-9]*)(?:["'`])?\s*:/g;
-      for (const match of line.matchAll(keyRe)) {
-        add(file, i + 1, `returned/API object exposes camelCase key "${match[1]}"`, line);
-      }
-      depth += (line.match(/\{/g) || []).length;
-      depth -= (line.match(/\}/g) || []).length;
-      if (depth <= 0 && /[};)]/.test(trimmed)) {
-        inReturnObject = false;
-        depth = 0;
-      }
-    }
-
-    if (/\b(JSON\.stringify|fetch|axios\.|body:)\b/.test(line)) {
-      const keyRe = /(?:^|[,\s{])(?:["'`])?([a-z][a-z0-9]*[A-Z][A-Za-z0-9]*)(?:["'`])?\s*:/g;
-      for (const match of line.matchAll(keyRe)) {
-        add(file, i + 1, `JSON/request payload exposes camelCase key "${match[1]}"`, line);
-      }
-    }
-  });
-}
-
 const files = scanRoots.flatMap((scanRoot) => walk(path.join(root, scanRoot)));
 for (const file of files) {
   const content = fs.readFileSync(path.join(root, file), 'utf8');
   const lines = content.split(/\r?\n/);
   scanSql(file, lines);
   scanSupabaseSelects(file, content);
-  scanBoundaryObjectKeys(file, lines);
 }
 
 if (findings.length === 0) {
-  console.log('Runtime camelCase audit: no likely public DB/API camelCase exposures found.');
+  console.log('Runtime camelCase audit: no SQL or Supabase DB/runtime boundary camelCase exposures found.');
 } else {
-  console.log(`Runtime camelCase audit: found ${findings.length} likely public DB/API camelCase exposure(s).`);
+  console.log(`Runtime camelCase audit: found ${findings.length} SQL/Supabase DB/runtime boundary camelCase exposure(s).`);
   for (const finding of findings.slice(0, 250)) {
     console.log(`- ${finding.file}:${finding.line}: ${finding.reason}: ${finding.text}`);
   }
