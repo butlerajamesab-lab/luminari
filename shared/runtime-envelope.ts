@@ -90,8 +90,6 @@ export function withRuntimeEnvelope<TPayload extends Record<string, any>, TData 
     ...options,
     action: options.action ?? (typeof payload.action === "string" ? payload.action : undefined),
     dry_run: options.dry_run ?? (typeof payload.dry_run === "boolean" ? payload.dry_run : undefined),
-    errors: options.errors ?? (payload.success === false && errorCode ? [{ code: errorCode, message: typeof payload.message === "string" ? payload.message : undefined }] : []),
-    warnings: options.warnings ?? (warningCode ? [{ code: warningCode, message: typeof payload.message === "string" ? payload.message : undefined }] : []),
     errors: options.errors ?? (payload_failed ? [{ code: errorCode ?? "runtime_payload_failed", message: payload_message }] : []),
     warnings: options.warnings ?? (warningCode ? [{ code: warningCode, message: payload_message }] : []),
   });
