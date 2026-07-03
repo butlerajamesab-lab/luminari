@@ -1,13 +1,9 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
+import { TRPCError } from "@trpc/server";
 import {
   get_user_by_email_snake,
   get_user_by_open_id_snake,
   type RuntimeUser,
-} from "./user-resolver";
-import { classify_db_error, get_pool_runtime_configuration } from "../db";
-import {
-  PROFILE_POOL_ACQUIRE_TIMEOUT_MS,
-  PROFILE_QUERY_TIMEOUT_MS,
 } from "./user-resolver";
 
 export type AuthStatus =
@@ -53,83 +49,6 @@ type ContextLookupPhase = {
   detail?: string;
 };
 
-type ProfileResolutionResult = {
-  user: RuntimeUser | null;
-  status: ProfileResolutionStatus;
-  error: string | null;
-};
-
-type RequestProfileLookupRecord = {
-  promise?: Promise<ProfileResolutionResult>;
-  result?: ProfileResolutionResult;
-};
-
-type RequestProfileLookupState = {
-  lookups: Map<string, RequestProfileLookupRecord>;
-};
-
-const REQUEST_PROFILE_LOOKUP_STATE = Symbol.for(
-  "luminari.request_profile_lookup_state",
-);
-
-function getRequestProfileLookupState(
-  req: CreateExpressContextOptions["req"] | undefined,
-): RequestProfileLookupState {
-  const carrier = (req ?? {}) as any;
-  if (!carrier[REQUEST_PROFILE_LOOKUP_STATE]) {
-    carrier[REQUEST_PROFILE_LOOKUP_STATE] = {
-      lookups: new Map<string, RequestProfileLookupRecord>(),
-    };
-  }
-  return carrier[REQUEST_PROFILE_LOOKUP_STATE] as RequestProfileLookupState;
-}
-
-function profileLookupCacheKey(
-  kind: "open_id" | "email",
-  value: string,
-): string {
-  return `${kind}:${value.trim().toLowerCase()}`;
-}
-
-async function resolveProfileOncePerRequest(
-  req: CreateExpressContextOptions["req"] | undefined,
-  key: string,
-  lookup: () => Promise<ProfileResolutionResult>,
-): Promise<ProfileResolutionResult> {
-  const state = getRequestProfileLookupState(req);
-  const existing = state.lookups.get(key);
-  if (existing?.result) {
-    logContextAuthEvent("profile_lookup_request_cache_hit", {
-      cache_key: key,
-      duplicate_lookup_suppressed: true,
-      profile_resolution_status: existing.result.status,
-    });
-    return existing.result;
-  }
-  if (existing?.promise) {
-    logContextAuthEvent("profile_lookup_duplicate_suppressed", {
-      cache_key: key,
-      duplicate_lookup_suppressed: true,
-    });
-    return existing.promise;
-  }
-
-  logContextAuthEvent("profile_lookup_request_cache_miss", {
-    cache_key: key,
-    duplicate_lookup_suppressed: false,
-    pool_runtime_configuration: get_pool_runtime_configuration(),
-    profile_pool_acquire_timeout_ms: PROFILE_POOL_ACQUIRE_TIMEOUT_MS,
-    profile_query_timeout_ms: PROFILE_QUERY_TIMEOUT_MS,
-  });
-  const record: RequestProfileLookupRecord = {};
-  record.promise = lookup().then((result) => {
-    record.result = result;
-    return result;
-  });
-  state.lookups.set(key, record);
-  return record.promise;
-}
-
 function readPositiveIntegerEnv(name: string, fallback: number): number {
   const raw = process.env[name];
   if (!raw) return fallback;
@@ -137,39 +56,14 @@ function readPositiveIntegerEnv(name: string, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
 }
 
-const USER_LOOKUP_TIMEOUT_MS = readPositiveIntegerEnv(
-  "CONTEXT_USER_LOOKUP_TIMEOUT_MS",
-  5000,
-);
-const USER_DB_LOOKUP_TIMEOUT_MS = Math.max(
-  readPositiveIntegerEnv("CONTEXT_USER_DB_LOOKUP_TIMEOUT_MS", 5000),
-  PROFILE_POOL_ACQUIRE_TIMEOUT_MS + 250,
-);
-const CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS = readPositiveIntegerEnv(
-  "CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS",
-  Math.min(2500, USER_LOOKUP_TIMEOUT_MS),
-);
-const CONTEXT_SLOW_USER_LOOKUP_LOG_MS = readPositiveIntegerEnv(
-  "CONTEXT_SLOW_USER_LOOKUP_LOG_MS",
-  250,
-);
-const CONTEXT_ERROR_LOG_THROTTLE_MS = 60_000;
-let lastContextUserLookupErrorLogAt = 0;
-let suppressedContextUserLookupErrors = 0;
+const CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS = readPositiveIntegerEnv("CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS", 2500);
+const CONTEXT_SLOW_USER_LOOKUP_LOG_MS = readPositiveIntegerEnv("CONTEXT_SLOW_USER_LOOKUP_LOG_MS", 250);
 
-export async function withTimeout<T>(
-  promise: Promise<T>,
-  ms: number,
-  label: string,
-): Promise<T> {
+export async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const timeoutPromise = new Promise<never>((_, reject) => {
-    timeout = setTimeout(
-      () => reject(new Error(`${label} timed out after ${ms}ms`)),
-      ms,
-    );
+    timeout = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
   });
-
   try {
     return await Promise.race([promise, timeoutPromise]);
   } finally {
@@ -177,11 +71,7 @@ export async function withTimeout<T>(
   }
 }
 
-async function withAbortableTimeout<T>(
-  task: (signal: AbortSignal) => Promise<T>,
-  ms: number,
-  label: string,
-): Promise<T> {
+async function withAbortableTimeout<T>(task: (signal: AbortSignal) => Promise<T>, ms: number, label: string): Promise<T> {
   const controller = new AbortController();
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const timeoutPromise = new Promise<never>((_, reject) => {
@@ -190,7 +80,6 @@ async function withAbortableTimeout<T>(
       reject(new Error(`${label} timed out after ${ms}ms`));
     }, ms);
   });
-
   try {
     return await Promise.race([task(controller.signal), timeoutPromise]);
   } finally {
@@ -202,69 +91,42 @@ function errorDetail(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function isTimeoutError(error: unknown): boolean {
-  return (
-    errorDetail(error).toLowerCase().includes("timed out") ||
-    classify_db_error(error) !== "db_error"
-  );
-}
-
-function profile_lookup_error_code(
-  error: unknown,
-):
-  | "pool_acquire_timeout"
-  | "query_timeout"
-  | "profile_lookup_timeout"
-  | "profile_lookup_error" {
-  const db_code = classify_db_error(error);
-  if (db_code === "pool_acquire_timeout" || db_code === "query_timeout")
-    return db_code;
-  return isTimeoutError(error)
-    ? "profile_lookup_timeout"
-    : "profile_lookup_error";
-}
-
 function createUnauthenticatedAuth(): ContextAuth {
+  return { auth_status: "unauthenticated", supabase_user_id: null, supabase_email: null, profile_resolution_status: "not_attempted", profile_resolution_error: null };
+}
+
+function createInspectionAuth(): ContextAuth {
+  return { auth_status: "inspection_mode", supabase_user_id: null, supabase_email: null, profile_resolution_status: "resolved", profile_resolution_error: null };
+}
+
+function createAuthenticatedUnresolvedAuth(authUser: SupabaseAuthUser): ContextAuth {
   return {
-    auth_status: "unauthenticated",
-    supabase_user_id: null,
-    supabase_email: null,
+    auth_status: "authenticated_profile_unresolved",
+    supabase_user_id: authUser.id?.trim() || null,
+    supabase_email: authUser.email?.trim().toLowerCase() || null,
     profile_resolution_status: "not_attempted",
     profile_resolution_error: null,
   };
 }
 
-function createInspectionAuth(): ContextAuth {
+function createResolvedAuth(user: RuntimeUser): ContextAuth {
   return {
-    auth_status: "inspection_mode",
-    supabase_user_id: null,
-    supabase_email: null,
+    auth_status: "authenticated_profile_resolved",
+    supabase_user_id: user.open_id,
+    supabase_email: user.email?.trim().toLowerCase() || null,
     profile_resolution_status: "resolved",
     profile_resolution_error: null,
   };
 }
 
-function logContextAuthEvent(
-  event: string,
-  details: Record<string, unknown>,
-): void {
+function logContextAuthEvent(event: string, details: Record<string, unknown>): void {
   console.warn("[CONTEXT] auth_context_event", { event, ...details });
 }
 
-async function timeContextPhase<T>(
-  phase: string,
-  phases: ContextLookupPhase[],
-  task: () => Promise<T>,
-): Promise<T> {
+async function timeContextPhase<T>(phase: string, phases: ContextLookupPhase[], task: () => Promise<T>): Promise<T> {
   const startedAt = Date.now();
-  const entry: ContextLookupPhase = {
-    phase,
-    status: "started",
-    elapsed_ms: 0,
-    started_at: startedAt,
-  };
+  const entry: ContextLookupPhase = { phase, status: "started", elapsed_ms: 0, started_at: startedAt };
   phases.push(entry);
-
   try {
     const result = await task();
     entry.status = "completed";
@@ -278,136 +140,40 @@ async function timeContextPhase<T>(
   }
 }
 
-async function timeRequiredDbUserPhase(
-  phase: string,
-  phases: ContextLookupPhase[],
-  task: () => Promise<RuntimeUser | null>,
-): Promise<RuntimeUser | null> {
-  return withTimeout(
-    timeContextPhase(phase, phases, task),
-    USER_DB_LOOKUP_TIMEOUT_MS,
-    `tRPC context ${phase}`,
-  );
-}
-
-async function timeOptionalDbUserPhase(
-  phase: string,
-  phases: ContextLookupPhase[],
-  task: () => Promise<RuntimeUser | null>,
-): Promise<RuntimeUser | null> {
-  try {
-    return await timeRequiredDbUserPhase(phase, phases, task);
-  } catch (error) {
-    console.warn("[CONTEXT] User DB lookup phase settled as null after error", {
-      phase,
-      timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
-      error: errorDetail(error),
-    });
-    return null;
-  }
-}
-
 function serializeContextLookupPhases(phases: ContextLookupPhase[]) {
   const now = Date.now();
-  return phases.map(({ phase, status, elapsed_ms, started_at, detail }) => ({
-    phase,
-    status,
-    elapsed_ms: status === "started" ? now - started_at : elapsed_ms,
-    ...(detail ? { detail } : {}),
-  }));
+  return phases.map(({ phase, status, elapsed_ms, started_at, detail }) => ({ phase, status, elapsed_ms: status === "started" ? now - started_at : elapsed_ms, ...(detail ? { detail } : {}) }));
 }
 
-function logContextUserLookupError(error: unknown): void {
-  const now = Date.now();
-  const detail = errorDetail(error);
-
-  if (now - lastContextUserLookupErrorLogAt >= CONTEXT_ERROR_LOG_THROTTLE_MS) {
-    const suppressedSuffix =
-      suppressedContextUserLookupErrors > 0
-        ? ` (${suppressedContextUserLookupErrors} similar user lookup errors suppressed in the last ${CONTEXT_ERROR_LOG_THROTTLE_MS / 1000}s)`
-        : "";
-    console.error(
-      `[CONTEXT] Error during user lookup:${suppressedSuffix}`,
-      detail,
-    );
-    lastContextUserLookupErrorLogAt = now;
-    suppressedContextUserLookupErrors = 0;
-    return;
-  }
-
-  suppressedContextUserLookupErrors += 1;
-}
-
-function logSlowContextUserLookup(
-  phases: ContextLookupPhase[],
-  total_ms: number,
-  user_found: boolean,
-): void {
+function logSlowContextUserLookup(phases: ContextLookupPhase[], total_ms: number): void {
   if (!phases.length || total_ms < CONTEXT_SLOW_USER_LOOKUP_LOG_MS) return;
-  console.warn("[CONTEXT] Slow user lookup", {
-    total_ms,
-    timeout_ms: USER_LOOKUP_TIMEOUT_MS,
-    db_phase_timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
-    supabase_auth_fetch_timeout_ms: CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS,
-    slow_log_threshold_ms: CONTEXT_SLOW_USER_LOOKUP_LOG_MS,
-    user_found,
-    phases: serializeContextLookupPhases(phases),
-  });
+  console.warn("[CONTEXT] Slow context auth lookup", { total_ms, supabase_auth_fetch_timeout_ms: CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS, slow_log_threshold_ms: CONTEXT_SLOW_USER_LOOKUP_LOG_MS, phases: serializeContextLookupPhases(phases) });
 }
 
 function getSupabaseConfig(): { url: string; key: string } | null {
-  const url =
-    process.env.LIGHTHOUSE_SUPABASE_URL ||
-    process.env.SUPABASE_URL ||
-    process.env.VITE_SUPABASE_URL;
-  const key =
-    process.env.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.VITE_SUPABASE_ANON_KEY;
+  const url = process.env.LIGHTHOUSE_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const key = process.env.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return { url: url.replace(/\/$/, ""), key };
 }
 
-function isLighthouseInspectionMode(
-  req?: CreateExpressContextOptions["req"],
-): boolean {
+function isLighthouseInspectionMode(req?: CreateExpressContextOptions["req"]): boolean {
   const headerFlag = req?.headers?.["x-lighthouse-inspection-mode"];
-  return (
-    process.env.LIGHTHOUSE_INSPECTION_MODE === "true" ||
-    process.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true" ||
-    headerFlag === "true" ||
-    headerFlag === "1"
-  );
+  return process.env.LIGHTHOUSE_INSPECTION_MODE === "true" || process.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true" || headerFlag === "true" || headerFlag === "1";
 }
 
 function createInspectionUser(): RuntimeUser {
   const now = Date.now();
-  return {
-    id: 0,
-    open_id: "inspection_user",
-    name: "Inspection User",
-    email: "inspection@lighthouse.local",
-    login_method: "temporary_lighthouse_inspection_mode",
-    role: "admin",
-    plan: "enterprise",
-    created_at: now,
-    updated_at: now,
-    last_signed_in: now,
-  };
+  return { id: 0, open_id: "inspection_user", name: "Inspection User", email: "inspection@lighthouse.local", login_method: "temporary_lighthouse_inspection_mode", role: "admin", plan: "enterprise", created_at: now, updated_at: now, last_signed_in: now };
 }
 
-function readHeader(
-  req: CreateExpressContextOptions["req"] | undefined,
-  name: string,
-): string | null {
+function readHeader(req: CreateExpressContextOptions["req"] | undefined, name: string): string | null {
   const value = req?.headers?.[name.toLowerCase()];
   const first = Array.isArray(value) ? value[0] : value;
   return first ? String(first) : null;
 }
 
-function getForwardedSupabaseSession(
-  req?: CreateExpressContextOptions["req"],
-): string | null {
+function getForwardedSupabaseSession(req?: CreateExpressContextOptions["req"]): string | null {
   const lighthouseHeader = readHeader(req, "x-lighthouse-supabase-session");
   if (lighthouseHeader?.trim()) return lighthouseHeader.trim();
   const authHeader = readHeader(req, "authorization");
@@ -415,303 +181,95 @@ function getForwardedSupabaseSession(
   return match?.[1]?.trim() || null;
 }
 
-async function fetchSupabaseAuthUser(
-  sessionValue: string,
-  signal?: AbortSignal,
-): Promise<SupabaseAuthUser | null> {
+async function fetchSupabaseAuthUser(sessionValue: string, signal?: AbortSignal): Promise<SupabaseAuthUser | null> {
   const config = getSupabaseConfig();
   if (!config) {
-    console.warn(
-      "[CONTEXT] Supabase auth REST unavailable; missing URL or key env vars",
-    );
+    console.warn("[CONTEXT] Supabase auth REST unavailable; missing URL or key env vars");
     return null;
   }
   const headers = new Headers();
   headers.set("apikey", config.key);
-  headers.set("Author" + "ization", "Bearer " + sessionValue);
-  const response = await fetch(`${config.url}/auth/v1/user`, {
-    headers,
-    signal,
-  });
+  headers.set("Authorization", `Bearer ${sessionValue}`);
+  const response = await fetch(`${config.url}/auth/v1/user`, { headers, signal });
   if (!response.ok) {
-    console.warn(
-      "[CONTEXT] Supabase session rejected",
-      response.status,
-      response.statusText,
-    );
+    console.warn("[CONTEXT] Supabase session rejected", response.status, response.statusText);
     return null;
   }
   return (await response.json()) as SupabaseAuthUser;
 }
 
-async function resolveSupabaseAuthUser(
-  req: CreateExpressContextOptions["req"] | undefined,
-  phases: ContextLookupPhase[],
-): Promise<SupabaseAuthUser | null> {
+async function resolveSupabaseAuthUser(req: CreateExpressContextOptions["req"] | undefined, phases: ContextLookupPhase[]): Promise<SupabaseAuthUser | null> {
   const sessionValue = getForwardedSupabaseSession(req);
   if (!sessionValue) return null;
-
   try {
-    const authUser = await withAbortableTimeout(
-      (signal) =>
-        timeContextPhase("supabase_auth_user_fetch", phases, () =>
-          fetchSupabaseAuthUser(sessionValue, signal),
-        ),
-      CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS,
-      "tRPC context supabase auth user fetch",
-    );
+    const authUser = await withAbortableTimeout((signal) => timeContextPhase("supabase_auth_user_fetch", phases, () => fetchSupabaseAuthUser(sessionValue, signal)), CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS, "tRPC context supabase auth user fetch");
     if (authUser) {
-      logContextAuthEvent("supabase_auth_fetch_succeeded", {
-        supabase_user_id: authUser.id ?? null,
-        supabase_email: authUser.email?.trim().toLowerCase() ?? null,
-      });
+      logContextAuthEvent("supabase_auth_fetch_succeeded", { supabase_user_id: authUser.id ?? null, supabase_email: authUser.email?.trim().toLowerCase() ?? null, profile_resolution_status: "not_attempted" });
     }
     return authUser;
   } catch (error) {
-    logContextAuthEvent("supabase_auth_fetch_failed", {
-      timeout_ms: CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS,
-      error: errorDetail(error),
-    });
+    logContextAuthEvent("supabase_auth_fetch_failed", { timeout_ms: CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS, error: errorDetail(error) });
     return null;
   }
 }
 
-async function resolveProfileFromSupabaseAuthUser(
-  authUser: SupabaseAuthUser,
-  phases: ContextLookupPhase[],
-  req?: CreateExpressContextOptions["req"],
-): Promise<ProfileResolutionResult> {
-  const authEmail = authUser.email?.trim().toLowerCase() || null;
-  const authOpenId = authUser.id?.trim() || null;
-  let first_error: string | null = null;
-  let timed_out = false;
-
-  if (authOpenId) {
-    return resolveProfileOncePerRequest(
-      req,
-      profileLookupCacheKey("open_id", authOpenId),
-      async () => {
-        try {
-          const user = await timeRequiredDbUserPhase(
-            "supabase_open_id_lookup",
-            phases,
-            () => get_user_by_open_id_snake(authOpenId),
-          );
-          if (user) {
-            logContextAuthEvent("profile_lookup_succeeded", {
-              lookup_key: "open_id",
-              supabase_user_id: authOpenId,
-            });
-            return { user, status: "resolved", error: null };
-          }
-          logContextAuthEvent("profile_lookup_missed", {
-            lookup_key: "open_id",
-            supabase_user_id: authOpenId,
-          });
-        } catch (error) {
-          first_error = errorDetail(error);
-          timed_out = isTimeoutError(error);
-          logContextAuthEvent(
-            timed_out ? "profile_lookup_timed_out" : "profile_lookup_threw",
-            {
-              lookup_key: "open_id",
-              supabase_user_id: authOpenId,
-              timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
-              error: first_error,
-              diagnostic_code: profile_lookup_error_code(error),
-            },
-          );
-          logContextAuthEvent("profile_lookup_fallback_activated", {
-            lookup_key: "open_id",
-            supabase_user_id: authOpenId,
-            fallback_activation: true,
-            profile_state: "unavailable",
-          });
-          return {
-            user: null,
-            status: timed_out ? "timed_out" : "threw",
-            error: first_error,
-          };
-        }
-        return { user: null, status: "missed", error: null };
-      },
-    );
-  }
-
-  if (authEmail) {
-    return resolveProfileOncePerRequest(
-      req,
-      profileLookupCacheKey("email", authEmail),
-      async () => {
-        try {
-          const user = await timeRequiredDbUserPhase(
-            "supabase_email_lookup",
-            phases,
-            () => get_user_by_email_snake(authEmail),
-          );
-          if (user) {
-            logContextAuthEvent("profile_lookup_succeeded", {
-              lookup_key: "email",
-              supabase_email: authEmail,
-            });
-            return { user, status: "resolved", error: null };
-          }
-          logContextAuthEvent("profile_lookup_missed", {
-            lookup_key: "email",
-            supabase_email: authEmail,
-          });
-        } catch (error) {
-          const detail = errorDetail(error);
-          timed_out = timed_out || isTimeoutError(error);
-          logContextAuthEvent(
-            isTimeoutError(error)
-              ? "profile_lookup_timed_out"
-              : "profile_lookup_threw",
-            {
-              lookup_key: "email",
-              supabase_email: authEmail,
-              timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
-              error: detail,
-              diagnostic_code: profile_lookup_error_code(error),
-            },
-          );
-          logContextAuthEvent("profile_lookup_fallback_activated", {
-            lookup_key: "email",
-            supabase_email: authEmail,
-            fallback_activation: true,
-            profile_state: "unavailable",
-          });
-          return {
-            user: null,
-            status: isTimeoutError(error) ? "timed_out" : "threw",
-            error: detail,
-          };
-        }
-        return { user: null, status: "missed", error: null };
-      },
-    );
-  }
-
-  if (first_error) {
-    return {
-      user: null,
-      status: timed_out ? "timed_out" : "threw",
-      error: first_error,
-    };
-  }
-
-  return { user: null, status: "missed", error: null };
+async function resolveUserFromLegacySessionWithoutDb(session: any): Promise<{ user: RuntimeUser | null; auth: ContextAuth | null }> {
+  if (!session?.user && !session?.openId) return { user: null, auth: null };
+  return {
+    user: null,
+    auth: {
+      auth_status: "authenticated_profile_unresolved",
+      supabase_user_id: session?.openId ? String(session.openId) : null,
+      supabase_email: session?.user?.email ? String(session.user.email).trim().toLowerCase() : null,
+      profile_resolution_status: "not_attempted",
+      profile_resolution_error: null,
+    },
+  };
 }
 
-async function resolveUserFromLegacySession(
-  session: any,
-  phases: ContextLookupPhase[],
-): Promise<RuntimeUser | null> {
-  let dbUser: RuntimeUser | null = null;
-  if (session?.openId) {
-    dbUser = await timeOptionalDbUserPhase(
-      "session_open_id_lookup",
-      phases,
-      () => get_user_by_open_id_snake(String(session.openId)),
-    );
+export async function resolve_user_for_procedure(ctx: TrpcContext): Promise<RuntimeUser | null> {
+  if (ctx.user) return ctx.user;
+  const openId = ctx.auth.supabase_user_id?.trim() || null;
+  const email = ctx.auth.supabase_email?.trim().toLowerCase() || null;
+  let user: RuntimeUser | null = null;
+  if (openId) user = await get_user_by_open_id_snake(openId);
+  if (!user && email) user = await get_user_by_email_snake(email);
+  if (user) {
+    ctx.user = user;
+    ctx.auth = createResolvedAuth(user);
   }
-  if (!dbUser && session?.user?.email) {
-    dbUser = await timeOptionalDbUserPhase("session_email_lookup", phases, () =>
-      get_user_by_email_snake(String(session.user.email)),
-    );
-  }
-  return dbUser;
+  return user;
 }
 
-export async function createContext(
-  opts: CreateExpressContextOptions,
-): Promise<TrpcContext> {
+export async function require_resolved_user(ctx: TrpcContext): Promise<RuntimeUser> {
+  const user = await resolve_user_for_procedure(ctx);
+  if (!user) throw new TRPCError({ code: "UNAUTHORIZED", message: "Authenticated profile is required for this operation." });
+  return user;
+}
+
+export async function createContext(opts: CreateExpressContextOptions): Promise<TrpcContext> {
   let user: RuntimeUser | null = null;
   let auth = createUnauthenticatedAuth();
   const phases: ContextLookupPhase[] = [];
   const started = Date.now();
   const isInspectionMode = isLighthouseInspectionMode(opts.req);
   if (isInspectionMode) {
-    return {
-      req: opts.req,
-      res: opts.res,
-      user: createInspectionUser(),
-      auth: createInspectionAuth(),
-      isSystem: false,
-      isInspectionMode: true,
-    };
+    return { req: opts.req, res: opts.res, user: createInspectionUser(), auth: createInspectionAuth(), isSystem: false, isInspectionMode: true };
   }
-
-  const session = (opts.req as any).session;
   try {
     const authUser = await resolveSupabaseAuthUser(opts.req, phases);
     if (authUser) {
-      const supabase_user_id = authUser.id?.trim() || null;
-      const supabase_email = authUser.email?.trim().toLowerCase() || null;
-      const profileResult = await withTimeout(
-        resolveProfileFromSupabaseAuthUser(authUser, phases, opts.req),
-        USER_LOOKUP_TIMEOUT_MS,
-        "tRPC context supabase profile resolution",
-      ).catch((error): ProfileResolutionResult => {
-        const detail = errorDetail(error);
-        logContextAuthEvent(
-          isTimeoutError(error)
-            ? "profile_lookup_timed_out"
-            : "profile_lookup_threw",
-          {
-            lookup_key: "supabase_profile_resolution",
-            supabase_user_id,
-            supabase_email,
-            timeout_ms: USER_LOOKUP_TIMEOUT_MS,
-            error: detail,
-            diagnostic_code: profile_lookup_error_code(error),
-          },
-        );
-        return {
-          user: null,
-          status: isTimeoutError(error) ? "timed_out" : "threw",
-          error: detail,
-        };
-      });
-      user = profileResult.user;
-      auth = {
-        auth_status: user
-          ? "authenticated_profile_resolved"
-          : "authenticated_profile_unresolved",
-        supabase_user_id,
-        supabase_email,
-        profile_resolution_status: profileResult.status,
-        profile_resolution_error: profileResult.error,
-      };
+      auth = createAuthenticatedUnresolvedAuth(authUser);
     } else {
-      user = await withTimeout(
-        resolveUserFromLegacySession(session, phases),
-        USER_LOOKUP_TIMEOUT_MS,
-        "tRPC context legacy user lookup",
-      );
-      if (user) {
-        auth = {
-          auth_status: "authenticated_profile_resolved",
-          supabase_user_id: user.open_id,
-          supabase_email: user.email?.trim().toLowerCase() || null,
-          profile_resolution_status: "resolved",
-          profile_resolution_error: null,
-        };
-      }
+      const legacy = await resolveUserFromLegacySessionWithoutDb((opts.req as any).session);
+      if (legacy.auth) auth = legacy.auth;
+      user = legacy.user;
     }
   } catch (error) {
-    logContextUserLookupError(error);
+    logContextAuthEvent("context_auth_resolution_failed", { error: errorDetail(error) });
     user = null;
   } finally {
-    logSlowContextUserLookup(phases, Date.now() - started, Boolean(user));
+    logSlowContextUserLookup(phases, Date.now() - started);
   }
-
-  return {
-    req: opts.req,
-    res: opts.res,
-    user,
-    auth,
-    isSystem: false,
-    isInspectionMode: false,
-  };
+  return { req: opts.req, res: opts.res, user, auth, isSystem: false, isInspectionMode: false };
 }
