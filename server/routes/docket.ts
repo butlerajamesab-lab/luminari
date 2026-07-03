@@ -50,7 +50,7 @@ const normalize_state_code = (state: unknown): string => {
 
   const normalized = state.trim().toUpperCase();
 
-  if (!LEGISCAN_ROLLOUT_STATES.includes(normalized)) {
+  if (!LEGISCAN_ROLLOUT_STATES.includes(normalized as (typeof LEGISCAN_ROLLOUT_STATES)[number])) {
     throw new Error(`Invalid state code: ${state}`);
   }
 
