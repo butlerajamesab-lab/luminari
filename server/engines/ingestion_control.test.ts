@@ -79,3 +79,36 @@ describe("temporary DOCX ingestion conveyor salvage", () => {
     expect(__testing.candidate_source_table({ target_surfaces: "[\"workflow_registry\"]" })).toBe("registry_entity_extraction_v4");
   });
 });
+
+describe("authoritative DOCX conveyor preservation", () => {
+  it("reads bound fields from forensic provenance when normalized DOCX candidates have no payload", () => {
+    const row = {
+      candidate_type: "resource_block",
+      name: "Utah Legal Services",
+      source_file: "registry files/utah.docx",
+      source_citation: "registry files/utah.docx",
+      jurisdiction: "Utah",
+      content_hash: "abc123",
+      confidence: 0.82,
+      promotion_lane: "state_enriched_registry_docx_review",
+      document_family: "state_enriched_registry_docx_review",
+      forensic_provenance: {
+        source_excerpt: "Utah Legal Services | Phone: (801) 555-1212 | Website: utahlegalservices.org | Eligibility: Utah residents",
+        phone: "(801) 555-1212",
+        website: "utahlegalservices.org",
+        eligibility: "Utah residents",
+        field_metadata: { description: "Civil legal help" },
+      },
+    };
+
+    expect(__testing.candidate_payload_text(row, ["phone"])).toBe("(801) 555-1212");
+    expect(__testing.candidate_payload_text(row, ["website"])).toBe("utahlegalservices.org");
+    expect(__testing.candidate_payload_text(row, ["description"])).toBe("Civil legal help");
+    expect(__testing.verify_registry_candidate(row).verified).toBe(true);
+  });
+
+  it("keeps resource-like normalized DOCX blocks promotion-eligible without relabeling them as benefit programs", () => {
+    expect(__testing.candidate_is_resource_like({ candidate_type: "resource_block" })).toBe(true);
+    expect(__testing.candidate_is_resource_like({ candidate_type: "label_value" })).toBe(true);
+  });
+});

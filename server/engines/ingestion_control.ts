@@ -1,4 +1,96 @@
 import { createHash, randomUUID } from "node:crypto";
+import { getPool } from "../db";
+import { getPool, query_with_diagnostics } from "../db";
+
+export type CorpusImportQueueStatusFilter =
+  | "all"
+  | "blocked"
+  | "review_required"
+  | "pending_bucket_content_scan"
+  | "pending_docx_normalization"
+  | "ready_for_review"
+  | "docx_extraction_failed"
+  | "candidates_created";
+
+type CorpusImportQueueRow = {
+  id: number;
+  source_name: string | null;
+  source_ext: string | null;
+  storage_bucket: string | null;
+  storage_path: string | null;
+  storage_mode: string | null;
+  target_hint: string | null;
+  import_status: string | null;
+  record_count_estimate: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+  raw_text_chars: number;
+  normalized_text_chars: number;
+  has_payload: boolean;
+  policy_class: string;
+  dedupe_behavior: string;
+  intended_destination: string;
+  blocked_reason: string | null;
+  next_action: string;
+};
+
+export const allowed_target_hints = [
+  "state_enriched_registry_docx_review",
+  "registry_entity_extraction_v4",
+  "legal_authority_staging",
+  "legislator_registry",
+  "committee_registry",
+  "committee_membership_registry",
+  "government_benefits_registry",
+  "workflow_registry",
+  "escalation_registry",
+  "advocacy_organizations",
+  "advocacy_targets",
+  "agency_authority_map",
+] as const;
+
+export type TargetHintValue = typeof allowed_target_hints[number];
+
+function classify_policy(row: { target_hint: string | null; source_ext: string | null; import_status: string | null }) {
+  const target_hint = (row.target_hint ?? "").toLowerCase();
+  const source_ext = (row.source_ext ?? "").toLowerCase();
+  const import_status = row.import_status ?? "pending";
+
+  if (import_status.includes("failed")) {
+    return {
+      policy_class: "review_required",
+      dedupe_behavior: "hold_for_operator_review",
+      intended_destination: "corpus_import_queue",
+      blocked_reason: import_status,
+      next_action: "inspect_error_then_retry_step",
+    };
+  }
+
+  if (source_ext === ".docx" && import_status === "pending_bucket_content_scan") {
+    return {
+      policy_class: "entity_enrichment",
+      dedupe_behavior: "enrich_blank_fields_only",
+      intended_destination: target_hint || "registry_entity_extraction_v4",
+      blocked_reason: "docx_not_extracted",
+      next_action: "extract_docx_queue_row",
+    };
+  }
+
+  if (source_ext === ".docx" && import_status === "pending_docx_normalization") {
+    return {
+      policy_class: "entity_enrichment",
+      dedupe_behavior: "enrich_blank_fields_only",
+      intended_destination: target_hint || "registry_entity_extraction_v4",
+      blocked_reason: null,
+      next_action: "normalize_docx_queue_row",
+    };
+  }
+
+  if (source_ext === ".docx" && import_status === "ready_for_review") {
+    return {
+      policy_class: "entity_enrichment",
+      dedupe_behavior: "enrich_blank_fields_only",
+      intended_destinatiimport { getPool } from "../db";
 import { getPool, query_with_diagnostics } from "../db";
 
 export type CorpusImportQueueStatusFilter =
@@ -90,6 +182,30 @@ function classify_policy(row: { target_hint: string | null; source_ext: string |
       policy_class: "entity_enrichment",
       dedupe_behavior: "enrich_blank_fields_only",
       intended_destination: target_hint || "registry_entity_extraction_v4",
+      blocked_reason: null,
+      next_action: "create_registry_candidates",
+    };
+  }
+
+  if (target_hint.includes("statute") || target_hint.includes("law") || target_hint.includes("legal_authority")) {
+    return {
+      policy_class: "strict_authority",
+      dedupe_behavior: "no_silent_merge",
+      intended_destination: target_hint || "legal_authority_staging",
+      blocked_reason: "strict_authority_requires_review",
+      next_action: "route_corpus_queue_dry_run",
+    };
+  }
+
+  return {
+    policy_class: target_hint ? "entity_enrichment" : "review_required",
+    dedupe_behavior: target_hint ? "enrich_blank_fields_only" : "hold_for_target_hint",
+    intended_destination: target_hint || "target_hint_required",
+    blocked_reason: target_hint ? null : "missing_target_hint",
+    next_action: target_hint ? "route_corpus_queue_dry_run" : "set_target_hint",
+  };
+}
+on: target_hint || "registry_entity_extraction_v4",
       blocked_reason: null,
       next_action: "create_registry_candidates",
     };
@@ -267,6 +383,12 @@ function sha256(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
 
+function infer_jurisdiction(row: Pick<ReadyQueueRow, "source_name" | "storage_path">, text: string) {
+  const haystack = `${row.source_name ?? ""} ${row.storage_path ?? ""} ${text.slice(0, 2000)}`.toLowerCase();
+  const states: Record<string, string[]> = {
+    Alabama: ["alabama", "_al_", "-al-"], Alaska: ["alaska", "_ak_", "-ak-"], Arizona: ["arizona", "_az_", "-az-"], Arkansas: ["arkansas", "_ar_", "-ar-"], California: ["california", "_ca_", "-ca-"], Colorado: ["colorado", "_co_", "-co-"], Connecticut: ["connecticut", "_ct_", "-ct-"], Delaware: ["delaware", "_de_", "-de-"], Florida: ["florida", "_fl_", "-fl-"], Georgia: ["georgia", "_ga_", "-ga-"], Hawaii: ["hawaii", "_hi_", "-hi-"], Idaho: ["idaho", "_id_", "-id-"], Illinois: ["illinois", "_il_", "-il-"], Indiana: ["indiana", "_in_", "-in-"], Iowa: ["iowa", "_ia_", "-ia-"], Kansas: ["kansas", "_ks_", "-ks-"], Kentucky: ["kentucky", "_ky_", "-ky-"], Louisiana: ["louisiana", "_la_", "-la-"], Maine: ["maine", "_me_", "-me-"], Maryland: ["maryland", "_md_", "-md-"], Massachusetts: ["massachusetts", "_ma_", "-ma-"], Michigan: ["michigan", "_mi_", "-mi-"], Minnesota: ["minnesota", "_mn_", "-mn-"], Mississippi: ["mississippi", "_ms_", "-ms-"], Missouri: ["missouri", "_mo_", "-mo-"], Montana: ["montana", "_mt_", "-mt-"], Nebraska: ["nebraska", "_ne_", "-ne-"], Nevada: ["nevada", "_nv_", "-nv-"], "New Hampshire": ["new hampshire", "_nh_", "-nh-"], "New Jersey": ["new jersey", "_nj_", "-nj-"], "New Mexico": ["new mexico", "_nm_", "-nm-"], "New York": ["new york", "_ny_", "-ny-"], "North Carolina": ["north carolina", "_nc_", "-nc-"], "North Dakota": ["north dakota", "_nd_", "-nd-"], Ohio: ["ohio", "_oh_", "-oh-"], Oklahoma: ["oklahoma", "_ok_", "-ok-"], Oregon: ["oregon", "_or_", "-or-"], Pennsylvania: ["pennsylvania", "_pa_", "-pa-"], "Rhode Island": ["rhode island", "_ri_", "-ri-"], "South Carolina": ["south carolina", "_sc_", "-sc-"], "South Dakota": ["south dakota", "_sd_", "-sd-"], Tennessee: ["tennessee", "_tn_", "-tn-"], Texas: ["texas", "_tx_", "-tx-"], Utah: ["utah", "_ut_", "-ut-"], Vermont: ["vermont", "_vt_", "-vt-"], Virginia: ["virginia", "_va_", "-va-"], Washington: ["washington", "_wa_", "-wa-"], "West Virginia": ["west virginia", "_wv_", "-wv-"], Wisconsin: ["wisconsin", "_wi_", "-wi-"], Wyoming: ["wyoming", "_wy_", "-wy-"],
+  };
+  return Object.entries(states).find(([, needles]) => needles.some((needle) => haystack.includes(needle)))?.[0] ?? null;
 const STATE_NEEDLES: Record<string, string[]> = {
   Alabama: ["alabama", "_al_", "-al-"], Alaska: ["alaska", "_ak_", "-ak-"], Arizona: ["arizona", "_az_", "-az-"], Arkansas: ["arkansas", "_ar_", "-ar-"], California: ["california", "_ca_", "-ca-"], Colorado: ["colorado", "_co_", "-co-"], Connecticut: ["connecticut", "_ct_", "-ct-"], Delaware: ["delaware", "_de_", "-de-"], Florida: ["florida", "_fl_", "-fl-"], Georgia: ["georgia", "_ga_", "-ga-"], Hawaii: ["hawaii", "_hi_", "-hi-"], Idaho: ["idaho", "_id_", "-id-"], Illinois: ["illinois", "_il_", "-il-"], Indiana: ["indiana", "_in_", "-in-"], Iowa: ["iowa", "_ia_", "-ia-"], Kansas: ["kansas", "_ks_", "-ks-"], Kentucky: ["kentucky", "_ky_", "-ky-"], Louisiana: ["louisiana", "_la_", "-la-"], Maine: ["maine", "_me_", "-me-"], Maryland: ["maryland", "_md_", "-md-"], Massachusetts: ["massachusetts", "_ma_", "-ma-"], Michigan: ["michigan", "_mi_", "-mi-"], Minnesota: ["minnesota", "_mn_", "-mn-"], Mississippi: ["mississippi", "_ms_", "-ms-"], Missouri: ["missouri", "_mo_", "-mo-"], Montana: ["montana", "_mt_", "-mt-"], Nebraska: ["nebraska", "_ne_", "-ne-"], Nevada: ["nevada", "_nv_", "-nv-"], "New Hampshire": ["new hampshire", "_nh_", "-nh-"], "New Jersey": ["new jersey", "_nj_", "-nj-"], "New Mexico": ["new mexico", "_nm_", "-nm-"], "New York": ["new york", "_ny_", "-ny-"], "North Carolina": ["north carolina", "_nc_", "-nc-"], "North Dakota": ["north dakota", "_nd_", "-nd-"], Ohio: ["ohio", "_oh_", "-oh-"], Oklahoma: ["oklahoma", "_ok_", "-ok-"], Oregon: ["oregon", "_or_", "-or-"], Pennsylvania: ["pennsylvania", "_pa_", "-pa-"], "Rhode Island": ["rhode island", "_ri_", "-ri-"], "South Carolina": ["south carolina", "_sc_", "-sc-"], "South Dakota": ["south dakota", "_sd_", "-sd-"], Tennessee: ["tennessee", "_tn_", "-tn-"], Texas: ["texas", "_tx_", "-tx-"], Utah: ["utah", "_ut_", "-ut-"], Vermont: ["vermont", "_vt_", "-vt-"], Virginia: ["virginia", "_va_", "-va-"], Washington: ["washington", "_wa_", "-wa-"], "West Virginia": ["west virginia", "_wv_", "-wv-"], Wisconsin: ["wisconsin", "_wi_", "-wi-"], Wyoming: ["wyoming", "_wy_", "-wy-"],
 };
@@ -933,7 +1055,7 @@ function verify_registry_candidate(candidate: any) {
   const candidate_type = resolved_candidate_type(candidate);
   const name = first_text_value(candidate.name, payload?.name);
   if (payload?.jurisdiction_mismatch_reason || payload?.classification_outcome === "provenance_mismatch") blocked_reasons.push("provenance_mismatch");
-  if (candidate_type !== "benefit_program") blocked_reasons.push("benefit_program_candidate_type_required");
+  if (!candidate_is_resource_like({ ...candidate, candidate_type })) blocked_reasons.push("resource_like_candidate_type_required");
   if (!name) blocked_reasons.push("name_required");
   else if (is_generic_header_text(name) || name.startsWith("review_fragment:")) blocked_reasons.push("non_generic_real_name_required");
   if (!first_text_value(candidate.source_file, payload?.source_file, payload?.source_name)) blocked_reasons.push("source_file_required");
@@ -1048,8 +1170,17 @@ function promotion_feature_flag_enabled() {
   return process.env[CANONICAL_PROMOTION_FLAG] === "true";
 }
 
+function merge_plain_objects(...values: any[]) {
+  return Object.assign({}, ...values.filter((value) => value && typeof value === "object" && !Array.isArray(value)));
+}
+
 function candidate_payload_from_row(row: any) {
-  return row.candidate_payload ?? row.raw_candidate_payload ?? row.payload ?? row.promotion_ready ?? {};
+  const forensic = row.forensic_provenance && typeof row.forensic_provenance === "object" ? row.forensic_provenance : {};
+  const promotion = row.promotion_ready && typeof row.promotion_ready === "object" ? row.promotion_ready : {};
+  const payload = row.payload && typeof row.payload === "object" ? row.payload : {};
+  const raw = row.raw_candidate_payload && typeof row.raw_candidate_payload === "object" ? row.raw_candidate_payload : {};
+  const candidate = row.candidate_payload && typeof row.candidate_payload === "object" ? row.candidate_payload : {};
+  return merge_plain_objects(forensic.field_metadata, forensic, promotion, payload, raw, candidate);
 }
 
 function first_text_value(...values: unknown[]) {
@@ -1139,7 +1270,15 @@ function truncate_preview(value: unknown, limit = PROMOTION_SOURCE_PREVIEW_CHAR_
 function candidate_payload_text(row: any, keys: string[]) {
   const payload = candidate_payload_from_row(row);
   const extracted = payload?.extracted ?? {};
-  return first_text_value(...keys.map((key) => payload?.[key]), ...keys.map((key) => extracted?.[key]));
+  const forensic = row.forensic_provenance ?? {};
+  const metadata = forensic?.field_metadata ?? {};
+  return first_text_value(
+    ...keys.map((key) => row?.[key]),
+    ...keys.map((key) => payload?.[key]),
+    ...keys.map((key) => extracted?.[key]),
+    ...keys.map((key) => forensic?.[key]),
+    ...keys.map((key) => metadata?.[key]),
+  );
 }
 
 function promotion_write_adapter_status(row: any) {
@@ -1310,7 +1449,7 @@ function hold_reason_for_material_scope(material_scope: string) {
 
 function candidate_is_resource_like(candidate: any) {
   const candidate_type = String(candidate.candidate_type || "unknown").toLowerCase();
-  return ["benefit_program", "agency", "legal_aid", "court", "contact", "resource"].includes(candidate_type);
+  return ["benefit_program", "agency", "legal_aid", "court", "contact", "resource", "resource_block", "resource_context", "label_value", "contact_phone", "contact_website", "address"].includes(candidate_type);
 }
 
 
@@ -1528,8 +1667,8 @@ async function write_canonical_candidate(client: any, row: any, entity_columns: 
     layer: "registry_resource",
     jurisdiction: row.jurisdiction,
     jurisdiction_scope: "state",
-    description: text_or_null(candidate_payload.normalized_excerpt) ?? text_or_null(row.normalized_excerpt),
-    eligibility_summary: text_or_null(candidate_payload.eligibility_summary),
+    description: text_or_null(candidate_payload.description) ?? text_or_null(candidate_payload.purpose) ?? text_or_null(candidate_payload.normalized_excerpt) ?? text_or_null(candidate_payload.source_excerpt) ?? text_or_null(row.normalized_excerpt),
+    eligibility_summary: text_or_null(candidate_payload.eligibility_summary) ?? text_or_null(candidate_payload.eligibility),
     domains: [],
     metadata: { source: source_table, candidate_payload, forensic_provenance: row.forensic_provenance ?? {}, content_hash: row.content_hash, dedupe_behavior: "enrich_blank_fields_only" },
     verification_status: "source_attached",
@@ -1790,6 +1929,7 @@ export const __testing = {
   build_candidates,
   extract_obvious_values,
   verify_registry_candidate,
-  candidate_targets_resource_directory,
-  candidate_source_table,
+  candidate_payload_from_row,
+  candidate_payload_text,
+  candidate_is_resource_like,
 };
