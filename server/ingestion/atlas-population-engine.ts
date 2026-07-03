@@ -150,6 +150,7 @@ export async function get_atlas_signal_intelligence_cards(input: atlas_signal_in
 
   if (!input.include_excluded) {
     query = query.or("exclude_from_production.is.false,exclude_from_production.is.null");
+    query = query.eq("exclude_from_production", false);
   }
 
   if (input.canonical_signal_code) {

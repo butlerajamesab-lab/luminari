@@ -126,6 +126,7 @@ export const ingestionRouter = router({
   get_atlas_public_stream_catalog: publicProcedure.query(() => summarizeAtlasCatalog()),
 
   list_signal_intelligence_cards: adminProcedure
+  list_signal_intelligence_cards: publicProcedure
     .input(z.object({
       limit: z.number().int().min(1).max(100).default(25),
       canonical_signal_code: z.string().optional(),
@@ -140,6 +141,7 @@ export const ingestionRouter = router({
     })),
 
   get_signal_intelligence_summary: adminProcedure.query(() => get_atlas_signal_intelligence_summary()),
+  get_signal_intelligence_summary: publicProcedure.query(() => get_atlas_signal_intelligence_summary()),
 
   seed_atlas_population_streams: adminProcedure
     .input(z.object({
