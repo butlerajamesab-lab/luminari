@@ -918,6 +918,7 @@ function dry_run_lane_for_candidate(candidate: any) {
 const CANDIDATE_PROMOTION_CONFIDENCE_THRESHOLD = 0.6;
 const PROMOTION_SOURCE_PREVIEW_CHAR_LIMIT = 750;
 const SAFE_PROMOTION_WRITE_TARGETS = new Set(["luminari_resource_entities", "registry_programs"]);
+const RESOURCE_DIRECTORY_SOURCE_TABLE = "resource_directory_docx_import";
 
 function has_useful_bound_value(candidate: any) {
   const payload = candidate_payload_from_row(candidate);
@@ -1083,6 +1084,28 @@ function promotion_ready_value(row: any, field: string) {
   return row.promotion_ready && typeof row.promotion_ready === "object" ? row.promotion_ready[field] ?? null : null;
 }
 
+function normalize_target_surface(value: unknown) {
+  return String(value ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+}
+
+function parse_target_surfaces(value: unknown) {
+  if (Array.isArray(value)) return value.map(normalize_target_surface).filter(Boolean);
+  if (typeof value !== "string" || !value.trim()) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) return parsed.map(normalize_target_surface).filter(Boolean);
+  } catch {}
+  return value.split(",").map(normalize_target_surface).filter(Boolean);
+}
+
+function candidate_targets_resource_directory(row: any) {
+  return parse_target_surfaces(row.target_surfaces).includes("resource_directory");
+}
+
+function candidate_source_table(row: any) {
+  return candidate_targets_resource_directory(row) ? RESOURCE_DIRECTORY_SOURCE_TABLE : "registry_entity_extraction_v4";
+}
+
 function resolved_candidate_type(row: any) {
   return first_text_value(promotion_ready_value(row, "candidate_type"), row.candidate_type) ?? "unknown";
 }
@@ -1120,6 +1143,9 @@ function candidate_payload_text(row: any, keys: string[]) {
 }
 
 function promotion_write_adapter_status(row: any) {
+  if (candidate_targets_resource_directory(row)) {
+    return { write_target_table: "luminari_resource_entities", write_adapter_status: "safe_resource_directory_backbone_adapter" };
+  }
   const intended_target_table = resolved_intended_target_table(row);
   if (intended_target_table === "registry_programs") {
     return resolved_candidate_type(row) === "benefit_program" ? { write_target_table: "registry_programs", write_adapter_status: "safe_registry_programs_benefit_program_adapter" } : { write_target_table: null, write_adapter_status: "no_safe_registry_programs_adapter_for_candidate_type" };
@@ -1217,10 +1243,15 @@ function candidate_source_queue_id(row: any) {
 function candidate_contact_values(row: any) {
   const payload = candidate_payload_from_row(row);
   const extracted = payload?.extracted ?? {};
+  const phone = candidate_payload_text(row, ["phone", "telephone"]);
+  const email = candidate_payload_text(row, ["email"]);
+  const website = candidate_payload_text(row, ["website", "site", "homepage", "url", "source_url", "link"]);
+  const normalize = (value: string) => value.trim();
+  const unique = (values: string[]) => [...new Set(values.map((value) => normalize(String(value))).filter(Boolean))];
   return {
-    phones: Array.isArray(extracted.phones) ? extracted.phones.filter(Boolean) : [],
-    emails: Array.isArray(extracted.emails) ? extracted.emails.filter(Boolean) : [],
-    urls: Array.isArray(extracted.urls) ? extracted.urls.filter(Boolean) : [],
+    phones: unique([...(Array.isArray(extracted.phones) ? extracted.phones : []), ...(phone ? [phone] : [])] as string[]),
+    emails: unique([...(Array.isArray(extracted.emails) ? extracted.emails : []), ...(email ? [email] : [])] as string[]),
+    urls: unique([...(Array.isArray(extracted.urls) ? extracted.urls : []), ...(website ? [website] : [])] as string[]),
   };
 }
 
@@ -1283,17 +1314,19 @@ function candidate_is_resource_like(candidate: any) {
 }
 
 
-async function existing_resource_entity(client: any, row: any) {
+async function existing_resource_entity(client: any, row: any, source_table_override?: string) {
   const source_pk = row.content_hash ?? row.program_id ?? null;
   if (!source_pk) return null;
+  const source_table = source_table_override ?? candidate_source_table(row);
+  const canonical_id = `${source_table}:${source_pk}`;
   const result = await client.query(
     `select *
-       from public.luminari_resource_entities
-      where (source_table = 'registry_entity_extraction_v4' and source_pk = $1)
-         or canonical_id = $2
+      from public.luminari_resource_entities
+      where (source_table = $2 and source_pk = $1)
+         or canonical_id = $3
       order by resource_entity_id
       limit 1`,
-    [source_pk, `registry_entity_extraction_v4:${source_pk}`],
+    [source_pk, source_table, canonical_id],
   );
   return result.rows[0] ?? null;
 }
@@ -1469,8 +1502,9 @@ async function update_conveyor_run_row(client: any, input: Record<string, unknow
 
 
 async function write_canonical_candidate(client: any, row: any, entity_columns: Set<string>, location_columns: Set<string>, contact_columns: Set<string>) {
-  const existing_row = await existing_resource_entity(client, row);
   const source_pk = row.content_hash ?? row.program_id;
+  const source_table = candidate_source_table(row);
+  const existing_row = await existing_resource_entity(client, row, source_table);
   const candidate_payload = candidate_payload_from_row(row);
   if (existing_row) {
     const updates = blank_update_fields(existing_row, row, entity_columns);
@@ -1483,9 +1517,9 @@ async function write_canonical_candidate(client: any, row: any, entity_columns: 
     return { action_type: "would_update_blank_fields", canonical_record_id: String(existing_row.resource_entity_id ?? existing_row.canonical_id ?? source_pk), bridge_record_id: null };
   }
   const insertable: Record<string, unknown> = {
-    canonical_id: `registry_entity_extraction_v4:${source_pk}`,
+    canonical_id: `${source_table}:${source_pk}`,
     source_family_key: "state_enriched_registry_docx_review",
-    source_table: "registry_entity_extraction_v4",
+    source_table,
     source_pk,
     source_hash: row.content_hash,
     resource_name: row.name,
@@ -1497,7 +1531,7 @@ async function write_canonical_candidate(client: any, row: any, entity_columns: 
     description: text_or_null(candidate_payload.normalized_excerpt) ?? text_or_null(row.normalized_excerpt),
     eligibility_summary: text_or_null(candidate_payload.eligibility_summary),
     domains: [],
-    metadata: { source: "registry_entity_extraction_v4", candidate_payload, forensic_provenance: row.forensic_provenance ?? {}, content_hash: row.content_hash, dedupe_behavior: "enrich_blank_fields_only" },
+    metadata: { source: source_table, candidate_payload, forensic_provenance: row.forensic_provenance ?? {}, content_hash: row.content_hash, dedupe_behavior: "enrich_blank_fields_only" },
     verification_status: "source_attached",
     promotion_status: "review_ready",
     provenance_status: "candidate_provenance_attached",
@@ -1506,14 +1540,31 @@ async function write_canonical_candidate(client: any, row: any, entity_columns: 
   const placeholders = names.map((name, index) => Array.isArray(insertable[name]) || (typeof insertable[name] === "object" && insertable[name] !== null) ? `$${index + 1}::jsonb` : `$${index + 1}`);
   const inserted = await client.query(`insert into public.luminari_resource_entities (${names.join(", ")}) values (${placeholders.join(", ")}) returning resource_entity_id, canonical_id`, names.map((name) => Array.isArray(insertable[name]) || (typeof insertable[name] === "object" && insertable[name] !== null) ? JSON.stringify(insertable[name]) : insertable[name]));
   const canonical_record_id = String(inserted.rows[0]?.resource_entity_id ?? inserted.rows[0]?.canonical_id ?? source_pk);
+  const address = candidate_payload_text(row, ["address", "mailing_address", "physical_address"]);
+  const city = candidate_payload_text(row, ["city"]);
+  const state = candidate_payload_text(row, ["state", "addr_state"]) ?? row.jurisdiction ?? null;
+  const postal_code = candidate_payload_text(row, ["postal_code", "zip", "zip_code"]);
+  if (
+    address
+    && required_columns_present(location_columns, ["resource_entity_id", "address_line1", "city", "state", "postal_code", "country", "coordinate_quality", "source_table", "source_pk", "source_hash", "metadata"])
+  ) {
+    await client.query(
+      `insert into public.luminari_resource_locations
+         (resource_entity_id, address_line1, city, state, postal_code, country, coordinate_quality, source_table, source_pk, source_hash, metadata)
+       select $1,$2,$3,$4,$5,'US','ungeocoded',$6,$7,$8,$9::jsonb
+       where not exists (
+         select 1 from public.luminari_resource_locations l where l.source_table = $6 and l.source_pk = $7
+       )`,
+      [inserted.rows[0]?.resource_entity_id, address, city, state, postal_code, source_table, source_pk, row.content_hash, JSON.stringify({ source: source_table, content_hash: row.content_hash })],
+    );
+  }
   const contacts = candidate_contact_values(row);
   const contact_values = [...contacts.phones.map((value: string) => ["phone", value]), ...contacts.emails.map((value: string) => ["email", value]), ...contacts.urls.map((value: string) => ["url", value])];
   if (contact_values.length && required_columns_present(contact_columns, ["resource_entity_id", "canonical_id", "contact_type", "contact_value", "label", "is_primary", "contact_quality", "source_table", "source_pk", "source_hash", "metadata"])) {
     for (const [contact_type, contact_value] of contact_values.slice(0, 10)) {
-      await client.query(`insert into public.luminari_resource_contact_points (resource_entity_id, canonical_id, contact_type, contact_value, label, is_primary, contact_quality, source_table, source_pk, source_hash, metadata) values ($1,$2,$3,$4,$3,false,'candidate_extracted','registry_entity_extraction_v4',$5,$6,$7::jsonb) on conflict do nothing`, [inserted.rows[0]?.resource_entity_id, inserted.rows[0]?.canonical_id, contact_type, contact_value, source_pk, row.content_hash, JSON.stringify({ source: "registry_entity_extraction_v4", content_hash: row.content_hash })]);
+      await client.query(`insert into public.luminari_resource_contact_points (resource_entity_id, canonical_id, contact_type, contact_value, label, is_primary, contact_quality, source_table, source_pk, source_hash, metadata) values ($1,$2,$3,$4,$3,false,'candidate_extracted',$5,$6,$7,$8::jsonb) on conflict do nothing`, [inserted.rows[0]?.resource_entity_id, inserted.rows[0]?.canonical_id, contact_type, contact_value, source_table, source_pk, row.content_hash, JSON.stringify({ source: source_table, content_hash: row.content_hash })]);
     }
   }
-  void location_columns;
   return { action_type: "would_insert", canonical_record_id, bridge_record_id: null };
 }
 
@@ -1570,7 +1621,7 @@ export async function promote_registry_entity_candidates_apply(input: promote_re
                 ${source_queue_sql} as resolved_source_queue_id
            from public.registry_entity_extraction_v4 c
        )
-       select candidates.*, q.id as source_queue_id, q.source_name as queue_source_name, q.storage_path as queue_storage_path, q.target_hint
+       select candidates.*, q.id as source_queue_id, q.source_name as queue_source_name, q.storage_path as queue_storage_path, q.target_hint, q.target_surfaces
          from candidates
          join public.corpus_import_queue q on q.id = candidates.resolved_source_queue_id
         where q.target_hint = $1
@@ -1739,4 +1790,6 @@ export const __testing = {
   build_candidates,
   extract_obvious_values,
   verify_registry_candidate,
+  candidate_targets_resource_directory,
+  candidate_source_table,
 };
