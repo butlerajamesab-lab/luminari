@@ -54,24 +54,24 @@ function compactNumberRecord(value: Record<string, unknown>): Record<string, num
 }
 
 export function createRuntimeEnvelope<TData = unknown>(options: RuntimeEnvelopeOptions<TData>): RuntimeEnvelope<TData> {
-  const errors = options.errors ?? [];
-  const blockers = options.blockers ?? errors.map((error) => error.code).filter(Boolean);
+  const diagnostics: RuntimeDiagnostics = {
+    errors: options.errors ?? [],
+    warnings: options.warnings ?? [],
+    ...(options.backend === undefined ? {} : { backend: options.backend }),
+  };
+  const blockers = options.blockers ?? diagnostics.errors.map((error) => error.code).filter(Boolean);
   return {
-    success: errors.length === 0,
+    success: diagnostics.errors.length === 0,
     source: options.source,
     ...(options.action ? { action: options.action } : {}),
     data: options.data ?? null,
     state: {
-      availability: options.availability ?? (errors.length ? "unavailable" : "available"),
+      availability: options.availability ?? (diagnostics.errors.length ? "unavailable" : "available"),
       ...(options.dry_run === undefined ? {} : { dry_run: options.dry_run }),
       ...(options.can_apply === undefined ? {} : { can_apply: options.can_apply }),
       blockers,
     },
-    diagnostics: {
-      errors,
-      warnings: options.warnings ?? [],
-      ...(options.backend === undefined ? {} : { backend: options.backend }),
-    },
+    diagnostics,
     ...(options.counts ? { counts: options.counts } : {}),
     ...(options.flags ? { flags: options.flags } : {}),
     ...(options.meta ? { meta: options.meta } : {}),
