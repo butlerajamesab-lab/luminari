@@ -314,21 +314,21 @@ export const enforcementIntelligenceRouter = router({
         }
 
         return {
-          formId: f.id,
+          form_id: f.id,
           agency: f.agency,
           agency_short: f.agency_short,
           form_name: f.form_name,
           filing_deadlineText: f.filing_deadline,
-          incidentDate: input.incidentDate,
+          incident_date: input.incidentDate,
           daysSinceIncident,
-          primaryDeadlineDays: rule.primaryDays,
-          primaryDeadlineDate: primaryDeadlineDate?.toISOString().split('T')[0] ?? null,
+          primary_deadline_days: rule.primaryDays,
+          primary_deadline_date: primaryDeadlineDate?.toISOString().split('T')[0] ?? null,
           primaryDaysRemaining,
-          extendedDeadlineDays: rule.extendedDays,
-          extendedDeadlineDate: extendedDeadlineDate?.toISOString().split('T')[0] ?? null,
+          extended_deadline_days: rule.extendedDays,
+          extended_deadline_date: extendedDeadlineDate?.toISOString().split('T')[0] ?? null,
           extendedDaysRemaining,
-          extendedCondition: rule.extendedCondition,
-          noDeadline: rule.noDeadline,
+          extended_condition: rule.extendedCondition,
+          no_deadline: rule.noDeadline,
           urgency,
         };
       });
@@ -390,13 +390,13 @@ export const enforcementIntelligenceRouter = router({
 
       return {
         domain: input.domain,
-        gapType: input.gapType,
+        gap_type: input.gapType,
         forms: matchingForms,
         guidance: matchingGuidance,
         penalties: matchingPenalties,
         viability_rules: matchingViability,
         barriers: matchingBarriers,
-        totalResources: matchingForms.length + matchingGuidance.length + matchingPenalties.length + matchingViability.length + matchingBarriers.length,
+        total_resources: matchingForms.length + matchingGuidance.length + matchingPenalties.length + matchingViability.length + matchingBarriers.length,
       };
     }),
 
@@ -446,10 +446,10 @@ export const enforcementIntelligenceRouter = router({
         gaps: gaps.map((g: any) => ({
           id: g.id,
           domain: g.domain,
-          recordType: g.recordType,
+          record_type: g.recordType,
           label: g.label,
           severity: g.severity,
-          agencyType: g.agencyType,
+          agency_type: g.agencyType,
         })),
         suggestions: {
           forms,
@@ -458,7 +458,7 @@ export const enforcementIntelligenceRouter = router({
           viability_rules,
         },
         domains,
-        pipelineCategories: allPipelineCategories,
+        pipeline_categories: allPipelineCategories,
       };
     }),
 
@@ -546,7 +546,7 @@ export const enforcementIntelligenceRouter = router({
       else severity = 'low';
 
       return {
-        contradictionId: input.contradictionId ?? null,
+        contradiction_id: input.contradictionId ?? null,
         title: contradiction?.title ?? `${input.doctrineA ?? 'Unknown'} vs. ${input.doctrineB ?? 'Unknown'}`,
         domain,
         total_score,
@@ -703,7 +703,7 @@ export const enforcementIntelligenceRouter = router({
       // If specific agency requested, return that model
       if (input.agency_short && pathwayModels[input.agency_short]) {
         return {
-          matchedBy: 'agency',
+          matched_by: 'agency',
           pathways: [{ agency_short: input.agency_short, ...pathwayModels[input.agency_short] }],
         };
       }
@@ -995,9 +995,9 @@ export const enforcementIntelligenceRouter = router({
         domain: input.domain,
         claim_type: input.claim_type,
         agency_short: input.agency_short,
-        generatedAt: Date.now(),
+        generated_at: Date.now(),
         workflow: {
-          immediateActions: immediateActions.sort((a, b) => a.priority - b.priority),
+          immediate_actions: immediateActions.sort((a, b) => a.priority - b.priority),
           recordsToRequest,
           witnessTargets,
           timelineTasks,
@@ -1006,10 +1006,10 @@ export const enforcementIntelligenceRouter = router({
           signalWatchList,
         },
         metadata: {
-          weakJointsConsidered: weakJoints.length,
-          signalsConsidered: signals.length,
-          contradictionTemplatesConsidered: templates.length,
-          barriersConsidered: barriers.length,
+          weak_joints_considered: weakJoints.length,
+          signals_considered: signals.length,
+          contradiction_templates_considered: templates.length,
+          barriers_considered: barriers.length,
         },
       };
     }),
@@ -1035,11 +1035,11 @@ export const enforcementIntelligenceRouter = router({
       penalties: counts[2][0]?.count ?? 0,
       viability_rules: counts[3][0]?.count ?? 0,
       doctrines: counts[4][0]?.count ?? 0,
-      doctrineEdges: counts[5][0]?.count ?? 0,
+      doctrine_edges: counts[5][0]?.count ?? 0,
       barriers: counts[6][0]?.count ?? 0,
       signals: counts[7][0]?.count ?? 0,
-      contradictionTemplates: counts[8][0]?.count ?? 0,
-      narrativeTemplates: counts[9][0]?.count ?? 0,
+      contradiction_templates: counts[8][0]?.count ?? 0,
+      narrative_templates: counts[9][0]?.count ?? 0,
       workflows: counts[10][0]?.count ?? 0,
     };
   }),
@@ -1057,18 +1057,18 @@ export const enforcementIntelligenceRouter = router({
       const opts = input ?? {};
       const conditions = [];
       // detected_signals has no 'active' column — all rows are approved
-      // @ts-expect-error pre-existing type mismatch
+      // @ts-ignore pre-existing type mismatch
       if (opts.severity) conditions.push(eq((detectedSignals as any).severityLevel, opts.severity));
-      // @ts-expect-error pre-existing type mismatch
+      // @ts-ignore pre-existing type mismatch
       if (opts.datasetId) conditions.push(eq((detectedSignals as any).datasetId, opts.datasetId));
       const rows = await db
         .select()
         .from(detectedSignals)
         .where(conditions.length > 0 ? and(...conditions) : undefined)
         .orderBy(desc((detectedSignals as any).detectionTimestamp))
-        // @ts-expect-error pre-existing type mismatch
+        // @ts-ignore pre-existing type mismatch
         .limit(opts.limit ?? 100)
-        // @ts-expect-error pre-existing type mismatch
+        // @ts-ignore pre-existing type mismatch
         .offset(opts.offset ?? 0);
       return rows;
     }),
@@ -1086,8 +1086,8 @@ export const enforcementIntelligenceRouter = router({
     ]);
     return {
       total: total[0]?.count ?? 0,
-      bySeverity: { critical: critical[0]?.count ?? 0, high: high[0]?.count ?? 0, medium: medium[0]?.count ?? 0, low: low[0]?.count ?? 0 },
-      byDataset: byDataset.map((r: any) => ({ datasetId: r.datasetId, count: r.count })),
+      by_severity: { critical: critical[0]?.count ?? 0, high: high[0]?.count ?? 0, medium: medium[0]?.count ?? 0, low: low[0]?.count ?? 0 },
+      by_dataset: byDataset.map((r: any) => ({ dataset_id: r.datasetId, count: r.count })),
     };
   }),
 

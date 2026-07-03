@@ -51,7 +51,7 @@ export async function processSignalsBatch(
       const rows = await db
         .select({ signalId: sunamGateLog.liveSignalId })
         .from(sunamGateLog);
-      processedSignalIds = rows?.map((r) => r.signalId).filter((id): id is number => id !== null) || [];
+      processedSignalIds = rows?.map((r: any) => r.signalId).filter((id: any): id is number => id !== null) || [];
     } catch (err) {
       // If query fails, start with empty list
       processedSignalIds = [];

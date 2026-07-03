@@ -269,9 +269,9 @@ export const knowledgeIngestionRouter = router({
       summary: {
         totalPopulated,
         totalTarget,
-        overallCoverage: totalTarget ? Math.round((totalPopulated / totalTarget) * 100) : 0,
-        criticallyLow: criticallyLow.map((r) => r.label),
-        underPopulated: underPopulated.map((r) => r.label),
+        overall_coverage: totalTarget ? Math.round((totalPopulated / totalTarget) * 100) : 0,
+        critically_low: criticallyLow.map((r) => r.label),
+        under_populated: underPopulated.map((r) => r.label),
       },
     };
   }),
@@ -280,28 +280,28 @@ export const knowledgeIngestionRouter = router({
   importStatutes: adminProcedure
     .input(z.object({ records: z.array(statuteImportSchema).min(1).max(500) }))
     .mutation(async ({ ctx, input }) => {
-      return bulkInsert(legalStatutes, input.records, ctx.user.name ?? ctx.user.open_id);
+      return bulkInsert(legalStatutes, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
     }),
 
   /* ── Bulk Import: Case Law ── */
   importCaseLaw: adminProcedure
     .input(z.object({ records: z.array(caseLawImportSchema).min(1).max(500) }))
     .mutation(async ({ ctx, input }) => {
-      return bulkInsert(legalCaseLaw, input.records, ctx.user.name ?? ctx.user.open_id);
+      return bulkInsert(legalCaseLaw, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
     }),
 
   /* ── Bulk Import: Agency Authority Map ── */
   importAgencyAuthorities: adminProcedure
     .input(z.object({ records: z.array(agencyImportSchema).min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
-      return bulkInsert(agencyAuthorityMap, input.records, ctx.user.name ?? ctx.user.open_id);
+      return bulkInsert(agencyAuthorityMap, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
     }),
 
   /* ── Bulk Import: Claim Catalog ── */
   importClaimCatalog: adminProcedure
     .input(z.object({ records: z.array(claimCatalogImportSchema).min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
-      return bulkInsert(strategyClaimCatalog, input.records, ctx.user.name ?? ctx.user.open_id);
+      return bulkInsert(strategyClaimCatalog, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
     }),
 
   /* ── Bulk Import: LumenSend Templates ── */
@@ -344,14 +344,14 @@ export const knowledgeIngestionRouter = router({
   importLegislators: adminProcedure
     .input(z.object({ records: z.array(legislatorImportSchema).min(1).max(500) }))
     .mutation(async ({ ctx, input }) => {
-      return bulkInsert(legislatorContacts, input.records, ctx.user.name ?? ctx.user.open_id);
+      return bulkInsert(legislatorContacts, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
     }),
 
   /* ── Bulk Import: Advocacy Organizations ── */
   importAdvocacyOrgs: adminProcedure
     .input(z.object({ records: z.array(advocacyOrgImportSchema).min(1).max(500) }))
     .mutation(async ({ ctx, input }) => {
-      return bulkInsert(advocacyOrganizations, input.records, ctx.user.name ?? ctx.user.open_id);
+      return bulkInsert(advocacyOrganizations, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
     }),
 
   /* ── Bulk Import: Doctrine Registry ── */
@@ -363,7 +363,7 @@ export const knowledgeIngestionRouter = router({
       domains: z.array(z.string()),
     })).min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
-      return bulkInsert(doctrineRegistry, input.records, ctx.user.name ?? ctx.user.open_id);
+      return bulkInsert(doctrineRegistry, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
     }),
 
   /* ── Bulk Import: Court Directory ── */
@@ -382,7 +382,7 @@ export const knowledgeIngestionRouter = router({
       notes: z.string().optional(),
     })).min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
-      return bulkInsert(courtDirectory, input.records, ctx.user.name ?? ctx.user.open_id);
+      return bulkInsert(courtDirectory, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
     }),
 
   /* ── Bulk Import: Workflow Master ── */
@@ -402,7 +402,7 @@ export const knowledgeIngestionRouter = router({
       remedies: z.array(z.string()).optional(),
     })).min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
-      return bulkInsert(workflowMaster, input.records, ctx.user.name ?? ctx.user.open_id);
+      return bulkInsert(workflowMaster, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
     }),
 
   /* ── Bulk Import: Evidence Profiles ── */
@@ -418,7 +418,7 @@ export const knowledgeIngestionRouter = router({
       spoliationRisks: z.array(z.string()).optional(),
     })).min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
-      return bulkInsert(evidenceProfiles, input.records, ctx.user.name ?? ctx.user.open_id);
+      return bulkInsert(evidenceProfiles, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
     }),
 
   /* ── Bulk Import: Deadline Rules ── */
@@ -437,7 +437,7 @@ export const knowledgeIngestionRouter = router({
       notes: z.string().optional(),
     })).min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
-      return bulkInsert(deadlineRules, input.records, ctx.user.name ?? ctx.user.open_id);
+      return bulkInsert(deadlineRules, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
     }),
 
   /* ── Bulk Import: Escalation Routes ── */
@@ -452,7 +452,7 @@ export const knowledgeIngestionRouter = router({
       notes: z.string().optional(),
     })).min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
-      return bulkInsert(escalationRoutes, input.records, ctx.user.name ?? ctx.user.open_id);
+      return bulkInsert(escalationRoutes, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
     }),
 
   /* ── Bulk Import: Weak Joint Triggers ── */
@@ -464,7 +464,7 @@ export const knowledgeIngestionRouter = router({
       severityWeight: z.string(),
     })).min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
-      return bulkInsert(weakJointTriggers, input.records, ctx.user.name ?? ctx.user.open_id);
+      return bulkInsert(weakJointTriggers, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
     }),
 
   /* ── Bulk Import: Proof Frameworks ── */
@@ -482,7 +482,7 @@ export const knowledgeIngestionRouter = router({
       notes: z.string().optional(),
     })).min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
-      return bulkInsert(proofFrameworks, input.records, ctx.user.name ?? ctx.user.open_id);
+      return bulkInsert(proofFrameworks, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
     }),
 
   /* ── Bulk Import: Signal Registry ── */
@@ -498,7 +498,7 @@ export const knowledgeIngestionRouter = router({
       recommendedNextSteps: z.array(z.string()).optional(),
     })).min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
-      return bulkInsert(signalRegistry, input.records, ctx.user.name ?? ctx.user.open_id);
+      return bulkInsert(signalRegistry, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
     }),
 
   /* ── Bulk Import: Pattern Registry ── */
@@ -567,7 +567,7 @@ export const knowledgeIngestionRouter = router({
       rawJson: z.string().max(5_000_000),
     }))
     .mutation(async ({ ctx, input }) => {
-      const added_by = ctx.user.name ?? ctx.user.open_id;
+      const added_by = ctx.user.name ?? ctx.user.open_id ?? "";
       let parsed: any;
       try {
         parsed = JSON.parse(input.rawJson);
@@ -921,7 +921,7 @@ export const knowledgeIngestionRouter = router({
       rawSql: z.string().max(5_000_000),
     }))
     .mutation(async ({ ctx, input }) => {
-      const added_by = ctx.user.name ?? ctx.user.open_id;
+      const added_by = ctx.user.name ?? ctx.user.open_id ?? "";
       const now = Date.now();
 
       // Allowed tables (same as JSON import)

@@ -51,25 +51,25 @@ async function buildEvidenceCorpus(caseId: number): Promise<string> {
       textContent: documents.textContent,
       documentType: documents.documentType,
       documentPurpose: documents.documentPurpose,
-      filename: documents.filename,
-    }).from(documents).where(eq(documents.caseId, caseId)),
+      fileName: documents.fileName,
+    }).from(documents).where(eq(documents.caseId, caseId as any)),
 
     db.select({
       name: entities.name,
       type: entities.type,
       description: entities.description,
-    }).from(entities).where(eq(entities.caseId, caseId)),
+    }).from(entities).where(eq(entities.caseId, caseId as any)),
 
     db.select({
       title: events.title,
       description: events.description,
       eventType: events.eventType,
-    }).from(events).where(eq(events.caseId, caseId)),
+    }).from(events).where(eq(events.caseId, caseId as any)),
 
     db.select({
       text: quotes.text,
       context: quotes.context,
-    }).from(quotes).where(eq(quotes.caseId, caseId)),
+    }).from(quotes).where(eq(quotes.caseId, caseId as any)),
   ]);
 
   // Combine all text into a single searchable corpus
@@ -242,7 +242,7 @@ export async function detectAndPersistGaps(caseId: number, pipelineType: string)
         eq(missingRecords.domain, result.domain),
         eq(missingRecords.status, "detected"),
       ));
-    const newMissingIds = allCurrent.map(r => r.id);
+    const newMissingIds = allCurrent.map((r: any) => r.id);
     if (newMissingIds.length > 0) {
       const { runPatternDetection } = await import("./pattern-detection");
       const patternResult = await runPatternDetection({

@@ -62,8 +62,9 @@ export const proceduralEngineRouter = router({
       const chain: (typeof jurisdictionHierarchy.$inferSelect)[] = [];
       let currentId: number | null = input.id;
       while (currentId) {
-        const [row] = await db.select().from(jurisdictionHierarchy)
+        const rows: (typeof jurisdictionHierarchy.$inferSelect)[] = await db.select().from(jurisdictionHierarchy)
           .where(eq(jurisdictionHierarchy.id, currentId));
+        const row: typeof jurisdictionHierarchy.$inferSelect | undefined = rows[0];
         if (!row) break;
         chain.unshift(row);
         currentId = row.parentId;
@@ -178,14 +179,14 @@ export const proceduralEngineRouter = router({
         .where(eq(workflowMaster.id, input.id));
       if (!workflow) return null;
       const steps = await db.select().from(workflowSteps)
-        .where(eq(workflowSteps.workflowId, input.id))
+        .where(eq(workflowSteps.workflowId, String(input.id)))
         .orderBy(workflowSteps.stepOrder);
       const escalations = await db.select().from(escalationRoutes)
         .where(eq(escalationRoutes.workflowId, input.id));
       const profile = workflow.evidenceProfileId
         ? (await db.select().from(evidenceProfiles).where(eq(evidenceProfiles.id, workflow.evidenceProfileId)))[0]
         : null;
-      return { ...workflow, steps, escalations, evidenceProfile: profile };
+      return { ...workflow, steps, escalations, evidence_profile: profile };
     }),
 
   resolveWorkflow: publicProcedure
@@ -196,7 +197,7 @@ export const proceduralEngineRouter = router({
     .query(async ({ input }) => {
       const allWorkflows = await db.select().from(workflowMaster)
         .where(eq(workflowMaster.status, "active"));
-      return allWorkflows.filter(w => {
+      return allWorkflows.filter((w: any) => {
         const types = w.issueTypes as string[];
         const matchesIssue = types?.some(t =>
           t.toLowerCase().includes(input.issueType.toLowerCase())
@@ -213,7 +214,7 @@ export const proceduralEngineRouter = router({
     .input(z.object({ workflowId: z.number() }))
     .query(async ({ input }) => {
       return db.select().from(workflowSteps)
-        .where(eq(workflowSteps.workflowId, input.workflowId))
+        .where(eq(workflowSteps.workflowId, String(input.workflowId)))
         .orderBy(workflowSteps.stepOrder);
     }),
 
@@ -301,16 +302,16 @@ export const proceduralEngineRouter = router({
 
       return {
         jurisdictions: jhCount.count,
-        nodeTimelines: ntCount.count,
-        timelineEvents: teCount.count,
-        timelineEdges: edgeCount.count,
+        node_timelines: ntCount.count,
+        timeline_events: teCount.count,
+        timeline_edges: edgeCount.count,
         workflows: wmCount.count,
-        workflowSteps: wsCount.count,
-        evidenceProfiles: epCount.count,
-        escalationRoutes: erCount.count,
-        deadlineRules: drCount.count,
-        weakJointTriggers: wjtCount.count,
-        claimDetectionRules: cdrCount.count,
+        workflow_steps: wsCount.count,
+        evidence_profiles: epCount.count,
+        escalation_routes: erCount.count,
+        deadline_rules: drCount.count,
+        weak_joint_triggers: wjtCount.count,
+        claim_detection_rules: cdrCount.count,
       };
     }),
 
@@ -340,7 +341,7 @@ export const proceduralEngineRouter = router({
         elements,
         evidence,
         weakJoints,
-        factClaims: factClaimsList,
+        fact_claims: factClaimsList,
         detectionResults,
       };
     }),

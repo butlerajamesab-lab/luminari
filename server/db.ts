@@ -4,7 +4,7 @@ import { compareDateOccurred, normalizeDateForSort, isPreModernDate } from "./da
 import { runPhoenixDetection, emitPhoenixSignal } from "./engines/phoenix-detector";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { create_database_pool } from "./pg-config";
+import { create_database_pool, get_database_host_label } from "./pg-config";
 import {
   users, cases, documents, quotes, entities, entityRoles,
   relationships, relationshipEvidence, claims, findings,
@@ -63,7 +63,25 @@ let dbInstance: ReturnType<typeof drizzle> | null = null;
 function initializePool(): Pool {
   if (pgPool) return pgPool;
   pgPool = create_database_pool({ label: "DB", connection_timeout_millis: 10000, max: 5 });
+  console.log("[DB] runtime pool configuration", get_pool_runtime_configuration());
   return pgPool;
+}
+
+export function get_pool_runtime_configuration() {
+  const pool = pgPool;
+  return {
+    host: get_database_host_label(),
+    pool_max: (pool as any)?.options?.max ?? 5,
+    connection_timeout_ms: (pool as any)?.options?.connectionTimeoutMillis ?? 10000,
+    idle_timeout_ms: (pool as any)?.options?.idleTimeoutMillis ?? 30000,
+    max_uses: (pool as any)?.options?.maxUses ?? 7500,
+    statement_timeout_ms: (pool as any)?.options?.statement_timeout ?? null,
+    query_timeout_ms: (pool as any)?.options?.query_timeout ?? null,
+    keep_alive: (pool as any)?.options?.keepAlive ?? true,
+    pool_total_count: pool?.totalCount ?? 0,
+    pool_idle_count: pool?.idleCount ?? 0,
+    pool_waiting_count: pool?.waitingCount ?? 0,
+  };
 }
 
 export function getDb() {
@@ -84,6 +102,115 @@ export const db = new Proxy({} as any, {
 // Export pool for direct access if needed
 export function getPool(): Pool {
   return initializePool();
+}
+
+
+export type DbTimeoutCode = "pool_acquire_timeout" | "query_timeout";
+
+export class DbTimeoutDiagnosticError extends Error {
+  code: DbTimeoutCode;
+  detail: string;
+  timeout_ms: number;
+
+  constructor(code: DbTimeoutCode, message: string, timeout_ms: number, detail?: string) {
+    super(message);
+    this.name = "DbTimeoutDiagnosticError";
+    this.code = code;
+    this.detail = detail ?? message;
+    this.timeout_ms = timeout_ms;
+  }
+}
+
+function normalize_error_message(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function is_query_timeout_error(error: unknown): boolean {
+  const err = error as any;
+  const message = normalize_error_message(error).toLowerCase();
+  return (
+    err?.code === "57014" ||
+    message.includes("statement timeout") ||
+    message.includes("query read timeout") ||
+    message.includes("query timeout")
+  );
+}
+
+export function classify_db_error(error: unknown): "pool_acquire_timeout" | "query_timeout" | "db_error" {
+  const err = error as any;
+  const message = normalize_error_message(error).toLowerCase();
+  if (err?.code === "pool_acquire_timeout") return "pool_acquire_timeout";
+  if (err?.code === "query_timeout" || is_query_timeout_error(error)) return "query_timeout";
+  if (message.includes("timeout exceeded when trying to connect")) return "pool_acquire_timeout";
+  if (message.includes("connection terminated due to connection timeout")) return "pool_acquire_timeout";
+  return "db_error";
+}
+
+export async function connect_with_pool_timeout(timeout_ms: number, label = "db"): Promise<any> {
+  const pool = getPool();
+  const wait_started_at = Date.now();
+  let timed_out = false;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const connect_promise = pool.connect().then((client) => {
+    if (timed_out) {
+      client.release();
+      return Promise.reject(new DbTimeoutDiagnosticError("pool_acquire_timeout", `${label} pool acquire timed out after ${timeout_ms}ms`, timeout_ms));
+    }
+    const pool_wait_ms = Date.now() - wait_started_at;
+    console.warn("[DB] pool_acquire_succeeded", { label, pool_wait_ms, acquisition_time_ms: pool_wait_ms, acquire_timeout_ms: timeout_ms, pool_total_count: pool.totalCount, pool_idle_count: pool.idleCount, pool_waiting_count: pool.waitingCount });
+    return client;
+  });
+
+  const timeout_promise = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => {
+      timed_out = true;
+      const pool_wait_ms = Date.now() - wait_started_at;
+      console.warn("[DB] pool_acquire_timed_out", { label, pool_wait_ms, acquire_timeout_ms: timeout_ms, pool_total_count: pool.totalCount, pool_idle_count: pool.idleCount, pool_waiting_count: pool.waitingCount });
+      reject(new DbTimeoutDiagnosticError("pool_acquire_timeout", `${label} pool acquire timed out after ${timeout_ms}ms`, timeout_ms));
+    }, timeout_ms);
+  });
+
+  try {
+    return await Promise.race([connect_promise, timeout_promise]);
+  } catch (error) {
+    if (classify_db_error(error) === "pool_acquire_timeout") {
+      throw error instanceof DbTimeoutDiagnosticError
+        ? error
+        : new DbTimeoutDiagnosticError("pool_acquire_timeout", `${label} pool acquire failed or timed out`, timeout_ms, normalize_error_message(error));
+    }
+    throw error;
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
+export async function query_with_diagnostics<T = any>(
+  text: string,
+  values: unknown[] = [],
+  options: { label?: string; pool_acquire_timeout_ms?: number; query_timeout_ms?: number } = {},
+): Promise<{ rows: T[]; rowCount: number | null }> {
+  const label = options.label ?? "db_query";
+  const pool_acquire_timeout_ms = options.pool_acquire_timeout_ms ?? 1000;
+  const query_timeout_ms = options.query_timeout_ms ?? 10000;
+  const client = await connect_with_pool_timeout(pool_acquire_timeout_ms, label);
+  try {
+    const query_started_at = Date.now();
+    try {
+      const result = await client.query({ text, values, query_timeout: query_timeout_ms });
+      console.warn("[DB] query_diagnostics", { label, query_execution_time_ms: Date.now() - query_started_at, query_timeout_ms, row_count: result.rowCount });
+      return result;
+    } catch (error) {
+      console.warn("[DB] query_diagnostics", { label, query_execution_time_ms: Date.now() - query_started_at, query_timeout_ms, status: "failed", error: normalize_error_message(error) });
+      throw error;
+    }
+  } catch (error) {
+    if (is_query_timeout_error(error)) {
+      throw new DbTimeoutDiagnosticError("query_timeout", `${label} query timed out after ${query_timeout_ms}ms`, query_timeout_ms, normalize_error_message(error));
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export const pool = new Proxy({} as any, {
@@ -1999,7 +2126,7 @@ export async function listUnsupportedFindings(caseId?: number): Promise<Unsuppor
 
 export interface FindingMatchDetail {
   finding: Finding;
-  candidateClaims: { id: number; claimText: string; claimType: string; documentId: number; documentLabel: string }[];
+  candidateClaims: { id: string; claimText: string; claimType: string | null; documentId: string | null; documentLabel: string }[];
   matchMetadata: Record<string, unknown> | null;
   auditLog: ProvenanceAuditLog[];
 }
@@ -2024,7 +2151,7 @@ export async function getFindingMatchDetail(findingId: number): Promise<FindingM
     .leftJoin(documents, eq(claims.documentId, documents.id))
     .where(eq(claims.caseId, finding.caseId));
 
-  const candidateClaims = caseClaims.map(c => ({
+  const candidateClaims = caseClaims.map((c: any) => ({
     id: c.id,
     claimText: c.claimText,
     claimType: c.claimType,
@@ -2035,7 +2162,7 @@ export async function getFindingMatchDetail(findingId: number): Promise<FindingM
   // Get audit log for this finding
   const auditLog = await db.select()
     .from(provenanceAuditLogs)
-    .where(eq(provenanceAuditLogs.findingId, findingId))
+    .where(eq(provenanceAuditLogs.targetId, findingId))
     .orderBy(desc(provenanceAuditLogs.createdAt));
 
   return {
@@ -2050,18 +2177,20 @@ export async function getFindingMatchDetail(findingId: number): Promise<FindingM
  * Create an immutable audit log entry for a provenance action.
  */
 export async function createProvenanceAuditLog(entry: {
-  findingId: number;
+  caseId: number;
   userId: number;
-  actionType: "re_run_matching" | "mark_synthesis" | "flag_for_review" | "batch_rerun";
-  reason?: string;
-  previousStatus: string;
-  newStatus: string;
-  metadata?: Record<string, unknown>;
+  actionType: string;
+  targetType: string;
+  targetId: number;
+  details?: Record<string, unknown>;
 }): Promise<number> {
   const [result] = await db.insert(provenanceAuditLogs).values({
-    ...entry,
-    reason: entry.reason ?? null,
-    metadata: entry.metadata ?? null,
+    caseId: entry.caseId,
+    userId: entry.userId,
+    actionType: entry.actionType,
+    targetType: entry.targetType,
+    targetId: entry.targetId,
+    details: entry.details ?? null,
     createdAt: Date.now(),
   });
   return result.insertId;
@@ -2071,22 +2200,19 @@ export async function createProvenanceAuditLog(entry: {
  * List provenance audit log entries, optionally filtered by case.
  */
 export async function listProvenanceAuditLogs(caseId?: number, limit = 1000) {
-  // Join with findings to get caseId filter
   if (caseId) {
     return db.select({
       id: provenanceAuditLogs.id,
-      findingId: provenanceAuditLogs.findingId,
       userId: provenanceAuditLogs.userId,
+      caseId: provenanceAuditLogs.caseId,
       actionType: provenanceAuditLogs.actionType,
-      reason: provenanceAuditLogs.reason,
-      previousStatus: provenanceAuditLogs.previousStatus,
-      newStatus: provenanceAuditLogs.newStatus,
-      metadata: provenanceAuditLogs.metadata,
+      targetType: provenanceAuditLogs.targetType,
+      targetId: provenanceAuditLogs.targetId,
+      details: provenanceAuditLogs.details,
       createdAt: provenanceAuditLogs.createdAt,
     })
       .from(provenanceAuditLogs)
-      .innerJoin(findings, eq(provenanceAuditLogs.findingId, findings.id))
-      .where(eq(findings.caseId, caseId))
+      .where(eq(provenanceAuditLogs.caseId, caseId))
       .orderBy(desc(provenanceAuditLogs.createdAt))
       .limit(limit);
   }

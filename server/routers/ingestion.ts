@@ -82,7 +82,7 @@ export const ingestionRouter = router({
       // Refresh scheduler to pick up new dataset
       await refreshSchedules();
 
-      return { success: true, datasetId: input.datasetId };
+      return { success: true, dataset_id: input.datasetId };
     }),
 
   toggleDataset: adminProcedure
@@ -97,7 +97,7 @@ export const ingestionRouter = router({
         datasetId: input.datasetId,
         enabled: input.enabled,
         rationale: input.rationale ?? `Data stream ${input.enabled ? "enabled" : "disabled"} via admin control panel`,
-        actorId: ctx.user.open_id,
+        actorId: ctx.user.open_id ?? "",
         actorRole: "admin",
       });
       await refreshSchedules();
@@ -114,7 +114,7 @@ export const ingestionRouter = router({
       await governedDataStreamDelete({
         datasetId: input.datasetId,
         rationale: input.rationale ?? `Data stream removed via admin control panel`,
-        actorId: ctx.user.open_id,
+        actorId: ctx.user.open_id ?? "",
         actorRole: "admin",
       });
       await refreshSchedules();
@@ -125,6 +125,7 @@ export const ingestionRouter = router({
 
   get_atlas_public_stream_catalog: publicProcedure.query(() => summarizeAtlasCatalog()),
 
+  list_signal_intelligence_cards: adminProcedure
   list_signal_intelligence_cards: publicProcedure
     .input(z.object({
       limit: z.number().int().min(1).max(100).default(25),
@@ -139,6 +140,7 @@ export const ingestionRouter = router({
       include_excluded: input?.include_excluded,
     })),
 
+  get_signal_intelligence_summary: adminProcedure.query(() => get_atlas_signal_intelligence_summary()),
   get_signal_intelligence_summary: publicProcedure.query(() => get_atlas_signal_intelligence_summary()),
 
   seed_atlas_population_streams: adminProcedure
@@ -240,7 +242,7 @@ export const ingestionRouter = router({
       }
 
       return {
-        // @ts-expect-error pre-existing type mismatch
+        // @ts-ignore pre-existing type mismatch
         success: result.success,
         message: result.success
           ? `Processed ${result.recordsProcessed} records, ${result.signalsGenerated} signals generated`
@@ -337,9 +339,9 @@ export const ingestionRouter = router({
         .limit(20);
 
       return {
-        totalRecords: totalResult?.count ?? 0,
-        topCategories: byCategory.filter(r => r.category),
-        topCities: byCity.filter(r => r.city),
+        total_records: totalResult?.count ?? 0,
+        top_categories: byCategory.filter((r: any) => r.category),
+        top_cities: byCity.filter((r: any) => r.city),
       };
     }),
 
@@ -501,7 +503,7 @@ export const ingestionRouter = router({
         .where(sql`${liveSignals.signalType} = 'repeat_entity' AND ${liveSignals.active} = true`);
 
       const entityNames = entities
-        .map(e => e.title.replace(/^Repeat (Company|Agency|Entity):\s*/, "").replace(/^Repeat Entity:\s*/, "").trim())
+        .map((e: any) => e.title.replace(/^Repeat (Company|Agency|Entity):\s*/, "").replace(/^Repeat Entity:\s*/, "").trim())
         .filter(Boolean);
 
       return findMergeCandidates(entityNames, input.similarityThreshold);
@@ -544,7 +546,7 @@ export const ingestionRouter = router({
       .where(sql`${detectedSignals.signalType} = 'repeat_entity'`)
       .groupBy(detectedSignals.entityRole);
 
-    return distribution.map(d => ({
+    return distribution.map((d: any) => ({
       entityType: d.entityRole ?? "unclassified",
       count: d.count,
     }));

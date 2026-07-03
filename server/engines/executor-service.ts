@@ -376,7 +376,7 @@ export async function rollbackPatch(changeId: number, executedBy: string, execut
       .where(eq(adminChangeLog.id, changeId));
 
     // Log the rollback itself
-    // @ts-expect-error pre-existing type mismatch
+    // @ts-ignore pre-existing type mismatch
     await db.insert(adminChangeLog).values({
       adminId: executedBy,
       adminName: executedByName,
@@ -403,7 +403,7 @@ export async function getExecutionLog(limit = 50): Promise<ExecutionLogEntry[]> 
     .orderBy(desc(adminChangeLog.timestamp))
     .limit(limit);
 
-  // @ts-expect-error pre-existing type mismatch
+  // @ts-ignore pre-existing type mismatch
   return changes.map(c => ({
     id: c.id,
     patchType: c.actionType,

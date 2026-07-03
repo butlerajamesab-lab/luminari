@@ -22,9 +22,9 @@ import { eq, and, inArray, isNull, sql } from "drizzle-orm";
 // ─── Types ───
 
 interface BackfillResult {
-  findingId: number;
+  findingId: string;
   status: "linked" | "partial" | "no_match" | "error";
-  matchedClaimIds: number[];
+  matchedClaimIds: string[];
   confidence: "high" | "medium" | "low";
   error?: string;
 }
@@ -60,9 +60,9 @@ export function extractDocumentRefs(description: string): number[] {
  * so this is always a single LLM call.
  */
 async function matchClaimsToFinding(
-  finding: { id: number; title: string; description: string; findingType: string },
-  candidateClaims: Array<{ id: number; claimText: string; claimType: string; documentId: number }>
-): Promise<{ matchedIds: number[]; confidence: "high" | "medium" | "low" }> {
+  finding: { id: number | string; title: string | null; description: string | null; findingType: string | null },
+  candidateClaims: Array<{ id: string; claimText: string; claimType: string | null; documentId: string | null }>
+): Promise<{ matchedIds: string[]; confidence: "high" | "medium" | "low" }> {
   if (candidateClaims.length === 0) {
     return { matchedIds: [], confidence: "low" };
   }
@@ -70,7 +70,7 @@ async function matchClaimsToFinding(
   // With document-scoped filtering, batches are small enough for a single call
   // But still batch at 100 as a safety valve
   const BATCH_SIZE = 100;
-  const allMatchedIds: number[] = [];
+  const allMatchedIds: string[] = [];
 
   for (let i = 0; i < candidateClaims.length; i += BATCH_SIZE) {
     const batch = candidateClaims.slice(i, i + BATCH_SIZE);
@@ -86,9 +86,9 @@ async function matchClaimsToFinding(
 }
 
 async function matchClaimBatch(
-  finding: { id: number; title: string; description: string; findingType: string },
-  batch: Array<{ id: number; claimText: string; claimType: string; documentId: number }>
-): Promise<number[]> {
+  finding: { id: number | string; title: string | null; description: string | null; findingType: string | null },
+  batch: Array<{ id: string; claimText: string; claimType: string | null; documentId: string | null }>
+): Promise<string[]> {
   const claimList = batch.map(c => 
     `[${c.id}] (doc ${c.documentId}, type: ${c.claimType}): ${c.claimText}`
   ).join("\n");
@@ -117,9 +117,9 @@ RULES:
       {
         role: "user",
         content: `FINDING [${finding.id}]:
-Title: ${finding.title}
-Type: ${finding.findingType}
-Description: ${finding.description}
+Title: ${finding.title ?? ""}
+Type: ${finding.findingType ?? ""}
+Description: ${finding.description ?? ""}
 
 CANDIDATE CLAIMS:
 ${claimList}
@@ -156,7 +156,7 @@ Return JSON: { "matched_claim_ids": [<ids>] }`
     const ids = parsed.matched_claim_ids || [];
     // Validate: only return IDs that exist in the batch
     const validIds = new Set(batch.map(c => c.id));
-    return ids.filter((id: number) => validIds.has(id));
+    return ids.filter((id: string) => validIds.has(id));
   } catch {
     return [];
   }
@@ -164,9 +164,9 @@ Return JSON: { "matched_claim_ids": [<ids>] }`
 
 // ─── Finding Linkage Updater ───
 
-async function linkFindingToClaims(findingId: number, claimIds: number[]): Promise<void> {
+async function linkFindingToClaims(findingId: number, claimIds: string[]): Promise<void> {
   await db.update(findings)
-    .set({ claimIds })
+    .set({ claimIds: claimIds as unknown as number[] })
     .where(eq(findings.id, findingId));
 }
 
@@ -213,7 +213,7 @@ export async function runClaimBackfill(caseId?: number): Promise<BackfillSummary
     unlinkedFindings = await db.select()
       .from(findings)
       .where(and(
-        eq(findings.caseId, caseId),
+        eq(findings.caseId, String(caseId)),
         isNull(findings.claimIds)
       ));
   } else {
@@ -291,7 +291,7 @@ export async function runClaimBackfill(caseId?: number): Promise<BackfillSummary
             description: finding.description,
             findingType: finding.findingType,
           },
-          candidateClaims.map(c => ({
+          candidateClaims.map((c: any) => ({
             id: c.id,
             claimText: c.claimText,
             claimType: c.claimType,

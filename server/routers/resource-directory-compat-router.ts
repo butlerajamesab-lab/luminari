@@ -13,14 +13,14 @@ export const resourceDirectoryCompatRouter = router({
       resources: resourceSurfaces.map(surface => ({
         id: surface.namespace,
         name: surface.namespace,
-        runtimeView: surface.runtimeView,
-        activationReady: surface.activationReady,
-        stabilizationState: surface.stabilizationState,
+        runtime_view: surface.runtimeView,
+        activation_ready: surface.activationReady,
+        stabilization_state: surface.stabilizationState,
         deterministic: surface.deterministic,
       })),
       summary: {
-        operationalSurfaceCount: visibility.operationalSurfaceCount,
-        readyNamespaces: visibility.readyNamespaces,
+        operational_surface_count: visibility.operationalSurfaceCount,
+        ready_namespaces: visibility.readyNamespaces,
         deterministic: visibility.deterministic,
       },
     };

@@ -66,7 +66,7 @@ async function getProceduralDashboard() {
     totalPaths,
     byClaimType,
     byJurisdiction,
-    recentPaths: recentRows as unknown as unknown as any[],
+    recent_paths: recentRows as unknown as unknown as any[],
   };
 }
 
@@ -97,7 +97,7 @@ async function resolveProceduralPath(claimType: string, jurisdiction: string) {
     claimType,
     jurisdiction,
     paths: parsed,
-    primaryPath: parsed[0],
+    primary_path: parsed[0],
   };
 }
 
@@ -126,7 +126,7 @@ export const proceduralPathEngineRouter = router({
     .query(async ({ input }) => {
       const pathData = await resolveProceduralPath(input.claimType, input.jurisdiction);
       if (!pathData) return null;
-      const allSteps = pathData.primaryPath?.process_steps || [];
+      const allSteps = pathData.primary_path?.process_steps || [];
       const completed = new Set(input.completedStepNumbers);
       const steps = allSteps.map((step: any, idx: number) => ({
         ...step,

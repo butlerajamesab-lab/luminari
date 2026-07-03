@@ -40,6 +40,14 @@ export const adminDashboardRouter = router({
       ),
     ]);
 
+    const memoryUsage = process.memoryUsage();
+    const engineBreakdown = engineBreakdownRows.rows.map((row: any) => ({
+      type: row.run_type,
+      count: Number(row.cnt ?? 0),
+    }));
+    const successRate = recentRuns ? Math.round((completedRuns / recentRuns) * 100) : 100;
+    const serverUptime = process.uptime();
+
     return {
       totalRuns,
       last24h: {
@@ -47,14 +55,15 @@ export const adminDashboardRouter = router({
         completed: completedRuns,
         failed: failedRuns,
         running: runningNow,
-        successRate: recentRuns ? Math.round((completedRuns / recentRuns) * 100) : 100,
+        success_rate: successRate,
+        successRate,
       },
-      engineBreakdown: engineBreakdownRows.rows.map((row: any) => ({
-        type: row.run_type,
-        count: Number(row.cnt ?? 0),
-      })),
-      serverUptime: process.uptime(),
-      memoryUsage: process.memoryUsage(),
+      engine_breakdown: engineBreakdown,
+      engineBreakdown,
+      server_uptime: serverUptime,
+      serverUptime,
+      memory_usage: memoryUsage,
+      memoryUsage,
       timestamp: Date.now(),
     };
   }),
@@ -83,14 +92,14 @@ export const adminDashboardRouter = router({
     ]);
 
     return {
-      cases: { total: totalCases, today: casesToday, thisWeek: casesThisWeek },
+      cases: { total: totalCases, today: casesToday, this_week: casesThisWeek },
       documents: { total: totalDocs, today: docsToday },
       findings: { total: totalFindings, today: findingsToday },
       users: { total: totalUsers, today: usersToday },
-      recentCases: recentCasesRows.rows.map((row: any) => ({
+      recent_cases: recentCasesRows.rows.map((row: any) => ({
         id: row.id,
         name: row.name,
-        createdAt: toMillis(row.created_at) ?? Date.now(),
+        created_at: toMillis(row.created_at) ?? Date.now(),
       })),
     };
   }),
@@ -122,17 +131,17 @@ export const adminDashboardRouter = router({
     ]);
 
     return {
-      bySeverity: severityRows.rows.map((row: any) => ({ severity: row.severity, count: Number(row.cnt ?? 0) })),
-      byCategory: categoryRows.rows.map((row: any) => ({ category: row.category, count: Number(row.cnt ?? 0) })),
-      criticalFindings: criticalRows.rows.map((row: any) => ({
+      by_severity: severityRows.rows.map((row: any) => ({ severity: row.severity, count: Number(row.cnt ?? 0) })),
+      by_category: categoryRows.rows.map((row: any) => ({ category: row.category, count: Number(row.cnt ?? 0) })),
+      critical_findings: criticalRows.rows.map((row: any) => ({
         id: row.id,
-        caseId: row.case_id,
+        case_id: row.case_id,
         title: row.title,
         severity: row.severity,
         category: row.category,
-        createdAt: toMillis(row.created_at) ?? Date.now(),
+        created_at: toMillis(row.created_at) ?? Date.now(),
       })),
-      totalFindings: totalSignals,
+      total_findings: totalSignals,
     };
   }),
 
@@ -168,24 +177,24 @@ export const adminDashboardRouter = router({
     return {
       running: runningRows.rows.map((row: any) => ({
         id: row.id,
-        caseId: row.case_id,
-        runType: row.run_type,
-        runStatus: row.run_status,
-        createdAt: toMillis(row.started_at) ?? Date.now(),
+        case_id: row.case_id,
+        run_type: row.run_type,
+        run_status: row.run_status,
+        created_at: toMillis(row.started_at) ?? Date.now(),
       })),
       failed: failedRows.rows.map((row: any) => ({
         id: row.id,
-        caseId: row.case_id,
-        runType: row.run_type,
-        runStatus: row.run_status,
-        errorMessage: row.error_message,
-        createdAt: toMillis(row.started_at) ?? Date.now(),
+        case_id: row.case_id,
+        run_type: row.run_type,
+        run_status: row.run_status,
+        error_message: row.error_message,
+        created_at: toMillis(row.started_at) ?? Date.now(),
       })),
-      recentlyCompleted: completedRows.rows.map((row: any) => ({
+      recently_completed: completedRows.rows.map((row: any) => ({
         id: row.id,
-        caseId: row.case_id,
-        runType: row.run_type,
-        completedAt: toMillis(row.completed_at) ?? toMillis(row.started_at),
+        case_id: row.case_id,
+        run_type: row.run_type,
+        completed_at: toMillis(row.completed_at) ?? toMillis(row.started_at),
       })),
     };
   }),

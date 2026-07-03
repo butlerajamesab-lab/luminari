@@ -269,9 +269,9 @@ export const registryRouter = router({
         forms,
         escalations,
         summary: {
-          agencyCount: agencies.length,
-          formCount: forms.length,
-          escalationCount: escalations.length,
+          agency_count: agencies.length,
+          form_count: forms.length,
+          escalation_count: escalations.length,
         },
       };
     }),
@@ -423,20 +423,20 @@ export const registryRouter = router({
             url: f.url,
             description: f.filingDeadline ? `Deadline: ${f.filingDeadline}` : "No deadline specified",
           })),
-          mentalHealth: (mentalHealth as any[]).map((r: any) => ({
+          mental_health: (mentalHealth as any[]).map((r: any) => ({
             id: r.id,
             name: r.name,
             type: r.type,
             jurisdiction: r.jurisdiction,
             phone: null,
             website: r.website,
-            description: r.servicesProvided || '',
+            description: r.services_provided || '',
             availability: "Check website",
           })),
         };
       } catch (err) {
         console.error('[getResources] Error:', err);
-        return { agencies: [], forms: [], mentalHealth: [] };
+        return { agencies: [], forms: [], mental_health: [] };
       }
     }),
 });

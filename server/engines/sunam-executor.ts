@@ -570,12 +570,12 @@ export async function dispatchTool(
         const cutoff = Date.now() - hoursBack * 3600 * 1000;
         const failedRuns = await db.select({ datasetId: ingestRuns.datasetId })
           .from(ingestRuns).where(sql`${ingestRuns.status} = 'failed' AND ${ingestRuns.startTime} > ${cutoff}`);
-        const unique = [...new Set(failedRuns.map(r => r.datasetId))];
+        const unique = [...new Set(failedRuns.map((r: any) => r.datasetId))];
         const results = [];
         for (const sid of unique) {
           try {
             const r = await Promise.race([
-              triggerManualIngestion(sid),
+              triggerManualIngestion(sid as string),
               new Promise<null>((res) => setTimeout(() => res(null), 120_000)),
             ]);
             results.push({ stream_id: sid, success: r?.success ?? true, records: r?.recordsProcessed ?? 0 });
@@ -1001,7 +1001,7 @@ async function retryWithRecovery(
     if (args.stream_id) {
       const streams = await db.select({ streamId: dataStreamRegistry.streamId, streamName: dataStreamRegistry.streamName })
         .from(dataStreamRegistry);
-      const match = streams.find(s => 
+      const match = streams.find((s: any) => 
         s.streamId.includes(args.stream_id) || 
         s.streamName.toLowerCase().includes(args.stream_id.toLowerCase())
       );
@@ -1014,7 +1014,7 @@ async function retryWithRecovery(
     if (args.engine_id) {
       const engines = await db.select({ engineId: engineRegistry.engineId, engineName: engineRegistry.engineName })
         .from(engineRegistry);
-      const match = engines.find(e => 
+      const match = engines.find((e: any) => 
         e.engineId.includes(args.engine_id) || 
         e.engineName.toLowerCase().includes(args.engine_id.toLowerCase())
       );

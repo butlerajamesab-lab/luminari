@@ -313,7 +313,7 @@ export async function getEntityProfile(entityId: number) {
     );
 
   // Get related entity names
-  const relatedEntityIds = relationships.map(r =>
+  const relatedEntityIds = relationships.map((r: any) =>
     r.entityIdA === entityId ? r.entityIdB : r.entityIdA
   );
 
@@ -326,7 +326,7 @@ export async function getEntityProfile(entityId: number) {
         entityType: entityRegistry.entityType,
       })
       .from(entityRegistry)
-      .where(sql`${entityRegistry.id} IN (${sql.join(relatedEntityIds.map(id => sql`${id}`), sql`, `)})`);
+      .where(sql`${entityRegistry.id} IN (${sql.join(relatedEntityIds.map((id: any) => sql`${id}`), sql`, `)})`);
   }
 
   // Count signals mentioning this entity
@@ -338,7 +338,7 @@ export async function getEntityProfile(entityId: number) {
   return {
     ...entity,
     signalCount: signalCount?.count ?? 0,
-    relationships: relationships.map(r => ({
+    relationships: relationships.map((r: any) => ({
       ...r,
       relatedEntityName: relatedEntities.find(
         e => e.id === (r.entityIdA === entityId ? r.entityIdB : r.entityIdA)
@@ -588,7 +588,7 @@ export async function getEntityStats() {
   return {
     totalEntities: total?.count ?? 0,
     totalRelationships: relCount?.count ?? 0,
-    byType: Object.fromEntries(byType.map(b => [b.entityType, b.cnt])),
+    byType: Object.fromEntries(byType.map((b: any) => [b.entityType, b.cnt])),
     topEntities,
   };
 }

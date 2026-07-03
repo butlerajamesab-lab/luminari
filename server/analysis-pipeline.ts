@@ -304,7 +304,7 @@ export async function processDocument(documentId: number): Promise<void> {
     console.log("[Pipeline] Step 3: Relationship extraction");
     // Get all entities for this document
     const entitiesForDoc = await db.select().from(entities).where(sql`caseId = ${caseId}`);
-    const entityIds = entitiesForDoc.map(e => e.id);
+    const entityIds = entitiesForDoc.map((e: any) => e.id);
     const relationshipCount = await extractRelationshipsFromEntities(caseId, entityIds);
     console.log("[Pipeline] Created", relationshipCount, "relationships");
     
@@ -356,16 +356,16 @@ async function generateFindingsFromExtraction(caseId: number, documentId: number
   
   try {
     // Fetch entities extracted for this case
-    const caseEntities = await db.select().from(entities).where(eq(entities.caseId, caseId));
+    const caseEntities = await db.select().from(entities).where(eq(entities.caseId, String(caseId)));
     // Fetch quotes for this document
-    const docQuotes = await db.select().from(quotes).where(eq(quotes.documentId, documentId));
+    const docQuotes = await db.select().from(quotes).where(eq(quotes.documentId, String(documentId)));
     // Fetch signal flags for this case
     const caseSignals = await db.select().from(signalFlags).where(eq(signalFlags.caseId, caseId));
     
     console.log(`[Findings] Input: ${caseEntities.length} entities, ${docQuotes.length} quotes, ${caseSignals.length} signals`);
     
     // Strategy 1: Generate findings from institutional failures
-    const failures = caseEntities.filter(e => 
+    const failures = caseEntities.filter((e: any) => 
       e.type === 'INSTITUTIONAL_FAILURE' || 
       e.type === 'institutional_failure' ||
       (e.description && e.description.toLowerCase().includes('failure'))
@@ -375,8 +375,8 @@ async function generateFindingsFromExtraction(caseId: number, documentId: number
       try {
         // Find backing quotes for this entity
         const backingQuoteIds = docQuotes
-          .filter(q => q.text && failure.name && q.text.toLowerCase().includes(failure.name.toLowerCase().split(' ')[0]))
-          .map(q => q.id)
+          .filter((q: any) => q.text && failure.name && q.text.toLowerCase().includes(failure.name.toLowerCase().split(' ')[0]))
+          .map((q: any) => q.id)
           .slice(0, 5);
         
         await injectForensicMetadata('findings', {
@@ -405,15 +405,15 @@ async function generateFindingsFromExtraction(caseId: number, documentId: number
     }
     
     // Strategy 2: Generate findings from statutes/requirements
-    const statutes = caseEntities.filter(e => 
+    const statutes = caseEntities.filter((e: any) => 
       e.type === 'STATUTE' || e.type === 'REQUIREMENT' || e.type === 'statute' || e.type === 'requirement'
     );
     
     for (const statute of statutes) {
       try {
         const backingQuoteIds = docQuotes
-          .filter(q => q.text && statute.name && q.text.toLowerCase().includes(statute.name.toLowerCase().split(' ')[0]))
-          .map(q => q.id)
+          .filter((q: any) => q.text && statute.name && q.text.toLowerCase().includes(statute.name.toLowerCase().split(' ')[0]))
+          .map((q: any) => q.id)
           .slice(0, 5);
         
         await injectForensicMetadata('findings', {
@@ -482,7 +482,7 @@ async function generateFindingsFromExtraction(caseId: number, documentId: number
 export async function runCrossDocumentCorrelation(caseId: number): Promise<void> {
   console.log("[Pipeline] Cross-document correlation for case:", caseId);
   // Fetch all documents for this case and run findings generation for each
-  const caseDocs = await db.select().from(documents).where(eq(documents.caseId, caseId));
+  const caseDocs = await db.select().from(documents).where(eq(documents.caseId, String(caseId)));
   for (const doc of caseDocs) {
     await generateFindingsFromExtraction(caseId, doc.id);
   }
@@ -525,7 +525,7 @@ async function generateClaimsFromQuotes(caseId: number, documentId: number): Pro
   try {
     // 1. Load quotes for this document
     const docQuotes = await db.select().from(quotes).where(
-      and(eq(quotes.caseId, caseId), eq(quotes.documentId, documentId))
+      and(eq(quotes.caseId, String(caseId)), eq(quotes.documentId, String(documentId)))
     );
     
     if (docQuotes.length === 0) {
@@ -535,7 +535,7 @@ async function generateClaimsFromQuotes(caseId: number, documentId: number): Pro
     
     // 2. Deduplicate by text
     const seen = new Set<string>();
-    const uniqueQuotes = docQuotes.filter(q => {
+    const uniqueQuotes = docQuotes.filter((q: any) => {
       const key = (q.text || "").trim().toLowerCase();
       if (!key || key.length < 5 || seen.has(key)) return false;
       seen.add(key);
@@ -545,7 +545,7 @@ async function generateClaimsFromQuotes(caseId: number, documentId: number): Pro
     console.log(`[ClaimGen] ${docQuotes.length} quotes → ${uniqueQuotes.length} unique`);
     
     // 3. Load entities for matching
-    const caseEntities = await db.select().from(entities).where(eq(entities.caseId, caseId));
+    const caseEntities = await db.select().from(entities).where(eq(entities.caseId, String(caseId)));
     const entityIndex: Record<string, number[]> = {};
     for (const e of caseEntities) {
       const key = (e.name || "").toLowerCase().split(" ")[0];
@@ -561,7 +561,7 @@ async function generateClaimsFromQuotes(caseId: number, documentId: number): Pro
     
     for (let i = 0; i < uniqueQuotes.length; i += BATCH_SIZE) {
       const batch = uniqueQuotes.slice(i, i + BATCH_SIZE);
-      const quotesForPrompt = batch.map((q, idx) => `[${idx}] "${q.text}"`).join("\n");
+      const quotesForPrompt = batch.map((q: any, idx: any) => `[${idx}] "${q.text}"`).join("\n");
       
       try {
         const response = await invokeLLM({
@@ -663,7 +663,10 @@ Return ONLY a JSON array matching the input order.`,
     }
     
     // 7. Finalize snapshot via direct connection
-    const conn = await getForensicConnection();
+    const conn = await getForensicConnection() as any;
+    if (!conn) {
+      throw new Error("Forensic connection unavailable");
+    }
     await conn.execute(
       'UPDATE data_snapshots SET snapshot_status = ?, record_count = ? WHERE id = ?',
       ['complete', inserted, snapshotId]

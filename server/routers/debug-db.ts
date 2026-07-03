@@ -1,5 +1,4 @@
 import { router, publicProcedure } from "../_core/trpc";
-import { create_database_pool } from "../pg-config";
 import { db, getPool } from "../db";
 import { sql } from "drizzle-orm";
 import { legalStatutes } from "../../drizzle/schema";
@@ -26,20 +25,16 @@ export const debugDbRouter = router({
     let error_msg: string | null = null;
     
     if (db_url && db_url !== "postgresql://dummy") {
+      let client: any = null;
       try {
-        const test_pool = create_database_pool({
-          label: "DebugDb",
-          max: 1,
-          connection_timeout_millis: 5000,
-        });
-        const client = await test_pool.connect();
+        client = await getPool().connect();
         can_connect = true;
         const res = await client.query("SELECT COUNT(*) as cnt FROM legal_statutes");
         query_result = res.rows[0];
-        client.release();
-        await test_pool.end();
       } catch (e: any) {
         error_msg = e.message;
+      } finally {
+        client?.release();
       }
     } else {
       error_msg = db_url ? "DATABASE_URL is dummy placeholder" : "DATABASE_URL is not set";
@@ -75,14 +70,16 @@ export const debugDbRouter = router({
     }
 
     // Test 2: Raw pool query via getPool()
+    let client: any = null;
     try {
-      const client = await getPool().connect();
+      client = await getPool().connect();
       const res = await client.query("SELECT COUNT(*)::int as cnt FROM legal_statutes");
       pool_result = res.rows[0];
-      client.release();
     } catch (e: any) {
       pool_error = e.message;
       if (e.cause) pool_error += ` | cause: ${e.cause.message}`;
+    } finally {
+      client?.release();
     }
 
     return {

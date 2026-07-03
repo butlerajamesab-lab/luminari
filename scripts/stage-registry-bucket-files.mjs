@@ -5,17 +5,17 @@ import fs from "node:fs";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import {
-  buildStorageStagingRow,
-  createPool,
-  detectStorageFileExtension,
-  estimateStorageRecordCount,
-  getTableColumns,
-  hasDuplicateRisk,
-  isTextStorageExtension,
-  parseRegistryBucketNames,
-  repoRoot,
-  storageModeForExtension,
-  tableExists,
+  build_storage_staging_row,
+  create_pool,
+  detect_storage_file_extension,
+  estimate_storage_record_count,
+  get_table_columns,
+  has_duplicate_risk,
+  is_text_storage_extension,
+  parse_registry_bucket_names,
+  repo_root,
+  storage_mode_for_extension,
+  table_exists,
 } from "./lib/corpus-audit-utils.mjs";
 
 const preferredFields = [
@@ -40,7 +40,7 @@ const preferredFields = [
   "created_at",
 ];
 
-const artifactDir = path.join(repoRoot, "artifacts", "corpus-audit");
+const artifactDir = path.join(repo_root, "artifacts", "corpus-audit");
 const jsonReportPath = path.join(artifactDir, "registry-bucket-staging-report.json");
 const csvReportPath = path.join(artifactDir, "registry-bucket-staging-report.csv");
 
@@ -124,8 +124,8 @@ async function downloadStorageFile(supabase, bucketName, storagePath) {
 }
 
 function decodeFileContent(buffer, sourceExt) {
-  const storageMode = storageModeForExtension(sourceExt);
-  const text = isTextStorageExtension(sourceExt) ? buffer.toString("utf8") : null;
+  const storageMode = storage_mode_for_extension(sourceExt);
+  const text = is_text_storage_extension(sourceExt) ? buffer.toString("utf8") : null;
   let payload = null;
   let rawText = null;
   let base64Payload = null;
@@ -148,17 +148,17 @@ function decodeFileContent(buffer, sourceExt) {
     payload = { binary_metadata_only: true };
   }
 
-  const recordCountEstimate = estimateStorageRecordCount({ sourceExt, text, payload });
+  const recordCountEstimate = estimate_storage_record_count({ sourceExt, text, payload });
   return { storageMode, payload, rawText, base64Payload, recordCountEstimate, parseError };
 }
 
 async function readQueueColumns() {
-  const { pool } = createPool("registry-bucket-staging-column-introspection");
+  const { pool } = create_pool("registry-bucket-staging-column-introspection");
   if (!pool) return { available: false, exists: null, columns: [], missingPreferredFields: [], status: "DATABASE_URL unavailable; column compatibility will be determined by Supabase insert responses." };
   try {
-    const exists = await tableExists(pool, "corpus_import_queue");
+    const exists = await table_exists(pool, "corpus_import_queue");
     if (!exists) return { available: true, exists: false, columns: [], missingPreferredFields: preferredFields, status: "public.corpus_import_queue does not exist." };
-    const columns = await getTableColumns(pool, "corpus_import_queue");
+    const columns = await get_table_columns(pool, "corpus_import_queue");
     return {
       available: true,
       exists: true,
@@ -234,7 +234,7 @@ function csvCell(value) {
 
 async function main() {
   const args = parseCliArgs();
-  const buckets = parseRegistryBucketNames();
+  const buckets = parse_registry_bucket_names();
   const prefix = normalizePrefix(process.env.REGISTRY_BUCKET_PREFIX);
   const envStatus = {
     SUPABASE_URL: Boolean(process.env.SUPABASE_URL?.trim()),
@@ -270,7 +270,7 @@ async function main() {
     report.summary = { filesDiscovered: 0, wouldStage: 0, staged: 0, duplicateRiskCount: 0, unreadableCount: 0, targetHintGroupCounts: {} };
     writeReports(report);
     console.warn(report.message);
-    console.log(`Report: ${path.relative(repoRoot, jsonReportPath)}`);
+    console.log(`Report: ${path.relative(repo_root, jsonReportPath)}`);
     return;
   }
 
@@ -291,10 +291,10 @@ async function main() {
       const base = { bucket: file.bucketName, path: file.storagePath, unreadable: false };
       try {
         const downloaded = await downloadStorageFile(supabase, file.bucketName, file.storagePath);
-        const sourceExt = detectStorageFileExtension(file.storagePath);
+        const sourceExt = detect_storage_file_extension(file.storagePath);
         const sha256 = crypto.createHash("sha256").update(downloaded.buffer).digest("hex");
         const decoded = decodeFileContent(downloaded.buffer, sourceExt);
-        const initialRow = buildStorageStagingRow({
+        const initialRow = build_storage_staging_row({
           bucketName: file.bucketName,
           storagePath: file.storagePath,
           byteSize: downloaded.byteSize,
@@ -307,9 +307,9 @@ async function main() {
           base64Payload: decoded.base64Payload,
           recordCountEstimate: decoded.recordCountEstimate,
         });
-        const risk = hasDuplicateRisk(initialRow, existingRows);
+        const risk = has_duplicate_risk(initialRow, existingRows);
         const row = risk.duplicateRisk
-          ? buildStorageStagingRow({
+          ? build_storage_staging_row({
             bucketName: file.bucketName,
             storagePath: file.storagePath,
             byteSize: downloaded.byteSize,
@@ -375,7 +375,7 @@ async function main() {
   writeReports(report);
 
   if (!args.jsonOnly) {
-    console.log(JSON.stringify({ status: report.status, summary: report.summary, report: path.relative(repoRoot, jsonReportPath), csv: path.relative(repoRoot, csvReportPath) }, null, 2));
+    console.log(JSON.stringify({ status: report.status, summary: report.summary, report: path.relative(repo_root, jsonReportPath), csv: path.relative(repo_root, csvReportPath) }, null, 2));
     if (schema.missingPreferredFields?.length) console.warn(`Unavailable preferred columns: ${[...new Set(schema.missingPreferredFields)].join(", ")}`);
   }
 }

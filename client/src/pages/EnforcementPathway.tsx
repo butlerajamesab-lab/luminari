@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowRight, CheckCircle2, Clock, AlertTriangle, Scale, Building2, Shield, ShoppingCart, ArrowLeft, Wrench } from "lucide-react";
 import { useLocation } from "wouter";
 import { CommitToCase } from "@/components/CommitToCase";
+import { safeArray, safeObject, safeText } from "@/lib/data-guard";
 
 const agencyIcons: Record<string, React.ReactNode> = {
   EEOC: <Scale className="h-5 w-5" />,
@@ -44,6 +45,10 @@ export default function EnforcementPathway() {
 
   const pathway = trpc.enforcementIntel.getEnforcementPathway.useQuery(queryInput);
   const allPathways = trpc.enforcementIntel.listAllPathways.useQuery();
+  const allPathwayRows = safeArray<any>(allPathways.data);
+  const pathwayData = safeObject<any>(pathway.data);
+  const pathwayRows = safeArray<any>(pathwayData.pathways);
+  const matchedBy = safeText(pathwayData.matchedBy, "unavailable");
 
   const [, navigate] = useLocation();
   return (
@@ -61,7 +66,7 @@ export default function EnforcementPathway() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Enforcement Pathway Models</h1>
         <p className="text-muted-foreground mt-1">
-          {allPathways.data ? allPathways.data.length : 4} enforcement pathway models across federal and state agencies. Select by agency, claim type, or pipeline category.
+          {allPathways.isLoading ? "not_loaded" : allPathwayRows.length} enforcement pathway models across federal and state agencies. Select by agency, claim type, or pipeline category.
         </p>
       </div>
 
@@ -113,15 +118,15 @@ export default function EnforcementPathway() {
       {/* Pathway Results */}
       {pathway.isLoading && <p className="text-muted-foreground">Loading enforcement pathway...</p>}
       {/* All Pathways from Database */}
-      {allPathways.data && allPathways.data.length > 0 && (
+      {allPathwayRows.length > 0 && (
         <Card className="border-0 bg-card/50">
           <CardHeader>
-            <CardTitle className="text-lg">All Enforcement Pathways ({allPathways.data.length})</CardTitle>
+            <CardTitle className="text-lg">All Enforcement Pathways ({allPathwayRows.length})</CardTitle>
             <CardDescription>Complete database of enforcement pathway models including state labor boards</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-2 max-h-[500px] overflow-y-auto">
-              {allPathways.data.map((p: any) => (
+              {allPathwayRows.map((p: any) => (
                 <div key={p.id} className="p-3 rounded-lg border border-border/30 bg-muted/20 hover:bg-muted/40 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
@@ -137,15 +142,15 @@ export default function EnforcementPathway() {
         </Card>
       )}
 
-      {pathway.data && (
+      {pathwayRows.length > 0 ? (
         <div className="space-y-6">
-          {pathway.data.matchedBy !== "all" && (
+          {matchedBy !== "all" && (
             <p className="text-sm text-muted-foreground">
-              Matched by <Badge variant="outline" className="text-xs ml-1">{pathway.data.matchedBy}</Badge> — {pathway.data.pathways.length} pathway{pathway.data.pathways.length !== 1 ? "s" : ""} found
+              Matched by <Badge variant="outline" className="text-xs ml-1">{matchedBy}</Badge> — {pathwayRows.length} pathway{pathwayRows.length !== 1 ? "s" : ""} found
             </p>
           )}
 
-          {pathway.data.pathways.map((pw: any) => (
+          {pathwayRows.map((pw: any) => (
             <Card key={pw.agencyShort} className={`border ${agencyColors[pw.agencyShort] || "border-border/30"}`}>
               <CardHeader>
                 <div className="flex items-center gap-3">
@@ -165,14 +170,14 @@ export default function EnforcementPathway() {
                 <div>
                   <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">Process Steps</h3>
                   <div className="space-y-0">
-                    {pw.steps.map((step: any, i: number) => (
+                    {safeArray<any>(pw.steps).map((step: any, i: number) => (
                       <div key={step.step} className="flex gap-3">
                         {/* Vertical connector */}
                         <div className="flex flex-col items-center">
                           <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary shrink-0">
                             {step.step}
                           </div>
-                          {i < pw.steps.length - 1 && <div className="w-px flex-1 bg-border/50 my-1" />}
+                          {i < safeArray(pw.steps).length - 1 && <div className="w-px flex-1 bg-border/50 my-1" />}
                         </div>
                         {/* Step content */}
                         <div className="pb-4 flex-1">
@@ -198,7 +203,7 @@ export default function EnforcementPathway() {
                   <div>
                     <h3 className="text-sm font-semibold mb-2 text-muted-foreground uppercase tracking-wider">Key Deadlines</h3>
                     <div className="space-y-1.5">
-                      {pw.keyDeadlines.map((d: string, i: number) => (
+                      {safeArray<string>(pw.keyDeadlines).map((d: string, i: number) => (
                         <div key={i} className="flex items-start gap-2 text-sm">
                           <AlertTriangle className="h-3.5 w-3.5 text-amber-400 mt-0.5 shrink-0" />
                           <span>{d}</span>
@@ -210,7 +215,7 @@ export default function EnforcementPathway() {
                   <div>
                     <h3 className="text-sm font-semibold mb-2 text-muted-foreground uppercase tracking-wider">Typical Outcomes</h3>
                     <div className="space-y-1.5">
-                      {pw.typicalOutcomes.map((o: string, i: number) => (
+                      {safeArray<string>(pw.typicalOutcomes).map((o: string, i: number) => (
                         <div key={i} className="flex items-start gap-2 text-sm">
                           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 mt-0.5 shrink-0" />
                           <span>{o}</span>
@@ -239,7 +244,9 @@ export default function EnforcementPathway() {
             </Card>
           ))}
         </div>
-      )}
+      ) : !pathway.isLoading ? (
+        <Card className="py-12 text-center"><p className="text-muted-foreground">empty</p></Card>
+      ) : null}
     </div>
   );
 }

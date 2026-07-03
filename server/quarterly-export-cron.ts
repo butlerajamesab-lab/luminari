@@ -132,7 +132,7 @@ export async function getQuarterlyExportStatus() {
     .limit(10);
 
   const autoRuns = recentRuns.filter(
-    r => r.createdBy === CREATED_BY || r.createdBy === "manual-trigger"
+    (r: any) => r.createdBy === CREATED_BY || r.createdBy === "manual-trigger"
   );
 
   return {

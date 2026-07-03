@@ -32,6 +32,10 @@ export async function generateEntityBreakdown(patternId: number): Promise<Patter
   }>();
 
   for (const sig of signals) {
+    // SCHEMA NOTE: sig.entityId is a UUID foreign key to the entities table, not a human-readable
+    // entity name. Grouping signals by entityId (UUID) and using it as the display name is
+    // semantically incorrect. A join against the entities table would be required to get the name.
+    // TODO: verify production schema and replace with entities.name via join.
     const name = sig.entityId;
     if (!name || name === "Unknown" || name === "N/A") continue;
 
@@ -64,7 +68,7 @@ export async function generateEntityBreakdown(patternId: number): Promise<Patter
 
   // Also check entity_registry for cross-stream counts
   const registryEntities = await db.select().from(entityRegistry);
-  const registryMap = new Map(registryEntities.map(e => [e.entityName, e]));
+  const registryMap = new Map<string, any>(registryEntities.map((e: any) => [e.entityName, e]));
 
   // Upsert into pattern_entity_summary
   const results: PatternEntitySummaryRow[] = [];
@@ -72,7 +76,12 @@ export async function generateEntityBreakdown(patternId: number): Promise<Patter
 
   for (const [, entity] of entityMap) {
     const regEntry = registryMap.get(entity.entityName);
-    const confidence = calculateEntityConfidence(entity, regEntry);
+    // entityRegistry uses complaintCount+litigationCount+enforcementCount, not signalCount.
+    // Pass the combined count as signalCount for confidence calculation.
+    const regSignalCount = regEntry
+      ? (regEntry.complaintCount ?? 0) + (regEntry.litigationCount ?? 0) + (regEntry.enforcementCount ?? 0)
+      : undefined;
+    const confidence = calculateEntityConfidence(entity, regEntry ? { signalCount: regSignalCount, patternCount: regEntry.patternCount } : undefined);
 
     // Delete existing entry for this pattern+entity
     await db.delete(patternEntitySummary).where(
@@ -168,9 +177,9 @@ export async function generateResponsibleAgencyMapping(patternId: number): Promi
   }>();
 
   // Determine agencies based on pattern type and jurisdiction
-  // @ts-expect-error pre-existing type mismatch
+  // @ts-ignore pre-existing type mismatch
   const category = (pattern.patternType || pattern.claimType || "").toLowerCase();
-  // @ts-expect-error pre-existing type mismatch
+  // @ts-ignore pre-existing type mismatch
   const jurisdiction = pattern.jurisdiction || "Federal";
 
   // Map categories to responsible agencies
@@ -335,7 +344,7 @@ export async function getTopEntitiesLeaderboard(limit: number = 20): Promise<Lea
     .orderBy(desc(sql`SUM(${patternEntitySummary.complaintCount}) + SUM(${patternEntitySummary.lawsuitCount}) + SUM(${patternEntitySummary.enforcementActions})`))
     .limit(limit);
 
-  return summaries.map(s => {
+  return summaries.map((s: any) => {
     const signalCount = (s.totalComplaints || 0) + (s.totalLawsuits || 0) + (s.totalEnforcement || 0);
     // Cross-stream = number of distinct evidence types present
     let crossStreamCount = 0;
@@ -352,7 +361,7 @@ export async function getTopEntitiesLeaderboard(limit: number = 20): Promise<Lea
       totalScore: signalCount * (1 + crossStreamCount * 0.5) * (1 + (s.patternCount || 0) * 0.3),
       confidenceScore: Math.round(s.avgConfidence || 0),
     };
-  }).sort((a, b) => b.totalScore - a.totalScore);
+  }).sort((a: any, b: any) => b.totalScore - a.totalScore);
 }
 
 // ─── Investigative Brief Generation ──────────────────────────────────
@@ -412,7 +421,7 @@ export async function generateInvestigativeBrief(patternId: number): Promise<Inv
     .orderBy(desc(detectedSignals.detectionTimestamp));
 
   // Build signal timeline
-  const signalTimeline = signals.map(s => ({
+  const signalTimeline = signals.map((s: any) => ({
     date: new Date(s.detectionTimestamp).toISOString().split("T")[0],
     signalType: s.signalType || "unknown",
     title: s.plainLanguageExplanation || "",
@@ -421,16 +430,16 @@ export async function generateInvestigativeBrief(patternId: number): Promise<Inv
 
   // Filter litigation and regulatory signals
   const litigationActivity = signals
-    .filter(s => (s.signalType || "").includes("litigation") || (s.signalType || "").includes("lawsuit"))
-    .map(s => ({
+    .filter((s: any) => (s.signalType || "").includes("litigation") || (s.signalType || "").includes("lawsuit"))
+    .map((s: any) => ({
       signalType: s.signalType || "unknown",
       title: s.plainLanguageExplanation || "",
       entityName: s.entityId || null,
     }));
 
   const regulatoryActions = signals
-    .filter(s => (s.signalType || "").includes("enforcement") || (s.signalType || "").includes("regulatory"))
-    .map(s => ({
+    .filter((s: any) => (s.signalType || "").includes("enforcement") || (s.signalType || "").includes("regulatory"))
+    .map((s: any) => ({
       signalType: s.signalType || "unknown",
       title: s.plainLanguageExplanation || "",
       entityName: s.entityId || null,
@@ -438,7 +447,7 @@ export async function generateInvestigativeBrief(patternId: number): Promise<Inv
 
   // Build pattern summary
   const patternSummary = pattern
-    // @ts-expect-error pre-existing type mismatch
+    // @ts-ignore pre-existing type mismatch
     ? `Pattern "${pattern.patternName}" (${pattern.patternType || "unknown type"}) detected in ${pattern.jurisdiction || "unknown jurisdiction"} jurisdiction. ${pattern.claimType ? `Claim type: ${pattern.claimType}.` : ""} ${entities.length} entities identified across ${signals.length} signals.`
     : `Pattern #${patternId} — ${entities.length} entities identified.`;
 

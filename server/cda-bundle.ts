@@ -210,7 +210,7 @@ export interface CdaRunBundleFiles {
 // ═══════════════════════════════════════════════════════════════════════
 
 export async function buildRunBundle(
-  runId: number,
+  runId: string,
   t7Transcripts?: T7Transcript[],
 ): Promise<CdaRunBundleFiles> {
   const snapshot = await cdaDb.getFullRunSnapshot(runId);
@@ -219,31 +219,31 @@ export async function buildRunBundle(
   const counts = await cdaDb.getRunRowCounts(runId);
 
   // Build doc hash lookup: docId → sha256
-  const docHashById = new Map<number, string>();
+  const docHashById = new Map<string, string>();
   for (const doc of snapshot.s1_documents) {
     docHashById.set(doc.id, doc.hash);
   }
 
   // Build quote text lookup: quoteId → quoteText
-  const quoteTextById = new Map<number, string>();
+  const quoteTextById = new Map<string, string>();
   for (const q of snapshot.s2_quotes) {
     quoteTextById.set(q.id, q.quoteText);
   }
 
   // Build reason text lookup: reasonId → reasonTextVerbatim
-  const reasonTextById = new Map<number, string>();
+  const reasonTextById = new Map<string, string>();
   for (const r of snapshot.s4_denial_reasons) {
     reasonTextById.set(r.id, r.reasonTextVerbatim);
   }
 
   // Build clause lookup: clauseId → { sectionHeading, clauseTextVerbatim }
-  const clauseById = new Map<number, { sectionHeading: string | null; clauseTextVerbatim: string }>();
+  const clauseById = new Map<string, { sectionHeading: string | null; clauseTextVerbatim: string }>();
   for (const c of snapshot.s5_policy_clauses) {
     clauseById.set(c.id, { sectionHeading: c.sectionHeading, clauseTextVerbatim: c.clauseTextVerbatim });
   }
 
   // Helper: resolve quoteIds array to quote hashes
-  const resolveQuoteHashes = (quoteIds: number[] | null | undefined): string[] => {
+  const resolveQuoteHashes = (quoteIds: string[] | null | undefined): string[] => {
     if (!quoteIds || !Array.isArray(quoteIds)) return [];
     return quoteIds.map((qid) => {
       const text = quoteTextById.get(qid);
@@ -289,7 +289,7 @@ export async function buildRunBundle(
           paid_amount: s3Raw.paidAmount ? Number(s3Raw.paidAmount) : null,
           communication_channels: (s3Raw.communicationChannels as string[]) ?? null,
           source_quote_hashes: s3Raw.sourceQuotes
-            ? (s3Raw.sourceQuotes as Array<{ quoteId: number }>).map((sq) => {
+            ? (s3Raw.sourceQuotes as Array<{ quoteId: string }>).map((sq) => {
                 const text = quoteTextById.get(sq.quoteId);
                 return text ? quoteHash(text) : `unknown_quote_${sq.quoteId}`;
               })
@@ -304,7 +304,7 @@ export async function buildRunBundle(
     normalized_reason_code: r.normalizedReasonCode,
     cited_policy_refs_verbatim: r.citedPolicyRefsVerbatim ?? null,
     cited_facts_verbatim: r.citedFactsVerbatim ?? null,
-    source_quote_hashes: resolveQuoteHashes(r.sourceQuoteIds as number[]),
+    source_quote_hashes: resolveQuoteHashes(r.sourceQuoteIds as string[]),
   }));
 
   // ─── S5 ───
@@ -315,11 +315,11 @@ export async function buildRunBundle(
     clause_type: c.clauseType,
     defined_terms: (c.definedTerms as string[]) ?? null,
     effective_scope_note: c.effectiveScopeNote ?? null,
-    source_quote_hashes: resolveQuoteHashes(c.sourceQuoteIds as number[]),
+    source_quote_hashes: resolveQuoteHashes(c.sourceQuoteIds as string[]),
   }));
 
   // Build clause identifier lookup: clauseId → stable clause_identifier
-  const clauseIdentById = new Map<number, string>();
+  const clauseIdentById = new Map<string, string>();
   for (const c of snapshot.s5_policy_clauses) {
     clauseIdentById.set(c.id, clauseIdentifier(c.sectionHeading, c.clauseTextVerbatim));
   }
@@ -336,7 +336,7 @@ export async function buildRunBundle(
     required_evidence: row.requiredEvidence ?? null,
     missing_evidence: row.missingEvidence ?? null,
     conflict_evidence: row.conflictEvidence ?? null,
-    supporting_quote_hashes: resolveQuoteHashes(row.supportingQuoteIds as number[]),
+    supporting_quote_hashes: resolveQuoteHashes(row.supportingQuoteIds as string[]),
     resolution_method: row.resolutionMethod ?? null,
   }));
 
@@ -348,7 +348,7 @@ export async function buildRunBundle(
     how_to_obtain: g.howToObtain ?? null,
     priority_level: g.priorityLevel,
     linked_reason_identifiers: g.linkedReasonIds
-      ? (g.linkedReasonIds as number[]).map((rid) => {
+      ? (g.linkedReasonIds as string[]).map((rid) => {
           const text = reasonTextById.get(rid);
           return text ? reasonIdentifier(text) : `unknown_reason_${rid}`;
         })
@@ -363,12 +363,12 @@ export async function buildRunBundle(
     denial_reference: c.denialReference ?? null,
     policy_reference: c.policyReference ?? null,
     explanation: c.explanation,
-    linked_quote_hashes: resolveQuoteHashes(c.linkedQuoteIds as number[]),
+    linked_quote_hashes: resolveQuoteHashes(c.linkedQuoteIds as string[]),
   }));
 
   // ─── T7 Transcripts ───
   const t7Lines: T7TranscriptLine[] = (t7Transcripts ?? []).map((t) => {
-    const reasonText = reasonTextById.get(t.reasonId);
+    const reasonText = t.reasonId ? reasonTextById.get(t.reasonId) : undefined;
     const clauseData = t.clauseId ? clauseById.get(t.clauseId) : null;
 
     return {

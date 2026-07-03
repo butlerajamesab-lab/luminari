@@ -1,8 +1,10 @@
 import type { Response } from "express";
-import { getPool } from "../db";
+import { query_with_diagnostics } from "../db";
 
 export const SUPABASE_PROJECT = "wepxlinwbjrkqdzkqpar";
 const CACHE_TTL_MS = 45_000;
+const DIAGNOSTIC_POOL_ACQUIRE_TIMEOUT_MS = 750;
+const DIAGNOSTIC_QUERY_TIMEOUT_MS = 4_000;
 let cached_diagnostic: { expires_at: number; payload: DatabaseDiagnosticResponse } | null = null;
 
 type DiagnosticError = { code: string; message: string };
@@ -35,13 +37,11 @@ export function livenessPayload() {
 }
 
 function sanitizeError(error: unknown): DiagnosticError {
-  const message = error instanceof Error ? error.message : String(error);
-  return { code: "database_unreachable", message: message.replace(/password=[^\s&]+/g, "password=***").slice(0, 500) };
-}
-
-async function count(sql_text: string): Promise<number> {
-  const { rows } = await getPool().query(sql_text);
-  return Number(rows[0]?.total ?? 0);
+  const raw_message = error instanceof Error ? error.message : String(error);
+  const message = raw_message
+    .replace(/password=[^\s&]+/g, "password=***")
+    .slice(0, 500);
+  return { code: "database_unreachable", message };
 }
 
 async function buildDatabaseDiagnostic(): Promise<DatabaseDiagnosticResponse> {
@@ -49,19 +49,52 @@ async function buildDatabaseDiagnostic(): Promise<DatabaseDiagnosticResponse> {
   const database_url = process.env.DATABASE_URL ? "configured" : "missing";
 
   try {
-    const [{ rows: version_rows }, public_tables, public_views, foreign_keys] = await Promise.all([
-      getPool().query("select version() as version"),
-      count("select count(*)::int as total from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE'"),
-      count("select count(*)::int as total from information_schema.views where table_schema = 'public'"),
-      count("select count(*)::int as total from information_schema.table_constraints where table_schema = 'public' and constraint_type = 'FOREIGN KEY'"),
-    ]);
+    const { rows } = await query_with_diagnostics<{
+      version: string;
+      public_tables: number;
+      public_views: number;
+      foreign_keys: number;
+    }>(
+      `
+        select
+          version() as version,
+          (
+            select count(*)::int
+            from information_schema.tables
+            where table_schema = 'public'
+              and table_type = 'BASE TABLE'
+          ) as public_tables,
+          (
+            select count(*)::int
+            from information_schema.views
+            where table_schema = 'public'
+          ) as public_views,
+          (
+            select count(*)::int
+            from information_schema.table_constraints
+            where table_schema = 'public'
+              and constraint_type = 'FOREIGN KEY'
+          ) as foreign_keys
+      `,
+      [],
+      {
+        label: "db_diagnostic",
+        pool_acquire_timeout_ms: DIAGNOSTIC_POOL_ACQUIRE_TIMEOUT_MS,
+        query_timeout_ms: DIAGNOSTIC_QUERY_TIMEOUT_MS,
+      },
+    );
+
+    const row = rows[0];
+    const public_tables = Number(row?.public_tables ?? 0);
+    const public_views = Number(row?.public_views ?? 0);
+    const foreign_keys = Number(row?.foreign_keys ?? 0);
 
     return {
       ok: true,
       runtime: "active",
       database: "connected",
       database_url,
-      database_version: String(version_rows[0]?.version ?? "unknown"),
+      database_version: String(row?.version ?? "unknown"),
       supabase_project: SUPABASE_PROJECT,
       public_tables,
       db_diagnostic: {

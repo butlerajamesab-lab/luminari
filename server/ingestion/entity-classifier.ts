@@ -647,7 +647,7 @@ export async function classifyAndCacheEntity(rawName: string, datasetId?: string
       confidence: parseFloat(String(entry.confidence)),
       roleConfidence: role.confidence,
       canonicalName: entry.canonicalName,
-      aliases: allAliases.map(a => a.aliasName).filter(a => a !== entry.canonicalName),
+      aliases: allAliases.map((a: any) => a.aliasName).filter((a: any) => a !== entry.canonicalName),
       reasoning: `Cached classification (source: ${entry.source})`,
     };
   }

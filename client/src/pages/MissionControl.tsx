@@ -997,6 +997,8 @@ function DatasetRow({ ds, triggerMutation, toggleMutation }: {
 function IngestionPanel() {
   const datasets = trpc.unified.get_unified_ingestion_metrics.useQuery({});
   const runs = trpc.ingestion.listRuns.useQuery({ limit: 10 });
+  const signals = trpc.ingestion.listLiveSignals.useQuery({ limit: 20 });
+  const signalStats = trpc.ingestion.getLiveSignalStats.useQuery();
   const signals = trpc.unified.get_unified_signals.useQuery({ limit: 20 });
   const signalStats = trpc.unified.get_unified_signal_summary.useQuery({});
   const signal_cards = trpc.ingestion.list_signal_intelligence_cards.useQuery({
@@ -1170,11 +1172,16 @@ function IngestionPanel() {
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="rounded-lg border border-border/50 p-3">
                   <div className="text-xs text-muted-foreground">Active Signals</div>
+                  <div className="text-xl font-bold text-amber-400">{signalStats.data?.totalActive ?? 0}</div>
                   <div className="text-xl font-bold text-amber-400">{signalStats.data?.total_active ?? 0}</div>
                 </div>
                 <div className="rounded-lg border border-border/50 p-3">
                   <div className="text-xs text-muted-foreground">By Severity</div>
                   <div className="flex gap-2 mt-1 flex-wrap">
+                    {signalStats.data?.bySeverity && Object.entries(signalStats.data.bySeverity).map(([sev, cnt]) => (
+                      <Badge key={sev} variant="outline" className={severityColor[sev] ?? ""}>{sev}: {String(cnt)}</Badge>
+                    ))}
+                    {(!signalStats.data?.bySeverity || Object.keys(signalStats.data.bySeverity).length === 0) && (
                     {signalStats.data?.by_severity && Object.entries(signalStats.data.by_severity).map(([sev, cnt]) => (
                       <Badge key={sev} variant="outline" className={severityColor[sev] ?? ""}>{sev}: {String(cnt)}</Badge>
                     ))}

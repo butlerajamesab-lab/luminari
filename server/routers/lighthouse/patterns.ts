@@ -51,9 +51,9 @@ export const lighthousePatternsRouter = router({
       avgConfidence += p.confidence_score;
     }
     return {
-      totalPatterns: patterns.length,
+      total_patterns: patterns.length,
       totalSignals,
-      avgConfidence: patterns.length > 0 ? Math.round(avgConfidence / patterns.length) : 0,
+      avg_confidence: patterns.length > 0 ? Math.round(avgConfidence / patterns.length) : 0,
       byJurisdiction,
       byPatternType,
     };

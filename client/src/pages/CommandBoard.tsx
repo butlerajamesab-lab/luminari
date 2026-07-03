@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
+import { safeArray, safeObject, safeText } from "@/lib/data-guard";
 import { useInterfaceStore } from "@/store/interfaceStore";
 import { matchJurisdiction } from "@/utils/jurisdiction-matcher";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -180,12 +181,12 @@ function JurisdictionsTab() {
     return () => clearTimeout(timer);
   }, [searchQuery, setActiveJurisdiction, setIsSovereign, setIsProcessing]);
 
+  const jurisdictionRows = safeArray<any>(jurisdictions.data);
   const filtered = useMemo(() => {
-    if (!jurisdictions.data) return [];
-    if (!searchQuery) return jurisdictions.data;
+    if (!searchQuery) return jurisdictionRows;
     const q = searchQuery.toLowerCase();
-    return jurisdictions.data.filter((j: any) => j.name.toLowerCase().includes(q) || j.type.toLowerCase().includes(q));
-  }, [jurisdictions.data, searchQuery]);
+    return jurisdictionRows.filter((j: any) => safeText(j.name).toLowerCase().includes(q) || safeText(j.type).toLowerCase().includes(q));
+  }, [jurisdictionRows, searchQuery]);
 
   const typeColors: Record<string, string> = {
     federal: "bg-blue-500/10 text-blue-500 border-blue-500/20",
@@ -348,7 +349,7 @@ function TimelineTab() {
             <p className="text-center text-muted-foreground py-8">No timeline events found</p>
           ) : (
             <div className="space-y-2">
-              {events.data.map((e: any) => (
+              {safeArray<any>(events.data).map((e: any) => (
                 <div key={e.id} className="flex items-start gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
                   <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
                   <div className="min-w-0 flex-1">
@@ -370,7 +371,7 @@ function TimelineTab() {
         </CardContent>
       </Card>
 
-      {edges.data && edges.data.length > 0 && (
+      {safeArray(edges.data).length > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Timeline Edges</CardTitle>
@@ -378,7 +379,7 @@ function TimelineTab() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {edges.data.map((e: any) => (
+              {safeArray<any>(edges.data).map((e: any) => (
                 <div key={e.id} className="flex items-center gap-2 p-2 rounded border text-sm">
                   <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{e.sourceNode}</code>
                   <Badge variant="outline" className="text-[10px]">{e.relationshipType}</Badge>
@@ -471,11 +472,11 @@ function WorkflowsTab() {
                     </pre>
                   </div>
                 )}
-                {workflowDetail.data.steps && workflowDetail.data.steps.length > 0 && (
+                {safeArray(safeObject<any>(workflowDetail.data).steps).length > 0 && (
                   <div>
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Workflow Steps ({workflowDetail.data.steps.length})</span>
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Workflow Steps ({safeArray(safeObject<any>(workflowDetail.data).steps).length})</span>
                     <div className="mt-2 space-y-2">
-                      {workflowDetail.data.steps.map((step: any, idx: number) => (
+                      {safeArray<any>(safeObject<any>(workflowDetail.data).steps).map((step: any, idx: number) => (
                         <div key={step.id} className="flex items-start gap-3 p-3 rounded-lg border">
                           <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">{idx + 1}</span>
                           <div className="min-w-0 flex-1">
@@ -508,11 +509,11 @@ function WorkflowsTab() {
                     </div>
                   </div>
                 )}
-                {workflowDetail.data.escalations && workflowDetail.data.escalations.length > 0 && (
+                {safeArray(safeObject<any>(workflowDetail.data).escalations).length > 0 && (
                   <div>
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Escalation Routes ({workflowDetail.data.escalations.length})</span>
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Escalation Routes ({safeArray(safeObject<any>(workflowDetail.data).escalations).length})</span>
                     <div className="mt-2 space-y-2">
-                      {workflowDetail.data.escalations.map((e: any) => (
+                      {safeArray<any>(safeObject<any>(workflowDetail.data).escalations).map((e: any) => (
                         <div key={e.id} className="p-3 rounded-lg border">
                           <pre className="text-xs overflow-x-auto whitespace-pre-wrap">{JSON.stringify(e.routes, null, 2)}</pre>
                         </div>
@@ -528,12 +529,12 @@ function WorkflowsTab() {
         </Card>
       </div>
 
-      {deadlineRules.data && deadlineRules.data.length > 0 && (
+      {safeArray(deadlineRules.data).length > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Timer className="h-5 w-5 text-red-500" />
-              Deadline Rules ({deadlineRules.data.length})
+              Deadline Rules ({safeArray(deadlineRules.data).length})
             </CardTitle>
             <CardDescription>Computable deadline logic across claim types and jurisdictions</CardDescription>
           </CardHeader>
@@ -552,7 +553,7 @@ function WorkflowsTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {deadlineRules.data.map((r: any) => (
+                  {safeArray<any>(deadlineRules.data).map((r: any) => (
                     <tr key={r.id} className="border-b hover:bg-accent/50">
                       <td className="p-2 text-xs">{r.claimType?.replace(/_/g, " ")}</td>
                       <td className="p-2 text-xs"><Badge variant="outline" className="text-[10px]">{r.jurisdiction}</Badge></td>

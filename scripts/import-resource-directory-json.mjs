@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import "dotenv/config";
-import { createPool, repoRoot } from "./lib/corpus-audit-utils.mjs";
+import { create_pool, repo_root } from "./lib/corpus-audit-utils.mjs";
 
 const SOURCE_TABLE = "resource_directory_docx_import";
 const SOURCE_FAMILY_KEY = "address_audit_supplement";
@@ -64,7 +64,7 @@ function normalizeRow(row, index) {
 }
 
 function readRows(input, limit) {
-  const file = path.isAbsolute(input) ? input : path.join(repoRoot, input);
+  const file = path.isAbsolute(input) ? input : path.join(repo_root, input);
   const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
   const rows = Array.isArray(parsed) ? parsed : parsed.rows;
   if (!Array.isArray(rows)) throw new Error("input must be a JSON array or object with rows array");
@@ -143,7 +143,7 @@ async function main() {
     console.log(JSON.stringify({ status: "completed", summary }, null, 2));
     return;
   }
-  const { pool, databaseStatus } = createPool("resource-directory-json-import");
+  const { pool, databaseStatus } = create_pool("resource-directory-json-import");
   if (!pool) throw new Error(databaseStatus);
   try {
     for (const [index, batch] of chunks(rows, args.batchSize).entries()) {

@@ -1,13 +1,14 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import * as node_url from "node:url";
+const file_url_to_path = node_url.fileURLToPath;
 import { Pool } from "pg";
 
-const __filename = fileURLToPath(import.meta.url);
+const __filename = file_url_to_path(import.meta.url);
 const __dirname = path.dirname(__filename);
-export const repoRoot = path.resolve(__dirname, "../..");
+export const repo_root = path.resolve(__dirname, "../..");
 
-export const pipelineContexts = [
+export const pipeline_contexts = [
   "benefits",
   "housing",
   "employment",
@@ -27,72 +28,72 @@ export const pipelineContexts = [
   "admin",
 ];
 
-export function parseArgs(argv = process.argv.slice(2)) {
-  const args = { dryRun: false, dataDir: undefined, outDir: path.join(repoRoot, "tmp", "doctrine-graph-candidates") };
+export function parse_args(argv = process.argv.slice(2)) {
+  const args = { dry_run: false, data_dir: undefined, out_dir: path.join(repo_root, "tmp", "doctrine-graph-candidates") };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (arg === "--dry-run") args.dryRun = true;
-    else if (arg === "--data-dir") args.dataDir = argv[++i];
-    else if (arg.startsWith("--data-dir=")) args.dataDir = arg.slice("--data-dir=".length);
-    else if (arg === "--out-dir") args.outDir = argv[++i];
-    else if (arg.startsWith("--out-dir=")) args.outDir = arg.slice("--out-dir=".length);
-    else if (arg === "--json") args.jsonOnly = true;
+    if (arg === "--dry-run") args.dry_run = true;
+    else if (arg === "--data-dir") args.data_dir = argv[++i];
+    else if (arg.startsWith("--data-dir=")) args.data_dir = arg.slice("--data-dir=".length);
+    else if (arg === "--out-dir") args.out_dir = argv[++i];
+    else if (arg.startsWith("--out-dir=")) args.out_dir = arg.slice("--out-dir=".length);
+    else if (arg === "--json") args.json_only = true;
   }
   return args;
 }
 
-export function createPool(label = "corpus-audit") {
-  const connectionString = process.env.DATABASE_URL?.trim();
-  if (!connectionString) {
-    return { pool: null, databaseStatus: "DATABASE_URL is not configured; database audit sections will be marked unavailable." };
+export function create_pool(label = "corpus-audit") {
+  const connection_string = process.env.DATABASE_URL?.trim();
+  if (!connection_string) {
+    return { pool: null, database_status: "DATABASE_URL is not configured; database audit sections will be marked unavailable." };
   }
   const pool = new Pool({
-    connectionString,
+    connectionString: connection_string,
     connectionTimeoutMillis: 10000,
     ssl: { rejectUnauthorized: false },
     max: 3,
   });
-  pool.on("error", (err) => console.error(`[${label}] unexpected PostgreSQL pool error`, err));
-  return { pool, databaseStatus: "configured" };
+  pool.on("error", (err) => console.error(`[${label}] unexpected postgres pool error`, err));
+  return { pool, database_status: "configured" };
 }
 
-export async function tableExists(pool, tableName, schemaName = "public") {
+export async function table_exists(pool, table_name, schema_name = "public") {
   if (!pool) return false;
   const result = await pool.query(
     `select exists (
        select 1 from information_schema.tables
        where table_schema = $1 and table_name = $2
      ) as exists`,
-    [schemaName, tableName],
+    [schema_name, table_name],
   );
   return Boolean(result.rows[0]?.exists);
 }
 
-export async function getTableColumns(pool, tableName, schemaName = "public") {
+export async function get_table_columns(pool, table_name, schema_name = "public") {
   if (!pool) return [];
   const result = await pool.query(
     `select column_name
        from information_schema.columns
       where table_schema = $1 and table_name = $2
       order by ordinal_position`,
-    [schemaName, tableName],
+    [schema_name, table_name],
   );
   return result.rows.map((row) => row.column_name);
 }
 
-export async function safeCount(pool, tableName) {
+export async function safe_count(pool, table_name) {
   if (!pool) return { exists: false, count: null, error: "database-unavailable" };
-  const exists = await tableExists(pool, tableName);
+  const exists = await table_exists(pool, table_name);
   if (!exists) return { exists: false, count: null, error: null };
-  const result = await pool.query(`select count(*)::bigint as count from public.${quoteIdent(tableName)}`);
+  const result = await pool.query(`select count(*)::bigint as count from public.${quote_ident(table_name)}`);
   return { exists: true, count: Number(result.rows[0]?.count ?? 0), error: null };
 }
 
-export function quoteIdent(identifier) {
+export function quote_ident(identifier) {
   return `"${String(identifier).replaceAll('"', '""')}"`;
 }
 
-export function normalizeText(value) {
+export function normalize_text(value) {
   if (value === null || value === undefined) return "";
   if (typeof value === "string") return value;
   try {
@@ -102,19 +103,19 @@ export function normalizeText(value) {
   }
 }
 
-export function normalizeName(value) {
-  return normalizeText(value).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+export function normalize_name(value) {
+  return normalize_text(value).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
 }
 
 
-export function asArray(value) {
+export function as_array(value) {
   if (value === null || value === undefined) return [];
   if (Array.isArray(value)) return value;
   return [value];
 }
 
-export function normalizeIdentifier(value) {
-  return normalizeText(value)
+export function normalize_identifier(value) {
+  return normalize_text(value)
     .toLowerCase()
     .replace(/[§–—-]/g, " ")
     .replace(/[^a-z0-9]+/g, " ")
@@ -122,15 +123,15 @@ export function normalizeIdentifier(value) {
     .replace(/\s+/g, " ");
 }
 
-export function tableDisplayName(tableName) {
-  return tableName.includes(".") ? tableName : `public.${tableName}`;
+export function table_display_name(table_name) {
+  return table_name.includes(".") ? table_name : `public.${table_name}`;
 }
 
-export function uniqueBy(items, keyFn) {
+export function unique_by(items, key_fn) {
   const seen = new Set();
   const out = [];
   for (const item of items) {
-    const key = keyFn(item);
+    const key = key_fn(item);
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(item);
@@ -138,8 +139,8 @@ export function uniqueBy(items, keyFn) {
   return out;
 }
 
-export function extractJsonRecordCount(parsed, selector) {
-  const selected = selectPath(parsed, selector);
+export function extract_json_record_count(parsed, selector) {
+  const selected = select_path(parsed, selector);
   if (Array.isArray(selected)) return selected.length;
   if (selected && typeof selected === "object") {
     if (Array.isArray(selected.records)) return selected.records.length;
@@ -149,22 +150,22 @@ export function extractJsonRecordCount(parsed, selector) {
   return selected === undefined ? null : 1;
 }
 
-export function selectPath(value, selector) {
+export function select_path(value, selector) {
   if (!selector) return value;
   return selector.split(".").filter(Boolean).reduce((current, part) => current?.[part], value);
 }
 
-export function countJsonlRecords(text) {
+export function count_jsonl_records(text) {
   return text.split(/\r?\n/).filter((line) => line.trim() && !line.trim().startsWith("--")).length;
 }
 
-export function countCsvRecords(text) {
+export function count_csv_records(text) {
   const lines = text.split(/\r?\n/).filter((line) => line.trim());
   return Math.max(0, lines.length - 1);
 }
 
 
-export function parseRegistryBucketNames(env = process.env) {
+export function parse_registry_bucket_names(env = process.env) {
   const configured = env.REGISTRY_BUCKET_NAMES?.trim()
     ? env.REGISTRY_BUCKET_NAMES
     : env.REGISTRY_BUCKET_NAME;
@@ -174,28 +175,28 @@ export function parseRegistryBucketNames(env = process.env) {
   return [...new Set(names)];
 }
 
-export function detectStorageFileExtension(storagePath) {
-  const ext = path.extname(String(storagePath ?? "")).toLowerCase();
+export function detect_storage_file_extension(storage_path) {
+  const ext = path.extname(String(storage_path ?? "")).toLowerCase();
   return ext || "unknown";
 }
 
-export function storageModeForExtension(sourceExt) {
-  const ext = String(sourceExt ?? "").toLowerCase();
+export function storage_mode_for_extension(source_ext) {
+  const ext = String(source_ext ?? "").toLowerCase();
   if (ext === ".json") return "json_payload";
   if ([".jsonl", ".csv", ".txt", ".md", ".html", ".sql", ".ts", ".js"].includes(ext)) return "raw_text";
   if ([".zip", ".pdf"].includes(ext)) return "base64_payload";
   return "binary_metadata";
 }
 
-export function isTextStorageExtension(sourceExt) {
-  return [".json", ".jsonl", ".csv", ".txt", ".md", ".html", ".sql", ".ts", ".js"].includes(String(sourceExt ?? "").toLowerCase());
+export function is_text_storage_extension(source_ext) {
+  return [".json", ".jsonl", ".csv", ".txt", ".md", ".html", ".sql", ".ts", ".js"].includes(String(source_ext ?? "").toLowerCase());
 }
 
-export function estimateStorageRecordCount({ sourceExt, text, payload }) {
-  const ext = String(sourceExt ?? "").toLowerCase();
-  if (ext === ".json") return extractJsonRecordCount(payload);
-  if (ext === ".jsonl") return countJsonlRecords(text ?? "");
-  if (ext === ".csv") return countCsvRecords(text ?? "");
+export function estimate_storage_record_count({ source_ext, text, payload }) {
+  const ext = String(source_ext ?? "").toLowerCase();
+  if (ext === ".json") return extract_json_record_count(payload);
+  if (ext === ".jsonl") return count_jsonl_records(text ?? "");
+  if (ext === ".csv") return count_csv_records(text ?? "");
   if ([".txt", ".md", ".html", ".ts", ".js"].includes(ext)) {
     return String(text ?? "").split(/\r?\n/).filter((line) => line.trim()).length;
   }
@@ -203,8 +204,8 @@ export function estimateStorageRecordCount({ sourceExt, text, payload }) {
   return null;
 }
 
-export function inferStorageTargetMetadata(...values) {
-  const haystack = values.map(normalizeText).join(" ").toLowerCase();
+export function infer_storage_target_metadata(...values) {
+  const haystack = values.map(normalize_text).join(" ").toLowerCase();
   const rules = [
     { hint: "legal_weak_joints", surfaces: ["legal_weak_joints", "weak_joint", "failure_layer", "doctrine_graph", "reform_graph"], pattern: /legal[_ -]?weak[_ -]?joints?|weak[_ -]?joint|failure[_ -]?layer/ },
     { hint: "legal_statutes", surfaces: ["legal_statutes", "authority_layer", "legal_library", "doctrine_graph"], pattern: /legal[_ -]?statutes?|statute[_ -]?key[_ -]?text|legal[_ -]?library|\bstatutes?\b|authority[_ -]?layer/ },
@@ -220,76 +221,76 @@ export function inferStorageTargetMetadata(...values) {
     { hint: "coalition_intelligence", surfaces: ["coalition_intelligence", "reform_graph"], pattern: /coalition|reform[_ -]?graph/ },
   ];
   const matched = rules.filter((rule) => rule.pattern.test(haystack));
-  const targetHint = matched[0]?.hint ?? "review_required";
-  const targetSurfaces = matched.length
+  const target_hint = matched[0]?.hint ?? "review_required";
+  const target_surfaces = matched.length
     ? [...new Set(matched.flatMap((rule) => rule.surfaces))]
     : ["review_required"];
-  const pipelineContext = inferPipelineContext(haystack, targetHint, targetSurfaces);
-  const domainTags = inferDomainTags(haystack, targetHint, targetSurfaces);
-  return { targetHint, targetSurfaces, pipelineContext, domainTags };
+  const pipeline_context = infer_pipeline_context(haystack, target_hint, target_surfaces);
+  const domain_tags = infer_domain_tags(haystack, target_hint, target_surfaces);
+  return { target_hint, target_surfaces, pipeline_context, domain_tags };
 }
 
-export function buildStorageStagingRow({ bucketName, storagePath, byteSize, sha256, contentType, sourceExt, storageMode, payload, rawText, base64Payload, recordCountEstimate, duplicateRisk = false, duplicateRiskReasons = [] }) {
-  const metadata = inferStorageTargetMetadata(bucketName, storagePath, rawText, payload);
+export function build_storage_staging_row({ bucket_name, storage_path, byte_size, sha256, content_type, source_ext, storage_mode, payload, raw_text, base64_payload, record_count_estimate, duplicate_risk = false, duplicate_risk_reasons = [] }) {
+  const metadata = infer_storage_target_metadata(bucket_name, storage_path, raw_text, payload);
   return {
-    source_name: `${bucketName}/${storagePath}`,
+    source_name: `${bucket_name}/${storage_path}`,
     source_type: "supabase_storage",
-    source_ext: sourceExt,
-    storage_bucket: bucketName,
-    storage_path: storagePath,
-    byte_size: byteSize,
+    source_ext: source_ext,
+    storage_bucket: bucket_name,
+    storage_path: storage_path,
+    byte_size: byte_size,
     sha256,
-    content_type: contentType ?? null,
-    storage_mode: storageMode,
-    target_hint: metadata.targetHint,
-    record_count_estimate: recordCountEstimate,
+    content_type: content_type ?? null,
+    storage_mode: storage_mode,
+    target_hint: metadata.target_hint,
+    record_count_estimate: record_count_estimate,
     payload: payload ?? {
-      storage_bucket: bucketName,
-      storage_path: storagePath,
-      source_ext: sourceExt,
-      storage_mode: storageMode,
-      duplicate_risk: duplicateRisk,
-      duplicate_risk_reasons: duplicateRiskReasons,
+      storage_bucket: bucket_name,
+      storage_path: storage_path,
+      source_ext: source_ext,
+      storage_mode: storage_mode,
+      duplicate_risk: duplicate_risk,
+      duplicate_risk_reasons: duplicate_risk_reasons,
     },
-    raw_text: rawText ?? null,
-    base64_payload: base64Payload ?? null,
-    pipeline_context: metadata.pipelineContext,
-    domain_tags: metadata.domainTags,
-    target_surfaces: metadata.targetSurfaces,
-    import_status: duplicateRisk ? "duplicate_risk_review" : "pending_storage_review",
+    raw_text: raw_text ?? null,
+    base64_payload: base64_payload ?? null,
+    pipeline_context: metadata.pipeline_context,
+    domain_tags: metadata.domain_tags,
+    target_surfaces: metadata.target_surfaces,
+    import_status: duplicate_risk ? "duplicate_risk_review" : "pending_storage_review",
     created_at: new Date().toISOString(),
   };
 }
 
-export function hasDuplicateRisk(candidate, existingRows = []) {
+export function has_duplicate_risk(candidate, existing_rows = []) {
   const risks = [];
-  for (const row of existingRows) {
+  for (const row of existing_rows) {
     if (!row) continue;
-    const sameContent = row.sha256 && candidate.sha256 && row.sha256 === candidate.sha256;
-    const sameLocation = (row.storage_bucket === candidate.storage_bucket && row.storage_path === candidate.storage_path) || row.source_name === candidate.source_name;
-    if (sameContent && !sameLocation) risks.push("same_sha256_different_storage_location");
-    if (sameLocation && row.sha256 && candidate.sha256 && row.sha256 !== candidate.sha256) risks.push("same_storage_path_changed_sha256");
+    const same_content = row.sha256 && candidate.sha256 && row.sha256 === candidate.sha256;
+    const same_location = (row.storage_bucket === candidate.storage_bucket && row.storage_path === candidate.storage_path) || row.source_name === candidate.source_name;
+    if (same_content && !same_location) risks.push("same_sha256_different_storage_location");
+    if (same_location && row.sha256 && candidate.sha256 && row.sha256 !== candidate.sha256) risks.push("same_storage_path_changed_sha256");
   }
-  return { duplicateRisk: risks.length > 0, duplicateRiskReasons: [...new Set(risks)] };
+  return { duplicate_risk: risks.length > 0, duplicate_risk_reasons: [...new Set(risks)] };
 }
 
-export function findDataDirectories(cliDataDir) {
+export function find_data_directories(cli_data_dir) {
   const candidates = [
-    cliDataDir,
+    cli_data_dir,
     process.env.CORPUS_DATA_DIR,
-    path.join(repoRoot, "data"),
-    path.join(repoRoot, "corpus"),
-    path.join(repoRoot, "uploads"),
-    path.join(repoRoot, "attached_assets"),
-    repoRoot,
+    path.join(repo_root, "data"),
+    path.join(repo_root, "corpus"),
+    path.join(repo_root, "uploads"),
+    path.join(repo_root, "attached_assets"),
+    repo_root,
   ].filter(Boolean);
   return [...new Set(candidates.map((candidate) => path.resolve(candidate)))].filter((candidate) => fs.existsSync(candidate));
 }
 
-export function findFilesByBasename(dataDirs, basenames) {
-  const basenameSet = new Set(basenames);
+export function find_files_by_basename(data_dirs, basenames) {
+  const basename_set = new Set(basenames);
   const matches = new Map();
-  for (const dir of dataDirs) scan(dir, 4);
+  for (const dir of data_dirs) scan(dir, 4);
   return matches;
 
   function scan(dir, depth) {
@@ -305,7 +306,7 @@ export function findFilesByBasename(dataDirs, basenames) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         scan(full, depth - 1);
-      } else if (basenameSet.has(entry.name)) {
+      } else if (basename_set.has(entry.name)) {
         if (!matches.has(entry.name)) matches.set(entry.name, []);
         matches.get(entry.name).push(full);
       }
@@ -313,8 +314,8 @@ export function findFilesByBasename(dataDirs, basenames) {
   }
 }
 
-export function inferPipelineContext(...values) {
-  const haystack = values.map(normalizeText).join(" ").toLowerCase();
+export function infer_pipeline_context(...values) {
+  const haystack = values.map(normalize_text).join(" ").toLowerCase();
   const matches = [];
   const rules = [
     ["benefits", /benefit|snap|medicaid|ssi|ssdi|tanf|unemployment/],
@@ -341,17 +342,17 @@ export function inferPipelineContext(...values) {
   return matches.length ? [...new Set(matches)] : ["admin"];
 }
 
-export function inferDomainTags(...values) {
-  return inferPipelineContext(...values).filter((context) => !["admin", "advocate", "pro_se"].includes(context));
+export function infer_domain_tags(...values) {
+  return infer_pipeline_context(...values).filter((context) => !["admin", "advocate", "pro_se"].includes(context));
 }
 
-export function extractCitations(...values) {
-  const text = values.flatMap(asArray).map(normalizeText).join(" \n ");
+export function extract_citations(...values) {
+  const text = values.flatMap(as_array).map(normalize_text).join(" \n ");
   const section = "(?:§|§§|sections?|secs?\\.)?";
-  const sectionBody = "[\\w.:()–—-]+(?:\\s*(?:,|and|or|–|—|-)\\s*[\\w.:()–—-]+)*[a-z]?";
+  const section_body = "[\\w.:()–—-]+(?:\\s*(?:,|and|or|–|—|-)\\s*[\\w.:()–—-]+)*[a-z]?";
   const patterns = [
-    new RegExp(`\\b\\d+\\s+U\\.?S\\.?C\\.?\\s*${section}\\s*${sectionBody}`, "gi"),
-    new RegExp(`\\b\\d+\\s+C\\.?F\\.?R\\.?\\s*(?:Part\\s+\\d+|${section}\\s*${sectionBody})`, "gi"),
+    new RegExp(`\\b\\d+\\s+U\\.?S\\.?C\\.?\\s*${section}\\s*${section_body}`, "gi"),
+    new RegExp(`\\b\\d+\\s+C\\.?F\\.?R\\.?\\s*(?:Part\\s+\\d+|${section}\\s*${section_body})`, "gi"),
     /\b[A-Z][a-z]+\.?\s+Stat\.?\s*§{1,2}\s*[\w.:()–—-]+/g,
     /\b[A-Z][a-z]+\.\s+[A-Z][A-Za-z.'’ &]+Code\s*§{1,2}\s*[\w.:()–—-]+/g,
     /\b[A-Z][a-z]+\s+Rev\.\s+Code\s*§{0,2}\s*[\w.:()–—-]+/g,
@@ -364,35 +365,35 @@ export function extractCitations(...values) {
 }
 
 
-export function extractCorpusImportQueueRowsFromSql(text, sourcePath = null) {
+export function extract_corpus_import_queue_rows_from_sql(text, source_path = null) {
   const rows = [];
   const pattern = /insert\s+into\s+public\.corpus_import_queue\s*\(([^)]*)\)\s*values\s*\((.*?)\)\s*;/gis;
   for (const match of text.matchAll(pattern)) {
-    const columns = splitSqlCsv(match[1]).map((column) => column.replace(/["\s]/g, "").toLowerCase());
-    const values = parseSqlValues(match[2]);
+    const columns = split_sql_csv(match[1]).map((column) => column.replace(/["\s]/g, "").toLowerCase());
+    const values = parse_sql_values(match[2]);
     if (!columns.length || columns.length !== values.length) {
       rows.push({
-        source_name: `unparsed:${sourcePath ?? "sql"}:${rows.length + 1}`,
+        source_name: `unparsed:${source_path ?? "sql"}:${rows.length + 1}`,
         source_type: "unparsed_sql_insert",
         target_hint: "Unable to parse corpus_import_queue insert values safely.",
         payload: null,
         raw_text: match[0],
         record_count_estimate: null,
         import_status: "parse_error",
-        _local_sql_source: sourcePath,
+        _local_sql_source: source_path,
       });
       continue;
     }
-    const row = { _local_sql_source: sourcePath, import_status: "local_sql_staged" };
+    const row = { _local_sql_source: source_path, import_status: "local_sql_staged" };
     columns.forEach((column, index) => {
-      row[column] = coerceSqlLiteral(values[index]);
+      row[column] = coerce_sql_literal(values[index]);
     });
     rows.push(row);
   }
   return rows;
 }
 
-function splitSqlCsv(text) {
+function split_sql_csv(text) {
   const out = [];
   let current = "";
   let depth = 0;
@@ -422,7 +423,7 @@ function splitSqlCsv(text) {
   return out;
 }
 
-function parseSqlValues(text) {
+function parse_sql_values(text) {
   const out = [];
   let current = "";
   let depth = 0;
@@ -444,7 +445,7 @@ function parseSqlValues(text) {
     }
     const char = text[index];
     if (char === "'") {
-      const end = findSqlSingleQuoteEnd(text, index + 1);
+      const end = find_sql_single_quote_end(text, index + 1);
       current += text.slice(index, end + 1);
       index = end;
       continue;
@@ -462,7 +463,7 @@ function parseSqlValues(text) {
   return out;
 }
 
-function findSqlSingleQuoteEnd(text, start) {
+function find_sql_single_quote_end(text, start) {
   for (let index = start; index < text.length; index += 1) {
     if (text[index] !== "'") continue;
     if (text[index + 1] === "'") {
@@ -474,19 +475,19 @@ function findSqlSingleQuoteEnd(text, start) {
   return text.length - 1;
 }
 
-function coerceSqlLiteral(value) {
+function coerce_sql_literal(value) {
   const trimmed = value.trim();
   if (/^null$/i.test(trimmed)) return null;
   const dollar = trimmed.match(/^\$lq\$(.*)\$lq\$(?:::jsonb?)?$/is);
-  if (dollar) return parseMaybeJson(dollar[1]);
+  if (dollar) return parse_maybe_json(dollar[1]);
   const single = trimmed.match(/^'(.*)'(?:::jsonb?)?$/is);
-  if (single) return parseMaybeJson(single[1].replace(/''/g, "'"));
+  if (single) return parse_maybe_json(single[1].replace(/''/g, "'"));
   const numeric = Number(trimmed);
   if (Number.isFinite(numeric)) return numeric;
   return trimmed;
 }
 
-function parseMaybeJson(value) {
+function parse_maybe_json(value) {
   const trimmed = value.trim();
   if (!trimmed) return "";
   if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
@@ -499,7 +500,7 @@ function parseMaybeJson(value) {
   return value;
 }
 
-export function stringifyCsv(rows) {
+export function stringify_csv(rows) {
   if (!rows.length) return "";
   const columns = Object.keys(rows[0]);
   const escape = (value) => {

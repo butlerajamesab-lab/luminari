@@ -92,7 +92,7 @@ export const governanceRouter = router({
         ${timestamp})`
       );
 
-      return { controlId, actionId: input.actionId, status: "paused" };
+      return { controlId, action_id: input.actionId, status: "paused" };
     }),
 
   /**
@@ -122,7 +122,7 @@ export const governanceRouter = router({
         VALUES (CONCAT('gov_', UUID()), ${input.actionId}, 'action_execution', 'action_resumed', 'admin', ${input.actorId}, ${input.reason}, ${timestamp})`
       );
 
-      return { actionId: input.actionId, status: "resumed" };
+      return { action_id: input.actionId, status: "resumed" };
     }),
 
   /**
@@ -151,9 +151,9 @@ export const governanceRouter = router({
       );
 
       return {
-        caseId: input.caseId,
+        case_id: input.caseId,
         lens: input.lens,
-        forceActive: input.forceActive,
+        force_active: input.forceActive,
         timestamp,
       };
     }),
@@ -178,7 +178,7 @@ export const governanceRouter = router({
         VALUES (CONCAT('gov_', UUID()), ${input.actionId}, 'action_outcome', 'outcome_disputed', 'admin', ${input.actorId}, ${input.reason}, ${timestamp})`
       );
 
-      return { actionId: input.actionId, status: "disputed" };
+      return { action_id: input.actionId, status: "disputed" };
     }),
 
   /**

@@ -1,92 +1,110 @@
 import { trpc } from "@/lib/trpc";
 
-export function useMissionControlData() {
-  // System Health & Operations
-  const systemHealth = trpc.adminDashboard.systemHealth.useQuery();
-  const knowledgePopulation = trpc.knowledgeIngestion.populationStats.useQuery();
-  const caseActivity = trpc.adminDashboard.caseActivity.useQuery();
-  const structuralSignals = trpc.adminDashboard.structuralSignals.useQuery();
-  const workQueue = trpc.adminDashboard.workQueue.useQuery();
-  const sunamStatus = trpc.sunam.getStatus.useQuery();
+const HOT_PATH_QUERY_OPTIONS = {
+  staleTime: 60_000,
+  refetchOnWindowFocus: false,
+  retry: false,
+} as const;
 
-  // Ingestion & Datasets
-  const datasets = trpc.ingestion.listDatasets.useQuery();
-  const runs = trpc.ingestion.listRuns.useQuery();
-  const schedulerStatus = trpc.s76.execution.getSchedulerStatus.useQuery();
+const DEFERRED_ARRAY_QUERY_OPTIONS = {
+  ...HOT_PATH_QUERY_OPTIONS,
+  enabled: false,
+  placeholderData: [] as unknown[],
+} as const;
+
+const DEFERRED_OBJECT_QUERY_OPTIONS = {
+  ...HOT_PATH_QUERY_OPTIONS,
+  enabled: false,
+  placeholderData: null,
+} as const;
+
+export function useMissionControlData() {
+  // System Health & Operations — keep only the top-level boot panels hot.
+  const systemHealth = trpc.adminDashboard.systemHealth.useQuery(undefined, HOT_PATH_QUERY_OPTIONS);
+  const knowledgePopulation = trpc.knowledgeIngestion.populationStats.useQuery(undefined, HOT_PATH_QUERY_OPTIONS);
+  const caseActivity = trpc.adminDashboard.caseActivity.useQuery(undefined, HOT_PATH_QUERY_OPTIONS);
+  const structuralSignals = trpc.adminDashboard.structuralSignals.useQuery(undefined, HOT_PATH_QUERY_OPTIONS);
+  const workQueue = trpc.adminDashboard.workQueue.useQuery(undefined, HOT_PATH_QUERY_OPTIONS);
+  const sunamStatus = trpc.sunam.getStatus.useQuery(undefined, HOT_PATH_QUERY_OPTIONS);
+
+  // Ingestion & Datasets — non-critical lists are deferred to avoid startup DB stampede.
+  const datasets = trpc.ingestion.listDatasets.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
+  const runs = trpc.ingestion.listRuns.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
+  const schedulerStatus = trpc.s76.execution.getSchedulerStatus.useQuery(undefined, DEFERRED_OBJECT_QUERY_OPTIONS as any);
   const seedMutation = trpc.ingestion.seedDefaultDatasets.useMutation();
   const triggerMutation = trpc.ingestion.triggerIngestion.useMutation();
   const toggleMutation = trpc.ingestion.toggleDataset.useMutation();
 
-  // Knowledge Ingestion Browse
-  const jurisdictions = trpc.knowledgeIngestion.getJurisdictions.useQuery();
-  const domains = trpc.knowledgeIngestion.getDomains.useQuery();
-  const statutes = trpc.knowledgeIngestion.browseStatutes.useQuery({});
-  const caseLaw = trpc.knowledgeIngestion.browseCaseLaw.useQuery({});
-  const agencies = trpc.knowledgeIngestion.browseAgencies.useQuery({});
-  const courts = trpc.knowledgeIngestion.browseCourts.useQuery({});
-  const targets = trpc.knowledgeIngestion.browseAdvocacyTargets.useQuery({});
-  const formulas = trpc.knowledgeIngestion.browseSettlementFormulas.useQuery({});
+  // Knowledge Ingestion Browse — deferred; these were firing multiple large browse reads on first paint.
+  const jurisdictions = trpc.knowledgeIngestion.getJurisdictions.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
+  const domains = trpc.knowledgeIngestion.getDomains.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
+  const statutes = trpc.knowledgeIngestion.browseStatutes.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
+  const caseLaw = trpc.knowledgeIngestion.browseCaseLaw.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
+  const agencies = trpc.knowledgeIngestion.browseAgencies.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
+  const courts = trpc.knowledgeIngestion.browseCourts.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
+  const targets = trpc.knowledgeIngestion.browseAdvocacyTargets.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
+  const formulas = trpc.knowledgeIngestion.browseSettlementFormulas.useQuery({}, DEFERRED_OBJECT_QUERY_OPTIONS as any);
 
   // Signal Governance
-  const escalationSummary = trpc.signalGovernance.escalationSummary.useQuery({ limit: 20 });
-  const escalationThresholds = trpc.signalGovernance.escalationThresholds.useQuery();
-  const auditTrail = trpc.signalGovernance.auditTrail.useQuery({ limit: 50 });
+  const escalationSummary = trpc.signalGovernance.escalationSummary.useQuery({ limit: 20 }, HOT_PATH_QUERY_OPTIONS);
+  const escalationThresholds = trpc.signalGovernance.escalationThresholds.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
+  const auditTrail = trpc.signalGovernance.auditTrail.useQuery({ limit: 50 }, DEFERRED_ARRAY_QUERY_OPTIONS as any);
 
   // Trend Engine
-  const trendDashboard = trpc.trendEngine.dashboard.useQuery();
-  const alertRules = trpc.trendEngine.alertRules.useQuery();
-  const trendMissionSummary = trpc.trendEngine.missionControlSummary.useQuery();
+  const trendDashboard = trpc.trendEngine.dashboard.useQuery(undefined, DEFERRED_OBJECT_QUERY_OPTIONS as any);
+  const alertRules = trpc.trendEngine.alertRules.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
+  const trendMissionSummary = trpc.trendEngine.missionControlSummary.useQuery(undefined, HOT_PATH_QUERY_OPTIONS);
 
   // Pattern Engine
-  const entityClusters = trpc.patternEngine.getEntityClusters.useQuery();
-  const conductClusters = trpc.patternEngine.getConductClusters.useQuery();
-  const outcomeAnalytics = trpc.patternEngine.getOutcomeAnalytics.useQuery();
+  const entityClusters = trpc.patternEngine.getEntityClusters.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
+  const conductClusters = trpc.patternEngine.getConductClusters.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
+  const outcomeAnalytics = trpc.patternEngine.getOutcomeAnalytics.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
 
   // Strategy Engine
-  const strategyDashboard = trpc.systemicStrategy.dashboard.useQuery();
+  const strategyDashboard = trpc.systemicStrategy.dashboard.useQuery(undefined, DEFERRED_OBJECT_QUERY_OPTIONS as any);
 
   // Procedural Engine
-  const proceduralJurisdictions = trpc.proceduralEngine.listJurisdictions.useQuery({});
+  const proceduralJurisdictions = trpc.proceduralEngine.listJurisdictions.useQuery({}, DEFERRED_ARRAY_QUERY_OPTIONS as any);
 
   // Outcome Engine
-  const outcomeDashboard = trpc.outcomeEngine.dashboard.useQuery();
-  const effectivenessReport = trpc.outcomeEngine.effectivenessReport.useQuery();
-  const outcomeMissionSummary = trpc.outcomeEngine.missionControlSummary.useQuery();
+  const outcomeDashboard = trpc.outcomeEngine.dashboard.useQuery(undefined, DEFERRED_OBJECT_QUERY_OPTIONS as any);
+  const effectivenessReport = trpc.outcomeEngine.effectivenessReport.useQuery(undefined, DEFERRED_OBJECT_QUERY_OPTIONS as any);
+  const outcomeMissionSummary = trpc.outcomeEngine.missionControlSummary.useQuery(undefined, HOT_PATH_QUERY_OPTIONS);
 
   // Intervention Network
-  const interventionDashboard = trpc.interventionNetwork.dashboard.useQuery();
-  const interventionSummary = trpc.interventionNetwork.missionControlSummary.useQuery();
+  const interventionDashboard = trpc.interventionNetwork.dashboard.useQuery(undefined, DEFERRED_OBJECT_QUERY_OPTIONS as any);
+  const interventionSummary = trpc.interventionNetwork.missionControlSummary.useQuery(undefined, HOT_PATH_QUERY_OPTIONS);
 
   // Policy Impact
-  const policyDashboard = trpc.policyImpact.dashboard.useQuery();
+  const policyDashboard = trpc.policyImpact.dashboard.useQuery(undefined, DEFERRED_OBJECT_QUERY_OPTIONS as any);
 
   // Remedy Template
-  const remedyDashboard = trpc.remedyTemplate.dashboard.useQuery();
-  const remedyMissionSummary = trpc.remedyTemplate.missionControlSummary.useQuery();
+  const remedyDashboard = trpc.remedyTemplate.dashboard.useQuery(undefined, DEFERRED_OBJECT_QUERY_OPTIONS as any);
+  const remedyMissionSummary = trpc.remedyTemplate.missionControlSummary.useQuery(undefined, HOT_PATH_QUERY_OPTIONS);
 
   // Memory Overlay
-  const memoryMetrics = trpc.memoryOverlay.missionControlMetrics.useQuery();
+  const memoryMetrics = trpc.memoryOverlay.missionControlMetrics.useQuery(undefined, HOT_PATH_QUERY_OPTIONS);
 
   // Reform Package
-  const reformDashboard = trpc.reformPackage.dashboard.useQuery();
+  const reformDashboard = trpc.reformPackage.dashboard.useQuery(undefined, DEFERRED_OBJECT_QUERY_OPTIONS as any);
   const generateMutation = trpc.reformPackage.generate.useMutation();
   const updateStatusMutation = trpc.reformPackage.updateStatus.useMutation();
 
   // Lighthouse
-  const lighthouseSuggestions = trpc.lighthouse.suggestions.list.useQuery();
-  const lighthouseCategories = trpc.lighthouse.categories.list.useQuery();
+  const lighthouseSuggestions = trpc.lighthouse.suggestions.list.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
+  const lighthouseCategories = trpc.lighthouse.categories.list.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
 
   // Cases
-  const casesList = trpc.cases.list.useQuery();
+  const casesList = trpc.cases.list.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
 
   // Upload Sessions
-  const uploadSessionsActive = trpc.uploadSessions.getActive.useQuery();
+  const uploadSessionsActive = trpc.uploadSessions.getActive.useQuery(undefined, DEFERRED_ARRAY_QUERY_OPTIONS as any);
 
   // Benefits
-  const benefitAppsList = trpc.benefitApps.list.useQuery({});
+  const benefitAppsList = trpc.benefitApps.list.useQuery({}, DEFERRED_ARRAY_QUERY_OPTIONS as any);
 
   // Documents, Entities, Findings (no caseId = admin view)
-  const signalStats = trpc.signalExtraction.stats.useQuery({ caseId: undefined } as any);
+  const signalStats = trpc.signalExtraction.stats.useQuery({ caseId: undefined } as any, HOT_PATH_QUERY_OPTIONS as any);
 
   return {
     // System Health & Operations

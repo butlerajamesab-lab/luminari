@@ -61,7 +61,7 @@ export async function startBatchRerun(userId: number): Promise<{ batchId: number
   activeBatchId = batchId;
 
   // Process in background (non-blocking)
-  processBatch(batchId, userId, eligible.map(f => f.id)).catch(err => {
+  processBatch(batchId, userId, eligible.map((f) => f.id)).catch(err => {
     console.error(`[BatchRerun] Fatal error in batch ${batchId}:`, err);
     db.updateBatchProgress(batchId, {}).then(() => {
       // Mark as error if not already completed/aborted
@@ -95,7 +95,7 @@ export async function resumeBatchRerun(batchId: number, userId: number): Promise
 
   // Filter to only findings not yet processed (after lastProcessedFindingId)
   const remaining = run.lastProcessedFindingId
-    ? eligible.filter(f => f.id > run.lastProcessedFindingId!)
+    ? eligible.filter((f) => f.id > run.lastProcessedFindingId!)
     : eligible;
 
   if (remaining.length === 0) {
@@ -114,7 +114,7 @@ export async function resumeBatchRerun(batchId: number, userId: number): Promise
   activeBatchId = batchId;
 
   // Process in background
-  processBatch(batchId, userId, remaining.map(f => f.id), run.processedCount, run.resolvedCount, run.errorCount, run.fallbackUsageCount).catch(err => {
+  processBatch(batchId, userId, remaining.map((f) => f.id), run.processedCount, run.resolvedCount, run.errorCount, run.fallbackUsageCount).catch(err => {
     console.error(`[BatchRerun] Fatal error resuming batch ${batchId}:`, err);
     activeBatchId = null;
     clearAbortFlag(batchId);
@@ -194,6 +194,7 @@ async function processSingleFinding(
   findingId: number,
   userId: number,
 ): Promise<"resolved" | "error" | "unsupported"> {
+  let finding: { id: number; caseId: any; provenanceStatus: string | null; fallbackTriggered: boolean | null; [key: string]: any } | null = null;
   try {
     const detail = await db.getFindingMatchDetail(findingId);
     if (!detail) {
@@ -201,11 +202,11 @@ async function processSingleFinding(
       return "error";
     }
 
-    const finding = detail.finding;
+    finding = detail.finding;
     const previousStatus = finding.provenanceStatus;
 
     // Gather candidate claims for this finding (document-scoped)
-    const candidateClaims = detail.candidateClaims.map(c => ({
+    const candidateClaims = detail.candidateClaims.map((c: any) => ({
       id: c.id,
       claimText: c.claimText,
       claimType: c.claimType,
@@ -222,7 +223,7 @@ async function processSingleFinding(
     let newStatus: string;
     if (result.matchedIds.length > 0) {
       // Successfully linked
-      await db.updateFindingClaimIds(findingId, result.matchedIds);
+      await db.updateFindingClaimIds(findingId, result.matchedIds as unknown as number[]);
       newStatus = "linked";
     } else {
       // Still unsupported after re-run
@@ -240,12 +241,14 @@ async function processSingleFinding(
 
     // Write audit log
     await db.createProvenanceAuditLog({
-      findingId,
+      caseId: finding.caseId,
       userId,
       actionType: "batch_rerun",
-      previousStatus,
-      newStatus,
-      metadata: {
+      targetType: "finding",
+      targetId: findingId,
+      details: {
+        previousStatus: previousStatus ?? "unknown",
+        newStatus,
         batchId,
         candidateCount: candidateClaims.length,
         matchedCount: result.matchedIds.length,
@@ -270,16 +273,23 @@ async function processSingleFinding(
         },
       }).where(eq(findingsTable.id, findingId));
 
-      // Write error audit log
-      await db.createProvenanceAuditLog({
-        findingId,
-        userId,
-        actionType: "batch_rerun",
-        previousStatus: "unsupported",
-        newStatus: "rerun_error",
-        reason: err instanceof Error ? err.message : String(err),
-        metadata: { batchId, error: true },
-      });
+      // Write error audit log only if we loaded the finding (have caseId)
+      if (finding) {
+        await db.createProvenanceAuditLog({
+          caseId: finding.caseId,
+          userId,
+          actionType: "batch_rerun",
+          targetType: "finding",
+          targetId: findingId,
+          details: {
+            previousStatus: "unsupported",
+            newStatus: "rerun_error",
+            batchId,
+            error: true,
+            message: err instanceof Error ? err.message : String(err),
+          },
+        });
+      }
     } catch (logErr) {
       console.error(`[BatchRerun] Failed to log error for finding ${findingId}:`, logErr);
     }
