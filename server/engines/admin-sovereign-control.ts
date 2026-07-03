@@ -10,7 +10,8 @@
  * 
  * All changes require confirmation + logging + rollback support.
  */
-import { db } from "../db";
+import { db, pool } from "../db";
+import { get_unified_ingestion_metrics } from "../unified-queries";
 import { eq, desc, sql, and, asc } from "drizzle-orm";
 import {
   adminChangeLog,
@@ -52,7 +53,7 @@ async function logChange(entry: LogEntry) {
     description: entry.description,
     rollbackAvailable: !!entry.rollbackData,
     rollbackData: entry.rollbackData,
-    timestamp: Date.now(),
+    timestamp: new Date(),
   });
 }
 
@@ -85,15 +86,23 @@ export async function rollbackChange(changeId: number, adminId: string, adminNam
         .where(eq(engineRegistry.engineId, change.targetId));
     } else if (change.targetSystem === "data_stream_registry" && rollbackData.restoreState) {
       const prev = rollbackData.restoreState;
-      await db.update(dataStreamRegistry)
-        .set({
-          streamName: prev.streamName,
-          signalWeight: prev.signalWeight,
-          confidenceMultiplier: prev.confidenceMultiplier,
-          enabled: prev.enabled,
-          updatedAt: Date.now(),
-        })
-        .where(eq(dataStreamRegistry.streamId, change.targetId));
+      await pool.query(
+        `UPDATE data_stream_registry
+         SET stream_name_dsr = COALESCE($2, stream_name_dsr),
+             signal_weight_dsr = COALESCE($3, signal_weight_dsr),
+             confidence_multiplier_dsr = COALESCE($4, confidence_multiplier_dsr),
+             enabled_dsr = COALESCE($5, enabled_dsr),
+             updated_at_dsr = $6
+         WHERE stream_id_dsr = $1`,
+        [
+          change.targetId,
+          prev.stream_name_dsr ?? prev.stream_name ?? null,
+          prev.signal_weight_dsr ?? prev.signal_weight ?? null,
+          prev.confidence_multiplier_dsr ?? prev.confidence_multiplier ?? null,
+          prev.enabled_dsr ?? prev.enabled ?? null,
+          Date.now(),
+        ],
+      );
     }
   }
 
@@ -194,7 +203,7 @@ export async function toggleEngine(engineId: string, enabled: boolean, adminId: 
 
 export async function reorderEngines(orderedIds: string[], adminId: string, adminName?: string) {
   const currentEngines = await listEngines();
-  const previousOrder = currentEngines.map(e => ({ engineId: e.engineId, sortOrder: e.sortOrder }));
+  const previousOrder = currentEngines.map((e: any) => ({ engineId: e.engineId, sortOrder: e.sortOrder }));
 
   for (let i = 0; i < orderedIds.length; i++) {
     await db.update(engineRegistry)
@@ -216,83 +225,141 @@ export async function reorderEngines(orderedIds: string[], adminId: string, admi
 
 // ─── Stream Manager ───
 
-export async function listStreams() {
-  return db.select().from(dataStreamRegistry);
+export interface CanonicalStream {
+  stream_id: string;
+  stream_name: string;
+  stream_type: string;
+  source_url: string | null;
+  update_frequency: string | null;
+  signal_weight: number;
+  confidence_multiplier: number;
+  description: string | null;
+  field_mapping: Record<string, string> | null;
+  enabled: boolean;
+  records_ingested: number;
+  signals_generated: number;
+  auto_disabled: boolean;
+  consecutive_failures: number;
+  last_error_type: string | null;
+  last_error_message: string | null;
+  created_at: number | null;
+  updated_at: number | null;
+}
+
+function rowsFromResult<T>(result: any): T[] {
+  return (Array.isArray(result) ? result[0] : result.rows) as T[];
+}
+
+export async function listStreams(): Promise<CanonicalStream[]> {
+  const streams = await get_unified_ingestion_metrics();
+  return streams.map((stream) => ({
+    stream_id: stream.stream_id,
+    stream_name: stream.stream_name,
+    stream_type: stream.stream_type,
+    source_url: stream.source_url,
+    update_frequency: stream.update_frequency,
+    signal_weight: stream.signal_weight,
+    confidence_multiplier: stream.confidence_multiplier,
+    description: stream.description,
+    field_mapping: stream.field_mapping as Record<string, string> | null,
+    enabled: stream.enabled,
+    records_ingested: stream.records_ingested,
+    signals_generated: stream.signals_generated,
+    auto_disabled: stream.auto_disabled,
+    consecutive_failures: stream.consecutive_failures,
+    last_error_type: stream.last_error_type,
+    last_error_message: stream.last_error_message,
+    created_at: stream.created_at,
+    updated_at: stream.updated_at,
+  }));
 }
 
 export async function addStream(
   input: {
-    streamId: string; streamName: string; streamType: string;
-    sourceUrl?: string; updateFrequency?: string;
-    signalWeight?: number; confidenceMultiplier?: number;
-    description?: string; fieldMapping?: Record<string, string>;
+    stream_id: string; stream_name: string; stream_type: string;
+    source_url?: string; update_frequency?: string;
+    signal_weight?: number; confidence_multiplier?: number;
+    description?: string; field_mapping?: Record<string, string>;
   },
   adminId: string,
   adminName?: string,
 ) {
-  await db.insert(dataStreamRegistry).values({
-    streamId: input.streamId,
-    streamName: input.streamName,
-    streamType: input.streamType as any,
-    sourceUrl: input.sourceUrl,
-    updateFrequency: (input.updateFrequency as any) || "daily",
-    signalWeight: input.signalWeight ?? 100,
-    confidenceMultiplier: input.confidenceMultiplier ?? 100,
-    description: input.description,
-    fieldMapping: input.fieldMapping,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  });
+  const now = Date.now();
+  await pool.query(
+    `INSERT INTO data_stream_registry (
+      stream_id_dsr, stream_name_dsr, stream_type_dsr, source_url_dsr, update_freq_dsr,
+      signal_weight_dsr, confidence_multiplier_dsr, description_dsr, field_mapping_dsr,
+      enabled_dsr, records_ingested_dsr, signals_generated_dsr, created_at_dsr, updated_at_dsr
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,true,0,0,$10,$10)`,
+    [
+      input.stream_id,
+      input.stream_name,
+      input.stream_type,
+      input.source_url ?? null,
+      input.update_frequency ?? "daily",
+      input.signal_weight ?? 100,
+      input.confidence_multiplier ?? 100,
+      input.description ?? null,
+      input.field_mapping ? JSON.stringify(input.field_mapping) : null,
+      now,
+    ],
+  );
 
   await logChange({
     adminId, adminName,
     actionType: "stream_add",
     targetSystem: "data_stream_registry",
-    targetId: input.streamId,
+    targetId: input.stream_id,
     newState: input,
-    description: `Added stream: ${input.streamName}`,
-    rollbackData: { sql: `DELETE FROM data_stream_registry WHERE stream_id_dsr = '${input.streamId}'` },
+    description: `Added stream: ${input.stream_name}`,
+    rollbackData: { sql: `DELETE FROM data_stream_registry WHERE stream_id_dsr = '${input.stream_id.replace(/'/g, "''")}'` },
   });
 
   return { success: true };
 }
 
 export async function editStream(
-  streamId: string,
-  updates: { streamName?: string; signalWeight?: number; confidenceMultiplier?: number; enabled?: boolean; description?: string; sourceUrl?: string; updateFrequency?: string },
+  stream_id: string,
+  updates: { stream_name?: string; signal_weight?: number; confidence_multiplier?: number; enabled?: boolean; description?: string; source_url?: string; update_frequency?: string },
   adminId: string,
   adminName?: string,
 ) {
-  const [stream] = await db.select().from(dataStreamRegistry).where(eq(dataStreamRegistry.streamId, streamId));
-  if (!stream) throw new Error("Stream not found");
+  const previousRows = await pool.query(`SELECT * FROM data_stream_registry WHERE stream_id_dsr = $1 LIMIT 1`, [stream_id]);
+  const previous = rowsFromResult<any>(previousRows)[0];
+  if (!previous) throw new Error("Stream not found");
 
-  const setValues: any = { updatedAt: Date.now() };
-  if (updates.streamName !== undefined) setValues.streamName = updates.streamName;
-  if (updates.signalWeight !== undefined) setValues.signalWeight = updates.signalWeight;
-  if (updates.confidenceMultiplier !== undefined) setValues.confidenceMultiplier = updates.confidenceMultiplier;
-  if (updates.enabled !== undefined) setValues.enabled = updates.enabled;
-  if (updates.description !== undefined) setValues.description = updates.description;
-  if (updates.sourceUrl !== undefined) setValues.sourceUrl = updates.sourceUrl;
-  if (updates.updateFrequency !== undefined) setValues.updateFrequency = updates.updateFrequency;
-
-  await db.update(dataStreamRegistry).set(setValues).where(eq(dataStreamRegistry.streamId, streamId));
+  const setClauses = ["updated_at_dsr = $1"];
+  const values: unknown[] = [Date.now()];
+  const add = (column: string, value: unknown) => {
+    values.push(value);
+    setClauses.push(`${column} = $${values.length}`);
+  };
+  if (updates.stream_name !== undefined) add("stream_name_dsr", updates.stream_name);
+  if (updates.signal_weight !== undefined) add("signal_weight_dsr", updates.signal_weight);
+  if (updates.confidence_multiplier !== undefined) add("confidence_multiplier_dsr", updates.confidence_multiplier);
+  if (updates.enabled !== undefined) add("enabled_dsr", updates.enabled);
+  if (updates.description !== undefined) add("description_dsr", updates.description);
+  if (updates.source_url !== undefined) add("source_url_dsr", updates.source_url);
+  if (updates.update_frequency !== undefined) add("update_freq_dsr", updates.update_frequency);
+  values.push(stream_id);
+  await pool.query(`UPDATE data_stream_registry SET ${setClauses.join(", ")} WHERE stream_id_dsr = $${values.length}`, values);
 
   await logChange({
     adminId, adminName,
     actionType: "stream_edit",
     targetSystem: "data_stream_registry",
-    targetId: streamId,
-    previousState: stream,
+    targetId: stream_id,
+    previousState: previous,
     newState: updates,
-    description: `Edited stream: ${stream.streamName}`,
-    rollbackData: { restoreState: { streamName: stream.streamName, signalWeight: stream.signalWeight, confidenceMultiplier: stream.confidenceMultiplier, enabled: stream.enabled } },
+    description: `Edited stream: ${previous.stream_name_dsr ?? stream_id}`,
+    rollbackData: { restoreState: previous },
   });
 
   return { success: true };
 }
 
-export async function disableStream(streamId: string, adminId: string, adminName?: string) {
-  return editStream(streamId, { enabled: false }, adminId, adminName);
+export async function disableStream(stream_id: string, adminId: string, adminName?: string) {
+  return editStream(stream_id, { enabled: false }, adminId, adminName);
 }
 
 // ─── Schema Manager ───
@@ -370,23 +437,34 @@ export async function executeSql(
   sqlStatement: string,
   adminId: string,
   adminName?: string,
-): Promise<{ success: boolean; result: any; rowsAffected: number }> {
+): Promise<{ success: boolean; result: any; rowsAffected: number; audit_error?: string }> {
   const preview = await previewSql(sqlStatement);
 
   try {
     const result = await db.execute(sql.raw(sqlStatement));
     const rows = result[0] as unknown as any[];
     const rowsAffected = (result[0] as any)?.affectedRows || rows?.length || 0;
+    let audit_error: string | undefined;
 
-    await logChange({
-      adminId, adminName,
-      actionType: preview.isDestructive ? "schema_edit" : "migration_run",
-      targetSystem: "database",
-      description: `Executed SQL: ${sqlStatement.substring(0, 200)}${sqlStatement.length > 200 ? "..." : ""}`,
-      newState: { sql: sqlStatement, rowsAffected },
-    });
+    try {
+      await logChange({
+        adminId, adminName,
+        actionType: preview.isDestructive ? "schema_edit" : "migration_run",
+        targetSystem: "database",
+        description: `Executed SQL: ${sqlStatement.substring(0, 200)}${sqlStatement.length > 200 ? "..." : ""}`,
+        newState: { sql: sqlStatement, rowsAffected },
+      });
+    } catch (auditError: any) {
+      audit_error = auditError?.message ?? String(auditError);
+      console.error("[Admin Sovereign Control] SQL audit log failed:", auditError);
+    }
 
-    return { success: true, result: preview.isSelect ? rows : { affectedRows: rowsAffected }, rowsAffected };
+    return {
+      success: true,
+      result: preview.isSelect ? rows : { affectedRows: rowsAffected },
+      rowsAffected,
+      ...(audit_error ? { audit_error } : {}),
+    };
   } catch (error: any) {
     return { success: false, result: { error: error.message }, rowsAffected: 0 };
   }
@@ -406,7 +484,7 @@ export async function getSystemStats() {
     tableCount: tables.length,
     totalRows,
     engineCount: engines.length,
-    enabledEngines: engines.filter(e => e.enabled).length,
+    enabledEngines: engines.filter((e: any) => e.enabled).length,
     streamCount: streams.length,
     enabledStreams: streams.filter(s => s.enabled).length,
     recentChangeCount: recentChanges.length,

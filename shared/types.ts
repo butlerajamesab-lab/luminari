@@ -17,3 +17,5 @@ export type { User, InsertUser } from "../drizzle/schema";
 // ============================================================
 // SECTION: SERVER CORE (Infrastructure) (22 files)
 // ============================================================
+
+export * from "./jurisdiction-substrate";

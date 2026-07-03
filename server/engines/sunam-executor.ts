@@ -40,6 +40,7 @@ import {
 import { uiReadFile, uiWriteFile, uiPatchFile, uiListFiles } from "../ui-editor/index";
 import { dispatchServiceTool } from "./sunam-service-dispatcher";
 import { SUNAM_SERVICE_ONLY_TOOLS, getSunamVisibleToolNames } from "./sunam-service-only-tools";
+import { get_unified_ingestion_metrics, get_unified_ingestion_summary, get_unified_signal_summary, get_unified_signals } from "../unified-queries";
 
 // ─── Tool Definitions ───
 
@@ -569,12 +570,12 @@ export async function dispatchTool(
         const cutoff = Date.now() - hoursBack * 3600 * 1000;
         const failedRuns = await db.select({ datasetId: ingestRuns.datasetId })
           .from(ingestRuns).where(sql`${ingestRuns.status} = 'failed' AND ${ingestRuns.startTime} > ${cutoff}`);
-        const unique = [...new Set(failedRuns.map(r => r.datasetId))];
+        const unique = [...new Set(failedRuns.map((r: any) => r.datasetId))];
         const results = [];
         for (const sid of unique) {
           try {
             const r = await Promise.race([
-              triggerManualIngestion(sid),
+              triggerManualIngestion(sid as string),
               new Promise<null>((res) => setTimeout(() => res(null), 120_000)),
             ]);
             results.push({ stream_id: sid, success: r?.success ?? true, records: r?.recordsProcessed ?? 0 });
@@ -635,7 +636,7 @@ export async function dispatchTool(
           actionType: "stream_edit", targetSystem: "data_stream_registry",
           targetId: args.stream_id,
           description: `[SUNAM] Re-enabled stream ${args.stream_id} and reset failure counters`,
-          rollbackAvailable: false, timestamp: Date.now(),
+          rollbackAvailable: false, timestamp: new Date(),
         });
         return { ...base, success: true, result: { stream_id: args.stream_id, status: "enabled", failures_reset: true } };
       }
@@ -650,7 +651,7 @@ export async function dispatchTool(
           actionType: "stream_disable", targetSystem: "data_stream_registry",
           targetId: args.stream_id,
           description: `[SUNAM] Disabled stream ${args.stream_id}: ${args.reason ?? "no reason given"}`,
-          rollbackAvailable: false, timestamp: Date.now(),
+          rollbackAvailable: false, timestamp: new Date(),
         });
         return { ...base, success: true, result: { stream_id: args.stream_id, status: "disabled" } };
       }
@@ -674,7 +675,7 @@ export async function dispatchTool(
           actionType: "stream_add", targetSystem: "data_stream_registry",
           targetId: args.stream_id,
           description: `[SUNAM] Registered new stream: ${args.stream_name} (${args.stream_id})`,
-          rollbackAvailable: false, timestamp: Date.now(),
+          rollbackAvailable: false, timestamp: new Date(),
         });
         return { ...base, success: true, result: { stream_id: args.stream_id, registered: true } };
       }
@@ -734,15 +735,43 @@ export async function dispatchTool(
       case "get_workflows":
       case "get_programs":
       case "get_entities":
-      case "get_signals":
       case "record_validation":
       case "record_reconciliation":
       case "record_case_action":
       case "add_case_note":
-      case "update_case_status":
-      case "get_system_state": {
+      case "update_case_status": {
         const serviceResult = await dispatchServiceTool(toolName, args);
         return { ...base, success: serviceResult.success, result: serviceResult.result, error: serviceResult.error };
+      }
+
+
+      case "get_signals": {
+        const signals = await get_unified_signals({
+          stream_id: args.stream_id,
+          status: args.status,
+          severity: args.severity,
+          limit: args.limit ?? 50,
+        });
+        return { ...base, success: true, result: { signals, total: signals.length } };
+      }
+
+      case "get_system_state": {
+        const [ingestion_summary, signal_summary] = await Promise.all([
+          get_unified_ingestion_summary(),
+          get_unified_signal_summary(),
+        ]);
+        return {
+          ...base,
+          success: true,
+          result: {
+            timestamp: Date.now(),
+            sunam_connected: true,
+            service_layer_active: true,
+            sql_access_disabled: true,
+            ingestion_summary,
+            signal_summary,
+          },
+        };
       }
 
       // ── SQL / Schema (DISABLED) ──
@@ -768,7 +797,7 @@ export async function dispatchTool(
           actionType: "signal_weight_change", targetSystem: "data_stream_registry",
           targetId: args.stream_id,
           description: `[SUNAM] Signal weight for ${args.stream_id} → weight=${args.signal_weight ?? "unchanged"}, confidence=${args.confidence_multiplier ?? "unchanged"}`,
-          rollbackAvailable: false, timestamp: Date.now(),
+          rollbackAvailable: false, timestamp: new Date(),
         });
         return { ...base, success: true, result: { stream_id: args.stream_id, signal_weight: args.signal_weight, confidence_multiplier: args.confidence_multiplier } };
       }
@@ -781,18 +810,18 @@ export async function dispatchTool(
       }
 
       case "get_scheduler_status": {
-        const allStreams = await db.select().from(dataStreamRegistry);
-        let schedulerStatus: any = {};
+        let scheduler_status: any = {};
         try {
           const { getSchedulerStatus } = await import("../ingestion/scheduler");
-          schedulerStatus = getSchedulerStatus();
+          scheduler_status = getSchedulerStatus();
         } catch {}
+        const ingestion_summary = await get_unified_ingestion_summary();
         return {
           ...base, success: true,
           result: {
-            total_streams: allStreams.length,
-            enabled_streams: allStreams.filter(s => s.enabled).length,
-            scheduler: schedulerStatus,
+            total_streams: ingestion_summary.total_streams,
+            enabled_streams: ingestion_summary.enabled_streams,
+            scheduler_status,
           },
         };
       }
@@ -833,38 +862,29 @@ export async function dispatchTool(
 
 
       case "get_stream_diagnostics": {
-        if (args.stream_id) {
-          const [stream] = await db.select().from(dataStreamRegistry).where(eq(dataStreamRegistry.streamId, args.stream_id)).limit(1);
-          const [lastRun] = await db.select().from(ingestRuns).where(eq(ingestRuns.datasetId, args.stream_id)).orderBy(desc(ingestRuns.startTime)).limit(1);
-          return {
-            ...base, success: true,
-            result: {
-              total_streams: 1,
-              stream: stream ?? null,
-              last_run: lastRun ?? null,
-              diagnostics: stream ? [{ streamId: stream.streamId, consecutiveFailures: (stream as any).consecutiveFailures ?? 0, lastErrorType: (stream as any).lastErrorType, enabled: stream.enabled }] : [],
-            },
-          };
-        } else {
-          // All failing streams
-          const allStreams = await db.select().from(dataStreamRegistry);
-          const failing = allStreams.filter(s => ((s as any).consecutiveFailures ?? 0) > 0 || !(s.enabled));
-          return {
-            ...base, success: true,
-            result: {
-              total_streams: allStreams.length,
-              failing_count: failing.length,
-              diagnostics: failing.map(s => ({
-                streamId: s.streamId,
-                streamName: s.streamName,
-                consecutiveFailures: (s as any).consecutiveFailures ?? 0,
-                lastErrorType: (s as any).lastErrorType,
-                enabled: s.enabled,
-                autoDisabled: (s as any).autoDisabled,
-              })),
-            },
-          };
-        }
+        const streams = await get_unified_ingestion_metrics(args.stream_id ? { stream_id: args.stream_id } : {});
+        const diagnostics = streams
+          .filter((stream) => args.stream_id || stream.consecutive_failures > 0 || !stream.enabled || stream.auto_disabled)
+          .map((stream) => ({
+            stream_id: stream.stream_id,
+            stream_name: stream.stream_name,
+            consecutive_failures: stream.consecutive_failures,
+            last_error_type: stream.last_error_type,
+            last_error_message: stream.last_error_message,
+            enabled: stream.enabled,
+            auto_disabled: stream.auto_disabled,
+            health_status: stream.health_status,
+          }));
+        return {
+          ...base,
+          success: true,
+          result: {
+            total_streams: streams.length,
+            failing_count: diagnostics.length,
+            stream: args.stream_id ? streams[0] ?? null : null,
+            diagnostics,
+          },
+        };
       }
 
       case "get_execution_log": {
@@ -981,7 +1001,7 @@ async function retryWithRecovery(
     if (args.stream_id) {
       const streams = await db.select({ streamId: dataStreamRegistry.streamId, streamName: dataStreamRegistry.streamName })
         .from(dataStreamRegistry);
-      const match = streams.find(s => 
+      const match = streams.find((s: any) => 
         s.streamId.includes(args.stream_id) || 
         s.streamName.toLowerCase().includes(args.stream_id.toLowerCase())
       );
@@ -994,7 +1014,7 @@ async function retryWithRecovery(
     if (args.engine_id) {
       const engines = await db.select({ engineId: engineRegistry.engineId, engineName: engineRegistry.engineName })
         .from(engineRegistry);
-      const match = engines.find(e => 
+      const match = engines.find((e: any) => 
         e.engineId.includes(args.engine_id) || 
         e.engineName.toLowerCase().includes(args.engine_id.toLowerCase())
       );
@@ -1220,7 +1240,7 @@ Timestamp: ${new Date(executedAt).toISOString()}`,
     description: `[SUNAM EXECUTE] ${instruction.substring(0, 200)} — ${steps.length} actions taken`,
     newState: { instruction, steps: steps.length, success: steps.every(s => s.success) },
     rollbackAvailable: false,
-    timestamp: executedAt,
+    timestamp: new Date(executedAt),
   });
 
   return {

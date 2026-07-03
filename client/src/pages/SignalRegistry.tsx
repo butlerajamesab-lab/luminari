@@ -61,7 +61,7 @@ export default function SignalRegistry() {
   const [activeTab, setActiveTab] = useState<"registry" | "types">("registry");
 
   // Signal type catalog (5 types from signal_registry)
-  const { data: signalTypes, isLoading: loadingTypes } = trpc.enforcementIntel.listSignals.useQuery();
+  const { data: signal_types, isLoading: loadingTypes } = trpc.enforcementIntel.listSignals.useQuery();
   // Per-jurisdiction signal instances (59 rows from registry_signals)
   const { data: registrySignals, isLoading: loadingRegistry } = trpc.enforcementIntel.listRegistrySignals.useQuery({ limit: 200 });
 
@@ -81,7 +81,7 @@ export default function SignalRegistry() {
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(s =>
-        (s.signalType ?? "").toLowerCase().includes(q) ||
+        (s.signal_type ?? "").toLowerCase().includes(q) ||
         (s.category ?? "").toLowerCase().includes(q) ||
         (s.jurisdictionId ?? "").toLowerCase().includes(q)
       );
@@ -90,14 +90,14 @@ export default function SignalRegistry() {
   }, [registrySignals, filterCategory, filterSeverity, search]);
 
   const filteredTypes = useMemo(() => {
-    if (!signalTypes) return [];
-    if (!search) return signalTypes;
+    if (!signal_types) return [];
+    if (!search) return signal_types;
     const q = search.toLowerCase();
-    return signalTypes.filter(s =>
-      s.signalType.toLowerCase().includes(q) ||
+    return signal_types.filter(s =>
+      s.signal_type.toLowerCase().includes(q) ||
       s.domain.toLowerCase().includes(q)
     );
-  }, [signalTypes, search]);
+  }, [signal_types, search]);
 
   if (isLoading) {
     return (
@@ -123,7 +123,7 @@ export default function SignalRegistry() {
         </div>
         <p style={{ color: c.muted, fontSize: 14, margin: 0, maxWidth: 700 }}>
           Live signal catalog spanning {registrySignals?.length ?? 0} jurisdiction-specific instances across{" "}
-          {categories.length} categories, plus {signalTypes?.length ?? 0} master signal type definitions.
+          {categories.length} categories, plus {signal_types?.length ?? 0} master signal type definitions.
         </p>
       </div>
 
@@ -131,7 +131,7 @@ export default function SignalRegistry() {
       <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
         {[
           { value: registrySignals?.length ?? 0, label: "Registry Signals", color: c.amber },
-          { value: signalTypes?.length ?? 0, label: "Signal Types", color: c.purple },
+          { value: signal_types?.length ?? 0, label: "Signal Types", color: c.purple },
           { value: categories.length, label: "Categories", color: c.teal },
           { value: [...new Set(registrySignals?.map(s => s.jurisdictionId) ?? [])].length, label: "Jurisdictions", color: c.blue },
         ].map(stat => (
@@ -151,7 +151,7 @@ export default function SignalRegistry() {
       <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: `1px solid ${c.cardBorder}`, paddingBottom: 0 }}>
         {[
           { key: "registry", label: `Registry Signals (${registrySignals?.length ?? 0})` },
-          { key: "types", label: `Signal Types (${signalTypes?.length ?? 0})` },
+          { key: "types", label: `Signal Types (${signal_types?.length ?? 0})` },
         ].map(tab => (
           <button
             key={tab.key}
@@ -267,7 +267,7 @@ export default function SignalRegistry() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                       <span style={{ color: c.paper, fontSize: 13, fontWeight: 600 }}>
-                        {s.signalType ?? "Unknown Signal"}
+                        {s.signal_type ?? "Unknown Signal"}
                       </span>
                       {s.category && (
                         <span style={{
@@ -319,7 +319,7 @@ export default function SignalRegistry() {
                     )}
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, paddingTop: 10, borderTop: `1px solid ${c.cardBorder}` }}>
                       <a
-                        href={`/workshop?signal=${encodeURIComponent(s.signalType ?? "")}&jurisdiction=${encodeURIComponent(s.jurisdictionId)}`}
+                        href={`/workshop?signal=${encodeURIComponent(s.signal_type ?? "")}&jurisdiction=${encodeURIComponent(s.jurisdictionId)}`}
                         style={{
                           display: "flex", alignItems: "center", gap: 6,
                           background: c.amberBg, border: `1px solid ${c.goldBorder}`,
@@ -387,7 +387,7 @@ export default function SignalRegistry() {
                   <Zap size={16} style={{ color: c.amber, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <h3 style={{ color: c.paper, fontSize: 14, margin: 0, fontWeight: 600 }}>
-                      {s.signalType}
+                      {s.signal_type}
                     </h3>
                     <span style={{ color: c.muted, fontSize: 11 }}>{s.domain}</span>
                   </div>
@@ -395,7 +395,7 @@ export default function SignalRegistry() {
                     background: c.amberBg, color: c.amber,
                     padding: "2px 8px", borderRadius: 10, fontSize: 10, fontFamily: fontMono,
                   }}>
-                    {(s.triggerPatterns as string[]).length} triggers
+                    {(s.trigger_patterns as string[]).length} triggers
                   </span>
                 </button>
 
@@ -407,7 +407,7 @@ export default function SignalRegistry() {
                         Trigger Patterns
                       </span>
                       <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
-                        {(s.triggerPatterns as string[]).map((p, i) => (
+                        {(s.trigger_patterns as string[]).map((p, i) => (
                           <div key={i} style={{
                             display: "flex", alignItems: "flex-start", gap: 8,
                             background: c.amberBg, borderRadius: 6, padding: "6px 10px",
@@ -420,13 +420,13 @@ export default function SignalRegistry() {
                     </div>
 
                     {/* Linked doctrines */}
-                    {s.linkedDoctrine && (s.linkedDoctrine as string[]).length > 0 && (
+                    {s.linked_doctrine && (s.linked_doctrine as string[]).length > 0 && (
                       <div style={{ marginBottom: 12 }}>
                         <span style={{ color: c.purple, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>
                           Linked Doctrines
                         </span>
                         <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}>
-                          {(s.linkedDoctrine as string[]).map((d, i) => (
+                          {(s.linked_doctrine as string[]).map((d, i) => (
                             <a
                               key={i}
                               href="/doctrine-graph"
@@ -459,10 +459,10 @@ export default function SignalRegistry() {
                     )}
 
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 16, paddingTop: 12, borderTop: `1px solid ${c.cardBorder}` }}>
-                      <CommitToCase type="signal" itemId={s.id} signalType={(s.signalType as any) || "structural"} label="Commit Signal to Case" />
+                      <CommitToCase type="signal" itemId={s.id} signal_type={(s.signal_type as any) || "structural"} label="Commit Signal to Case" />
                       <FlagArea location="signal_registry" targetId={s.id} targetType="signal" message={`Review signal: ${s.name}`} />
                       <a
-                        href={`/workshop?signalType=${encodeURIComponent(s.signalType)}`}
+                        href={`/workshop?signal_type=${encodeURIComponent(s.signal_type)}`}
                         style={{
                           display: "flex", alignItems: "center", gap: 6,
                           background: c.amberBg, border: `1px solid ${c.goldBorder}`,

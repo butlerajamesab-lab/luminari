@@ -42,16 +42,16 @@ export const patternEngineRouter = router({
       if (input.caseIds && input.caseIds.length > 0) {
         allEntities = [];
         for (const caseId of input.caseIds) {
-          const ents = await db.select().from(entities).where(eq(entities.caseId, caseId));
+          const ents = await db.select().from(entities).where(eq(entities.caseId, String(caseId)));
           allEntities.push(...ents);
         }
       } else {
         allEntities = await db.select().from(entities).limit(500);
       }
 
-      if (allEntities.length === 0) return { clustersCreated: 0, message: "No entities found." };
+      if (allEntities.length === 0) return { clusters_created: 0, message: "No entities found." };
 
-      const entitySummary = allEntities.slice(0, 100).map(e =>
+      const entitySummary = allEntities.slice(0, 100).map((e: any) =>
         `${e.id}|case:${e.caseId}|${e.name}|${e.type}|${e.description?.slice(0, 60) ?? ""}`
       ).join("\n");
 
@@ -105,7 +105,7 @@ Only create clusters for entities appearing in 2+ cases or with notable risk ind
         created++;
       }
 
-      return { clustersCreated: created };
+      return { clusters_created: created };
     }),
 
   // ─── P2: Cluster Conduct ────────────────────────────────────────────
@@ -117,21 +117,21 @@ Only create clusters for entities appearing in 2+ cases or with notable risk ind
       if (input.caseIds && input.caseIds.length > 0) {
         allClaims = [];
         for (const caseId of input.caseIds) {
-          const cls = await db.select().from(claims).where(eq(claims.caseId, caseId));
+          const cls = await db.select().from(claims).where(eq(claims.caseId, String(caseId)));
           allClaims.push(...cls);
         }
       } else {
         allClaims = await db.select().from(claims).limit(500);
       }
 
-      if (allClaims.length === 0) return { clustersCreated: 0, message: "No claims found." };
+      if (allClaims.length === 0) return { clusters_created: 0, message: "No claims found." };
 
-      const claimSummary = allClaims.slice(0, 80).map(c =>
+      const claimSummary = allClaims.slice(0, 80).map((c: any) =>
         `case:${c.caseId}|${c.claimType}|${c.claimText?.slice(0, 100) ?? ""}`
       ).join("\n");
 
       const entityClusters = await db.select().from(patternEntityClusters);
-      const entityRef = entityClusters.map(e => `${e.id}. ${e.entityName} (${e.caseCount} cases)`).join(", ");
+      const entityRef = entityClusters.map((e: any) => `${e.id}. ${e.entityName} (${e.caseCount} cases)`).join(", ");
 
       const response = await invokeLLMInteractive({
         messages: [
@@ -184,7 +184,7 @@ Focus on patterns that repeat across multiple cases.`
         created++;
       }
 
-      return { clustersCreated: created };
+      return { clusters_created: created };
     }),
 
   // ─── P3: Detect Case Links ─────────────────────────────────────────
@@ -247,7 +247,7 @@ Focus on patterns that repeat across multiple cases.`
         created++;
       }
 
-      return { linksCreated: created };
+      return { links_created: created };
     }),
 
   // ─── P4: Generate Systemic Inferences ───────────────────────────────
@@ -259,14 +259,14 @@ Focus on patterns that repeat across multiple cases.`
       const caseLinks = await db.select().from(patternCaseLinks);
 
       if (entityClusters.length === 0 && conductClusters.length === 0) {
-        return { inferencesGenerated: 0, message: "No clusters found. Run P1 and P2 first." };
+        return { inferences_generated: 0, message: "No clusters found. Run P1 and P2 first." };
       }
 
-      const ecSummary = entityClusters.map(e =>
+      const ecSummary = entityClusters.map((e: any) =>
         `Entity: ${e.entityName} (${e.caseCount} cases, risk: ${e.riskScore})`
       ).join("\n");
 
-      const ccSummary = conductClusters.map(c =>
+      const ccSummary = conductClusters.map((c: any) =>
         `Conduct: ${c.conductType} (${c.caseCount} cases, severity: ${c.severityScore})`
       ).join("\n");
 
@@ -321,7 +321,7 @@ Focus on actionable inferences that strengthen individual cases.`
         created++;
       }
 
-      return { inferencesGenerated: created };
+      return { inferences_generated: created };
     }),
 
   // ─── P5: Apply Feedback Loop ────────────────────────────────────────
@@ -331,9 +331,9 @@ Focus on actionable inferences that strengthen individual cases.`
       const now = Date.now();
       // Get strategy paths for this case
       const paths = await db.select().from(strategyPaths)
-        .where(eq(strategyPaths.caseId, input.caseId));
+        .where(eq(strategyPaths.caseId, String(input.caseId)));
 
-      if (paths.length === 0) return { feedbackApplied: 0, message: "No strategy paths found." };
+      if (paths.length === 0) return { feedback_applied: 0, message: "No strategy paths found." };
 
       // Get relevant pattern data
       const entityClusters = await db.select().from(patternEntityClusters);
@@ -344,18 +344,18 @@ Focus on actionable inferences that strengthen individual cases.`
       let feedbackApplied = 0;
       for (const path of paths) {
         // Find relevant entity clusters (matching case)
-        const relevantEntities = entityClusters.filter(ec =>
+        const relevantEntities = entityClusters.filter((ec: any) =>
           ((ec.caseIds as number[]) ?? []).includes(input.caseId)
         );
-        const relevantConduct = conductClusters.filter(cc =>
+        const relevantConduct = conductClusters.filter((cc: any) =>
           ((cc.caseIds as number[]) ?? []).includes(input.caseId)
         );
 
         if (relevantEntities.length === 0 && relevantConduct.length === 0) continue;
 
         // Calculate pattern confidence boost
-        const entityBoost = relevantEntities.reduce((sum, e) => sum + (e.caseCount ?? 0) * 0.05, 0);
-        const conductBoost = relevantConduct.reduce((sum, c) => sum + parseFloat(String(c.severityScore ?? 0)) * 0.1, 0);
+        const entityBoost = relevantEntities.reduce((sum: any, e: any) => sum + (e.caseCount ?? 0) * 0.05, 0);
+        const conductBoost = relevantConduct.reduce((sum: any, c: any) => sum + parseFloat(String(c.severityScore ?? 0)) * 0.1, 0);
         const totalBoost = Math.min(entityBoost + conductBoost, 0.20);
 
         // GOVERNED: Strategy path pattern boost is a control-plane decision

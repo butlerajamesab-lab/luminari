@@ -310,7 +310,7 @@ export async function generateNarrative(
     name: cases.name,
     description: cases.description,
     pipelineType: cases.pipelineType,
-  }).from(cases).where(eq(cases.id, caseId));
+  }).from(cases).where(eq(cases.id, caseId as any));
 
   if (!caseRow) {
     return { success: false, error: "Case not found." };
@@ -328,7 +328,7 @@ export async function generateNarrative(
     if (cached) {
       const fullCase = await getCaseInternal(caseId);
       const flags = await listSignalFlags(caseId);
-      const flagTypes = flags.map(f => f.flagType);
+      const flagTypes = flags.map((f: any) => f.flagType);
       const evidenceSignals = mapSignalFlags(flagTypes);
       lensContext = activateLensesWithResolution(
         {

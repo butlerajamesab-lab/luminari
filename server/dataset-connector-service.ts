@@ -19,21 +19,21 @@ import { sql } from "drizzle-orm";
 // Types
 // ============================================================
 export interface DatasetStats {
-  datasetId: string;
-  datasetName: string;
+  dataset_id: string;
+  dataset_name: string;
   source: string;
   jurisdiction: string;
   domain: string;
-  recordCount: number;
-  lastIngested: number | null;
+  record_count: number;
+  last_ingested: number | null;
   enabled: boolean;
-  updateFrequency: string;
+  update_frequency: string;
 }
 
 export interface IngestionJobConfig {
-  datasetId: string;
+  dataset_id: string;
   frequency: 'daily' | 'weekly' | 'monthly';
-  cronExpression: string;
+  cron_expression: string;
   enabled: boolean;
 }
 
@@ -74,43 +74,43 @@ export interface TrendFromDataset {
 
 export async function listDatasets(): Promise<DatasetStats[]> {
   const [rows]: any = await db.execute(sql.raw(
-    `SELECT stream_id_dsr as datasetId, stream_name_dsr as datasetName, source_dsr as source, jurisdiction_dsr as jurisdiction, domain_dsr as domain, 
-            records_ingested_dsr as recordCount, last_ingested_at_dsr as lastIngested,
-            enabled_dsr as enabled, update_freq_dsr as updateFrequency
+    `SELECT stream_id_dsr as dataset_id, stream_name_dsr as dataset_name, source_dsr as source, jurisdiction_dsr as jurisdiction, domain_dsr as domain, 
+            records_ingested_dsr as record_count, last_ingested_at_dsr as last_ingested,
+            enabled_dsr as enabled, update_freq_dsr as update_frequency
      FROM data_stream_registry ORDER BY stream_name_dsr`
   ));
   return (rows as any[]).map(r => ({
-    datasetId: r.datasetId,
-    datasetName: r.datasetName,
+    dataset_id: r.dataset_id,
+    dataset_name: r.dataset_name,
     source: r.source,
     jurisdiction: r.jurisdiction,
     domain: r.domain,
-    recordCount: Number(r.recordCount) || 0,
-    lastIngested: r.lastIngested ? Number(r.lastIngested) : null,
+    record_count: Number(r.record_count) || 0,
+    last_ingested: r.last_ingested ? Number(r.last_ingested) : null,
     enabled: Boolean(r.enabled),
-    updateFrequency: r.updateFrequency,
+    update_frequency: r.update_frequency,
   }));
 }
 
-export async function getDatasetById(datasetId: string): Promise<DatasetStats | null> {
+export async function getDatasetById(dataset_id: string): Promise<DatasetStats | null> {
   const [rows]: any = await db.execute(sql.raw(
-    `SELECT stream_id_dsr as datasetId, stream_name_dsr as datasetName, source_dsr as source, jurisdiction_dsr as jurisdiction, domain_dsr as domain,
-            records_ingested_dsr as recordCount, last_ingested_at_dsr as lastIngested,
-            enabled_dsr as enabled, update_freq_dsr as updateFrequency
-     FROM data_stream_registry WHERE stream_id_dsr = '${datasetId.replace(/'/g, "''")}'`
+    `SELECT stream_id_dsr as dataset_id, stream_name_dsr as dataset_name, source_dsr as source, jurisdiction_dsr as jurisdiction, domain_dsr as domain,
+            records_ingested_dsr as record_count, last_ingested_at_dsr as last_ingested,
+            enabled_dsr as enabled, update_freq_dsr as update_frequency
+     FROM data_stream_registry WHERE stream_id_dsr = '${dataset_id.replace(/'/g, "''")}'`
   ));
   if (!(rows as any[]).length) return null;
   const r = (rows as any[])[0];
   return {
-    datasetId: r.datasetId,
-    datasetName: r.datasetName,
+    dataset_id: r.dataset_id,
+    dataset_name: r.dataset_name,
     source: r.source,
     jurisdiction: r.jurisdiction,
     domain: r.domain,
-    recordCount: Number(r.recordCount) || 0,
-    lastIngested: r.lastIngested ? Number(r.lastIngested) : null,
+    record_count: Number(r.record_count) || 0,
+    last_ingested: r.last_ingested ? Number(r.last_ingested) : null,
     enabled: Boolean(r.enabled),
-    updateFrequency: r.updateFrequency,
+    update_frequency: r.update_frequency,
   };
 }
 
@@ -196,7 +196,7 @@ export async function extractSignalsFromEnforcement(
 
   const [enfSignals]: any = await db.execute(sql.raw(
     `SELECT respondent_name, violation_type, agency_name, jurisdiction, 
-            COUNT(*) as cnt, SUM(penalty_amount) as totalPenalty
+            COUNT(*) as cnt, SUM(penalty_amount) as total_penalty
      FROM enforcement_records ${whereClause}
      GROUP BY respondent_name, violation_type, agency_name, jurisdiction
      HAVING cnt >= 2
@@ -206,7 +206,7 @@ export async function extractSignalsFromEnforcement(
 
   return (enfSignals as any[]).map(r => {
     const cnt = Number(r.cnt);
-    const penalty = Number(r.totalPenalty) || 0;
+    const penalty = Number(r.total_penalty) || 0;
     const severity = cnt >= 5 ? 'critical' : cnt >= 3 ? 'high' : 'medium';
     return {
       signalType: 'enforcement_cluster',
@@ -342,7 +342,7 @@ export async function analyzeEnforcementTrends(
             SUM(CASE WHEN action_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH) THEN 1 ELSE 0 END) as recent,
             SUM(CASE WHEN action_date < DATE_SUB(CURDATE(), INTERVAL 6 MONTH) THEN 1 ELSE 0 END) as older,
             COUNT(*) as total,
-            SUM(penalty_amount) as totalPenalty
+            SUM(penalty_amount) as total_penalty
      FROM enforcement_records ${whereClause}
      GROUP BY jurisdiction, violation_type, agency_name
      HAVING total >= 3
@@ -376,8 +376,8 @@ export async function generateInterventionTargets(
 ): Promise<Array<{
   entity: string;
   jurisdiction: string;
-  complaintCount: number;
-  enforcementCount: number;
+  complaint_count: number;
+  enforcement_count: number;
   totalPenalties: number;
   recommendedAction: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
@@ -417,8 +417,8 @@ export async function generateInterventionTargets(
     return {
       entity: r.entity,
       jurisdiction: r.jurisdiction,
-      complaintCount: complaints,
-      enforcementCount: enforcements,
+      complaint_count: complaints,
+      enforcement_count: enforcements,
       totalPenalties: penalties,
       recommendedAction,
       priority,
@@ -523,29 +523,29 @@ export async function analyzeCampaignFinance(
 
 export async function getIngestionJobs(): Promise<IngestionJobConfig[]> {
   const [rows]: any = await db.execute(sql.raw(
-    `SELECT stream_id_dsr as datasetId, update_freq_dsr as updateFrequency, cron_expression_dsr as cronExpression, enabled_dsr as enabled
+    `SELECT stream_id_dsr as dataset_id, update_freq_dsr as update_frequency, cron_expression_dsr as cron_expression, enabled_dsr as enabled
      FROM data_stream_registry ORDER BY stream_name_dsr`
   ));
   return (rows as any[]).map(r => ({
-    datasetId: r.datasetId,
-    frequency: r.updateFrequency,
-    cronExpression: r.cronExpression,
+    dataset_id: r.dataset_id,
+    frequency: r.update_frequency,
+    cron_expression: r.cron_expression,
     enabled: Boolean(r.enabled),
   }));
 }
 
 export async function updateIngestionJob(
-  datasetId: string,
-  updates: { enabled?: boolean; cronExpression?: string; frequency?: string }
+  dataset_id: string,
+  updates: { enabled?: boolean; cron_expression?: string; frequency?: string }
 ): Promise<boolean> {
   const setClauses: string[] = [];
   if (updates.enabled !== undefined) setClauses.push(`enabled_dsr = ${updates.enabled ? 1 : 0}`);
-  if (updates.cronExpression) setClauses.push(`cron_expression_dsr = '${updates.cronExpression.replace(/'/g, "''")}'`);
+  if (updates.cron_expression) setClauses.push(`cron_expression_dsr = '${updates.cron_expression.replace(/'/g, "''")}'`);
   if (updates.frequency) setClauses.push(`update_freq_dsr = '${updates.frequency.replace(/'/g, "''")}'`);
   if (!setClauses.length) return false;
   setClauses.push(`updated_at_dsr = ${Date.now()}`);;
   await db.execute(sql.raw(
-    `UPDATE data_stream_registry SET ${setClauses.join(', ')} WHERE stream_id_dsr = '${datasetId.replace(/'/g, "''")}'`
+    `UPDATE data_stream_registry SET ${setClauses.join(', ')} WHERE stream_id_dsr = '${dataset_id.replace(/'/g, "''")}'`
   ));
   return true;
 }

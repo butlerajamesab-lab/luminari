@@ -143,7 +143,7 @@ export type CollaboratorAccessLevel = typeof COLLABORATOR_ACCESS_LEVELS[number];
 // ─── Notifications ───
 
 
-// ─── Admin Invite Links (targetRole, targetPlan, inviteStatus) ───
+// ─── Admin Invite Links (target_role, target_plan, invite_status) ───
 
 
 // ─── Invite Redemptions (tracks who used which invite) ───
@@ -1069,6 +1069,8 @@ export const agenciesRegistry = pgTable("agencies_registry", {
   id: uuid("id").defaultRandom().primaryKey(),
   agencyName: text("agency_name").notNull(),
   jurisdiction: text("jurisdiction"),
+  domain: text("domain"),
+  officialStatus: text("official_status"),
   metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -1317,11 +1319,15 @@ export type InsertCaseExitGuarantees = typeof caseExitGuarantees.$inferInsert;
 export const cases = pgTable("cases", {
   id: uuid("id").defaultRandom().primaryKey(),
   caseNumber: text("case_number"),
+  name: text("name"),
   title: text("title"),
   description: text("description"),
   caseType: text("case_type"),
   jurisdiction: text("jurisdiction"),
   domain: text("domain"),
+  userId: uuid("user_id"),
+  pipelineType: text("pipeline_type"),
+  container: jsonb("container"),
   status: text("status").default(sql`'active'::text`).notNull(),
   priorityLevel: text("priority_level"),
   ownerRef: text("owner_ref"),
@@ -1451,8 +1457,14 @@ export const claims = pgTable("claims", {
   caseId: uuid("case_id").notNull(),
   snapshotId: uuid("snapshot_id").notNull(),
   pipelineRunId: uuid("pipeline_run_id").notNull(),
+  documentId: uuid("document_id"),
+  quoteId: uuid("quote_id"),
   claimText: text("claim_text").notNull(),
   claimType: text("claim_type"),
+  entitiesInvolved: jsonb("entities_involved").default(sql`'[]'::jsonb`).notNull(),
+  dateReferenced: timestamp("date_referenced", { withTimezone: true }),
+  statementOrigin: text("statement_origin"),
+  evidentiaryWeight: numeric("evidentiary_weight"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -1534,6 +1546,8 @@ export type InsertCriticalFilesVerification = typeof criticalFilesVerification.$
 export const crossStreamCorrelations = pgTable("cross_stream_correlations", {
   id: uuid("id").defaultRandom().primaryKey(),
   correlationKey: text("correlation_key"),
+  entity: text("entity"),
+  streamCount: integer("stream_count"),
   description: text("description"),
   correlationStrength: numeric("correlation_strength"),
   metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
@@ -1618,13 +1632,24 @@ export type InsertDeliverableFiles = typeof deliverableFiles.$inferInsert;
 
 export const detectedSignals = pgTable("detected_signals", {
   id: uuid("id").defaultRandom().primaryKey(),
+  signalId: text("signal_id"),
   caseId: uuid("case_id").notNull(),
+  entityId: uuid("entity_id"),
   findingId: uuid("finding_id").notNull(),
   snapshotId: uuid("snapshot_id").notNull(),
   pipelineRunId: uuid("pipeline_run_id").notNull(),
+  datasetId: text("dataset_id"),
+  patternTypeId: text("pattern_type_id"),
+  jurisdictionScope: text("jurisdiction_scope"),
+  entityRole: text("entity_role"),
+  detectionTimestamp: timestamp("detection_timestamp", { withTimezone: true }),
   signalType: text("signal_type").notNull(),
   signalDescription: text("signal_description"),
+  plainLanguageExplanation: text("plain_language_explanation"),
   severity: signalSeverityEnum("severity").default(sql`'medium'::signal_severity_enum`).notNull(),
+  severityLevel: text("severity_level"),
+  escalationStatus: text("escalation_status"),
+  crossSignalLinks: jsonb("cross_signal_links").default(sql`'[]'::jsonb`).notNull(),
   confidenceScore: numeric("confidence_score"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -1684,11 +1709,11 @@ export const doctrineRegistry = pgTable("doctrine_registry", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
-  primaryCases: jsonb("primaryCases"),
+  primary_cases: jsonb("primary_cases"),
   domains: jsonb("domains"),
-  addedBy: text("addedBy"),
-  createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow(),
-  updatedAt: timestamp("updatedAt", { withTimezone: true }),
+  added_by: text("added_by"),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updated_at: timestamp("updated_at", { withTimezone: true }),
 });
 
 export type DoctrineRegistryEntry = typeof doctrineRegistry.$inferSelect;
@@ -1697,15 +1722,21 @@ export type InsertDoctrineRegistryEntry = typeof doctrineRegistry.$inferInsert;
 export const documents = pgTable("documents", {
   id: uuid("id").defaultRandom().primaryKey(),
   caseId: uuid("case_id").notNull(),
+  snapshotId: uuid("snapshot_id"),
   normalizedRecordId: uuid("normalized_record_id"),
   documentType: text("document_type"),
+  documentPurpose: text("document_purpose"),
   title: text("title"),
   fileName: text("file_name"),
+  fileType: text("file_type"),
   mimeType: text("mime_type"),
   storagePath: text("storage_path"),
+  s3Key: text("s3_key"),
   sourceHash: text("source_hash"),
+  sha256Hash: text("sha256_hash"),
   rawText: text("raw_text"),
   extractedText: text("extracted_text"),
+  textContent: text("text_content"),
   status: text("status"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -1745,9 +1776,13 @@ export type InsertEnforcementPathwayModels = typeof enforcementPathwayModels.$in
 export const entities = pgTable("entities", {
   id: uuid("id").defaultRandom().primaryKey(),
   caseId: uuid("case_id").notNull(),
+  snapshotId: uuid("snapshot_id"),
   normalizedRecordId: uuid("normalized_record_id"),
+  type: text("type"),
   entityType: text("entity_type"),
+  name: text("name"),
   entityName: text("entity_name").notNull(),
+  description: text("description"),
   attributes: jsonb("attributes").default(sql`'{}'::jsonb`).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -1776,6 +1811,9 @@ export const escalationRegistry = pgTable("escalation_registry", {
   id: uuid("id").defaultRandom().primaryKey(),
   escalationName: text("escalation_name").notNull(),
   jurisdiction: text("jurisdiction"),
+  domain: text("domain"),
+  fromAgencyId: uuid("from_agency_id"),
+  toAgencyId: uuid("to_agency_id"),
   metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -1786,10 +1824,15 @@ export type InsertEscalationRegistry = typeof escalationRegistry.$inferInsert;
 export const events = pgTable("events", {
   id: uuid("id").defaultRandom().primaryKey(),
   caseId: uuid("case_id").notNull(),
+  snapshotId: uuid("snapshot_id"),
   normalizedRecordId: uuid("normalized_record_id"),
   eventType: text("event_type"),
+  title: text("title"),
+  dateOccurred: timestamp("date_occurred", { withTimezone: true }),
   eventDate: timestamp("event_date", { withTimezone: true }),
   description: text("description"),
+  entitiesInvolved: jsonb("entities_involved").default(sql`'[]'::jsonb`).notNull(),
+  quoteIds: jsonb("quote_ids").default(sql`'[]'::jsonb`).notNull(),
   metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -1906,14 +1949,27 @@ export type FilingTemplates = typeof filingTemplates.$inferSelect;
 export type InsertFilingTemplates = typeof filingTemplates.$inferInsert;
 
 export const findings = pgTable("findings", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: serial("id").primaryKey(),
   caseId: uuid("case_id").notNull(),
   claimId: uuid("claim_id").notNull(),
   snapshotId: uuid("snapshot_id").notNull(),
   pipelineRunId: uuid("pipeline_run_id").notNull(),
+  title: text("title"),
+  description: text("description"),
   findingText: text("finding_text").notNull(),
+  findingType: text("finding_type"),
+  significance: text("significance"),
+  confidence: numeric("confidence"),
   confidenceScore: numeric("confidence_score"),
+  evidentiaryWeight: numeric("evidentiary_weight"),
   confidenceLabel: confidenceLabelEnum("confidence_label"),
+  claimIds: jsonb("claim_ids").$type<number[]>(),
+  provenanceStatus: text("provenance_status"),
+  provenanceAttempted: boolean("provenance_attempted"),
+  fallbackTriggered: boolean("fallback_triggered"),
+  matchMetadata: jsonb("match_metadata"),
+  candidateClaimCount: integer("candidate_claim_count"),
+  matchAttemptTimestamp: bigint("match_attempt_timestamp", { mode: "number" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -1921,9 +1977,12 @@ export type Finding = typeof findings.$inferSelect;
 
 export const formsRegistry = pgTable("forms_registry", {
   id: uuid("id").defaultRandom().primaryKey(),
+  agencyId: uuid("agency_id"),
   formName: text("form_name").notNull(),
   issuingAgency: text("issuing_agency"),
   jurisdiction: text("jurisdiction"),
+  domain: text("domain"),
+  isActive: boolean("is_active").default(sql`true`),
   metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -1950,7 +2009,13 @@ export const ingestedRecords = pgTable("ingested_records", {
   id: uuid("id").defaultRandom().primaryKey(),
   entryRunId: uuid("entry_run_id").notNull(),
   caseId: uuid("case_id"),
+  datasetId: text("dataset_id"),
   recordKey: text("record_key"),
+  normalizedDate: timestamp("normalized_date", { withTimezone: true }),
+  normalizedCategory: text("normalized_category"),
+  normalizedCity: text("normalized_city"),
+  normalizedEntity: text("normalized_entity"),
+  ingestedAt: timestamp("ingested_at", { withTimezone: true }).defaultNow(),
   rawPayload: jsonb("raw_payload").notNull(),
   sourceHash: text("source_hash"),
   sourceSystem: text("source_system"),
@@ -2020,6 +2085,7 @@ export const legalCaseLaw = pgTable("legal_case_law", {
   sourceUrl: text("source_url"),
   verificationStatus: text("verification_status"),
   title: text("title"),
+  holding: text("holding"),
   opinionText: text("opinion_text"),
   metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -2106,7 +2172,9 @@ export const legalWeakJoints = pgTable("legal_weak_joints", {
   weakJointId: text("weak_joint_id"),
   title: text("title"),
   description: text("description"),
+  severity: text("severity"),
   severityLevel: text("severity_level"),
+  statuteCitation: text("statute_citation"),
   severityRationale: text("severity_rationale"),
   reformStatus: text("reform_status"),
   metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
@@ -2319,6 +2387,10 @@ export const patterns = pgTable("patterns", {
   caseId: uuid("case_id").notNull(),
   snapshotId: uuid("snapshot_id").notNull(),
   pipelineRunId: uuid("pipeline_run_id").notNull(),
+  signature: text("signature"),
+  occurrenceCount: integer("occurrence_count"),
+  firstSeenAt: timestamp("first_seen_at", { withTimezone: true }),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
   patternType: text("pattern_type").notNull(),
   description: text("description"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -2389,9 +2461,14 @@ export type InsertProceduralOutput = typeof proceduralOutputs.$inferInsert;
 export const quotes = pgTable("quotes", {
   id: uuid("id").defaultRandom().primaryKey(),
   caseId: uuid("case_id").notNull(),
+  snapshotId: uuid("snapshot_id"),
   documentId: uuid("document_id"),
   normalizedRecordId: uuid("normalized_record_id"),
+  text: text("text"),
   quoteText: text("quote_text").notNull(),
+  pageNumber: integer("page_number"),
+  laneId: text("lane_id"),
+  context: text("context"),
   anchorRef: text("anchor_ref"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -2617,6 +2694,7 @@ export const strategyPaths = pgTable("strategy_paths", {
   caseId: uuid("case_id").notNull(),
   snapshotId: uuid("snapshot_id").notNull(),
   pipelineRunId: uuid("pipeline_run_id"),
+  priorityRank: integer("priority_rank"),
   title: text("title").notNull(),
   description: text("description"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -3222,7 +3300,7 @@ export const uploadSessions = pgTable("upload_sessions", {
   completedFiles: integer("completedFiles").notNull().default(0),
   failedFiles: integer("failedFiles").notNull().default(0),
   duplicateFiles: integer("duplicateFiles").notNull().default(0),
-  status: pgEnum("upload_sessions_session_status_enum", ["uploading", "processing", "complete", "failed", "expired"])("sessionStatus").default("uploading").notNull(),
+  status: pgEnum("upload_sessions_session_status_enum", ["uploading", "processing", "complete", "failed", "expired"])("session_status").default("uploading").notNull(),
   createdAt: bigint("createdAt", { mode: "number" }).notNull(),
   updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
 }, (table) => [
@@ -3235,16 +3313,15 @@ export type UploadSession = typeof uploadSessions.$inferSelect;
 
 export const provenanceAuditLogs = pgTable("provenance_audit_logs", {
   id: serial("id").primaryKey(),
-  findingId: integer("findingId").notNull(),
-  userId: integer("userId").notNull(),
-  actionType: pgEnum("provenance_audit_logs_action_type_enum", ["re_run_matching", "mark_synthesis", "flag_for_review", "batch_rerun"])("actionType").notNull(),
-  reason: text("reason"), // mandatory for mark_synthesis
-  previousStatus: varchar("previousStatus", { length: 64 }).notNull(),
-  newStatus: varchar("newStatus", { length: 64 }).notNull(),
-  metadata: jsonb("metadata").$type<Record<string, unknown>>(), // action-specific details (match results, etc.)
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  userId: integer("user_id").notNull(),
+  caseId: integer("case_id").notNull(),
+  actionType: varchar("action_type", { length: 64 }).notNull(),
+  targetType: varchar("target_type", { length: 64 }).notNull(),
+  targetId: integer("target_id").notNull(),
+  details: jsonb("details").$type<Record<string, unknown>>(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
 }, (table) => [
-  index("idx_prov_audit_finding").on(table.findingId),
+  index("idx_prov_audit_target").on(table.targetType, table.targetId),
   index("idx_prov_audit_user").on(table.userId),
   index("idx_prov_audit_action").on(table.actionType),
 ]);
@@ -3260,7 +3337,7 @@ export const batchRerunRuns = pgTable("batch_rerun_runs", {
   resolvedCount: integer("resolvedCount").default(0).notNull(), // newly linked
   errorCount: integer("errorCount").default(0).notNull(),
   stillUnsupported: integer("stillUnsupported").default(0).notNull(),
-  lastProcessedFindingId: integer("lastProcessedFindingId"), // for resume
+  lastProcessedFindingId: integer("last_processed_finding_id"), // for resume
   fallbackUsageCount: integer("fallbackUsageCount").default(0).notNull(),
   startedAt: bigint("startedAt", { mode: "number" }).notNull(),
   completedAt: bigint("completedAt", { mode: "number" }),
@@ -3360,7 +3437,7 @@ export const checklistItems = pgTable("checklist_items", {
   priority: pgEnum("checklist_items_priority_enum", ["critical", "important", "helpful"])("priority").default("important").notNull(),
   checked: boolean("checked").default(false).notNull(),
   checkedAt: bigint("checkedAt", { mode: "number" }),
-  sortOrder: integer("sortOrder").default(0).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
   createdAt: bigint("createdAt", { mode: "number" }).notNull(),
 }, (table) => [
   index("idx_checklist_case").on(table.caseId),
@@ -3443,32 +3520,32 @@ export type Notification = typeof notifications.$inferSelect;
 export const adminInvites = pgTable("admin_invites", {
   id: serial("id").primaryKey(),
   token: varchar("token", { length: 128 }).notNull().unique(),
-  createdBy: integer("createdBy").notNull(),
-  targetRole: pgEnum("admin_invites_target_role_enum", ["user", "admin"])("targetRole").default("admin").notNull(),
-  targetPlan: pgEnum("admin_invites_target_plan_enum", ["free", "advocacy", "family_advocacy", "analyst", "professional", "enterprise"])("targetPlan").default("advocacy").notNull(),
+  created_by: integer("created_by").notNull(),
+  target_role: pgEnum("admin_invites_target_role_enum", ["user", "admin"])("target_role").default("admin").notNull(),
+  target_plan: pgEnum("admin_invites_target_plan_enum", ["free", "advocacy", "family_advocacy", "analyst", "professional", "enterprise"])("target_plan").default("advocacy").notNull(),
   label: varchar("label", { length: 256 }),
-  maxUses: integer("maxUses").default(1).notNull(),
-  useCount: integer("useCount").default(0).notNull(),
-  expiresAt: bigint("expiresAt", { mode: "number" }).notNull(),
-  inviteStatus: pgEnum("admin_invites_invite_status_enum", ["active", "expired", "revoked", "exhausted"])("inviteStatus").default("active").notNull(),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  max_uses: integer("max_uses").default(1).notNull(),
+  use_count: integer("use_count").default(0).notNull(),
+  expires_at: bigint("expires_at", { mode: "number" }).notNull(),
+  invite_status: pgEnum("admin_invites_invite_status_enum", ["active", "expired", "revoked", "exhausted"])("invite_status").default("active").notNull(),
+  created_at: bigint("created_at", { mode: "number" }).notNull(),
 }, (table) => [
   uniqueIndex("idx_invite_token").on(table.token),
-  index("idx_invite_created_by").on(table.createdBy),
-  index("idx_invite_status").on(table.inviteStatus),
-  index("idx_invite_expires").on(table.expiresAt),
+  index("idx_invite_created_by").on(table.created_by),
+  index("idx_invite_status").on(table.invite_status),
+  index("idx_invite_expires").on(table.expires_at),
 ]);
 
 export type AdminInvite = typeof adminInvites.$inferSelect;
 
 export const inviteRedemptions = pgTable("invite_redemptions", {
   id: serial("id").primaryKey(),
-  inviteId: integer("inviteId").notNull(),
-  userId: integer("userId").notNull(),
-  redeemedAt: bigint("redeemedAt", { mode: "number" }).notNull(),
+  invite_id: integer("invite_id").notNull(),
+  user_id: integer("user_id").notNull(),
+  redeemed_at: bigint("redeemed_at", { mode: "number" }).notNull(),
 }, (table) => [
-  index("idx_redemption_invite").on(table.inviteId),
-  index("idx_redemption_user").on(table.userId),
+  index("idx_redemption_invite").on(table.invite_id),
+  index("idx_redemption_user").on(table.user_id),
 ]);
 
 export type InviteRedemption = typeof inviteRedemptions.$inferSelect;
@@ -3754,7 +3831,7 @@ export const lighthouseSpotlight = pgTable("lighthouse_spotlight", {
   cta: varchar("cta", { length: 64 }).default("Learn More").notNull(), // call-to-action text
   href: text("href"), // optional link
   active: boolean("active").default(true).notNull(),
-  sortOrder: integer("sortOrder").default(0).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
   startDate: bigint("startDate", { mode: "number" }), // optional scheduling
   endDate: bigint("endDate", { mode: "number" }),
   lat: doublePrecision("lat"), // geocoded latitude
@@ -4182,24 +4259,24 @@ export const legalContradictions = pgTable("legal_contradictions", {
   // Title: short name for the contradiction
   title: varchar("title", { length: 512 }).notNull(),
   // Doctrine A: the first legal principle
-  doctrineA: text("doctrineA").notNull(),
-  doctrineACitation: varchar("doctrineACitation", { length: 256 }),
+  doctrine_a: text("doctrine_a").notNull(),
+  doctrine_a_citation: varchar("doctrine_a_citation", { length: 256 }),
   // Doctrine B: the contradicting legal principle
-  doctrineB: text("doctrineB").notNull(),
-  doctrineBCitation: varchar("doctrineBCitation", { length: 256 }),
+  doctrine_b: text("doctrine_b").notNull(),
+  doctrine_b_citation: varchar("doctrine_b_citation", { length: 256 }),
   // The contradiction: how these two doctrines conflict
-  contradictionDescription: text("contradictionDescription").notNull(),
+  contradiction_description: text("contradiction_description").notNull(),
   // Who is harmed by this contradiction
-  harmDescription: text("harmDescription"),
+  harm_description: text("harm_description"),
   // Domain tags
   domains: jsonb("domains").notNull().$type<LegalDomain[]>(),
   // Jurisdiction: "federal" or state code, or "all" for universal contradictions
   jurisdiction: varchar("jurisdiction", { length: 16 }).notNull(),
   // Status of reform efforts
-  reformStatus: text("reformStatus"),
-  addedBy: varchar("addedBy", { length: 128 }),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  reform_status: text("reform_status"),
+  added_by: varchar("added_by", { length: 128 }),
+  created_at: bigint("created_at", { mode: "number" }).notNull(),
+  updated_at: bigint("updated_at", { mode: "number" }).notNull(),
 }, (table) => [
   index("idx_legal_contradictions_jurisdiction").on(table.jurisdiction),
 ]);
@@ -4282,20 +4359,20 @@ export type InsertAgencyAuthorityMapEntry = typeof agencyAuthorityMap.$inferInse
 
 export const doctrineGraphEdges = pgTable("doctrine_graph_edges", {
   id: serial("id").primaryKey(),
-  fromType: pgEnum("doctrine_graph_edges_from_type_enum", ["statute", "case", "doctrine", "weak_joint", "agency", "domain"])("fromType").notNull(),
-  fromId: varchar("fromId", { length: 512 }).notNull(),
-  edgeType: pgEnum("doctrine_graph_edges_edge_type_enum", ["interpreted_by", "creates", "triggers", "fails_at", "enforced_by", "routes_to", "associated_with", "blocks", "supports"])("edgeType").notNull(),
-  toType: pgEnum("doctrine_graph_edges_to_type_enum", ["statute", "case", "doctrine", "weak_joint", "agency", "domain"])("toType").notNull(),
-  toId: varchar("toId", { length: 512 }).notNull(),
+  from_type: pgEnum("doctrine_graph_edges_from_type_enum", ["statute", "case", "doctrine", "weak_joint", "agency", "domain"])("from_type").notNull(),
+  from_id: varchar("from_id", { length: 512 }).notNull(),
+  edge_type: pgEnum("doctrine_graph_edges_edge_type_enum", ["interpreted_by", "creates", "triggers", "fails_at", "enforced_by", "routes_to", "associated_with", "blocks", "supports"])("edge_type").notNull(),
+  to_type: pgEnum("doctrine_graph_edges_to_type_enum", ["statute", "case", "doctrine", "weak_joint", "agency", "domain"])("to_type").notNull(),
+  to_id: varchar("to_id", { length: 512 }).notNull(),
   strength: pgEnum("doctrine_graph_edges_strength_enum", ["strong", "moderate", "contextual"])("strength").default("moderate").notNull(),
   notes: text("notes"),
-  addedBy: varchar("addedBy", { length: 128 }),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  added_by: varchar("added_by", { length: 128 }),
+  created_at: bigint("created_at", { mode: "number" }).notNull(),
+  updated_at: bigint("updated_at", { mode: "number" }).notNull(),
 }, (table) => [
-  index("idx_dge_from").on(table.fromType, table.fromId),
-  index("idx_dge_to").on(table.toType, table.toId),
-  index("idx_dge_edge").on(table.edgeType),
+  index("idx_dge_from").on(table.from_type, table.from_id),
+  index("idx_dge_to").on(table.to_type, table.to_id),
+  index("idx_dge_edge").on(table.edge_type),
 ]);
 
 export type DoctrineGraphEdge = typeof doctrineGraphEdges.$inferSelect;
@@ -4303,24 +4380,24 @@ export type InsertDoctrineGraphEdge = typeof doctrineGraphEdges.$inferInsert;
 
 export const litigationBarriers = pgTable("litigation_barriers", {
   id: serial("id").primaryKey(),
-  barrierId: varchar("barrierId", { length: 64 }).notNull().unique(),
+  barrier_id: varchar("barrier_id", { length: 64 }).notNull().unique(),
   name: varchar("name", { length: 256 }).notNull(),
-  barrierType: pgEnum("litigation_barriers_barrier_type_enum", ["jurisdictional", "immunity", "procedural", "timing", "evidentiary", "contractual"])("barrierType").notNull(),
+  barrier_type: pgEnum("litigation_barriers_barrier_type_enum", ["jurisdictional", "immunity", "procedural", "timing", "evidentiary", "contractual"])("barrier_type").notNull(),
   domains: jsonb("domains").$type<string[]>().notNull(),
   description: text("description").notNull(),
-  leadingAuthorities: jsonb("leadingAuthorities").$type<string[]>(),
-  whatItBlocks: text("whatItBlocks").notNull(),
-  commonTriggerPatterns: jsonb("commonTriggerPatterns").$type<string[]>(),
-  usualOutcome: jsonb("usualOutcome").$type<string[]>(),
+  leading_authorities: jsonb("leading_authorities").$type<string[]>(),
+  what_it_blocks: text("what_it_blocks").notNull(),
+  common_trigger_patterns: jsonb("common_trigger_patterns").$type<string[]>(),
+  usual_outcome: jsonb("usual_outcome").$type<string[]>(),
   severity: pgEnum("litigation_barriers_severity_enum", ["critical", "high", "medium", "low"])("severity").default("high").notNull(),
-  linkedWeakJoints: jsonb("linkedWeakJoints").$type<string[]>(),
-  possibleWorkarounds: jsonb("possibleWorkarounds").$type<string[]>(),
+  linked_weak_joints: jsonb("linked_weak_joints").$type<string[]>(),
+  possible_workarounds: jsonb("possible_workarounds").$type<string[]>(),
   notes: text("notes"),
-  addedBy: varchar("addedBy", { length: 128 }),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  added_by: varchar("added_by", { length: 128 }),
+  created_at: bigint("created_at", { mode: "number" }).notNull(),
+  updated_at: bigint("updated_at", { mode: "number" }).notNull(),
 }, (table) => [
-  index("idx_lb_type").on(table.barrierType),
+  index("idx_lb_type").on(table.barrier_type),
   index("idx_lb_severity").on(table.severity),
 ]);
 
@@ -4373,24 +4450,24 @@ export type InsertPipelineIntelligence = typeof pipelineIntelligenceMap.$inferIn
 
 export const signalRegistry = pgTable("signal_registry", {
   id: serial("id").primaryKey(),
-  signalType: varchar("signalType", { length: 128 }).notNull().unique(),
+  signal_type: varchar("signal_type", { length: 128 }).notNull().unique(),
   domain: varchar("domain", { length: 128 }).notNull(),
-  triggerPatterns: jsonb("triggerPatterns").$type<string[]>().notNull(),
-  linkedDoctrine: jsonb("linkedDoctrine").$type<string[]>(),
-  linkedWeakJoints: jsonb("linkedWeakJoints").$type<string[]>(),
-  linkedContradictionTemplates: jsonb("linkedContradictionTemplates").$type<string[]>(),
+  trigger_patterns: jsonb("trigger_patterns").$type<string[]>().notNull(),
+  linked_doctrine: jsonb("linked_doctrine").$type<string[]>(),
+  linked_weak_joints: jsonb("linked_weak_joints").$type<string[]>(),
+  linked_contradiction_templates: jsonb("linked_contradiction_templates").$type<string[]>(),
   severity: pgEnum("signal_registry_severity_enum", ["critical", "high", "medium", "low"])("severity").default("high").notNull(),
   explanation: text("explanation").notNull(),
-  recommendedNextSteps: jsonb("recommendedNextSteps").$type<string[]>(),
-  addedBy: varchar("addedBy", { length: 128 }),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  recommended_next_steps: jsonb("recommended_next_steps").$type<string[]>(),
+  added_by: varchar("added_by", { length: 128 }),
+  created_at: bigint("created_at", { mode: "number" }).notNull(),
+  updated_at: bigint("updated_at", { mode: "number" }).notNull(),
   // Signal Flow Engine routing (dedup clustering)
-  clusterId: varchar("clusterId", { length: 256 }),
+  cluster_id: varchar("cluster_id", { length: 256 }),
   // Engine routing targets
-  routeToPatternEngine: boolean("routeToPatternEngine").default(true),
-  routeToStrategyEngine: boolean("routeToStrategyEngine").default(true),
-  routeToProceduralEngine: boolean("routeToProceduralEngine").default(true),
+  route_to_pattern_engine: boolean("route_to_pattern_engine").default(true),
+  route_to_strategy_engine: boolean("route_to_strategy_engine").default(true),
+  route_to_procedural_engine: boolean("route_to_procedural_engine").default(true),
 }, (table) => [
   index("idx_sr_domain").on(table.domain),
   index("idx_sr_severity").on(table.severity),
@@ -4658,21 +4735,21 @@ export type InsertEnforcementTrend = typeof enforcementTrends.$inferInsert;
 export const agencyForms = pgTable("agency_forms", {
   id: serial("id").primaryKey(),
   agency: varchar("agency", { length: 256 }).notNull(),
-  agencyShort: varchar("agencyShort", { length: 32 }).notNull(),
-  formName: varchar("formName", { length: 512 }).notNull(),
-  formNumber: varchar("formNumber", { length: 128 }),
+  agency_short: varchar("agency_short", { length: 32 }).notNull(),
+  form_name: varchar("form_name", { length: 512 }).notNull(),
+  form_number: varchar("form_number", { length: 128 }),
   purpose: text("purpose").notNull(),
-  requiredFields: jsonb("requiredFields").$type<string[]>(),
-  supportingDocuments: jsonb("supportingDocuments").$type<string[]>(),
-  submissionMethods: jsonb("submissionMethods").$type<string[]>(),
-  filingDeadline: varchar("filingDeadline", { length: 512 }),
+  required_fields: jsonb("required_fields").$type<string[]>(),
+  supporting_documents: jsonb("supporting_documents").$type<string[]>(),
+  submission_methods: jsonb("submission_methods").$type<string[]>(),
+  filing_deadline: varchar("filing_deadline", { length: 512 }),
   link: text("link"),
-  pipelineCategory: varchar("pipelineCategory", { length: 128 }),
-  addedBy: varchar("addedBy", { length: 128 }),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  pipeline_category: varchar("pipeline_category", { length: 128 }),
+  added_by: varchar("added_by", { length: 128 }),
+  created_at: bigint("created_at", { mode: "number" }).notNull(),
+  updated_at: bigint("updated_at", { mode: "number" }).notNull(),
 }, (table) => [
-  index("idx_af_agency").on(table.agencyShort),
+  index("idx_af_agency").on(table.agency_short),
 ]);
 
 export type AgencyForm = typeof agencyForms.$inferSelect;
@@ -4681,22 +4758,22 @@ export type InsertAgencyForm = typeof agencyForms.$inferInsert;
 export const regulatoryGuidance = pgTable("regulatory_guidance", {
   id: serial("id").primaryKey(),
   agency: varchar("agency", { length: 256 }).notNull(),
-  agencyShort: varchar("agencyShort", { length: 32 }).notNull(),
-  documentTitle: varchar("documentTitle", { length: 512 }).notNull(),
-  issueArea: varchar("issueArea", { length: 256 }).notNull(),
-  authorityBasis: varchar("authorityBasis", { length: 512 }),
-  guidanceType: varchar("guidanceType", { length: 128 }).notNull(),
-  keyRules: jsonb("keyRules").$type<string[]>(),
-  publicationDate: varchar("publicationDate", { length: 64 }),
+  agency_short: varchar("agency_short", { length: 32 }).notNull(),
+  document_title: varchar("document_title", { length: 512 }).notNull(),
+  issue_area: varchar("issue_area", { length: 256 }).notNull(),
+  authority_basis: varchar("authority_basis", { length: 512 }),
+  guidance_type: varchar("guidance_type", { length: 128 }).notNull(),
+  key_rules: jsonb("key_rules").$type<string[]>(),
+  publication_date: varchar("publication_date", { length: 64 }),
   citation: varchar("citation", { length: 512 }),
-  documentLink: text("documentLink"),
-  pipelineCategory: varchar("pipelineCategory", { length: 128 }),
-  addedBy: varchar("addedBy", { length: 128 }),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  document_link: text("document_link"),
+  pipeline_category: varchar("pipeline_category", { length: 128 }),
+  added_by: varchar("added_by", { length: 128 }),
+  created_at: bigint("created_at", { mode: "number" }).notNull(),
+  updated_at: bigint("updated_at", { mode: "number" }).notNull(),
 }, (table) => [
-  index("idx_rg_agency").on(table.agencyShort),
-  index("idx_rg_issue").on(table.issueArea),
+  index("idx_rg_agency").on(table.agency_short),
+  index("idx_rg_issue").on(table.issue_area),
 ]);
 
 export type RegulatoryGuidanceEntry = typeof regulatoryGuidance.$inferSelect;
@@ -4705,21 +4782,21 @@ export type InsertRegulatoryGuidance = typeof regulatoryGuidance.$inferInsert;
 export const enforcementPenalties = pgTable("enforcement_penalties", {
   id: serial("id").primaryKey(),
   agency: varchar("agency", { length: 256 }).notNull(),
-  agencyShort: varchar("agencyShort", { length: 32 }).notNull(),
-  violationType: varchar("violationType", { length: 256 }).notNull(),
-  statutoryMaxPenalty: varchar("statutoryMaxPenalty", { length: 256 }),
-  averagePenalty: varchar("averagePenalty", { length: 256 }),
-  typicalSettlementRange: varchar("typicalSettlementRange", { length: 256 }),
-  additionalRemedies: jsonb("additionalRemedies").$type<string[]>(),
-  notableCases: jsonb("notableCases").$type<string[]>(),
+  agency_short: varchar("agency_short", { length: 32 }).notNull(),
+  violation_type: varchar("violation_type", { length: 256 }).notNull(),
+  statutory_max_penalty: varchar("statutory_max_penalty", { length: 256 }),
+  average_penalty: varchar("average_penalty", { length: 256 }),
+  typical_settlement_range: varchar("typical_settlement_range", { length: 256 }),
+  additional_remedies: jsonb("additional_remedies").$type<string[]>(),
+  notable_cases: jsonb("notable_cases").$type<string[]>(),
   notes: text("notes"),
-  pipelineCategory: varchar("pipelineCategory", { length: 128 }),
-  addedBy: varchar("addedBy", { length: 128 }),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  pipeline_category: varchar("pipeline_category", { length: 128 }),
+  added_by: varchar("added_by", { length: 128 }),
+  created_at: bigint("created_at", { mode: "number" }).notNull(),
+  updated_at: bigint("updated_at", { mode: "number" }).notNull(),
 }, (table) => [
-  index("idx_ep_agency").on(table.agencyShort),
-  index("idx_ep_violation").on(table.violationType),
+  index("idx_ep_agency").on(table.agency_short),
+  index("idx_ep_violation").on(table.violation_type),
 ]);
 
 export type EnforcementPenalty = typeof enforcementPenalties.$inferSelect;
@@ -4727,24 +4804,24 @@ export type InsertEnforcementPenalty = typeof enforcementPenalties.$inferInsert;
 
 export const enforcementViabilityRules = pgTable("enforcement_viability_rules", {
   id: serial("id").primaryKey(),
-  claimType: varchar("claimType", { length: 256 }).notNull(),
+  claim_type: varchar("claim_type", { length: 256 }).notNull(),
   jurisdiction: varchar("jurisdiction", { length: 128 }).notNull(),
-  pipelineCategory: varchar("pipelineCategory", { length: 128 }).notNull(),
+  pipeline_category: varchar("pipeline_category", { length: 128 }).notNull(),
   agency: varchar("agency", { length: 256 }).notNull(),
-  agencyShort: varchar("agencyShort", { length: 32 }).notNull(),
-  minimumIntakeThreshold: text("minimumIntakeThreshold"),
-  deadlineDependency: text("deadlineDependency"),
-  triggerStrength: varchar("triggerStrength", { length: 64 }),
-  historicalActionability: varchar("historicalActionability", { length: 64 }),
-  recommendedChannel: varchar("recommendedChannel", { length: 256 }),
+  agency_short: varchar("agency_short", { length: 32 }).notNull(),
+  minimum_intake_threshold: text("minimum_intake_threshold"),
+  deadline_dependency: text("deadline_dependency"),
+  trigger_strength: varchar("trigger_strength", { length: 64 }),
+  historical_actionability: varchar("historical_actionability", { length: 64 }),
+  recommended_channel: varchar("recommended_channel", { length: 256 }),
   notes: text("notes"),
-  addedBy: varchar("addedBy", { length: 128 }),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  added_by: varchar("added_by", { length: 128 }),
+  created_at: bigint("created_at", { mode: "number" }).notNull(),
+  updated_at: bigint("updated_at", { mode: "number" }).notNull(),
 }, (table) => [
-  index("idx_evr_agency").on(table.agencyShort),
-  index("idx_evr_claim").on(table.claimType),
-  index("idx_evr_pipeline").on(table.pipelineCategory),
+  index("idx_evr_agency").on(table.agency_short),
+  index("idx_evr_claim").on(table.claim_type),
+  index("idx_evr_pipeline").on(table.pipeline_category),
 ]);
 
 export type EnforcementViabilityRule = typeof enforcementViabilityRules.$inferSelect;
@@ -8864,7 +8941,7 @@ export const adminChangeLog = pgTable("admin_change_log", {
   previousState: jsonb("previous_state_acl"),
   newState: jsonb("new_state_acl"),
   description: text("description_acl"),
-  timestamp: bigint("timestamp_acl", { mode: "number" }).notNull().$defaultFn(() => Date.now()),
+  timestamp: timestamp("timestamp_acl", { withTimezone: true }).notNull().$defaultFn(() => new Date()),
   rollbackAvailable: boolean("rollback_available_acl").default(true),
   rolledBack: boolean("rolled_back_acl").default(false),
   rollbackData: jsonb("rollback_data_acl"),
@@ -9994,6 +10071,198 @@ export const unifiedResources = pgTable("unified_resources", {
 
 export type UnifiedResource = typeof unifiedResources.$inferSelect;
 export type InsertUnifiedResource = typeof unifiedResources.$inferInsert;
+
+
+export const jurisdictionAssertions = pgTable("jurisdiction_assertions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sourceTable: text("source_table").notNull(),
+  sourceRecordId: text("source_record_id").notNull(),
+  sourceName: text("source_name"),
+  sourceHash: text("source_hash"),
+  candidateRecordId: text("candidate_record_id"),
+  canonicalRecordId: text("canonical_record_id"),
+  jurisdictionRefTable: text("jurisdiction_ref_table"),
+  jurisdictionRefId: text("jurisdiction_ref_id"),
+  jurisdictionType: text("jurisdiction_type").notNull(),
+  jurisdictionLabel: text("jurisdiction_label"),
+  jurisdictionCode: text("jurisdiction_code"),
+  relationshipType: text("relationship_type").notNull(),
+  confidence: numeric("confidence", { precision: 5, scale: 4 }),
+  evidenceBasis: text("evidence_basis").notNull(),
+  createdFromRule: text("created_from_rule").notNull(),
+  reviewStatus: text("review_status").notNull().default("queued"),
+  promotionStatus: text("promotion_status").notNull().default("queued"),
+  promotionBatchId: text("promotion_batch_id"),
+  reviewDecisionBy: text("review_decision_by"),
+  reviewDecisionAt: timestamp("review_decision_at", { withTimezone: true }),
+  rejectedReason: text("rejected_reason"),
+  supersedesId: uuid("supersedes_id"),
+  isActive: boolean("is_active").notNull().default(true),
+  tribalNation: text("tribal_nation"),
+  federalRecognitionStatus: text("federal_recognition_status"),
+  sourceAuthority: text("source_authority"),
+  tribalGovernmentName: text("tribal_government_name"),
+  tribalCourtName: text("tribal_court_name"),
+  reservationOrServiceArea: text("reservation_or_service_area"),
+  stateOverlap: text("state_overlap").array().notNull().default(sql`'{}'::text[]`),
+  federalAgencyOverlap: text("federal_agency_overlap").array().notNull().default(sql`'{}'::text[]`),
+  biaOverlap: text("bia_overlap").array().notNull().default(sql`'{}'::text[]`),
+  ihsOverlap: text("ihs_overlap").array().notNull().default(sql`'{}'::text[]`),
+  bieOverlap: text("bie_overlap").array().notNull().default(sql`'{}'::text[]`),
+  icwaRelevance: text("icwa_relevance"),
+  publicLaw280Relevance: text("public_law_280_relevance"),
+  treatyReservedRightsReference: text("treaty_reserved_rights_reference"),
+  countyFips: text("county_fips"),
+  censusGeoid: text("census_geoid"),
+  serviceAreaGeometryRef: text("service_area_geometry_ref"),
+  regionalServiceArea: text("regional_service_area"),
+  legalAidServiceArea: text("legal_aid_service_area"),
+  tribalServiceArea: text("tribal_service_area"),
+  distanceTravelBarrierFlags: text("distance_travel_barrier_flags").array().notNull().default(sql`'{}'::text[]`),
+  remotePhoneOnlineIntake: text("remote_phone_online_intake").array().notNull().default(sql`'{}'::text[]`),
+  ruralFrontierClassification: text("rural_frontier_classification"),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("idx_ja_source").on(table.sourceTable, table.sourceRecordId),
+  index("idx_ja_candidate").on(table.candidateRecordId),
+  index("idx_ja_canonical").on(table.canonicalRecordId),
+  index("idx_ja_ref").on(table.jurisdictionRefTable, table.jurisdictionRefId),
+  index("idx_ja_type").on(table.jurisdictionType),
+  index("idx_ja_review").on(table.reviewStatus, table.promotionStatus),
+  index("idx_ja_active").on(table.isActive),
+]);
+
+export type JurisdictionAssertion = typeof jurisdictionAssertions.$inferSelect;
+export type InsertJurisdictionAssertion = typeof jurisdictionAssertions.$inferInsert;
+
+export const jurisdictionAliases = pgTable("jurisdiction_aliases", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  canonicalJurisdictionRefTable: text("canonical_jurisdiction_ref_table").notNull(),
+  canonicalJurisdictionRefId: text("canonical_jurisdiction_ref_id").notNull(),
+  aliasType: text("alias_type").notNull(),
+  aliasValue: text("alias_value").notNull(),
+  sourceSystem: text("source_system").notNull(),
+  confidence: numeric("confidence", { precision: 5, scale: 4 }),
+  validFrom: date("valid_from"),
+  validTo: date("valid_to"),
+  isActive: boolean("is_active").notNull().default(true),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("idx_ja_alias_active_unique").on(table.canonicalJurisdictionRefTable, table.canonicalJurisdictionRefId, table.aliasType, table.aliasValue, table.sourceSystem),
+  index("idx_ja_alias_lookup").on(table.aliasType, table.aliasValue, table.sourceSystem),
+  index("idx_ja_alias_canonical").on(table.canonicalJurisdictionRefTable, table.canonicalJurisdictionRefId),
+]);
+
+export type JurisdictionAliasRecord = typeof jurisdictionAliases.$inferSelect;
+export type InsertJurisdictionAlias = typeof jurisdictionAliases.$inferInsert;
+
+export const jurisdictionCoverageRuns = pgTable("jurisdiction_coverage_runs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  runKey: text("run_key").notNull().unique(),
+  reportKind: text("report_kind").notNull(),
+  scope: text("scope").notNull(),
+  sourceInventoryHash: text("source_inventory_hash").notNull(),
+  generatedAt: timestamp("generated_at", { withTimezone: true }).defaultNow().notNull(),
+  generatedBy: text("generated_by").notNull(),
+  notes: text("notes"),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
+}, (table) => [
+  index("idx_jcr_kind_scope").on(table.reportKind, table.scope),
+  index("idx_jcr_generated").on(table.generatedAt),
+]);
+
+export type JurisdictionCoverageRunRecord = typeof jurisdictionCoverageRuns.$inferSelect;
+export type InsertJurisdictionCoverageRun = typeof jurisdictionCoverageRuns.$inferInsert;
+
+export const jurisdictionCoverageItems = pgTable("jurisdiction_coverage_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  runId: uuid("run_id").notNull(),
+  jurisdictionRefTable: text("jurisdiction_ref_table"),
+  jurisdictionRefId: text("jurisdiction_ref_id"),
+  jurisdictionType: text("jurisdiction_type").notNull(),
+  domain: text("domain"),
+  runtimeSurface: text("runtime_surface"),
+  pipelineContext: text("pipeline_context"),
+  coverageState: text("coverage_state").notNull(),
+  expectedCount: integer("expected_count").notNull().default(0),
+  stagedCount: integer("staged_count").notNull().default(0),
+  candidateCount: integer("candidate_count").notNull().default(0),
+  promotedCount: integer("promoted_count").notNull().default(0),
+  verifiedCount: integer("verified_count").notNull().default(0),
+  gapCount: integer("gap_count").notNull().default(0),
+  confidence: numeric("confidence", { precision: 5, scale: 4 }),
+  freshnessStatus: text("freshness_status"),
+  gapReason: text("gap_reason"),
+  nextAction: text("next_action"),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("idx_jci_run").on(table.runId),
+  index("idx_jci_ref").on(table.jurisdictionRefTable, table.jurisdictionRefId),
+  index("idx_jci_state").on(table.coverageState),
+  index("idx_jci_surface").on(table.runtimeSurface),
+  index("idx_jci_domain").on(table.domain),
+  index("idx_jci_pipeline").on(table.pipelineContext),
+]);
+
+export type JurisdictionCoverageItemRecord = typeof jurisdictionCoverageItems.$inferSelect;
+export type InsertJurisdictionCoverageItem = typeof jurisdictionCoverageItems.$inferInsert;
+
+export const jurisdictionOverlapAssertions = pgTable("jurisdiction_overlap_assertions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  fromJurisdictionRefTable: text("from_jurisdiction_ref_table").notNull(),
+  fromJurisdictionRefId: text("from_jurisdiction_ref_id").notNull(),
+  toJurisdictionRefTable: text("to_jurisdiction_ref_table").notNull(),
+  toJurisdictionRefId: text("to_jurisdiction_ref_id").notNull(),
+  relationshipType: text("relationship_type").notNull(),
+  legalBasis: text("legal_basis"),
+  evidenceBasis: text("evidence_basis"),
+  confidence: numeric("confidence", { precision: 5, scale: 4 }),
+  reviewStatus: text("review_status").notNull().default("queued"),
+  isActive: boolean("is_active").notNull().default(true),
+  validFrom: date("valid_from"),
+  validTo: date("valid_to"),
+  supersedesId: uuid("supersedes_id"),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("idx_joa_from").on(table.fromJurisdictionRefTable, table.fromJurisdictionRefId),
+  index("idx_joa_to").on(table.toJurisdictionRefTable, table.toJurisdictionRefId),
+  index("idx_joa_relation").on(table.relationshipType),
+  index("idx_joa_review").on(table.reviewStatus),
+  index("idx_joa_active").on(table.isActive),
+]);
+
+export type JurisdictionOverlapAssertionRecord = typeof jurisdictionOverlapAssertions.$inferSelect;
+export type InsertJurisdictionOverlapAssertion = typeof jurisdictionOverlapAssertions.$inferInsert;
+
+export const jurisdictionMetadataGaps = pgTable("jurisdiction_metadata_gaps", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sourceTable: text("source_table").notNull(),
+  sourceRecordId: text("source_record_id").notNull(),
+  missingField: text("missing_field").notNull(),
+  jurisdictionHint: text("jurisdiction_hint"),
+  gapReason: text("gap_reason").notNull(),
+  severity: text("severity").notNull(),
+  pipelineContext: text("pipeline_context"),
+  runtimeSurface: text("runtime_surface"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  resolutionNotes: text("resolution_notes"),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
+}, (table) => [
+  index("idx_jmg_source").on(table.sourceTable, table.sourceRecordId),
+  index("idx_jmg_open").on(table.severity, table.createdAt),
+  index("idx_jmg_surface").on(table.runtimeSurface),
+]);
+
+export type JurisdictionMetadataGapRecord = typeof jurisdictionMetadataGaps.$inferSelect;
+export type InsertJurisdictionMetadataGap = typeof jurisdictionMetadataGaps.$inferInsert;
 
 export const signalFlowLogs = pgTable("signal_flow_logs", {
   id: serial("id").primaryKey(),

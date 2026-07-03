@@ -62,7 +62,10 @@ jobs:
         run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/verification/runtime_hotfix_verification.sql
 
       - name: Lint public runtime schema identifiers
-        run: node scripts/check-public-runtime-camelcase.mjs
+        run: node scripts/audit-runtime-camelcase.mjs
+
+      - name: Check owned snake_case contracts
+        run: npm run check:contracts
 
       - name: TypeScript legacy debt scan
         continue-on-error: true
@@ -107,10 +110,3 @@ jobs:
 
       - name: Run health check
         run: curl -fsS http://localhost:3000/api/health
-
-      - name: Stop server
-        if: always()
-        run: |
-          if [ -f server.pid ]; then
-            kill $(cat server.pid) 2>/dev/null || true
-          fi

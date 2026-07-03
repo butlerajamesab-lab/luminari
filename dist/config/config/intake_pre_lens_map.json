@@ -1,0 +1,464 @@
+{
+  "version": "1.0.0",
+  "intake_mappings": {
+    "housing": {
+      "label": "Housing",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Housing Dispute"
+    },
+    "section8": {
+      "label": "Section8",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Section 8 / Housing Voucher"
+    },
+    "hoa": {
+      "label": "Hoa",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "HOA Dispute"
+    },
+    "workplace": {
+      "label": "Workplace",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Workplace Rights"
+    },
+    "workerscomp": {
+      "label": "Workerscomp",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Workers Compensation"
+    },
+    "unemployment": {
+      "label": "Unemployment",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Unemployment Benefits"
+    },
+    "insurance": {
+      "label": "Insurance",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Insurance Denial"
+    },
+    "medical": {
+      "label": "Medical",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Medical Billing & Debt"
+    },
+    "medmalpractice": {
+      "label": "Medmalpractice",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Medical Malpractice"
+    },
+    "medicaid": {
+      "label": "Medicaid",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Medicaid Issue"
+    },
+    "elderabuse": {
+      "label": "Elderabuse",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Elder Abuse"
+    },
+    "eldercare": {
+      "label": "Eldercare",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Elder Care Issue"
+    },
+    "nursing": {
+      "label": "Nursing",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Nursing Home / Facility"
+    },
+    "guardianship": {
+      "label": "Guardianship",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Guardianship"
+    },
+    "disability": {
+      "label": "Disability",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Disability Benefits & Rights"
+    },
+    "custody": {
+      "label": "Custody",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Child Custody"
+    },
+    "childwelfare": {
+      "label": "Childwelfare",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Child Welfare / CPS"
+    },
+    "fostercare": {
+      "label": "Fostercare",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Foster Care"
+    },
+    "icwa": {
+      "label": "Icwa",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "ICWA / Native Child Welfare"
+    },
+    "juvenile": {
+      "label": "Juvenile",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Juvenile Justice"
+    },
+    "policemisconduct": {
+      "label": "Policemisconduct",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Police Misconduct"
+    },
+    "wrongfulconviction": {
+      "label": "Wrongfulconviction",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Wrongful Conviction"
+    },
+    "whistleblower": {
+      "label": "Whistleblower",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Whistleblower Retaliation"
+    },
+    "accountability": {
+      "label": "Accountability",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Government Accountability"
+    },
+    "justice": {
+      "label": "Justice",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "General Justice Issue"
+    },
+    "tribal": {
+      "label": "Tribal",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Tribal Rights (General)"
+    },
+    "tribalenrollment": {
+      "label": "Tribalenrollment",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Tribal Enrollment"
+    },
+    "tribalhousing": {
+      "label": "Tribalhousing",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Tribal Housing & Benefits"
+    },
+    "triballand": {
+      "label": "Triballand",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Land & Trust"
+    },
+    "tribalsovereignty": {
+      "label": "Tribalsovereignty",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Sovereignty & Jurisdiction"
+    },
+    "treatyrights": {
+      "label": "Treatyrights",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Treaty Rights"
+    },
+    "mmiw": {
+      "label": "Mmiw",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Missing & Murdered Indigenous"
+    },
+    "benefits": {
+      "label": "Benefits",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Benefits Denial"
+    },
+    "snap": {
+      "label": "Snap",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "SNAP / Food Assistance"
+    },
+    "veterans": {
+      "label": "Veterans",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Veterans Benefits"
+    },
+    "predatorylending": {
+      "label": "Predatorylending",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Predatory Lending"
+    },
+    "debtcollection": {
+      "label": "Debtcollection",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Debt Collection Abuse"
+    },
+    "bankruptcy": {
+      "label": "Bankruptcy",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Bankruptcy Issue"
+    },
+    "taxdispute": {
+      "label": "Taxdispute",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Tax Dispute"
+    },
+    "consumer": {
+      "label": "Consumer",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Consumer Fraud"
+    },
+    "marketconcentration": {
+      "label": "Marketconcentration",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Market Concentration"
+    },
+    "agricultureexploitation": {
+      "label": "Agricultureexploitation",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Agriculture Exploitation"
+    },
+    "nonprofitcompliance": {
+      "label": "Nonprofitcompliance",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Nonprofit Compliance"
+    },
+    "immigration": {
+      "label": "Immigration",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Immigration Issue"
+    },
+    "education": {
+      "label": "Education",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Education Rights"
+    },
+    "environmental": {
+      "label": "Environmental",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Environmental Justice"
+    },
+    "community": {
+      "label": "Community",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Community Issue"
+    },
+    "vulnerable": {
+      "label": "Vulnerable",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Vulnerable Populations"
+    },
+    "personal": {
+      "label": "Personal",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Personal Matter"
+    },
+    "general": {
+      "label": "General",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "General Legal Issue"
+    },
+    "other": {
+      "label": "Other",
+      "pre_lenses": [
+        "intake",
+        "document_review",
+        "timeline"
+      ],
+      "description": "Other"
+    }
+  }
+}

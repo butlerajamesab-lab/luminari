@@ -1,0 +1,350 @@
+{
+  "all_canonical_ids": [
+    "housing",
+    "section8",
+    "hoa",
+    "workplace",
+    "workerscomp",
+    "unemployment",
+    "insurance",
+    "medical",
+    "medmalpractice",
+    "medicaid",
+    "elderabuse",
+    "eldercare",
+    "nursing",
+    "guardianship",
+    "disability",
+    "custody",
+    "childwelfare",
+    "fostercare",
+    "icwa",
+    "juvenile",
+    "policemisconduct",
+    "wrongfulconviction",
+    "whistleblower",
+    "accountability",
+    "justice",
+    "tribal",
+    "tribalenrollment",
+    "tribalhousing",
+    "triballand",
+    "tribalsovereignty",
+    "treatyrights",
+    "mmiw",
+    "benefits",
+    "snap",
+    "veterans",
+    "predatorylending",
+    "debtcollection",
+    "bankruptcy",
+    "taxdispute",
+    "consumer",
+    "marketconcentration",
+    "agricultureexploitation",
+    "nonprofitcompliance",
+    "immigration",
+    "education",
+    "environmental",
+    "community",
+    "vulnerable",
+    "personal",
+    "general",
+    "other"
+  ],
+  "categories": {
+    "housing_tenant": {
+      "id": "housing_tenant",
+      "label": "Housing & Property",
+      "description": "Eviction, housing discrimination, Section 8, HOA disputes, unsafe conditions",
+      "pipelines": [
+        {
+          "id": "housing",
+          "label": "Housing Dispute"
+        },
+        {
+          "id": "section8",
+          "label": "Section 8 / Housing Voucher"
+        },
+        {
+          "id": "hoa",
+          "label": "HOA Dispute"
+        }
+      ]
+    },
+    "employment_labor": {
+      "id": "employment_labor",
+      "label": "Employment & Labor",
+      "description": "Wage theft, wrongful termination, workplace discrimination, workers comp, unemployment",
+      "pipelines": [
+        {
+          "id": "workplace",
+          "label": "Workplace Rights"
+        },
+        {
+          "id": "workerscomp",
+          "label": "Workers Compensation"
+        },
+        {
+          "id": "unemployment",
+          "label": "Unemployment Benefits"
+        }
+      ]
+    },
+    "healthcare_insurance": {
+      "id": "healthcare_insurance",
+      "label": "Insurance & Medical",
+      "description": "Insurance denials, medical billing, malpractice, Medicaid disputes",
+      "pipelines": [
+        {
+          "id": "insurance",
+          "label": "Insurance Denial"
+        },
+        {
+          "id": "medical",
+          "label": "Medical Billing & Debt"
+        },
+        {
+          "id": "medmalpractice",
+          "label": "Medical Malpractice"
+        },
+        {
+          "id": "medicaid",
+          "label": "Medicaid Issue"
+        }
+      ]
+    },
+    "elder_care": {
+      "id": "elder_care",
+      "label": "Elder & Senior Rights",
+      "description": "Elder abuse, nursing home neglect, guardianship, senior care issues",
+      "pipelines": [
+        {
+          "id": "elderabuse",
+          "label": "Elder Abuse"
+        },
+        {
+          "id": "eldercare",
+          "label": "Elder Care Issue"
+        },
+        {
+          "id": "nursing",
+          "label": "Nursing Home / Facility"
+        },
+        {
+          "id": "guardianship",
+          "label": "Guardianship Dispute"
+        }
+      ]
+    },
+    "disability_rights": {
+      "id": "disability_rights",
+      "label": "Disability Rights",
+      "description": "SSDI/SSI appeals, ADA accommodations, disability discrimination",
+      "pipelines": [
+        {
+          "id": "disability",
+          "label": "Disability Benefits & Rights"
+        }
+      ]
+    },
+    "family_custody": {
+      "id": "family_custody",
+      "label": "Family & Children",
+      "description": "Child custody, CPS, foster care, ICWA, juvenile justice, guardianship",
+      "pipelines": [
+        {
+          "id": "custody",
+          "label": "Child Custody"
+        },
+        {
+          "id": "childwelfare",
+          "label": "Child Welfare / CPS"
+        },
+        {
+          "id": "fostercare",
+          "label": "Foster Care"
+        },
+        {
+          "id": "icwa",
+          "label": "ICWA / Native Child Welfare"
+        },
+        {
+          "id": "juvenile",
+          "label": "Juvenile Justice"
+        },
+        {
+          "id": "guardianship",
+          "label": "Guardianship"
+        }
+      ]
+    },
+    "justice_accountability": {
+      "id": "justice_accountability",
+      "label": "Justice & Accountability",
+      "description": "Police misconduct, wrongful conviction, civil rights violations, whistleblower",
+      "pipelines": [
+        {
+          "id": "policemisconduct",
+          "label": "Police Misconduct"
+        },
+        {
+          "id": "wrongfulconviction",
+          "label": "Wrongful Conviction"
+        },
+        {
+          "id": "whistleblower",
+          "label": "Whistleblower Retaliation"
+        },
+        {
+          "id": "accountability",
+          "label": "Government Accountability"
+        },
+        {
+          "id": "justice",
+          "label": "General Justice Issue"
+        }
+      ]
+    },
+    "tribal_indigenous": {
+      "id": "tribal_indigenous",
+      "label": "Tribal & Indigenous Rights",
+      "description": "ICWA, treaty rights, tribal land, enrollment, MMIW, tribal sovereignty",
+      "pipelines": [
+        {
+          "id": "tribal",
+          "label": "Tribal Rights (General)"
+        },
+        {
+          "id": "tribalenrollment",
+          "label": "Tribal Enrollment"
+        },
+        {
+          "id": "tribalhousing",
+          "label": "Tribal Housing & Benefits"
+        },
+        {
+          "id": "triballand",
+          "label": "Land & Trust"
+        },
+        {
+          "id": "tribalsovereignty",
+          "label": "Sovereignty & Jurisdiction"
+        },
+        {
+          "id": "treatyrights",
+          "label": "Treaty Rights"
+        },
+        {
+          "id": "mmiw",
+          "label": "Missing & Murdered Indigenous"
+        }
+      ]
+    },
+    "government_benefits": {
+      "id": "government_benefits",
+      "label": "Government Benefits",
+      "description": "SNAP, veterans benefits, general benefits denials and terminations",
+      "pipelines": [
+        {
+          "id": "benefits",
+          "label": "Benefits Denial"
+        },
+        {
+          "id": "snap",
+          "label": "SNAP / Food Assistance"
+        },
+        {
+          "id": "veterans",
+          "label": "Veterans Benefits"
+        }
+      ]
+    },
+    "financial_consumer": {
+      "id": "financial_consumer",
+      "label": "Financial & Consumer",
+      "description": "Predatory lending, debt collection, bankruptcy, tax disputes, consumer fraud",
+      "pipelines": [
+        {
+          "id": "predatorylending",
+          "label": "Predatory Lending"
+        },
+        {
+          "id": "debtcollection",
+          "label": "Debt Collection Abuse"
+        },
+        {
+          "id": "bankruptcy",
+          "label": "Bankruptcy Issue"
+        },
+        {
+          "id": "taxdispute",
+          "label": "Tax Dispute"
+        },
+        {
+          "id": "consumer",
+          "label": "Consumer Fraud"
+        },
+        {
+          "id": "marketconcentration",
+          "label": "Market Concentration"
+        },
+        {
+          "id": "agricultureexploitation",
+          "label": "Agriculture Exploitation"
+        },
+        {
+          "id": "nonprofitcompliance",
+          "label": "Nonprofit Compliance"
+        }
+      ]
+    },
+    "immigration_rights": {
+      "id": "immigration_rights",
+      "label": "Immigration",
+      "description": "Deportation defense, asylum, DACA, immigration enforcement",
+      "pipelines": [
+        {
+          "id": "immigration",
+          "label": "Immigration Issue"
+        }
+      ]
+    },
+    "general": {
+      "id": "general",
+      "label": "Other Issues",
+      "description": "Education, environment, community, and other civil matters",
+      "pipelines": [
+        {
+          "id": "education",
+          "label": "Education Rights"
+        },
+        {
+          "id": "environmental",
+          "label": "Environmental Justice"
+        },
+        {
+          "id": "community",
+          "label": "Community Issue"
+        },
+        {
+          "id": "vulnerable",
+          "label": "Vulnerable Populations"
+        },
+        {
+          "id": "personal",
+          "label": "Personal Matter"
+        },
+        {
+          "id": "general",
+          "label": "General Legal Issue"
+        },
+        {
+          "id": "other",
+          "label": "Other"
+        }
+      ]
+    }
+  },
+  "preserved_legacy_types": []
+}

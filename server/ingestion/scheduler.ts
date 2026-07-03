@@ -79,7 +79,7 @@ export async function cleanupOrphanedRuns(): Promise<number> {
 
   if (orphans.length === 0) return 0;
 
-  const ids = orphans.map(r => r.id);
+  const ids = orphans.map((r: any) => r.id);
   console.log(`[Scheduler] Found ${ids.length} orphaned 'running' run(s): ${ids.join(", ")}. Marking as failed.`);
 
   for (const id of ids) {

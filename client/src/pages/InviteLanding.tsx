@@ -33,7 +33,7 @@ export default function InviteLanding() {
     onSuccess: (result) => {
       setRedeemed(true);
       const r = result as any;
-      const planKey = r.assignedPlan ?? 'advocacy';
+      const planKey = r.target_plan ?? 'advocacy';
       toast.success(`Welcome! You've been upgraded to ${PLAN_LABELS[planKey] || planKey} plan.`);
     },
     onError: (err) => {
@@ -111,8 +111,8 @@ export default function InviteLanding() {
                   )}
                   {(() => {
                     const inv = validation.invite as any;
-                    const role = inv.assignedRole;
-                    const plan = inv.assignedPlan;
+                    const role = inv.target_role;
+                    const plan = inv.target_plan;
                     return (
                       <>
                         <div className="flex items-center gap-2">

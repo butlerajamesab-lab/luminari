@@ -239,23 +239,23 @@ export async function listStructuredNotes(runId: number): Promise<Phase2Structur
  * Returns document count, quote count, entity count, etc.
  */
 export async function getSnapshotExtractionSummary(snapshotId: number) {
-  const [docCount] = await db.select({ count: documents.id }).from(documents).where(eq(documents.snapshotId, snapshotId));
-  const [quoteCount] = await db.select({ count: quotes.id }).from(quotes).where(eq(quotes.snapshotId, snapshotId));
-  const [entityCount] = await db.select({ count: entities.id }).from(entities).where(eq(entities.snapshotId, snapshotId));
-  const [claimCount] = await db.select({ count: claims.id }).from(claims).where(eq(claims.snapshotId, snapshotId));
-  const [findingCount] = await db.select({ count: findings.id }).from(findings).where(eq(findings.snapshotId, snapshotId));
-  const [eventCount] = await db.select({ count: events.id }).from(events).where(eq(events.snapshotId, snapshotId));
+  const [docCount] = await db.select({ count: documents.id }).from(documents).where(eq(documents.snapshotId, snapshotId as any));
+  const [quoteCount] = await db.select({ count: quotes.id }).from(quotes).where(eq(quotes.snapshotId, snapshotId as any));
+  const [entityCount] = await db.select({ count: entities.id }).from(entities).where(eq(entities.snapshotId, snapshotId as any));
+  const [claimCount] = await db.select({ count: claims.id }).from(claims).where(eq(claims.snapshotId, snapshotId as any));
+  const [findingCount] = await db.select({ count: findings.id }).from(findings).where(eq(findings.snapshotId, snapshotId as any));
+  const [eventCount] = await db.select({ count: events.id }).from(events).where(eq(events.snapshotId, snapshotId as any));
   const [flagCount] = await db.select({ count: signalFlags.id }).from(signalFlags).where(eq(signalFlags.snapshotId, snapshotId));
   const [corrCount] = await db.select({ count: documentCorrelations.id }).from(documentCorrelations).where(eq(documentCorrelations.snapshotId, snapshotId));
 
   // Note: These are COUNT queries that return the id field, not actual counts.
   // We need to use SQL count function. For simplicity, use the array length approach.
-  const docs = await db.select({ id: documents.id }).from(documents).where(eq(documents.snapshotId, snapshotId));
-  const quotesArr = await db.select({ id: quotes.id }).from(quotes).where(eq(quotes.snapshotId, snapshotId));
-  const entitiesArr = await db.select({ id: entities.id }).from(entities).where(eq(entities.snapshotId, snapshotId));
-  const claimsArr = await db.select({ id: claims.id }).from(claims).where(eq(claims.snapshotId, snapshotId));
-  const findingsArr = await db.select({ id: findings.id }).from(findings).where(eq(findings.snapshotId, snapshotId));
-  const eventsArr = await db.select({ id: events.id }).from(events).where(eq(events.snapshotId, snapshotId));
+  const docs = await db.select({ id: documents.id }).from(documents).where(eq(documents.snapshotId, snapshotId as any));
+  const quotesArr = await db.select({ id: quotes.id }).from(quotes).where(eq(quotes.snapshotId, snapshotId as any));
+  const entitiesArr = await db.select({ id: entities.id }).from(entities).where(eq(entities.snapshotId, snapshotId as any));
+  const claimsArr = await db.select({ id: claims.id }).from(claims).where(eq(claims.snapshotId, snapshotId as any));
+  const findingsArr = await db.select({ id: findings.id }).from(findings).where(eq(findings.snapshotId, snapshotId as any));
+  const eventsArr = await db.select({ id: events.id }).from(events).where(eq(events.snapshotId, snapshotId as any));
   const flagsArr = await db.select({ id: signalFlags.id }).from(signalFlags).where(eq(signalFlags.snapshotId, snapshotId));
   const corrsArr = await db.select({ id: documentCorrelations.id }).from(documentCorrelations).where(eq(documentCorrelations.snapshotId, snapshotId));
 
@@ -279,14 +279,14 @@ export async function getSnapshotDocuments(snapshotId: number) {
   return db.select({
     id: documents.id,
     caseId: documents.caseId,
-    filename: documents.filename,
+    fileName: documents.fileName,
     fileType: documents.fileType,
     sha256Hash: documents.sha256Hash,
     status: documents.status,
     documentType: documents.documentType,
     snapshotId: documents.snapshotId,
   }).from(documents)
-    .where(eq(documents.snapshotId, snapshotId))
+    .where(eq(documents.snapshotId, snapshotId as any))
     .orderBy(asc(documents.id));
 }
 
@@ -324,7 +324,7 @@ export async function getPhase2ExportData(snapshotId: number) {
 
   if (runs.length === 0) return null;
 
-  const runIds = runs.map(r => r.id);
+  const runIds = runs.map((r: any) => r.id);
   const evidenceReqs: Phase2EvidenceRequirement[] = [];
   const structuredNotes: Phase2StructuredNote[] = [];
 
@@ -336,7 +336,7 @@ export async function getPhase2ExportData(snapshotId: number) {
   }
 
   return {
-    runs: runs.map(r => ({
+    runs: runs.map((r: any) => ({
       id: r.id,
       caseId: r.caseId,
       snapshotId: r.snapshotId,

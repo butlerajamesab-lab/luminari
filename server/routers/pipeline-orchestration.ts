@@ -72,7 +72,7 @@ export const pipelineOrchestrationRouter = router({
         taskCount = tasks.length;
 
         const paths = await db.select().from(strategyPaths)
-          .where(eq(strategyPaths.caseId, input.caseId));
+          .where(eq(strategyPaths.caseId, String(input.caseId)));
         pathCount = paths.length;
       }
 
@@ -89,15 +89,15 @@ export const pipelineOrchestrationRouter = router({
 
       // Pattern Engine status
       const feedback = await db.select().from(patternFeedbackLoop);
-      const caseFeedback = feedback.filter(f => {
+      const caseFeedback = feedback.filter((f: any) => {
         // Check if any strategy path for this case has feedback
         return true; // simplified — all feedback is relevant
       });
 
       return {
-        strategyEngine: {
+        strategy_engine: {
           status: latestProfile ? "initialized" : "not_started",
-          matterProfileId: latestProfile?.id ?? null,
+          matter_profile_id: latestProfile?.id ?? null,
           stages: {
             S1_matterProfile: matterProfiles.length > 0,
             S2_factMatrix: factCount > 0,
@@ -110,14 +110,14 @@ export const pipelineOrchestrationRouter = router({
           },
           counts: { facts: factCount, candidates: candidateCount, assessments: assessmentCount, deadlines: deadlineCount, links: linkCount, tasks: taskCount, paths: pathCount },
         },
-        assemblyEngine: {
+        assembly_engine: {
           status: packets.length > 0 ? "initialized" : "not_started",
-          packetCount: packets.length,
+          packet_count: packets.length,
           sectionCount,
-          packets: packets.map(p => ({ id: p.id, name: p.packetName, type: p.packetType, status: p.packetStatus })),
+          packets: packets.map((p: any) => ({ id: p.id, name: p.packetName, type: p.packetType, status: p.packetStatus })),
         },
-        patternEngine: {
-          feedbackCount: caseFeedback.length,
+        pattern_engine: {
+          feedback_count: caseFeedback.length,
         },
       };
     }),

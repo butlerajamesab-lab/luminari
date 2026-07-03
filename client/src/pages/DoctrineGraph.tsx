@@ -86,7 +86,7 @@ interface GraphEdge {
   id: number;
   source: string;
   target: string;
-  edgeType: string;
+  edge_type: string;
   strength: string;
   notes: string | null;
 }
@@ -249,24 +249,24 @@ export default function DoctrineGraph() {
 
     // Add edges and create nodes for endpoints
     for (const e of graphData.edges) {
-      const sourceId = `${e.fromType}:${e.fromId}`;
-      const targetId = `${e.toType}:${e.toId}`;
-      const sourceLabel = e.fromType === 'doctrine'
-        ? (doctrineById.get(String(e.fromId)) ?? e.fromId)
-        : e.fromId;
-      const targetLabel = e.toType === 'doctrine'
-        ? (doctrineById.get(String(e.toId)) ?? e.toId)
-        : e.toId;
+      const sourceId = `${e.from_type}:${e.from_id}`;
+      const targetId = `${e.to_type}:${e.to_id}`;
+      const sourceLabel = e.from_type === 'doctrine'
+        ? (doctrineById.get(String(e.from_id)) ?? e.from_id)
+        : e.from_id;
+      const targetLabel = e.to_type === 'doctrine'
+        ? (doctrineById.get(String(e.to_id)) ?? e.to_id)
+        : e.to_id;
 
       if (!nodeSet.has(sourceId)) {
         nodeSet.set(sourceId, {
-          id: sourceId, type: e.fromType, label: sourceLabel,
+          id: sourceId, type: e.from_type, label: sourceLabel,
           x: 0, y: 0, vx: 0, vy: 0, connections: 0,
         });
       }
       if (!nodeSet.has(targetId)) {
         nodeSet.set(targetId, {
-          id: targetId, type: e.toType, label: targetLabel,
+          id: targetId, type: e.to_type, label: targetLabel,
           x: 0, y: 0, vx: 0, vy: 0, connections: 0,
         });
       }
@@ -278,7 +278,7 @@ export default function DoctrineGraph() {
         id: e.id,
         source: sourceId,
         target: targetId,
-        edgeType: e.edgeType,
+        edge_type: e.edge_type,
         strength: e.strength,
         notes: e.notes,
       });
@@ -301,7 +301,7 @@ export default function DoctrineGraph() {
   const filteredEdges = useMemo(() => {
     const nodeIds = new Set(filteredNodes.map(n => n.id));
     let result = edges.filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
-    if (filterEdge) result = result.filter(e => e.edgeType === filterEdge);
+    if (filterEdge) result = result.filter(e => e.edge_type === filterEdge);
     return result;
   }, [edges, filteredNodes, filterEdge]);
 
@@ -467,7 +467,7 @@ export default function DoctrineGraph() {
               const sp = positions[e.source];
               const tp = positions[e.target];
               if (!sp || !tp) return null;
-              const edgeStyle = EDGE_TYPES[e.edgeType] || { color: c.muted };
+              const edgeStyle = EDGE_TYPES[e.edge_type] || { color: c.muted };
               const strengthStyle = STRENGTH_STYLES[e.strength] || STRENGTH_STYLES.moderate;
               return (
                 <line
@@ -568,11 +568,11 @@ export default function DoctrineGraph() {
                 <p style={{ color: c.paper, fontSize: 13, margin: "0 0 8px 0", lineHeight: 1.5 }}>
                   {selectedDetails.doctrine.description}
                 </p>
-                {selectedDetails.doctrine.primaryCases && (
+                {selectedDetails.doctrine.primary_cases && (
                   <div>
                     <span style={{ color: c.muted, fontSize: 11 }}>Primary Cases:</span>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
-                      {(selectedDetails.doctrine.primaryCases as string[]).map((cs, i) => (
+                      {(selectedDetails.doctrine.primary_cases as string[]).map((cs, i) => (
                         <span key={i} style={{
                           background: c.cardBg, border: `1px solid ${c.cardBorder}`,
                           borderRadius: 4, padding: "2px 6px", fontSize: 10, color: c.paper,
@@ -609,7 +609,7 @@ export default function DoctrineGraph() {
               </h4>
               {selectedDetails.connectedNodes.map(({ edge, node }) => {
                 if (!node) return null;
-                const edgeInfo = EDGE_TYPES[edge.edgeType] || { color: c.muted, label: edge.edgeType };
+                const edgeInfo = EDGE_TYPES[edge.edge_type] || { color: c.muted, label: edge.edge_type };
                 const isOutgoing = edge.source === selectedNode;
                 return (
                   <div

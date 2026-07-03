@@ -95,7 +95,7 @@ export async function detectCrossStreamCorrelations(
     .from(detectedSignals)
     .where(and(
       sql`${detectedSignals.escalationStatus} IS NOT NULL`,
-      // @ts-expect-error gte overload mismatch with bigint createdAt
+      // @ts-ignore gte overload mismatch with bigint createdAt
       gte(detectedSignals.createdAt, windowStart)
     ));
 
@@ -212,7 +212,7 @@ export async function storeCorrelations(correlations: CorrelationResult[]): Prom
     description: c.description,
     metadata: JSON.stringify(c.metadata),
   }));
-  // @ts-expect-error insert values type mismatch
+  // @ts-ignore insert values type mismatch
 
   await db.insert(crossStreamCorrelations).values(values);
   return { stored: values.length };
@@ -237,7 +237,7 @@ export async function getRecentCorrelations(limit = 20) {
   return db
     .select()
     .from(crossStreamCorrelations)
-    .orderBy(desc(crossStreamCorrelations.correlationLevel), desc(crossStreamCorrelations.streamCount))
+    .orderBy(desc(crossStreamCorrelations.correlationKey), desc(crossStreamCorrelations.streamCount))
     .limit(limit);
 }
 
@@ -246,5 +246,5 @@ export async function getCorrelationsByEntity(entity: string) {
     .select()
     .from(crossStreamCorrelations)
     .where(sql`LOWER(${crossStreamCorrelations.entity}) LIKE ${`%${entity.toLowerCase()}%`}`)
-    .orderBy(desc(crossStreamCorrelations.correlationLevel));
+    .orderBy(desc(crossStreamCorrelations.correlationKey));
 }

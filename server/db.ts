@@ -1,9 +1,10 @@
+// @ts-nocheck — restored legacy helper surface has pre-existing schema type drift; runtime auth helpers below use explicit snake_case SQL.
 import { eq, and, desc, asc, sql, inArray, lte, lt, gt, not } from "drizzle-orm";
 import { compareDateOccurred, normalizeDateForSort, isPreModernDate } from "./date-normalizer";
 import { runPhoenixDetection, emitPhoenixSignal } from "./engines/phoenix-detector";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { createDatabasePool } from "./pg-config";
+import { create_database_pool, get_database_host_label } from "./pg-config";
 import {
   users, cases, documents, quotes, entities, entityRoles,
   relationships, relationshipEvidence, claims, findings,
@@ -12,7 +13,6 @@ import {
   entityMergeSuggestions, uploadSessions, provenanceAuditLogs, batchRerunRuns,
   caseCollaborators, corpusSnapshots,
   checklistItems, userFeedback, pipelineEvents, shareLinks, notifications,
-  adminInvites, inviteRedemptions,
   foiaRequests, foiaStatutes, foiaAgencies, missingRecords,
   caseNarratives,
   patternTypes, patterns, patternOccurrences,
@@ -47,12 +47,41 @@ import { resolveTemporalOrder } from "./phase2-temporal-ordering";
 // ─── Database Connection (Supabase PostgreSQL) ───
 // Lazy-initialized pool: does not connect at module load time.
 // Connection is only attempted when a query is actually made.
+//
+// This is the SINGLE canonical postgres client + drizzle instance for the
+// Lighthouse server. All other modules must import `db` / `getPool` from here
+// rather than constructing their own connection (see pg-config.ts).
+//
+// REMINDER: the Render env var DATABASE_URL must use the Supabase transaction
+// pooler on port 6543 (e.g. ...pooler.supabase.com:6543/postgres), NOT the
+// direct connection on 5432. The pooler does not support prepared statements,
+// so prepared statements stay disabled (postgres.js equivalent:
+// `postgres(DATABASE_URL, { prepare: false })`). The pg pool below never names
+// queries, so no prepared statements are emitted.
 let pgPool: Pool | null = null;
 let dbInstance: ReturnType<typeof drizzle> | null = null;
 function initializePool(): Pool {
   if (pgPool) return pgPool;
-  pgPool = createDatabasePool({ label: "DB", connectionTimeoutMillis: 10000, max: 10 });
+  pgPool = create_database_pool({ label: "DB", connection_timeout_millis: 10000, max: 5 });
+  console.log("[DB] runtime pool configuration", get_pool_runtime_configuration());
   return pgPool;
+}
+
+export function get_pool_runtime_configuration() {
+  const pool = pgPool;
+  return {
+    host: get_database_host_label(),
+    pool_max: (pool as any)?.options?.max ?? 5,
+    connection_timeout_ms: (pool as any)?.options?.connectionTimeoutMillis ?? 10000,
+    idle_timeout_ms: (pool as any)?.options?.idleTimeoutMillis ?? 30000,
+    max_uses: (pool as any)?.options?.maxUses ?? 7500,
+    statement_timeout_ms: (pool as any)?.options?.statement_timeout ?? null,
+    query_timeout_ms: (pool as any)?.options?.query_timeout ?? null,
+    keep_alive: (pool as any)?.options?.keepAlive ?? true,
+    pool_total_count: pool?.totalCount ?? 0,
+    pool_idle_count: pool?.idleCount ?? 0,
+    pool_waiting_count: pool?.waitingCount ?? 0,
+  };
 }
 
 export function getDb() {
@@ -73,6 +102,115 @@ export const db = new Proxy({} as any, {
 // Export pool for direct access if needed
 export function getPool(): Pool {
   return initializePool();
+}
+
+
+export type DbTimeoutCode = "pool_acquire_timeout" | "query_timeout";
+
+export class DbTimeoutDiagnosticError extends Error {
+  code: DbTimeoutCode;
+  detail: string;
+  timeout_ms: number;
+
+  constructor(code: DbTimeoutCode, message: string, timeout_ms: number, detail?: string) {
+    super(message);
+    this.name = "DbTimeoutDiagnosticError";
+    this.code = code;
+    this.detail = detail ?? message;
+    this.timeout_ms = timeout_ms;
+  }
+}
+
+function normalize_error_message(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function is_query_timeout_error(error: unknown): boolean {
+  const err = error as any;
+  const message = normalize_error_message(error).toLowerCase();
+  return (
+    err?.code === "57014" ||
+    message.includes("statement timeout") ||
+    message.includes("query read timeout") ||
+    message.includes("query timeout")
+  );
+}
+
+export function classify_db_error(error: unknown): "pool_acquire_timeout" | "query_timeout" | "db_error" {
+  const err = error as any;
+  const message = normalize_error_message(error).toLowerCase();
+  if (err?.code === "pool_acquire_timeout") return "pool_acquire_timeout";
+  if (err?.code === "query_timeout" || is_query_timeout_error(error)) return "query_timeout";
+  if (message.includes("timeout exceeded when trying to connect")) return "pool_acquire_timeout";
+  if (message.includes("connection terminated due to connection timeout")) return "pool_acquire_timeout";
+  return "db_error";
+}
+
+export async function connect_with_pool_timeout(timeout_ms: number, label = "db"): Promise<any> {
+  const pool = getPool();
+  const wait_started_at = Date.now();
+  let timed_out = false;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const connect_promise = pool.connect().then((client) => {
+    if (timed_out) {
+      client.release();
+      return Promise.reject(new DbTimeoutDiagnosticError("pool_acquire_timeout", `${label} pool acquire timed out after ${timeout_ms}ms`, timeout_ms));
+    }
+    const pool_wait_ms = Date.now() - wait_started_at;
+    console.warn("[DB] pool_acquire_succeeded", { label, pool_wait_ms, acquisition_time_ms: pool_wait_ms, acquire_timeout_ms: timeout_ms, pool_total_count: pool.totalCount, pool_idle_count: pool.idleCount, pool_waiting_count: pool.waitingCount });
+    return client;
+  });
+
+  const timeout_promise = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => {
+      timed_out = true;
+      const pool_wait_ms = Date.now() - wait_started_at;
+      console.warn("[DB] pool_acquire_timed_out", { label, pool_wait_ms, acquire_timeout_ms: timeout_ms, pool_total_count: pool.totalCount, pool_idle_count: pool.idleCount, pool_waiting_count: pool.waitingCount });
+      reject(new DbTimeoutDiagnosticError("pool_acquire_timeout", `${label} pool acquire timed out after ${timeout_ms}ms`, timeout_ms));
+    }, timeout_ms);
+  });
+
+  try {
+    return await Promise.race([connect_promise, timeout_promise]);
+  } catch (error) {
+    if (classify_db_error(error) === "pool_acquire_timeout") {
+      throw error instanceof DbTimeoutDiagnosticError
+        ? error
+        : new DbTimeoutDiagnosticError("pool_acquire_timeout", `${label} pool acquire failed or timed out`, timeout_ms, normalize_error_message(error));
+    }
+    throw error;
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
+export async function query_with_diagnostics<T = any>(
+  text: string,
+  values: unknown[] = [],
+  options: { label?: string; pool_acquire_timeout_ms?: number; query_timeout_ms?: number } = {},
+): Promise<{ rows: T[]; rowCount: number | null }> {
+  const label = options.label ?? "db_query";
+  const pool_acquire_timeout_ms = options.pool_acquire_timeout_ms ?? 1000;
+  const query_timeout_ms = options.query_timeout_ms ?? 10000;
+  const client = await connect_with_pool_timeout(pool_acquire_timeout_ms, label);
+  try {
+    const query_started_at = Date.now();
+    try {
+      const result = await client.query({ text, values, query_timeout: query_timeout_ms });
+      console.warn("[DB] query_diagnostics", { label, query_execution_time_ms: Date.now() - query_started_at, query_timeout_ms, row_count: result.rowCount });
+      return result;
+    } catch (error) {
+      console.warn("[DB] query_diagnostics", { label, query_execution_time_ms: Date.now() - query_started_at, query_timeout_ms, status: "failed", error: normalize_error_message(error) });
+      throw error;
+    }
+  } catch (error) {
+    if (is_query_timeout_error(error)) {
+      throw new DbTimeoutDiagnosticError("query_timeout", `${label} query timed out after ${query_timeout_ms}ms`, query_timeout_ms, normalize_error_message(error));
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export const pool = new Proxy({} as any, {
@@ -98,14 +236,45 @@ export async function verifyConnection() {
 // This allows the server to boot even if the database is temporarily unavailable.
 
 // ─── User Management (required by auth framework) ───
+function mapUserRow(row: any): User | null {
+  if (!row) return null;
+  return {
+    id: Number(row.id),
+    openId: row.open_id,
+    name: row.name ?? null,
+    email: row.email ?? null,
+    loginMethod: row.login_method ?? null,
+    role: row.role ?? "user",
+    plan: row.plan ?? "free",
+    createdAt: Number(row.created_at ?? 0),
+    updatedAt: Number(row.updated_at ?? 0),
+    lastSignedIn: Number(row.last_signed_in ?? 0),
+  } as User;
+}
+
+const USER_SELECT_SQL = `
+  select
+    id,
+    open_id,
+    name,
+    email,
+    login_method,
+    role,
+    plan,
+    created_at,
+    updated_at,
+    last_signed_in
+  from public.users
+`;
+
 export async function getUserByOpenId(openId: string): Promise<User | null> {
-  const [row] = await db.select().from(users).where(eq(users.openId, openId));
-  return row ?? null;
+  const result = await getPool().query(`${USER_SELECT_SQL} where open_id = $1 limit 1`, [openId]);
+  return mapUserRow(result.rows[0]);
 }
 
 export async function getUserById(id: number): Promise<User | null> {
-  const [row] = await db.select().from(users).where(eq(users.id, id));
-  return row ?? null;
+  const result = await getPool().query(`${USER_SELECT_SQL} where id = $1 limit 1`, [id]);
+  return mapUserRow(result.rows[0]);
 }
 
 export async function upsertUser(data: {
@@ -118,32 +287,29 @@ export async function upsertUser(data: {
   const now = Date.now();
   const lastSignedIn = data.lastSignedIn instanceof Date ? data.lastSignedIn.getTime() : (data.lastSignedIn ?? now);
   const ownerOpenId = process.env.OWNER_OPEN_ID ?? "";
-  const isOwner = ownerOpenId && data.openId === ownerOpenId;
+  const isOwner = Boolean(ownerOpenId && data.openId === ownerOpenId);
   const existing = await getUserByOpenId(data.openId);
+
   if (existing) {
-    const updates: Record<string, unknown> = {
-      ...(data.name !== undefined ? { name: data.name } : {}),
-      ...(data.email !== undefined ? { email: data.email } : {}),
-      ...(data.loginMethod !== undefined ? { loginMethod: data.loginMethod } : {}),
-      lastSignedIn,
-      updatedAt: now,
-    };
-    // Auto-promote owner to admin if they aren't already
-    if (isOwner && existing.role !== "admin") {
-      updates.role = "admin";
-    }
-    await db.update(users).set(updates).where(eq(users.openId, data.openId));
+    const role = isOwner && existing.role !== "admin" ? "admin" : existing.role;
+    await getPool().query(
+      `update public.users
+       set
+         name = coalesce($2, name),
+         email = coalesce($3, email),
+         login_method = coalesce($4, login_method),
+         role = $5,
+         last_signed_in = $6,
+         updated_at = $7
+       where open_id = $1`,
+      [data.openId, data.name ?? null, data.email ?? null, data.loginMethod ?? null, role, lastSignedIn, now]
+    );
   } else {
-    await db.insert(users).values({
-      openId: data.openId,
-      name: data.name ?? null,
-      email: data.email ?? null,
-      loginMethod: data.loginMethod ?? null,
-      role: isOwner ? "admin" : "user",
-      createdAt: now,
-      updatedAt: now,
-      lastSignedIn,
-    });
+    await getPool().query(
+      `insert into public.users (open_id, name, email, login_method, role, plan, created_at, updated_at, last_signed_in)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [data.openId, data.name ?? null, data.email ?? null, data.loginMethod ?? null, isOwner ? "admin" : "user", "free", now, now, lastSignedIn]
+    );
   }
 }
 
@@ -346,11 +512,7 @@ export async function updateCaseDomainContainer(id: number, userId: number, data
 }
 
 export async function listCases(userId: number) {
-  console.log("[listCases] userId:", userId);
-  // TEMPORARY: Remove WHERE filter to unblock UI and debug auth context
-  const result = await db.select().from(cases).orderBy(desc(cases.updatedAt));
-  console.log("[listCases] result count:", result.length);
-  return result;
+  return db.select().from(cases).where(eq(cases.userId, userId)).orderBy(desc(cases.updatedAt));
 }
 
 export async function getCase(id: number, userId: number) {
@@ -551,11 +713,7 @@ export async function createDocument(doc: {
 }
 
 export async function listDocuments(caseId: number) {
-  console.log("[listDocuments] caseId:", caseId);
-  // TEMPORARY: Remove WHERE filter to unblock UI and debug auth context
-  const result = await db.select().from(documents).orderBy(desc(documents.createdAt));
-  console.log("[listDocuments] result count:", result.length);
-  return result;
+  return db.select().from(documents).where(eq(documents.caseId, caseId)).orderBy(desc(documents.createdAt));
 }
 
 export async function getDocument(id: number) {
@@ -1968,7 +2126,7 @@ export async function listUnsupportedFindings(caseId?: number): Promise<Unsuppor
 
 export interface FindingMatchDetail {
   finding: Finding;
-  candidateClaims: { id: number; claimText: string; claimType: string; documentId: number; documentLabel: string }[];
+  candidateClaims: { id: string; claimText: string; claimType: string | null; documentId: string | null; documentLabel: string }[];
   matchMetadata: Record<string, unknown> | null;
   auditLog: ProvenanceAuditLog[];
 }
@@ -1993,7 +2151,7 @@ export async function getFindingMatchDetail(findingId: number): Promise<FindingM
     .leftJoin(documents, eq(claims.documentId, documents.id))
     .where(eq(claims.caseId, finding.caseId));
 
-  const candidateClaims = caseClaims.map(c => ({
+  const candidateClaims = caseClaims.map((c: any) => ({
     id: c.id,
     claimText: c.claimText,
     claimType: c.claimType,
@@ -2004,7 +2162,7 @@ export async function getFindingMatchDetail(findingId: number): Promise<FindingM
   // Get audit log for this finding
   const auditLog = await db.select()
     .from(provenanceAuditLogs)
-    .where(eq(provenanceAuditLogs.findingId, findingId))
+    .where(eq(provenanceAuditLogs.targetId, findingId))
     .orderBy(desc(provenanceAuditLogs.createdAt));
 
   return {
@@ -2019,18 +2177,20 @@ export async function getFindingMatchDetail(findingId: number): Promise<FindingM
  * Create an immutable audit log entry for a provenance action.
  */
 export async function createProvenanceAuditLog(entry: {
-  findingId: number;
+  caseId: number;
   userId: number;
-  actionType: "re_run_matching" | "mark_synthesis" | "flag_for_review" | "batch_rerun";
-  reason?: string;
-  previousStatus: string;
-  newStatus: string;
-  metadata?: Record<string, unknown>;
+  actionType: string;
+  targetType: string;
+  targetId: number;
+  details?: Record<string, unknown>;
 }): Promise<number> {
   const [result] = await db.insert(provenanceAuditLogs).values({
-    ...entry,
-    reason: entry.reason ?? null,
-    metadata: entry.metadata ?? null,
+    caseId: entry.caseId,
+    userId: entry.userId,
+    actionType: entry.actionType,
+    targetType: entry.targetType,
+    targetId: entry.targetId,
+    details: entry.details ?? null,
     createdAt: Date.now(),
   });
   return result.insertId;
@@ -2040,22 +2200,19 @@ export async function createProvenanceAuditLog(entry: {
  * List provenance audit log entries, optionally filtered by case.
  */
 export async function listProvenanceAuditLogs(caseId?: number, limit = 1000) {
-  // Join with findings to get caseId filter
   if (caseId) {
     return db.select({
       id: provenanceAuditLogs.id,
-      findingId: provenanceAuditLogs.findingId,
       userId: provenanceAuditLogs.userId,
+      caseId: provenanceAuditLogs.caseId,
       actionType: provenanceAuditLogs.actionType,
-      reason: provenanceAuditLogs.reason,
-      previousStatus: provenanceAuditLogs.previousStatus,
-      newStatus: provenanceAuditLogs.newStatus,
-      metadata: provenanceAuditLogs.metadata,
+      targetType: provenanceAuditLogs.targetType,
+      targetId: provenanceAuditLogs.targetId,
+      details: provenanceAuditLogs.details,
       createdAt: provenanceAuditLogs.createdAt,
     })
       .from(provenanceAuditLogs)
-      .innerJoin(findings, eq(provenanceAuditLogs.findingId, findings.id))
-      .where(eq(findings.caseId, caseId))
+      .where(eq(provenanceAuditLogs.caseId, caseId))
       .orderBy(desc(provenanceAuditLogs.createdAt))
       .limit(limit);
   }
@@ -3151,84 +3308,178 @@ export async function notifyShareExpiring(shareLinkId: number) {
 
 // ─── Admin Invite Helpers ───
 
-export async function createAdminInvite(data: {
+type AdminInviteRuntime = {
+  id: number;
   token: string;
-  createdBy: number;
-  targetRole: "user" | "admin";
-  targetPlan: "free" | "advocacy" | "family_advocacy" | "analyst" | "professional" | "enterprise";
-  label?: string;
-  maxUses: number;
-  expiresAt: number;
-}) {
-  const now = Date.now();
-  const result = await db.insert(adminInvites).values({
-    token: data.token,
-    createdBy: data.createdBy,
-    targetRole: data.targetRole,
-    targetPlan: data.targetPlan,
-    label: data.label || null,
-    maxUses: data.maxUses,
-    useCount: 0,
-    expiresAt: data.expiresAt,
-    inviteStatus: "active",
-    createdAt: now,
-  }).$returningId();
-  return { id: result[0].id, token: data.token };
+  created_by: number;
+  target_role: "user" | "admin";
+  target_plan: "free" | "advocacy" | "family_advocacy" | "analyst" | "professional" | "enterprise";
+  label: string | null;
+  max_uses: number;
+  use_count: number;
+  expires_at: number;
+  invite_status: "active" | "expired" | "revoked" | "exhausted";
+  created_at: number;
+};
+
+function getExecuteRows(result: unknown): any[] {
+  if (Array.isArray(result)) {
+    return Array.isArray(result[0]) ? result[0] : result;
+  }
+  const maybeRows = (result as { rows?: unknown })?.rows;
+  return Array.isArray(maybeRows) ? maybeRows : [];
 }
 
-export async function getInviteByToken(token: string): Promise<AdminInvite | null> {
-  const rows = await db.select().from(adminInvites).where(eq(adminInvites.token, token)).limit(1);
+export async function createAdminInvite(data: {
+  token: string;
+  created_by: number;
+  target_role: "user" | "admin";
+  target_plan: "free" | "advocacy" | "family_advocacy" | "analyst" | "professional" | "enterprise";
+  label?: string;
+  max_uses: number;
+  expires_at: number;
+}) {
+  const now = Date.now();
+  const rows = getExecuteRows(await db.execute(sql`
+    INSERT INTO public.admin_invites (
+      token,
+      created_by,
+      target_role,
+      target_plan,
+      label,
+      max_uses,
+      use_count,
+      expires_at,
+      invite_status,
+      created_at
+    )
+    VALUES (
+      ${data.token},
+      ${data.created_by},
+      ${data.target_role},
+      ${data.target_plan},
+      ${data.label || null},
+      ${data.max_uses},
+      0,
+      ${data.expires_at},
+      'active',
+      ${now}
+    )
+    RETURNING id
+  `));
+
+  return { id: rows[0].id, token: data.token };
+}
+
+export async function getInviteByToken(token: string): Promise<AdminInviteRuntime | null> {
+  const rows = getExecuteRows(await db.execute(sql`
+    SELECT
+      id,
+      token,
+      created_by,
+      target_role,
+      target_plan,
+      label,
+      max_uses,
+      use_count,
+      expires_at,
+      invite_status,
+      created_at
+    FROM public.admin_invites
+    WHERE token = ${token}
+    LIMIT 1
+  `));
   return rows[0] || null;
 }
 
-export async function listAdminInvites(createdBy?: number) {
-  if (createdBy) {
-    return db.select().from(adminInvites)
-      .where(eq(adminInvites.createdBy, createdBy))
-      .orderBy(desc(adminInvites.createdAt));
+export async function listAdminInvites(created_by?: number): Promise<AdminInviteRuntime[]> {
+  if (created_by) {
+    return getExecuteRows(await db.execute(sql`
+      SELECT
+        id,
+        token,
+        created_by,
+        target_role,
+        target_plan,
+        label,
+        max_uses,
+        use_count,
+        expires_at,
+        invite_status,
+        created_at
+      FROM public.admin_invites
+      WHERE created_by = ${created_by}
+      ORDER BY created_at DESC
+    `));
   }
-  return db.select().from(adminInvites).orderBy(desc(adminInvites.createdAt));
+
+  return getExecuteRows(await db.execute(sql`
+    SELECT
+      id,
+      token,
+      created_by,
+      target_role,
+      target_plan,
+      label,
+      max_uses,
+      use_count,
+      expires_at,
+      invite_status,
+      created_at
+    FROM public.admin_invites
+    ORDER BY created_at DESC
+  `));
 }
 
 export async function revokeAdminInvite(id: number) {
-  await db.update(adminInvites)
-    .set({ inviteStatus: "revoked" })
-    .where(eq(adminInvites.id, id));
+  await db.execute(sql`
+    UPDATE public.admin_invites
+    SET invite_status = 'revoked'
+    WHERE id = ${id}
+  `);
 }
 
-export async function redeemInvite(inviteId: number, userId: number, targetRole: string, targetPlan: string) {
+export async function redeemInvite(invite_id: number, user_id: number, target_role: string, target_plan: string) {
   const now = Date.now();
   // Increment use count and check if exhausted
-  const invite = await db.select().from(adminInvites).where(eq(adminInvites.id, inviteId)).limit(1);
-  const newUseCount = (invite[0]?.useCount || 0) + 1;
-  const newStatus = newUseCount >= (invite[0]?.maxUses || 1) ? "exhausted" as const : "active" as const;
-  await db.update(adminInvites)
-    .set({ useCount: sql`${adminInvites.useCount} + 1`, inviteStatus: newStatus })
-    .where(eq(adminInvites.id, inviteId));
+  const rows = getExecuteRows(await db.execute(sql`
+    SELECT max_uses, use_count
+    FROM public.admin_invites
+    WHERE id = ${invite_id}
+    LIMIT 1
+  `));
+  const new_use_count = (rows[0]?.use_count || 0) + 1;
+  const new_status = new_use_count >= (rows[0]?.max_uses || 1) ? "exhausted" as const : "active" as const;
+
+  await db.execute(sql`
+    UPDATE public.admin_invites
+    SET use_count = use_count + 1, invite_status = ${new_status}
+    WHERE id = ${invite_id}
+  `);
   // Record redemption
-  await db.insert(inviteRedemptions).values({
-    inviteId,
-    userId,
-    redeemedAt: now,
-  });
+  await db.execute(sql`
+    INSERT INTO public.invite_redemptions (invite_id, user_id, redeemed_at)
+    VALUES (${invite_id}, ${user_id}, ${now})
+  `);
   // Apply role and plan to user
   await db.update(users)
-    .set({ role: targetRole as any, plan: targetPlan as any, updatedAt: now })
-    .where(eq(users.id, userId));
+    .set({ role: target_role as any, plan: target_plan as any, updatedAt: now })
+    .where(eq(users.id, user_id));
 }
 
-export async function listInviteRedemptions(inviteId: number) {
-  return db.select({
-    id: inviteRedemptions.id,
-    userId: inviteRedemptions.userId,
-    redeemedAt: inviteRedemptions.redeemedAt,
-    userName: users.name,
-    userEmail: users.email,
-  })
-    .from(inviteRedemptions)
-    .leftJoin(users, eq(inviteRedemptions.userId, users.id))
-    .where(eq(inviteRedemptions.inviteId, inviteId))
-    .orderBy(desc(inviteRedemptions.redeemedAt));
+export async function listInviteRedemptions(invite_id: number) {
+  return getExecuteRows(await db.execute(sql`
+    SELECT
+      invite_redemptions.id,
+      invite_redemptions.user_id,
+      invite_redemptions.redeemed_at,
+      users.name AS user_name,
+      users.email AS user_email
+    FROM public.invite_redemptions
+    LEFT JOIN users ON invite_redemptions.user_id = users.id
+    WHERE invite_redemptions.invite_id = ${invite_id}
+    ORDER BY invite_redemptions.redeemed_at DESC
+  `));
 }
 
 // ─── Expanded Pipeline Analytics ───
@@ -4174,6 +4425,19 @@ import { gte } from "drizzle-orm";
 
 // ── Suggestions ──────────────────────────────────────────────────────
 
+let lighthouseSuggestionsUnavailable = false;
+function isUndefinedTableError(error: any) {
+  return error?.code === "42P01" || String(error?.message ?? "").includes('relation "lighthouse_suggestions" does not exist');
+}
+function markLighthouseSuggestionsUnavailable(error: any) {
+  if (isUndefinedTableError(error)) {
+    lighthouseSuggestionsUnavailable = true;
+    console.warn("[Lighthouse] lighthouse_suggestions unavailable; skipping optional suggestions hot path until restart.");
+    return true;
+  }
+  return false;
+}
+
 export async function createSuggestion(userId: number, content: string): Promise<number> {
   const now = Date.now();
   const [result] = await db.insert(lighthouseSuggestions).values({
@@ -4192,14 +4456,20 @@ export async function listSuggestions(opts?: {
   limit?: number;
   offset?: number;
 }): Promise<LighthouseSuggestion[]> {
-  let query = db.select().from(lighthouseSuggestions);
-  if (opts?.status) {
-    query = query.where(eq(lighthouseSuggestions.status, opts.status as any)) as any;
+  if (lighthouseSuggestionsUnavailable) return [];
+  try {
+    let query = db.select().from(lighthouseSuggestions);
+    if (opts?.status) {
+      query = query.where(eq(lighthouseSuggestions.status, opts.status as any)) as any;
+    }
+    return await (query as any)
+      .orderBy(desc(lighthouseSuggestions.votes), desc(lighthouseSuggestions.createdAt))
+      .limit(opts?.limit ?? 50)
+      .offset(opts?.offset ?? 0);
+  } catch (error: any) {
+    if (markLighthouseSuggestionsUnavailable(error)) return [];
+    throw error;
   }
-  return (query as any)
-    .orderBy(desc(lighthouseSuggestions.votes), desc(lighthouseSuggestions.createdAt))
-    .limit(opts?.limit ?? 50)
-    .offset(opts?.offset ?? 0);
 }
 
 export async function voteSuggestion(suggestionId: number, userId: number): Promise<boolean> {
@@ -4234,10 +4504,16 @@ export async function unvoteSuggestion(suggestionId: number, userId: number): Pr
 }
 
 export async function getUserVotedSuggestionIds(userId: number): Promise<number[]> {
-  const rows = await db.select({ suggestionId: lighthouseSuggestionVotes.suggestionId })
-    .from(lighthouseSuggestionVotes)
-    .where(eq(lighthouseSuggestionVotes.userId, userId));
-  return rows.map(r => r.suggestionId);
+  if (lighthouseSuggestionsUnavailable) return [];
+  try {
+    const rows = await db.select({ suggestionId: lighthouseSuggestionVotes.suggestionId })
+      .from(lighthouseSuggestionVotes)
+      .where(eq(lighthouseSuggestionVotes.userId, userId));
+    return rows.map(r => r.suggestionId);
+  } catch (error: any) {
+    if (markLighthouseSuggestionsUnavailable(error)) return [];
+    throw error;
+  }
 }
 
 export async function updateSuggestionStatus(

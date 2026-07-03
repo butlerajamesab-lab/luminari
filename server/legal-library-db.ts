@@ -246,7 +246,7 @@ export async function listContradictions(opts: {
   if (opts.domain) conditions.push(sql`${legalContradictions.domains}::text ILIKE ${"%" + opts.domain + "%"}`);
   return db.select().from(legalContradictions)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(legalContradictions.updatedAt));
+    .orderBy(desc(legalContradictions.updated_at));
 }
 
 // ─── Stats (resilient — each count independent, failures return 0) ───

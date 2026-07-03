@@ -195,7 +195,7 @@ async function handleCriticalViolations(caseId: number, violations: TestViolatio
           violation: violation.detail,
           test: violation.testName,
         }),
-        Date.now(),
+        new Date(),
         "critical",
       ]
     );
@@ -216,7 +216,7 @@ async function handleHighViolations(caseId: number, violations: TestViolation[])
           violation: violation.detail,
           test: violation.testName,
         }),
-        Date.now(),
+        new Date(),
         "warning",
       ]
     );
@@ -237,7 +237,7 @@ async function handleWarnings(caseId: number, violations: TestViolation[]): Prom
           violation: violation.detail,
           test: violation.testName,
         }),
-        Date.now(),
+        new Date(),
         "info",
       ]
     );
@@ -307,7 +307,7 @@ async function logWorkerError(caseId: number | null, error: unknown): Promise<vo
           caseId,
           error: error instanceof Error ? error.message : String(error),
         }),
-        Date.now(),
+        new Date(),
         "warning",
       ]
     );

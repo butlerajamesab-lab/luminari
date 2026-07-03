@@ -13,7 +13,15 @@
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
     "seed": "tsx server/db/seed/master-seed.ts",
     "seed:normalize": "tsx server/db/seed/normalize-seed.ts",
-    "check:wire-contracts": "node scripts/check-wire-contracts.cjs"
+    "check:wire-contracts": "node scripts/check-wire-contracts.cjs",
+    "check:snake-case": "node scripts/audit-runtime-camelcase.mjs --strict",
+    "audit:snake-case": "node scripts/audit-runtime-camelcase.mjs",
+    "smoke:docket:wa": "tsx scripts/smoke-docket-wa.mjs",
+    "check:contracts": "node scripts/check-owned-contracts-snake-case.mjs && node scripts/check-health-contracts.mjs",
+    "check:health-contracts": "node scripts/check-health-contracts.mjs",
+    "warm:docket:wa": "node scripts/warm-docket-state-cache.mjs --state=WA",
+    "warm:docket:all": "node scripts/warm-docket-state-cache.mjs --all",
+    "audit:ui-data-guards": "node scripts/audit-ui-data-guards.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
@@ -41,7 +49,7 @@
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slider": "^1.3.6",
     "@radix-ui/react-slot": "^1.2.3",
-    "@radix-ui/react-switch": "^1.2.6",
+    "@radix-ui/react-switch": "^1.3.1",
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-toggle-group": "^1.1.11",
@@ -94,7 +102,7 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
     "wouter": "^3.3.5",
-    "zod": "^4.1.12",
+    "zod": "^3.25.76",
     "zustand": "^5.0.12",
     "mysql2": "^3.11.0"
   },

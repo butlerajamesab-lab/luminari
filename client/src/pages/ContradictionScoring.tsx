@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, BarChart3, Shield, Target, Clock, Users, ChevronRight, ArrowLeft, Wrench } from "lucide-react";
 import { useLocation } from "wouter";
+import { safeArray, safeText } from "@/lib/data-guard";
 
 const severityColor: Record<string, string> = {
   critical: "bg-red-500/10 text-red-400 border-red-500/30",
@@ -17,6 +18,11 @@ const severityColor: Record<string, string> = {
   medium: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
   low: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
 };
+
+function get_dimension_score(dimensions: any, key: string, fallback = 0): number {
+  const value = dimensions?.[key]?.score;
+  return typeof value === "number" ? value : fallback;
+}
 
 function ScoreBar({ label, score, max, icon }: { label: string; score: number; max: number; icon: React.ReactNode }) {
   const pct = (score / max) * 100;
@@ -48,6 +54,7 @@ export default function ContradictionScoring() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const allScores = trpc.enforcementIntel.scoreAllContradictions.useQuery();
+  const scoreRows = safeArray<any>(allScores.data);
 
   const singleScore = trpc.enforcementIntel.scoreContradiction.useQuery({
     contradictionId: selectedId ?? undefined,
@@ -91,12 +98,12 @@ export default function ContradictionScoring() {
         {/* Library Scores Tab */}
         <TabsContent value="library" className="space-y-4">
           {allScores.isLoading && <p className="text-muted-foreground">Loading contradiction scores...</p>}
-          {allScores.data && (
+          {scoreRows.length > 0 ? (
             <>
               {/* Summary Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {(["critical", "high", "medium", "low"] as const).map(sev => {
-                  const count = allScores.data.filter(s => s.severity === sev).length;
+                  const count = scoreRows.filter((s: any) => s.severity === sev).length;
                   return (
                     <Card key={sev} className="border-0 bg-card/50">
                       <CardContent className="p-4">
@@ -114,7 +121,7 @@ export default function ContradictionScoring() {
               <Card className="border-0 bg-card/50">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">All Contradictions — Ranked by Score</CardTitle>
-                  <CardDescription>{allScores.data.length} contradictions scored</CardDescription>
+                  <CardDescription>{scoreRows.length} contradictions scored</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="overflow-x-auto">
@@ -134,18 +141,18 @@ export default function ContradictionScoring() {
                         </tr>
                       </thead>
                       <tbody>
-                        {allScores.data.map(s => (
+                        {scoreRows.map((s: any) => (
                           <tr key={s.id} className="border-b border-border/20 hover:bg-muted/30 transition-colors">
                             <td className="py-2.5 pr-3 max-w-[250px] truncate font-medium">{s.title}</td>
-                            <td className="py-2.5 px-3 text-muted-foreground">{s.domain.replace(/_/g, " ")}</td>
-                            <td className="py-2.5 px-2 text-center font-mono font-bold">{s.totalScore}</td>
-                            <td className="py-2.5 px-2 text-center font-mono text-xs">{s.legalSeverity}/25</td>
-                            <td className="py-2.5 px-2 text-center font-mono text-xs">{s.evidenceStrength}/25</td>
-                            <td className="py-2.5 px-2 text-center font-mono text-xs">{s.timelineSupport}/20</td>
+                            <td className="py-2.5 px-3 text-muted-foreground">{safeText(s.domain, "unavailable").replace(/_/g, " ")}</td>
+                            <td className="py-2.5 px-2 text-center font-mono font-bold">{s.total_score}</td>
+                            <td className="py-2.5 px-2 text-center font-mono text-xs">{s.legal_severity}/25</td>
+                            <td className="py-2.5 px-2 text-center font-mono text-xs">{s.evidence_strength}/25</td>
+                            <td className="py-2.5 px-2 text-center font-mono text-xs">{s.timeline_support}/20</td>
                             <td className="py-2.5 px-2 text-center font-mono text-xs">{s.corroboration}/20</td>
-                            <td className="py-2.5 px-2 text-center font-mono text-xs">{s.systemicRisk}/10</td>
+                            <td className="py-2.5 px-2 text-center font-mono text-xs">{s.systemic_risk}/10</td>
                             <td className="py-2.5 px-2 text-center">
-                              <Badge variant="outline" className={`text-xs ${severityColor[s.severity]}`}>{s.severity}</Badge>
+                              <Badge variant="outline" className={`text-xs ${severityColor[s.severity] ?? ""}`}>{safeText(s.severity, "unavailable")}</Badge>
                             </td>
                             <td className="py-2.5 pl-3">
                               <Button variant="ghost" size="sm" onClick={() => { setSelectedId(s.id); setTab("adhoc"); }}>
@@ -160,7 +167,9 @@ export default function ContradictionScoring() {
                 </CardContent>
               </Card>
             </>
-          )}
+          ) : !allScores.isLoading ? (
+            <Card className="py-12 text-center"><p className="text-muted-foreground">empty</p></Card>
+          ) : null}
         </TabsContent>
 
         {/* Ad-Hoc Scoring Tab */}
@@ -243,7 +252,7 @@ export default function ContradictionScoring() {
                   <>
                     {/* Total Score */}
                     <div className="text-center py-4">
-                      <div className="text-5xl font-bold font-mono">{singleScore.data.totalScore}</div>
+                      <div className="text-5xl font-bold font-mono">{singleScore.data.total_score}</div>
                       <div className="text-sm text-muted-foreground mt-1">out of 100</div>
                       <Badge variant="outline" className={`mt-2 text-sm ${severityColor[singleScore.data.severity]}`}>
                         {singleScore.data.severity.toUpperCase()}
@@ -252,11 +261,11 @@ export default function ContradictionScoring() {
 
                     {/* Dimension Bars */}
                     <div className="space-y-3">
-                      <ScoreBar label="Legal Severity" score={singleScore.data.dimensions.legalSeverity.score} max={25} icon={<Shield className="h-3.5 w-3.5" />} />
-                      <ScoreBar label="Evidence Strength" score={singleScore.data.dimensions.evidenceStrength.score} max={25} icon={<Target className="h-3.5 w-3.5" />} />
-                      <ScoreBar label="Timeline Support" score={singleScore.data.dimensions.timelineSupport.score} max={20} icon={<Clock className="h-3.5 w-3.5" />} />
-                      <ScoreBar label="Corroboration" score={singleScore.data.dimensions.corroboration.score} max={20} icon={<BarChart3 className="h-3.5 w-3.5" />} />
-                      <ScoreBar label="Systemic Risk" score={singleScore.data.dimensions.systemicRisk.score} max={10} icon={<Users className="h-3.5 w-3.5" />} />
+                      <ScoreBar label="Legal Severity" score={get_dimension_score(singleScore.data.dimensions, "legal_severity")} max={25} icon={<Shield className="h-3.5 w-3.5" />} />
+                      <ScoreBar label="Evidence Strength" score={get_dimension_score(singleScore.data.dimensions, "evidence_strength")} max={25} icon={<Target className="h-3.5 w-3.5" />} />
+                      <ScoreBar label="Timeline Support" score={get_dimension_score(singleScore.data.dimensions, "timeline_support")} max={20} icon={<Clock className="h-3.5 w-3.5" />} />
+                      <ScoreBar label="Corroboration" score={get_dimension_score(singleScore.data.dimensions, "corroboration")} max={20} icon={<BarChart3 className="h-3.5 w-3.5" />} />
+                      <ScoreBar label="Systemic Risk" score={get_dimension_score(singleScore.data.dimensions, "systemic_risk")} max={10} icon={<Users className="h-3.5 w-3.5" />} />
                     </div>
 
                     {/* Recommendation */}
@@ -268,7 +277,7 @@ export default function ContradictionScoring() {
                     </div>
 
                     <p className="text-xs text-muted-foreground">
-                      {singleScore.data.title} — {singleScore.data.domain.replace(/_/g, " ")}
+                      {singleScore.data.title} — {(singleScore.data.domain ?? "general").replace(/_/g, " ")}
                     </p>
                   </>
                 )}

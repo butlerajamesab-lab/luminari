@@ -1,0 +1,155 @@
+{
+  "generatedAt": "2026-06-08T03:51:41.955Z",
+  "mode": "dry-run",
+  "status": "database-unavailable",
+  "safety": {
+    "writesPerformed": false,
+    "canonicalProductionTablesMutated": false,
+    "doctrineGraphEdgesInserted": false,
+    "atlasChanged": false,
+    "rlsSecurityIndexesChanged": false,
+    "independentGateCreated": false,
+    "sunamBypassed": false,
+    "conveyorBypassed": false
+  },
+  "inspectedFiles": [
+    "server/sunam-gate.ts",
+    "server/routes/conveyor-router.ts",
+    "server/routers/ingestion.ts",
+    "server/ingestion/signal-detector.ts",
+    "scripts/stage-registry-bucket-files.mjs",
+    "scripts/lib/corpus-audit-utils.mjs"
+  ],
+  "inspectedTables": [
+    {
+      "tableName": "corpus_import_queue",
+      "status": "database-unavailable",
+      "exists": null,
+      "columns": []
+    },
+    {
+      "tableName": "live_signals",
+      "status": "database-unavailable",
+      "exists": null,
+      "columns": []
+    },
+    {
+      "tableName": "detected_signals",
+      "status": "database-unavailable",
+      "exists": null,
+      "columns": []
+    },
+    {
+      "tableName": "extraction_staging",
+      "status": "database-unavailable",
+      "exists": null,
+      "columns": []
+    },
+    {
+      "tableName": "sunam_gate_log",
+      "status": "database-unavailable",
+      "exists": null,
+      "columns": []
+    },
+    {
+      "tableName": "sunam_thresholds",
+      "status": "database-unavailable",
+      "exists": null,
+      "columns": []
+    },
+    {
+      "tableName": "registry_entity_extraction_v4",
+      "status": "database-unavailable",
+      "exists": null,
+      "columns": []
+    },
+    {
+      "tableName": "promotion_validation_log",
+      "status": "database-unavailable",
+      "exists": null,
+      "columns": []
+    },
+    {
+      "tableName": "promotion_validation_rules",
+      "status": "database-unavailable",
+      "exists": null,
+      "columns": []
+    },
+    {
+      "tableName": "conveyor_validation_log",
+      "status": "database-unavailable",
+      "exists": null,
+      "columns": []
+    },
+    {
+      "tableName": "conveyor_runs",
+      "status": "database-unavailable",
+      "exists": null,
+      "columns": []
+    },
+    {
+      "tableName": "conveyor_promotion_accounting",
+      "status": "database-unavailable",
+      "exists": null,
+      "columns": []
+    },
+    {
+      "tableName": "promotion_accounting",
+      "status": "database-unavailable",
+      "exists": null,
+      "columns": []
+    }
+  ],
+  "gateMap": [
+    {
+      "sourceTable": "public.live_signals",
+      "gateTable": "public.sunam_gate_log",
+      "validationTable": "public.sunam_thresholds",
+      "outputTable": "public.detected_signals",
+      "rejectedOrReviewTable": "public.extraction_staging",
+      "runtimeConsumer": "Sunam gate routers, signal intelligence, trend/reform/policy engines",
+      "existingCodeOwner": "server/sunam-gate.ts + server/ingestion/signal-detector.ts",
+      "path": "live_signals -> Sunam gate -> detected_signals or extraction_staging"
+    },
+    {
+      "sourceTable": "public.registry_entity_extraction_v4",
+      "gateTable": "public.promotion_validation_log",
+      "validationTable": "server/routes/conveyor-router.ts lane validation rules",
+      "outputTable": "canonical lane tables after conveyor promote",
+      "rejectedOrReviewTable": "promotion_validation_log failed rows / V4 rows remaining unpromoted",
+      "runtimeConsumer": "Conveyor API /api/conveyor dry-run, promote, bridge, run",
+      "existingCodeOwner": "server/routes/conveyor-router.ts",
+      "path": "registry_entity_extraction_v4 -> conveyor validation -> canonical tables -> Atlas bridge through conveyor bridge endpoints"
+    },
+    {
+      "sourceTable": "public.corpus_import_queue",
+      "gateTable": "adapter output only; no independent gate",
+      "validationTable": "existing Sunam thresholds or conveyor lane rules after candidate creation",
+      "outputTable": "public.live_signals or public.registry_entity_extraction_v4 candidate rows only",
+      "rejectedOrReviewTable": "public.extraction_staging for review/staged signals where represented; otherwise remain queued with review classification",
+      "runtimeConsumer": "This dry-run routing report; future adapter should feed existing pre-promotion tables",
+      "existingCodeOwner": "scripts/route-corpus-queue-through-existing-gates.mjs",
+      "path": "corpus_import_queue -> extraction/normalization adapter -> existing Sunam/conveyor inputs"
+    }
+  ],
+  "databaseStatus": "DATABASE_URL is not configured; database audit sections will be marked unavailable.",
+  "summary": {
+    "queuedRowCount": 0,
+    "bucketCount": 0,
+    "filesByExtension": {},
+    "filesByTargetHint": {},
+    "rowsRequiringParser": 0,
+    "rowsEligibleForRegistryEntityExtractionV4": 0,
+    "rowsEligibleForLiveSignalsSunam": 0,
+    "rowsBlocked": 0,
+    "rowsAlreadyProcessed": 0,
+    "rowsRequiringManualReview": 0,
+    "rowsByDestination": {},
+    "rowsByParser": {}
+  },
+  "rowGroups": [],
+  "rows": [],
+  "parserGaps": [],
+  "proposedNextAdapter": "Implement write mode that normalizes corpus_import_queue rows into existing pre-promotion inputs only: live_signals for Sunam candidates and registry_entity_extraction_v4 for conveyor candidates. Keep canonical promotion inside Sunam/conveyor.",
+  "message": "DATABASE_URL is not configured; database audit sections will be marked unavailable."
+}

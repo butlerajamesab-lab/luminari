@@ -162,11 +162,11 @@ export async function registerPatternOccurrence(params: {
         lastSeenAt: now,
         occurrenceCount: sql`${patterns.occurrenceCount} + 1`,
       })
-      .where(eq(patterns.id, patternId));
+      .where(eq(patterns.id, patternId as any));
   } else {
     isNewPattern = true;
     const [inserted] = await db.insert(patterns).values({
-      patternTypeId,
+      patternType: params.patternType,
       signature,
       description: params.description,
       firstSeenAt: now,
@@ -202,7 +202,7 @@ export async function registerPatternOccurrence(params: {
           .set({
             occurrenceCount: sql`GREATEST(${patterns.occurrenceCount} - 1, 1)`,
           })
-          .where(eq(patterns.id, patternId));
+          .where(eq(patterns.id, patternId as any));
       }
     } else {
       throw err;
@@ -237,7 +237,7 @@ export async function detectEntityRecurrence(
     caseId: entities.caseId,
   })
     .from(entities)
-    .where(inArray(entities.id, entityIds));
+    .where(inArray(entities.id, entityIds as any));
 
   let detected = 0;
   let registered = 0;
@@ -465,7 +465,7 @@ export async function detectAgencyBehaviorPattern(
   // Check for overdue responses (agency non-compliance)
   const now = Date.now();
   const overdueRequests = caseRequests.filter(
-    r => r.responseDueAt && r.responseDueAt < now && !r.responseReceivedAt
+    (r: any) => r.responseDueAt && r.responseDueAt < now && !r.responseReceivedAt
       && !["records_produced", "closed"].includes(r.status)
   );
 
@@ -531,7 +531,7 @@ export async function detectDenialLanguagePattern(
     reasonTextVerbatim: cdaDenialReasons.reasonTextVerbatim,
   })
     .from(cdaDenialReasons)
-    .where(eq(cdaDenialReasons.runId, runId));
+    .where(eq(cdaDenialReasons.runId, runId as any));
 
   let detected = 0;
   let registered = 0;
@@ -672,8 +672,8 @@ export async function getPatternsForCase(caseId: number): Promise<{
     lastSeenAt: patterns.lastSeenAt,
   })
     .from(patternOccurrences)
-    .innerJoin(patterns, eq(patternOccurrences.patternId, patterns.id))
-    .innerJoin(patternTypes, eq(patterns.patternTypeId, patternTypes.id))
+    .innerJoin(patterns, eq(patternOccurrences.patternId as any, patterns.id))
+    .innerJoin(patternTypes, eq(patterns.patternType, patternTypes.patternType))
     .where(eq(patternOccurrences.caseId, caseId))
     .orderBy(desc(patterns.occurrenceCount));
 
@@ -745,7 +745,7 @@ export async function getCasesForPattern(patternId: number): Promise<{
     .groupBy(patternOccurrences.caseId, cases.name, cases.pipelineType)
     .orderBy(desc(count(patternOccurrences.id)));
 
-  return rows.map(r => ({
+  return rows.map((r: any) => ({
     caseId: r.caseId,
     caseName: r.caseName,
     pipelineType: r.pipelineType,
@@ -777,15 +777,15 @@ export async function getPatternSummary(userId: number): Promise<{
     lastSeenAt: patterns.lastSeenAt,
   })
     .from(patterns)
-    .innerJoin(patternTypes, eq(patterns.patternTypeId, patternTypes.id))
-    .innerJoin(patternOccurrences, eq(patternOccurrences.patternId, patterns.id))
-    .innerJoin(cases, eq(patternOccurrences.caseId, cases.id))
-    .where(eq(cases.userId, userId))
+    .innerJoin(patternTypes, eq(patterns.patternType, patternTypes.patternType))
+    .innerJoin(patternOccurrences, eq(patternOccurrences.patternId as any, patterns.id))
+    .innerJoin(cases, eq(patternOccurrences.caseId as any, cases.id))
+    .where(eq(cases.userId, userId as any))
     .groupBy(patterns.id, patternTypes.patternType, patterns.description,
       patterns.occurrenceCount, patterns.firstSeenAt, patterns.lastSeenAt)
     .orderBy(desc(patterns.occurrenceCount));
 
-  return rows.map(r => ({
+  return rows.map((r: any) => ({
     patternId: r.patternId,
     patternType: r.patternType,
     description: r.description,
@@ -809,7 +809,7 @@ export async function getPatternCountForCase(caseId: number): Promise<{
   })
     .from(patternOccurrences)
     .innerJoin(patterns, eq(patternOccurrences.patternId, patterns.id))
-    .innerJoin(patternTypes, eq(patterns.patternTypeId, patternTypes.id))
+    .innerJoin(patternTypes, eq(patterns.patternType, patternTypes.patternType))
     .where(eq(patternOccurrences.caseId, caseId))
     .groupBy(patternTypes.patternType);
 
@@ -866,10 +866,10 @@ export async function getPatternTrendData(userId: number): Promise<{
     occCount: count(patternOccurrences.id),
   })
     .from(patternOccurrences)
-    .innerJoin(patterns, eq(patternOccurrences.patternId, patterns.id))
-    .innerJoin(patternTypes, eq(patterns.patternTypeId, patternTypes.id))
-    .innerJoin(cases, eq(patternOccurrences.caseId, cases.id))
-    .where(eq(cases.userId, userId))
+    .innerJoin(patterns, eq(patternOccurrences.patternId as any, patterns.id))
+    .innerJoin(patternTypes, eq(patterns.patternType, patternTypes.patternType))
+    .innerJoin(cases, eq(patternOccurrences.caseId as any, cases.id))
+    .where(eq(cases.userId, userId as any))
     .groupBy(
       patternTypes.patternType,
       sql`DATE(FROM_UNIXTIME(${patternOccurrences.createdAt} / 1000))`

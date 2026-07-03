@@ -11,12 +11,15 @@ import { systemVisibilityRouter } from "../routes/system-visibility-router";
 import { conveyorRouter } from "../routes/conveyor-router";
 import { civicMapRouter } from "../routes/civic-map-router";
 import { atlasProxyRouter } from "../routes/atlas-proxy-router";
+import { ingestion_control_rest_router } from "../routes/ingestion_control_router";
+import { docket_router } from "../routes/docket";
 import { registerExecutorRoutes } from "../executor-routes";
 import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";
 import { serveStatic, setupVite } from "./vite";
+import { livenessPayload, sendDatabaseDiagnostic, SUPABASE_PROJECT } from "./health-diagnostics";
 
-const SUPABASE_PROJECT = "wepxlinwbjrkqdzkqpar";
+
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -103,7 +106,16 @@ async function startServer() {
   );
 
   app.get("/api/health", (_req, res) => {
-    res.json({ ok: true, supabaseProject: SUPABASE_PROJECT });
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.json(livenessPayload());
+  });
+
+  app.get("/api/db-diagnostic", async (_req, res) => {
+    await sendDatabaseDiagnostic(res);
+  });
+
+  app.get("/api/system/health", async (_req, res) => {
+    await sendDatabaseDiagnostic(res);
   });
 
   // AI inspection routes — MUST be mounted before Vite/static serving
@@ -116,6 +128,10 @@ async function startServer() {
   app.use("/api/civic-map", civicMapRouter);
   // Atlas API proxy — same-origin bridge to the Atlas service
   app.use("/api/atlas", atlasProxyRouter);
+  // Ingestion Control API — server-side queue visibility, before static fallback
+  app.use("/api/ingestion-control", ingestion_control_rest_router);
+  // Docket Room API — LegiScan-backed state bill cache
+  app.use("/api/docket", docket_router);
   // Sovereign Control executor API — must be mounted before Vite/static fallback
   registerExecutorRoutes(app);
 

@@ -35,10 +35,10 @@ async function selectEntities(
   if (entityIdFilter && entityIdFilter.length > 0) {
     return txOrDb.select({ id: entities.id, name: entities.name, type: entities.type })
       .from(entities)
-      .where(and(eq(entities.caseId, caseId), inArray(entities.id, entityIdFilter)));
+      .where(and(eq(entities.caseId, String(caseId)), inArray(entities.id, entityIdFilter.map(String))));
   }
   return txOrDb.select({ id: entities.id, name: entities.name, type: entities.type })
-    .from(entities).where(eq(entities.caseId, caseId));
+    .from(entities).where(eq(entities.caseId, String(caseId)));
 }
 
 async function countDependents(txOrDb: typeof db, caseId: number, entityIds: number[]) {
@@ -70,26 +70,26 @@ async function countDependents(txOrDb: typeof db, caseId: number, entityIds: num
   }
 
   const [qCount] = await txOrDb.select({ c: sql<number>`COUNT(*)` })
-    .from(quotes).where(eq(quotes.caseId, caseId));
+    .from(quotes).where(eq(quotes.caseId, String(caseId)));
   const [clCount] = await txOrDb.select({ c: sql<number>`COUNT(*)` })
-    .from(claims).where(eq(claims.caseId, caseId));
+    .from(claims).where(eq(claims.caseId, String(caseId)));
   const [evCount] = await txOrDb.select({ c: sql<number>`COUNT(*)` })
-    .from(events).where(eq(events.caseId, caseId));
+    .from(events).where(eq(events.caseId, String(caseId)));
   const [flCount] = await txOrDb.select({ c: sql<number>`COUNT(*)` })
     .from(signalFlags).where(eq(signalFlags.caseId, caseId));
   const [fiCount] = await txOrDb.select({ c: sql<number>`COUNT(*)` })
-    .from(findings).where(eq(findings.caseId, caseId));
+    .from(findings).where(eq(findings.caseId, String(caseId)));
   const [corrCount] = await txOrDb.select({ c: sql<number>`COUNT(*)` })
     .from(documentCorrelations).where(eq(documentCorrelations.caseId, caseId));
 
   return {
-    entityRoles: erCount,
+    entity_roles: erCount,
     relationships: relIds.length,
-    relationshipEvidence: reCount,
+    relationship_evidence: reCount,
     quotes: qCount.c,
     claims: clCount.c,
     events: evCount.c,
-    signalFlags: flCount.c,
+    signal_flags: flCount.c,
     findings: fiCount.c,
     correlations: corrCount.c,
     _relIds: relIds, // internal: used by execute path
@@ -100,7 +100,7 @@ async function countDependents(txOrDb: typeof db, caseId: number, entityIds: num
 const findOrphans = adminProcedure.query(async ({ ctx }) => {
   const userCases = await db.select({ id: cases.id, name: cases.name })
     .from(cases)
-    .where(eq(cases.userId, ctx.user.id));
+    .where(eq(cases.userId, String(ctx.user.id)));
 
   const orphanDetails: {
     caseId: number;
@@ -119,7 +119,7 @@ const findOrphans = adminProcedure.query(async ({ ctx }) => {
 
     if (entCount.c > 0 && docCount.c === 0) {
       const ents = await selectEntities(db, c.id);
-      const entityIds = ents.map(e => e.id);
+      const entityIds = ents.map((e: any) => e.id);
       const deps = await countDependents(db, c.id, entityIds);
       const { _relIds, ...dependentCounts } = deps;
 
@@ -135,7 +135,7 @@ const findOrphans = adminProcedure.query(async ({ ctx }) => {
   }
 
   return {
-    mismatchedCases: orphanDetails.length,
+    mismatched_cases: orphanDetails.length,
     orphanDetails,
   };
 });
@@ -153,11 +153,11 @@ const moveEntities = adminProcedure
 
     // Validate both cases exist and are owned by this user
     const [sourceCase] = await db.select({ id: cases.id, name: cases.name })
-      .from(cases).where(and(eq(cases.id, sourceCaseId), eq(cases.userId, ctx.user.id)));
+      .from(cases).where(and(eq(cases.id, String(sourceCaseId)), eq(cases.userId, String(ctx.user.id))));
     if (!sourceCase) throw new Error("Source case not found or not owned by you");
 
     const [targetCase] = await db.select({ id: cases.id, name: cases.name })
-      .from(cases).where(and(eq(cases.id, targetCaseId), eq(cases.userId, ctx.user.id)));
+      .from(cases).where(and(eq(cases.id, String(targetCaseId)), eq(cases.userId, String(ctx.user.id))));
     if (!targetCase) throw new Error("Target case not found or not owned by you");
 
     if (sourceCaseId === targetCaseId) throw new Error("Source and target case must be different");
@@ -166,26 +166,26 @@ const moveEntities = adminProcedure
     const entitiesToMove = await selectEntities(db, sourceCaseId, input.entityIds);
 
     if (entitiesToMove.length === 0) {
-      return { dryRun, moved: 0, entities: [], dependentMoves: {}, sourceCaseName: sourceCase.name, targetCaseName: targetCase.name };
+      return { dryRun, moved: 0, entities: [], dependent_moves: {}, source_case_name: sourceCase.name, target_case_name: targetCase.name };
     }
 
-    const entityIds = entitiesToMove.map(e => e.id);
+    const entityIds = entitiesToMove.map((e: any) => e.id);
     const deps = await countDependents(db, sourceCaseId, entityIds);
     const { _relIds: relIds, ...dependentMoves } = deps;
 
     if (dryRun) {
       return {
-        dryRun: true,
+        dry_run: true,
         moved: entitiesToMove.length,
         entities: entitiesToMove,
-        sourceCaseName: sourceCase.name,
-        targetCaseName: targetCase.name,
+        source_case_name: sourceCase.name,
+        target_case_name: targetCase.name,
         dependentMoves,
       };
     }
 
     // ── Execute move inside transaction ──
-    await db.transaction(async (tx) => {
+    await db.transaction(async (tx: any) => {
       // 1. Move entities
       await tx.update(entities).set({ caseId: targetCaseId })
         .where(inArray(entities.id, entityIds));
@@ -198,24 +198,24 @@ const moveEntities = adminProcedure
 
       // 3. Move case-level data
       if (dependentMoves.quotes > 0) {
-        await tx.update(quotes).set({ caseId: targetCaseId })
-          .where(eq(quotes.caseId, sourceCaseId));
+        await tx.update(quotes).set({ caseId: String(targetCaseId) })
+          .where(eq(quotes.caseId, String(sourceCaseId)));
       }
       if (dependentMoves.claims > 0) {
-        await tx.update(claims).set({ caseId: targetCaseId })
-          .where(eq(claims.caseId, sourceCaseId));
+        await tx.update(claims).set({ caseId: String(targetCaseId) })
+          .where(eq(claims.caseId, String(sourceCaseId)));
       }
       if (dependentMoves.events > 0) {
-        await tx.update(events).set({ caseId: targetCaseId })
-          .where(eq(events.caseId, sourceCaseId));
+        await tx.update(events).set({ caseId: String(targetCaseId) })
+          .where(eq(events.caseId, String(sourceCaseId)));
       }
-      if (dependentMoves.signalFlags > 0) {
+      if (dependentMoves.signal_flags > 0) {
         await tx.update(signalFlags).set({ caseId: targetCaseId })
           .where(eq(signalFlags.caseId, sourceCaseId));
       }
       if (dependentMoves.findings > 0) {
-        await tx.update(findings).set({ caseId: targetCaseId })
-          .where(eq(findings.caseId, sourceCaseId));
+        await tx.update(findings).set({ caseId: String(targetCaseId) })
+          .where(eq(findings.caseId, String(sourceCaseId)));
       }
       if (dependentMoves.correlations > 0) {
         await tx.update(documentCorrelations).set({ caseId: targetCaseId })
@@ -242,11 +242,11 @@ const moveEntities = adminProcedure
     });
 
     return {
-      dryRun: false,
+      dry_run: false,
       moved: entitiesToMove.length,
       entities: entitiesToMove,
-      sourceCaseName: sourceCase.name,
-      targetCaseName: targetCase.name,
+      source_case_name: sourceCase.name,
+      target_case_name: targetCase.name,
       dependentMoves,
     };
   });
@@ -263,12 +263,12 @@ const purgeEntities = adminProcedure
 
     // Validate case exists and is owned by user
     const [caseRow] = await db.select({ id: cases.id, name: cases.name })
-      .from(cases).where(and(eq(cases.id, caseId), eq(cases.userId, ctx.user.id)));
+      .from(cases).where(and(eq(cases.id, String(caseId)), eq(cases.userId, String(ctx.user.id))));
     if (!caseRow) throw new Error("Case not found or not owned by you");
 
     // Purge guardrail: doc_count must be 0
     const [docCount] = await db.select({ c: sql<number>`COUNT(*)` })
-      .from(documents).where(eq(documents.caseId, caseId));
+      .from(documents).where(eq(documents.caseId, String(caseId)));
     if (docCount.c > 0) {
       throw new Error(`Cannot purge: case has ${docCount.c} documents. Purge is only allowed on cases with 0 documents.`);
     }
@@ -277,25 +277,25 @@ const purgeEntities = adminProcedure
     const entitiesToPurge = await selectEntities(db, caseId, input.entityIds);
 
     if (entitiesToPurge.length === 0) {
-      return { dryRun, purged: 0, entities: [], dependentDeletes: {}, caseName: caseRow.name };
+      return { dryRun, purged: 0, entities: [], dependent_deletes: {}, case_name: caseRow.name };
     }
 
-    const entityIds = entitiesToPurge.map(e => e.id);
+    const entityIds = entitiesToPurge.map((e: any) => e.id);
     const deps = await countDependents(db, caseId, entityIds);
     const { _relIds: relIds, ...dependentDeletes } = deps;
 
     if (dryRun) {
       return {
-        dryRun: true,
+        dry_run: true,
         purged: entitiesToPurge.length,
         entities: entitiesToPurge,
-        caseName: caseRow.name,
+        case_name: caseRow.name,
         dependentDeletes,
       };
     }
 
     // ── Execute purge inside transaction (leaf → root) ──
-    await db.transaction(async (tx) => {
+    await db.transaction(async (tx: any) => {
       // 1. Relationship evidence (leaf)
       if (relIds.length > 0) {
         await tx.delete(relationshipEvidence).where(inArray(relationshipEvidence.relationshipId, relIds));
@@ -309,15 +309,15 @@ const purgeEntities = adminProcedure
       // 4. Signal flags
       await tx.delete(signalFlags).where(eq(signalFlags.caseId, caseId));
       // 5. Claims
-      await tx.delete(claims).where(eq(claims.caseId, caseId));
+      await tx.delete(claims).where(eq(claims.caseId, String(caseId)));
       // 6. Findings
-      await tx.delete(findings).where(eq(findings.caseId, caseId));
+      await tx.delete(findings).where(eq(findings.caseId, String(caseId)));
       // 7. Events
-      await tx.delete(events).where(eq(events.caseId, caseId));
+      await tx.delete(events).where(eq(events.caseId, String(caseId)));
       // 8. Correlations
       await tx.delete(documentCorrelations).where(eq(documentCorrelations.caseId, caseId));
       // 9. Quotes
-      await tx.delete(quotes).where(eq(quotes.caseId, caseId));
+      await tx.delete(quotes).where(eq(quotes.caseId, String(caseId)));
       // 10. Entities (root)
       await tx.delete(entities).where(inArray(entities.id, entityIds));
     });
@@ -339,10 +339,10 @@ const purgeEntities = adminProcedure
     });
 
     return {
-      dryRun: false,
+      dry_run: false,
       purged: entitiesToPurge.length,
       entities: entitiesToPurge,
-      caseName: caseRow.name,
+      case_name: caseRow.name,
       dependentDeletes,
     };
   });

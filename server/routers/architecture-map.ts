@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
-import { db } from "../db";
+import { db, getPool } from "../db";
 import { desc, eq, sql, like, count } from "drizzle-orm";
 import {
   proofFrameworks,
@@ -36,6 +36,17 @@ import {
   liveSignals,
   registryWorkflows,
 } from "../../drizzle/schema";
+
+async function count_public_table(table_name: string): Promise<number> {
+  const allowed = new Set(["contacts"]);
+  if (!allowed.has(table_name)) return 0;
+  try {
+    const result = await getPool().query(`select count(*)::int as c from public.${table_name}`);
+    return Number(result.rows[0]?.c ?? 0);
+  } catch {
+    return 0;
+  }
+}
 
 export const architectureMapRouter = router({
   // ═══════════════════════════════════════════════════
@@ -138,10 +149,10 @@ export const architectureMapRouter = router({
       return {
         ready: true,
         template,
-        requiredFieldCount: (template.requiredFields as string[]).length,
-        requiredEvidenceCount: (template.requiredEvidence as string[]).length,
+        required_field_count: (template.requiredFields as string[]).length,
+        required_evidence_count: (template.requiredEvidence as string[]).length,
         deadline: template.filingDeadline,
-        submissionMethods: template.submissionMethods,
+        submission_methods: template.submissionMethods,
       };
     }),
 
@@ -149,7 +160,8 @@ export const architectureMapRouter = router({
   // ARCHITECTURE MAP — SYSTEM OVERVIEW
   // ═══════════════════════════════════════════════════
   getArchitectureOverview: publicProcedure.query(async () => {
-    // Count records in every library table to build the architecture map
+    // Count records in every configured seed/library table to build the architecture map.
+    // These counts measure seed coverage, not national corpus completion.
     const [
       statuteCount,
       caseLawCount,
@@ -182,6 +194,7 @@ export const architectureMapRouter = router({
       registrySignalCount,
       liveSignalCount,
       registryWorkflowCount,
+      contactCount,
     ] = await Promise.all([
       db.select({ c: count() }).from(legalStatutes).then((r: any[]) => r[0]?.c ?? 0),
       db.select({ c: count() }).from(legalCaseLaw).then((r: any[]) => r[0]?.c ?? 0),
@@ -214,6 +227,7 @@ export const architectureMapRouter = router({
       db.select({ c: count() }).from(registrySignals).then((r: any[]) => r[0]?.c ?? 0),
       db.select({ c: count() }).from(liveSignals).then((r: any[]) => r[0]?.c ?? 0),
       db.select({ c: count() }).from(registryWorkflows).then((r: any[]) => r[0]?.c ?? 0),
+      count_public_table("contacts"),
     ]);
 
     // Build the 8-layer architecture
@@ -274,18 +288,19 @@ export const architectureMapRouter = router({
       {
         id: "enforcement",
         name: "Agency Enforcement",
-        description: "Agency authority, enforcement pathways, forms, penalties, viability rules, and interagency referrals.",
+        description: "Agency authority, enforcement pathways, canonical contact infrastructure, forms, penalties, viability rules, and interagency referrals.",
         order: 5,
         tables: [
           { name: "agency_authority_map", label: "Agency Authority", count: agencyAuthCount },
+          { name: "contacts", label: "Canonical Contacts", count: contactCount },
           { name: "agency_forms", label: "Agency Forms", count: agencyFormCount },
           { name: "enforcement_penalties", label: "Penalties", count: penaltyCount },
           { name: "enforcement_viability_rules", label: "Viability Rules", count: viabilityCount },
           { name: "interagency_referrals", label: "Referrals", count: interagencyCount },
           { name: "legal_enforcement_records", label: "Enforcement Records", count: enforcementRecordCount },
         ],
-        totalRecords: agencyAuthCount + agencyFormCount + penaltyCount + viabilityCount + interagencyCount + enforcementRecordCount,
-        status: (agencyAuthCount + agencyFormCount) > 0 ? "populated" : "empty",
+        totalRecords: agencyAuthCount + contactCount + agencyFormCount + penaltyCount + viabilityCount + interagencyCount + enforcementRecordCount,
+        status: (agencyAuthCount + agencyFormCount + contactCount) > 0 ? "populated" : "empty",
         color: "#f59e0b",
       },
       {
@@ -339,7 +354,6 @@ export const architectureMapRouter = router({
       },
     ];
 
-    // Cross-layer connections
     const connections = [
       { from: "statutes", to: "case_law", label: "Statutes interpreted by case law", strength: Math.min(statuteCount, caseLawCount) },
       { from: "case_law", to: "claim_elements", label: "Case law defines claim elements", strength: Math.min(caseLawCount, claimElementCount) },
@@ -349,7 +363,6 @@ export const architectureMapRouter = router({
       { from: "regulatory", to: "investigation", label: "Guidance shapes investigation approach", strength: Math.min(guidanceCount, investigationGuidanceCount) },
       { from: "investigation", to: "intelligence", label: "Investigation feeds signal detection", strength: Math.min(investigationGuidanceCount, signalCount) },
       { from: "intelligence", to: "statutes", label: "Signals trigger statutory analysis (feedback loop)", strength: Math.min(signalCount, statuteCount) },
-      // Cross-connections
       { from: "statutes", to: "enforcement", label: "Statutes define agency authority", strength: Math.min(statuteCount, agencyAuthCount) },
       { from: "case_law", to: "proof_frameworks", label: "Precedent establishes proof standards", strength: Math.min(caseLawCount, proofFrameworkCount) },
       { from: "claim_elements", to: "investigation", label: "Elements drive investigation focus", strength: Math.min(claimElementCount, investigationGuidanceCount) },
@@ -359,6 +372,7 @@ export const architectureMapRouter = router({
     const totalRecords = layers.reduce((sum, l) => sum + l.totalRecords, 0);
     const totalTables = layers.reduce((sum, l) => sum + l.tables.length, 0);
     const populatedLayers = layers.filter(l => l.status === "populated").length;
+    const seedCoveragePercent = Math.round((populatedLayers / layers.length) * 100);
 
     return {
       layers,
@@ -366,9 +380,12 @@ export const architectureMapRouter = router({
       summary: {
         totalRecords,
         totalTables,
-        totalLayers: layers.length,
+        total_layers: layers.length,
         populatedLayers,
-        completionPercent: Math.round((populatedLayers / layers.length) * 100),
+        seedCoveragePercent,
+        completion_percent: seedCoveragePercent,
+        completion_label: "Seed coverage",
+        completion_caveat: "Configured seed-layer coverage only. Not national/full-corpus completion.",
       },
     };
   }),

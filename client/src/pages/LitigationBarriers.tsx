@@ -86,7 +86,7 @@ export default function LitigationBarriers() {
   const filtered = useMemo(() => {
     if (!barriers) return [];
     let result = barriers;
-    if (filterType) result = result.filter(b => b.barrierType === filterType);
+    if (filterType) result = result.filter(b => b.barrier_type === filterType);
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(b =>
@@ -103,8 +103,8 @@ export default function LitigationBarriers() {
   const grouped = useMemo(() => {
     const groups: Record<string, typeof filtered> = {};
     for (const b of filtered) {
-      if (!groups[b.barrierType]) groups[b.barrierType] = [];
-      groups[b.barrierType].push(b);
+      if (!groups[b.barrier_type]) groups[b.barrier_type] = [];
+      groups[b.barrier_type].push(b);
     }
     return groups;
   }, [filtered]);
@@ -141,7 +141,7 @@ export default function LitigationBarriers() {
       {/* Stats */}
       <div style={{ display: "flex", gap: 16, marginBottom: 20, flexWrap: "wrap" }}>
         {Object.entries(BARRIER_TYPE_META).map(([type, meta]) => {
-          const count = barriers?.filter(b => b.barrierType === type).length ?? 0;
+          const count = barriers?.filter(b => b.barrier_type === type).length ?? 0;
           if (count === 0) return null;
           return (
             <button
@@ -230,13 +230,13 @@ export default function LitigationBarriers() {
                         <ChevronRight size={16} style={{ color: c.muted, flexShrink: 0 }} />
                       )}
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        {(b as any).barrierId && (
+                        {(b as any).barrier_id && (
                           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                             <span style={{
                               color: meta.color, fontSize: 10, fontFamily: fontMono,
                               background: meta.color + "15", padding: "1px 6px", borderRadius: 4,
                             }}>
-                              {(b as any).barrierId}
+                              {(b as any).barrier_id}
                             </span>
                           </div>
                         )}
@@ -275,7 +275,7 @@ export default function LitigationBarriers() {
                         )}
 
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                          {b.leadingAuthorities && (b.leadingAuthorities as string[]).length > 0 && (
+                          {b.leading_authorities && (b.leading_authorities as string[]).length > 0 && (
                           <div style={{
                               background: c.purpleBg, border: `1px solid ${c.purpleBorder}`,
                               borderRadius: 8, padding: 12,
@@ -284,14 +284,14 @@ export default function LitigationBarriers() {
                                 Leading Authorities
                               </span>
                               <ul style={{ margin: "6px 0 0 0", padding: "0 0 0 16px" }}>
-                                {(b.leadingAuthorities as string[]).map((a, i) => (
+                                {(b.leading_authorities as string[]).map((a, i) => (
                                   <li key={i} style={{ color: c.paper, fontSize: 12, lineHeight: 1.6 }}>{a}</li>
                                 ))}
                               </ul>
                             </div>
                           )}
 
-                          {b.whatItBlocks && (
+                          {b.what_it_blocks && (
                             <div style={{
                               background: c.redBg, border: `1px solid ${c.redBorder}`,
                               borderRadius: 8, padding: 12,
@@ -300,19 +300,19 @@ export default function LitigationBarriers() {
                                 What It Blocks
                               </span>
                               <p style={{ color: c.paper, fontSize: 12, margin: "6px 0 0 0", lineHeight: 1.5 }}>
-                                {b.whatItBlocks}
+                                {b.what_it_blocks}
                               </p>
                             </div>
                           )}
                         </div>
 
-                        {b.possibleWorkarounds && (b.possibleWorkarounds as string[]).length > 0 && (
+                        {b.possible_workarounds && (b.possible_workarounds as string[]).length > 0 && (
                           <div style={{ marginTop: 12 }}>
                             <span style={{ color: c.green, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>
                               Possible Workarounds
                             </span>
                             <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
-                              {(b.possibleWorkarounds as string[]).map((w, i) => (
+                              {(b.possible_workarounds as string[]).map((w, i) => (
                                 <div key={i} style={{
                                   display: "flex", alignItems: "flex-start", gap: 8,
                                   background: "rgba(52,211,153,0.04)", borderRadius: 6, padding: "6px 10px",
@@ -325,13 +325,13 @@ export default function LitigationBarriers() {
                           </div>
                         )}
 
-                        {b.linkedWeakJoints && (b.linkedWeakJoints as string[]).length > 0 && (
+                        {b.linked_weak_joints && (b.linked_weak_joints as string[]).length > 0 && (
                           <div style={{ marginTop: 12 }}>
                             <span style={{ color: c.muted, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>
                               Linked Weak Joints
                             </span>
                             <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}>
-                              {(b.linkedWeakJoints as string[]).map((d, i) => (
+                              {(b.linked_weak_joints as string[]).map((d, i) => (
                                 <span key={i} style={{
                                   background: c.purpleBg, border: `1px solid ${c.purpleBorder}`,
                                   borderRadius: 4, padding: "2px 8px", fontSize: 11, color: c.purple,

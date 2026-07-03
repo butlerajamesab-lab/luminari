@@ -1,5 +1,5 @@
 // @ts-nocheck — pre-existing type drift, to be resolved in UI type alignment pass
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCase } from "@/contexts/CaseContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -37,6 +37,57 @@ import { StreamUploader } from "@/components/StreamUploader";
 import { CanonicalSpineDashboard } from "@/components/CanonicalSpineDashboard";
 import { FlagQueuePanel } from "@/components/FlagQueuePanel";
 import { FlagButton } from "@/components/FlagButton";
+
+type DatabaseDiagnosticContract = {
+  ok: boolean;
+  database: string;
+  database_url: string;
+  database_version: string | null;
+  public_tables: number | null;
+  db_diagnostic: { tables: { total: number | null }; views: { total: number | null }; foreign_keys: { total: number | null }; errors: Array<{ code: string; message: string }> };
+  supabase_project: string;
+  timestamp: string;
+};
+
+const diagnostic_required_fields = ["database", "database_url", "database_version", "public_tables", "db_diagnostic", "supabase_project", "timestamp"] as const;
+
+function isDatabaseDiagnosticContract(value: unknown): value is DatabaseDiagnosticContract {
+  if (!value || typeof value !== "object") return false;
+  return diagnostic_required_fields.every((field) => field in value);
+}
+
+function useDatabaseDiagnostic() {
+  const [data, setData] = useState<DatabaseDiagnosticContract | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const load = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/db-diagnostic", { cache: "no-store" });
+      const payload = await response.json();
+      if (!isDatabaseDiagnosticContract(payload)) {
+        setError(`diagnostic_contract_mismatch: expected ${diagnostic_required_fields.join(", ")}`);
+        return;
+      }
+      setData(payload);
+      setError(response.ok ? null : payload.error?.message ?? "database_diagnostic_failed");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    const timer = window.setInterval(load, 60000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return { data, error, isLoading, refetch: load };
+}
+
 import { CommitToCase } from "@/components/CommitToCase";
 import { PatternRegistryPanel } from "@/components/mission/PatternRegistryPanel";
 import { StrategyPathsPanel } from "@/components/mission/StrategyPathsPanel";
@@ -183,8 +234,9 @@ function SystemHealthPanel() {
   const { data, isLoading, refetch } = trpc.adminDashboard.systemHealth.useQuery(undefined, {
     refetchInterval: 30000,
   });
+  const diagnostic = useDatabaseDiagnostic();
 
-  if (isLoading) return <PanelSkeleton />;
+  if (isLoading || diagnostic.isLoading) return <PanelSkeleton />;
   if (!data) return <PanelEmpty label="No health data available" />;
 
   return (
@@ -198,6 +250,18 @@ function SystemHealthPanel() {
           <RefreshCw className="h-3 w-3 mr-1" /> Refresh
         </Button>
       </div>
+
+      <Card className="bg-card/50">
+        <CardContent className="pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+            <div><span className="text-muted-foreground">Database</span><div className={diagnostic.data?.database === "connected" ? "text-emerald-400" : "text-red-400"}>{diagnostic.data?.database ?? "unknown"}</div></div>
+            <div><span className="text-muted-foreground">Database URL</span><div>{diagnostic.data?.database_url ?? "unknown"}</div></div>
+            <div><span className="text-muted-foreground">Public tables</span><div>{diagnostic.data?.public_tables ?? "unavailable"}</div></div>
+            <div><span className="text-muted-foreground">Supabase project</span><div className="font-mono text-xs">{diagnostic.data?.supabase_project ?? "unknown"}</div></div>
+          </div>
+          {diagnostic.error && <div className="mt-3 text-xs text-red-300">{diagnostic.error}</div>}
+        </CardContent>
+      </Card>
 
       {/* Server Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -867,12 +931,12 @@ function LegacyRegistryView() {
 /* ── Panel: Live Data Ingestion ── */
 /** Per-dataset row with run status polling to disable Ingest button */
 function DatasetRow({ ds, triggerMutation, toggleMutation }: {
-  ds: { datasetId: string; datasetName: string; enabled: boolean; updateFrequency: string; jurisdiction: string; domain: string; totalRecordsIngested: number; lastIngestedAt: number | null };
+  ds: { stream_id: string; stream_name: string; enabled: boolean; update_frequency: string; jurisdiction: string | null; domain: string | null; records_ingested: number; last_ingested_at: number | null };
   triggerMutation: { mutate: (input: { datasetId: string; maxRecords?: number }) => void; isPending: boolean };
   toggleMutation: { mutate: (input: { datasetId: string; enabled: boolean }) => void };
 }) {
   const runStatus = trpc.ingestion.datasetRunStatus.useQuery(
-    { datasetId: ds.datasetId },
+    { datasetId: ds.stream_id },
     { refetchInterval: 3000 } // Poll every 3s while visible
   );
 
@@ -884,11 +948,11 @@ function DatasetRow({ ds, triggerMutation, toggleMutation }: {
     <div className="rounded-lg border border-border/50 p-4 flex items-center justify-between">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-medium truncate">{ds.datasetName}</span>
+          <span className="font-medium truncate">{ds.stream_name}</span>
           <Badge variant="outline" className={ds.enabled ? "text-emerald-400 border-emerald-400/30" : "text-muted-foreground border-border"}>
             {ds.enabled ? "Active" : "Paused"}
           </Badge>
-          <Badge variant="outline" className="text-cyan-400 border-cyan-400/30">{ds.updateFrequency}</Badge>
+          <Badge variant="outline" className="text-cyan-400 border-cyan-400/30">{ds.update_frequency}</Badge>
           {isRunning && (
             <Badge variant="outline" className="text-amber-400 border-amber-400/30 animate-pulse">
               <Loader2 className="h-3 w-3 animate-spin mr-1" /> Running
@@ -901,17 +965,17 @@ function DatasetRow({ ds, triggerMutation, toggleMutation }: {
           )}
         </div>
         <div className="text-xs text-muted-foreground mt-1 flex items-center gap-3">
-          <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {ds.jurisdiction}</span>
-          <span>{ds.domain}</span>
-          <span>{(ds.totalRecordsIngested ?? 0).toLocaleString()} records</span>
-          {ds.lastIngestedAt && <span>Last: {formatTimeAgo(ds.lastIngestedAt)}</span>}
+          <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {ds.jurisdiction ?? "—"}</span>
+          <span>{ds.domain ?? "—"}</span>
+          <span>{(ds.records_ingested ?? 0).toLocaleString()} records</span>
+          {ds.last_ingested_at && <span>Last: {formatTimeAgo(ds.last_ingested_at)}</span>}
         </div>
       </div>
       <div className="flex items-center gap-2 ml-4">
         <Button
           size="sm"
           variant="outline"
-          onClick={() => triggerMutation.mutate({ datasetId: ds.datasetId, maxRecords: 5000 })}
+          onClick={() => triggerMutation.mutate({ datasetId: ds.stream_id, maxRecords: 5000 })}
           disabled={isBusy}
           title={isRunning ? "Ingestion is running" : isQueued ? "Ingestion is queued" : "Start ingestion"}
         >
@@ -921,7 +985,7 @@ function DatasetRow({ ds, triggerMutation, toggleMutation }: {
         <Button
           size="sm"
           variant="outline"
-          onClick={() => toggleMutation.mutate({ datasetId: ds.datasetId, enabled: !ds.enabled })}
+          onClick={() => toggleMutation.mutate({ datasetId: ds.stream_id, enabled: !ds.enabled })}
         >
           {ds.enabled ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
         </Button>
@@ -931,10 +995,12 @@ function DatasetRow({ ds, triggerMutation, toggleMutation }: {
 }
 
 function IngestionPanel() {
-  const datasets = trpc.ingestion.listDatasets.useQuery();
+  const datasets = trpc.unified.get_unified_ingestion_metrics.useQuery({});
   const runs = trpc.ingestion.listRuns.useQuery({ limit: 10 });
   const signals = trpc.ingestion.listLiveSignals.useQuery({ limit: 20 });
   const signalStats = trpc.ingestion.getLiveSignalStats.useQuery();
+  const signals = trpc.unified.get_unified_signals.useQuery({ limit: 20 });
+  const signalStats = trpc.unified.get_unified_signal_summary.useQuery({});
   const signal_cards = trpc.ingestion.list_signal_intelligence_cards.useQuery({
     limit: 25,
     include_excluded: false,
@@ -1107,6 +1173,7 @@ function IngestionPanel() {
                 <div className="rounded-lg border border-border/50 p-3">
                   <div className="text-xs text-muted-foreground">Active Signals</div>
                   <div className="text-xl font-bold text-amber-400">{signalStats.data?.totalActive ?? 0}</div>
+                  <div className="text-xl font-bold text-amber-400">{signalStats.data?.total_active ?? 0}</div>
                 </div>
                 <div className="rounded-lg border border-border/50 p-3">
                   <div className="text-xs text-muted-foreground">By Severity</div>
@@ -1115,6 +1182,10 @@ function IngestionPanel() {
                       <Badge key={sev} variant="outline" className={severityColor[sev] ?? ""}>{sev}: {String(cnt)}</Badge>
                     ))}
                     {(!signalStats.data?.bySeverity || Object.keys(signalStats.data.bySeverity).length === 0) && (
+                    {signalStats.data?.by_severity && Object.entries(signalStats.data.by_severity).map(([sev, cnt]) => (
+                      <Badge key={sev} variant="outline" className={severityColor[sev] ?? ""}>{sev}: {String(cnt)}</Badge>
+                    ))}
+                    {(!signalStats.data?.by_severity || Object.keys(signalStats.data.by_severity).length === 0) && (
                       <span className="text-xs text-muted-foreground">No signals yet</span>
                     )}
                   </div>
@@ -1144,7 +1215,7 @@ function IngestionPanel() {
             <div className="space-y-3">
               {datasets.data.map((ds) => (
                 <DatasetRow
-                  key={ds.datasetId}
+                  key={ds.stream_id}
                   ds={ds}
                   triggerMutation={triggerMutation}
                   toggleMutation={toggleMutation}
@@ -1190,7 +1261,7 @@ function IngestionPanel() {
                         </Badge>
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        {run.startTime ? new Date(run.startTime).toLocaleString() : "—"} · {run.recordsProcessed ?? 0} processed · {run.signalsGenerated ?? 0} signals
+                        {run.startTime ? new Date(run.startTime).toLocaleString() : "—"} · {run.recordsProcessed ?? 0} processed · {run.signals_generated ?? 0} signals
                       </div>
                     </div>
                   </div>
@@ -1303,8 +1374,8 @@ function IngestionPanel() {
                     status_delay: { label: "Status", icon: "\u23F3", color: "text-orange-400" },
                     trend_anomaly: { label: "Trend", icon: "\u{1F4C8}", color: "text-purple-400" },
                   };
-                  const isRepeatEntity = sig.signalType === "repeat_entity";
-                  const isFrequencySpike = sig.signalType === "frequency_spike";
+                  const isRepeatEntity = sig.signal_type === "repeat_entity";
+                  const isFrequencySpike = sig.signal_type === "frequency_spike";
                   const displayName = isRepeatEntity
                     ? ((sig as any).canonicalEntityName || sig.title.replace(/^Repeat (Company|Agency|Entity):\s*/, "").replace(/^Repeat Entity:\s*/, ""))
                     : sig.title;
@@ -1314,12 +1385,12 @@ function IngestionPanel() {
                   const roleConf = (sig as any).roleConfidence;
                   const aliases = (sig as any).entityAliasesJson as string[] | null;
                   const roleLabel = entRole === "business" || entRole === "respondent" ? "Company" : entRole === "agency" ? "Agency" : entRole === "organization" ? "Organization" : null;
-                  const stConfig = signalTypeConfig[sig.signalType] ?? { label: sig.signalType, icon: "\u26A0\uFE0F", color: "text-gray-400" };
+                  const stConfig = signalTypeConfig[sig.signal_type] ?? { label: sig.signal_type, icon: "\u26A0\uFE0F", color: "text-gray-400" };
 
                   return (
-                    <div key={sig.id} className={`rounded-lg border p-3 ${severityColor[sig.severity] ?? "border-border/50"}`}>
+                    <div key={sig.id} className={`rounded-lg border p-3 ${severityColor[sig.severity_level] ?? "border-border/50"}`}>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className={severityColor[sig.severity] ?? ""}>{sig.severity}</Badge>
+                        <Badge variant="outline" className={severityColor[sig.severity_level] ?? ""}>{sig.severity}</Badge>
                         {/* Signal type badge — always shown */}
                         <Badge variant="outline" className={`text-[10px] ${stConfig.color} border-current/30`}>
                           {stConfig.label}
@@ -1345,7 +1416,7 @@ function IngestionPanel() {
                       <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
                         <span>{sig.jurisdiction}</span>
                         <span>\u00B7</span>
-                        <span>Confidence: {(Number(sig.confidenceScore) * 100).toFixed(0)}%</span>
+                        <span>Confidence: {(Number(sig.confidence_score) * 100).toFixed(0)}%</span>
                         {isRepeatEntity && entConfidence && (
                           <>
                             <span>\u00B7</span>
@@ -1359,7 +1430,7 @@ function IngestionPanel() {
                           </>
                         )}
                         <span>\u00B7</span>
-                        <span>{sig.detectedAt ? new Date(sig.detectedAt).toLocaleDateString() : "—"}</span>
+                        <span>{sig.detected_at ? new Date(sig.detected_at).toLocaleDateString() : "—"}</span>
                       </div>
                     </div>
                   );
@@ -1493,8 +1564,8 @@ function KnowledgeExplorerPanel() {
                           <div className="mt-3 pt-3 border-t border-border/50 space-y-2" onClick={e => e.stopPropagation()}>
                             {r.summary && <p className="text-xs text-foreground/80 leading-relaxed">{r.summary}</p>}
                             {r.effectiveDate && <div className="text-xs text-muted-foreground">Effective: {r.effectiveDate}</div>}
-                            {r.sourceUrl && (
-                              <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer"
+                            {r.source_url && (
+                              <a href={r.source_url} target="_blank" rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:underline">
                                 <ExternalLink className="h-3 w-3" /> View Full Statute
                               </a>
@@ -1552,8 +1623,8 @@ function KnowledgeExplorerPanel() {
                                 <p className="text-xs text-muted-foreground leading-relaxed">{r.subsequentHistory}</p>
                               </div>
                             )}
-                            {r.sourceUrl && (
-                              <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer"
+                            {r.source_url && (
+                              <a href={r.source_url} target="_blank" rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:underline">
                                 <ExternalLink className="h-3 w-3" /> Full Opinion
                               </a>
@@ -1744,8 +1815,8 @@ function KnowledgeExplorerPanel() {
                               {r.maxMultiplier != null && <div><span className="text-muted-foreground">Max: </span><span>{r.maxMultiplier}x</span></div>}
                               {r.confidenceThreshold != null && <div><span className="text-muted-foreground">Confidence: </span><span>{r.confidenceThreshold}%</span></div>}
                             </div>
-                            {r.sourceUrl && (
-                              <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer"
+                            {r.source_url && (
+                              <a href={r.source_url} target="_blank" rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:underline">
                                 <ExternalLink className="h-3 w-3" /> Source
                               </a>
@@ -1887,43 +1958,43 @@ function SignalGovernancePanel() {
           ) : (
             <div className="space-y-2">
               {(dashboard.signals || []).map((sig: any) => (
-                <div key={sig.signalId}
+                <div key={sig.signal_id}
                   className={`p-3 rounded-lg border transition-all cursor-pointer hover:bg-accent/30 ${
-                    selectedSignalId === sig.signalId ? "ring-1 ring-primary bg-accent/20" : "bg-card/50"
+                    selectedSignalId === sig.signal_id ? "ring-1 ring-primary bg-accent/20" : "bg-card/50"
                   }`}
-                  onClick={() => setSelectedSignalId(selectedSignalId === sig.signalId ? null : sig.signalId)}>
+                  onClick={() => setSelectedSignalId(selectedSignalId === sig.signal_id ? null : sig.signal_id)}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium text-sm truncate">{sig.title}</span>
-                        <Badge className={`text-[10px] ${severityColors[sig.severityLevel] || ""}`}>
-                          {sig.severityLevel}
+                        <Badge className={`text-[10px] ${severityColors[sig.severity_level] || ""}`}>
+                          {sig.severity_level}
                         </Badge>
-                        <Badge variant="outline" className={`text-[10px] ${tierColors[sig.escalationTier] || ""}`}>
-                          {(sig.escalationTier || "").replace(/_/g, " ")}
+                        <Badge variant="outline" className={`text-[10px] ${tierColors[sig.escalation_tier] || ""}`}>
+                          {(sig.escalation_tier || "").replace(/_/g, " ")}
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground line-clamp-2">{sig.explanation}</p>
                       <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
-                        <span className="flex items-center gap-1"><Globe className="h-3 w-3" />{sig.datasetId}</span>
-                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{sig.jurisdictionScope}</span>
-                        <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{sig.extractionTimestamp ? new Date(sig.extractionTimestamp).toLocaleString() : ""}</span>
+                        <span className="flex items-center gap-1"><Globe className="h-3 w-3" />{sig.stream_id}</span>
+                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{sig.jurisdiction}</span>
+                        <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{sig.detected_at ? new Date(sig.detected_at).toLocaleString() : ""}</span>
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <div className={`text-lg font-bold ${
-                        sig.confidenceScore >= 85 ? "text-red-400" :
-                        sig.confidenceScore >= 70 ? "text-orange-400" :
-                        sig.confidenceScore >= 51 ? "text-yellow-400" : "text-slate-400"
+                        sig.confidence_score >= 85 ? "text-red-400" :
+                        sig.confidence_score >= 70 ? "text-orange-400" :
+                        sig.confidence_score >= 51 ? "text-yellow-400" : "text-slate-400"
                       }`}>
-                        {sig.confidenceScore}
+                        {sig.confidence_score}
                       </div>
                       <div className="text-[10px] text-muted-foreground">confidence</div>
                     </div>
                   </div>
 
                   {/* Expanded Audit Trail */}
-                  {selectedSignalId === sig.signalId && auditTrail && (
+                  {selectedSignalId === sig.signal_id && auditTrail && (
                     <div className="mt-3 pt-3 border-t border-border/50">
                       <h4 className="text-xs font-semibold mb-2 flex items-center gap-1">
                         <Eye className="h-3 w-3" /> Generation Audit Trail
@@ -4068,8 +4139,8 @@ function RemedyFeasibilityPanel({ onNavigateTo }: { onNavigateTo?: (tab: string)
   /* ── Jurisdiction-Specific Feasibility Card ── */
   function JurisdictionFeasibilityCard() {
     const { currentCaseId } = useCase();
-    const { data: fullData, isLoading: fullLoading } = trpc.caseState.getRemedyFull.useQuery(
-      { caseId: currentCaseId! },
+    const { data: fullData, isLoading: fullLoading } = trpc.case_state.get_remedy_full.useQuery(
+      { case_id: currentCaseId! },
       { enabled: !!currentCaseId }
     );
     if (!currentCaseId) return null;
@@ -4626,7 +4697,7 @@ function HardeningPipelinePanel() {
   const strategies = trpc.remedyFeasibility.strategies.useQuery();
   const ppClaimTypes = trpc.proceduralPathEngine.claimTypes.useQuery();
 
-  const [claimType, setClaimType] = useState("");
+  const [claimType, set_claim_type] = useState("");
   const [jurisdiction, setJurisdiction] = useState("");
   const [strategyType, setStrategyType] = useState("");
   const [evidenceInput, setEvidenceInput] = useState("");
@@ -4728,7 +4799,7 @@ function HardeningPipelinePanel() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="text-sm text-slate-400 block mb-1">Claim Type</label>
-              <select className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm" value={claimType} onChange={e => { setClaimType(e.target.value); setJurisdiction(""); }}>
+              <select className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm" value={claimType} onChange={e => { set_claim_type(e.target.value); setJurisdiction(""); }}>
                 <option value="">Select...</option>
                 {(ecClaimTypes.data || []).map(ct => <option key={ct} value={ct}>{ct.replace(/_/g, " ")}</option>)}
               </select>
@@ -6701,7 +6772,7 @@ function LobbyingPanel() {
           { name: "reportingPeriod", type: "string" },
           { name: "jurisdiction", type: "string" },
           { name: "legislatorsContacted", type: "string" },
-          { name: "sourceUrl", type: "string" },
+          { name: "source_url", type: "string" },
         ]}
         onIngest={(records) => ingestMut.mutateAsync({ records })}
         onSuccess={() => utils.streams.lobbyingStats.invalidate()}
@@ -6797,7 +6868,7 @@ function LitigationPanel() {
           { name: "judge", type: "string" },
           { name: "industry", type: "string" },
           { name: "caseStatus", type: "string" },
-          { name: "sourceUrl", type: "string" },
+          { name: "source_url", type: "string" },
         ]}
         onIngest={(records) => ingestMut.mutateAsync({ records })}
         onSuccess={() => utils.streams.litigationStats.invalidate()}
@@ -6889,7 +6960,7 @@ function AdminDecisionsPanel() {
           { name: "hearingRequested", type: "boolean" },
           { name: "reversal", type: "boolean" },
           { name: "entityOrAgency", type: "string" },
-          { name: "sourceUrl", type: "string" },
+          { name: "source_url", type: "string" },
         ]}
         onIngest={(records) => ingestMut.mutateAsync({ records })}
         onSuccess={() => utils.streams.adminDecisionsStats.invalidate()}
@@ -6957,7 +7028,7 @@ function VerifiedReportsPanel() {
                   <span className="text-muted-foreground">{r.entityNamed || 'Anonymous'}</span>
                   {r.claimType && <span className="text-xs text-muted-foreground/60 ml-1">({r.claimType})</span>}
                 </div>
-                <Badge variant="outline" className="text-xs capitalize">{(r.verificationStatus || 'unverified').replace(/_/g, ' ')}</Badge>
+                <Badge variant="outline" className="text-xs capitalize">{(r.verification_status || 'unverified').replace(/_/g, ' ')}</Badge>
               </div>
             ))}
             {(!recent || recent.length === 0) && <p className="text-xs text-muted-foreground">No reports yet. Users can submit harm reports through the platform.</p>}
@@ -7153,7 +7224,7 @@ function AdvocacyPanel() {
           { name: "estimatedAffectedCount", type: "number" },
           { name: "keyFindings", type: "string" },
           { name: "recommendedActions", type: "string" },
-          { name: "sourceUrl", type: "string" },
+          { name: "source_url", type: "string" },
           { name: "publishDate", type: "string" },
         ]}
         onIngest={(records) => ingestMut.mutateAsync({ records })}
@@ -8663,8 +8734,8 @@ function ExtCollabPanel() {
                       {p.organization ?? '—'} • {p.partnerType} • {p.email ?? 'No email'}
                     </p>
                   </div>
-                  <Badge variant={p.verificationStatus === 'verified' ? 'default' : 'outline'} className="text-xs">
-                    {p.verificationStatus}
+                  <Badge variant={p.verification_status === 'verified' ? 'default' : 'outline'} className="text-xs">
+                    {p.verification_status}
                   </Badge>
                 </div>
               ))}

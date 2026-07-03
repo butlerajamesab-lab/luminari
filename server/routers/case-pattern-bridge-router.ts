@@ -71,7 +71,7 @@ export const casePatternBridgeRouter = router({
         candidateId: input.candidateId,
         status: input.status,
         rationale: input.rationale,
-        actorId: ctx.user.openId,
+        actorId: ctx.user.open_id ?? "",
         actorRole: "admin",
       });
       return { success: true };
@@ -103,7 +103,7 @@ export const casePatternBridgeRouter = router({
         signals: {
           total: signalStats?.totalSignals || 0,
           active: signalStats?.activeSignals || 0,
-          uniqueCases: signalStats?.uniqueCases || 0,
+          unique_cases: signalStats?.uniqueCases || 0,
         },
         candidates: {
           total: candidateStats?.totalCandidates || 0,
@@ -114,7 +114,7 @@ export const casePatternBridgeRouter = router({
         },
         links: {
           total: linkStats?.totalLinks || 0,
-          uniqueCases: linkStats?.uniqueLinkedCases || 0,
+          unique_cases: linkStats?.uniqueLinkedCases || 0,
         },
       };
     }),
@@ -125,7 +125,7 @@ export const casePatternBridgeRouter = router({
       const { cases } = await import("../../drizzle/schema");
       const userCases = await db.select({ id: cases.id })
         .from(cases)
-        .where(eq(cases.userId, ctx.user.id));
+        .where(eq(cases.userId, String(ctx.user.id)));
 
       let totalSignals = 0;
       let totalCandidates = 0;
@@ -145,7 +145,7 @@ export const casePatternBridgeRouter = router({
       }
 
       return {
-        casesProcessed: userCases.length,
+        cases_processed: userCases.length,
         totalSignals,
         totalCandidates,
         totalPromoted,

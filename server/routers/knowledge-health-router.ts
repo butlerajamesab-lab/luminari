@@ -115,13 +115,13 @@ Return a single JSON object. No markdown wrapping. No explanatory text outside t
 
     return {
       prompt,
-      generatedAt: Date.now(),
+      generated_at: Date.now(),
       stats: {
         overallScore,
-        emptyCount: empty.length,
-        staleCount: stale.length,
-        underpopulatedCount: underpopulated.length,
-        tablesNeedingAttention: empty.length + stale.length + underpopulated.length,
+        empty_count: empty.length,
+        stale_count: stale.length,
+        underpopulated_count: underpopulated.length,
+        tables_needing_attention: empty.length + stale.length + underpopulated.length,
       },
     };
   }),

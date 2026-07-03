@@ -51,13 +51,13 @@ export const lighthouseLineageRouter = router({
       if (l.linked_pattern_id && l.linked_trend_id) fullChain++;
     }
     return {
-      totalSignals: lineage.length,
+      total_signals: lineage.length,
       promoted,
       patternLinked,
       trendLinked,
       fullChain,
-      promotionRate: lineage.length > 0 ? Math.round((promoted / lineage.length) * 100) : 0,
-      fullChainRate: promoted > 0 ? Math.round((fullChain / promoted) * 100) : 0,
+      promotion_rate: lineage.length > 0 ? Math.round((promoted / lineage.length) * 100) : 0,
+      full_chain_rate: promoted > 0 ? Math.round((fullChain / promoted) * 100) : 0,
     };
   }),
 });

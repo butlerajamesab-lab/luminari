@@ -8,13 +8,12 @@
  * - View stream health and statistics
  *
  * Runtime note:
- * The live Lighthouse database stores data_stream_registry columns with the
- * canonical *_dsr snake_case/suffixed names. Read paths use explicit SQL aliases
- * so Sovereign Control receives the existing UI shape without requiring
- * destructive database changes or frontend rewrites.
+ * The unified query layer owns data_stream_registry reads and emits one
+ * canonical snake_case shape for Sovereign Control, Mission Control, and Sunam.
  */
 import { db } from "../db";
 import { sql } from "drizzle-orm";
+import { get_unified_ingestion_metrics, get_unified_ingestion_summary } from "../unified-queries";
 
 export const STREAM_TYPES = [
   { id: "government_complaints", label: "Government Complaints", description: "Consumer complaints filed with government agencies" },
@@ -35,138 +34,10 @@ export const UPDATE_FREQUENCIES = [
   { id: "manual", label: "Manual Only" },
 ] as const;
 
-type StreamRow = {
-  id: number;
-  streamId: string;
-  streamName: string;
-  streamType: string | null;
-  sourceUrl: string | null;
-  apiUrl: string | null;
-  updateFrequency: string | null;
-  cronExpression: string | null;
-  signalWeight: number | null;
-  confidenceMultiplier: number | null;
-  enabled: number | boolean | null;
-  fieldMapping: string | null;
-  postProcessingEngineName: string | null;
-  parserMode: string | null;
-  recordsIngested: number | null;
-  signalsGenerated: number | null;
-  lastIngestedAt: string | number | null;
-  lastRunStatus: string | null;
-  lastSuccessAt: string | number | null;
-  lastFailureAt: string | number | null;
-  lastErrorType: string | null;
-  lastErrorMessage: string | null;
-  lastHttpStatus: string | null;
-  failureCount: number | null;
-  consecutiveFailures: number | null;
-  autoDisabled: number | boolean | null;
-  disabledReason: string | null;
-};
+type CanonicalStream = Awaited<ReturnType<typeof get_unified_ingestion_metrics>>[number];
 
-function toBool(value: number | boolean | null | undefined): boolean {
-  return value === true || Number(value) === 1;
-}
-
-function toNumber(value: number | string | null | undefined): number {
-  const n = Number(value ?? 0);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function toTimestamp(value: string | number | null | undefined): number | null {
-  if (value === null || value === undefined || value === "") return null;
-  const numeric = Number(value);
-  if (Number.isFinite(numeric) && numeric > 0) return numeric;
-  const parsed = Date.parse(String(value));
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function normalizeStream(row: StreamRow) {
-  const lastIngestedAt = toTimestamp(row.lastIngestedAt);
-  const enabled = toBool(row.enabled);
-  const autoDisabled = toBool(row.autoDisabled);
-  const recordsIngested = toNumber(row.recordsIngested);
-  const signalsGenerated = toNumber(row.signalsGenerated);
-  const failureCount = toNumber(row.failureCount);
-  const consecutiveFailures = toNumber(row.consecutiveFailures);
-  const signalWeight = toNumber(row.signalWeight) || 100;
-  const confidenceMultiplier = toNumber(row.confidenceMultiplier) || 100;
-
-  return {
-    id: row.id,
-    streamId: row.streamId,
-    streamName: row.streamName,
-    streamType: row.streamType ?? "unknown",
-    sourceUrl: row.sourceUrl,
-    apiUrl: row.apiUrl,
-    updateFrequency: row.updateFrequency ?? "manual",
-    cronExpression: row.cronExpression,
-    signalWeight,
-    confidenceMultiplier,
-    enabled,
-    fieldMapping: row.fieldMapping,
-    postProcessingEngineName: row.postProcessingEngineName,
-    parserMode: row.parserMode,
-    recordsIngested,
-    signalsGenerated,
-    lastIngestedAt,
-    lastRunStatus: row.lastRunStatus,
-    lastSuccessAt: toTimestamp(row.lastSuccessAt),
-    lastFailureAt: toTimestamp(row.lastFailureAt),
-    lastErrorType: row.lastErrorType,
-    lastErrorMessage: row.lastErrorMessage,
-    lastHttpStatus: row.lastHttpStatus,
-    failureCount,
-    consecutiveFailures,
-    autoDisabled,
-    disabledReason: row.disabledReason,
-    linkedDatasetCount: 1,
-    healthStatus: autoDisabled
-      ? "auto_disabled"
-      : enabled
-        ? (lastIngestedAt && Date.now() - lastIngestedAt < 7 * 24 * 60 * 60 * 1000
-          ? "healthy"
-          : "stale")
-        : "disabled",
-  };
-}
-
-async function listCanonicalStreams() {
-  const [rows]: any = await db.execute(sql.raw(`
-    SELECT
-      id,
-      stream_id_dsr as "streamId",
-      stream_name_dsr as "streamName",
-      stream_type_dsr as "streamType",
-      source_url_dsr as "sourceUrl",
-      api_url_dsr as "apiUrl",
-      update_freq_dsr as "updateFrequency",
-      cron_expression_dsr as "cronExpression",
-      signal_weight_dsr as "signalWeight",
-      confidence_multiplier_dsr as "confidenceMultiplier",
-      enabled_dsr as "enabled",
-      field_mapping_dsr as "fieldMapping",
-      post_processing_engine_name_dsr as "postProcessingEngineName",
-      parser_mode_dsr as "parserMode",
-      records_ingested_dsr as "recordsIngested",
-      signals_generated_dsr as "signalsGenerated",
-      last_ingested_at_dsr as "lastIngestedAt",
-      last_run_status_dsr as "lastRunStatus",
-      last_success_at_dsr as "lastSuccessAt",
-      last_failure_at_dsr as "lastFailureAt",
-      last_error_type_dsr as "lastErrorType",
-      last_error_message_dsr as "lastErrorMessage",
-      last_http_status_dsr as "lastHttpStatus",
-      failure_count_dsr as "failureCount",
-      consecutive_failures_dsr as "consecutiveFailures",
-      auto_disabled_dsr as "autoDisabled",
-      disabled_reason_dsr as "disabledReason"
-    FROM data_stream_registry
-    ORDER BY stream_name_dsr
-  `));
-
-  return (rows as StreamRow[]).map(normalizeStream);
+async function listCanonicalStreams(): Promise<CanonicalStream[]> {
+  return get_unified_ingestion_metrics();
 }
 
 /** Get all streams with health stats — includes self-healing columns */
@@ -175,79 +46,43 @@ export async function getStreamsWithHealth() {
 }
 
 /** Get stream detail with recent activity */
-export async function getStreamDetail(streamId: string) {
-  const escapedStreamId = streamId.replace(/'/g, "''");
-  const [rows]: any = await db.execute(sql.raw(`
-    SELECT
-      id,
-      stream_id_dsr as "streamId",
-      stream_name_dsr as "streamName",
-      stream_type_dsr as "streamType",
-      source_url_dsr as "sourceUrl",
-      api_url_dsr as "apiUrl",
-      update_freq_dsr as "updateFrequency",
-      cron_expression_dsr as "cronExpression",
-      signal_weight_dsr as "signalWeight",
-      confidence_multiplier_dsr as "confidenceMultiplier",
-      enabled_dsr as "enabled",
-      field_mapping_dsr as "fieldMapping",
-      post_processing_engine_name_dsr as "postProcessingEngineName",
-      parser_mode_dsr as "parserMode",
-      records_ingested_dsr as "recordsIngested",
-      signals_generated_dsr as "signalsGenerated",
-      last_ingested_at_dsr as "lastIngestedAt",
-      last_run_status_dsr as "lastRunStatus",
-      last_success_at_dsr as "lastSuccessAt",
-      last_failure_at_dsr as "lastFailureAt",
-      last_error_type_dsr as "lastErrorType",
-      last_error_message_dsr as "lastErrorMessage",
-      last_http_status_dsr as "lastHttpStatus",
-      failure_count_dsr as "failureCount",
-      consecutive_failures_dsr as "consecutiveFailures",
-      auto_disabled_dsr as "autoDisabled",
-      disabled_reason_dsr as "disabledReason"
-    FROM data_stream_registry
-    WHERE stream_id_dsr = '${escapedStreamId}'
-    LIMIT 1
-  `));
+export async function getStreamDetail(stream_id: string) {
+  const [stream] = await get_unified_ingestion_metrics({ stream_id });
+  if (!stream) return null;
 
-  if (!(rows as StreamRow[]).length) return null;
-  const stream = normalizeStream((rows as StreamRow[])[0]);
-
-  // Stream IS the dataset — no separate linked datasets
   return {
     ...stream,
-    linkedDatasets: [{
-      datasetId: stream.streamId,
-      datasetName: stream.streamName,
-      source: stream.sourceUrl ?? stream.apiUrl ?? "unknown",
+    linked_datasets: [{
+      dataset_id: stream.stream_id,
+      dataset_name: stream.stream_name,
+      source: stream.source_url ?? stream.api_url ?? "unknown",
       enabled: stream.enabled,
-      totalRecordsIngested: stream.recordsIngested ?? 0,
-      lastIngestedAt: stream.lastIngestedAt,
+      total_records_ingested: stream.records_ingested,
+      last_ingested_at: stream.last_ingested_at,
     }],
   };
 }
 
 /** Create a new stream */
 export async function createStream(input: {
-  streamId: string;
-  streamName: string;
-  streamType: string;
-  sourceUrl?: string;
-  updateFrequency?: string;
-  signalWeight?: number;
-  confidenceMultiplier?: number;
+  stream_id: string;
+  stream_name: string;
+  stream_type: string;
+  source_url?: string;
+  update_frequency?: string;
+  signal_weight?: number;
+  confidence_multiplier?: number;
   description?: string;
-  fieldMapping?: Record<string, string>;
+  field_mapping?: Record<string, string>;
 }) {
-  const streamId = input.streamId.replace(/'/g, "''");
-  const streamName = input.streamName.replace(/'/g, "''");
-  const streamType = input.streamType.replace(/'/g, "''");
-  const sourceUrl = input.sourceUrl ? `'${input.sourceUrl.replace(/'/g, "''")}'` : "NULL";
-  const updateFrequency = (input.updateFrequency ?? "daily").replace(/'/g, "''");
-  const signalWeight = input.signalWeight ?? 100;
-  const confidenceMultiplier = input.confidenceMultiplier ?? 100;
-  const fieldMapping = input.fieldMapping ? `'${JSON.stringify(input.fieldMapping).replace(/'/g, "''")}'` : "NULL";
+  const stream_id = input.stream_id.replace(/'/g, "''");
+  const stream_name = input.stream_name.replace(/'/g, "''");
+  const stream_type = input.stream_type.replace(/'/g, "''");
+  const source_url = input.source_url ? `'${input.source_url.replace(/'/g, "''")}'` : "NULL";
+  const update_frequency = (input.update_frequency ?? "daily").replace(/'/g, "''");
+  const signal_weight = input.signal_weight ?? 100;
+  const confidence_multiplier = input.confidence_multiplier ?? 100;
+  const field_mapping = input.field_mapping ? `'${JSON.stringify(input.field_mapping).replace(/'/g, "''")}'` : "NULL";
 
   const [rows]: any = await db.execute(sql.raw(`
     INSERT INTO data_stream_registry (
@@ -263,49 +98,49 @@ export async function createStream(input: {
       records_ingested_dsr,
       signals_generated_dsr
     ) VALUES (
-      '${streamId}',
-      '${streamName}',
-      '${streamType}',
-      ${sourceUrl},
-      '${updateFrequency}',
-      ${signalWeight},
-      ${confidenceMultiplier},
+      '${stream_id}',
+      '${stream_name}',
+      '${stream_type}',
+      ${source_url},
+      '${update_frequency}',
+      ${signal_weight},
+      ${confidence_multiplier},
       1,
-      ${fieldMapping},
+      ${field_mapping},
       0,
       0
     )
-    RETURNING id, stream_id_dsr as "streamId"
+    RETURNING id, stream_id_dsr as "stream_id"
   `));
 
   const inserted = (rows as any[])[0];
-  return { id: inserted?.id, streamId: inserted?.streamId ?? input.streamId };
+  return { id: inserted?.id, stream_id: inserted?.stream_id ?? input.stream_id };
 }
 
 /** Update a stream */
-export async function updateStream(streamId: string, updates: {
-  streamName?: string;
-  signalWeight?: number;
-  confidenceMultiplier?: number;
+export async function updateStream(stream_id: string, updates: {
+  stream_name?: string;
+  signal_weight?: number;
+  confidence_multiplier?: number;
   enabled?: boolean;
   description?: string;
-  sourceUrl?: string;
-  updateFrequency?: string;
-  fieldMapping?: Record<string, string>;
+  source_url?: string;
+  update_frequency?: string;
+  field_mapping?: Record<string, string>;
 }) {
   const setValues: string[] = [];
-  if (updates.streamName !== undefined) setValues.push(`stream_name_dsr = '${updates.streamName.replace(/'/g, "''")}'`);
-  if (updates.signalWeight !== undefined) setValues.push(`signal_weight_dsr = ${updates.signalWeight}`);
-  if (updates.confidenceMultiplier !== undefined) setValues.push(`confidence_multiplier_dsr = ${updates.confidenceMultiplier}`);
+  if (updates.stream_name !== undefined) setValues.push(`stream_name_dsr = '${updates.stream_name.replace(/'/g, "''")}'`);
+  if (updates.signal_weight !== undefined) setValues.push(`signal_weight_dsr = ${updates.signal_weight}`);
+  if (updates.confidence_multiplier !== undefined) setValues.push(`confidence_multiplier_dsr = ${updates.confidence_multiplier}`);
   if (updates.enabled !== undefined) setValues.push(`enabled_dsr = ${updates.enabled ? 1 : 0}`);
   if (updates.description !== undefined) setValues.push(`description_dsr = '${updates.description.replace(/'/g, "''")}'`);
-  if (updates.sourceUrl !== undefined) setValues.push(`source_url_dsr = '${updates.sourceUrl.replace(/'/g, "''")}'`);
-  if (updates.updateFrequency !== undefined) setValues.push(`update_freq_dsr = '${updates.updateFrequency.replace(/'/g, "''")}'`);
-  if (updates.fieldMapping !== undefined) setValues.push(`field_mapping_dsr = '${JSON.stringify(updates.fieldMapping).replace(/'/g, "''")}'`);
+  if (updates.source_url !== undefined) setValues.push(`source_url_dsr = '${updates.source_url.replace(/'/g, "''")}'`);
+  if (updates.update_frequency !== undefined) setValues.push(`update_freq_dsr = '${updates.update_frequency.replace(/'/g, "''")}'`);
+  if (updates.field_mapping !== undefined) setValues.push(`field_mapping_dsr = '${JSON.stringify(updates.field_mapping).replace(/'/g, "''")}'`);
 
   if (setValues.length === 0) return { success: true, skipped: true };
 
-  const escapedStreamId = streamId.replace(/'/g, "''");
+  const escapedStreamId = stream_id.replace(/'/g, "''");
   await db.execute(sql.raw(`
     UPDATE data_stream_registry
     SET ${setValues.join(", ")}
@@ -315,30 +150,21 @@ export async function updateStream(streamId: string, updates: {
 }
 
 /** Delete a stream */
-export async function deleteStream(streamId: string) {
-  const escapedStreamId = streamId.replace(/'/g, "''");
+export async function deleteStream(stream_id: string) {
+  const escapedStreamId = stream_id.replace(/'/g, "''");
   await db.execute(sql.raw(`DELETE FROM data_stream_registry WHERE stream_id_dsr = '${escapedStreamId}'`));
   return { success: true };
 }
 
 /** Get stream statistics */
 export async function getStreamStats() {
-  const streams = await listCanonicalStreams();
-  const totalRecords = streams.reduce((sum, s) => sum + s.recordsIngested, 0);
-  const totalSignals = streams.reduce((sum, s) => sum + s.signalsGenerated, 0);
-
+  const summary = await get_unified_ingestion_summary();
   return {
-    totalStreams: streams.length,
-    enabledStreams: streams.filter(s => s.enabled).length,
-    disabledStreams: streams.filter(s => !s.enabled).length,
-    autoDisabledStreams: streams.filter(s => s.autoDisabled).length,
-    totalRecordsIngested: totalRecords,
-    totalSignalsGenerated: totalSignals,
-    totalFailures: streams.reduce((sum, s) => sum + s.failureCount, 0),
-    byType: STREAM_TYPES.map(t => ({
-      type: t.id,
-      label: t.label,
-      count: streams.filter(s => s.streamType === t.id).length,
+    ...summary,
+    by_type: STREAM_TYPES.map((type) => ({
+      type: type.id,
+      label: type.label,
+      count: summary.by_type[type.id] ?? 0,
     })),
   };
 }

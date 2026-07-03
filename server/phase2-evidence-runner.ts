@@ -36,12 +36,12 @@ async function getSnapshotDocumentsWithText(snapshotId: number) {
   return db.select({
     id: documents.id,
     caseId: documents.caseId,
-    filename: documents.filename,
+    fileName: documents.fileName,
     textContent: documents.textContent,
     documentType: documents.documentType,
     snapshotId: documents.snapshotId,
   }).from(documents)
-    .where(eq(documents.snapshotId, snapshotId));
+    .where(eq(documents.snapshotId, snapshotId as any));
 }
 
 /**
@@ -56,7 +56,7 @@ async function getSnapshotQuotes(snapshotId: number) {
     laneId: quotes.laneId,
     snapshotId: quotes.snapshotId,
   }).from(quotes)
-    .where(eq(quotes.snapshotId, snapshotId));
+    .where(eq(quotes.snapshotId, snapshotId as any));
 }
 
 // ─── Evidence Detection Runner ───

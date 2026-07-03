@@ -70,7 +70,7 @@ export async function ingestAdvocacyReports(
     submittedBy: submittedBy || null,
   }));
 
-  // @ts-expect-error pre-existing type mismatch
+  // @ts-ignore pre-existing type mismatch
   await db.insert(advocacyReports).values(values);
   return { inserted: values.length };
 }

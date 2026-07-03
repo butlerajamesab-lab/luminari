@@ -783,7 +783,7 @@ export async function storeConstitutionalTestResults(report: ConstitutionalTestR
         [
           "constitutional_violation",
           JSON.stringify(violation),
-          violation.timestamp,
+          new Date(violation.timestamp),
           violation.type === "CRITICAL" ? "critical" : violation.type === "HIGH" ? "warning" : "info",
         ]
       );

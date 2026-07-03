@@ -18,7 +18,7 @@ console.log("🔥 REGISTRY ROUTER LOADED");
 
 export const registryRouter = router({
   // ─── Forms Queries ───
-  
+
   /**
    * Get all forms for a specific domain and optional jurisdiction
    */
@@ -269,9 +269,9 @@ export const registryRouter = router({
         forms,
         escalations,
         summary: {
-          agencyCount: agencies.length,
-          formCount: forms.length,
-          escalationCount: escalations.length,
+          agency_count: agencies.length,
+          form_count: forms.length,
+          escalation_count: escalations.length,
         },
       };
     }),
@@ -385,23 +385,23 @@ export const registryRouter = router({
       try {
         // Query agency_forms (canonical table)
         const [forms] = await pool.query(
-          `SELECT id, formName as name, pipelineCategory as domain, agency as jurisdiction, link as url, filingDeadline 
-           FROM agency_forms 
+          `SELECT id, formName as name, pipelineCategory as domain, agency as jurisdiction, link as url, filingDeadline
+           FROM agency_forms
            LIMIT 100`
         ) as any[];
 
         // Query unified_resources for mental health resources
         const [mentalHealth] = await pool.query(
-          `SELECT id, name, category as type, jurisdictionId as jurisdiction, phone, website, description as servicesProvided 
-           FROM unified_resources 
+          `SELECT id, name, category as type, jurisdictionId as jurisdiction, phone, website, description as services_provided
+           FROM unified_resources
            WHERE category = 'mental_behavioral_health'
            LIMIT 100`
         ) as any[];
 
         // Query registry_programs for agencies (oversight bodies)
         const [agencies] = await pool.query(
-          `SELECT id, name_rp as name, category_rp as domain, agency_rp as jurisdiction, NULL as contactMethods, website_rp as website, agency_rp as description 
-           FROM registry_programs 
+          `SELECT id, name_rp as name, category_rp as domain, agency_rp as jurisdiction, NULL as contact_methods, website_rp as website, agency_rp as description
+           FROM registry_programs
            LIMIT 100`
         ) as any[];
 
@@ -423,20 +423,20 @@ export const registryRouter = router({
             url: f.url,
             description: f.filingDeadline ? `Deadline: ${f.filingDeadline}` : "No deadline specified",
           })),
-          mentalHealth: (mentalHealth as any[]).map((r: any) => ({
+          mental_health: (mentalHealth as any[]).map((r: any) => ({
             id: r.id,
             name: r.name,
             type: r.type,
             jurisdiction: r.jurisdiction,
             phone: null,
             website: r.website,
-            description: r.servicesProvided || '',
+            description: r.services_provided || '',
             availability: "Check website",
           })),
         };
       } catch (err) {
         console.error('[getResources] Error:', err);
-        return { agencies: [], forms: [], mentalHealth: [] };
+        return { agencies: [], forms: [], mental_health: [] };
       }
     }),
 });

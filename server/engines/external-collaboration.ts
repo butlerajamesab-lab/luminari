@@ -194,7 +194,7 @@ export async function getAccessLog(shareId: number): Promise<{
 
   return {
     shareId,
-    entries: logs.map(l => ({
+    entries: logs.map((l: any) => ({
       action: l.action,
       timestamp: Number(l.timestamp),
       ipAddress: l.ipAddress,
@@ -221,7 +221,7 @@ export async function getCommentsForShare(shareId: number): Promise<{
     .orderBy(desc(externalComments.createdAt));
 
   return {
-    comments: comments.map(c => ({
+    comments: comments.map((c: any) => ({
       id: c.id,
       partnerId: c.partnerId,
       sectionId: c.sectionId,
@@ -250,7 +250,7 @@ export async function getRedactionsForDossier(dossierId: number): Promise<{
     .where(eq(dossierRedactions.dossierId, dossierId));
 
   return {
-    redactions: redactions.map(r => ({
+    redactions: redactions.map((r: any) => ({
       id: r.id,
       sectionId: r.sectionId,
       redactedText: r.redactedText,

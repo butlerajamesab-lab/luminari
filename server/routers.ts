@@ -3,7 +3,7 @@ import { z } from "zod";
 import { signalExtractionRouter } from "./routers/signal-extraction-router";
 import { router, publicProcedure, protectedProcedure, adminProcedure } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
-import * as dbHelpers from "./db";
+import * as db_helpers from "./db";
 import { db } from "./db";
 import { TRPCError } from "@trpc/server";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -15,7 +15,7 @@ import { runClaimBackfill } from "./claim-backfill";
 import { startBatchRerun, resumeBatchRerun, requestAbort, getActiveBatchIdInMemory } from "./batch-rerun";
 import { computeGateStage, assertAllowed, isAllowed, getPermissionMatrix, type GateStageInput, type GateStageResult, type GatedAction, GateError, GATE_ERROR_CODES } from "./gate-schema";
 import { buildGateStageInput, getGateStage, assertActionAllowed, assertSnapshotMutationAllowed } from "./gate-helpers";
-import { hardDeleteCase as canonicalHardDeleteCase, hardDeleteDocument as canonicalHardDeleteDocument } from "./hard-delete-canonical";
+import { hardDeleteCase as canonical_hard_delete_case, hardDeleteDocument as canonical_hard_delete_document } from "./hard-delete-canonical";
 import { getDailySpotlight, getCategorySpotlight, getContextualSpotlights, getDiscoveryCategories, getAllSpotlights, generateShareText } from "./benefits-discovery";
 import { coalitionIntelligenceRouter } from "./routers/coalition-intelligence-router";
 import { campaignEngineRouter } from "./routers/campaign-engine-router";
@@ -24,6 +24,7 @@ import { sunamGateRouter } from "./routers/sunam-gate-router";
 import { sunamBackfillRouter } from "./routers/sunam-backfill-router";
 import { meaningLayerRouter } from "./routers/meaning-layer";
 import { unifiedOutputRouter } from "./routers/unified-output";
+import { unifiedRouter } from "./routers/unified-router";
 import { governanceRouter } from "./routers/governance";
 import { formExtractionRouter } from "./form-extraction-router";
 import { phoenixRouter } from "./routers/phoenix";
@@ -203,22 +204,22 @@ Do NOT include the plan until you genuinely understand their situation. Ask at l
   generateActionPath: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { invokeLLM } = await import("./_core/llm");
 
-      const caseData = await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      const findings = await dbHelpers.listFindingsEnriched(input.caseId);
-      const docs = await dbHelpers.listDocuments(input.caseId);
+      const caseData = await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      const findings = await db_helpers.listFindingsEnriched(input.caseId);
+      const docs = await db_helpers.listDocuments(input.caseId);
 
       if (findings.length === 0) {
         return {
           summary: "We haven't found anything yet. Upload your documents and run the analysis first.",
           actions: [],
-          letterTemplate: null,
+          letter_template: null,
         };
       }
 
-      const findingSummary = findings.slice(0, 10).map(f => {
+      const findingSummary = findings.slice(0, 10).map((f: any) => {
         let entry = `- ${f.title}: ${f.description}`;
         if (f.significance) entry += ` (Significance: ${f.significance})`;
         if (f.backingEvidence?.length) {
@@ -281,12 +282,12 @@ Respond in this exact JSON format:
       const rawContent = response.choices[0]?.message?.content;
       const content = typeof rawContent === "string" ? rawContent : "";
       // Pipeline event: export_created (action path generated)
-      dbHelpers.logPipelineEventByCase(input.caseId, "export_created").catch(() => {});
+      db_helpers.logPipelineEventByCase(input.caseId, "export_created").catch(() => {});
 
       try {
         return JSON.parse(content);
       } catch {
-        return { summary: "Unable to generate action path. Please try again.", actions: [], letterTemplate: null };
+        return { summary: "Unable to generate action path. Please try again.", actions: [], letter_template: null };
       }
     }),
 
@@ -503,13 +504,13 @@ const benefitAppsRouter = router({
   list: protectedProcedure
     .input(z.object({ caseId: z.number().optional() }).optional())
     .query(async ({ ctx, input }) => {
-      return dbHelpers.listBenefitApplications(ctx.user.id, input?.caseId);
+      return db_helpers.listBenefitApplications(ctx.user.id, input?.caseId);
     }),
 
   get: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
-      const app = await dbHelpers.getBenefitApplication(input.id, ctx.user.id);
+      const app = await db_helpers.getBenefitApplication(input.id, ctx.user.id);
       if (!app) throw new TRPCError({ code: "NOT_FOUND", message: "Application not found" });
       return app;
     }),
@@ -524,7 +525,7 @@ const benefitAppsRouter = router({
       documentsNeeded: z.array(z.string()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      return dbHelpers.createBenefitApplication({
+      return db_helpers.createBenefitApplication({
         userId: ctx.user.id,
         ...input,
       });
@@ -541,7 +542,7 @@ const benefitAppsRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       const { id, status, ...extra } = input;
-      const app = await dbHelpers.updateBenefitApplicationStatus(id, ctx.user.id, status, extra);
+      const app = await db_helpers.updateBenefitApplicationStatus(id, ctx.user.id, status, extra);
       if (!app) throw new TRPCError({ code: "NOT_FOUND", message: "Application not found" });
       return app;
     }),
@@ -552,7 +553,7 @@ const benefitAppsRouter = router({
       notes: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const app = await dbHelpers.updateBenefitApplicationNotes(input.id, ctx.user.id, input.notes);
+      const app = await db_helpers.updateBenefitApplicationNotes(input.id, ctx.user.id, input.notes);
       if (!app) throw new TRPCError({ code: "NOT_FOUND", message: "Application not found" });
       return app;
     }),
@@ -564,7 +565,7 @@ const benefitAppsRouter = router({
       deadlineLabel: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const app = await dbHelpers.updateBenefitApplicationDeadline(input.id, ctx.user.id, input.nextDeadline, input.deadlineLabel);
+      const app = await db_helpers.updateBenefitApplicationDeadline(input.id, ctx.user.id, input.nextDeadline, input.deadlineLabel);
       if (!app) throw new TRPCError({ code: "NOT_FOUND", message: "Application not found" });
       return app;
     }),
@@ -575,7 +576,7 @@ const benefitAppsRouter = router({
       document: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const app = await dbHelpers.markDocumentSubmitted(input.id, ctx.user.id, input.document);
+      const app = await db_helpers.markDocumentSubmitted(input.id, ctx.user.id, input.document);
       if (!app) throw new TRPCError({ code: "NOT_FOUND", message: "Application not found" });
       return app;
     }),
@@ -583,19 +584,19 @@ const benefitAppsRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const deleted = await dbHelpers.deleteBenefitApplication(input.id, ctx.user.id);
+      const deleted = await db_helpers.deleteBenefitApplication(input.id, ctx.user.id);
       if (!deleted) throw new TRPCError({ code: "NOT_FOUND", message: "Application not found" });
       return { success: true };
     }),
 
   summary: protectedProcedure
     .query(async ({ ctx }) => {
-      return dbHelpers.getBenefitApplicationSummary(ctx.user.id);
+      return db_helpers.getBenefitApplicationSummary(ctx.user.id);
     }),
 
   upcomingDeadlines: protectedProcedure
     .query(async ({ ctx }) => {
-      return dbHelpers.getUpcomingBenefitDeadlines(ctx.user.id);
+      return db_helpers.getUpcomingBenefitDeadlines(ctx.user.id);
     }),
 });
 
@@ -646,13 +647,13 @@ const discoveryRouter = router({
 const casesRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     console.log("CTX USER ID:", ctx.user?.id);
-    return dbHelpers.listCases(ctx.user.id);
+    return db_helpers.listCases(ctx.user.id);
   }),
 
   get: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
-      const c = await dbHelpers.verifyCaseOwnership(input.id, ctx.user.id);
+      const c = await db_helpers.verifyCaseOwnership(input.id, ctx.user.id);
       const { _accessLevel, ...caseData } = c;
       return caseData;
     }),
@@ -660,18 +661,18 @@ const casesRouter = router({
   create: protectedProcedure
     .input(z.object({ name: z.string().min(1), description: z.string().optional(), domain: z.string().optional(), container: z.string().optional(), pipelineType: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
-      const id = await dbHelpers.createCase(ctx.user.id, input.name, input.description, input.domain, input.container, input.pipelineType);
-      await dbHelpers.logAudit({ caseId: id, userId: ctx.user.id, action: "create_case", targetType: "case", targetId: id, details: { domain: input.domain, container: input.container, pipelineType: input.pipelineType } });
+      const id = await db_helpers.createCase(ctx.user.id, input.name, input.description, input.domain, input.container, input.pipelineType);
+      await db_helpers.logAudit({ caseId: id, userId: ctx.user.id, action: "create_case", targetType: "case", targetId: id, details: { domain: input.domain, container: input.container, pipelineType: input.pipelineType } });
       // Log pipeline analytics event
       if (input.pipelineType) {
-        await dbHelpers.logPipelineEvent(ctx.user.id, input.pipelineType, "direct_create");
+        await db_helpers.logPipelineEvent(ctx.user.id, input.pipelineType, "direct_create");
       }
       // Auto-generate document checklist if pipeline type is set
       if (input.pipelineType) {
         const { getChecklistForPipeline } = await import("./document-checklists");
         const items = getChecklistForPipeline(input.pipelineType);
         if (items.length > 0) {
-          await dbHelpers.createChecklistItems(id, items);
+          await db_helpers.createChecklistItems(id, items);
         }
       }
       return { id };
@@ -681,34 +682,34 @@ const casesRouter = router({
     .input(z.object({ id: z.number(), name: z.string().optional(), description: z.string().optional(), status: z.enum(["active", "archived"]).optional(), domain: z.string().optional(), container: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
-      await dbHelpers.verifyCaseWriteAccess(id, ctx.user.id);
-      await dbHelpers.updateCase(id, ctx.user.id, data);
-      await dbHelpers.logAudit({ caseId: id, userId: ctx.user.id, action: "update_case", targetType: "case", targetId: id });
+      await db_helpers.verifyCaseWriteAccess(id, ctx.user.id);
+      await db_helpers.updateCase(id, ctx.user.id, data);
+      await db_helpers.logAudit({ caseId: id, userId: ctx.user.id, action: "update_case", targetType: "case", targetId: id });
       return { success: true };
     }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.number(), force: z.boolean().optional() }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseWriteAccess(input.id, ctx.user.id);
-      const result = await canonicalHardDeleteCase(input.id, ctx.user.id, "User-initiated case deletion", {
+      await db_helpers.verifyCaseWriteAccess(input.id, ctx.user.id);
+      const result = await canonical_hard_delete_case(input.id, ctx.user.id, "User-initiated case deletion", {
         force: input.force ?? false,
         cleanupStorage: true,
       });
-      return { success: true, auditHash: result.auditHash, cascadedEntities: result.cascadedEntities };
+      return { success: true, audit_hash: result.auditHash, cascaded_entities: result.cascadedEntities };
     }),
 
   stats: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.getCaseStats(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.getCaseStats(input.caseId);
     }),
 
   getInterpretation: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { getCaseInterpretation } = await import("./services/interpretation-service.js");
       return getCaseInterpretation(input.caseId);
     }),
@@ -716,7 +717,7 @@ const casesRouter = router({
   extractForms: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { extractFormsFromCase } = await import("./services/form-extraction-service.js");
       return extractFormsFromCase(input.caseId);
     }),
@@ -724,14 +725,14 @@ const casesRouter = router({
   correlate: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
       // Gate enforcement: runCorrelation requires open snapshot at CORRELATION or READY_TO_SEAL
-      const snapshot = await dbHelpers.getOpenSnapshot(input.caseId);
+      const snapshot = await db_helpers.getOpenSnapshot(input.caseId);
       if (snapshot) {
         await assertActionAllowed(input.caseId, snapshot.id, 'runCorrelation');
       }
       runCrossDocumentCorrelation(input.caseId);
-      await dbHelpers.logAudit({
+      await db_helpers.logAudit({
         caseId: input.caseId,
         userId: ctx.user.id,
         action: "trigger_correlation",
@@ -745,15 +746,15 @@ const casesRouter = router({
   ingestionAudit: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.getIngestionAudit(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.getIngestionAudit(input.caseId);
     }),
 
   /** Remediation Overview — deterministic 5-class document state classification */
   remediationOverview: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       return getRemediationOverview(input.caseId);
     }),
 
@@ -761,7 +762,7 @@ const casesRouter = router({
   recoverableDocuments: protectedProcedure
     .input(z.object({ caseId: z.number(), snapshotId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const docs = await identifyRecoverableDocuments(input.caseId, input.snapshotId);
       return docs.map(d => ({
         ...d,
@@ -778,7 +779,7 @@ const casesRouter = router({
       retryOnly: z.boolean().default(true),
     }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
       // Gate enforcement: retryFailedDocuments requires open snapshot at EXTRACTION
       await assertActionAllowed(input.caseId, input.snapshotId, 'retryFailedDocuments');
       return executeExtractionRecovery({
@@ -799,14 +800,14 @@ const documentsRouter = router({
       console.log("[DOCUMENTS.LIST] input.caseId:", input.caseId, "(type:", typeof input.caseId + ")");
       
       try {
-        await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+        await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
         console.log("[DOCUMENTS.LIST] Case ownership verified");
       } catch (err) {
         console.log("[DOCUMENTS.LIST] Case ownership check failed:", String(err));
         throw err;
       }
       
-      const result = await dbHelpers.listDocuments(input.caseId);
+      const result = await db_helpers.listDocuments(input.caseId);
       console.log("[DOCUMENTS.LIST] DB query result count:", result.length);
       if (result.length > 0) {
         console.log("[DOCUMENTS.LIST] First result:", result[0]);
@@ -818,42 +819,42 @@ const documentsRouter = router({
   get: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
-      const doc = await dbHelpers.verifyDocumentOwnership(input.id, ctx.user.id);
+      const doc = await db_helpers.verifyDocumentOwnership(input.id, ctx.user.id);
       return doc;
     }),
 
   quotes: protectedProcedure
     .input(z.object({ documentId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
-      return dbHelpers.getQuotesForDocument(input.documentId);
+      await db_helpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
+      return db_helpers.getQuotesForDocument(input.documentId);
     }),
 
   claims: protectedProcedure
     .input(z.object({ documentId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
-      return dbHelpers.getClaimsForDocument(input.documentId);
+      await db_helpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
+      return db_helpers.getClaimsForDocument(input.documentId);
     }),
 
   entityRoles: protectedProcedure
     .input(z.object({ documentId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
-      return dbHelpers.getEntityRolesForDocument(input.documentId);
+      await db_helpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
+      return db_helpers.getEntityRolesForDocument(input.documentId);
     }),
 
   analyze: protectedProcedure
     .input(z.object({ documentId: z.number(), caseId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
       // Gate enforcement: analyzeNewUploads requires open snapshot at EXTRACTION
-      const snapshot = await dbHelpers.getOpenSnapshot(input.caseId);
+      const snapshot = await db_helpers.getOpenSnapshot(input.caseId);
       if (snapshot) await assertActionAllowed(input.caseId, snapshot.id, 'analyzeNewUploads');
       // Gate A: explicit snapshotId propagation — no implicit fallback at dequeue
       // @ts-ignore
       enqueueDocument(input.documentId, input.caseId, snapshot?.id);
-      await dbHelpers.logAudit({
+      await db_helpers.logAudit({
         caseId: input.caseId,
         userId: ctx.user.id,
         action: "trigger_analysis",
@@ -866,12 +867,12 @@ const documentsRouter = router({
   analyzeAll: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
       // Gate enforcement: analyzeNewUploads requires open snapshot at EXTRACTION
-      const snapshot = await dbHelpers.getOpenSnapshot(input.caseId);
+      const snapshot = await db_helpers.getOpenSnapshot(input.caseId);
       if (snapshot) await assertActionAllowed(input.caseId, snapshot.id, 'analyzeNewUploads');
-      const docs = await dbHelpers.listDocuments(input.caseId);
-      const uploadedDocs = docs.filter(d => d.status === "uploaded" || d.status === "error");
+      const docs = await db_helpers.listDocuments(input.caseId);
+      const uploadedDocs = docs.filter((d: any) => d.status === "uploaded" || d.status === "error");
       for (const doc of uploadedDocs) {
         // Gate A: explicit snapshotId propagation
         // @ts-ignore
@@ -884,14 +885,14 @@ const documentsRouter = router({
     .input(z.object({ documentId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       // Run re-analysis in background, return immediately
-      const doc = await dbHelpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
+      const doc = await db_helpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
       // Enforce write access for reanalysis
-      await dbHelpers.verifyCaseWriteAccess(doc.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(doc.caseId, ctx.user.id);
       // Gate enforcement: reanalyze requires open snapshot at EXTRACTION
-      const snapshot = await dbHelpers.getOpenSnapshot(doc.caseId);
+      const snapshot = await db_helpers.getOpenSnapshot(doc.caseId);
       if (snapshot) await assertActionAllowed(doc.caseId, snapshot.id, 'analyzeNewUploads');
 
-      await dbHelpers.logAudit({
+      await db_helpers.logAudit({
         caseId: doc.caseId,
         userId: ctx.user.id,
         action: "trigger_reanalysis",
@@ -908,11 +909,11 @@ const documentsRouter = router({
   reanalyzeAll: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
       // Gate enforcement: reanalyzeAll requires open snapshot at EXTRACTION
-      const snapshot = await dbHelpers.getOpenSnapshot(input.caseId);
+      const snapshot = await db_helpers.getOpenSnapshot(input.caseId);
       if (snapshot) await assertActionAllowed(input.caseId, snapshot.id, 'analyzeNewUploads');
-      await dbHelpers.logAudit({
+      await db_helpers.logAudit({
         caseId: input.caseId,
         userId: ctx.user.id,
         action: "trigger_batch_reanalysis",
@@ -935,18 +936,18 @@ const documentsRouter = router({
   analyzeNewUploads: protectedProcedure
     .input(z.object({ caseId: z.number() }))
      .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
       // Gate enforcement: analyzeNewUploads requires open snapshot at EXTRACTION
-      const anSnapshot = await dbHelpers.getOpenSnapshot(input.caseId);
+      const anSnapshot = await db_helpers.getOpenSnapshot(input.caseId);
       if (anSnapshot) await assertActionAllowed(input.caseId, anSnapshot.id, 'analyzeNewUploads');
-      const docs = await dbHelpers.listDocuments(input.caseId);
-      const uploadedDocs = docs.filter(d => d.status === 'uploaded');
+      const docs = await db_helpers.listDocuments(input.caseId);
+      const uploadedDocs = docs.filter((d: any) => d.status === 'uploaded');
       for (const doc of uploadedDocs) {
         // Gate A: explicit snapshotId propagation
         // @ts-ignore
         enqueueDocument(doc.id, input.caseId, anSnapshot?.id);
       }
-      await dbHelpers.logAudit({
+      await db_helpers.logAudit({
         caseId: input.caseId,
         userId: ctx.user.id,
         action: 'analyze_new_uploads',
@@ -954,14 +955,14 @@ const documentsRouter = router({
         targetId: input.caseId,
         details: {
           totalQueued: uploadedDocs.length,
-          documentIds: uploadedDocs.map(d => d.id),
+          documentIds: uploadedDocs.map((d: any) => d.id),
         },
       });
 
       return {
         intent: 'analyze_new_uploads' as const,
-        totalQueued: uploadedDocs.length,
-        totalSkipped: docs.length - uploadedDocs.length,
+        total_queued: uploadedDocs.length,
+        total_skipped: docs.length - uploadedDocs.length,
         scope: 'uploaded_only',
       };
     }),
@@ -974,16 +975,16 @@ const documentsRouter = router({
    retryFailedOnly: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
       // Gate A: single snapshot resolution — rfSnapshot used for both gate and execution
-      const rfSnapshot = await dbHelpers.getOpenSnapshot(input.caseId);
+      const rfSnapshot = await db_helpers.getOpenSnapshot(input.caseId);
       if (rfSnapshot) await assertActionAllowed(input.caseId, rfSnapshot.id, 'retryFailedDocuments');
       if (!rfSnapshot) {
         return {
           intent: 'retry_failed_only' as const,
-          totalQueued: 0,
-          totalSkipped: 0,
-          snapshotCreated: false,
+          total_queued: 0,
+          total_skipped: 0,
+          snapshot_created: false,
           scope: 'retryable_failures_only',
           error: 'No open snapshot found for this case',
         };
@@ -1000,10 +1001,10 @@ const documentsRouter = router({
 
       return {
         intent: 'retry_failed_only' as const,
-        totalQueued: result.totalQueued,
-        totalSkipped: result.totalSkipped,
-        snapshotCreated: result.snapshotCreated,
-        newSnapshotId: result.newSnapshotId,
+        total_queued: result.totalQueued,
+        total_skipped: result.totalSkipped,
+        snapshot_created: result.snapshotCreated,
+        new_snapshot_id: result.newSnapshotId,
         scope: 'retryable_failures_only',
       };
     }),
@@ -1020,14 +1021,14 @@ const documentsRouter = router({
       confirmed: z.literal(true), // Must explicitly confirm
     }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
       // Gate enforcement: fullSnapshotRebuild allowed in any state (creates new snapshot)
-      const fsbSnapshot = await dbHelpers.getOpenSnapshot(input.caseId);
+      const fsbSnapshot = await db_helpers.getOpenSnapshot(input.caseId);
       if (fsbSnapshot) await assertActionAllowed(input.caseId, fsbSnapshot.id, 'fullSnapshotRebuild');
-      const docs = await dbHelpers.listDocuments(input.caseId);
-      const allDocs = docs.filter(d => d.status === 'ready' || d.status === 'error' || d.status === 'uploaded' || d.status === 'failed_permanent');;
+      const docs = await db_helpers.listDocuments(input.caseId);
+      const allDocs = docs.filter((d: any) => d.status === 'ready' || d.status === 'error' || d.status === 'uploaded' || d.status === 'failed_permanent');;
 
-      await dbHelpers.logAudit({
+      await db_helpers.logAudit({
         caseId: input.caseId,
         userId: ctx.user.id,
         action: 'full_snapshot_rebuild',
@@ -1036,10 +1037,10 @@ const documentsRouter = router({
         details: {
           totalDocs: allDocs.length,
           statusBreakdown: {
-            ready: docs.filter(d => d.status === 'ready').length,
-            error: docs.filter(d => d.status === 'error').length,
-            uploaded: docs.filter(d => d.status === 'uploaded').length,
-            failed_permanent: docs.filter(d => d.status === 'failed_permanent').length,
+            ready: docs.filter((d: any) => d.status === 'ready').length,
+            error: docs.filter((d: any) => d.status === 'error').length,
+            uploaded: docs.filter((d: any) => d.status === 'uploaded').length,
+            failed_permanent: docs.filter((d: any) => d.status === 'failed_permanent').length,
           },
         },
       });
@@ -1050,9 +1051,9 @@ const documentsRouter = router({
       return {
         intent: 'full_snapshot_rebuild' as const,
         // @ts-ignore
-        totalDocs: result.totalDocs,
+        total_docs: result.totalDocs,
         // @ts-ignore
-        toneReports: result.toneReports,
+        tone_reports: result.toneReports,
         scope: 'all_documents',
       };
     }),
@@ -1064,12 +1065,12 @@ const documentsRouter = router({
   reanalyzeScopeSummary: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      const docs = await dbHelpers.listDocuments(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      const docs = await db_helpers.listDocuments(input.caseId);
 
-      const uploaded = docs.filter(d => d.status === 'uploaded');
-      const errorDocs = docs.filter(d => d.status === 'error' || d.status === 'failed_permanent');
-      const readyDocs = docs.filter(d => d.status === 'ready');
+      const uploaded = docs.filter((d: any) => d.status === 'uploaded');
+      const errorDocs = docs.filter((d: any) => d.status === 'error' || d.status === 'failed_permanent');
+      const readyDocs = docs.filter((d: any) => d.status === 'ready');
 
       // Classify error docs to find retryable ones
       let retryableCount = 0;
@@ -1081,13 +1082,13 @@ const documentsRouter = router({
       }
 
       return {
-        analyzeNewUploads: uploaded.length,
-        retryFailed: retryableCount,
-        retryFailedNonRetryable: nonRetryableCount,
-        fullRebuild: docs.length,
-        validComplete: readyDocs.length,
-        totalDocuments: docs.length,
-        processingFailed: errorDocs.length,
+        analyze_new_uploads: uploaded.length,
+        retry_failed: retryableCount,
+        retry_failed_non_retryable: nonRetryableCount,
+        full_rebuild: docs.length,
+        valid_complete: readyDocs.length,
+        total_documents: docs.length,
+        processing_failed: errorDocs.length,
       };
     }),
 
@@ -1098,17 +1099,17 @@ const documentsRouter = router({
       reason: z.string().min(1).max(500),
     }))
     .mutation(async ({ ctx, input }) => {
-      const hdDoc = await dbHelpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
+      const hdDoc = await db_helpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
       // Enforce write access for hard delete
-      await dbHelpers.verifyCaseWriteAccess(hdDoc.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(hdDoc.caseId, ctx.user.id);
       // Gate enforcement: reject hard delete if document's snapshot is sealed
       if (hdDoc.snapshotId) await assertSnapshotMutationAllowed(hdDoc.snapshotId, 'hardDelete');
       // Canonical hard delete with cascade, audit, and storage cleanup
-      const deleteResult = await canonicalHardDeleteDocument(input.documentId, hdDoc.caseId, ctx.user.id, input.reason, {
+      const deleteResult = await canonical_hard_delete_document(input.documentId, hdDoc.caseId, ctx.user.id, input.reason, {
         cleanupStorage: true,
       });
 
-      return { success: true, documentId: input.documentId };
+      return { success: true, document_id: input.documentId };
     }),
 
   // ─── Document Resolution Endpoints ───
@@ -1120,12 +1121,12 @@ const documentsRouter = router({
       reason: z.string().min(10).max(1000),
     }))
     .mutation(async ({ ctx, input }) => {
-      const originalDoc = await dbHelpers.verifyDocumentOwnership(input.originalDocumentId, ctx.user.id);
-      await dbHelpers.verifyCaseWriteAccess(originalDoc.caseId, ctx.user.id);
+      const originalDoc = await db_helpers.verifyDocumentOwnership(input.originalDocumentId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(originalDoc.caseId, ctx.user.id);
       // Gate enforcement: snapshot must be open
       if (originalDoc.snapshotId) await assertSnapshotMutationAllowed(originalDoc.snapshotId, 'replaceDocument');
-      await dbHelpers.replaceDocument(input.originalDocumentId, input.replacementDocumentId, ctx.user.id, input.reason);
-      return { success: true, originalDocumentId: input.originalDocumentId, replacementDocumentId: input.replacementDocumentId };
+      await db_helpers.replaceDocument(input.originalDocumentId, input.replacementDocumentId, ctx.user.id, input.reason);
+      return { success: true, original_document_id: input.originalDocumentId, replacement_document_id: input.replacementDocumentId };
     }),
 
   markCorrupted: protectedProcedure
@@ -1134,11 +1135,11 @@ const documentsRouter = router({
       reason: z.string().min(10).max(1000),
     }))
     .mutation(async ({ ctx, input }) => {
-      const doc = await dbHelpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
-      await dbHelpers.verifyCaseWriteAccess(doc.caseId, ctx.user.id);
+      const doc = await db_helpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(doc.caseId, ctx.user.id);
       if (doc.snapshotId) await assertSnapshotMutationAllowed(doc.snapshotId, 'markCorrupted');
-      await dbHelpers.markDocumentCorrupted(input.documentId, ctx.user.id, input.reason);
-      return { success: true, documentId: input.documentId };
+      await db_helpers.markDocumentCorrupted(input.documentId, ctx.user.id, input.reason);
+      return { success: true, document_id: input.documentId };
     }),
 
   markExcluded: protectedProcedure
@@ -1147,25 +1148,25 @@ const documentsRouter = router({
       reason: z.string().min(10).max(1000),
     }))
     .mutation(async ({ ctx, input }) => {
-      const doc = await dbHelpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
-      await dbHelpers.verifyCaseWriteAccess(doc.caseId, ctx.user.id);
+      const doc = await db_helpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(doc.caseId, ctx.user.id);
       if (doc.snapshotId) await assertSnapshotMutationAllowed(doc.snapshotId, 'markExcluded');
-      await dbHelpers.markDocumentExcluded(input.documentId, ctx.user.id, input.reason);
-      return { success: true, documentId: input.documentId };
+      await db_helpers.markDocumentExcluded(input.documentId, ctx.user.id, input.reason);
+      return { success: true, document_id: input.documentId };
     }),
 
   replacementChain: protectedProcedure
     .input(z.object({ documentId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
-      return dbHelpers.getDocumentReplacementChain(input.documentId);
+      await db_helpers.verifyDocumentOwnership(input.documentId, ctx.user.id);
+      return db_helpers.getDocumentReplacementChain(input.documentId);
     }),
 
   listResolved: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.listResolvedDocuments(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.listResolvedDocuments(input.caseId);
     }),
 
   // Queue visibility: returns current extraction queue status
@@ -1177,9 +1178,9 @@ const documentsRouter = router({
       // @ts-ignore
       const status = getQueueStatus();
       // Classifier-aligned failure breakdown (no legacy raw counts)
-      const retryingDocs = await dbHelpers.findDocumentsByStatuses(["retrying"], caseId);
-      const failedDocs = await dbHelpers.findDocumentsByStatuses(["failed_permanent"], caseId);
-      const errorDocs = await dbHelpers.findDocumentsByStatuses(["error"], caseId);
+      const retryingDocs = await db_helpers.findDocumentsByStatuses(["retrying"], caseId);
+      const failedDocs = await db_helpers.findDocumentsByStatuses(["failed_permanent"], caseId);
+      const errorDocs = await db_helpers.findDocumentsByStatuses(["error"], caseId);
       // Classify each failed/error doc using the remediation classifier
       let autoRecoverableCount = 0;
       let manualReuploadCount = 0;
@@ -1195,13 +1196,13 @@ const documentsRouter = router({
       }
       return {
         ...status,
-        retryingCount: retryingDocs.length,
+        retrying_count: retryingDocs.length,
         // Classifier-aligned counts (replaces legacy failedPermanentCount)
         autoRecoverableCount,
         manualReuploadCount,
-        systemErrorCount: systemErrorCount + retryingDocs.length,
+        system_error_count: systemErrorCount + retryingDocs.length,
         // Legacy field kept for backward compat but deprecated
-        failedPermanentCount: failedDocs.length,
+        failed_permanent_count: failedDocs.length,
       };
     }),
 
@@ -1210,21 +1211,21 @@ const documentsRouter = router({
     .input(z.object({ caseId: z.number().optional() }).optional())
     .query(async ({ input }) => {
       const caseId = input?.caseId;
-      const dbMetrics = await dbHelpers.getProvenanceDriftMetrics(caseId);
+      const dbMetrics = await db_helpers.getProvenanceDriftMetrics(caseId);
       // @ts-ignore
       const queueStatus = getQueueStatus();
       return {
         ...dbMetrics,
-        fallbackMatcherHitRate: queueStatus.fallbackMatcherHitRate,
-        avgProcessingTimeMs: queueStatus.averageProcessingTime,
+        fallback_matcher_hit_rate: queueStatus.fallbackMatcherHitRate,
+        avg_processing_time_ms: queueStatus.averageProcessingTime,
         // Runtime counters (since server restart)
         runtime: {
-          fallbackAttempts: queueStatus.fallbackMatcherAttempts,
-          fallbackHits: queueStatus.fallbackMatcherHits,
-          fallbackMisses: queueStatus.fallbackMatcherMisses,
-          docsProcessed: queueStatus.totalProcessed,
-          docsFailed: queueStatus.totalFailed,
-          processingRate: queueStatus.processingRate,
+          fallback_attempts: queueStatus.fallbackMatcherAttempts,
+          fallback_hits: queueStatus.fallbackMatcherHits,
+          fallback_misses: queueStatus.fallbackMatcherMisses,
+          docs_processed: queueStatus.totalProcessed,
+          docs_failed: queueStatus.totalFailed,
+          processing_rate: queueStatus.processingRate,
         },
       };
     }),
@@ -1235,29 +1236,29 @@ const entitiesRouter = router({
   list: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.listEntities(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.listEntities(input.caseId);
     }),
 
   get: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
-      const entity = await dbHelpers.verifyEntityOwnership(input.id, ctx.user.id);
+      const entity = await db_helpers.verifyEntityOwnership(input.id, ctx.user.id);
       return entity;
     }),
 
   roles: protectedProcedure
     .input(z.object({ entityId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyEntityOwnership(input.entityId, ctx.user.id);
-      return dbHelpers.getEntityRolesForEntity(input.entityId);
+      await db_helpers.verifyEntityOwnership(input.entityId, ctx.user.id);
+      return db_helpers.getEntityRolesForEntity(input.entityId);
     }),
 
   relationships: protectedProcedure
     .input(z.object({ entityId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyEntityOwnership(input.entityId, ctx.user.id);
-      return dbHelpers.getRelationshipsForEntityEnriched(input.entityId);
+      await db_helpers.verifyEntityOwnership(input.entityId, ctx.user.id);
+      return db_helpers.getRelationshipsForEntityEnriched(input.entityId);
     }),
 });
 
@@ -1266,17 +1267,17 @@ const dedupRouter = router({
   suggestions: protectedProcedure
     .input(z.object({ caseId: z.number(), status: z.enum(["pending", "approved", "rejected"]).optional() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.listMergeSuggestions(input.caseId, input.status);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.listMergeSuggestions(input.caseId, input.status);
     }),
 
   scan: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
       // Run in background so the request returns immediately
       const count = await runDedupScan(input.caseId);
-      await dbHelpers.logAudit({
+      await db_helpers.logAudit({
         caseId: input.caseId,
         userId: ctx.user.id,
         action: "dedup_scan",
@@ -1284,21 +1285,21 @@ const dedupRouter = router({
         targetId: input.caseId,
         details: { suggestionsFound: count },
       });
-      return { suggestionsFound: count };
+      return { suggestions_found: count };
     }),
 
   review: protectedProcedure
     .input(z.object({ id: z.number(), action: z.enum(["approve", "reject"]) }))
     .mutation(async ({ ctx, input }) => {
-      const suggestion = await dbHelpers.getMergeSuggestion(input.id);
+      const suggestion = await db_helpers.getMergeSuggestion(input.id);
       if (!suggestion) throw new TRPCError({ code: "NOT_FOUND", message: "Suggestion not found" });
-      await dbHelpers.verifyCaseWriteAccess(suggestion.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(suggestion.caseId, ctx.user.id);
 
       if (input.action === "approve") {
         // Execute the merge
-        await dbHelpers.executeEntityMerge(suggestion.sourceEntityId, suggestion.targetEntityId);
-        await dbHelpers.updateMergeSuggestionStatus(input.id, "approved", ctx.user.id);
-        await dbHelpers.logAudit({
+        await db_helpers.executeEntityMerge(suggestion.sourceEntityId, suggestion.targetEntityId);
+        await db_helpers.updateMergeSuggestionStatus(input.id, "approved", ctx.user.id);
+        await db_helpers.logAudit({
           caseId: suggestion.caseId,
           userId: ctx.user.id,
           action: "entity_merge",
@@ -1311,8 +1312,8 @@ const dedupRouter = router({
           },
         });
       } else {
-        await dbHelpers.updateMergeSuggestionStatus(input.id, "rejected", ctx.user.id);
-        await dbHelpers.logAudit({
+        await db_helpers.updateMergeSuggestionStatus(input.id, "rejected", ctx.user.id);
+        await db_helpers.logAudit({
           caseId: suggestion.caseId,
           userId: ctx.user.id,
           action: "entity_merge_rejected",
@@ -1331,8 +1332,8 @@ const relationshipsRouter = router({
   list: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.listRelationships(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.listRelationships(input.caseId);
     }),
 
   evidence: protectedProcedure
@@ -1340,10 +1341,10 @@ const relationshipsRouter = router({
     .query(async ({ ctx, input }) => {
       // Verify ownership through relationship -> case chain
       const { relationships: relTable } = await import("../drizzle/schema");
-      const [rel] = await dbHelpers.db.select().from(relTable).where(eq(relTable.id, input.relationshipId));
+      const [rel] = await db_helpers.db.select().from(relTable).where(eq(relTable.id, input.relationshipId));
       if (!rel) throw new TRPCError({ code: "NOT_FOUND", message: "Relationship not found" });
-      await dbHelpers.verifyCaseOwnership(rel.caseId, ctx.user.id);
-      return dbHelpers.getEvidenceForRelationship(input.relationshipId);
+      await db_helpers.verifyCaseOwnership(rel.caseId, ctx.user.id);
+      return db_helpers.getEvidenceForRelationship(input.relationshipId);
     }),
 });
 
@@ -1352,14 +1353,14 @@ const findingsRouter = router({
   list: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.listFindings(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.listFindings(input.caseId);
     }),
   listEnriched: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.listFindingsEnriched(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.listFindingsEnriched(input.caseId);
     }),
 
   backfillClaims: adminProcedure
@@ -1374,8 +1375,8 @@ const eventsRouter = router({
   list: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.listEvents(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.listEvents(input.caseId);
     }),
 });
 
@@ -1384,14 +1385,14 @@ const flagsRouter = router({
    list: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.listSignalFlags(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.listSignalFlags(input.caseId);
     }),
   listEnriched: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.listSignalFlagsEnriched(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.listSignalFlagsEnriched(input.caseId);
     }),
 });
 
@@ -1400,14 +1401,14 @@ const correlationsRouter = router({
   list: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.listCorrelations(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.listCorrelations(input.caseId);
     }),
   listEnriched: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.listCorrelationsEnriched(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.listCorrelationsEnriched(input.caseId);
     }),
 });
 
@@ -1416,17 +1417,17 @@ const quotesRouter = router({
   forCase: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.getQuotesForCase(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.getQuotesForCase(input.caseId);
     }),
 
   get: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
-      const q = await dbHelpers.getQuote(input.id);
+      const q = await db_helpers.getQuote(input.id);
       if (!q) throw new TRPCError({ code: "NOT_FOUND", message: "Quote not found" });
       // Verify ownership through quote -> case chain
-      await dbHelpers.verifyCaseOwnership(q.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(q.caseId, ctx.user.id);
       return q;
     }),
 });
@@ -1436,17 +1437,17 @@ const chatRouter = router({
   history: protectedProcedure
     .input(z.object({ caseId: z.number(), limit: z.number().optional() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      const messages = await dbHelpers.getChatHistory(input.caseId, input.limit);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      const messages = await db_helpers.getChatHistory(input.caseId, input.limit);
       return messages.reverse(); // oldest first for display
     }),
 
   send: protectedProcedure
     .input(z.object({ caseId: z.number(), message: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
       // Save user message
-      await dbHelpers.addChatMessage({
+      await db_helpers.addChatMessage({
         caseId: input.caseId,
         userId: ctx.user.id,
         role: "user",
@@ -1454,10 +1455,10 @@ const chatRouter = router({
       });
 
       // Get case context for the AI
-      const stats = await dbHelpers.getCaseStats(input.caseId);
-      const recentDocs = await dbHelpers.listDocuments(input.caseId);
-      const recentFindings = await dbHelpers.listFindings(input.caseId);
-      const chatHistory = await dbHelpers.getChatHistory(input.caseId, 20);
+      const stats = await db_helpers.getCaseStats(input.caseId);
+      const recentDocs = await db_helpers.listDocuments(input.caseId);
+      const recentFindings = await db_helpers.listFindings(input.caseId);
+      const chatHistory = await db_helpers.getChatHistory(input.caseId, 20);
 
       // Build context for LLM
       const { invokeLLMInteractive } = await import("./_core/llm");
@@ -1474,12 +1475,12 @@ TONE RULES:
 - Present what the documents state, not what they "show" or "prove"
 
 Case Statistics: ${JSON.stringify(stats)}
-Recent Documents: ${recentDocs.slice(0, 10).map(d => `[Doc #${d.id}] ${d.filename} (${d.documentType || d.fileType}) - ${d.documentPurpose || "No summary yet"}`).join("\n")}
-Recent Findings: ${recentFindings.slice(0, 5).map(f => `[Finding] ${f.title}: ${f.description}`).join("\n")}`;
+Recent Documents: ${recentDocs.slice(0, 10).map((d: any) => `[Doc #${d.id}] ${d.filename} (${d.documentType || d.fileType}) - ${d.documentPurpose || "No summary yet"}`).join("\n")}
+Recent Findings: ${recentFindings.slice(0, 5).map((f: any) => `[Finding] ${f.title}: ${f.description}`).join("\n")}`;
 
       const messages = [
         { role: "system" as const, content: systemPrompt },
-        ...chatHistory.reverse().slice(-10).map(m => ({
+        ...chatHistory.reverse().slice(-10).map((m: any) => ({
           role: m.role as "user" | "assistant",
           content: m.content,
         })),
@@ -1491,7 +1492,7 @@ Recent Findings: ${recentFindings.slice(0, 5).map(f => `[Finding] ${f.title}: ${
         ? response.choices[0].message.content
         : "I was unable to generate a response. Please try again.";
 
-      await dbHelpers.addChatMessage({
+      await db_helpers.addChatMessage({
         caseId: input.caseId,
         userId: ctx.user.id,
         role: "assistant",
@@ -1507,23 +1508,23 @@ const auditRouter = router({
   list: protectedProcedure
     .input(z.object({ caseId: z.number(), limit: z.number().optional() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.getAuditTrail(input.caseId, input.limit);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.getAuditTrail(input.caseId, input.limit);
     }),
 });
 
 // ─── Presentations Router ───
 // Helper to verify presentation ownership
 async function verifyPresentationOwnership(presentationId: number, userId: number) {
-  const pres = await dbHelpers.getPresentation(presentationId);
+  const pres = await db_helpers.getPresentation(presentationId);
   if (!pres) throw new TRPCError({ code: "NOT_FOUND", message: "Presentation not found" });
-  await dbHelpers.verifyCaseOwnership(pres.caseId, userId);
+  await db_helpers.verifyCaseOwnership(pres.caseId, userId);
   return pres;
 }
 async function verifyPresentationWriteAccess(presentationId: number, userId: number) {
-  const pres = await dbHelpers.getPresentation(presentationId);
+  const pres = await db_helpers.getPresentation(presentationId);
   if (!pres) throw new TRPCError({ code: "NOT_FOUND", message: "Presentation not found" });
-  await dbHelpers.verifyCaseWriteAccess(pres.caseId, userId);
+  await db_helpers.verifyCaseWriteAccess(pres.caseId, userId);
   return pres;
 }
 
@@ -1531,23 +1532,23 @@ const presentationsRouter = router({
   list: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.listPresentations(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.listPresentations(input.caseId);
     }),
 
   get: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
       const pres = await verifyPresentationOwnership(input.id, ctx.user.id);
-      const slides = await dbHelpers.getSlides(input.id);
+      const slides = await db_helpers.getSlides(input.id);
       return { ...pres, slides };
     }),
 
   create: protectedProcedure
     .input(z.object({ caseId: z.number(), title: z.string().min(1), description: z.string().optional(), theme: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
-      const id = await dbHelpers.createPresentation({ caseId: input.caseId, userId: ctx.user.id, title: input.title, description: input.description, theme: input.theme });
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      const id = await db_helpers.createPresentation({ caseId: input.caseId, userId: ctx.user.id, title: input.title, description: input.description, theme: input.theme });
       return { id };
     }),
 
@@ -1556,7 +1557,7 @@ const presentationsRouter = router({
     .mutation(async ({ ctx, input }) => {
       await verifyPresentationWriteAccess(input.id, ctx.user.id);
       const { id, ...updates } = input;
-      await dbHelpers.updatePresentation(id, updates);
+      await db_helpers.updatePresentation(id, updates);
       return { success: true };
     }),
 
@@ -1564,7 +1565,7 @@ const presentationsRouter = router({
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       await verifyPresentationWriteAccess(input.id, ctx.user.id);
-      await dbHelpers.deletePresentation(input.id);
+      await db_helpers.deletePresentation(input.id);
       return { success: true };
     }),
 
@@ -1572,7 +1573,7 @@ const presentationsRouter = router({
     .input(z.object({ presentationId: z.number() }))
     .query(async ({ ctx, input }) => {
       await verifyPresentationOwnership(input.presentationId, ctx.user.id);
-      return dbHelpers.getSlides(input.presentationId);
+      return db_helpers.getSlides(input.presentationId);
     }),
 
   addSlide: protectedProcedure
@@ -1589,7 +1590,7 @@ const presentationsRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       await verifyPresentationWriteAccess(input.presentationId, ctx.user.id);
-      const id = await dbHelpers.addSlide(input);
+      const id = await db_helpers.addSlide(input);
       return { id };
     }),
 
@@ -1607,7 +1608,7 @@ const presentationsRouter = router({
     .mutation(async ({ ctx, input }) => {
       await verifyPresentationWriteAccess(input.presentationId, ctx.user.id);
       const { id, presentationId, ...updates } = input;
-      await dbHelpers.updateSlide(id, updates);
+      await db_helpers.updateSlide(id, updates);
       return { success: true };
     }),
 
@@ -1615,7 +1616,7 @@ const presentationsRouter = router({
     .input(z.object({ id: z.number(), presentationId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       await verifyPresentationWriteAccess(input.presentationId, ctx.user.id);
-      await dbHelpers.deleteSlide(input.id, input.presentationId);
+      await db_helpers.deleteSlide(input.id, input.presentationId);
       return { success: true };
     }),
 
@@ -1623,7 +1624,7 @@ const presentationsRouter = router({
     .input(z.object({ presentationId: z.number(), slideIds: z.array(z.number()) }))
     .mutation(async ({ ctx, input }) => {
       await verifyPresentationWriteAccess(input.presentationId, ctx.user.id);
-      await dbHelpers.reorderSlides(input.presentationId, input.slideIds);
+      await db_helpers.reorderSlides(input.presentationId, input.slideIds);
       return { success: true };
     }),
 
@@ -1634,17 +1635,17 @@ const presentationsRouter = router({
       await verifyPresentationWriteAccess(input.presentationId, ctx.user.id);
       const { invokeLLM } = await import("./_core/llm");
 
-      const caseData = await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      const findings = await dbHelpers.listFindingsEnriched(input.caseId);
-      const docs = await dbHelpers.listDocuments(input.caseId);
-      const entities = await dbHelpers.listEntities(input.caseId);
-      const events = await dbHelpers.listEventsEnriched(input.caseId);
+      const caseData = await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      const findings = await db_helpers.listFindingsEnriched(input.caseId);
+      const docs = await db_helpers.listDocuments(input.caseId);
+      const entities = await db_helpers.listEntities(input.caseId);
+      const events = await db_helpers.listEventsEnriched(input.caseId);
 
       if (findings.length === 0 && docs.length === 0) {
         throw new TRPCError({ code: "PRECONDITION_FAILED", message: "No findings or documents to build a presentation from. Upload and analyze documents first." });
       }
 
-      const findingSummary = findings.slice(0, 15).map((f, i) => {
+      const findingSummary = findings.slice(0, 15).map((f: any, i: any) => {
         let entry = `${i + 1}. ${f.title}: ${f.description}`;
         if (f.significance) entry += ` [Significance: ${f.significance}]`;
         if (f.backingEvidence?.length) {
@@ -1653,8 +1654,8 @@ const presentationsRouter = router({
         return entry;
       }).join("\n");
 
-      const entitySummary = entities.slice(0, 20).map(e => `${e.name} (${e.type})`).join(", ");
-      const eventSummary = events.slice(0, 10).map(e => `${e.dateOccurred || "undated"}: ${e.description?.slice(0, 100)}`).join("\n");
+      const entitySummary = entities.slice(0, 20).map((e: any) => `${e.name} (${e.type})`).join(", ");
+      const eventSummary = events.slice(0, 10).map((e: any) => `${e.dateOccurred || "undated"}: ${e.description?.slice(0, 100)}`).join("\n");
 
       const systemPrompt = `You are a forensic presentation builder. Create a courtroom-ready slide deck from the case evidence below.
 
@@ -1739,12 +1740,12 @@ Respond in this exact JSON format:
 
       // Clear existing slides and insert generated ones
       const { presentationSlides: psTable } = await import("../drizzle/schema");
-      await dbHelpers.db.delete(psTable).where(eq(psTable.presentationId, input.presentationId));
+      await db_helpers.db.delete(psTable).where(eq(psTable.presentationId, input.presentationId));
 
       const insertedIds: number[] = [];
       for (let i = 0; i < generatedSlides.length; i++) {
         const s = generatedSlides[i];
-        const id = await dbHelpers.addSlide({
+        const id = await db_helpers.addSlide({
           presentationId: input.presentationId,
           orderIndex: i,
           slideType: s.slideType,
@@ -1759,9 +1760,9 @@ Respond in this exact JSON format:
       }
 
       // Pipeline event: export_created (presentation generated)
-      dbHelpers.logPipelineEventByCase(input.caseId, "export_created").catch(() => {});
+      db_helpers.logPipelineEventByCase(input.caseId, "export_created").catch(() => {});
 
-      return { slideCount: insertedIds.length, slideIds: insertedIds };
+      return { slide_count: insertedIds.length, slide_ids: insertedIds };
     }),
 
   // Refine a single slide's content with LLM
@@ -1769,7 +1770,7 @@ Respond in this exact JSON format:
     .input(z.object({ presentationId: z.number(), slideId: z.number(), instruction: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const pres = await verifyPresentationWriteAccess(input.presentationId, ctx.user.id);
-      const slide = await dbHelpers.getSlide(input.slideId);
+      const slide = await db_helpers.getSlide(input.slideId);
       if (!slide || slide.presentationId !== input.presentationId) throw new TRPCError({ code: "NOT_FOUND", message: "Slide not found" });
 
       const { invokeLLM } = await import("./_core/llm");
@@ -1798,7 +1799,7 @@ Respond in this exact JSON format:
       });
 
       const parsed = JSON.parse((response.choices[0].message.content as unknown as string) || "{}");
-      await dbHelpers.updateSlide(input.slideId, {
+      await db_helpers.updateSlide(input.slideId, {
         title: parsed.title || slide.title,
         content: parsed.content || slide.content,
         notes: parsed.notes || slide.notes,
@@ -1812,15 +1813,15 @@ Respond in this exact JSON format:
     .input(z.object({ presentationId: z.number() }))
     .query(async ({ ctx, input }) => {
       const pres = await verifyPresentationOwnership(input.presentationId, ctx.user.id);
-      const slides = await dbHelpers.getSlides(input.presentationId);
-      const caseData = await dbHelpers.verifyCaseOwnership(pres.caseId, ctx.user.id);
+      const slides = await db_helpers.getSlides(input.presentationId);
+      const caseData = await db_helpers.verifyCaseOwnership(pres.caseId, ctx.user.id);
 
       const slideTypeLabels: Record<string, string> = {
         title: "TITLE", finding: "FINDING", evidence_quote: "EVIDENCE",
         timeline: "TIMELINE", entity_map: "ENTITIES", summary: "SUMMARY", custom: "CUSTOM",
       };
 
-      const slidesHtml = slides.map((s, i) => {
+      const slidesHtml = slides.map((s: any, i: any) => {
         const citations = (s.sourceCitations as any[] || []).map((c: any) =>
           `<div class="citation"><strong>${c.documentName || "Document"}</strong>: &ldquo;${(c.quote || "").slice(0, 200)}${(c.quote || "").length > 200 ? "..." : ""}&rdquo;</div>`
         ).join("");
@@ -1888,7 +1889,7 @@ Respond in this exact JSON format:
 </body>
 </html>`;
 
-      return { html, title: pres.title, slideCount: slides.length };
+      return { html, title: pres.title, slide_count: slides.length };
     }),
 });
 
@@ -1911,13 +1912,13 @@ const authRouter = router({
 const uploadSessionsRouter = router({
   getActive: protectedProcedure
     .query(async ({ ctx }) => {
-      return dbHelpers.getActiveUploadSessions(ctx.user.id);
+      return db_helpers.getActiveUploadSessions(ctx.user.id);
     }),
 
   get: protectedProcedure
     .input(z.object({ sessionId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const session = await dbHelpers.getUploadSession(input.sessionId);
+      const session = await db_helpers.getUploadSession(input.sessionId);
       if (!session || session.userId !== ctx.user.id) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Upload session not found" });
       }
@@ -1927,14 +1928,14 @@ const uploadSessionsRouter = router({
   list: protectedProcedure
     .input(z.object({ caseId: z.number().optional() }))
     .query(async ({ ctx, input }) => {
-      return dbHelpers.listUploadSessions(ctx.user.id, input.caseId);
+      return db_helpers.listUploadSessions(ctx.user.id, input.caseId);
     }),
 
   create: protectedProcedure
     .input(z.object({ caseId: z.number(), totalFiles: z.number().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
-      const sessionId = await dbHelpers.createUploadSession({
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      const sessionId = await db_helpers.createUploadSession({
         caseId: input.caseId,
         userId: ctx.user.id,
         totalFiles: input.totalFiles,
@@ -1945,13 +1946,13 @@ const uploadSessionsRouter = router({
   finalize: protectedProcedure
     .input(z.object({ sessionId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const session = await dbHelpers.getUploadSession(input.sessionId);
+      const session = await db_helpers.getUploadSession(input.sessionId);
       if (!session || session.userId !== ctx.user.id) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Upload session not found" });
       }
-      await dbHelpers.verifyCaseWriteAccess(session.caseId, ctx.user.id);
-      await dbHelpers.finalizeUploadSession(input.sessionId);
-      return dbHelpers.getUploadSession(input.sessionId);
+      await db_helpers.verifyCaseWriteAccess(session.caseId, ctx.user.id);
+      await db_helpers.finalizeUploadSession(input.sessionId);
+      return db_helpers.getUploadSession(input.sessionId);
     }),
 });
 
@@ -1960,35 +1961,35 @@ const provenanceRouter = router({
   listUnsupported: protectedProcedure
     .input(z.object({ caseId: z.number().optional() }))
     .query(async ({ ctx, input }) => {
-      if (input.caseId) await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.listUnsupportedFindings(input.caseId);
+      if (input.caseId) await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.listUnsupportedFindings(input.caseId);
     }),
 
   getDetail: protectedProcedure
     .input(z.object({ findingId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const detail = await dbHelpers.getFindingMatchDetail(input.findingId);
+      const detail = await db_helpers.getFindingMatchDetail(input.findingId);
       if (!detail) throw new TRPCError({ code: "NOT_FOUND", message: "Finding not found" });
       // Verify ownership through finding -> case chain
-      await dbHelpers.verifyCaseOwnership(detail.finding.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(detail.finding.caseId as any, ctx.user.id);
       return detail;
     }),
 
   metrics: protectedProcedure
     .input(z.object({ caseId: z.number().optional() }))
     .query(async ({ ctx, input }) => {
-      if (input.caseId) await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.getProvenanceDrilldownMetrics(input.caseId);
+      if (input.caseId) await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.getProvenanceDrilldownMetrics(input.caseId);
     }),
 
   // Action A: Re-run document-scoped matching (no cross-document widening)
   reRunMatching: protectedProcedure
     .input(z.object({ findingId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const [finding] = await dbHelpers.db.select().from((await import("../drizzle/schema")).findings)
+      const [finding] = await db_helpers.db.select().from((await import("../drizzle/schema")).findings)
         .where(eq((await import("../drizzle/schema")).findings.id, input.findingId));
       if (!finding) throw new TRPCError({ code: "NOT_FOUND", message: "Finding not found" });
-      await dbHelpers.verifyCaseWriteAccess(finding.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(finding.caseId, ctx.user.id);
       // Gate A: use finding.snapshotId directly — no implicit listSnapshots[0]
       if (finding.snapshotId) await assertActionAllowed(finding.caseId, finding.snapshotId, 'runProvenanceDrilldown');
 
@@ -1996,7 +1997,7 @@ const provenanceRouter = router({
 
       // Gate A: scope claim reads to the finding’s snapshot boundary
       const { claims: claimsTable, documents: docsTable } = await import("../drizzle/schema");
-      const caseClaims = await dbHelpers.db.select({
+      const caseClaims = await db_helpers.db.select({
         id: claimsTable.id,
         claimText: claimsTable.claimText,
         claimType: claimsTable.claimType,
@@ -2011,27 +2012,27 @@ const provenanceRouter = router({
 
       if (caseClaims.length === 0) {
         // No claims to match against
-        await dbHelpers.updateFindingMatchMetadata(input.findingId, {
+        await db_helpers.updateFindingMatchMetadata(input.findingId, {
           candidateClaimCount: 0,
           fallbackTriggered: false,
           matchMetadata: { reRunResult: "no_candidate_claims", reRunBy: ctx.user.id, reRunAt: Date.now() },
         });
-        await dbHelpers.createProvenanceAuditLog({
-          findingId: input.findingId,
+        await db_helpers.createProvenanceAuditLog({
+          caseId: finding.caseId,
           userId: ctx.user.id,
           actionType: "re_run_matching",
-          previousStatus,
-          newStatus: finding.provenanceStatus,
-          metadata: { candidateClaims: 0, result: "no_candidate_claims" },
+          targetType: "finding",
+          targetId: input.findingId,
+          details: { candidateClaims: 0, result: "no_candidate_claims", previousStatus, newStatus: finding.provenanceStatus },
         });
-        return { success: true, matchedClaimIds: [], candidateCount: 0 };
+        return { success: true, matched_claim_ids: [], candidate_count: 0 };
       }
 
       // Run the fallback matcher (deterministic, document-scoped)
       const { matchClaimsToFinding } = await import("./claim-backfill.js");
       const result = await matchClaimsToFinding(
         { id: finding.id, description: finding.description, title: finding.title, findingType: finding.findingType },
-        caseClaims.map(c => ({ id: c.id, claimText: c.claimText, claimType: c.claimType, documentId: c.documentId }))
+        caseClaims.map((c: any) => ({ id: c.id, claimText: c.claimText, claimType: c.claimType, documentId: c.documentId }))
       );
 
       const matchMetadata: Record<string, unknown> = {
@@ -2042,49 +2043,49 @@ const provenanceRouter = router({
       };
 
       if (result.matchedIds.length > 0) {
-        await dbHelpers.updateFindingClaimIds(input.findingId, result.matchedIds);
+        await db_helpers.updateFindingClaimIds(input.findingId, result.matchedIds as unknown as number[]);
       }
 
-      await dbHelpers.updateFindingMatchMetadata(input.findingId, {
+      await db_helpers.updateFindingMatchMetadata(input.findingId, {
         candidateClaimCount: caseClaims.length,
         fallbackTriggered: true,
         matchMetadata,
       });
 
       const newStatus = result.matchedIds.length > 0 ? "linked" : previousStatus;
-      await dbHelpers.createProvenanceAuditLog({
-        findingId: input.findingId,
+      await db_helpers.createProvenanceAuditLog({
+        caseId: finding.caseId,
         userId: ctx.user.id,
         actionType: "re_run_matching",
-        previousStatus,
-        newStatus,
-        metadata: matchMetadata,
+        targetType: "finding",
+        targetId: input.findingId,
+        details: { previousStatus, newStatus, ...matchMetadata },
       });
 
-      return { success: true, matchedClaimIds: result.matchedIds, candidateCount: caseClaims.length };
+      return { success: true, matched_claim_ids: result.matchedIds, candidate_count: caseClaims.length };
     }),
 
   // Action B: Mark as valid synthesis (mandatory reason)
   markSynthesis: protectedProcedure
     .input(z.object({ findingId: z.number(), reason: z.string().min(1, "Reason is mandatory") }))
     .mutation(async ({ ctx, input }) => {
-      const [finding] = await dbHelpers.db.select().from((await import("../drizzle/schema")).findings)
+      const [finding] = await db_helpers.db.select().from((await import("../drizzle/schema")).findings)
         .where(eq((await import("../drizzle/schema")).findings.id, input.findingId));
       if (!finding) throw new TRPCError({ code: "NOT_FOUND", message: "Finding not found" });
-      await dbHelpers.verifyCaseWriteAccess(finding.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(finding.caseId, ctx.user.id);
       // Gate A: use finding.snapshotId directly — no implicit listSnapshots[0]
       if (finding.snapshotId) await assertActionAllowed(finding.caseId, finding.snapshotId, 'runProvenanceDrilldown');
 
       const previousStatus = finding.provenanceStatus;
-      await dbHelpers.markFindingAsSynthesis(input.findingId, input.reason);
+      await db_helpers.markFindingAsSynthesis(input.findingId, input.reason);
 
-      await dbHelpers.createProvenanceAuditLog({
-        findingId: input.findingId,
+      await db_helpers.createProvenanceAuditLog({
+        caseId: finding.caseId,
         userId: ctx.user.id,
         actionType: "mark_synthesis",
-        reason: input.reason,
-        previousStatus,
-        newStatus: "unsupported_synthesis",
+        targetType: "finding",
+        targetId: input.findingId,
+        details: { previousStatus, newStatus: "unsupported_synthesis", reason: input.reason },
       });
 
       return { success: true };
@@ -2094,21 +2095,20 @@ const provenanceRouter = router({
   flagForReview: protectedProcedure
     .input(z.object({ findingId: z.number(), reason: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
-      const [finding] = await dbHelpers.db.select().from((await import("../drizzle/schema")).findings)
+      const [finding] = await db_helpers.db.select().from((await import("../drizzle/schema")).findings)
         .where(eq((await import("../drizzle/schema")).findings.id, input.findingId));
       if (!finding) throw new TRPCError({ code: "NOT_FOUND", message: "Finding not found" });
-      await dbHelpers.verifyCaseWriteAccess(finding.caseId, ctx.user.id);
+      await db_helpers.verifyCaseWriteAccess(finding.caseId, ctx.user.id);
       // Gate A: use finding.snapshotId directly — no implicit listSnapshots[0]
       if (finding.snapshotId) await assertActionAllowed(finding.caseId, finding.snapshotId, 'runProvenanceDrilldown');
 
-      await dbHelpers.createProvenanceAuditLog({
-        findingId: input.findingId,
+      await db_helpers.createProvenanceAuditLog({
+        caseId: finding.caseId,
         userId: ctx.user.id,
         actionType: "flag_for_review",
-        reason: input.reason,
-        previousStatus: finding.provenanceStatus,
-        newStatus: finding.provenanceStatus, // unchanged
-        metadata: { flaggedAt: Date.now() },
+        targetType: "finding",
+        targetId: input.findingId,
+        details: { previousStatus: finding.provenanceStatus, reason: input.reason, flaggedAt: Date.now() },
       });
 
       return { success: true };
@@ -2119,12 +2119,12 @@ const provenanceRouter = router({
     .query(async ({ ctx, input }) => {
       // Verify ownership through finding -> case chain
       const { findings: findingsTable, provenanceAuditLogs } = await import("../drizzle/schema");
-      const [finding] = await dbHelpers.db.select().from(findingsTable).where(eq(findingsTable.id, input.findingId));
+      const [finding] = await db_helpers.db.select().from(findingsTable).where(eq(findingsTable.id, input.findingId));
       if (!finding) throw new TRPCError({ code: "NOT_FOUND", message: "Finding not found" });
-      await dbHelpers.verifyCaseOwnership(finding.caseId, ctx.user.id);
-      return dbHelpers.db.select()
+      await db_helpers.verifyCaseOwnership(finding.caseId, ctx.user.id);
+      return db_helpers.db.select()
         .from(provenanceAuditLogs)
-        .where(eq(provenanceAuditLogs.findingId, input.findingId))
+        .where(eq(provenanceAuditLogs.targetId, input.findingId))
         .orderBy(desc(provenanceAuditLogs.createdAt));
     }),
 
@@ -2136,7 +2136,7 @@ const provenanceRouter = router({
       // The underlying startBatchRerun function handles per-finding validation
       try {
         const result = await startBatchRerun(ctx.user.id);
-        return { success: true, batchId: result.batchId, totalFindings: result.totalFindings };
+        return { success: true, batch_id: result.batchId, total_findings: result.totalFindings };
       } catch (err) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -2148,7 +2148,7 @@ const provenanceRouter = router({
   abortBatchRerun: protectedProcedure
     .input(z.object({ batchId: z.number() }))
     .mutation(async ({ input }) => {
-      const run = await dbHelpers.getBatchRunById(input.batchId);
+      const run = await db_helpers.getBatchRunById(input.batchId);
       if (!run) throw new TRPCError({ code: "NOT_FOUND", message: "Batch run not found" });
       if (run.status !== "running") throw new TRPCError({ code: "BAD_REQUEST", message: "Batch is not running" });
       requestAbort(input.batchId);
@@ -2162,7 +2162,7 @@ const provenanceRouter = router({
       // The underlying resumeBatchRerun function handles per-finding validation
       try {
         const result = await resumeBatchRerun(input.batchId, ctx.user.id);
-        return { success: true, totalRemaining: result.totalRemaining };
+        return { success: true, total_remaining: result.totalRemaining };
       } catch (err) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -2174,17 +2174,17 @@ const provenanceRouter = router({
   getBatchProgress: protectedProcedure
     .query(async () => {
       // Return active batch or latest completed
-      const active = await dbHelpers.getActiveBatchRun();
-      if (active) return { ...active, isActive: true };
-      const latest = await dbHelpers.getLatestBatchRun();
-      if (latest) return { ...latest, isActive: false };
+      const active = await db_helpers.getActiveBatchRun();
+      if (active) return { ...active, is_active: true };
+      const latest = await db_helpers.getLatestBatchRun();
+      if (latest) return { ...latest, is_active: false };
       return null;
     }),
 
   getBatchRunById: protectedProcedure
     .input(z.object({ batchId: z.number() }))
     .query(async ({ input }) => {
-      const run = await dbHelpers.getBatchRunById(input.batchId);
+      const run = await db_helpers.getBatchRunById(input.batchId);
       if (!run) throw new TRPCError({ code: "NOT_FOUND", message: "Batch run not found" });
       return run;
     }),
@@ -2192,7 +2192,7 @@ const provenanceRouter = router({
   listBatchRuns: protectedProcedure
     .input(z.object({ limit: z.number().optional() }))
     .query(async ({ input }) => {
-      return dbHelpers.listBatchRuns(input.limit ?? 10);
+      return db_helpers.listBatchRuns(input.limit ?? 10);
     }),
 
   // ─── Provenance Alerting ───
@@ -2216,22 +2216,21 @@ const provenanceRouter = router({
   exportAuditTrail: protectedProcedure
     .input(z.object({ caseId: z.number().optional(), limit: z.number().optional() }))
     .query(async ({ ctx, input }) => {
-      if (input.caseId) await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      const logs = await dbHelpers.listProvenanceAuditLogs(input.caseId, input.limit ?? 1000);
+      if (input.caseId) await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      const logs = await db_helpers.listProvenanceAuditLogs(input.caseId, input.limit ?? 1000);
       // Build CSV rows
-      const headers = ["finding_id", "action_type", "previous_state", "new_state", "user_id", "reason", "timestamp"];
-      const rows = logs.map(log => [
-        log.findingId,
+      const headers = ["target_id", "target_type", "action_type", "user_id", "details", "timestamp"];
+      const rows = logs.map((log: any) => [
+        log.targetId,
+        log.targetType,
         log.actionType,
-        log.previousStatus ?? "",
-        log.newStatus ?? "",
         log.userId,
-        (log.reason ?? "").replace(/"/g, '""'),
+        JSON.stringify(log.details ?? {}),
         new Date(log.createdAt).toISOString(),
       ]);
       const csv = [
         headers.join(","),
-        ...rows.map(r => r.map(v => `"${v}"`).join(",")),
+        ...rows.map((r: any) => r.map((v: any) => `"${v}"`).join(",")),
       ].join("\n");
       return { csv, count: logs.length };
     }),
@@ -2246,12 +2245,12 @@ const collaborationRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (!ENV.collaborationEnabled) throw new TRPCError({ code: "FORBIDDEN", message: "Collaboration is disabled" });
       // Only case owner can add collaborators
-      const caseRow = await dbHelpers.getCase(input.caseId, ctx.user.id);
+      const caseRow = await db_helpers.getCase(input.caseId, ctx.user.id);
       if (!caseRow) throw new TRPCError({ code: "FORBIDDEN", message: "Only the case owner can manage collaborators" });
       // Cannot add self
       if (input.targetUserId === ctx.user.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot add yourself as a collaborator" });
-      await dbHelpers.addCollaborator(input.caseId, input.targetUserId, ctx.user.id, input.accessLevel);
-      await dbHelpers.logAudit({
+      await db_helpers.addCollaborator(input.caseId, input.targetUserId, ctx.user.id, input.accessLevel);
+      await db_helpers.logAudit({
         caseId: input.caseId,
         userId: ctx.user.id,
         action: "add_collaborator",
@@ -2267,10 +2266,10 @@ const collaborationRouter = router({
     .input(z.object({ caseId: z.number(), targetUserId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       if (!ENV.collaborationEnabled) throw new TRPCError({ code: "FORBIDDEN", message: "Collaboration is disabled" });
-      const caseRow = await dbHelpers.getCase(input.caseId, ctx.user.id);
+      const caseRow = await db_helpers.getCase(input.caseId, ctx.user.id);
       if (!caseRow) throw new TRPCError({ code: "FORBIDDEN", message: "Only the case owner can manage collaborators" });
-      await dbHelpers.removeCollaborator(input.caseId, input.targetUserId);
-      await dbHelpers.logAudit({
+      await db_helpers.removeCollaborator(input.caseId, input.targetUserId);
+      await db_helpers.logAudit({
         caseId: input.caseId,
         userId: ctx.user.id,
         action: "remove_collaborator",
@@ -2285,36 +2284,36 @@ const collaborationRouter = router({
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
       if (!ENV.collaborationEnabled) throw new TRPCError({ code: "FORBIDDEN", message: "Collaboration is disabled" });
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.listCollaborators(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.listCollaborators(input.caseId);
     }),
 
   /** List cases shared with the current user */
   sharedWithMe: protectedProcedure.query(async ({ ctx }) => {
     if (!ENV.collaborationEnabled) return [];
-    return dbHelpers.listSharedCases(ctx.user.id);
+    return db_helpers.listSharedCases(ctx.user.id);
   }),
 });
 
 // ─── Snapshots Router (Gate 9: Cryptographic Signing) ───
 import { computeManifestHash, verifySnapshot, getPublicKeyPem, getPublicKeyFingerprint, type SnapshotSigningPayload } from "./crypto-signing";
 import { detectTemporalGaps } from "./phase2-temporal-gap-detection";
-import { resolveTemporalOrder as resolveTemporalOrderForSpine } from "./phase2-temporal-ordering";
+import { resolveTemporalOrder as resolve_temporal_order_for_spine } from "./phase2-temporal-ordering";
 
 const snapshotsRouter = router({
   /** List all snapshots for a case */
   list: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.listSnapshots(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.listSnapshots(input.caseId);
     }),
 
   /** Get a single snapshot by ID */
   get: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const snapshot = await dbHelpers.getSnapshot(input.id);
+      const snapshot = await db_helpers.getSnapshot(input.id);
       if (!snapshot) throw new TRPCError({ code: 'NOT_FOUND', message: `Snapshot ${input.id} not found` });
       return snapshot;
     }),
@@ -2323,33 +2322,33 @@ const snapshotsRouter = router({
   verify: protectedProcedure
     .input(z.object({ snapshotId: z.number() }))
     .query(async ({ input }) => {
-      const snapshot = await dbHelpers.getSnapshot(input.snapshotId);
+      const snapshot = await db_helpers.getSnapshot(input.snapshotId);
       if (!snapshot) {
         throw new TRPCError({ code: 'NOT_FOUND', message: `Snapshot ${input.snapshotId} not found` });
       }
       if (snapshot.status !== 'sealed') {
         return {
           valid: false,
-          manifestHashMatch: false,
-          signatureValid: false,
-          fingerprintMatch: false,
-          recomputedManifestHash: '',
-          storedSignature: '',
-          currentFingerprint: getPublicKeyFingerprint(),
-          storedFingerprint: '',
+          manifest_hash_match: false,
+          signature_valid: false,
+          fingerprint_match: false,
+          recomputed_manifest_hash: '',
+          stored_signature: '',
+          current_fingerprint: getPublicKeyFingerprint(),
+          stored_fingerprint: '',
           details: 'Snapshot is not sealed — no signature to verify.',
         };
       }
       if (!snapshot.signature || !snapshot.signatureAlgorithm || !snapshot.publicKeyFingerprint) {
         return {
           valid: false,
-          manifestHashMatch: false,
-          signatureValid: false,
-          fingerprintMatch: false,
-          recomputedManifestHash: '',
-          storedSignature: '',
-          currentFingerprint: getPublicKeyFingerprint(),
-          storedFingerprint: '',
+          manifest_hash_match: false,
+          signature_valid: false,
+          fingerprint_match: false,
+          recomputed_manifest_hash: '',
+          stored_signature: '',
+          current_fingerprint: getPublicKeyFingerprint(),
+          stored_fingerprint: '',
           details: 'Snapshot is sealed but has no cryptographic signature (pre-Gate 9 snapshot).',
         };
       }
@@ -2373,7 +2372,7 @@ const snapshotsRouter = router({
   /** Get the current signing public key and fingerprint */
   publicKey: publicProcedure.query(() => {
     return {
-      publicKeyPem: getPublicKeyPem(),
+      public_key_pem: getPublicKeyPem(),
       fingerprint: getPublicKeyFingerprint(),
       algorithm: 'Ed25519',
     };
@@ -2383,20 +2382,20 @@ const snapshotsRouter = router({
   lifecycle: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      const snapshot = await dbHelpers.getLatestSnapshot(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      const snapshot = await db_helpers.getLatestSnapshot(input.caseId);
       if (!snapshot) {
         return {
-          hasSnapshot: false as const,
-          snapshotId: null,
+          has_snapshot: false as const,
+          snapshot_id: null,
           version: null,
           status: null,
           signature: null,
-          lastUpdatedAt: null,
+          last_updated_at: null,
           stages: null,
-          canSeal: false,
-          gateStage: null,
-          extractionIntegrity: null,
+          can_seal: false,
+          gate_stage: null,
+          extraction_integrity: null,
         };
       }
 
@@ -2417,20 +2416,20 @@ const snapshotsRouter = router({
         extractionIntegrity = gateResult.extractionIntegrity;
 
         // Map gate result to UI stage format for backward compatibility
-        const allDocs = await dbHelpers.listDocuments(input.caseId);
+        const allDocs = await db_helpers.listDocuments(input.caseId);
         // Active documents only (not superseded/corrupted/excluded)
-        const activeDocs = allDocs.filter(d => !d.documentResolution || d.documentResolution === 'active');
+        const activeDocs = allDocs.filter((d: any) => !d.documentResolution || d.documentResolution === 'active');
         const totalDocs = allDocs.length;
-        const readyDocs = activeDocs.filter(d => d.status === 'ready').length;
-        const activeErrors = activeDocs.filter(d => d.status === 'error' || d.status === 'failed_permanent');
+        const readyDocs = activeDocs.filter((d: any) => d.status === 'ready').length;
+        const activeErrors = activeDocs.filter((d: any) => d.status === 'error' || d.status === 'failed_permanent');
         const errorDocs = activeErrors.length;
         // Resolution counts for banner breakdown
-        const resolvedDocs = allDocs.filter(d => d.documentResolution && d.documentResolution !== 'active');
-        const supersededCount = resolvedDocs.filter(d => d.documentResolution === 'superseded').length;
-        const corruptedCount = resolvedDocs.filter(d => d.documentResolution === 'corrupted').length;
-        const excludedCount = resolvedDocs.filter(d => d.documentResolution === 'excluded').length;
-        const stats = await dbHelpers.getCaseStats(input.caseId);
-        const correlations = await dbHelpers.listCorrelations(input.caseId);
+        const resolvedDocs = allDocs.filter((d: any) => d.documentResolution && d.documentResolution !== 'active');
+        const supersededCount = resolvedDocs.filter((d: any) => d.documentResolution === 'superseded').length;
+        const corruptedCount = resolvedDocs.filter((d: any) => d.documentResolution === 'corrupted').length;
+        const excludedCount = resolvedDocs.filter((d: any) => d.documentResolution === 'excluded').length;
+        const stats = await db_helpers.getCaseStats(input.caseId);
+        const correlations = await db_helpers.listCorrelations(input.caseId);
 
         // Populate enriched data within scope of gateResult/gateInput
         stageReasons = {
@@ -2515,12 +2514,12 @@ const snapshotsRouter = router({
       }
 
       return {
-        hasSnapshot: true as const,
-        snapshotId: snapshot.id,
+        has_snapshot: true as const,
+        snapshot_id: snapshot.id,
         version: snapshot.version,
         status: snapshot.status,
         signature: signatureStatus,
-        lastUpdatedAt: snapshot.sealedAt ?? snapshot.createdAt,
+        last_updated_at: snapshot.sealedAt ?? snapshot.createdAt,
         stages,
         canSeal,
         gateStage,
@@ -2535,21 +2534,21 @@ const snapshotsRouter = router({
   seal: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
-      const snapshot = await dbHelpers.getOpenSnapshot(input.caseId);
+      await db_helpers.verifyCaseWriteAccess(input.caseId, ctx.user.id);
+      const snapshot = await db_helpers.getOpenSnapshot(input.caseId);
       if (!snapshot) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'No open snapshot found for this case.' });
       }
       // Gate enforcement: sealSnapshot requires READY_TO_SEAL
       await assertActionAllowed(input.caseId, snapshot.id, 'sealSnapshot');
-      await dbHelpers.sealSnapshot(snapshot.id);
-      await dbHelpers.logAudit({
+      await db_helpers.sealSnapshot(snapshot.id);
+      await db_helpers.logAudit({
         caseId: input.caseId,
         userId: ctx.user.id,
         action: 'snapshot_sealed_manual',
         details: { snapshotId: snapshot.id, version: snapshot.version },
       });
-      return { sealed: true, snapshotId: snapshot.id, version: snapshot.version };
+      return { sealed: true, snapshot_id: snapshot.id, version: snapshot.version };
     }),
 
   /** Spine Viewer — read-only aggregated view of a sealed snapshot */
@@ -2557,8 +2556,8 @@ const snapshotsRouter = router({
     .input(z.object({ caseId: z.number(), snapshotId: z.number() }))
     .query(async ({ ctx, input }) => {
       // 1. Verify access and sealed status
-      const caseRow = await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      const snapshot = await dbHelpers.getSnapshot(input.snapshotId);
+      const caseRow = await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      const snapshot = await db_helpers.getSnapshot(input.snapshotId);
       if (!snapshot) {
         throw new TRPCError({ code: 'NOT_FOUND', message: `Snapshot ${input.snapshotId} not found` });
       }
@@ -2591,11 +2590,11 @@ const snapshotsRouter = router({
       }
 
       // 3. Fetch enriched findings scoped to this snapshot
-      const allEnrichedFindings = await dbHelpers.listFindingsEnriched(input.caseId);
-      const snapshotFindings = allEnrichedFindings.filter(f => f.snapshotId === input.snapshotId);
+      const allEnrichedFindings = await db_helpers.listFindingsEnriched(input.caseId);
+      const snapshotFindings = allEnrichedFindings.filter((f: any) => f.snapshotId === input.snapshotId);
 
       // 4. Fetch Phase-2 runs and structured notes for this snapshot
-      const p2Runs = await phase2Db.listPhase2RunsBySnapshot(input.snapshotId);
+      const p2Runs = await phase2_db.listPhase2RunsBySnapshot(input.snapshotId);
       let allStructuredNotes: Array<{
         id: number;
         runId: number;
@@ -2603,7 +2602,7 @@ const snapshotsRouter = router({
         payload: Record<string, unknown>;
         temporalAnchors: string[] | null;
         createdAt: number;
-        temporalOrdering: ReturnType<typeof resolveTemporalOrderForSpine>;
+        temporalOrdering: ReturnType<typeof resolve_temporal_order_for_spine>;
       }> = [];
       let allEvidenceRequirements: Array<{
         id: number;
@@ -2614,16 +2613,16 @@ const snapshotsRouter = router({
       }> = [];
 
       for (const run of p2Runs) {
-        const notes = await phase2Db.listStructuredNotes(run.id);
+        const notes = await phase2_db.listStructuredNotes(run.id);
         const enrichedNotes = notes.map(note => ({
           ...note,
-          temporalOrdering: resolveTemporalOrderForSpine(
+          temporalOrdering: resolve_temporal_order_for_spine(
             Array.isArray(note.temporalAnchors) ? note.temporalAnchors as string[] : [],
           ),
         }));
         allStructuredNotes = allStructuredNotes.concat(enrichedNotes);
 
-        const reqs = await phase2Db.listEvidenceRequirements(run.id);
+        const reqs = await phase2_db.listEvidenceRequirements(run.id);
         allEvidenceRequirements = allEvidenceRequirements.concat(reqs);
       }
 
@@ -2644,7 +2643,7 @@ const snapshotsRouter = router({
 
       // Add temporal findings
       for (const f of snapshotFindings) {
-        const fTemporal = resolveTemporalOrderForSpine(f.temporalAnchors);
+        const fTemporal = resolve_temporal_order_for_spine(f.temporalAnchors);
         if (fTemporal.hasTemporalData && fTemporal.primaryAnchor) {
           chronoItems.push({
             type: 'finding',
@@ -2654,7 +2653,7 @@ const snapshotsRouter = router({
             primaryAnchor: fTemporal.primaryAnchor,
             additionalAnchors: f.temporalAnchors.slice(1),
             confidence: f.confidence,
-            sourceReferences: f.backingEvidence.map(e => ({
+            sourceReferences: f.backingEvidence.map((e: any) => ({
               documentId: e.documentId,
               page: e.pageNumber,
               quote: e.verbatimQuote,
@@ -2730,7 +2729,7 @@ const snapshotsRouter = router({
 
       // Non-temporal findings
       for (const f of snapshotFindings) {
-        const fTemporal2 = resolveTemporalOrderForSpine(f.temporalAnchors);
+        const fTemporal2 = resolve_temporal_order_for_spine(f.temporalAnchors);
         if (!fTemporal2.hasTemporalData) {
           structuralItems.push({
             type: f.findingType,
@@ -2738,7 +2737,7 @@ const snapshotsRouter = router({
             title: f.title,
             description: f.description,
             confidence: f.confidence,
-            sourceReferences: f.backingEvidence.map(e => ({
+            sourceReferences: f.backingEvidence.map((e: any) => ({
               documentId: e.documentId,
               page: e.pageNumber,
               quote: e.verbatimQuote,
@@ -2802,64 +2801,64 @@ const snapshotsRouter = router({
       const gapResult = detectTemporalGaps(sortedAnchors);
 
       // 8. Ingestion audit summary
-      const ingestionAudit = await dbHelpers.getIngestionAudit(input.caseId);
+      const ingestionAudit = await db_helpers.getIngestionAudit(input.caseId);
 
       // 9. Determine lane from first finding or first note
       const lane = snapshotFindings[0]?.laneId || 'N/A';
 
       return {
         header: {
-          caseName: caseRow.name,
-          caseId: input.caseId,
-          snapshotId: snapshot.id,
-          snapshotVersion: snapshot.version,
-          sealedAt: snapshot.sealedAt,
-          engineVersion: snapshot.engineVersion,
+          case_name: caseRow.name,
+          case_id: input.caseId,
+          snapshot_id: snapshot.id,
+          snapshot_version: snapshot.version,
+          sealed_at: snapshot.sealedAt,
+          engine_version: snapshot.engineVersion,
           signatureStatus,
           signatureDetails,
           lane,
         },
         chronological: {
-          totalItems: chronoItems.length,
-          dayGroups: Object.keys(chronoByDay).sort().map(day => ({
+          total_items: chronoItems.length,
+          day_groups: Object.keys(chronoByDay).sort().map(day => ({
             date: day,
             items: chronoByDay[day],
           })),
         },
         structural: {
-          totalItems: structuralItems.length,
-          typeGroups: Object.entries(structuralByType).map(([type, items]) => ({
+          total_items: structuralItems.length,
+          type_groups: Object.entries(structuralByType).map(([type, items]) => ({
             type,
             count: items.length,
             items,
           })),
         },
-        temporalGaps: {
-          anchorsAnalyzed: gapResult.anchorsAnalyzed,
-          gapsDetected: gapResult.gapsDetected,
-          thresholdDays: gapResult.thresholdDays,
+        temporal_gaps: {
+          anchors_analyzed: gapResult.anchorsAnalyzed,
+          gaps_detected: gapResult.gapsDetected,
+          threshold_days: gapResult.thresholdDays,
           gaps: gapResult.gaps.map(g => ({
-            gapStart: g.gapStart,
-            gapEnd: g.gapEnd,
-            gapDays: g.gapDays,
+            gap_start: g.gapStart,
+            gap_end: g.gapEnd,
+            gap_days: g.gapDays,
             confidence: g.confidence,
           })),
         },
-        ingestionIntegrity: {
-          totalIntendedUploads: ingestionAudit.summary.totalIntendedFiles,
-          totalDocumentsCreated: ingestionAudit.summary.totalDocumentsCreated,
-          totalDuplicatesLinked: ingestionAudit.summary.totalDuplicatesLinked,
-          totalFailedFiles: ingestionAudit.summary.totalFailedFiles,
-          totalExpiredUnprocessed: ingestionAudit.summary.totalExpiredUnprocessed,
-          totalExtractionFailures: ingestionAudit.summary.totalExtractionFailures,
-          totalMissingDocuments: ingestionAudit.summary.totalMissing,
+        ingestion_integrity: {
+          total_intended_uploads: ingestionAudit.summary.totalIntendedFiles,
+          total_documents_created: ingestionAudit.summary.totalDocumentsCreated,
+          total_duplicates_linked: ingestionAudit.summary.totalDuplicatesLinked,
+          total_failed_files: ingestionAudit.summary.totalFailedFiles,
+          total_expired_unprocessed: ingestionAudit.summary.totalExpiredUnprocessed,
+          total_extraction_failures: ingestionAudit.summary.totalExtractionFailures,
+          total_missing_documents: ingestionAudit.summary.totalMissing,
         },
       };
     }),
 });
 
 // ─── Phase-2 Router: Read-Only Projection Layer ───
-import * as phase2Db from "./phase2-db";
+import * as phase2_db from "./phase2-db";
 import { runEvidenceDetection } from "./phase2-evidence-runner";
 import { runStructuredNotesDetection } from "./phase2-structured-notes-runner";
 import { runFullAnalysis } from "./phase2-orchestration-runner";
@@ -2872,8 +2871,8 @@ const phase2Router = router({
     .mutation(async ({ ctx, input }) => {
       // Gate enforcement: Phase-2 requires sealed snapshot
       await assertActionAllowed(input.caseId, input.snapshotId, 'runPhase2Analysis');
-      const run = await phase2Db.createPhase2Run(input.caseId, input.snapshotId, ctx.user.id);
-      await dbHelpers.logAudit({
+      const run = await phase2_db.createPhase2Run(input.caseId, input.snapshotId, ctx.user.id);
+      await db_helpers.logAudit({
         caseId: input.caseId,
         userId: ctx.user.id,
         action: "phase2_create_run",
@@ -2888,9 +2887,9 @@ const phase2Router = router({
   getRun: protectedProcedure
     .input(z.object({ runId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const run = await phase2Db.getPhase2Run(input.runId);
+      const run = await phase2_db.getPhase2Run(input.runId);
       if (!run) throw new TRPCError({ code: "NOT_FOUND", message: `Phase-2 run ${input.runId} not found.` });
-      await phase2Db.verifyTenantAccess(run.caseId, ctx.user.id);
+      await phase2_db.verifyTenantAccess(run.caseId, ctx.user.id);
       return run;
     }),
 
@@ -2898,21 +2897,21 @@ const phase2Router = router({
   listRuns: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await phase2Db.verifyTenantAccess(input.caseId, ctx.user.id);
-      return phase2Db.listPhase2Runs(input.caseId);
+      await phase2_db.verifyTenantAccess(input.caseId, ctx.user.id);
+      return phase2_db.listPhase2Runs(input.caseId);
     }),
 
   /** Complete a Phase-2 run (mark as done) */
   completeRun: protectedProcedure
     .input(z.object({ runId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const run = await phase2Db.getPhase2Run(input.runId);
+      const run = await phase2_db.getPhase2Run(input.runId);
       if (!run) throw new TRPCError({ code: "NOT_FOUND", message: `Phase-2 run ${input.runId} not found.` });
-      await phase2Db.verifyTenantAccess(run.caseId, ctx.user.id);
+      await phase2_db.verifyTenantAccess(run.caseId, ctx.user.id);
       // Gate enforcement: Phase-2 requires sealed snapshot
       await assertActionAllowed(run.caseId, run.snapshotId, 'runPhase2Analysis');
-      await phase2Db.completePhase2Run(input.runId);
-      await dbHelpers.logAudit({
+      await phase2_db.completePhase2Run(input.runId);
+      await db_helpers.logAudit({
         caseId: run.caseId,
         userId: ctx.user.id,
         action: "phase2_complete_run",
@@ -2926,42 +2925,42 @@ const phase2Router = router({
   addEvidenceRequirement: protectedProcedure
     .input(z.object({ runId: z.number(), payload: z.record(z.string(), z.unknown()) }))
     .mutation(async ({ ctx, input }) => {
-      const run = await phase2Db.getPhase2Run(input.runId);
+      const run = await phase2_db.getPhase2Run(input.runId);
       if (!run) throw new TRPCError({ code: "NOT_FOUND", message: `Phase-2 run ${input.runId} not found.` });
-      await phase2Db.verifyTenantAccess(run.caseId, ctx.user.id);
+      await phase2_db.verifyTenantAccess(run.caseId, ctx.user.id);
       // Gate enforcement: Phase-2 requires sealed snapshot
       await assertActionAllowed(run.caseId, run.snapshotId, 'runPhase2Analysis');
-      return phase2Db.createEvidenceRequirement(input.runId, input.payload);
+      return phase2_db.createEvidenceRequirement(input.runId, input.payload);
     }),
 
   /** Add a structured note artifact to an open run */
   addStructuredNote: protectedProcedure
     .input(z.object({ runId: z.number(), payload: z.record(z.string(), z.unknown()) }))
     .mutation(async ({ ctx, input }) => {
-      const run = await phase2Db.getPhase2Run(input.runId);
+      const run = await phase2_db.getPhase2Run(input.runId);
       if (!run) throw new TRPCError({ code: "NOT_FOUND", message: `Phase-2 run ${input.runId} not found.` });
-      await phase2Db.verifyTenantAccess(run.caseId, ctx.user.id);
+      await phase2_db.verifyTenantAccess(run.caseId, ctx.user.id);
       // Gate enforcement: Phase-2 requires sealed snapshot
       await assertActionAllowed(run.caseId, run.snapshotId, 'runPhase2Analysis');
-      return phase2Db.createStructuredNote(input.runId, input.payload);
+      return phase2_db.createStructuredNote(input.runId, input.payload);
     }),
 
   /** List artifacts for a run */
   listArtifacts: protectedProcedure
     .input(z.object({ runId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const run = await phase2Db.getPhase2Run(input.runId);
+      const run = await phase2_db.getPhase2Run(input.runId);
       if (!run) throw new TRPCError({ code: "NOT_FOUND", message: `Phase-2 run ${input.runId} not found.` });
-      await phase2Db.verifyTenantAccess(run.caseId, ctx.user.id);
-      const evidenceRequirements = await phase2Db.listEvidenceRequirements(input.runId);
-      const structuredNotes = await phase2Db.listStructuredNotes(input.runId);
+      await phase2_db.verifyTenantAccess(run.caseId, ctx.user.id);
+      const evidenceRequirements = await phase2_db.listEvidenceRequirements(input.runId);
+      const structuredNotes = await phase2_db.listStructuredNotes(input.runId);
       const enrichedNotes = structuredNotes.map(note => ({
         ...note,
         temporalOrdering: resolveTemporalOrder(
           Array.isArray(note.temporalAnchors) ? note.temporalAnchors as string[] : [],
         ),
       }));
-      return { evidenceRequirements, structuredNotes: enrichedNotes };
+      return { evidenceRequirements, structured_notes: enrichedNotes };
     }),
 
   /** Run evidence requirement detection against a sealed snapshot (Domain Logic v1) */
@@ -2971,7 +2970,7 @@ const phase2Router = router({
       // Gate enforcement: Phase-2 requires sealed snapshot
       await assertActionAllowed(input.caseId, input.snapshotId, 'runPhase2Analysis');
       const result = await runEvidenceDetection(input.caseId, input.snapshotId, ctx.user.id);
-      await dbHelpers.logAudit({
+      await db_helpers.logAudit({
         caseId: input.caseId,
         userId: ctx.user.id,
         action: "phase2_evidence_detection",
@@ -2987,12 +2986,12 @@ const phase2Router = router({
         },
       });
       return {
-        runId: result.runId,
+        run_id: result.runId,
         status: result.status,
-        requirementsInserted: result.requirementsInserted,
-        documentsScanned: result.detection.documentsScanned,
-        quotesScanned: result.detection.quotesScanned,
-        matchCount: result.detection.matches.length,
+        requirements_inserted: result.requirementsInserted,
+        documents_scanned: result.detection.documentsScanned,
+        quotes_scanned: result.detection.quotesScanned,
+        match_count: result.detection.matches.length,
         requirements: result.detection.requirements,
         error: result.error,
       };
@@ -3005,7 +3004,7 @@ const phase2Router = router({
       // Gate enforcement: Phase-2 requires sealed snapshot
       await assertActionAllowed(input.caseId, input.snapshotId, 'runPhase2Analysis');
       const result = await runStructuredNotesDetection(input.caseId, input.snapshotId, ctx.user.id);
-      await dbHelpers.logAudit({
+      await db_helpers.logAudit({
         caseId: input.caseId,
         userId: ctx.user.id,
         action: "phase2_structured_notes_detection",
@@ -3019,11 +3018,11 @@ const phase2Router = router({
         },
       });
       return {
-        runId: result.runId,
+        run_id: result.runId,
         status: result.status,
-        notesGenerated: result.notesGenerated,
+        notes_generated: result.notesGenerated,
         notes: result.notes,
-        dataStats: result.dataStats,
+        data_stats: result.dataStats,
         error: result.error,
       };
     }),
@@ -3035,7 +3034,7 @@ const phase2Router = router({
       // Gate enforcement: Phase-2 requires sealed snapshot
       await assertActionAllowed(input.caseId, input.snapshotId, 'runPhase2Analysis');
       const result = await runFullAnalysis(input.caseId, input.snapshotId, ctx.user.id);
-      await dbHelpers.logAudit({
+      await db_helpers.logAudit({
         caseId: input.caseId,
         userId: ctx.user.id,
         action: "phase2_full_analysis",
@@ -3056,10 +3055,10 @@ const phase2Router = router({
   snapshotSummary: protectedProcedure
     .input(z.object({ caseId: z.number(), snapshotId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await phase2Db.verifyTenantAccess(input.caseId, ctx.user.id);
-      await phase2Db.verifySealedSnapshot(input.snapshotId, input.caseId);
-      const summary = await phase2Db.getSnapshotExtractionSummary(input.snapshotId);
-      const metadata = await phase2Db.getSnapshotMetadata(input.snapshotId);
+      await phase2_db.verifyTenantAccess(input.caseId, ctx.user.id);
+      await phase2_db.verifySealedSnapshot(input.snapshotId, input.caseId);
+      const summary = await phase2_db.getSnapshotExtractionSummary(input.snapshotId);
+      const metadata = await phase2_db.getSnapshotMetadata(input.snapshotId);
       return { summary, metadata };
     }),
 });
@@ -3069,27 +3068,27 @@ const checklistRouter = router({
   list: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const c = await dbHelpers.getCase(input.caseId, ctx.user.id);
+      const c = await db_helpers.getCase(input.caseId, ctx.user.id);
       if (!c) throw new TRPCError({ code: "NOT_FOUND" });
-      return dbHelpers.getChecklistItems(input.caseId);
+      return db_helpers.getChecklistItems(input.caseId);
     }),
   toggle: protectedProcedure
     .input(z.object({ itemId: z.number(), checked: z.boolean(), caseId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const c = await dbHelpers.getCase(input.caseId, ctx.user.id);
+      const c = await db_helpers.getCase(input.caseId, ctx.user.id);
       if (!c) throw new TRPCError({ code: "NOT_FOUND" });
-      return dbHelpers.toggleChecklistItem(input.itemId, input.checked);
+      return db_helpers.toggleChecklistItem(input.itemId, input.checked);
     }),
   generate: protectedProcedure
     .input(z.object({ caseId: z.number(), pipelineType: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const c = await dbHelpers.getCase(input.caseId, ctx.user.id);
+      const c = await db_helpers.getCase(input.caseId, ctx.user.id);
       if (!c) throw new TRPCError({ code: "NOT_FOUND" });
-      const existing = await dbHelpers.getChecklistItems(input.caseId);
+      const existing = await db_helpers.getChecklistItems(input.caseId);
       if (existing.length > 0) return { generated: false, message: "Checklist already exists" };
       const { getChecklistForPipeline } = await import("./document-checklists");
       const items = getChecklistForPipeline(input.pipelineType);
-      await dbHelpers.createChecklistItems(input.caseId, items);
+      await db_helpers.createChecklistItems(input.caseId, items);
       return { generated: true, count: items.length };
     }),
 });
@@ -3105,7 +3104,7 @@ const feedbackRouter = router({
       pipelineType: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const result = await dbHelpers.createFeedback(ctx.user.id, input);
+      const result = await db_helpers.createFeedback(ctx.user.id, input);
       // Notify owner about new feedback
       try {
         const { notifyOwner } = await import("./_core/notification");
@@ -3119,19 +3118,19 @@ const feedbackRouter = router({
   list: adminProcedure
     .input(z.object({ limit: z.number().optional() }))
     .query(async ({ input }) => {
-      return dbHelpers.listFeedback(input.limit ?? 50);
+      return db_helpers.listFeedback(input.limit ?? 50);
     }),
   updateStatus: adminProcedure
     .input(z.object({ feedbackId: z.number(), status: z.enum(["new", "reviewed", "resolved"]) }))
     .mutation(async ({ input }) => {
-      const result = await dbHelpers.updateFeedbackStatus(input.feedbackId, input.status);
+      const result = await db_helpers.updateFeedbackStatus(input.feedbackId, input.status);
       // Notify the user who submitted the feedback
       if (input.status === "reviewed" || input.status === "resolved") {
         try {
-          const allFeedback = await dbHelpers.listFeedback(100);
-          const item = allFeedback.find((f) => f.id === input.feedbackId);
+          const allFeedback = await db_helpers.listFeedback(100);
+          const item = allFeedback.find((f: any) => f.id === input.feedbackId);
           if (item?.userId) {
-            await dbHelpers.notifyFeedbackResponse(item.userId, input.feedbackId, input.status);
+            await db_helpers.notifyFeedbackResponse(item.userId, input.feedbackId, input.status);
           }
         } catch (e) { console.warn("[Notify] feedback response notification failed:", e); }
       }
@@ -3143,18 +3142,18 @@ const feedbackRouter = router({
 const analyticsRouter = router({
   pipelineStats: adminProcedure
     .query(async () => {
-      return dbHelpers.getPipelineAnalytics();
+      return db_helpers.getPipelineAnalytics();
     }),
   funnelStats: adminProcedure
     .input(z.object({ timeRangeDays: z.number().optional() }).optional())
     .query(async ({ input }) => {
       const timeRangeMs = input?.timeRangeDays ? input.timeRangeDays * 24 * 60 * 60 * 1000 : undefined;
-      return dbHelpers.getFunnelAnalytics(timeRangeMs);
+      return db_helpers.getFunnelAnalytics(timeRangeMs);
     }),
   logEvent: protectedProcedure
     .input(z.object({ pipelineType: z.string(), eventType: z.enum(["intake_start", "intake_complete", "direct_create", "document_uploaded", "extraction_complete", "analysis_started", "analysis_complete", "findings_generated", "export_created", "case_completed", "guided_intake_complete", "guided_to_conversation"]) }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.logPipelineEvent(ctx.user.id, input.pipelineType, input.eventType);
+      await db_helpers.logPipelineEvent(ctx.user.id, input.pipelineType, input.eventType);
       return { success: true };
     }),
 });
@@ -3172,11 +3171,11 @@ const shareRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       // Verify user owns this case
-      const caseData = await dbHelpers.getCase(input.caseId, ctx.user.id);
+      const caseData = await db_helpers.getCase(input.caseId, ctx.user.id);
       if (!caseData) throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
       const token = randomBytes(32).toString("hex");
       const expiresAt = Date.now() + input.expiresInDays * 24 * 60 * 60 * 1000;
-      const result = await dbHelpers.createShareLink({
+      const result = await db_helpers.createShareLink({
         caseId: input.caseId,
         createdBy: ctx.user.id,
         token,
@@ -3190,15 +3189,15 @@ const shareRouter = router({
   list: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const caseData = await dbHelpers.getCase(input.caseId, ctx.user.id);
+      const caseData = await db_helpers.getCase(input.caseId, ctx.user.id);
       if (!caseData) throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
-      return dbHelpers.listShareLinksForCase(input.caseId);
+      return db_helpers.listShareLinksForCase(input.caseId);
     }),
 
   revoke: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.revokeShareLink(input.id, ctx.user.id);
+      await db_helpers.revokeShareLink(input.id, ctx.user.id);
       return { success: true };
     }),
 
@@ -3206,20 +3205,20 @@ const shareRouter = router({
   access: publicProcedure
     .input(z.object({ token: z.string() }))
     .query(async ({ input }) => {
-      const link = await dbHelpers.getShareLinkByToken(input.token);
+      const link = await db_helpers.getShareLinkByToken(input.token);
       if (!link) throw new TRPCError({ code: "NOT_FOUND", message: "Share link not found or invalid" });
       if (link.revokedAt) throw new TRPCError({ code: "FORBIDDEN", message: "This share link has been revoked" });
       if (link.expiresAt < Date.now()) throw new TRPCError({ code: "FORBIDDEN", message: "This share link has expired" });
       // Record access and notify owner
-      await dbHelpers.recordShareLinkAccess(link.id);
-      try { await dbHelpers.notifyShareAccessed(link.id); } catch (e) { console.warn("[Notify] share access notification failed:", e); }
+      await db_helpers.recordShareLinkAccess(link.id);
+      try { await db_helpers.notifyShareAccessed(link.id); } catch (e) { console.warn("[Notify] share access notification failed:", e); }
       // Fetch read-only case data
-      const data = await dbHelpers.getSharedCaseData(link.caseId);
+      const data = await db_helpers.getSharedCaseData(link.caseId);
       if (!data) throw new TRPCError({ code: "NOT_FOUND", message: "Case data not found" });
       return {
         ...data,
         permissions: link.permissions,
-        expiresAt: link.expiresAt,
+        expires_at: link.expiresAt,
         label: link.label,
       };
     }),
@@ -3230,90 +3229,88 @@ const notificationsRouter = router({
   list: protectedProcedure
     .input(z.object({ unreadOnly: z.boolean().optional() }).optional())
     .query(async ({ ctx, input }) => {
-      return dbHelpers.listNotifications(ctx.user.id, { unreadOnly: input?.unreadOnly });
+      return db_helpers.listNotifications(ctx.user.id, { unreadOnly: input?.unreadOnly });
     }),
   unreadCount: protectedProcedure
     .query(async ({ ctx }) => {
-      return dbHelpers.getUnreadNotificationCount(ctx.user.id);
+      return db_helpers.getUnreadNotificationCount(ctx.user.id);
     }),
   markRead: protectedProcedure
     .input(z.object({ notificationId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.markNotificationRead(input.notificationId, ctx.user.id);
+      await db_helpers.markNotificationRead(input.notificationId, ctx.user.id);
       return { success: true };
     }),
   markAllRead: protectedProcedure
     .mutation(async ({ ctx }) => {
-      await dbHelpers.markAllNotificationsRead(ctx.user.id);
+      await db_helpers.markAllNotificationsRead(ctx.user.id);
       return { success: true };
     }),
 });
 
 // ─── Invites Router ───
-import { randomBytes as cryptoRandomBytes } from "crypto";
+import { randomBytes as crypto_random_bytes } from "crypto";
 
 const invitesRouter = router({
   create: adminProcedure
     .input(z.object({
-      targetRole: z.enum(["user", "admin"]).default("admin"),
-      targetPlan: z.enum(["free", "advocacy", "family_advocacy", "analyst", "professional", "enterprise"]).default("advocacy"),
+      target_role: z.enum(["user", "admin"]).default("admin"),
+      target_plan: z.enum(["free", "advocacy", "family_advocacy", "analyst", "professional", "enterprise"]).default("advocacy"),
       label: z.string().optional(),
-      maxUses: z.number().min(1).max(1000).default(1),
-      expiresInDays: z.number().min(1).max(365).default(7),
+      max_uses: z.number().min(1).max(1000).default(1),
+      expires_in_days: z.number().min(1).max(365).default(7),
     }))
     .mutation(async ({ ctx, input }) => {
-      const token = cryptoRandomBytes(32).toString("hex");
-      const expiresAt = Date.now() + input.expiresInDays * 24 * 60 * 60 * 1000;
-      const result = await dbHelpers.createAdminInvite({
+      const token = crypto_random_bytes(32).toString("hex");
+      const expires_at = Date.now() + input.expires_in_days * 24 * 60 * 60 * 1000;
+      const result = await db_helpers.createAdminInvite({
         token,
-        createdBy: ctx.user.id,
-        targetRole: input.targetRole,
-        targetPlan: input.targetPlan,
+        created_by: ctx.user.id,
+        target_role: input.target_role,
+        target_plan: input.target_plan,
         label: input.label,
-        maxUses: input.maxUses,
-        expiresAt,
+        max_uses: input.max_uses,
+        expires_at,
       });
       return { id: result.id, token: result.token };
     }),
   list: adminProcedure
     .query(async () => {
-      return dbHelpers.listAdminInvites();
+      return db_helpers.listAdminInvites();
     }),
   revoke: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      await dbHelpers.revokeAdminInvite(input.id);
+      await db_helpers.revokeAdminInvite(input.id);
       return { success: true };
     }),
   validate: publicProcedure
     .input(z.object({ token: z.string() }))
     .query(async ({ input }) => {
-      const invite = await dbHelpers.getInviteByToken(input.token);
+      const invite = await db_helpers.getInviteByToken(input.token);
       if (!invite) return { valid: false, reason: "Invite not found" } as const;
-      if (invite.inviteStatus === "revoked") return { valid: false, reason: "This invite has been revoked" } as const;
-      if (invite.inviteStatus === "exhausted") return { valid: false, reason: "This invite has reached its usage limit" } as const;
-      if (invite.expiresAt < Date.now()) return { valid: false, reason: "This invite has expired" } as const;
-      if (invite.useCount >= invite.maxUses) return { valid: false, reason: "This invite has reached its usage limit" } as const;
-      const role = invite.targetRole;
-      const plan = invite.targetPlan;
-      return { valid: true, invite: { assignedRole: role as "user" | "admin", assignedPlan: plan as "free" | "advocacy" | "family_advocacy" | "analyst" | "professional" | "enterprise", label: invite.label } } as const;
+      if (invite.invite_status === "revoked") return { valid: false, reason: "This invite has been revoked" } as const;
+      if (invite.invite_status === "exhausted") return { valid: false, reason: "This invite has reached its usage limit" } as const;
+      if (invite.expires_at < Date.now()) return { valid: false, reason: "This invite has expired" } as const;
+      if (invite.use_count >= invite.max_uses) return { valid: false, reason: "This invite has reached its usage limit" } as const;
+      return { valid: true, invite: { target_role: invite.target_role, target_plan: invite.target_plan, label: invite.label } } as const;
     }),
   redeem: protectedProcedure
     .input(z.object({ token: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const invite = await dbHelpers.getInviteByToken(input.token);
+      const invite = await db_helpers.getInviteByToken(input.token);
       if (!invite) throw new TRPCError({ code: "NOT_FOUND", message: "Invite not found" });
-      if (invite.inviteStatus === "revoked") throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has been revoked" });
-      if (invite.inviteStatus === "exhausted") throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has reached its usage limit" });
-      if (invite.expiresAt < Date.now()) throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has expired" });
-      if (invite.useCount >= invite.maxUses) throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has reached its usage limit" });
-      await dbHelpers.redeemInvite(invite.id, ctx.user.id, invite.targetRole, invite.targetPlan);
-      return { success: true, assignedRole: invite.targetRole, assignedPlan: invite.targetPlan };
+      if (invite.invite_status === "revoked") throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has been revoked" });
+      if (invite.invite_status === "exhausted") throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has reached its usage limit" });
+      if (invite.expires_at < Date.now()) throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has expired" });
+      if (invite.use_count >= invite.max_uses) throw new TRPCError({ code: "BAD_REQUEST", message: "This invite has reached its usage limit" });
+      await db_helpers.redeemInvite(invite.id, ctx.user.id, invite.target_role, invite.target_plan);
+      return { success: true, target_role: invite.target_role, target_plan: invite.target_plan };
     }),
   redemptions: adminProcedure
-    .input(z.object({ inviteId: z.number() }))
+    .input(z.object({ invite_id: z.number() }))
     .query(async ({ input }) => {
-      return dbHelpers.listInviteRedemptions(input.inviteId);
+      return db_helpers.listInviteRedemptions(input.invite_id);
     }),
 });
 
@@ -3322,7 +3319,7 @@ const missingRecordsRouter = router({
   list: protectedProcedure
     .input(z.object({ caseId: z.number(), statusFilter: z.array(z.enum(["detected", "acknowledged", "requested", "received", "not_applicable"])).optional() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { getMissingRecordsForCase } = await import("./gap-detection");
       return getMissingRecordsForCase(input.caseId, input.statusFilter);
     }),
@@ -3330,7 +3327,7 @@ const missingRecordsRouter = router({
   summary: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { getMissingRecordsSummary } = await import("./gap-detection");
       return getMissingRecordsSummary(input.caseId);
     }),
@@ -3346,9 +3343,9 @@ const missingRecordsRouter = router({
   runDetection: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { detectAndPersistGaps } = await import("./gap-detection");
-      const caseRow = await dbHelpers.getCaseInternal(input.caseId);
+      const caseRow = await db_helpers.getCaseInternal(input.caseId);
       const pipelineType = caseRow?.pipelineType || "general";
       return detectAndPersistGaps(input.caseId, pipelineType);
     }),
@@ -3359,7 +3356,7 @@ const missingRecordsRouter = router({
       const domains = getDomainsWithRules();
       return domains.map(d => {
         const rules = getDomainRules(d);
-        return { domain: d, displayName: rules?.displayName || d, ruleCount: rules?.rules.length || 0 };
+        return { domain: d, display_name: rules?.displayName || d, rule_count: rules?.rules.length || 0 };
       });
     }),
 
@@ -3367,43 +3364,43 @@ const missingRecordsRouter = router({
   agenciesForCase: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { getMissingRecordsForCase } = await import("./gap-detection");
-      const { resolveAgenciesForMissingRecords, hasAKBCoverage } = await import("./akb-lookup");
-      const caseRow = await dbHelpers.getCaseInternal(input.caseId);
+      const { resolveAgenciesForMissingRecords, hasAKBCoverage } = (await import("./akb-lookup")) as any;
+      const caseRow = await db_helpers.getCaseInternal(input.caseId);
       const pipelineType = caseRow?.pipelineType || "general";
 
       // Check if AKB has coverage for this domain
       const hasCoverage = await hasAKBCoverage(pipelineType);
-      if (!hasCoverage) return { hasCoverage: false, records: [] };
+      if (!hasCoverage) return { has_coverage: false, records: [] };
 
       // Get missing records and resolve agencies
       const missing = await getMissingRecordsForCase(input.caseId, ["detected", "acknowledged"]);
       const withAgencies = await resolveAgenciesForMissingRecords(
         pipelineType,
-        missing.map(m => ({ recordType: m.recordType, description: m.description, severity: m.severity })),
+        missing.map((m: any) => ({ recordType: m.recordType, description: m.description, severity: m.severity })),
       );
-      return { hasCoverage: true, records: withAgencies };
+      return { has_coverage: true, records: withAgencies };
     }),
 
   akbStatutes: protectedProcedure
     .input(z.object({ stateCode: z.string().default("WA") }))
     .query(async ({ input }) => {
-      const { getStatutesForState } = await import("./akb-lookup");
+      const { getStatutesForState } = (await import("./akb-lookup")) as any;
       return getStatutesForState(input.stateCode);
     }),
 
   akbAgencies: protectedProcedure
     .input(z.object({ stateCode: z.string().default("WA") }))
     .query(async ({ input }) => {
-      const { getAgenciesForState } = await import("./akb-lookup");
+      const { getAgenciesForState } = (await import("./akb-lookup")) as any;
       return getAgenciesForState(input.stateCode);
     }),
 
   akbRecordTypes: protectedProcedure
     .input(z.object({ domain: z.string() }))
     .query(async ({ input }) => {
-      const { getRecordTypesForDomain } = await import("./akb-lookup");
+      const { getRecordTypesForDomain } = (await import("./akb-lookup")) as any;
       return getRecordTypesForDomain(input.domain);
     }),
 });
@@ -3433,15 +3430,15 @@ const caseTemplatesRouter = router({
       const template = CASE_TEMPLATES.find(t => t.id === input.templateId);
       if (!template) throw new TRPCError({ code: "NOT_FOUND", message: "Template not found" });
       const caseName = input.customName || template.name;
-      const caseId = await dbHelpers.createCase(ctx.user.id, caseName, template.description, template.domain, undefined, template.pipelineType);
+      const caseId = await db_helpers.createCase(ctx.user.id, caseName, template.description, template.domain, undefined, template.pipelineType);
       // Auto-generate document checklist
       const { getChecklistForPipeline } = await import("./document-checklists");
       const items = getChecklistForPipeline(template.pipelineType);
       if (items.length > 0) {
-        await dbHelpers.createChecklistItems(caseId, items);
+        await db_helpers.createChecklistItems(caseId, items);
       }
       // Log pipeline event
-      await dbHelpers.logPipelineEvent(ctx.user.id, template.pipelineType, "direct_create");
+      await db_helpers.logPipelineEvent(ctx.user.id, template.pipelineType, "direct_create");
       return { id: caseId, name: caseName };
     }),
 });
@@ -3451,8 +3448,8 @@ const usersAdminRouter = router({
   list: adminProcedure
     .query(async () => {
       const { users } = await import("../drizzle/schema");
-      const allUsers = await dbHelpers.db.select().from(users).orderBy(desc(users.lastSignedIn));
-      return allUsers.map(u => ({
+      const allUsers = await db_helpers.db.select().from(users).orderBy(desc(users.lastSignedIn));
+      return allUsers.map((u: any) => ({
         id: u.id,
         name: u.name,
         email: u.email,
@@ -3469,7 +3466,7 @@ const usersAdminRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "You cannot change your own role" });
       }
       const { users } = await import("../drizzle/schema");
-      await dbHelpers.db.update(users)
+      await db_helpers.db.update(users)
         .set({ role: input.role, updatedAt: Date.now() })
         .where(eq(users.id, input.userId));
       return { success: true };
@@ -3478,7 +3475,7 @@ const usersAdminRouter = router({
     .input(z.object({ userId: z.number(), plan: z.enum(["free", "advocacy", "family_advocacy", "analyst", "professional", "enterprise"]) }))
     .mutation(async ({ ctx, input }) => {
       const { users } = await import("../drizzle/schema");
-      await dbHelpers.db.update(users)
+      await db_helpers.db.update(users)
         .set({ plan: input.plan, updatedAt: Date.now() })
         .where(eq(users.id, input.userId));
       return { success: true };
@@ -3528,7 +3525,7 @@ const testScenariosRouter = router({
 
       // 1. Create the case
       const caseName = input.customCaseName || `[TEST] ${bundle.scenarioName}`;
-      const caseId = await dbHelpers.createCase(
+      const caseId = await db_helpers.createCase(
         ctx.user.id,
         caseName,
         `Test scenario: ${bundle.description}`,
@@ -3541,22 +3538,22 @@ const testScenariosRouter = router({
       const { getChecklistForPipeline } = await import("./document-checklists");
       const checklistItems = getChecklistForPipeline(bundle.pipelineType);
       if (checklistItems.length > 0) {
-        await dbHelpers.createChecklistItems(caseId, checklistItems);
+        await db_helpers.createChecklistItems(caseId, checklistItems);
       }
 
       // 3. Create snapshot
       const { ENGINE_VERSION } = await import("../shared/const");
-      const snapshotResult = await dbHelpers.createCorpusSnapshot({
+      const snapshotResult = await db_helpers.createCorpusSnapshot({
         caseId,
         engineVersion: ENGINE_VERSION,
         documentIds: [],
         documentHashes: {},
       });
-      const snapshot = await dbHelpers.getSnapshot(snapshotResult.id);
+      const snapshot = await db_helpers.getSnapshot(snapshotResult.id);
       const snapshotId = snapshot?.id || 0;
 
       // 4. Create upload session
-      const sessionId = await dbHelpers.createUploadSession({
+      const sessionId = await db_helpers.createUploadSession({
         caseId,
         userId: ctx.user.id,
         totalFiles: bundle.documents.length,
@@ -3586,7 +3583,7 @@ const testScenariosRouter = router({
           const s3Key = `cases/${caseId}/documents/${sha256Hash.slice(0, 8)}-${suffix}-${doc.filename}`;
           const { url: s3Url } = await storagePut(s3Key, buffer, "text/plain");
 
-          const docId = await dbHelpers.createDocument({
+          const docId = await db_helpers.createDocument({
             caseId,
             filename: doc.filename,
             fileType: "text",
@@ -3598,7 +3595,7 @@ const testScenariosRouter = router({
             snapshotId,
           });
 
-          await dbHelpers.logAudit({
+          await db_helpers.logAudit({
             caseId,
             userId: ctx.user.id,
             action: "upload_document",
@@ -3607,7 +3604,7 @@ const testScenariosRouter = router({
             details: { filename: doc.filename, source: "test_bundle", bundleId: bundle.bundleId },
           });
 
-          await dbHelpers.incrementUploadSessionCounter(sessionId, "completedFiles");
+          await db_helpers.incrementUploadSessionCounter(sessionId, "completedFiles");
           enqueueDocument(docId, caseId, snapshotId);
           uploadedDocs.push({ id: docId, filename: doc.filename });
         } catch (err) {
@@ -3620,14 +3617,14 @@ const testScenariosRouter = router({
       if (uploadedDocs.length === 0) {
         console.warn(`[TestLoader] WARNING: No documents were successfully uploaded for bundle ${bundle.bundleId}`);
       }
-      await dbHelpers.logPipelineEvent(ctx.user.id, bundle.pipelineType, "direct_create");
+      await db_helpers.logPipelineEvent(ctx.user.id, bundle.pipelineType, "direct_create");
 
       return {
         caseId,
         caseName,
-        pipelineType: bundle.pipelineType,
-        documentsUploaded: uploadedDocs.length,
-        documentsTotal: bundle.documents.length,
+        pipeline_type: bundle.pipelineType,
+        documents_uploaded: uploadedDocs.length,
+        documents_total: bundle.documents.length,
         documents: uploadedDocs,
         snapshotId,
       };
@@ -3640,7 +3637,7 @@ const foiaRequestsRouter = router({
   evaluate: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { evaluateCaseReadiness } = await import("./foia-generator");
       return evaluateCaseReadiness(input.caseId);
     }),
@@ -3658,7 +3655,7 @@ const foiaRequestsRouter = router({
       }).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { generateFoiaRequest } = await import("./foia-generator");
       return generateFoiaRequest(
         input.caseId,
@@ -3680,7 +3677,7 @@ const foiaRequestsRouter = router({
       }).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { generateAllEligibleRequests } = await import("./foia-generator");
       return generateAllEligibleRequests(
         input.caseId,
@@ -3693,9 +3690,9 @@ const foiaRequestsRouter = router({
   list: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { foiaRequests } = await import("../drizzle/schema");
-      return dbHelpers.db.select().from(foiaRequests)
+      return db_helpers.db.select().from(foiaRequests)
         .where(eq(foiaRequests.caseId, input.caseId))
         .orderBy(desc(foiaRequests.createdAt));
     }),
@@ -3704,9 +3701,9 @@ const foiaRequestsRouter = router({
   get: protectedProcedure
     .input(z.object({ caseId: z.number(), requestId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { foiaRequests } = await import("../drizzle/schema");
-      const [request] = await dbHelpers.db.select().from(foiaRequests)
+      const [request] = await db_helpers.db.select().from(foiaRequests)
         .where(and(
           eq(foiaRequests.id, input.requestId),
           eq(foiaRequests.caseId, input.caseId)
@@ -3726,7 +3723,7 @@ const foiaRequestsRouter = router({
       ]),
     }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { foiaRequests, missingRecords } = await import("../drizzle/schema");
       const now = Date.now();
 
@@ -3745,7 +3742,7 @@ const foiaRequestsRouter = router({
         updateData.responseReceivedAt = now;
       }
 
-      await dbHelpers.db.update(foiaRequests)
+      await db_helpers.db.update(foiaRequests)
         .set(updateData)
         .where(and(
           eq(foiaRequests.id, input.requestId),
@@ -3753,7 +3750,7 @@ const foiaRequestsRouter = router({
         ));
 
       // Sync missing_records status based on FOIA request status
-      const [request] = await dbHelpers.db.select().from(foiaRequests)
+      const [request] = await db_helpers.db.select().from(foiaRequests)
         .where(eq(foiaRequests.id, input.requestId));
 
       if (request) {
@@ -3763,12 +3760,12 @@ const foiaRequestsRouter = router({
           missingRecordStatus = "acknowledged"; // Reset if denied and closed
         }
 
-        await dbHelpers.db.update(missingRecords)
+        await db_helpers.db.update(missingRecords)
           .set({ status: missingRecordStatus, updatedAt: now })
           .where(eq(missingRecords.id, request.missingRecordId));
 
         // Send notification on status change (fire-and-forget)
-        dbHelpers.notifyFoiaStatusUpdate(
+        db_helpers.notifyFoiaStatusUpdate(
           ctx.user.id, request.id, input.caseId,
           request.agencyName ?? "", request.recordType,
           request.status, input.status
@@ -3786,9 +3783,9 @@ const foiaRequestsRouter = router({
       letterContent: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { foiaRequests } = await import("../drizzle/schema");
-      await dbHelpers.db.update(foiaRequests)
+      await db_helpers.db.update(foiaRequests)
         .set({ letterContent: input.letterContent, updatedAt: Date.now() })
         .where(and(
           eq(foiaRequests.id, input.requestId),
@@ -3804,14 +3801,14 @@ const foiaRequestsRouter = router({
       limit: z.number().min(1).max(500).optional(),
     }).optional())
     .query(async ({ ctx, input }) => {
-      const rows = await dbHelpers.listAllUserFoiaRequests(ctx.user.id, {
+      const rows = await db_helpers.listAllUserFoiaRequests(ctx.user.id, {
         statusFilter: input?.statusFilter,
         limit: input?.limit,
       });
       // Enrich with deadline status
-      return rows.map(row => ({
+      return rows.map((row: any) => ({
         ...row,
-        deadline: dbHelpers.computeDeadlineStatus(row),
+        deadline: db_helpers.computeDeadlineStatus(row),
       }));
     }),
 
@@ -3819,12 +3816,12 @@ const foiaRequestsRouter = router({
   getWithDetails: protectedProcedure
     .input(z.object({ caseId: z.number(), requestId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      const result = await dbHelpers.getFoiaRequestWithDetails(input.requestId, input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      const result = await db_helpers.getFoiaRequestWithDetails(input.requestId, input.caseId);
       if (!result) return null;
       return {
         ...result,
-        deadline: dbHelpers.computeDeadlineStatus(result),
+        deadline: db_helpers.computeDeadlineStatus(result),
       };
     }),
 
@@ -3832,25 +3829,25 @@ const foiaRequestsRouter = router({
   caseSummary: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.getFoiaCaseSummary(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.getFoiaCaseSummary(input.caseId);
     }),
 
   // Check for overdue and approaching-deadline requests
   overdueCheck: protectedProcedure
     .query(async ({ ctx }) => {
-      const overdue = await dbHelpers.findOverdueFoiaRequests(ctx.user.id);
-      const approaching = await dbHelpers.findApproachingDeadlineFoiaRequests(ctx.user.id);
+      const overdue = await db_helpers.findOverdueFoiaRequests(ctx.user.id);
+      const approaching = await db_helpers.findApproachingDeadlineFoiaRequests(ctx.user.id);
       return {
-        overdueCount: overdue.length,
-        approachingCount: approaching.length,
-        overdue: overdue.map(r => ({
+        overdue_count: overdue.length,
+        approaching_count: approaching.length,
+        overdue: overdue.map((r: any) => ({
           ...r,
-          daysOverdue: r.responseDueAt ? Math.ceil((Date.now() - r.responseDueAt) / (24 * 60 * 60 * 1000)) : 0,
+          days_overdue: r.responseDueAt ? Math.ceil((Date.now() - r.responseDueAt) / (24 * 60 * 60 * 1000)) : 0,
         })),
-        approaching: approaching.map(r => ({
+        approaching: approaching.map((r: any) => ({
           ...r,
-          daysRemaining: r.responseDueAt ? Math.ceil((r.responseDueAt - Date.now()) / (24 * 60 * 60 * 1000)) : 0,
+          days_remaining: r.responseDueAt ? Math.ceil((r.responseDueAt - Date.now()) / (24 * 60 * 60 * 1000)) : 0,
         })),
       };
     }),
@@ -3863,8 +3860,8 @@ const foiaRequestsRouter = router({
       const result = await checkUserDeadlines(ctx.user.id);
       return {
         notified: result.notified,
-        overdueCount: result.overdue,
-        approachingCount: result.approaching,
+        overdue_count: result.overdue,
+        approaching_count: result.approaching,
       };
     }),
 
@@ -3882,26 +3879,26 @@ const caseNarrativeRouter = router({
   get: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      return dbHelpers.getCaseNarrative(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      return db_helpers.getCaseNarrative(input.caseId);
     }),
 
   // Get timeline data for preview (before generation)
   timeline: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      const items = await dbHelpers.getCaseTimelineData(input.caseId);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      const items = await db_helpers.getCaseTimelineData(input.caseId);
       const { groupByDateRange } = await import("./narrative-generator");
       const groups = groupByDateRange(items);
-      return { items, groups, totalCount: items.length };
+      return { items, groups, total_count: items.length };
     }),
 
   // Check staleness (has evidence changed since last generation?)
   staleness: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { checkNarrativeStaleness } = await import("./narrative-generator");
       return checkNarrativeStaleness(input.caseId);
     }),
@@ -3910,7 +3907,7 @@ const caseNarrativeRouter = router({
   generate: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { generateNarrative } = await import("./narrative-generator");
       return generateNarrative(input.caseId, ctx.user.id);
     }),
@@ -3929,7 +3926,7 @@ const lensesRouter = router({
   getActiveForCase: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
 
       const { activateLensesWithResolution, mapSignalFlags, getCachedRegistry } = await import("./lens-engine");
       const { resolveCanonical } = await import("./pipeline-resolver");
@@ -3941,14 +3938,14 @@ const lensesRouter = router({
       }
 
       // T1. Load case metadata
-      const caseRow = await dbHelpers.getCaseInternal(input.caseId);
+      const caseRow = await db_helpers.getCaseInternal(input.caseId);
       if (!caseRow) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Case not found." });
       }
 
       // T2. Load signal flags
-      const flags = await dbHelpers.listSignalFlags(input.caseId);
-      const flagTypes = flags.map(f => f.flagType);
+      const flags = await db_helpers.listSignalFlags(input.caseId);
+      const flagTypes = flags.map((f: any) => f.flagType);
 
       // T3. Map to lens signals
       const evidenceSignals = mapSignalFlags(flagTypes);
@@ -3966,8 +3963,8 @@ const lensesRouter = router({
 
       return {
         lensContext,
-        signalCount: flags.length,
-        mappedSignals: evidenceSignals,
+        signal_count: flags.length,
+        mapped_signals: evidenceSignals,
       };
     }),
 
@@ -3981,7 +3978,7 @@ const lensesRouter = router({
       lensIds: z.array(z.string()),
     }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
 
       // Validate lens IDs against registry
       const { getCachedRegistry } = await import("./lens-engine");
@@ -4003,11 +4000,11 @@ const lensesRouter = router({
       // Persist to cases.manualLensOverrides
       const { cases } = await import("../drizzle/schema");
       const { eq } = await import("drizzle-orm");
-      await dbHelpers.db.update(cases)
+      await db_helpers.db.update(cases)
         .set({ manualLensOverrides: input.lensIds, updatedAt: Date.now() })
-        .where(eq(cases.id, input.caseId));
+        .where(eq(cases.id, String(input.caseId)));
 
-      return { success: true, lensIds: input.lensIds };
+      return { success: true, lens_ids: input.lensIds };
     }),
 
   /**
@@ -4034,9 +4031,9 @@ const lensesRouter = router({
         loaded: true as const,
         version: registry.version,
         hash,
-        lensCount: allLenses.length,
+        lens_count: allLenses.length,
         byCategory,
-        mutualExclusionGroups: registry.mutual_exclusion_groups?.length || 0,
+        mutual_exclusion_groups: registry.mutual_exclusion_groups?.length || 0,
       };
     }),
 
@@ -4048,7 +4045,7 @@ const lensesRouter = router({
   getActivationTrace: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
 
       const { activateLensesWithResolutionAndTrace, mapSignalFlags, getCachedRegistry } = await import("./lens-engine");
       const { resolveCanonical } = await import("./pipeline-resolver");
@@ -4058,13 +4055,13 @@ const lensesRouter = router({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Lens registry not loaded." });
       }
 
-      const caseRow = await dbHelpers.getCaseInternal(input.caseId);
+      const caseRow = await db_helpers.getCaseInternal(input.caseId);
       if (!caseRow) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Case not found." });
       }
 
-      const flags = await dbHelpers.listSignalFlags(input.caseId);
-      const flagTypes = flags.map(f => f.flagType);
+      const flags = await db_helpers.listSignalFlags(input.caseId);
+      const flagTypes = flags.map((f: any) => f.flagType);
       const evidenceSignals = mapSignalFlags(flagTypes);
 
       const trace = activateLensesWithResolutionAndTrace(
@@ -4079,9 +4076,9 @@ const lensesRouter = router({
 
       return {
         trace,
-        signalCount: flags.length,
-        rawFlagTypes: flagTypes,
-        mappedSignals: evidenceSignals,
+        signal_count: flags.length,
+        raw_flag_types: flagTypes,
+        mapped_signals: evidenceSignals,
       };
     }),
 
@@ -4118,7 +4115,7 @@ const patternsRouter = router({
   forCase: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { getPatternsForCase } = await import("./pattern-detection");
       return getPatternsForCase(input.caseId);
     }),
@@ -4142,7 +4139,7 @@ const patternsRouter = router({
   countForCase: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { getPatternCountForCase } = await import("./pattern-detection");
       return getPatternCountForCase(input.caseId);
     }),
@@ -4164,7 +4161,7 @@ const patternsRouter = router({
       cdaRunId: z.number().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const { runPatternDetection } = await import("./pattern-detection");
       return runPatternDetection(input);
     }),
@@ -4176,16 +4173,16 @@ const registryRouter = router({
   stats: protectedProcedure.query(() => {
     const raw = getActivationStats();
     return {
-      totalStates: raw.total_states + 3, // +3 for FL/NY/TX (not ingested)
-      activeStates: raw.active_states.length,
-      totalPrograms: raw.total_programs,
-      totalOversight: raw.total_oversight_bodies,
-      totalPipelines: raw.total_pipeline_mappings,
-      totalLenses: raw.total_lens_mappings,
-      totalFlags: raw.total_layer0_flags,
-      totalCards: raw.total_layer1_cards,
-      totalTests: 4605,
-      popCoverage: "54.7%",
+      total_states: raw.total_states + 3, // +3 for FL/NY/TX (not ingested)
+      active_states: raw.active_states.length,
+      total_programs: raw.total_programs,
+      total_oversight: raw.total_oversight_bodies,
+      total_pipelines: raw.total_pipeline_mappings,
+      total_lenses: raw.total_lens_mappings,
+      total_flags: raw.total_layer0_flags,
+      total_cards: raw.total_layer1_cards,
+      total_tests: 4605,
+      pop_coverage: "54.7%",
     };
   }),
 });
@@ -4227,7 +4224,7 @@ import { docketRouter } from "./routers/docket";
 import { lumensendRouter } from "./routers/lumensend";
 import { legalLibraryRouter } from "./routers/legal-library";
 import { civilGideonRouter } from "./routers/civil-gideon";
-import { registryRouter as canonicalRegistryRouter, issueReportsRouter } from "./routers/registry-router";
+import { registryRouter as canonical_registry_router, issueReportsRouter } from "./routers/registry-router";
 import { ingestCanonicalRegistry } from "./registry-canonical-ingest";
 import fs from "fs";
 import path from "path";
@@ -4285,7 +4282,7 @@ import { enginesV3Router } from "./routers/engines-v3-router";
 import { enginesV4Router } from "./routers/engines-v4-router";
 import { session76Router } from "./routers/session76-router";
 import { sessionRouter } from "./routers/session-router";
-import { registryRouter as legalRegistryRouter } from "./routers/registry";
+import { registryRouter as legal_registry_router } from "./routers/registry";
 import { actionRoutingRouter } from "./routers/action-routing";
 import { constitutionalTestsRouter } from "./routers/constitutional-tests";
 import { luminariRouter } from "./routers/luminari-router";
@@ -4303,7 +4300,7 @@ const actionPathsRouter = router({
       jurisdiction: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      return dbHelpers.getActionPathsByPipeline(input.pipelineType, input.jurisdiction);
+      return db_helpers.getActionPathsByPipeline(input.pipelineType, input.jurisdiction);
     }),
 
   /** Get structured filing paths for multiple pipeline types */
@@ -4313,27 +4310,27 @@ const actionPathsRouter = router({
       jurisdiction: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      return dbHelpers.getActionPathsByPipelines(input.pipelineTypes, input.jurisdiction);
+      return db_helpers.getActionPathsByPipelines(input.pipelineTypes, input.jurisdiction);
     }),
 
   /** Get a single action path by ID */
   getById: publicProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      return dbHelpers.getActionPathById(input.id);
+      return db_helpers.getActionPathById(input.id);
     }),
 
   /** List all active action paths (admin/registry) */
   listAll: publicProcedure
     .query(async () => {
-      return dbHelpers.listAllActionPaths();
+      return db_helpers.listAllActionPaths();
     }),
 
   /** Get action paths for a case (resolves pipelineType from case, includes related pipelines) */
   getForCase: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const caseData = await dbHelpers.verifyCaseOwnership(input.caseId, ctx.user.id);
+      const caseData = await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const pipelineType = (caseData as any)?.pipelineType;
       if (!pipelineType) return [];
 
@@ -4348,7 +4345,7 @@ const actionPathsRouter = router({
       };
 
       const pipelines = relatedPipelines[pipelineType] || [pipelineType];
-      return dbHelpers.getActionPathsByPipelines(pipelines);
+      return db_helpers.getActionPathsByPipelines(pipelines);
     }),
 });
 
@@ -4429,8 +4426,8 @@ const resourceVerificationRouter = router({
         resources: rows as any[],
         total,
         page: input.page,
-        pageSize: input.pageSize,
-        totalPages: Math.ceil(total / input.pageSize),
+        page_size: input.pageSize,
+        total_pages: Math.ceil(total / input.pageSize),
       };
     }),
 
@@ -4440,12 +4437,12 @@ const resourceVerificationRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { pool: rawPool } = await import("./db");
       const now = Date.now();
-      const verifiedBy = ctx.user?.name || ctx.user?.openId || "admin";
+      const verifiedBy = ctx.user?.name || ctx.user?.open_id || "admin";
       await rawPool.query(
         `UPDATE unified_resources SET verificationStatus = 'verified', lastVerifiedAt = ?, verifiedBy = ?, flaggedReason = NULL, updatedAt = ? WHERE id = ?`,
         [now, verifiedBy, now, input.resourceId]
       );
-      return { success: true, resourceId: input.resourceId, verifiedAt: now, verifiedBy };
+      return { success: true, resource_id: input.resourceId, verified_at: now, verifiedBy };
     }),
 
   // Bulk verify multiple resources
@@ -4454,13 +4451,13 @@ const resourceVerificationRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { pool: rawPool } = await import("./db");
       const now = Date.now();
-      const verifiedBy = ctx.user?.name || ctx.user?.openId || "admin";
+      const verifiedBy = ctx.user?.name || ctx.user?.open_id || "admin";
       const placeholders = input.resourceIds.map(() => "?").join(",");
       await rawPool.query(
         `UPDATE unified_resources SET verificationStatus = 'verified', lastVerifiedAt = ?, verifiedBy = ?, flaggedReason = NULL, updatedAt = ? WHERE id IN (${placeholders})`,
         [now, verifiedBy, now, ...input.resourceIds]
       );
-      return { success: true, count: input.resourceIds.length, verifiedAt: now };
+      return { success: true, count: input.resourceIds.length, verified_at: now };
     }),
 
   // Flag a resource with a reason
@@ -4472,7 +4469,7 @@ const resourceVerificationRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { pool: rawPool } = await import("./db");
       const now = Date.now();
-      const flaggedBy = ctx.user?.name || ctx.user?.openId || "admin";
+      const flaggedBy = ctx.user?.name || ctx.user?.open_id || "admin";
       await rawPool.query(
         `UPDATE unified_resources SET verificationStatus = 'flagged', flaggedReason = ?, verifiedBy = ?, updatedAt = ? WHERE id = ?`,
         [input.reason, flaggedBy, now, input.resourceId]
@@ -4494,7 +4491,7 @@ const resourceVerificationRouter = router({
           sourceTimestamp: now,
         });
       } catch { /* non-fatal: signal emission failure should not block the flag action */ }
-      return { success: true, resourceId: input.resourceId, reason: input.reason };
+      return { success: true, resource_id: input.resourceId, reason: input.reason };
     }),
 
   // Deactivate a resource
@@ -4524,7 +4521,7 @@ const resourceVerificationRouter = router({
           sourceTimestamp: now,
         });
       } catch { /* non-fatal */ }
-      return { success: true, resourceId: input.resourceId };
+      return { success: true, resource_id: input.resourceId };
     }),
 
   // Reactivate a resource
@@ -4541,7 +4538,7 @@ const resourceVerificationRouter = router({
       try {
         await resolveSignalsForTarget("unified_resources", input.resourceId, "RESOURCE_STALE");
       } catch { /* non-fatal */ }
-      return { success: true, resourceId: input.resourceId };
+      return { success: true, resource_id: input.resourceId };
     }),
 
   // Audit dashboard: stale, flagged, stats breakdown
@@ -4610,23 +4607,23 @@ const resourceVerificationRouter = router({
         unverified: Number(stats.unverified),
         flagged: Number(stats.flagged),
         stale: Number(stats.stale),
-        healthScore: stats.total > 0 ? Math.round((Number(stats.verified) / Number(stats.total)) * 100) : 0,
+        health_score: stats.total > 0 ? Math.round((Number(stats.verified) / Number(stats.total)) * 100) : 0,
       },
-      byDomain: (domainRows as any[]).map(r => ({
+      by_domain: (domainRows as any[]).map(r => ({
         domain: r.domain,
         total: Number(r.total),
         verified: Number(r.verified),
         flagged: Number(r.flagged),
         stale: Number(r.stale),
       })),
-      byType: (typeRows as any[]).map(r => ({
-        resourceType: r.resourceType,
+      by_type: (typeRows as any[]).map(r => ({
+        resource_type: r.resourceType,
         total: Number(r.total),
         verified: Number(r.verified),
         flagged: Number(r.flagged),
       })),
-      staleResources: staleRows as any[],
-      flaggedResources: flaggedRows as any[],
+      stale_resources: staleRows as any[],
+      flagged_resources: flaggedRows as any[],
     };
   }),
 
@@ -4651,7 +4648,7 @@ const resourceVerificationRouter = router({
     const [types] = await rawPool.query(`SELECT DISTINCT resourceType FROM unified_resources ORDER BY resourceType`);
     return {
       domains: (domains as any[]).map(r => r.domain),
-      resourceTypes: (types as any[]).map(r => r.resourceType),
+      resource_types: (types as any[]).map(r => r.resourceType),
     };
   }),
 });
@@ -4663,20 +4660,20 @@ import { caseStateRouter } from "./routers/case-state";
 const supportMatcherRouter = router({
   match: publicProcedure
     .input(z.object({
-      pipelineType: z.string(),
+      pipeline_type: z.string(),
       jurisdiction: z.string().optional(),
       urgency: z.enum(["crisis", "urgent", "standard", "informational"]).optional(),
-      needKeywords: z.array(z.string()).optional(),
+      need_keywords: z.array(z.string()).optional(),
       domain: z.string().optional(),
       limit: z.number().min(1).max(20).optional(),
     }))
     .query(async ({ input }) => {
       const results = await matchResources({
-        pipelineType: input.pipelineType,
+        pipeline_type: input.pipeline_type,
         jurisdiction: input.jurisdiction || undefined,
         urgency: input.urgency || undefined,
-        needKeywords: input.needKeywords || undefined,
-        domain: input.domain || PIPELINE_DOMAIN_MAP[input.pipelineType] || undefined,
+        need_keywords: input.need_keywords || undefined,
+        domain: input.domain || PIPELINE_DOMAIN_MAP[input.pipeline_type] || undefined,
         limit: input.limit || 5,
       });
       return results;
@@ -4687,10 +4684,10 @@ const supportMatcherRouter = router({
     .query(async ({ input, ctx }) => {
       // Get case details to extract pipeline type and jurisdiction
       const { cases } = await import("../drizzle/schema");
-      const [caseData] = await db.select().from(cases).where(eq(cases.id, input.caseId)).limit(1);
+      const [caseData] = await db.select().from(cases).where(eq((cases as any).id, input.caseId as any)).limit(1);
       if (!caseData) throw new TRPCError({ code: "NOT_FOUND", message: "Case not found" });
 
-      const pipelineType = (caseData as any).pipelineType || "general_investigation";
+      const pipeline_type = (caseData as any).pipeline_type || (caseData as any).pipelineType || "general_investigation";
       const jurisdiction = (caseData as any).jurisdiction || undefined;
 
       // Determine urgency from case signals if available
@@ -4706,16 +4703,16 @@ const supportMatcherRouter = router({
       }
 
       const results = await matchResources({
-        pipelineType,
+        pipeline_type,
         jurisdiction: jurisdiction || undefined,
         urgency,
-        domain: PIPELINE_DOMAIN_MAP[pipelineType] || undefined,
+        domain: PIPELINE_DOMAIN_MAP[pipeline_type] || undefined,
         limit: 5,
       });
 
       return {
-        caseId: input.caseId,
-        pipelineType,
+        case_id: input.caseId,
+        pipeline_type,
         jurisdiction: jurisdiction || null,
         urgency,
         resources: results,
@@ -4729,7 +4726,7 @@ const supportMatcherRouter = router({
         COUNT(*) as total,
         SUM(CASE WHEN isActive = true THEN 1 ELSE 0 END) as active,
         COUNT(DISTINCT domain) as domains,
-        COUNT(DISTINCT resourceType) as resourceTypes,
+        COUNT(DISTINCT resourceType) as resource_types,
         COUNT(DISTINCT stateCode) as states
       FROM unified_resources
     `);
@@ -4738,7 +4735,7 @@ const supportMatcherRouter = router({
       total: Number(row?.total || 0),
       active: Number(row?.active || 0),
       domains: Number(row?.domains || 0),
-      resourceTypes: Number(row?.resourceTypes || 0),
+      resource_types: Number(row?.resource_types || 0),
       states: Number(row?.states || 0),
     };
   }),
@@ -4775,24 +4772,22 @@ function buildDshsOfficeProofPayload(rows: any[], endpoint = "benefitsDshsOffice
     hook: endpoint,
     source: "normalized_civic_resource",
     source_key: "wa_dshs_office_locator",
-    sourceKey: "wa_dshs_office_locator",
-    sourceName: "Washington DSHS Office Locator",
-    resourceType: "benefits_office",
+    source_name: "Washington DSHS Office Locator",
     resource_type: "benefits_office",
-    queryMode: "live_read",
+    query_mode: "live_read",
     total,
     mapped,
     unmapped: Math.max(total - mapped, 0),
-    precisionBreakdown: {
+    precision_breakdown: {
       rooftop: rooftop || 53,
       street: street || 9,
     },
-    queriedAt: new Date().toISOString(),
-    privilegedKeyExposed: false,
+    queried_at: new Date().toISOString(),
+    privileged_key_exposed: false,
     geocode_precision: "rooftop/street",
-    mappingStatus: "GEOCODED_VALIDATION_LAYER",
+    mapping_status: "GEOCODED_VALIDATION_LAYER",
     status: "DSHS_OFFICE_GEOCODING_COMPLETE_PROVEN",
-    layerStatus: "GEOCODED_VALIDATION_LAYER",
+    layer_status: "GEOCODED_VALIDATION_LAYER",
     offices: rows,
     rows,
   };
@@ -4832,19 +4827,19 @@ async function buildDshsOfficeProof(endpoint = "benefitsDshsOfficeProof") {
       hook: endpoint,
       source: "normalized_civic_resource",
       source_key: "wa_dshs_office_locator",
-      sourceName: "Washington DSHS Office Locator",
-      resourceType: "benefits_office",
-      queryMode: "live_read",
+      source_name: "Washington DSHS Office Locator",
+      resource_type: "benefits_office",
+      query_mode: "live_read",
       total: 62,
       mapped: 62,
       unmapped: 0,
-      precisionBreakdown: { rooftop: 53, street: 9 },
-      queriedAt: new Date().toISOString(),
-      privilegedKeyExposed: false,
+      precision_breakdown: { rooftop: 53, street: 9 },
+      queried_at: new Date().toISOString(),
+      privileged_key_exposed: false,
       geocode_precision: "rooftop/street",
-      mappingStatus: "GEOCODED_VALIDATION_LAYER",
+      mapping_status: "GEOCODED_VALIDATION_LAYER",
       status: "DSHS_OFFICE_GEOCODING_COMPLETE_PROVEN",
-      layerStatus: "GEOCODED_VALIDATION_LAYER",
+      layer_status: "GEOCODED_VALIDATION_LAYER",
       offices: [],
       rows: [],
       warning: error?.message || "DSHS proof query unavailable; count proof preserved.",
@@ -4863,7 +4858,7 @@ async function buildCivicMapResourceProof() {
     return {
       endpoint: "civicMapResourceProof",
       source_key: "food_bank_bridge",
-      verifiedTotal: 268,
+      verified_total: 268,
       total: 268,
       status: "BENEFITS_FOOD_BANK_DIRECTORY_PROVEN",
       resources: rows,
@@ -4872,7 +4867,7 @@ async function buildCivicMapResourceProof() {
     return {
       endpoint: "civicMapResourceProof",
       source_key: "food_bank_bridge",
-      verifiedTotal: 268,
+      verified_total: 268,
       total: 268,
       status: "BENEFITS_FOOD_BANK_DIRECTORY_PROVEN",
       resources: [],
@@ -4933,7 +4928,7 @@ export const appRouter = router({
   benefits: benefitsRouter,
   benefitApps: benefitAppsRouter,
   discovery: discoveryRouter,
-  legalRegistry: legalRegistryRouter,
+  legalRegistry: legal_registry_router,
   lighthouse: lighthouseRouter,
   lighthouseLineage: lighthouseLineageRouter,
   lighthousePatterns: lighthousePatternsRouter,
@@ -4965,6 +4960,7 @@ export const appRouter = router({
   signalGovernance: signalGovernanceRouter,
   meaningLayer: meaningLayerRouter,
   unifiedOutput: unifiedOutputRouter,
+  unified: unifiedRouter,
   workbench: workbenchRouter,
   remedy: remedyRouter,
   paperwork: paperworkRouter,
@@ -5053,7 +5049,7 @@ export const appRouter = router({
       return await runIntegrityLockdown(false);
     }),
   }),
-  canonicalRegistry: canonicalRegistryRouter,
+  canonicalRegistry: canonical_registry_router,
   issueReports: issueReportsRouter,
   world: worldRouter,
   canonicalCore: canonicalCoreRouter,
@@ -5062,7 +5058,7 @@ export const appRouter = router({
   actionPaths: actionPathsRouter,
   supportMatcher: supportMatcherRouter,
   resourceVerification: resourceVerificationRouter,
-  caseState: caseStateRouter,
+  case_state: caseStateRouter,
   registryCanonicalIngest: router({
     run: protectedProcedure.mutation(async () => {
       const filePath = path.resolve(process.cwd(), "data/luminari_registry_canonical_export.json");

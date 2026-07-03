@@ -211,10 +211,10 @@ export async function getMapData(filters?: { nodeType?: string; minRiskScore?: n
   }
 
   const nodes = await nodesQuery.orderBy(desc(systemMapNodes.riskScore)).limit(200);
-  const nodeIds = new Set(nodes.map(n => n.id));
+  const nodeIds = new Set(nodes.map((n: any) => n.id));
 
   const allEdges = await db.select().from(systemMapEdges).limit(1000);
-  const edges = allEdges.filter(e => nodeIds.has(e.sourceNode) && nodeIds.has(e.targetNode));
+  const edges = allEdges.filter((e: any) => nodeIds.has(e.sourceNode) && nodeIds.has(e.targetNode));
 
   return { nodes, edges };
 }

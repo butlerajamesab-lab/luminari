@@ -2,6 +2,7 @@ import { z } from "zod";
 import { notifyOwner } from "./notification";
 import { adminProcedure, publicProcedure, router } from "./trpc";
 import { getPool } from "../db";
+import { getDatabaseDiagnostic } from "./health-diagnostics";
 
 const countTable = async (tableName: string): Promise<number> => {
   try {
@@ -14,10 +15,7 @@ const countTable = async (tableName: string): Promise<number> => {
 };
 
 export const systemRouter = router({
-  health: publicProcedure.query(() => ({
-    ok: true,
-    supabaseProject: "wepxlinwbjrkqdzkqpar",
-  })),
+  health: publicProcedure.query(() => getDatabaseDiagnostic()),
 
   notifyOwner: adminProcedure
     .input(

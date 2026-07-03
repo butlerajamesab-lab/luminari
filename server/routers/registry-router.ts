@@ -18,36 +18,36 @@
 import { router, publicProcedure, protectedProcedure } from "../_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import * as registryDb from "../registry-db";
+import * as registry_db from "../registry-db";
 import { pool } from "../db";
 
 export const registryRouter = router({
   listJurisdictions: publicProcedure.query(async () => {
-    return registryDb.listJurisdictions();
+    return registry_db.listJurisdictions();
   }),
 
   getJurisdiction: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
-      const jurisdiction = await registryDb.getJurisdiction(input.id);
+      const jurisdiction = await registry_db.getJurisdiction(input.id);
       if (!jurisdiction) return null;
       // Enrich with related data
-      const programs = await registryDb.listPrograms(input.id);
-      const alerts = await registryDb.listPolicyAlerts(input.id);
-      const workflows = await registryDb.listWorkflows(input.id);
-      const oversight = await registryDb.listOversightBodies(input.id);
-      const signals = await registryDb.getSignals(input.id);
-      const traceability = await registryDb.getSourceTraceability(input.id);
-      const categories = await registryDb.getProgramCategories(input.id);
+      const programs = await registry_db.listPrograms(input.id);
+      const alerts = await registry_db.listPolicyAlerts(input.id);
+      const workflows = await registry_db.listWorkflows(input.id);
+      const oversight = await registry_db.listOversightBodies(input.id);
+      const signals = await registry_db.getSignals(input.id);
+      const traceability = await registry_db.getSourceTraceability(input.id);
+      const categories = await registry_db.getProgramCategories(input.id);
       return {
         ...jurisdiction,
         programs,
-        policyAlerts: alerts,
+        policy_alerts: alerts,
         workflows,
-        oversightBodies: oversight,
+        oversight_bodies: oversight,
         signals,
-        sourceTraceability: traceability,
-        programCategories: categories,
+        source_traceability: traceability,
+        program_categories: categories,
       };
     }),
 
@@ -57,7 +57,7 @@ export const registryRouter = router({
       category: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
-      return registryDb.listPrograms(input?.jurisdictionId, input?.category);
+      return registry_db.listPrograms(input?.jurisdictionId, input?.category);
     }),
 
   /**
@@ -94,8 +94,8 @@ export const registryRouter = router({
       const [rows] = await pool.query(
         `SELECT p.id, p.name_rp AS name, p.agency_rp AS agency, p.category_rp AS category,
                 p.eligibility_rp AS eligibility, p.contact_rp AS contact, p.website_rp AS website,
-                p.apply_notes_rp AS applyNotes, p.jurisdiction_id_rp AS jurisdictionId,
-                j.abbreviation AS stateCode, j.name AS jurisdictionName
+                p.apply_notes_rp AS apply_notes, p.jurisdiction_id_rp AS jurisdiction_id,
+                j.abbreviation AS state_code, j.name AS jurisdiction_name
          FROM registry_programs p
          LEFT JOIN registry_jurisdictions j ON p.jurisdiction_id_rp = j.id
          ${where}
@@ -131,8 +131,8 @@ export const registryRouter = router({
       const [progRows] = await pool.query(
         `SELECT p.id, p.name_rp AS name, p.agency_rp AS agency, p.category_rp AS category,
                 p.eligibility_rp AS eligibility, p.contact_rp AS contact, p.website_rp AS website,
-                p.apply_notes_rp AS applyNotes, p.jurisdiction_id_rp AS jurisdictionId,
-                j.abbreviation AS stateCode, j.name AS jurisdictionName
+                p.apply_notes_rp AS apply_notes, p.jurisdiction_id_rp AS jurisdiction_id,
+                j.abbreviation AS state_code, j.name AS jurisdiction_name
          FROM registry_programs p
          LEFT JOIN registry_jurisdictions j ON p.jurisdiction_id_rp = j.id
          WHERE p.id = ?`,
@@ -143,24 +143,24 @@ export const registryRouter = router({
 
       // 2. Get oversight bodies in the same jurisdiction
       const [oversightRows] = await pool.query(
-        `SELECT ob.id, ob.agency_name_rob AS agencyName, ob.function_rob AS function,
-                ob.statute_of_limitations_rob AS statuteOfLimitations,
+        `SELECT ob.id, ob.agency_name_rob AS agency_name, ob.function_rob AS function,
+                ob.statute_of_limitations_rob AS statute_of_limitations,
                 ob.contact_rob AS contact, ob.pathway_rob AS pathway, ob.escalation_rob AS escalation,
-                ob.jurisdiction_id_rob AS jurisdictionId
+                ob.jurisdiction_id_rob AS jurisdiction_id
          FROM registry_oversight_bodies ob
          WHERE ob.jurisdiction_id_rob = ?
          ORDER BY ob.agency_name_rob`,
-        [program.jurisdictionId]
+        [program.jurisdiction_id]
       );
 
       // 3. Get related workflows for the jurisdiction
       const [workflowRows] = await pool.query(
-        `SELECT id, workflow_type_rw AS workflowType, primary_statutes_rw AS primaryStatutes,
-                steps_rw AS steps, deadlines_rw AS deadlines, escalation_paths_rw AS escalationPaths
+        `SELECT id, workflow_type_rw AS workflow_type, primary_statutes_rw AS primary_statutes,
+                steps_rw AS steps, deadlines_rw AS deadlines, escalation_paths_rw AS escalation_paths
          FROM registry_workflows
          WHERE jurisdiction_id_rw = ?
          ORDER BY workflow_type_rw`,
-        [program.jurisdictionId]
+        [program.jurisdiction_id]
       );
 
       // 4. Get cross-avenue programs (same category, same jurisdiction)
@@ -173,21 +173,21 @@ export const registryRouter = router({
            AND p2.id != ?
          ORDER BY p2.name_rp
          LIMIT 10`,
-        [program.jurisdictionId, program.category, input.programId]
+        [program.jurisdiction_id, program.category, input.programId]
       );
 
       return {
         program,
-        oversightBodies: oversightRows as any[],
+        oversight_bodies: oversightRows as any[],
         workflows: workflowRows as any[],
-        relatedPrograms: crossRows as any[],
+        related_programs: crossRows as any[],
         chain: {
           program: program.name,
-          jurisdiction: program.jurisdictionName || program.jurisdictionId,
-          stateCode: program.stateCode,
-          oversightCount: (oversightRows as any[]).length,
-          workflowCount: (workflowRows as any[]).length,
-          relatedProgramCount: (crossRows as any[]).length,
+          jurisdiction: program.jurisdiction_name || program.jurisdiction_id,
+          state_code: program.state_code,
+          oversight_count: (oversightRows as any[]).length,
+          workflow_count: (workflowRows as any[]).length,
+          related_program_count: (crossRows as any[]).length,
         },
       };
     }),
@@ -226,7 +226,7 @@ export const registryRouter = router({
       };
 
       const adjacent = ADJACENT_CATEGORIES[input.category] || [];
-      if (adjacent.length === 0) return { programs: [], adjacentCategories: [] };
+      if (adjacent.length === 0) return { programs: [], adjacent_categories: [] };
 
       const placeholders = adjacent.map(() => '?').join(', ');
       const params: any[] = [...adjacent];
@@ -240,7 +240,7 @@ export const registryRouter = router({
       const [rows] = await pool.query(
         `SELECT p.id, p.name_rp AS name, p.agency_rp AS agency, p.category_rp AS category,
                 p.eligibility_rp AS eligibility, p.contact_rp AS contact, p.website_rp AS website,
-                p.apply_notes_rp AS applyNotes, j.abbreviation AS stateCode, j.name AS jurisdictionName
+                p.apply_notes_rp AS apply_notes, j.abbreviation AS state_code, j.name AS jurisdiction_name
          FROM registry_programs p
          LEFT JOIN registry_jurisdictions j ON p.jurisdiction_id_rp = j.id
          WHERE p.category_rp IN (${placeholders})
@@ -252,7 +252,7 @@ export const registryRouter = router({
 
       return {
         programs: rows as any[],
-        adjacentCategories: adjacent,
+        adjacent_categories: adjacent,
       };
     }),
 
@@ -261,7 +261,7 @@ export const registryRouter = router({
       jurisdictionId: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
-      return registryDb.listPolicyAlerts(input?.jurisdictionId);
+      return registry_db.listPolicyAlerts(input?.jurisdictionId);
     }),
 
   listWorkflows: publicProcedure
@@ -269,7 +269,7 @@ export const registryRouter = router({
       jurisdictionId: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
-      return registryDb.listWorkflows(input?.jurisdictionId);
+      return registry_db.listWorkflows(input?.jurisdictionId);
     }),
 
   listOversightBodies: publicProcedure
@@ -277,7 +277,7 @@ export const registryRouter = router({
       jurisdictionId: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
-      return registryDb.listOversightBodies(input?.jurisdictionId);
+      return registry_db.listOversightBodies(input?.jurisdictionId);
     }),
 
   /**
@@ -305,10 +305,10 @@ export const registryRouter = router({
 
       const where = `WHERE ${conditions.join(' AND ')}`;
       const [rows] = await pool.query(
-        `SELECT ob.id, ob.agency_name_rob AS agencyName, ob.function_rob AS function,
-                ob.statute_of_limitations_rob AS statuteOfLimitations,
+        `SELECT ob.id, ob.agency_name_rob AS agency_name, ob.function_rob AS function,
+                ob.statute_of_limitations_rob AS statute_of_limitations,
                 ob.contact_rob AS contact, ob.pathway_rob AS pathway, ob.escalation_rob AS escalation,
-                j.abbreviation AS stateCode, j.name AS jurisdictionName
+                j.abbreviation AS state_code, j.name AS jurisdiction_name
          FROM registry_oversight_bodies ob
          LEFT JOIN registry_jurisdictions j ON ob.jurisdiction_id_rob = j.id
          ${where}
@@ -334,11 +334,11 @@ export const registryRouter = router({
       signalType: z.string().optional(),
     }).optional())
     .query(async ({ input }) => {
-      return registryDb.getSignals(input?.jurisdictionId, input?.signalType);
+      return registry_db.getSignals(input?.jurisdictionId, input?.signalType);
     }),
 
   getCounts: publicProcedure.query(async () => {
-    return registryDb.getCounts();
+    return registry_db.getCounts();
   }),
 });
 

@@ -32,26 +32,26 @@ interface ResourceResult {
   id: number;
   name: string;
   description: string | null;
-  resourceType: string;
+  resource_type: string;
   domain: string;
-  urgencyLevel: string;
-  stateCode: string | null;
+  urgency_level: string;
+  state_code: string | null;
   phone: string | null;
   website: string | null;
   email: string | null;
   agency: string | null;
   category: string | null;
-  eligibilityNotes: string | null;
-  applyNotes: string | null;
+  eligibility_notes: string | null;
+  apply_notes: string | null;
   score: number;
-  matchReasons: string[];
-  needTypes: string[];
+  match_reasons: string[];
+  need_types: string[];
 }
 
 function ResourceCard({ resource, rank }: { resource: ResourceResult; rank: number }) {
   const [expanded, setExpanded] = useState(false);
-  const typeConfig = RESOURCE_TYPE_CONFIG[resource.resourceType] || RESOURCE_TYPE_CONFIG.government_program;
-  const urgencyConfig = URGENCY_CONFIG[resource.urgencyLevel] || URGENCY_CONFIG.standard;
+  const typeConfig = RESOURCE_TYPE_CONFIG[resource.resource_type] || RESOURCE_TYPE_CONFIG.government_program;
+  const urgencyConfig = URGENCY_CONFIG[resource.urgency_level] || URGENCY_CONFIG.standard;
   const TypeIcon = typeConfig.icon;
 
   const hasContactInfo = resource.phone || resource.website || resource.email;
@@ -97,7 +97,7 @@ function ResourceCard({ resource, rank }: { resource: ResourceResult; rank: numb
 
           {/* Match reasons - always visible */}
           <div className="flex flex-wrap gap-1 mt-2">
-            {resource.matchReasons.slice(0, 2).map((reason, i) => (
+            {resource.match_reasons.slice(0, 2).map((reason, i) => (
               <span key={i} className="inline-flex items-center gap-1 text-[11px] text-slate-600">
                 <CheckCircle2 className="w-3 h-3 text-green-500 flex-shrink-0" />
                 {reason}
@@ -154,32 +154,32 @@ function ResourceCard({ resource, rank }: { resource: ResourceResult; rank: numb
           )}
 
           {/* Eligibility */}
-          {resource.eligibilityNotes && (
+          {resource.eligibility_notes && (
             <div className="flex items-start gap-2 p-2.5 bg-white/60 rounded-md">
               <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs font-medium text-slate-700 mb-0.5">Eligibility</p>
-                <p className="text-xs text-slate-600">{resource.eligibilityNotes}</p>
+                <p className="text-xs text-slate-600">{resource.eligibility_notes}</p>
               </div>
             </div>
           )}
 
           {/* How to apply */}
-          {resource.applyNotes && (
+          {resource.apply_notes && (
             <div className="flex items-start gap-2 p-2.5 bg-white/60 rounded-md">
               <ArrowRight className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs font-medium text-slate-700 mb-0.5">How to Apply</p>
-                <p className="text-xs text-slate-600">{resource.applyNotes}</p>
+                <p className="text-xs text-slate-600">{resource.apply_notes}</p>
               </div>
             </div>
           )}
 
           {/* All match reasons */}
-          {resource.matchReasons.length > 2 && (
+          {resource.match_reasons.length > 2 && (
             <div className="space-y-1">
               <p className="text-xs font-medium text-slate-700">Why this matched:</p>
-              {resource.matchReasons.map((reason, i) => (
+              {resource.match_reasons.map((reason, i) => (
                 <span key={i} className="flex items-center gap-1.5 text-[11px] text-slate-600">
                   <CheckCircle2 className="w-3 h-3 text-green-500 flex-shrink-0" />
                   {reason}
@@ -199,10 +199,10 @@ function ResourceCard({ resource, rank }: { resource: ResourceResult; rank: numb
                 {resource.email}
               </a>
             )}
-            {resource.stateCode && (
+            {resource.state_code && (
               <span className="inline-flex items-center gap-1.5 text-xs bg-white px-2.5 py-1.5 rounded-md border text-slate-700">
                 <MapPin className="w-3.5 h-3.5" />
-                {resource.stateCode}
+                {resource.state_code}
               </span>
             )}
             {resource.category && (
@@ -214,9 +214,9 @@ function ResourceCard({ resource, rank }: { resource: ResourceResult; rank: numb
           </div>
 
           {/* Need types */}
-          {resource.needTypes && resource.needTypes.length > 0 && (
+          {resource.need_types && resource.need_types.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {resource.needTypes.map((need, i) => (
+              {resource.need_types.map((need, i) => (
                 <Badge key={i} variant="outline" className="text-[10px] bg-white">
                   {need.replace(/_/g, " ")}
                 </Badge>
@@ -242,17 +242,17 @@ function ResourceCard({ resource, rank }: { resource: ResourceResult; rank: numb
 
 // ─── Main component: by pipeline type ───
 export function SupportRecommendations({
-  pipelineType,
+  pipeline_type,
   jurisdiction,
   urgency,
 }: {
-  pipelineType: string;
+  pipeline_type: string;
   jurisdiction?: string;
   urgency?: "crisis" | "urgent" | "standard" | "informational";
 }) {
   const { data: resources, isLoading, error } = trpc.supportMatcher.match.useQuery(
-    { pipelineType, jurisdiction, urgency, limit: 5 },
-    { enabled: !!pipelineType, staleTime: 60_000 }
+    { pipeline_type, jurisdiction, urgency, limit: 5 },
+    { enabled: !!pipeline_type, staleTime: 60_000 }
   );
 
   if (isLoading) {

@@ -373,7 +373,7 @@ export async function getDossierById(id: number): Promise<{
 
   return {
     dossier,
-    sections: sections.map(s => ({
+    sections: sections.map((s: any) => ({
       type: s.sectionType,
       heading: s.heading,
       content: s.content,
