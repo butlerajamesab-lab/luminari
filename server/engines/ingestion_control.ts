@@ -932,7 +932,7 @@ function verify_registry_candidate(candidate: any) {
   const candidate_type = resolved_candidate_type(candidate);
   const name = first_text_value(candidate.name, payload?.name);
   if (payload?.jurisdiction_mismatch_reason || payload?.classification_outcome === "provenance_mismatch") blocked_reasons.push("provenance_mismatch");
-  if (candidate_type !== "benefit_program") blocked_reasons.push("benefit_program_candidate_type_required");
+  if (!candidate_is_resource_like({ ...candidate, candidate_type })) blocked_reasons.push("resource_like_candidate_type_required");
   if (!name) blocked_reasons.push("name_required");
   else if (is_generic_header_text(name) || name.startsWith("review_fragment:")) blocked_reasons.push("non_generic_real_name_required");
   if (!first_text_value(candidate.source_file, payload?.source_file, payload?.source_name)) blocked_reasons.push("source_file_required");
@@ -1047,8 +1047,17 @@ function promotion_feature_flag_enabled() {
   return process.env[CANONICAL_PROMOTION_FLAG] === "true";
 }
 
+function merge_plain_objects(...values: any[]) {
+  return Object.assign({}, ...values.filter((value) => value && typeof value === "object" && !Array.isArray(value)));
+}
+
 function candidate_payload_from_row(row: any) {
-  return row.candidate_payload ?? row.raw_candidate_payload ?? row.payload ?? row.promotion_ready ?? {};
+  const forensic = row.forensic_provenance && typeof row.forensic_provenance === "object" ? row.forensic_provenance : {};
+  const promotion = row.promotion_ready && typeof row.promotion_ready === "object" ? row.promotion_ready : {};
+  const payload = row.payload && typeof row.payload === "object" ? row.payload : {};
+  const raw = row.raw_candidate_payload && typeof row.raw_candidate_payload === "object" ? row.raw_candidate_payload : {};
+  const candidate = row.candidate_payload && typeof row.candidate_payload === "object" ? row.candidate_payload : {};
+  return merge_plain_objects(forensic.field_metadata, forensic, promotion, payload, raw, candidate);
 }
 
 function first_text_value(...values: unknown[]) {
@@ -1116,7 +1125,15 @@ function truncate_preview(value: unknown, limit = PROMOTION_SOURCE_PREVIEW_CHAR_
 function candidate_payload_text(row: any, keys: string[]) {
   const payload = candidate_payload_from_row(row);
   const extracted = payload?.extracted ?? {};
-  return first_text_value(...keys.map((key) => payload?.[key]), ...keys.map((key) => extracted?.[key]));
+  const forensic = row.forensic_provenance ?? {};
+  const metadata = forensic?.field_metadata ?? {};
+  return first_text_value(
+    ...keys.map((key) => row?.[key]),
+    ...keys.map((key) => payload?.[key]),
+    ...keys.map((key) => extracted?.[key]),
+    ...keys.map((key) => forensic?.[key]),
+    ...keys.map((key) => metadata?.[key]),
+  );
 }
 
 function promotion_write_adapter_status(row: any) {
@@ -1279,7 +1296,7 @@ function hold_reason_for_material_scope(material_scope: string) {
 
 function candidate_is_resource_like(candidate: any) {
   const candidate_type = String(candidate.candidate_type || "unknown").toLowerCase();
-  return ["benefit_program", "agency", "legal_aid", "court", "contact", "resource"].includes(candidate_type);
+  return ["benefit_program", "agency", "legal_aid", "court", "contact", "resource", "resource_block", "resource_context", "label_value", "contact_phone", "contact_website", "address"].includes(candidate_type);
 }
 
 
@@ -1494,8 +1511,8 @@ async function write_canonical_candidate(client: any, row: any, entity_columns: 
     layer: "registry_resource",
     jurisdiction: row.jurisdiction,
     jurisdiction_scope: "state",
-    description: text_or_null(candidate_payload.normalized_excerpt) ?? text_or_null(row.normalized_excerpt),
-    eligibility_summary: text_or_null(candidate_payload.eligibility_summary),
+    description: text_or_null(candidate_payload.description) ?? text_or_null(candidate_payload.purpose) ?? text_or_null(candidate_payload.normalized_excerpt) ?? text_or_null(candidate_payload.source_excerpt) ?? text_or_null(row.normalized_excerpt),
+    eligibility_summary: text_or_null(candidate_payload.eligibility_summary) ?? text_or_null(candidate_payload.eligibility),
     domains: [],
     metadata: { source: "registry_entity_extraction_v4", candidate_payload, forensic_provenance: row.forensic_provenance ?? {}, content_hash: row.content_hash, dedupe_behavior: "enrich_blank_fields_only" },
     verification_status: "source_attached",
@@ -1739,4 +1756,7 @@ export const __testing = {
   build_candidates,
   extract_obvious_values,
   verify_registry_candidate,
+  candidate_payload_from_row,
+  candidate_payload_text,
+  candidate_is_resource_like,
 };
