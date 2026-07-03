@@ -68,6 +68,16 @@ describe("temporary DOCX ingestion conveyor salvage", () => {
     expect(candidates.length).toBeGreaterThanOrEqual(2);
     expect(candidates.some((candidate) => candidate.candidate_type === "benefit_program")).toBe(true);
   });
+
+  it("Resource-directory target surface routes to resource_directory_docx_import source table", () => {
+    expect(__testing.candidate_targets_resource_directory({ target_surfaces: "[\"resource_directory\"]" })).toBe(true);
+    expect(__testing.candidate_source_table({ target_surfaces: "[\"resource_directory\"]" })).toBe("resource_directory_docx_import");
+  });
+
+  it("Non resource-directory target surfaces keep registry_entity_extraction_v4 source table", () => {
+    expect(__testing.candidate_targets_resource_directory({ target_surfaces: "[\"workflow_registry\"]" })).toBe(false);
+    expect(__testing.candidate_source_table({ target_surfaces: "[\"workflow_registry\"]" })).toBe("registry_entity_extraction_v4");
+  });
 });
 
 describe("authoritative DOCX conveyor preservation", () => {
