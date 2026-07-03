@@ -61,7 +61,7 @@ jobs:
       - name: Verify runtime hotfix schema contract
         run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/verification/runtime_hotfix_verification.sql
 
-      - name: Lint public runtime schema identifiers
+      - name: Audit SQL/Supabase snake_case runtime boundaries
         run: node scripts/audit-runtime-camelcase.mjs
 
       - name: Check owned snake_case contracts
