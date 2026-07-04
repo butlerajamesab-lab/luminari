@@ -9469,8 +9469,8 @@ async function getUserById(id) {
   return mapUserRow(result.rows[0]);
 }
 async function upsertUser(data) {
-  const now3 = Date.now();
-  const lastSignedIn = data.lastSignedIn instanceof Date ? data.lastSignedIn.getTime() : data.lastSignedIn ?? now3;
+  const now4 = Date.now();
+  const lastSignedIn = data.lastSignedIn instanceof Date ? data.lastSignedIn.getTime() : data.lastSignedIn ?? now4;
   const ownerOpenId = process.env.OWNER_OPEN_ID ?? "";
   const isOwner = Boolean(ownerOpenId && data.openId === ownerOpenId);
   const existing = await getUserByOpenId(data.openId);
@@ -9486,19 +9486,19 @@ async function upsertUser(data) {
          last_signed_in = $6,
          updated_at = $7
        where open_id = $1`,
-      [data.openId, data.name ?? null, data.email ?? null, data.loginMethod ?? null, role, lastSignedIn, now3]
+      [data.openId, data.name ?? null, data.email ?? null, data.loginMethod ?? null, role, lastSignedIn, now4]
     );
   } else {
     await getPool().query(
       `insert into public.users (open_id, name, email, login_method, role, plan, created_at, updated_at, last_signed_in)
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [data.openId, data.name ?? null, data.email ?? null, data.loginMethod ?? null, isOwner ? "admin" : "user", "free", now3, now3, lastSignedIn]
+      [data.openId, data.name ?? null, data.email ?? null, data.loginMethod ?? null, isOwner ? "admin" : "user", "free", now4, now4, lastSignedIn]
     );
   }
 }
 async function logAudit(entry) {
-  const now3 = Date.now();
-  const payload = JSON.stringify({ ...entry, createdAt: now3, previousHash: lastAuditHash });
+  const now4 = Date.now();
+  const payload = JSON.stringify({ ...entry, createdAt: now4, previousHash: lastAuditHash });
   const hash = createHash3("sha256").update(payload).digest("hex");
   lastAuditHash = hash;
   await db.insert(auditTrail).values({
@@ -9509,21 +9509,21 @@ async function logAudit(entry) {
     targetId: entry.targetId ?? null,
     details: entry.details ?? null,
     hash,
-    createdAt: now3
+    createdAt: now4
   });
   return hash;
 }
 async function createCorpusSnapshot(data) {
   const [latest] = await db.select({ maxVersion: sql2`COALESCE(MAX(version), -1)` }).from(corpusSnapshots).where(eq(corpusSnapshots.caseId, data.caseId));
   const nextVersion = (latest?.maxVersion ?? -1) + 1;
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(corpusSnapshots).values({
     caseId: data.caseId,
     version: nextVersion,
     engineVersion: data.engineVersion,
     documentIds: data.documentIds,
     documentHashes: data.documentHashes,
-    createdAt: now3,
+    createdAt: now4,
     status: "open"
   });
   return { id: result.insertId, version: nextVersion };
@@ -9599,9 +9599,9 @@ async function updateSnapshotManifest(snapshotId, documentIds, documentHashes) {
   }).where(eq(corpusSnapshots.id, snapshotId));
 }
 async function createCase(userId, name, description, domain, container, pipelineType) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const normalizedDomain = domain ? domain.toLowerCase().trim() : null;
-  const [result] = await db.insert(cases).values({ userId, name, description: description ?? null, domain: normalizedDomain, container: container ?? null, pipelineType: pipelineType ?? null, createdAt: now3, updatedAt: now3 });
+  const [result] = await db.insert(cases).values({ userId, name, description: description ?? null, domain: normalizedDomain, container: container ?? null, pipelineType: pipelineType ?? null, createdAt: now4, updatedAt: now4 });
   return result.insertId;
 }
 async function updateCaseDomainContainer(id, userId, data) {
@@ -9627,13 +9627,13 @@ async function getCollaboratorAccess(caseId2, userId) {
   return row ?? null;
 }
 async function addCollaborator(caseId2, userId, grantedBy, accessLevel = "READ_ONLY") {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(caseCollaborators).values({
     caseId: caseId2,
     userId,
     accessLevel,
     grantedBy,
-    grantedAt: now3
+    grantedAt: now4
   });
   return result.insertId;
 }
@@ -10187,8 +10187,8 @@ async function removeSelfReferencingCorrelations(caseId2, snapshotId, userId) {
   return ids.length;
 }
 async function createPresentation(p) {
-  const now3 = Date.now();
-  const [result] = await db.insert(presentations).values({ ...p, slideCount: 0, createdAt: now3, updatedAt: now3 });
+  const now4 = Date.now();
+  const [result] = await db.insert(presentations).values({ ...p, slideCount: 0, createdAt: now4, updatedAt: now4 });
   return result.insertId;
 }
 async function getPresentation(id) {
@@ -10416,7 +10416,7 @@ async function clearCaseFindings(caseId2, opts) {
   await db.delete(documentCorrelations).where(eq(documentCorrelations.caseId, caseId2));
 }
 async function createUploadSession(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(uploadSessions).values({
     caseId: data.caseId,
     userId: data.userId,
@@ -10425,8 +10425,8 @@ async function createUploadSession(data) {
     failedFiles: 0,
     duplicateFiles: 0,
     status: "uploading",
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   }).$returningId();
   return result.id;
 }
@@ -10448,10 +10448,10 @@ async function listUploadSessions(userId, caseId2) {
   return db.select().from(uploadSessions).where(and(...conditions)).orderBy(desc(uploadSessions.createdAt)).limit(50);
 }
 async function incrementUploadSessionCounter(sessionId, field, amount = 1) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.update(uploadSessions).set({
     [field]: sql2`${uploadSessions[field]} + ${amount}`,
-    updatedAt: now3
+    updatedAt: now4
   }).where(eq(uploadSessions.id, sessionId));
 }
 async function updateUploadSessionStatus(sessionId, status) {
@@ -10997,14 +10997,14 @@ async function checkReplacementEligibility(documentId) {
   return { eligible: true, document: doc };
 }
 async function createChecklistItems(caseId2, items) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const rows2 = items.map((item) => ({
     caseId: caseId2,
     label: item.label,
     description: item.description ?? null,
     priority: item.priority,
     sortOrder: item.sortOrder,
-    createdAt: now3
+    createdAt: now4
   }));
   if (rows2.length === 0) return [];
   await db.insert(checklistItems).values(rows2);
@@ -11066,7 +11066,7 @@ async function getPipelineAnalytics() {
   return { byPipeline, totalEvents: allEvents.length, recentEvents: allEvents.slice(0, 20) };
 }
 async function createShareLink(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const result = await db.insert(shareLinks).values({
     caseId: data.caseId,
     createdBy: data.createdBy,
@@ -11075,7 +11075,7 @@ async function createShareLink(data) {
     permissions: data.permissions || "read_only",
     expiresAt: data.expiresAt,
     accessCount: 0,
-    createdAt: now3
+    createdAt: now4
   }).$returningId();
   return { id: result[0].id, token: data.token };
 }
@@ -11224,7 +11224,7 @@ function getExecuteRows(result) {
   return Array.isArray(maybeRows) ? maybeRows : [];
 }
 async function createAdminInvite(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const rows2 = getExecuteRows(await db.execute(sql2`
     INSERT INTO public.admin_invites (
       token,
@@ -11248,7 +11248,7 @@ async function createAdminInvite(data) {
       0,
       ${data.expires_at},
       'active',
-      ${now3}
+      ${now4}
     )
     RETURNING id
   `));
@@ -11319,7 +11319,7 @@ async function revokeAdminInvite(id) {
   `);
 }
 async function redeemInvite(invite_id, user_id, target_role, target_plan) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const rows2 = getExecuteRows(await db.execute(sql2`
     SELECT max_uses, use_count
     FROM public.admin_invites
@@ -11335,9 +11335,9 @@ async function redeemInvite(invite_id, user_id, target_role, target_plan) {
   `);
   await db.execute(sql2`
     INSERT INTO public.invite_redemptions (invite_id, user_id, redeemed_at)
-    VALUES (${invite_id}, ${user_id}, ${now3})
+    VALUES (${invite_id}, ${user_id}, ${now4})
   `);
-  await db.update(users).set({ role: target_role, plan: target_plan, updatedAt: now3 }).where(eq(users.id, user_id));
+  await db.update(users).set({ role: target_role, plan: target_plan, updatedAt: now4 }).where(eq(users.id, user_id));
 }
 async function listInviteRedemptions(invite_id) {
   return getExecuteRows(await db.execute(sql2`
@@ -11504,8 +11504,8 @@ function computeDeadlineStatus(request) {
   if (["closed", "appeal_prepared", "appeal_submitted"].includes(request.status)) {
     return { deadlineState: "not_applicable", daysRemaining: null, daysOverdue: null };
   }
-  const now3 = Date.now();
-  const msRemaining = request.responseDueAt - now3;
+  const now4 = Date.now();
+  const msRemaining = request.responseDueAt - now4;
   const daysRemaining = Math.ceil(msRemaining / (24 * 60 * 60 * 1e3));
   if (daysRemaining < 0) {
     return {
@@ -11552,7 +11552,7 @@ async function getFoiaCaseSummary(caseId2) {
   };
 }
 async function findOverdueFoiaRequests(userId) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const rows2 = await db.select({
     id: foiaRequests.id,
     caseId: foiaRequests.caseId,
@@ -11565,16 +11565,16 @@ async function findOverdueFoiaRequests(userId) {
   }).from(foiaRequests).leftJoin(cases, eq(foiaRequests.caseId, cases.id)).where(and(
     eq(foiaRequests.userId, userId),
     sql2`${foiaRequests.responseDueAt} IS NOT NULL`,
-    sql2`${foiaRequests.responseDueAt} < ${now3}`,
+    sql2`${foiaRequests.responseDueAt} < ${now4}`,
     sql2`${foiaRequests.responseReceivedAt} IS NULL`,
     sql2`${foiaRequests.status} IN ('submitted', 'acknowledged', 'in_processing')`
   ));
   return rows2;
 }
 async function findApproachingDeadlineFoiaRequests(userId) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const sevenDaysMs = 7 * 24 * 60 * 60 * 1e3;
-  const cutoff = now3 + sevenDaysMs;
+  const cutoff = now4 + sevenDaysMs;
   const rows2 = await db.select({
     id: foiaRequests.id,
     caseId: foiaRequests.caseId,
@@ -11587,7 +11587,7 @@ async function findApproachingDeadlineFoiaRequests(userId) {
   }).from(foiaRequests).leftJoin(cases, eq(foiaRequests.caseId, cases.id)).where(and(
     eq(foiaRequests.userId, userId),
     sql2`${foiaRequests.responseDueAt} IS NOT NULL`,
-    sql2`${foiaRequests.responseDueAt} > ${now3}`,
+    sql2`${foiaRequests.responseDueAt} > ${now4}`,
     sql2`${foiaRequests.responseDueAt} <= ${cutoff}`,
     sql2`${foiaRequests.responseReceivedAt} IS NULL`,
     sql2`${foiaRequests.status} IN ('submitted', 'acknowledged', 'in_processing')`
@@ -11855,7 +11855,7 @@ function truncate(str, maxLen) {
   return str.slice(0, maxLen - 3) + "...";
 }
 async function upsertCaseNarrative(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [existing] = await db.select({ id: caseNarratives.id }).from(caseNarratives).where(eq(caseNarratives.caseId, data.caseId));
   if (existing) {
     await db.update(caseNarratives).set({
@@ -11864,8 +11864,8 @@ async function upsertCaseNarrative(data) {
       sourceMap: data.sourceMap,
       timelineItemCount: data.timelineItemCount,
       snapshotId: data.snapshotId ?? null,
-      generatedAt: now3,
-      updatedAt: now3
+      generatedAt: now4,
+      updatedAt: now4
     }).where(eq(caseNarratives.id, existing.id));
     const [updated] = await db.select().from(caseNarratives).where(eq(caseNarratives.id, existing.id));
     return updated;
@@ -11877,8 +11877,8 @@ async function upsertCaseNarrative(data) {
       sourceMap: data.sourceMap,
       timelineItemCount: data.timelineItemCount,
       snapshotId: data.snapshotId ?? null,
-      generatedAt: now3,
-      updatedAt: now3
+      generatedAt: now4,
+      updatedAt: now4
     });
     const [inserted] = await db.select().from(caseNarratives).where(eq(caseNarratives.caseId, data.caseId));
     return inserted;
@@ -11889,7 +11889,7 @@ async function getCaseNarrative(caseId2) {
   return row ?? null;
 }
 async function createBenefitApplication(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(benefitApplications).values({
     userId: data.userId,
     caseId: data.caseId ?? null,
@@ -11900,8 +11900,8 @@ async function createBenefitApplication(data) {
     applicationUrl: data.applicationUrl ?? null,
     documentsNeeded: data.documentsNeeded ?? null,
     documentsSubmitted: [],
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   const [row] = await db.select().from(benefitApplications).where(eq(benefitApplications.id, result.insertId));
   return row;
@@ -11923,16 +11923,16 @@ async function getBenefitApplication(id, userId) {
   return row ?? null;
 }
 async function updateBenefitApplicationStatus(id, userId, status, extra) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const updateData = {
     status,
-    updatedAt: now3
+    updatedAt: now4
   };
   if (status === "applied" && !extra?.appliedAt) {
-    updateData.appliedAt = now3;
+    updateData.appliedAt = now4;
   }
   if ((status === "approved" || status === "denied") && !extra?.decisionAt) {
-    updateData.decisionAt = now3;
+    updateData.decisionAt = now4;
   }
   if (extra?.appliedAt) updateData.appliedAt = extra.appliedAt;
   if (extra?.decisionAt) updateData.decisionAt = extra.decisionAt;
@@ -11986,10 +11986,10 @@ async function deleteBenefitApplication(id, userId) {
   return result.affectedRows > 0;
 }
 async function getUpcomingBenefitDeadlines(userId) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   return db.select().from(benefitApplications).where(and(
     eq(benefitApplications.userId, userId),
-    gt(benefitApplications.nextDeadline, now3)
+    gt(benefitApplications.nextDeadline, now4)
   )).orderBy(asc(benefitApplications.nextDeadline));
 }
 async function getBenefitApplicationSummary(userId) {
@@ -12012,14 +12012,14 @@ function markLighthouseSuggestionsUnavailable(error) {
   return false;
 }
 async function createSuggestion(userId, content) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(lighthouseSuggestions).values({
     userId,
     content,
     status: "pending",
     votes: 0,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   return result.insertId;
 }
@@ -12038,9 +12038,9 @@ async function listSuggestions(opts) {
 }
 async function voteSuggestion(suggestionId, userId) {
   try {
-    const now3 = Date.now();
-    await db.insert(lighthouseSuggestionVotes).values({ suggestionId, userId, createdAt: now3 });
-    await db.update(lighthouseSuggestions).set({ votes: sql2`votes + 1`, updatedAt: now3 }).where(eq(lighthouseSuggestions.id, suggestionId));
+    const now4 = Date.now();
+    await db.insert(lighthouseSuggestionVotes).values({ suggestionId, userId, createdAt: now4 });
+    await db.update(lighthouseSuggestions).set({ votes: sql2`votes + 1`, updatedAt: now4 }).where(eq(lighthouseSuggestions.id, suggestionId));
     return true;
   } catch (e) {
     if (e?.code === "ER_DUP_ENTRY" || e?.message?.includes("Duplicate")) return false;
@@ -12048,13 +12048,13 @@ async function voteSuggestion(suggestionId, userId) {
   }
 }
 async function unvoteSuggestion(suggestionId, userId) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.delete(lighthouseSuggestionVotes).where(and(
     eq(lighthouseSuggestionVotes.suggestionId, suggestionId),
     eq(lighthouseSuggestionVotes.userId, userId)
   ));
   if (result.affectedRows > 0) {
-    await db.update(lighthouseSuggestions).set({ votes: sql2`GREATEST(votes - 1, 0)`, updatedAt: now3 }).where(eq(lighthouseSuggestions.id, suggestionId));
+    await db.update(lighthouseSuggestions).set({ votes: sql2`GREATEST(votes - 1, 0)`, updatedAt: now4 }).where(eq(lighthouseSuggestions.id, suggestionId));
     return true;
   }
   return false;
@@ -12081,7 +12081,7 @@ async function deleteSuggestion(id) {
   await db.delete(lighthouseSuggestions).where(eq(lighthouseSuggestions.id, id));
 }
 async function listSpotlightItems(activeOnly = true) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   let query = db.select().from(lighthouseSpotlight);
   if (activeOnly) {
     query = query.where(eq(lighthouseSpotlight.active, true));
@@ -12089,11 +12089,11 @@ async function listSpotlightItems(activeOnly = true) {
   return query.orderBy(asc(lighthouseSpotlight.sortOrder), desc(lighthouseSpotlight.createdAt));
 }
 async function createSpotlightItem(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(lighthouseSpotlight).values({
     ...data,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   return result.insertId;
 }
@@ -12123,11 +12123,11 @@ async function getJob(id) {
   return row ?? null;
 }
 async function createJob(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(lighthouseJobs).values({
     ...data,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   return result.insertId;
 }
@@ -12157,13 +12157,13 @@ async function getPost(id) {
   return row ?? null;
 }
 async function createPost(data) {
-  const now3 = Date.now();
-  const expiresAt = data.expiresAt ?? now3 + 30 * 24 * 60 * 60 * 1e3;
+  const now4 = Date.now();
+  const expiresAt = data.expiresAt ?? now4 + 30 * 24 * 60 * 60 * 1e3;
   const [result] = await db.insert(lighthousePosts).values({
     ...data,
     expiresAt,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   return result.insertId;
 }
@@ -12196,11 +12196,11 @@ async function getPostWithAuthor(id) {
   return row ?? null;
 }
 async function createEvent_lh(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(lighthouseEvents).values({
     ...data,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   return result.insertId;
 }
@@ -12356,7 +12356,7 @@ async function getNearbyEvents(lat, lng, radiusKm) {
   ));
 }
 async function createMapIntakeSession(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(mapIntakeSessions).values({
     userId: data.userId,
     lat: data.lat,
@@ -12369,10 +12369,10 @@ async function createMapIntakeSession(data) {
     nearestPrograms: data.nearestPrograms ?? null,
     nearestOversight: data.nearestOversight ?? null,
     radiusKm: data.radiusKm ?? 50,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
-  return { id: result.insertId, createdAt: now3 };
+  return { id: result.insertId, createdAt: now4 };
 }
 async function getMapIntakeSession(sessionId, userId) {
   const rows2 = await db.select().from(mapIntakeSessions).where(
@@ -12399,13 +12399,13 @@ async function expireOldMapIntakeSessions() {
   ));
 }
 async function createEvidenceItem(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(evidenceItems).values({
     ...data,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
-  return { id: result.insertId, ...data, createdAt: now3, updatedAt: now3 };
+  return { id: result.insertId, ...data, createdAt: now4, updatedAt: now4 };
 }
 async function listEvidenceItems(caseId2) {
   return db.select().from(evidenceItems).where(eq(evidenceItems.caseId, caseId2)).orderBy(evidenceItems.createdAt);
@@ -13426,18 +13426,18 @@ Return JSON array: [{"index": 0, "claimType": "...", "evidentiaryWeight": "...",
     }
     console.log(`[ClaimGen] Classified: ${allClassifications.length}/${uniqueQuotes.length}`);
     if (allClassifications.length === 0) return 0;
-    const now3 = Date.now();
+    const now4 = Date.now();
     const snapResult = await db.insert(dataSnapshots).values({
-      snapshotDate: now3,
+      snapshotDate: now4,
       sourceTable: "claims",
       recordCount: 0,
       snapshotMetadata: {
         description: `Auto-generated claims for doc ${documentId} in case ${caseId2}`
       },
       status: "pending",
-      createdAt: now3
+      createdAt: now4
     });
-    const snapRows = await db.select().from(dataSnapshots).where(sql5`snapshot_date = ${now3} AND source_table = 'claims'`).orderBy(sql5`id DESC`).limit(1);
+    const snapRows = await db.select().from(dataSnapshots).where(sql5`snapshot_date = ${now4} AND source_table = 'claims'`).orderBy(sql5`id DESC`).limit(1);
     const snapshotId = snapRows.length > 0 ? snapRows[0].id : 1;
     console.log(`[ClaimGen] Created snapshot id=${snapshotId}`);
     let inserted = 0;
@@ -16301,7 +16301,7 @@ async function storeGovernedSignal(input) {
     );
   }
   const signalId = generateSignalId();
-  const now3 = Date.now();
+  const now4 = Date.now();
   const confidence = await calculateSignalConfidence(input);
   const template = await findTemplate(input.signalType);
   const explanation = template ? renderTemplate(template.templateText, input) : input.explanation || `${input.signalType} signal detected in dataset ${input.datasetId}`;
@@ -16315,13 +16315,13 @@ async function storeGovernedSignal(input) {
        signalType, datasetId, confidenceScore, severity, title, explanation,
        jurisdiction, detectedAt, createdAt, sunam_status)
     VALUES
-      (${signalId}, ${input.signalType}, ${input.datasetId}, ${now3}, ${confidence.totalScore},
-       ${JSON.stringify(input.sourceRecordIds || [])}, ${now3},
+      (${signalId}, ${input.signalType}, ${input.datasetId}, ${now4}, ${confidence.totalScore},
+       ${JSON.stringify(input.sourceRecordIds || [])}, ${now4},
        ${input.jurisdictionScope || null}, ${input.severityLevel},
-       ${explanation}, ${escalationTier}, ${now3}, ${now3},
+       ${explanation}, ${escalationTier}, ${now4}, ${now4},
        ${input.gateLogId},
        ${input.signalType}, ${input.datasetId || ""}, ${confidence.totalScore}, ${input.severityLevel}, ${input.title}, ${explanation},
-       ${input.jurisdictionScope || null}, ${now3}, ${now3}, ${"governed"})
+       ${input.jurisdictionScope || null}, ${now4}, ${now4}, ${"governed"})
   `);
   await logGenerationStep(signalId, "confidence_calculation", template?.templateId || null, {
     inputFactors: {
@@ -16346,7 +16346,7 @@ async function storeGovernedSignal(input) {
     }, confidence.totalScore >= template.confidenceRequired ? "verified" : "partial", null);
   }
   if (input.datasetId) {
-    await updateProvenance(input.datasetId, { lastFetched: now3 });
+    await updateProvenance(input.datasetId, { lastFetched: now4 });
   }
   return {
     signalId,
@@ -16360,7 +16360,7 @@ async function storeGovernedSignal(input) {
     jurisdictionScope: input.jurisdictionScope || null,
     statisticalContext: input.statisticalContext || null,
     sourceRecordIds: input.sourceRecordIds || null,
-    extractionTimestamp: now3,
+    extractionTimestamp: now4,
     escalationTier,
     templateUsed: template?.templateId || null
   };
@@ -16473,7 +16473,7 @@ async function updateGovernedSignal(signalId, updates) {
     throw new Error("[GATE ENFORCEMENT] updateGovernedSignal: signalId is required");
   }
   const setClauses = [];
-  const now3 = Date.now();
+  const now4 = Date.now();
   if (updates.confidenceScore !== void 0) {
     setClauses.push(`confidence_score = ${updates.confidenceScore}`);
   }
@@ -16486,7 +16486,7 @@ async function updateGovernedSignal(signalId, updates) {
   if (updates.observedValue !== void 0) {
     setClauses.push(`observed_value = ${updates.observedValue}`);
   }
-  setClauses.push(`updated_at = ${now3}`);
+  setClauses.push(`updated_at = ${now4}`);
   if (setClauses.length <= 1) {
     return;
   }
@@ -16711,7 +16711,7 @@ async function promoteSignal(signal, decision, gateLogId) {
   return governed.signalId;
 }
 async function stageSignal(signal, decision) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const result = await db.execute(sql16`
     INSERT INTO extraction_staging
       (signal_type, dataset_id, jurisdiction, domain, severity, title, explanation,
@@ -16733,12 +16733,12 @@ async function stageSignal(signal, decision) {
        ${decision.score}, ${decision.threshold},
        ${JSON.stringify(decision.breakdown)},
        'staged', ${decision.reason},
-       ${now3}, ${now3}, ${now3})
+       ${now4}, ${now4}, ${now4})
   `);
   return result[0]?.insertId || 0;
 }
 async function logGateDecision(signal, decision, outcome, promotedSignalId, stagingId, actor = null) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.execute(sql16`
     INSERT INTO sunam_gate_log
       (live_signal_id, signal_fingerprint, signal_type, dataset_id,
@@ -16752,7 +16752,7 @@ async function logGateDecision(signal, decision, outcome, promotedSignalId, stag
        ${JSON.stringify(decision.breakdown)},
        ${outcome}, ${decision.reason},
        ${promotedSignalId}, ${stagingId}, ${actor},
-       ${now3}, ${now3})
+       ${now4}, ${now4})
   `);
   const [rows2] = await db.execute(sql16`SELECT LAST_INSERT_ID() as id`);
   return Number(rows2[0]?.id) || 0;
@@ -16844,7 +16844,7 @@ async function manualPromote(stagingId, actor) {
     return { success: false, error: "Staged signal not found or already processed" };
   }
   const staged = arr[0];
-  const now3 = Date.now();
+  const now4 = Date.now();
   const signalLike = {
     id: staged.live_signal_id || 0,
     signalType: staged.signal_type,
@@ -16885,7 +16885,7 @@ async function manualPromote(stagingId, actor) {
        ${JSON.stringify(staged.score_breakdown)},
        'manual_promote', ${`Manually promoted by ${actor}`},
        ${null}, ${stagingId}, ${actor},
-       ${now3}, ${now3})
+       ${now4}, ${now4})
   `);
   const [gateRows] = await db.execute(sql16`SELECT LAST_INSERT_ID() as id`);
   const gateLogId = Number(gateRows[0]?.id) || 0;
@@ -16896,11 +16896,11 @@ async function manualPromote(stagingId, actor) {
   await db.execute(sql16`
     UPDATE extraction_staging
     SET gate_decision = 'promoted',
-        promoted_at = ${now3},
+        promoted_at = ${now4},
         promoted_signal_id = ${signalId},
         reviewed_by = ${actor},
-        reviewed_at = ${now3},
-        updated_at = ${now3}
+        reviewed_at = ${now4},
+        updated_at = ${now4}
     WHERE id = ${stagingId}
   `);
   return { success: true, signalId };
@@ -16914,14 +16914,14 @@ async function manualReject(stagingId, actor, reason) {
     return { success: false, error: "Staged signal not found or already processed" };
   }
   const staged = arr[0];
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.execute(sql16`
     UPDATE extraction_staging
     SET gate_decision = 'rejected',
         reviewed_by = ${actor},
-        reviewed_at = ${now3},
+        reviewed_at = ${now4},
         review_notes = ${reason},
-        updated_at = ${now3}
+        updated_at = ${now4}
     WHERE id = ${stagingId}
   `);
   await db.execute(sql16`
@@ -16938,7 +16938,7 @@ async function manualReject(stagingId, actor, reason) {
        ${JSON.stringify(staged.score_breakdown)},
        'manual_reject', ${reason},
        ${null}, ${stagingId}, ${actor},
-       ${now3}, ${now3})
+       ${now4}, ${now4})
   `);
   return { success: true };
 }
@@ -17845,14 +17845,14 @@ async function getPatternTypeId(patternType) {
 async function registerPatternOccurrence(params) {
   const signature = generateSignature(params.patternType, params.signatureComponents);
   const patternTypeId = await getPatternTypeId(params.patternType);
-  const now3 = Date.now();
+  const now4 = Date.now();
   let isNewPattern = false;
   let [existingPattern] = await db.select({ id: patterns.id }).from(patterns).where(eq15(patterns.signature, signature));
   let patternId;
   if (existingPattern) {
     patternId = existingPattern.id;
     await db.update(patterns).set({
-      lastSeenAt: now3,
+      lastSeenAt: now4,
       occurrenceCount: sql30`${patterns.occurrenceCount} + 1`
     }).where(eq15(patterns.id, patternId));
   } else {
@@ -17861,10 +17861,10 @@ async function registerPatternOccurrence(params) {
       patternType: params.patternType,
       signature,
       description: params.description,
-      firstSeenAt: now3,
-      lastSeenAt: now3,
+      firstSeenAt: now4,
+      lastSeenAt: now4,
       occurrenceCount: 1,
-      createdAt: now3
+      createdAt: now4
     });
     patternId = inserted.insertId;
   }
@@ -17878,7 +17878,7 @@ async function registerPatternOccurrence(params) {
       agencyId: params.agencyId ?? null,
       evidenceReferenceId: params.evidenceReferenceId,
       evidenceReferenceType: params.evidenceReferenceType,
-      createdAt: now3
+      createdAt: now4
     });
     occurrenceId = inserted.insertId;
     isNewOccurrence = true;
@@ -18055,9 +18055,9 @@ async function detectAgencyBehaviorPattern(caseId2, foiaRequestIds) {
   }).from(foiaRequests).where(inArray5(foiaRequests.id, foiaRequestIds));
   let detected = 0;
   let registered = 0;
-  const now3 = Date.now();
+  const now4 = Date.now();
   const overdueRequests = caseRequests.filter(
-    (r) => r.responseDueAt && r.responseDueAt < now3 && !r.responseReceivedAt && !["records_produced", "closed"].includes(r.status)
+    (r) => r.responseDueAt && r.responseDueAt < now4 && !r.responseReceivedAt && !["records_produced", "closed"].includes(r.status)
   );
   for (const req of overdueRequests) {
     if (!req.agencyName) continue;
@@ -18068,7 +18068,7 @@ async function detectAgencyBehaviorPattern(caseId2, foiaRequestIds) {
     }).from(foiaRequests).where(
       and13(
         sql30`LOWER(${foiaRequests.agencyName}) = ${normalizedAgency}`,
-        sql30`${foiaRequests.responseDueAt} < ${now3}`,
+        sql30`${foiaRequests.responseDueAt} < ${now4}`,
         sql30`${foiaRequests.responseReceivedAt} IS NULL`,
         sql30`${foiaRequests.caseId} != ${caseId2}`
       )
@@ -19660,7 +19660,7 @@ async function writeGovernanceLog(tx, input) {
   const actorHash = hashActorId(input.actorId);
   const previousStateJson = input.previousState != null ? canonicalStringify(input.previousState) : null;
   const newStateJson = canonicalStringify(input.newState);
-  const now3 = Date.now();
+  const now4 = Date.now();
   const entryHash = computeEntryHash({
     eventType: input.eventType,
     component: input.component,
@@ -19670,7 +19670,7 @@ async function writeGovernanceLog(tx, input) {
     rationale: input.rationale,
     actorHash,
     actorRole: input.actorRole,
-    createdAt: now3,
+    createdAt: now4,
     previousHash
   });
   await tx.insert(governanceLog).values({
@@ -19685,7 +19685,7 @@ async function writeGovernanceLog(tx, input) {
     actorRole: input.actorRole,
     previousHash,
     entryHash,
-    createdAt: now3
+    createdAt: now4
   });
   return { seqNo: nextSeqNo, entryHash };
 }
@@ -19939,7 +19939,7 @@ async function governedVersionChange(input) {
 }
 async function governedDataStreamCreate(input) {
   return await db.transaction(async (tx) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     await tx.insert(dataStreamRegistry).values({
       streamId: input.streamData.streamId,
       streamName: input.streamData.streamName,
@@ -19955,15 +19955,15 @@ async function governedDataStreamCreate(input) {
       enabled: true,
       recordsIngested: 0,
       cronExpression: input.streamData.cronExpression ?? null,
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     const result = await writeGovernanceLog(tx, {
       eventType: "data_stream_created",
       component: "data_stream_registry",
       scope: `stream_id:${input.streamData.streamId}`,
       previousState: null,
-      newState: { ...input.streamData, enabled: true, createdAt: now3 },
+      newState: { ...input.streamData, enabled: true, createdAt: now4 },
       rationale: input.rationale,
       actorId: input.actorId,
       actorRole: input.actorRole
@@ -20629,7 +20629,7 @@ async function upsertRecords(datasetId, records) {
   let inserted = 0;
   let updated = 0;
   const errors = [];
-  const now3 = Date.now();
+  const now4 = Date.now();
   const BATCH_SIZE4 = 200;
   for (let i = 0; i < records.length; i += BATCH_SIZE4) {
     const batch = records.slice(i, i + BATCH_SIZE4);
@@ -20637,8 +20637,8 @@ async function upsertRecords(datasetId, records) {
       const values = batch.map((record) => ({
         datasetId,
         sourceRecordId: record.sourceRecordId,
-        ingestedAt: now3,
-        updatedAt: now3,
+        ingestedAt: now4,
+        updatedAt: now4,
         rawJson: record.rawJson,
         normalizedDate: record.normalizedDate,
         normalizedCategory: record.normalizedCategory,
@@ -20676,8 +20676,8 @@ async function upsertRecords(datasetId, records) {
           await db.insert(ingestedRecords).values({
             datasetId,
             sourceRecordId: record.sourceRecordId,
-            ingestedAt: now3,
-            updatedAt: now3,
+            ingestedAt: now4,
+            updatedAt: now4,
             rawJson: record.rawJson,
             normalizedDate: record.normalizedDate,
             normalizedCategory: record.normalizedCategory,
@@ -23253,7 +23253,7 @@ function genId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 async function generateReformPackage(patternId) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [patternRows] = await db.execute(
     sql71`SELECT * FROM pattern_registry WHERE pattern_id = ${patternId} LIMIT 1`
   );
@@ -23411,7 +23411,7 @@ async function generateReformPackage(patternId) {
       implementation_roadmap_section, supporting_data_section, jurisdiction, reform_type, created_at, updated_at)
     VALUES (${packageId}, ${patternId}, ${title}, 'draft', ${executiveSummary}, ${evidenceSection},
       ${rootCauseSection}, ${interventionHistorySection}, ${recommendedReformsSection},
-      ${implementationRoadmapSection}, ${supportingDataSection}, ${jurisdiction}, ${reformType}, ${now3}, ${now3})
+      ${implementationRoadmapSection}, ${supportingDataSection}, ${jurisdiction}, ${reformType}, ${now4}, ${now4})
   `);
   return {
     packageId,
@@ -23427,8 +23427,8 @@ async function generateReformPackage(patternId) {
     supportingDataSection,
     jurisdiction,
     reformType,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   };
 }
 async function exportReformPackage(packageId, format) {
@@ -23621,11 +23621,11 @@ h3{color:#533483}hr{border:none;border-top:1px solid #eee;margin:2rem 0}</style>
   return { content: md, mimeType: "text/markdown", filename: `${packageId}.md` };
 }
 async function updateReformPackageStatus(packageId, newStatus, opts) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const validStatuses = ["draft", "review", "submitted", "under_consideration", "adopted", "rejected"];
   if (!validStatuses.includes(newStatus)) throw new Error(`Invalid status: ${newStatus}`);
   await db.execute(sql71`
-    UPDATE reform_packages SET status = ${newStatus}, updated_at = ${now3}
+    UPDATE reform_packages SET status = ${newStatus}, updated_at = ${now4}
     WHERE package_id = ${packageId}
   `);
   if (newStatus === "submitted" && opts?.submittedTo) {
@@ -23635,7 +23635,7 @@ async function updateReformPackageStatus(packageId, newStatus, opts) {
   }
   if (newStatus === "adopted") {
     await db.execute(sql71`
-      UPDATE reform_packages SET adopted_date = ${now3},
+      UPDATE reform_packages SET adopted_date = ${now4},
         signal_reduction_pct = ${opts?.signalReductionPct || null},
         systemic_impact_score = ${opts?.systemicImpactScore || null}
       WHERE package_id = ${packageId}
@@ -23648,7 +23648,7 @@ async function updateReformPackageStatus(packageId, newStatus, opts) {
       const changeId = genId("PCH");
       await db.execute(sql71`
         INSERT INTO policy_change_registry (change_id, pattern_type, jurisdiction, reform_type, proposal_title, priority_score, status, created_at, updated_at)
-        VALUES (${changeId}, ${pkg.reform_type || "reform"}, ${pkg.jurisdiction}, 'legislative_fix', ${"Reform Adopted: " + packageId}, 90, 'approved', ${now3}, ${now3})
+        VALUES (${changeId}, ${pkg.reform_type || "reform"}, ${pkg.jurisdiction}, 'legislative_fix', ${"Reform Adopted: " + packageId}, 90, 'approved', ${now4}, ${now4})
       `);
       await db.execute(sql71`
         INSERT INTO strategy_memory (memory_id, pattern_type, jurisdiction, intervention_type,
@@ -23656,7 +23656,7 @@ async function updateReformPackageStatus(packageId, newStatus, opts) {
         VALUES (${genId("MEM")}, ${pkg.reform_type || "reform"}, ${pkg.jurisdiction}, 'reform_adopted',
           ${opts?.signalReductionPct ? opts.signalReductionPct * 10 : 75},
           ${opts?.signalReductionPct ? Math.min(opts.signalReductionPct * 10, 100) : 70},
-          ${"Auto-recorded from adopted reform package " + packageId}, ${now3})
+          ${"Auto-recorded from adopted reform package " + packageId}, ${now4})
       `);
     }
   }
@@ -23841,12 +23841,12 @@ async function registerEntity(params) {
   const canonicalName = resolveEntityName(params.entityName);
   const entityType = params.entityType ?? classifyEntityType(canonicalName);
   const industry = params.industry ?? inferIndustry(canonicalName);
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [existing] = await db.select().from(entityRegistry).where(eq54(entityRegistry.canonicalName, canonicalName)).limit(1);
   if (existing) {
     await db.update(entityRegistry).set({
-      lastSeenAt: now3,
-      updatedAt: now3,
+      lastSeenAt: now4,
+      updatedAt: now4,
       ...industry && !existing.industry ? { industry } : {},
       ...params.jurisdiction && !existing.jurisdiction ? { jurisdiction: params.jurisdiction } : {}
     }).where(eq54(entityRegistry.id, existing.id));
@@ -23866,10 +23866,10 @@ async function registerEntity(params) {
     litigationCount: 0,
     enforcementCount: 0,
     patternCount: 0,
-    firstSeenAt: now3,
-    lastSeenAt: now3,
-    createdAt: now3,
-    updatedAt: now3
+    firstSeenAt: now4,
+    lastSeenAt: now4,
+    createdAt: now4,
+    updatedAt: now4
   });
   return { id: inserted.insertId, canonicalName, entityType };
 }
@@ -24638,12 +24638,12 @@ async function upsertCapturePattern(params) {
     conditions.push(eq56(regulatoryCapturePatterns.regulatedEntity, params.regulatedEntity));
   }
   const [existing] = await db.select().from(regulatoryCapturePatterns).where(and45(...conditions)).limit(1);
-  const now3 = Date.now();
+  const now4 = Date.now();
   if (existing) {
     await db.update(regulatoryCapturePatterns).set({
       captureRiskScore: riskScore,
       patternStatus: status,
-      updatedAt: now3
+      updatedAt: now4
     }).where(eq56(regulatoryCapturePatterns.id, existing.id));
     return { id: existing.id, riskScore, status, updated: true };
   }
@@ -24661,8 +24661,8 @@ async function upsertCapturePattern(params) {
     campaignContributions: 0,
     policyChanges: 0,
     patternStatus: status,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   for (const ind of params.indicators.filter((i) => i.detected)) {
     await db.insert(regulatoryCaptureSignals).values({
@@ -24674,7 +24674,7 @@ async function upsertCapturePattern(params) {
       sourceStreamRcs: "cross_stream_analysis",
       confidenceScoreRcs: ind.strength,
       evidenceReferenceRcs: ind.evidence,
-      createdAtRcs: now3
+      createdAtRcs: now4
     });
   }
   return { id: inserted.insertId, riskScore, status, updated: false };
@@ -24827,18 +24827,18 @@ async function calculateCrisisProbability(params) {
   return { probability, indicators, riskLevel };
 }
 function estimateEscalationDate(probability, patternAge, signalVelocity) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   if (probability >= 75) {
     const daysUntil = Math.max(30, Math.round(90 - (probability - 75)));
-    return now3 + daysUntil * 864e5;
+    return now4 + daysUntil * 864e5;
   } else if (probability >= 50) {
     const daysUntil = Math.max(90, Math.round(180 - (probability - 50) * 3.6));
-    return now3 + daysUntil * 864e5;
+    return now4 + daysUntil * 864e5;
   } else if (probability >= 25) {
     const daysUntil = Math.max(180, Math.round(365 - (probability - 25) * 7.4));
-    return now3 + daysUntil * 864e5;
+    return now4 + daysUntil * 864e5;
   } else {
-    return now3 + 365 * 864e5;
+    return now4 + 365 * 864e5;
   }
 }
 function identifyTriggerFactors(indicators) {
@@ -26636,14 +26636,14 @@ function startQuarterlyExportCron() {
   }, {
     timezone: "UTC"
   });
-  const now3 = /* @__PURE__ */ new Date();
-  const nextQuarter = new Date(now3);
+  const now4 = /* @__PURE__ */ new Date();
+  const nextQuarter = new Date(now4);
   nextQuarter.setUTCDate(1);
   nextQuarter.setUTCHours(0, 0, 0, 0);
-  const currentMonth = now3.getUTCMonth();
+  const currentMonth = now4.getUTCMonth();
   const nextQuarterMonth = Math.ceil((currentMonth + 1) / 3) * 3;
   if (nextQuarterMonth >= 12) {
-    nextQuarter.setUTCFullYear(now3.getUTCFullYear() + 1);
+    nextQuarter.setUTCFullYear(now4.getUTCFullYear() + 1);
     nextQuarter.setUTCMonth(0);
   } else {
     nextQuarter.setUTCMonth(nextQuarterMonth);
@@ -27228,7 +27228,7 @@ async function listStreams() {
   }));
 }
 async function addStream(input, adminId, adminName) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   await pool.query(
     `INSERT INTO data_stream_registry (
       stream_id_dsr, stream_name_dsr, stream_type_dsr, source_url_dsr, update_freq_dsr,
@@ -27245,7 +27245,7 @@ async function addStream(input, adminId, adminName) {
       input.confidence_multiplier ?? 100,
       input.description ?? null,
       input.field_mapping ? JSON.stringify(input.field_mapping) : null,
-      now3
+      now4
     ]
   );
   await logChange({
@@ -28728,8 +28728,8 @@ function map_jurisdiction_rows(rows2) {
   }));
 }
 async function getJurisdictions() {
-  const now3 = Date.now();
-  if (jurisdictions_cache && jurisdictions_cache.expires_at > now3) {
+  const now4 = Date.now();
+  if (jurisdictions_cache && jurisdictions_cache.expires_at > now4) {
     return jurisdictions_cache.rows;
   }
   try {
@@ -28743,7 +28743,7 @@ async function getJurisdictions() {
       }
     );
     const rows2 = map_jurisdiction_rows(result.rows);
-    jurisdictions_cache = { expires_at: now3 + JURISDICTIONS_CACHE_TTL_MS, rows: rows2 };
+    jurisdictions_cache = { expires_at: now4 + JURISDICTIONS_CACHE_TTL_MS, rows: rows2 };
     return rows2;
   } catch (error) {
     if (jurisdictions_cache) {
@@ -28889,7 +28889,7 @@ var init_pg_pool = __esm({
 
 // server/services/caseService.ts
 async function createCase2(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const query = `
     INSERT INTO luminari_cases (
       user_id,
@@ -28908,8 +28908,8 @@ async function createCase2(data) {
     data.category,
     data.selected_workflow_id,
     "active",
-    now3,
-    now3
+    now4,
+    now4
   ]);
   return result.rows[0];
 }
@@ -28922,7 +28922,7 @@ async function getCaseById(caseId2) {
   return result.rows[0] || null;
 }
 async function addCaseNote(caseId2, content) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const query = `
     INSERT INTO luminari_case_notes (
       case_id,
@@ -28931,7 +28931,7 @@ async function addCaseNote(caseId2, content) {
     ) VALUES ($1, $2, $3)
     RETURNING *;
   `;
-  const result = await pool2.query(query, [caseId2, content, now3]);
+  const result = await pool2.query(query, [caseId2, content, now4]);
   return result.rows[0];
 }
 async function getCaseNotes(caseId2) {
@@ -28944,7 +28944,7 @@ async function getCaseNotes(caseId2) {
   return result.rows;
 }
 async function recordCaseAction(caseId2, actionType, metadata) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const query = `
     INSERT INTO luminari_case_actions (
       case_id,
@@ -28954,11 +28954,11 @@ async function recordCaseAction(caseId2, actionType, metadata) {
     ) VALUES ($1, $2, $3, $4)
     RETURNING *;
   `;
-  const result = await pool2.query(query, [caseId2, actionType, JSON.stringify(metadata), now3]);
+  const result = await pool2.query(query, [caseId2, actionType, JSON.stringify(metadata), now4]);
   return result.rows[0];
 }
 async function recordCaseEvent(caseId2, eventType, eventData) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const query = `
     INSERT INTO luminari_case_events (
       case_id,
@@ -28968,7 +28968,7 @@ async function recordCaseEvent(caseId2, eventType, eventData) {
     ) VALUES ($1, $2, $3, $4)
     RETURNING *;
   `;
-  const result = await pool2.query(query, [caseId2, eventType, JSON.stringify(eventData), now3]);
+  const result = await pool2.query(query, [caseId2, eventType, JSON.stringify(eventData), now4]);
   return result.rows[0];
 }
 async function getCaseTimeline(caseId2) {
@@ -28984,14 +28984,14 @@ async function getCaseTimeline(caseId2) {
   return result.rows;
 }
 async function updateCaseStatus(caseId2, status) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const query = `
     UPDATE luminari_cases
     SET status = $1, updated_at = $2
     WHERE id = $3
     RETURNING *;
   `;
-  const result = await pool2.query(query, [status, now3, caseId2]);
+  const result = await pool2.query(query, [status, now4, caseId2]);
   return result.rows[0];
 }
 async function markCaseForExpungement(caseId2) {
@@ -29724,7 +29724,7 @@ async function processSignalsBatch2(input) {
           LIMIT 1
         `);
         if (existingByFp[0].length > 0) {
-          const now3 = Date.now();
+          const now4 = Date.now();
           await db.execute(sql123`
             INSERT INTO sunam_gate_log
               (live_signal_id, signal_fingerprint, signal_type, dataset_id,
@@ -29737,7 +29737,7 @@ async function processSignalsBatch2(input) {
                ${0}, ${0}, ${"{}"},
                'approve', ${"Skipped: fingerprint already promoted via prior path"},
                ${null}, ${null}, ${"process_signals_batch"},
-               ${now3}, ${now3})
+               ${now4}, ${now4})
           `);
           skipped++;
           details?.push({
@@ -31529,12 +31529,12 @@ async function stageWorldNode(domain) {
     stage.details = { error: metaValidation.message, metadata: metadataL10 };
     return stage;
   }
-  const now3 = Date.now();
+  const now4 = Date.now();
   const { rows: wnResult } = await pool.query(
     `INSERT INTO world_nodes
      (biome_type, node_name_wn, latitude, longitude, metadata_l10, active_remedy, last_verified_at_wn, created_at_wn, updated_at_wn)
      VALUES ($1, $2, 0, 0, $3, 1, $4, $5, $6)`,
-    [biomeType, nodeName, JSON.stringify(metadataL10), now3, now3, now3]
+    [biomeType, nodeName, JSON.stringify(metadataL10), now4, now4, now4]
   );
   const wnId = wnResult.insertId;
   stage.status = "completed";
@@ -32345,11 +32345,11 @@ __export(provenance_alerting_exports, {
 });
 import { eq as eq82, and as and62, gt as gt3 } from "drizzle-orm";
 async function isInCooldown(alertType) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [recent] = await db.select().from(provenanceAlertEvents).where(
     and62(
       eq82(provenanceAlertEvents.alertType, alertType),
-      gt3(provenanceAlertEvents.cooldownUntil, now3)
+      gt3(provenanceAlertEvents.cooldownUntil, now4)
     )
   ).limit(1);
   return !!recent;
@@ -32979,7 +32979,7 @@ async function detectEvidenceGaps(caseId2, pipelineType) {
 async function detectAndPersistGaps(caseId2, pipelineType) {
   const result = await detectEvidenceGaps(caseId2, pipelineType);
   if (!result) return null;
-  const now3 = Date.now();
+  const now4 = Date.now();
   const ruleSet = getDomainRules(pipelineType);
   const existing = await db.select().from(missingRecords).where(and63(
     eq83(missingRecords.caseId, caseId2),
@@ -33005,15 +33005,15 @@ async function detectAndPersistGaps(caseId2, pipelineType) {
         agencyType: rule.agencyType,
         foiaEligible: missing.foiaEligible,
         status: "detected",
-        detectedAt: now3,
-        updatedAt: now3
+        detectedAt: now4,
+        updatedAt: now4
       });
     }
   }
   for (const recordType of Object.keys(existingByType)) {
     const existingRecord = existingByType[recordType];
     if (!missingTypes.has(recordType) && existingRecord.status === "detected") {
-      await db.update(missingRecords).set({ status: "received", updatedAt: now3 }).where(eq83(missingRecords.id, existingRecord.id));
+      await db.update(missingRecords).set({ status: "received", updatedAt: now4 }).where(eq83(missingRecords.id, existingRecord.id));
     }
   }
   try {
@@ -33384,8 +33384,8 @@ async function generateFoiaRequest(caseId2, missingRecordId, userId, requesterIn
       error: `Letter generation failed: ${err instanceof Error ? err.message : "Unknown error"}`
     };
   }
-  const now3 = Date.now();
-  const responseDueAt = primaryAgency?.statute.responseDeadlineDays ? now3 + primaryAgency.statute.responseDeadlineDays * 24 * 60 * 60 * 1e3 : null;
+  const now4 = Date.now();
+  const responseDueAt = primaryAgency?.statute.responseDeadlineDays ? now4 + primaryAgency.statute.responseDeadlineDays * 24 * 60 * 60 * 1e3 : null;
   const gatingReason = JSON.stringify({
     severity: missingRecord.severity,
     foiaEligible: missingRecord.foiaEligible,
@@ -33414,12 +33414,12 @@ async function generateFoiaRequest(caseId2, missingRecordId, userId, requesterIn
     gatingReason,
     warmHandoff,
     warmHandoffReason: warmHandoffReasons.length > 0 ? warmHandoffReasons.join("\n\n") : null,
-    createdAt: now3,
-    updatedAt: now3,
+    createdAt: now4,
+    updatedAt: now4,
     responseDueAt
   });
   const requestId = result.insertId;
-  await db.update(missingRecords).set({ status: "requested", updatedAt: now3 }).where(eq84(missingRecords.id, missingRecordId));
+  await db.update(missingRecords).set({ status: "requested", updatedAt: now4 }).where(eq84(missingRecords.id, missingRecordId));
   try {
     const { runPatternDetection: runPatternDetection2 } = await Promise.resolve().then(() => (init_pattern_detection(), pattern_detection_exports));
     const patternResult = await runPatternDetection2({
@@ -35656,10 +35656,10 @@ async function buildDatabaseDiagnostic() {
   }
 }
 async function getDatabaseDiagnostic() {
-  const now3 = Date.now();
-  if (cached_diagnostic && cached_diagnostic.expires_at > now3) return cached_diagnostic.payload;
+  const now4 = Date.now();
+  if (cached_diagnostic && cached_diagnostic.expires_at > now4) return cached_diagnostic.payload;
   const payload = await buildDatabaseDiagnostic();
-  cached_diagnostic = { expires_at: now3 + CACHE_TTL_MS, payload };
+  cached_diagnostic = { expires_at: now4 + CACHE_TTL_MS, payload };
   return payload;
 }
 async function sendDatabaseDiagnostic(res) {
@@ -38534,7 +38534,7 @@ function assertOutputRefsFormat(value) {
 init_db();
 import { sql as sql11 } from "drizzle-orm";
 async function scanSchema() {
-  const now3 = Date.now();
+  const now4 = Date.now();
   let newTables = 0;
   let newFields = 0;
   const [allTables] = await db.execute(sql11`
@@ -38563,14 +38563,14 @@ async function scanSchema() {
       await db.execute(sql11`
         UPDATE table_registry 
         SET rowCount = ${rowCount}, columnCount = ${columnCount}, 
-            lastScannedAt = ${now3}, updatedAt = ${now3},
+            lastScannedAt = ${now4}, updatedAt = ${now4},
             status = ${rowCount > 0 ? "active" : "empty"}
         WHERE id = ${tableId}
       `);
     } else {
       const [ins] = await db.execute(sql11`
         INSERT INTO table_registry (tableName, category, description, rowCount, columnCount, lastScannedAt, status, createdAt, updatedAt)
-        VALUES (${tableName}, ${category}, ${`Auto-scanned: ${tableName}`}, ${rowCount}, ${columnCount}, ${now3}, ${rowCount > 0 ? "active" : "empty"}, ${now3}, ${now3})
+        VALUES (${tableName}, ${category}, ${`Auto-scanned: ${tableName}`}, ${rowCount}, ${columnCount}, ${now4}, ${rowCount > 0 ? "active" : "empty"}, ${now4}, ${now4})
       `);
       tableId = ins.insertId;
       newTables++;
@@ -38596,7 +38596,7 @@ async function scanSchema() {
             ${f.IS_NULLABLE === "YES" ? 1 : 0}, 
             ${f.COLUMN_KEY === "PRI" ? 1 : 0}, 
             ${f.COLUMN_KEY !== "" ? 1 : 0}, 
-            ${now3}
+            ${now4}
           )
         `);
         newFields++;
@@ -38649,7 +38649,7 @@ async function detectDrift() {
   };
 }
 async function logConduitEvent(params) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.execute(sql11`
     INSERT INTO conduit_events (event_type, pipeline_id, engine_id, run_id, snapshot_id, metadata, createdAt)
     VALUES (
@@ -38659,7 +38659,7 @@ async function logConduitEvent(params) {
       ${params.runId ?? null},
       ${params.snapshotId ?? null},
       ${JSON.stringify(params.metadata ?? {})},
-      ${now3}
+      ${now4}
     )
   `);
   return result.insertId;
@@ -38760,7 +38760,7 @@ async function generateOutput(snapshotId) {
       completed_at: r.completedAt
     }))
   };
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [ins] = await db.execute(sql11`
     INSERT INTO alpha_lake_exports (snapshot_id, export_type, engine_run_ids, output_payload, status, createdAt)
     VALUES (
@@ -38769,7 +38769,7 @@ async function generateOutput(snapshotId) {
       ${JSON.stringify(runs.map((r) => r.run_id))},
       ${JSON.stringify(assembled)},
       ${"completed"},
-      ${now3}
+      ${now4}
     )
   `);
   const exportId = ins.insertId;
@@ -38777,7 +38777,7 @@ async function generateOutput(snapshotId) {
     eventType: "ALPHA_EXPORT",
     pipelineId: "alpha_lake",
     snapshotId,
-    metadata: { export_id: exportId, engine_count: runs.length, timestamp: now3 }
+    metadata: { export_id: exportId, engine_count: runs.length, timestamp: now4 }
   });
   return { snapshotId, runs: assembled.runs, exportId };
 }
@@ -38796,7 +38796,7 @@ function syncStatus(s) {
 }
 async function wrapEngineExecution(config, engineFn, extractOutputRefs) {
   const runId = `run_${config.engineId}_${Date.now()}_${randomUUID().slice(0, 8)}`;
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.insert(engineRuns).values({
     runId,
     caseId: config.caseId,
@@ -38808,8 +38808,8 @@ async function wrapEngineExecution(config, engineFn, extractOutputRefs) {
     stageResults: null,
     outputRefs: null,
     snapshotId: config.snapshotId ?? null,
-    startedAt: now3,
-    createdAt: now3
+    startedAt: now4,
+    createdAt: now4
   });
   await db.update(engineRuns).set({ ...syncStatus("running"), currentStage: "executing" }).where(sql12`run_id = ${runId}`);
   try {
@@ -39086,11 +39086,11 @@ async function checkAndCreateCampaigns() {
 }
 async function createCampaign(params) {
   const id = randomUUID2();
-  const now3 = (/* @__PURE__ */ new Date()).toISOString();
+  const now4 = (/* @__PURE__ */ new Date()).toISOString();
   const stageHistory = [{
     stage: 1,
     stageName: "Detection",
-    enteredAt: now3
+    enteredAt: now4
   }];
   const stageHistoryJson = JSON.stringify(stageHistory);
   const patternId = params.patternId || null;
@@ -39151,13 +39151,13 @@ async function advanceCampaignStage(campaignId, notes) {
   const campaign = await getCampaign(campaignId);
   if (!campaign) throw new Error("Campaign not found");
   if (campaign.currentStage >= 6) throw new Error("Campaign already at final stage");
-  const now3 = (/* @__PURE__ */ new Date()).toISOString();
+  const now4 = (/* @__PURE__ */ new Date()).toISOString();
   const newStage = campaign.currentStage + 1;
   const stageDef = CAMPAIGN_STAGES.find((s) => s.number === newStage);
   const history = [...campaign.stageHistory];
   const currentEntry = history.find((h) => h.stage === campaign.currentStage && !h.completedAt);
-  if (currentEntry) currentEntry.completedAt = now3;
-  history.push({ stage: newStage, stageName: stageDef.name, enteredAt: now3, notes });
+  if (currentEntry) currentEntry.completedAt = now4;
+  history.push({ stage: newStage, stageName: stageDef.name, enteredAt: now4, notes });
   let status = "analysis";
   if (newStage === 2) status = "strategy";
   else if (newStage === 3) status = "reform_package";
@@ -39965,12 +39965,12 @@ var sunamGateRouter = router({
     return updateThreshold(id, updates, ctx.user.name ?? "admin");
   }),
   activateThreshold: adminProcedure.input(z6.object({ id: z6.number() })).mutation(async ({ ctx, input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const actor = ctx.user.name ?? "admin";
-    await db.execute(sql17`UPDATE sunam_thresholds SET is_active = 0, updated_at = ${now3}`);
+    await db.execute(sql17`UPDATE sunam_thresholds SET is_active = 0, updated_at = ${now4}`);
     await db.execute(sql17`
         UPDATE sunam_thresholds 
-        SET is_active = 1, updated_by = ${actor}, updated_at = ${now3}
+        SET is_active = 1, updated_by = ${actor}, updated_at = ${now4}
         WHERE id = ${input.id}
       `);
     invalidateThresholdCache();
@@ -41686,20 +41686,20 @@ var businessRouter = router({
     stddevAmount: z15.string().optional(),
     sampleCount: z15.number()
   })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const result = await db.insert(businessBaselines).values({
       entityType: input.entityType,
       entityId: input.entityId,
       avgAmount: input.avgAmount,
       stddevAmount: input.stddevAmount,
       sampleCount: input.sampleCount,
-      lastUpdated: now3
+      lastUpdated: now4
     }).onDuplicateKeyUpdate({
       set: {
         avgAmount: input.avgAmount,
         stddevAmount: input.stddevAmount,
         sampleCount: input.sampleCount,
-        lastUpdated: now3
+        lastUpdated: now4
       }
     });
     return { success: true, id: result?.[0]?.insertId ?? result.insertId };
@@ -43402,13 +43402,13 @@ async function verifyTenantAccess(caseId2, userId) {
 async function createPhase2Run(caseId2, snapshotId, userId) {
   await verifyTenantAccess(caseId2, userId);
   await verifySealedSnapshot(snapshotId, caseId2);
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(phase2Runs).values({
     caseId: caseId2,
     snapshotId,
     engineVersionReference: ENGINE_VERSION,
     status: "open",
-    createdAt: now3
+    createdAt: now4
   });
   const id = result.insertId;
   const [run] = await db.select().from(phase2Runs).where(eq9(phase2Runs.id, id));
@@ -43451,12 +43451,12 @@ async function createEvidenceRequirement(runId, payload) {
       message: `Phase-2 run ${runId} is ${run.status}. Artifacts can only be added to open runs.`
     });
   }
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(phase2EvidenceRequirements).values({
     runId,
     snapshotId: run.snapshotId,
     payload,
-    createdAt: now3
+    createdAt: now4
   });
   const id = result.insertId;
   const [row] = await db.select().from(phase2EvidenceRequirements).where(eq9(phase2EvidenceRequirements.id, id));
@@ -43473,13 +43473,13 @@ async function createStructuredNote(runId, payload, temporalAnchors) {
       message: `Phase-2 run ${runId} is ${run.status}. Artifacts can only be added to open runs.`
     });
   }
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(phase2StructuredNotes).values({
     runId,
     snapshotId: run.snapshotId,
     payload,
     temporalAnchors: temporalAnchors ?? [],
-    createdAt: now3
+    createdAt: now4
   });
   const id = result.insertId;
   const [row] = await db.select().from(phase2StructuredNotes).where(eq9(phase2StructuredNotes.id, id));
@@ -52006,11 +52006,11 @@ var docketRouter = router({
   }),
   /** Create a new docket entry (admin only) */
   create: adminProcedure.input(docketEntryInput).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const id = await createDocketEntry({
       ...input,
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     return { id };
   }),
@@ -52029,7 +52029,7 @@ var docketRouter = router({
     impacts: z24.array(impactInput),
     sources: z24.array(sourceInput)
   })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const existing = await getDocketEntryBySlug(input.entry.slug);
     if (existing) {
       await updateDocketEntry(existing.id, input.entry);
@@ -52037,29 +52037,29 @@ var docketRouter = router({
       await deleteImpactsForDocket(existing.id);
       await deleteSourcesForDocket(existing.id);
       if (input.actors.length > 0) {
-        await bulkCreateActors(input.actors.map((a) => ({ ...a, docketId: existing.id, createdAt: now3 })));
+        await bulkCreateActors(input.actors.map((a) => ({ ...a, docketId: existing.id, createdAt: now4 })));
       }
       if (input.impacts.length > 0) {
-        await bulkCreateImpacts(input.impacts.map((i) => ({ ...i, docketId: existing.id, createdAt: now3 })));
+        await bulkCreateImpacts(input.impacts.map((i) => ({ ...i, docketId: existing.id, createdAt: now4 })));
       }
       if (input.sources.length > 0) {
-        await bulkCreateSources(input.sources.map((s) => ({ ...s, docketId: existing.id, createdAt: now3 })));
+        await bulkCreateSources(input.sources.map((s) => ({ ...s, docketId: existing.id, createdAt: now4 })));
       }
       return { id: existing.id, updated: true };
     }
     const id = await createDocketEntry({
       ...input.entry,
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     if (input.actors.length > 0) {
-      await bulkCreateActors(input.actors.map((a) => ({ ...a, docketId: id, createdAt: now3 })));
+      await bulkCreateActors(input.actors.map((a) => ({ ...a, docketId: id, createdAt: now4 })));
     }
     if (input.impacts.length > 0) {
-      await bulkCreateImpacts(input.impacts.map((i) => ({ ...i, docketId: id, createdAt: now3 })));
+      await bulkCreateImpacts(input.impacts.map((i) => ({ ...i, docketId: id, createdAt: now4 })));
     }
     if (input.sources.length > 0) {
-      await bulkCreateSources(input.sources.map((s) => ({ ...s, docketId: id, createdAt: now3 })));
+      await bulkCreateSources(input.sources.map((s) => ({ ...s, docketId: id, createdAt: now4 })));
     }
     return { id, updated: false };
   }),
@@ -52108,7 +52108,7 @@ var docketRouter = router({
       fileName: z24.string().max(512).optional(),
       notes: z24.string().max(2e3).optional()
     })).mutation(async ({ ctx, input }) => {
-      const now3 = Date.now();
+      const now4 = Date.now();
       const id = await createDocketSubmission({
         userId: ctx.user.id,
         userName: ctx.user.name ?? void 0,
@@ -52121,8 +52121,8 @@ var docketRouter = router({
         fileName: input.fileName,
         notes: input.notes,
         status: "pending",
-        createdAt: now3,
-        updatedAt: now3
+        createdAt: now4,
+        updatedAt: now4
       });
       const fileNote = input.fileName ? ` [Attached: ${input.fileName}]` : "";
       await notifyOwner({
@@ -52651,7 +52651,7 @@ var lumensendRouter = router({
       ...input,
       senderName: input.senderName
     });
-    const now3 = Date.now();
+    const now4 = Date.now();
     const draft = await createDraft({
       userId: ctx.user.id,
       documentType: input.documentType,
@@ -52672,8 +52672,8 @@ var lumensendRouter = router({
       jurisdiction: input.stateCode,
       relatedActions: letter.relatedActions?.length ? JSON.stringify(letter.relatedActions) : null,
       status: "draft",
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     return {
       draft_id: draft.id,
@@ -54523,7 +54523,7 @@ var issueReportsRouter = router({
     lat: z28.number().optional(),
     lng: z28.number().optional()
   })).mutation(async ({ ctx, input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const user = ctx.user;
     await pool.query(
       `INSERT INTO issue_reports (target_type, target_id, target_label, issue_type, description, reporter_id, reporter_name, status, area_name, state_code, lat, lng, created_at, updated_at)
@@ -54540,8 +54540,8 @@ var issueReportsRouter = router({
         input.stateCode ?? null,
         input.lat ?? null,
         input.lng ?? null,
-        now3,
-        now3
+        now4,
+        now4
       ]
     );
     return { success: true };
@@ -54621,10 +54621,10 @@ function fingerprint(...parts) {
 }
 async function ingestCanonicalRegistry(data) {
   const errors = [];
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [runResult] = await db.insert(ingestRuns).values({
     datasetId: "luminari_canonical_registry",
-    startTime: now3,
+    startTime: now4,
     status: "running",
     recordsProcessed: 0,
     recordsInserted: 0,
@@ -54665,7 +54665,7 @@ async function ingestCanonicalRegistry(data) {
           uiMax: meta.ui_max || null,
           wageSol: meta.wage_sol || null,
           civilRightsSol: meta.civil_rights_sol || null,
-          createdAt: now3
+          createdAt: now4
         }).onDuplicateKeyUpdate({ set: { name: sql35`VALUES(name)` } });
         totalJurisdictions++;
         const alerts = jData.layer_0_policy_alerts || [];
@@ -54678,7 +54678,7 @@ async function ingestCanonicalRegistry(data) {
             severity: a.severity || null,
             title: a.title || null,
             description: a.description || a.raw || null,
-            createdAt: now3
+            createdAt: now4
           }).onDuplicateKeyUpdate({ set: { title: sql35`VALUES(title)` } });
           totalAlerts++;
         }
@@ -54701,7 +54701,7 @@ async function ingestCanonicalRegistry(data) {
                 website: p.website || null,
                 applyNotes: p.apply_notes || null,
                 fingerprint: fp,
-                createdAt: now3
+                createdAt: now4
               }).onDuplicateKeyUpdate({ set: { name: sql35`VALUES(name)` } });
               totalPrograms++;
             }
@@ -54719,7 +54719,7 @@ async function ingestCanonicalRegistry(data) {
             steps: w.steps || [],
             deadlines: Array.isArray(w.deadlines) ? w.deadlines.join("; ") : w.deadlines || null,
             escalationPaths: Array.isArray(w.escalation_paths) ? w.escalation_paths.join("; ") : w.escalation_paths || null,
-            createdAt: now3
+            createdAt: now4
           }).onDuplicateKeyUpdate({ set: { workflowType: sql35`VALUES(workflow_type)` } });
           totalWorkflows++;
         }
@@ -54736,7 +54736,7 @@ async function ingestCanonicalRegistry(data) {
             contact: o.contact || null,
             pathway: o.pathway || null,
             escalation: o.escalation || null,
-            createdAt: now3
+            createdAt: now4
           }).onDuplicateKeyUpdate({ set: { agencyName: sql35`VALUES(agency_name)` } });
           totalOversight++;
         }
@@ -54750,7 +54750,7 @@ async function ingestCanonicalRegistry(data) {
             sourceVariants: st.source_variants || [],
             notesOnMerge: Array.isArray(st.notes_on_merge) ? st.notes_on_merge.join("; ") : null,
             conflicts: st.conflicts || [],
-            createdAt: now3
+            createdAt: now4
           }).onDuplicateKeyUpdate({ set: { sourceDocuments: sql35`VALUES(source_documents)` } });
           totalTraceability++;
         }
@@ -54764,7 +54764,7 @@ async function ingestCanonicalRegistry(data) {
             severity: sig.severity,
             sourceReference: sig.sourceReference,
             fingerprint: sig.fingerprint,
-            createdAt: now3
+            createdAt: now4
           }).onDuplicateKeyUpdate({ set: { category: sql35`VALUES(category)` } });
           totalSignals++;
           const lsFp = fingerprint("registry", sig.signalType, jId, sig.category);
@@ -54782,12 +54782,12 @@ async function ingestCanonicalRegistry(data) {
                 recordsAnalyzed: 1,
                 patternCount: 1,
                 percentageAffected: 100,
-                timeRange: { from: now3, to: now3 },
+                timeRange: { from: now4, to: now4 },
                 jurisdictionsAffected: [key2],
                 dataSource: "luminari_canonical_registry"
               },
               confidenceScore: "0.9000",
-              detectedAt: now3,
+              detectedAt: now4,
               ingestRunId: runId,
               signalFingerprint: lsFp,
               active: true
@@ -55229,7 +55229,7 @@ var enforcementIntelligenceRouter = router({
   })).query(async ({ input }) => {
     const forms = input.formId ? await db.select().from(agencyForms).where(eq22(agencyForms.id, input.formId)) : input.agency_short ? await db.select().from(agencyForms).where(eq22(agencyForms.agency_short, input.agency_short)) : await db.select().from(agencyForms);
     const incident = new Date(input.incidentDate);
-    const now3 = /* @__PURE__ */ new Date();
+    const now4 = /* @__PURE__ */ new Date();
     const deadlineRules2 = [];
     const deadlineMap = {
       "EEOC": { primaryDays: 180, extendedDays: 300, extendedCondition: "In deferral states with state/local agency", noDeadline: false },
@@ -55239,11 +55239,11 @@ var enforcementIntelligenceRouter = router({
     };
     return forms.map((f) => {
       const rule = deadlineMap[f.agency_short] || { primaryDays: null, extendedDays: null, extendedCondition: null, noDeadline: true };
-      const daysSinceIncident = Math.floor((now3.getTime() - incident.getTime()) / (1e3 * 60 * 60 * 24));
+      const daysSinceIncident = Math.floor((now4.getTime() - incident.getTime()) / (1e3 * 60 * 60 * 24));
       const primaryDeadlineDate = rule.primaryDays ? new Date(incident.getTime() + rule.primaryDays * 24 * 60 * 60 * 1e3) : null;
       const extendedDeadlineDate = rule.extendedDays ? new Date(incident.getTime() + rule.extendedDays * 24 * 60 * 60 * 1e3) : null;
-      const primaryDaysRemaining = primaryDeadlineDate ? Math.floor((primaryDeadlineDate.getTime() - now3.getTime()) / (1e3 * 60 * 60 * 24)) : null;
-      const extendedDaysRemaining = extendedDeadlineDate ? Math.floor((extendedDeadlineDate.getTime() - now3.getTime()) / (1e3 * 60 * 60 * 24)) : null;
+      const primaryDaysRemaining = primaryDeadlineDate ? Math.floor((primaryDeadlineDate.getTime() - now4.getTime()) / (1e3 * 60 * 60 * 24)) : null;
+      const extendedDaysRemaining = extendedDeadlineDate ? Math.floor((extendedDeadlineDate.getTime() - now4.getTime()) / (1e3 * 60 * 60 * 24)) : null;
       let urgency = "no_deadline";
       if (rule.noDeadline) {
         urgency = "no_deadline";
@@ -55647,8 +55647,8 @@ var enforcementIntelligenceRouter = router({
     });
     if (input.incidentDate) {
       const incident = new Date(input.incidentDate);
-      const now3 = /* @__PURE__ */ new Date();
-      const daysSince = Math.floor((now3.getTime() - incident.getTime()) / (1e3 * 60 * 60 * 24));
+      const now4 = /* @__PURE__ */ new Date();
+      const daysSince = Math.floor((now4.getTime() - incident.getTime()) / (1e3 * 60 * 60 * 24));
       if (input.agency_short === "OSHA" && daysSince > 15) {
         immediateActions.push({
           priority: 1,
@@ -56480,7 +56480,7 @@ var viabilityEngineRouter = router({
   // Output: Rows inserted into fact_claims table
   extractFactClaims: protectedProcedure.input(z33.object({ caseId: z33.number() })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.VIABILITY, caseId: input.caseId, runType: "viability_only" }, async () => {
-      const now3 = Date.now();
+      const now4 = Date.now();
       const caseClaims = await db.select().from(claims).where(eq25(claims.caseId, String(input.caseId)));
       if (caseClaims.length === 0) {
         return { extracted: 0, message: "No claims found in case. Upload and analyze documents first." };
@@ -56564,7 +56564,7 @@ ${claimTexts}`
           relatedEvent: fact.relatedEvent || null,
           eventDate: fact.eventDate || null,
           confidenceScore: String(Math.min(1, Math.max(0, fact.confidenceScore ?? 0.5))),
-          createdAt: now3
+          createdAt: now4
         });
         inserted++;
       }
@@ -56575,7 +56575,7 @@ ${claimTexts}`
           caseId: input.caseId,
           pipelineCategory,
           factText: fact.factValue,
-          createdAt: now3
+          createdAt: now4
         });
       }
       return { extracted: inserted, message: `Extracted ${inserted} fact claims from ${caseClaims.length} document claims.` };
@@ -56587,7 +56587,7 @@ ${claimTexts}`
   //          keyword/phrase matching. Each rule has a triggerPhrase and weight.
   // Output: Rows inserted into claim_detection_results
   detectClaims: protectedProcedure.input(z33.object({ caseId: z33.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const patterns3 = await db.select().from(caseFactPatterns).where(eq25(caseFactPatterns.caseId, input.caseId));
     if (patterns3.length === 0) {
       return { detected: 0, message: "No fact patterns found. Run fact extraction first (T1)." };
@@ -56620,7 +56620,7 @@ ${claimTexts}`
           claimType,
           confidenceScore: normalizedScore.toFixed(2),
           matchedRules: data.matchedRuleIds,
-          createdAt: now3
+          createdAt: now4
         });
         detected++;
       }
@@ -56650,8 +56650,8 @@ ${claimTexts}`
       return { results: [], message: "No detected claims. Run claim detection first (T2)." };
     }
     const allRules = await db.select().from(deadlineRules);
-    const now3 = Date.now();
-    const daysSinceIncident = Math.floor((now3 - input.incidentDate) / (1e3 * 60 * 60 * 24));
+    const now4 = Date.now();
+    const daysSinceIncident = Math.floor((now4 - input.incidentDate) / (1e3 * 60 * 60 * 24));
     const results = detected.map((d) => {
       const matchingRules = allRules.filter(
         (r) => r.claimType.toLowerCase() === d.claimType.toLowerCase() && (r.jurisdiction === input.jurisdiction || r.jurisdiction === "federal" || r.jurisdiction === "all")
@@ -56714,7 +56714,7 @@ ${claimTexts}`
   //          by the case's evidence records and fact claims.
   // Output: Rows inserted into element_strength table
   evaluateElements: protectedProcedure.input(z33.object({ caseId: z33.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const detected = await db.select().from(claimDetectionResults).where(eq25(claimDetectionResults.caseId, input.caseId));
     if (detected.length === 0) {
       return { evaluated: 0, message: "No detected claims. Run claim detection first (T2)." };
@@ -56762,7 +56762,7 @@ ${claimTexts}`
           supportingEvidence: matchingEvidence.map((e) => e.id),
           strengthScore: score.toFixed(2),
           confidenceLevel,
-          createdAt: now3
+          createdAt: now4
         });
         evaluated++;
       }
@@ -56775,7 +56775,7 @@ ${claimTexts}`
   //          Also check against contradiction templates.
   // Output: Rows inserted into contradiction_scores table
   detectContradictions: protectedProcedure.input(z33.object({ caseId: z33.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const facts = await db.select().from(factClaims).where(eq25(factClaims.caseId, input.caseId));
     if (facts.length < 2) {
       return { detected: 0, message: "Need at least 2 fact claims to detect contradictions." };
@@ -56857,7 +56857,7 @@ ${factTexts}`
         factClaimA: c.factIdA || null,
         factClaimB: c.factIdB || null,
         evidenceReferences: [],
-        createdAt: now3
+        createdAt: now4
       });
       inserted++;
     }
@@ -56878,7 +56878,7 @@ ${factTexts}`
           factClaimA: null,
           factClaimB: null,
           evidenceReferences: [],
-          createdAt: now3
+          createdAt: now4
         });
         templateMatches++;
         inserted++;
@@ -56897,7 +56897,7 @@ ${factTexts}`
   //          Each trigger has a condition string that is matched against facts.
   // Output: Rows inserted into weak_joint_hits table
   checkWeakJoints: protectedProcedure.input(z33.object({ caseId: z33.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const facts = await db.select().from(factClaims).where(eq25(factClaims.caseId, input.caseId));
     const patterns3 = await db.select().from(caseFactPatterns).where(eq25(caseFactPatterns.caseId, input.caseId));
     if (facts.length === 0 && patterns3.length === 0) {
@@ -56921,7 +56921,7 @@ ${factTexts}`
           triggerId: trigger.id,
           hitStrength: hitStrength.toFixed(2),
           supportingFactPatterns: matchingPatternIds,
-          createdAt: now3
+          createdAt: now4
         });
         hits++;
       }
@@ -56952,14 +56952,14 @@ ${factTexts}`
     incidentDate: z33.number(),
     jurisdiction: z33.string().default("federal")
   })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const detected = await db.select().from(claimDetectionResults).where(eq25(claimDetectionResults.caseId, input.caseId));
     const elements = await db.select().from(elementStrength).where(eq25(elementStrength.caseId, input.caseId));
     const contradictions = await db.select().from(contradictionScores).where(eq25(contradictionScores.caseId, input.caseId));
     const wjHits = await db.select().from(weakJointHits).where(eq25(weakJointHits.caseId, input.caseId));
     const evidence = await db.select().from(evidenceRecords).where(eq25(evidenceRecords.caseId, input.caseId));
     const allDeadlineRules = await db.select().from(deadlineRules);
-    const daysSinceIncident = Math.floor((now3 - input.incidentDate) / (1e3 * 60 * 60 * 24));
+    const daysSinceIncident = Math.floor((now4 - input.incidentDate) / (1e3 * 60 * 60 * 24));
     if (detected.length === 0) {
       return { viability: [], message: "No detected claims. Run the full pipeline first." };
     }
@@ -57035,7 +57035,7 @@ ${factTexts}`
         agencyRouting: framework?.domain || null,
         contradictionCount,
         weakJointCount,
-        evaluatedAt: now3
+        evaluatedAt: now4
       });
       results.push({
         claimType: detection.claimType,
@@ -57125,8 +57125,8 @@ function assertCanonical2(table) {
 }
 async function canonicalInsert(table, data, entityType) {
   assertCanonical2(table);
-  const now3 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
-  const record = { ...data, createdAt: data.createdAt || now3, updatedAt: data.updatedAt || now3 };
+  const now4 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+  const record = { ...data, createdAt: data.createdAt || now4, updatedAt: data.updatedAt || now4 };
   const cols = Object.keys(record).filter((k) => k !== "id");
   const placeholders = cols.map(() => "?").join(", ");
   const values = cols.map((k) => {
@@ -57154,8 +57154,8 @@ async function canonicalInsert(table, data, entityType) {
 }
 async function canonicalUpdate(table, id, data) {
   assertCanonical2(table);
-  const now3 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
-  const record = { ...data, updatedAt: now3 };
+  const now4 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+  const record = { ...data, updatedAt: now4 };
   const setClauses = Object.entries(record).filter(([k]) => k !== "id").map(([k, v]) => {
     if (v === null) return `"${k}" = NULL`;
     if (typeof v === "object") return `"${k}" = '${JSON.stringify(v).replace(/'/g, "''")}'`;
@@ -57175,7 +57175,7 @@ async function writeStrategyWorkflow(data) {
 var strategyEngineRouter = router({
   // ─── S1: Build Matter Profile ───────────────────────────────────────
   buildMatterProfile: protectedProcedure.input(z34.object({ caseId: z34.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const [caseRow] = await db.select().from(cases).where(eq28(cases.id, String(input.caseId)));
     if (!caseRow) throw new Error("Case not found");
     const caseEntities = await db.select().from(entities).where(eq28(entities.caseId, String(input.caseId)));
@@ -57233,14 +57233,14 @@ ${eventSummary}`
       keyFacts: profile.keyFacts ?? [],
       riskFactors: profile.riskFactors ?? [],
       statusSummary: profile.statusSummary ?? "",
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     return { matter_profile_id: inserted.insertId, profile };
   }),
   // ─── S2: Build Fact Matrix ──────────────────────────────────────────
   buildFactMatrix: protectedProcedure.input(z34.object({ caseId: z34.number(), matterProfileId: z34.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const caseQuotes = await db.select().from(quotes).where(eq28(quotes.caseId, String(input.caseId)));
     const caseFindings = await db.select().from(findings).where(eq28(findings.caseId, String(input.caseId)));
     const caseClaims = await db.select().from(claims).where(eq28(claims.caseId, String(input.caseId)));
@@ -57296,7 +57296,7 @@ Extract only explicitly stated facts. Maximum 50 facts.`
         sourceDocumentId: null,
         relevanceScore: String(fact.relevanceScore ?? 0.5),
         disputeStatus: "unknown",
-        createdAt: now3
+        createdAt: now4
       });
       inserted++;
     }
@@ -57304,7 +57304,7 @@ Extract only explicitly stated facts. Maximum 50 facts.`
   }),
   // ─── S3: Generate Claim Candidates ──────────────────────────────────
   generateClaimCandidates: protectedProcedure.input(z34.object({ caseId: z34.number(), matterProfileId: z34.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const [profile] = await db.select().from(strategyMatterProfile).where(eq28(strategyMatterProfile.id, input.matterProfileId));
     if (!profile) throw new Error("Matter profile not found");
     const facts = await db.select().from(strategyFactMatrix).where(and21(
@@ -57372,7 +57372,7 @@ ${catalogSummary}`
         solStatus: cand.solStatus ?? "unknown",
         recommendation: cand.recommendation ?? "investigate_further",
         notes: cand.notes ?? null,
-        createdAt: now3
+        createdAt: now4
       });
       inserted++;
     }
@@ -57380,7 +57380,7 @@ ${catalogSummary}`
   }),
   // ─── S4: Evaluate Viability ─────────────────────────────────────────
   evaluateViability: protectedProcedure.input(z34.object({ caseId: z34.number(), matterProfileId: z34.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const candidates = await db.select().from(strategyClaimCandidates).where(and21(
       eq28(strategyClaimCandidates.caseId, input.caseId),
       eq28(strategyClaimCandidates.matterProfileId, input.matterProfileId)
@@ -57441,7 +57441,7 @@ ${factText}`
         solScore: String(assessment.solScore ?? 0),
         patternBonus: String(assessment.patternBonus ?? 0),
         assessmentDetails: assessment.assessmentDetails ?? {},
-        createdAt: now3
+        createdAt: now4
       });
       assessmentsCreated++;
     }
@@ -57449,7 +57449,7 @@ ${factText}`
   }),
   // ─── S5: Compute Deadlines ──────────────────────────────────────────
   computeDeadlines: protectedProcedure.input(z34.object({ caseId: z34.number(), matterProfileId: z34.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const [profile] = await db.select().from(strategyMatterProfile).where(eq28(strategyMatterProfile.id, input.matterProfileId));
     if (!profile) throw new Error("Matter profile not found");
     const candidates = await db.select().from(strategyClaimCandidates).where(and21(
@@ -57468,7 +57468,7 @@ ${factText}`
         const deadline = new Date(trigger);
         deadline.setFullYear(deadline.getFullYear() + solYears);
         deadlineDate = deadline.toISOString().split("T")[0];
-        daysRemaining = Math.ceil((deadline.getTime() - now3) / (1e3 * 60 * 60 * 24));
+        daysRemaining = Math.ceil((deadline.getTime() - now4) / (1e3 * 60 * 60 * 24));
       }
       await db.insert(strategyDeadlineEngine).values({
         caseId: input.caseId,
@@ -57482,7 +57482,7 @@ ${factText}`
         tollingApplied: false,
         deadlineStatus: daysRemaining !== null ? daysRemaining < 0 ? "expired" : "active" : "active",
         sourceRuleId: catalogEntry?.id ?? null,
-        createdAt: now3
+        createdAt: now4
       });
       deadlinesCreated++;
     }
@@ -57490,7 +57490,7 @@ ${factText}`
   }),
   // ─── S6: Link Elements to Facts ─────────────────────────────────────
   linkElementsToFacts: protectedProcedure.input(z34.object({ caseId: z34.number(), matterProfileId: z34.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const candidates = await db.select().from(strategyClaimCandidates).where(and21(
       eq28(strategyClaimCandidates.caseId, input.caseId),
       eq28(strategyClaimCandidates.matterProfileId, input.matterProfileId)
@@ -57517,7 +57517,7 @@ ${factText}`
           quoteId: matchingFact?.sourceQuoteId ?? null,
           linkStrength: elem.strength ?? "absent",
           notes: elem.evidence ?? null,
-          createdAt: now3
+          createdAt: now4
         });
         linksCreated++;
       }
@@ -57526,7 +57526,7 @@ ${factText}`
   }),
   // ─── S7: Identify Missing Evidence ──────────────────────────────────
   identifyMissingEvidence: protectedProcedure.input(z34.object({ caseId: z34.number(), matterProfileId: z34.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const links = await db.select().from(strategyElementFactLinks).where(eq28(strategyElementFactLinks.caseId, input.caseId));
     const weakLinks = links.filter((l) => l.linkStrength === "weak" || l.linkStrength === "absent");
     if (weakLinks.length === 0) return { tasks_created: 0, message: "No missing evidence identified." };
@@ -57573,8 +57573,8 @@ ${elemList}` }
           suggestedSource: task.suggestedSource ?? null,
           taskPriority: task.taskPriority ?? "medium",
           taskStatus: "open",
-          createdAt: now3,
-          updatedAt: now3
+          createdAt: now4,
+          updatedAt: now4
         });
         tasksCreated++;
       }
@@ -57583,7 +57583,7 @@ ${elemList}` }
   }),
   // ─── S8: Generate Strategy Paths ────────────────────────────────────
   generateStrategyPaths: protectedProcedure.input(z34.object({ caseId: z34.number(), matterProfileId: z34.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const [profile] = await db.select().from(strategyMatterProfile).where(eq28(strategyMatterProfile.id, input.matterProfileId));
     if (!profile) throw new Error("Matter profile not found");
     const candidates = await db.select().from(strategyClaimCandidates).where(and21(
@@ -57659,8 +57659,8 @@ ${forumSummary}`
         disadvantages: path5.disadvantages ?? [],
         priorityRank: path5.priorityRank ?? pathsCreated + 1,
         pathStatus: "recommended",
-        createdAt: now3,
-        updatedAt: now3
+        createdAt: now4,
+        updatedAt: now4
       });
       pathsCreated++;
     }
@@ -57779,7 +57779,7 @@ var assemblyEngineRouter = router({
     packetName: z35.string().optional()
   })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.ASSEMBLY, caseId: input.caseId, runType: "assembly_only" }, async () => {
-      const now3 = Date.now();
+      const now4 = Date.now();
       const [caseRow] = await db.select().from(cases).where(eq29(cases.id, String(input.caseId)));
       if (!caseRow) throw new Error("Case not found");
       let pathRow = null;
@@ -57796,15 +57796,15 @@ var assemblyEngineRouter = router({
         jurisdiction: pathRow ? null : null,
         claimTypes: pathRow?.claimCandidateIds ?? [],
         packetStatus: "draft",
-        createdAt: now3,
-        updatedAt: now3
+        createdAt: now4,
+        updatedAt: now4
       });
       return { packet_id: inserted.insertId };
     });
   }),
   // ─── A2: Designate Parties ──────────────────────────────────────────
   designateParties: protectedProcedure.input(z35.object({ caseId: z35.number(), packetId: z35.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const caseEntities = await db.select().from(entities).where(eq29(entities.caseId, String(input.caseId)));
     if (caseEntities.length === 0) return { parties_designated: 0, message: "No entities found." };
     const entitySummary = caseEntities.slice(0, 30).map(
@@ -57847,7 +57847,7 @@ ${entitySummary}` }
         entityId: p.entityId ?? null,
         partyType: p.partyType ?? null,
         notes: p.notes ?? null,
-        createdAt: now3
+        createdAt: now4
       });
       designated++;
     }
@@ -57855,7 +57855,7 @@ ${entitySummary}` }
   }),
   // ─── A3: Build Exhibit Index ────────────────────────────────────────
   buildExhibitIndex: protectedProcedure.input(z35.object({ caseId: z35.number(), packetId: z35.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const caseDocs = await db.select().from(documents).where(eq29(documents.caseId, String(input.caseId)));
     const caseQuotes = await db.select().from(quotes).where(eq29(quotes.caseId, String(input.caseId)));
     if (caseDocs.length === 0) return { exhibits_created: 0, message: "No documents found." };
@@ -57907,7 +57907,7 @@ Quotes available: ${caseQuotes.length}` }
         relevantElements: [],
         orderIndex: ex.orderIndex ?? created,
         exhibitStatus: "draft",
-        createdAt: now3
+        createdAt: now4
       });
       created++;
     }
@@ -57915,7 +57915,7 @@ Quotes available: ${caseQuotes.length}` }
   }),
   // ─── A4: Generate Fact Narrative Blocks ─────────────────────────────
   generateFactNarrative: protectedProcedure.input(z35.object({ caseId: z35.number(), packetId: z35.number(), matterProfileId: z35.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const facts = await db.select().from(strategyFactMatrix).where(and22(
       eq29(strategyFactMatrix.caseId, input.caseId),
       eq29(strategyFactMatrix.matterProfileId, input.matterProfileId)
@@ -57974,7 +57974,7 @@ Available Exhibits: ${exhibitRef}`
         quoteIds: [],
         exhibitRefs: block.exhibitRefs ?? [],
         timelinePosition: block.timelinePosition ?? null,
-        createdAt: now3
+        createdAt: now4
       });
       created++;
     }
@@ -57982,7 +57982,7 @@ Available Exhibits: ${exhibitRef}`
   }),
   // ─── A5: Generate Legal Argument Blocks ─────────────────────────────
   generateLegalArguments: protectedProcedure.input(z35.object({ caseId: z35.number(), packetId: z35.number(), matterProfileId: z35.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const candidates = await db.select().from(strategyClaimCandidates).where(and22(
       eq29(strategyClaimCandidates.caseId, input.caseId),
       eq29(strategyClaimCandidates.matterProfileId, input.matterProfileId)
@@ -58032,7 +58032,7 @@ SOL Status: ${cand.solStatus}`
         supportingFacts: arg.supportingFacts ?? [],
         elementsCovered: arg.elementsCovered ?? [],
         counterarguments: arg.counterarguments ?? [],
-        createdAt: now3
+        createdAt: now4
       });
       argumentsCreated++;
     }
@@ -58040,7 +58040,7 @@ SOL Status: ${cand.solStatus}`
   }),
   // ─── A6: Build Citation Index ───────────────────────────────────────
   buildCitationIndex: protectedProcedure.input(z35.object({ caseId: z35.number(), packetId: z35.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const args = await db.select().from(assemblyLegalArgumentBlocks).where(and22(
       eq29(assemblyLegalArgumentBlocks.caseId, input.caseId),
       eq29(assemblyLegalArgumentBlocks.packetId, input.packetId)
@@ -58063,7 +58063,7 @@ SOL Status: ${cand.solStatus}`
         // LLM already formats in Bluebook style
         relevantClaims: [],
         sectionIds: [],
-        createdAt: now3
+        createdAt: now4
       });
       created++;
     }
@@ -58071,7 +58071,7 @@ SOL Status: ${cand.solStatus}`
   }),
   // ─── A7: Generate Relief Requests ───────────────────────────────────
   generateReliefRequests: protectedProcedure.input(z35.object({ caseId: z35.number(), packetId: z35.number(), matterProfileId: z35.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const candidates = await db.select().from(strategyClaimCandidates).where(and22(
       eq29(strategyClaimCandidates.caseId, input.caseId),
       eq29(strategyClaimCandidates.matterProfileId, input.matterProfileId)
@@ -58113,7 +58113,7 @@ SOL Status: ${cand.solStatus}`
         estimatedValue: r.estimatedValue ?? null,
         claimTypes: r.claimTypes ?? [],
         orderIndex: created,
-        createdAt: now3
+        createdAt: now4
       });
       created++;
     }
@@ -58121,7 +58121,7 @@ SOL Status: ${cand.solStatus}`
   }),
   // ─── A8: Generate Document Sections ─────────────────────────────────
   generateSections: protectedProcedure.input(z35.object({ caseId: z35.number(), packetId: z35.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const [packet] = await db.select().from(assemblyFilingPackets).where(eq29(assemblyFilingPackets.id, input.packetId));
     if (!packet) throw new Error("Packet not found");
     const templates = await db.select().from(assemblyDocumentTemplates);
@@ -58155,20 +58155,20 @@ ${a.argumentText}`).join("\n\n");
         orderIndex: sectionsGenerated,
         generatedContent,
         sectionStatus: "generated",
-        createdAt: now3,
-        updatedAt: now3
+        createdAt: now4,
+        updatedAt: now4
       });
       sectionsGenerated++;
     }
     await db.update(assemblyFilingPackets).set({
       packetStatus: "in_progress",
-      updatedAt: now3
+      updatedAt: now4
     }).where(eq29(assemblyFilingPackets.id, input.packetId));
     return { sectionsGenerated };
   }),
   // ─── A9: Run Compliance Checklist ───────────────────────────────────
   runComplianceCheck: protectedProcedure.input(z35.object({ caseId: z35.number(), packetId: z35.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const sections = await db.select().from(assemblyGeneratedSections).where(and22(
       eq29(assemblyGeneratedSections.caseId, input.caseId),
       eq29(assemblyGeneratedSections.packetId, input.packetId)
@@ -58192,7 +58192,7 @@ ${a.argumentText}`).join("\n\n");
         checkItem: check.item,
         category: check.category,
         checkStatus: check.passed ? "passed" : "pending",
-        createdAt: now3
+        createdAt: now4
       });
       created++;
     }
@@ -58200,7 +58200,7 @@ ${a.argumentText}`).join("\n\n");
     if (allPassed) {
       await db.update(assemblyFilingPackets).set({
         packetStatus: "review",
-        updatedAt: now3
+        updatedAt: now4
       }).where(eq29(assemblyFilingPackets.id, input.packetId));
     }
     return { checks_run: created, allPassed };
@@ -58281,7 +58281,7 @@ import { eq as eq30, desc as desc16, sql as sql44 } from "drizzle-orm";
 var patternEngineRouter = router({
   // ─── P1: Cluster Entities ───────────────────────────────────────────
   clusterEntities: protectedProcedure.input(z36.object({ caseIds: z36.array(z36.number()).optional() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     let allEntities;
     if (input.caseIds && input.caseIds.length > 0) {
       allEntities = [];
@@ -58334,14 +58334,14 @@ ${entitySummary}` }
         aliases: c.aliases ?? [],
         caseIds: c.caseIds ?? [],
         caseCount: (c.caseIds ?? []).length,
-        firstSeen: now3,
-        lastSeen: now3,
+        firstSeen: now4,
+        lastSeen: now4,
         jurisdictions: c.jurisdictions ?? [],
         claimTypes: c.claimTypes ?? [],
         riskScore: String(c.riskScore ?? 0),
         notes: c.notes ?? null,
-        createdAt: now3,
-        updatedAt: now3
+        createdAt: now4,
+        updatedAt: now4
       });
       created++;
     }
@@ -58349,7 +58349,7 @@ ${entitySummary}` }
   }),
   // ─── P2: Cluster Conduct ────────────────────────────────────────────
   clusterConduct: protectedProcedure.input(z36.object({ caseIds: z36.array(z36.number()).optional() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     let allClaims;
     if (input.caseIds && input.caseIds.length > 0) {
       allClaims = [];
@@ -58413,8 +58413,8 @@ Entity Clusters: ${entityRef}`
         commonElements: c.commonElements ?? [],
         frequencyScore: String(c.frequencyScore ?? 0),
         severityScore: String(c.severityScore ?? 0),
-        createdAt: now3,
-        updatedAt: now3
+        createdAt: now4,
+        updatedAt: now4
       });
       created++;
     }
@@ -58422,7 +58422,7 @@ Entity Clusters: ${entityRef}`
   }),
   // ─── P3: Detect Case Links ─────────────────────────────────────────
   detectCaseLinks: protectedProcedure.input(z36.object({ caseIds: z36.array(z36.number()).optional() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const entityClusters = await db.select().from(patternEntityClusters);
     const conductClusters = await db.select().from(patternConductClusters);
     const links = [];
@@ -58465,7 +58465,7 @@ Entity Clusters: ${entityRef}`
         sharedEntityClusterIds: link.sharedEntities,
         sharedConductClusterIds: link.sharedConduct,
         similarityScore: String(Math.min(link.score, 1)),
-        createdAt: now3
+        createdAt: now4
       });
       created++;
     }
@@ -58473,7 +58473,7 @@ Entity Clusters: ${entityRef}`
   }),
   // ─── P4: Generate Systemic Inferences ───────────────────────────────
   generateSystemicInferences: protectedProcedure.mutation(async () => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const entityClusters = await db.select().from(patternEntityClusters);
     const conductClusters = await db.select().from(patternConductClusters);
     const caseLinks = await db.select().from(patternCaseLinks);
@@ -58536,8 +58536,8 @@ Case Links: ${caseLinks.length} connections found`
         confidenceScore: String(inf.confidenceScore ?? 0),
         legalImplications: inf.legalImplications ?? null,
         recommendedActions: inf.recommendedActions ?? [],
-        createdAt: now3,
-        updatedAt: now3
+        createdAt: now4,
+        updatedAt: now4
       });
       created++;
     }
@@ -58545,7 +58545,7 @@ Case Links: ${caseLinks.length} connections found`
   }),
   // ─── P5: Apply Feedback Loop ────────────────────────────────────────
   applyFeedbackLoop: protectedProcedure.input(z36.object({ caseId: z36.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const paths = await db.select().from(strategyPaths).where(eq30(strategyPaths.caseId, String(input.caseId)));
     if (paths.length === 0) return { feedback_applied: 0, message: "No strategy paths found." };
     const entityClusters = await db.select().from(patternEntityClusters);
@@ -58584,8 +58584,8 @@ Case Links: ${caseLinks.length} connections found`
         feedbackType: "pattern_boost",
         adjustmentApplied: `+${(totalBoost * 100).toFixed(1)}% confidence from ${relevantEntities.length} entity + ${relevantConduct.length} conduct clusters`,
         confidenceDelta: String(totalBoost),
-        appliedAt: now3,
-        createdAt: now3
+        appliedAt: now4,
+        createdAt: now4
       });
       feedbackApplied++;
     }
@@ -58803,10 +58803,10 @@ async function bulkInsert(table, rows2, addedBy) {
   let inserted = 0;
   let skipped = 0;
   const errors = [];
-  const now3 = Date.now();
+  const now4 = Date.now();
   for (let i = 0; i < rows2.length; i++) {
     try {
-      const row = { ...rows2[i], createdAt: now3, updatedAt: now3, addedBy };
+      const row = { ...rows2[i], createdAt: now4, updatedAt: now4, addedBy };
       await db.insert(table).values(row);
       inserted++;
     } catch (err) {
@@ -59037,12 +59037,12 @@ var knowledgeIngestionRouter = router({
   }),
   /* ── Bulk Import: LumenSend Templates ── */
   importTemplates: adminProcedure3.input(z38.object({ records: z38.array(templateImportSchema).min(1).max(100) })).mutation(async ({ ctx, input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     let inserted = 0;
     const errors = [];
     for (let i = 0; i < input.records.length; i++) {
       try {
-        await db.insert(lumensendTemplates).values({ ...input.records[i], createdAt: now3 });
+        await db.insert(lumensendTemplates).values({ ...input.records[i], createdAt: now4 });
         inserted++;
       } catch (err) {
         errors.push(`Row ${i}: ${err?.message ?? "Unknown error"}`);
@@ -59052,12 +59052,12 @@ var knowledgeIngestionRouter = router({
   }),
   /* ── Bulk Import: Assembly Section Library ── */
   importSectionLibrary: adminProcedure3.input(z38.object({ records: z38.array(sectionLibraryImportSchema).min(1).max(200) })).mutation(async ({ ctx, input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     let inserted = 0;
     const errors = [];
     for (let i = 0; i < input.records.length; i++) {
       try {
-        await db.insert(assemblySectionLibrary).values({ ...input.records[i], createdAt: now3 });
+        await db.insert(assemblySectionLibrary).values({ ...input.records[i], createdAt: now4 });
         inserted++;
       } catch (err) {
         errors.push(`Row ${i}: ${err?.message ?? "Unknown error"}`);
@@ -59205,12 +59205,12 @@ var knowledgeIngestionRouter = router({
     relatedAgencies: z38.array(z38.string()).optional(),
     harmDomains: z38.array(z38.string()).optional()
   })).min(1).max(200) })).mutation(async ({ ctx, input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     let inserted = 0;
     const errors = [];
     for (let i = 0; i < input.records.length; i++) {
       try {
-        await db.insert(patternRegistry).values({ ...input.records[i], createdAt: now3, updatedAt: now3 });
+        await db.insert(patternRegistry).values({ ...input.records[i], createdAt: now4, updatedAt: now4 });
         inserted++;
       } catch (err) {
         if (err?.code === "ER_DUP_ENTRY") {
@@ -59593,7 +59593,7 @@ var knowledgeIngestionRouter = router({
     rawSql: z38.string().max(5e6)
   })).mutation(async ({ ctx, input }) => {
     const added_by = ctx.user.name ?? ctx.user.open_id ?? "";
-    const now3 = Date.now();
+    const now4 = Date.now();
     const allowedTables = /* @__PURE__ */ new Set([
       "legal_statutes",
       "legal_case_law",
@@ -59724,8 +59724,8 @@ var knowledgeIngestionRouter = router({
     for (let i = 0; i < records.length; i++) {
       try {
         const rec = records[i];
-        if ("created_at" in rec && !rec.created_at) rec.created_at = now3;
-        if ("updated_at" in rec && !rec.updated_at) rec.updated_at = now3;
+        if ("created_at" in rec && !rec.created_at) rec.created_at = now4;
+        if ("updated_at" in rec && !rec.updated_at) rec.updated_at = now4;
         if ("added_by" in rec && !rec.added_by) rec.added_by = added_by;
         const cols = Object.keys(rec);
         const vals = cols.map((c) => {
@@ -59859,7 +59859,6 @@ var adminDashboardRouter = router({
     const successRate = recentRuns ? Math.round(completedRuns / recentRuns * 100) : 100;
     const serverUptime = process.uptime();
     return {
-      total_runs: totalRuns,
       totalRuns,
       last24h: {
         total: recentRuns,
@@ -59899,19 +59898,16 @@ var adminDashboardRouter = router({
          LIMIT 10`
       )
     ]);
-    const recentCases = recentCasesRows.rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      created_at: toMillis(row.created_at) ?? Date.now(),
-      createdAt: toMillis(row.created_at) ?? Date.now()
-    }));
     return {
-      cases: { total: totalCases, today: casesToday, this_week: casesThisWeek, thisWeek: casesThisWeek },
+      cases: { total: totalCases, today: casesToday, this_week: casesThisWeek },
       documents: { total: totalDocs, today: docsToday },
       findings: { total: totalFindings, today: findingsToday },
       users: { total: totalUsers, today: usersToday },
-      recent_cases: recentCases,
-      recentCases
+      recent_cases: recentCasesRows.rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        created_at: toMillis(row.created_at) ?? Date.now()
+      }))
     };
   }),
   /* ── Panel 4: Structural Signals (aggregated) ── */
@@ -59939,30 +59935,18 @@ var adminDashboardRouter = router({
       ),
       getCount(`SELECT COUNT(*)::int AS cnt FROM detected_signals`)
     ]);
-    const bySeverity = severityRows.rows.map((row) => ({ severity: row.severity, count: Number(row.cnt ?? 0) }));
-    const byCategory = categoryRows.rows.map((row) => ({ category: row.category, count: Number(row.cnt ?? 0) }));
-    const criticalFindings = criticalRows.rows.map((row) => {
-      const createdAt = toMillis(row.created_at) ?? Date.now();
-      return {
+    return {
+      by_severity: severityRows.rows.map((row) => ({ severity: row.severity, count: Number(row.cnt ?? 0) })),
+      by_category: categoryRows.rows.map((row) => ({ category: row.category, count: Number(row.cnt ?? 0) })),
+      critical_findings: criticalRows.rows.map((row) => ({
         id: row.id,
         case_id: row.case_id,
-        caseId: row.case_id,
         title: row.title,
         severity: row.severity,
         category: row.category,
-        created_at: createdAt,
-        createdAt
-      };
-    });
-    return {
-      by_severity: bySeverity,
-      bySeverity,
-      by_category: byCategory,
-      byCategory,
-      critical_findings: criticalFindings,
-      criticalFindings,
-      total_findings: totalSignals,
-      totalFindings: totalSignals
+        created_at: toMillis(row.created_at) ?? Date.now()
+      })),
+      total_findings: totalSignals
     };
   }),
   /* ── Panel 5: Work Queue ── */
@@ -59993,23 +59977,28 @@ var adminDashboardRouter = router({
          LIMIT 10`
       )
     ]);
-    const running = runningRows.rows.map((row) => {
-      const createdAt = toMillis(row.started_at) ?? Date.now();
-      return { id: row.id, case_id: row.case_id, caseId: row.case_id, run_type: row.run_type, runType: row.run_type, run_status: row.run_status, runStatus: row.run_status, created_at: createdAt, createdAt };
-    });
-    const failed = failedRows.rows.map((row) => {
-      const createdAt = toMillis(row.started_at) ?? Date.now();
-      return { id: row.id, case_id: row.case_id, caseId: row.case_id, run_type: row.run_type, runType: row.run_type, run_status: row.run_status, runStatus: row.run_status, error_message: row.error_message, errorMessage: row.error_message, created_at: createdAt, createdAt };
-    });
-    const recentlyCompleted = completedRows.rows.map((row) => {
-      const completedAt = toMillis(row.completed_at) ?? toMillis(row.started_at) ?? Date.now();
-      return { id: row.id, case_id: row.case_id, caseId: row.case_id, run_type: row.run_type, runType: row.run_type, completed_at: completedAt, completedAt };
-    });
     return {
-      running,
-      failed,
-      recently_completed: recentlyCompleted,
-      recentlyCompleted
+      running: runningRows.rows.map((row) => ({
+        id: row.id,
+        case_id: row.case_id,
+        run_type: row.run_type,
+        run_status: row.run_status,
+        created_at: toMillis(row.started_at) ?? Date.now()
+      })),
+      failed: failedRows.rows.map((row) => ({
+        id: row.id,
+        case_id: row.case_id,
+        run_type: row.run_type,
+        run_status: row.run_status,
+        error_message: row.error_message,
+        created_at: toMillis(row.started_at) ?? Date.now()
+      })),
+      recently_completed: completedRows.rows.map((row) => ({
+        id: row.id,
+        case_id: row.case_id,
+        run_type: row.run_type,
+        completed_at: toMillis(row.completed_at) ?? toMillis(row.started_at)
+      }))
     };
   }),
   /* ── Findings drill-through by severity ── */
@@ -60031,12 +60020,10 @@ var adminDashboardRouter = router({
     );
     return rows2.map((row) => ({
       id: row.id,
-      case_id: row.case_id,
       caseId: row.case_id,
       title: row.title,
       severity: row.severity,
       category: row.category,
-      created_at: toMillis(row.created_at) ?? Date.now(),
       createdAt: toMillis(row.created_at) ?? Date.now()
     }));
   })
@@ -61020,7 +61007,6 @@ async function get_atlas_signal_intelligence_cards(input = {}) {
   const limit = Math.min(Math.max(input.limit ?? 25, 1), 100);
   let query = atlas_client_result.atlas_client.schema("atlas").from("v_signal_intelligence_cards").select(ATLAS_SIGNAL_INTELLIGENCE_CARD_COLUMNS, { count: "exact" });
   if (!input.include_excluded) {
-    query = query.or("exclude_from_production.is.false,exclude_from_production.is.null");
     query = query.eq("exclude_from_production", false);
   }
   if (input.canonical_signal_code) {
@@ -61422,7 +61408,7 @@ function findMergeCandidates(entities3, similarityThreshold = 0.8) {
   return suggestions;
 }
 async function applyMerge(suggestion) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   try {
     await db.insert(entityAliases).values({
       canonicalName: suggestion.canonicalName,
@@ -61430,7 +61416,7 @@ async function applyMerge(suggestion) {
       entityType: suggestion.entityType,
       confidence: suggestion.confidence.toFixed(4),
       source: "dedup_merge",
-      createdAt: now3
+      createdAt: now4
     }).onDuplicateKeyUpdate({
       set: {
         canonicalName: suggestion.canonicalName,
@@ -61447,7 +61433,7 @@ async function applyMerge(suggestion) {
         entityType: suggestion.entityType,
         confidence: suggestion.confidence.toFixed(4),
         source: "dedup_merge",
-        createdAt: now3
+        createdAt: now4
       }).onDuplicateKeyUpdate({
         set: {
           canonicalName: suggestion.canonicalName,
@@ -61592,7 +61578,7 @@ var ingestionRouter = router({
   }),
   // ─── Seed Preconfigured Datasets ───
   seedDefaultDatasets: adminProcedure.mutation(async () => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const datasets = [
       {
         ...WA_CONSUMER_COMPLAINTS,
@@ -62689,12 +62675,12 @@ init_schema();
 import { eq as eq44, and as and32, sql as sql56, desc as desc22, gte as gte5 } from "drizzle-orm";
 import { randomUUID as randomUUID3 } from "crypto";
 async function evaluateSignalsForPatterns() {
-  const now3 = Date.now();
+  const now4 = Date.now();
   let patternsCreated = 0;
   let patternsUpdated = 0;
   const thresholds = await db.select().from(patternCreationThresholds);
   for (const threshold of thresholds) {
-    const windowStart = now3 - threshold.timeWindowDays * 24 * 60 * 60 * 1e3;
+    const windowStart = now4 - threshold.timeWindowDays * 24 * 60 * 60 * 1e3;
     let signalQuery;
     let signalParams;
     if (threshold.signalType === "any") {
@@ -62735,18 +62721,18 @@ async function evaluateSignalsForPatterns() {
     ));
     if (existingPatterns.length > 0) {
       for (const existing of existingPatterns) {
-        await updatePatternWithSignals(existing, signals, now3);
+        await updatePatternWithSignals(existing, signals, now4);
         patternsUpdated++;
       }
     } else {
-      await createPatternFromSignals(threshold, signals, now3);
+      await createPatternFromSignals(threshold, signals, now4);
       patternsCreated++;
     }
   }
-  const patternsDecayed = await runDecayLifecycle(now3);
+  const patternsDecayed = await runDecayLifecycle(now4);
   return { patternsCreated, patternsUpdated, patternsDecayed };
 }
-async function createPatternFromSignals(threshold, signals, now3) {
+async function createPatternFromSignals(threshold, signals, now4) {
   const patternId = randomUUID3();
   const agg = aggregateSignalData(signals);
   const confidence = await calculatePatternConfidence(threshold.patternType, signals, agg);
@@ -62770,7 +62756,7 @@ async function createPatternFromSignals(threshold, signals, now3) {
     jurisdictionScope: agg.primaryJurisdiction,
     firstDetected: Math.min(...timestamps),
     lastConfirmed: Math.max(...timestamps),
-    lastUpdated: now3,
+    lastUpdated: now4,
     signalCount: signals.length,
     uniqueEntitiesCount: agg.uniqueEntities,
     geographicSpread: agg.geographicAreas,
@@ -62780,8 +62766,8 @@ async function createPatternFromSignals(threshold, signals, now3) {
     relatedAgencies: agg.relatedAgencies,
     harmDomains: agg.harmDomains,
     metadata: { signalTypes: agg.signalTypeCounts, avgConfidence: agg.avgConfidence },
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   for (const signal of signals) {
     await db.insert(patternSignalLinks).values({
@@ -62790,24 +62776,24 @@ async function createPatternFromSignals(threshold, signals, now3) {
       signalType: signal.signal_type,
       confidenceAtLink: signal.confidence_score,
       contributingFactor: String(1 / signals.length),
-      linkedAt: now3,
+      linkedAt: now4,
       datasetId: signal.dataset_id,
       sourceRecordIds: signal.source_record_ids
     }).onDuplicateKeyUpdate({ set: { confidenceAtLink: signal.confidence_score } });
   }
   await db.insert(patternEvolution).values({
     patternId,
-    snapshotDate: now3,
+    snapshotDate: now4,
     signalCount: signals.length,
     confidenceScore: String(confidence),
     geographicSpread: agg.geographicAreas,
     status: "active",
     notes: `Pattern created with ${signals.length} signals`,
-    createdAt: now3
+    createdAt: now4
   });
   return patternId;
 }
-async function updatePatternWithSignals(pattern, signals, now3) {
+async function updatePatternWithSignals(pattern, signals, now4) {
   const existingLinks = await db.select({ signalId: patternSignalLinks.signalId }).from(patternSignalLinks).where(eq44(patternSignalLinks.patternId, pattern.patternId));
   const existingIds = new Set(existingLinks.map((l) => l.signalId));
   const newSignals = signals.filter((s) => !existingIds.has(s.signal_id));
@@ -62819,7 +62805,7 @@ async function updatePatternWithSignals(pattern, signals, now3) {
       signalType: signal.signal_type,
       confidenceAtLink: signal.confidence_score,
       contributingFactor: String(1 / signals.length),
-      linkedAt: now3,
+      linkedAt: now4,
       datasetId: signal.dataset_id,
       sourceRecordIds: signal.source_record_ids
     }).onDuplicateKeyUpdate({ set: { confidenceAtLink: signal.confidence_score } });
@@ -62831,7 +62817,7 @@ async function updatePatternWithSignals(pattern, signals, now3) {
   await db.update(patternRegistry).set({
     confidenceScore: confidence,
     lastConfirmed: Math.max(...timestamps),
-    lastUpdated: now3,
+    lastUpdated: now4,
     signalCount: signals.length,
     uniqueEntitiesCount: agg.uniqueEntities,
     geographicSpread: agg.geographicAreas,
@@ -62840,17 +62826,17 @@ async function updatePatternWithSignals(pattern, signals, now3) {
     relatedAgencies: agg.relatedAgencies,
     harmDomains: agg.harmDomains,
     metadata: { signalTypes: agg.signalTypeCounts, avgConfidence: agg.avgConfidence },
-    updatedAt: now3
+    updatedAt: now4
   }).where(eq44(patternRegistry.patternId, pattern.patternId));
   await db.insert(patternEvolution).values({
     patternId: pattern.patternId,
-    snapshotDate: now3,
+    snapshotDate: now4,
     signalCount: signals.length,
     confidenceScore: String(confidence),
     geographicSpread: agg.geographicAreas,
     status: "active",
     notes: `Updated with ${newSignals.length} new signals (total: ${signals.length})`,
-    createdAt: now3
+    createdAt: now4
   });
 }
 function aggregateSignalData(signals) {
@@ -62977,17 +62963,17 @@ async function calculatePatternConfidence(patternType, signals, agg) {
   }
   return totalWeight > 0 ? Math.round(weightedScore / totalWeight) : agg.avgConfidence;
 }
-async function runDecayLifecycle(now3) {
+async function runDecayLifecycle(now4) {
   const rules = await db.select().from(patternDecayRules);
   let decayed = 0;
   for (const rule of rules) {
-    const dormantCutoff = now3 - rule.dormantAfterDays * 24 * 60 * 60 * 1e3;
-    const archiveCutoff = now3 - rule.archiveAfterDays * 24 * 60 * 60 * 1e3;
+    const dormantCutoff = now4 - rule.dormantAfterDays * 24 * 60 * 60 * 1e3;
+    const archiveCutoff = now4 - rule.archiveAfterDays * 24 * 60 * 60 * 1e3;
     const [dormantResult] = await db.execute(sql56`
       UPDATE pattern_registry
       SET decay_status = 'dormant',
           decay_reason = ${`No confirming signals for ${rule.dormantAfterDays} days`},
-          updated_at = ${now3}
+          updated_at = ${now4}
       WHERE pattern_type = ${rule.patternType}
         AND decay_status = 'active'
         AND last_confirmed < ${dormantCutoff}
@@ -62997,7 +62983,7 @@ async function runDecayLifecycle(now3) {
       UPDATE pattern_registry
       SET decay_status = 'archived',
           decay_reason = ${`Dormant for ${rule.archiveAfterDays} days, archived`},
-          updated_at = ${now3}
+          updated_at = ${now4}
       WHERE pattern_type = ${rule.patternType}
         AND decay_status = 'dormant'
         AND last_confirmed < ${archiveCutoff}
@@ -63006,7 +62992,7 @@ async function runDecayLifecycle(now3) {
   }
   return decayed;
 }
-async function checkReactivation(patternId, now3) {
+async function checkReactivation(patternId, now4) {
   const [pattern] = await db.select().from(patternRegistry).where(eq44(patternRegistry.patternId, patternId));
   if (!pattern || pattern.decayStatus !== "dormant") return false;
   const [rule] = await db.select().from(patternDecayRules).where(eq44(patternDecayRules.patternType, pattern.patternType || ""));
@@ -63021,25 +63007,25 @@ async function checkReactivation(patternId, now3) {
     await db.update(patternRegistry).set({
       decayStatus: "active",
       decayReason: null,
-      lastConfirmed: now3,
-      updatedAt: now3
+      lastConfirmed: now4,
+      updatedAt: now4
     }).where(eq44(patternRegistry.patternId, patternId));
     await db.insert(patternEvolution).values({
       patternId,
-      snapshotDate: now3,
+      snapshotDate: now4,
       signalCount: pattern.signalCount,
       confidenceScore: String(pattern.confidenceScore),
       geographicSpread: pattern.geographicSpread,
       status: "reactivated",
       notes: `Reactivated with ${newSignals[0].cnt} new signals`,
-      createdAt: now3
+      createdAt: now4
     });
     return true;
   }
   return false;
 }
 async function discoverRelationships() {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const activePatterns = await db.select().from(patternRegistry).where(eq44(patternRegistry.decayStatus, "active"));
   let discovered = 0;
   for (let i = 0; i < activePatterns.length; i++) {
@@ -63065,15 +63051,15 @@ async function discoverRelationships() {
             targetPatternId: b.patternId,
             relationshipType: relType,
             confidenceScore: confidence,
-            discoveredAt: now3,
-            lastObserved: now3,
+            discoveredAt: now4,
+            lastObserved: now4,
             metadata: { sharedSignals: shared[0].cnt }
           });
           discovered++;
         } else {
           await db.update(patternRelationships).set({
             confidenceScore: confidence,
-            lastObserved: now3,
+            lastObserved: now4,
             metadata: { sharedSignals: shared[0].cnt }
           }).where(eq44(patternRelationships.id, existing[0].id));
         }
@@ -63370,8 +63356,8 @@ function evaluateAlertRules(rules, metrics) {
   return triggered;
 }
 async function updatePatternTrend(patternId) {
-  const now3 = /* @__PURE__ */ new Date();
-  const todayStr = now3.toISOString().split("T")[0];
+  const now4 = /* @__PURE__ */ new Date();
+  const todayStr = now4.toISOString().split("T")[0];
   const [pattern] = await db.execute(sql57`
     SELECT pattern_id, pattern_type, signal_count, confidence_score, 
             geographic_spread, severity, jurisdiction, first_seen, last_seen
@@ -63392,8 +63378,8 @@ async function updatePatternTrend(patternId) {
   const signalCount = Number(p.signal_count) || 0;
   const geoSpread = Number(p.geographic_spread) || 0;
   const confidence = Number(p.confidence_score) || 0;
-  const firstSeen = p.first_seen ? new Date(p.first_seen) : now3;
-  const timeSpanDays = Math.max(1, Math.round((now3.getTime() - firstSeen.getTime()) / (1e3 * 60 * 60 * 24)));
+  const firstSeen = p.first_seen ? new Date(p.first_seen) : now4;
+  const timeSpanDays = Math.max(1, Math.round((now4.getTime() - firstSeen.getTime()) / (1e3 * 60 * 60 * 24)));
   const [snap7d] = await db.execute(sql57`
     SELECT signal_count FROM trend_snapshots 
      WHERE pattern_id = ${patternId} AND snapshot_date <= DATE_SUB(${todayStr}, INTERVAL 7 DAY) 
@@ -63913,51 +63899,51 @@ async function evaluatePatternsForStrategies() {
   return { evaluated: patterns3.length, strategiesGenerated, results };
 }
 async function updateStepStatus(stepId, status, notes) {
-  const now3 = /* @__PURE__ */ new Date();
+  const now4 = /* @__PURE__ */ new Date();
   if (status === "in_progress") {
     await db.execute(sql58`
-      UPDATE strategy_steps SET step_status = ${status}, started_at = ${now3},
-        notes = COALESCE(${notes || null}, notes), updated_at = ${now3}
+      UPDATE strategy_steps SET step_status = ${status}, started_at = ${now4},
+        notes = COALESCE(${notes || null}, notes), updated_at = ${now4}
       WHERE step_id = ${stepId}
     `);
   } else if (status === "completed") {
     await db.execute(sql58`
-      UPDATE strategy_steps SET step_status = ${status}, completed_at = ${now3},
-        notes = COALESCE(${notes || null}, notes), updated_at = ${now3}
+      UPDATE strategy_steps SET step_status = ${status}, completed_at = ${now4},
+        notes = COALESCE(${notes || null}, notes), updated_at = ${now4}
       WHERE step_id = ${stepId}
     `);
   } else {
     await db.execute(sql58`
       UPDATE strategy_steps SET step_status = ${status},
-        notes = COALESCE(${notes || null}, notes), updated_at = ${now3}
+        notes = COALESCE(${notes || null}, notes), updated_at = ${now4}
       WHERE step_id = ${stepId}
     `);
   }
   return { success: true };
 }
 async function updatePathStatus(pathId, status, approvedBy) {
-  const now3 = /* @__PURE__ */ new Date();
+  const now4 = /* @__PURE__ */ new Date();
   if (status === "approved") {
     await db.execute(sql58`
       UPDATE sys_strategy_paths SET path_status = ${status},
-        approved_by = ${approvedBy || null}, approved_at = ${now3}, updated_at = ${now3}
+        approved_by = ${approvedBy || null}, approved_at = ${now4}, updated_at = ${now4}
       WHERE path_id = ${pathId}
     `);
   } else if (status === "in_progress") {
     await db.execute(sql58`
       UPDATE sys_strategy_paths SET path_status = ${status},
-        started_at = ${now3}, updated_at = ${now3}
+        started_at = ${now4}, updated_at = ${now4}
       WHERE path_id = ${pathId}
     `);
   } else if (status === "completed") {
     await db.execute(sql58`
       UPDATE sys_strategy_paths SET path_status = ${status},
-        completed_at = ${now3}, updated_at = ${now3}
+        completed_at = ${now4}, updated_at = ${now4}
       WHERE path_id = ${pathId}
     `);
   } else {
     await db.execute(sql58`
-      UPDATE sys_strategy_paths SET path_status = ${status}, updated_at = ${now3}
+      UPDATE sys_strategy_paths SET path_status = ${status}, updated_at = ${now4}
       WHERE path_id = ${pathId}
     `);
   }
@@ -64151,7 +64137,7 @@ Use formal but accessible language. The person filing this may not be a lawyer.`
   const content = response.choices?.[0]?.message?.content;
   if (!content) throw new Error("No response from LLM");
   const title = templateTitle || `${docLabel} \u2014 ${caseRow.name}`;
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [inserted] = await db.insert(generatedDocuments).values({
     caseId: input.caseId,
     userId: input.userId,
@@ -64162,8 +64148,8 @@ Use formal but accessible language. The person filing this may not be a lawyer.`
     content,
     recipientName: input.recipientName || null,
     recipientAddress: input.recipientAddress || null,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   return inserted.insertId;
 }
@@ -66334,8 +66320,8 @@ async function generateDocument2(templateId, placeholderValues, options) {
     const placeholder = `[${key2}]`;
     filledContent = filledContent.split(placeholder).join(value);
   }
-  const now3 = /* @__PURE__ */ new Date();
-  filledContent = filledContent.split("[CURRENT_DATE]").join(now3.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }));
+  const now4 = /* @__PURE__ */ new Date();
+  filledContent = filledContent.split("[CURRENT_DATE]").join(now4.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }));
   const docId = randomUUID9();
   await db.execute(
     sql67`INSERT INTO remedy_doc_generated 
@@ -66360,7 +66346,7 @@ async function generateDocument2(templateId, placeholderValues, options) {
     documentContent: filledContent,
     documentType: template.templateType,
     status: "draft",
-    createdAt: now3
+    createdAt: now4
   };
 }
 async function listGeneratedDocs(filters) {
@@ -66479,7 +66465,7 @@ async function getQueueStatus3() {
 }
 async function recordDocOutcome(input) {
   const trackingId = randomUUID9();
-  const now3 = Date.now();
+  const now4 = Date.now();
   const isSuccess = ["resolved", "settled", "favorable", "accepted", "successful"].includes(input.outcomeStatus);
   const [existing] = await db.execute(
     sql67`SELECT * FROM template_effectiveness WHERE template_id = ${input.templateId} LIMIT 1`
@@ -66498,8 +66484,8 @@ async function recordDocOutcome(input) {
         avg_settlement_amount = ${newAvgSettlement},
         avg_response_time_days = ${newAvgDays},
         avg_effectiveness_score = ${newAvgScore},
-        last_calculated_at = ${now3},
-        updated_at = ${now3}
+        last_calculated_at = ${now4},
+        updated_at = ${now4}
       WHERE template_id = ${input.templateId}
     `);
   } else {
@@ -66510,7 +66496,7 @@ async function recordDocOutcome(input) {
       VALUES (
         ${trackingId}, ${input.templateId}, 1, ${isSuccess ? 1 : 0},
         ${input.settlementAmount || 0}, ${input.daysToResolution || 0},
-        ${input.effectivenessScore || 0}, ${now3}, ${now3}, ${now3}
+        ${input.effectivenessScore || 0}, ${now4}, ${now4}, ${now4}
       )
     `);
   }
@@ -68068,7 +68054,7 @@ async function getCoalitionIntelligence(domain) {
 init_db();
 import { sql as sql73 } from "drizzle-orm";
 async function snapshotPackageVersion(packageId, changeSummary, userId) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [rows2] = await db.execute(
     sql73`SELECT * FROM reform_packages WHERE package_id = ${packageId} LIMIT 1`
   );
@@ -68095,7 +68081,7 @@ async function snapshotPackageVersion(packageId, changeSummary, userId) {
   });
   await db.execute(sql73`
     INSERT INTO reform_package_versions (package_id, version_number, package_data, change_summary, created_at, created_by)
-    VALUES (${packageId}, ${nextVersion}, ${packageData}, ${changeSummary}, ${now3}, ${userId})
+    VALUES (${packageId}, ${nextVersion}, ${packageData}, ${changeSummary}, ${now4}, ${userId})
   `);
   return {
     id: 0,
@@ -68103,7 +68089,7 @@ async function snapshotPackageVersion(packageId, changeSummary, userId) {
     versionNumber: nextVersion,
     packageData: JSON.parse(packageData),
     changeSummary,
-    createdAt: now3,
+    createdAt: now4,
     createdBy: userId
   };
 }
@@ -68156,10 +68142,10 @@ function mapVersionRow(r) {
   };
 }
 async function recordExport(packageId, exportFormat, userId, exportUrl, fileSize) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.execute(sql73`
     INSERT INTO reform_package_exports (package_id, export_format, export_url, file_size, created_at, created_by)
-    VALUES (${packageId}, ${exportFormat}, ${exportUrl || null}, ${fileSize || null}, ${now3}, ${userId})
+    VALUES (${packageId}, ${exportFormat}, ${exportUrl || null}, ${fileSize || null}, ${now4}, ${userId})
   `);
   const insertId = result.insertId || 0;
   return {
@@ -68168,7 +68154,7 @@ async function recordExport(packageId, exportFormat, userId, exportUrl, fileSize
     exportFormat,
     exportUrl: exportUrl || null,
     fileSize: fileSize || null,
-    createdAt: now3,
+    createdAt: now4,
     createdBy: userId
   };
 }
@@ -68204,11 +68190,11 @@ async function getExportStats(packageId) {
   return { totalExports, byFormat, lastExport };
 }
 async function recordReformAction(params) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const actionDataStr = JSON.stringify(params.actionData || {});
   const [result] = await db.execute(sql73`
     INSERT INTO reform_strategy_memory (pattern_id, reform_package_id, action_type, action_data, created_at, created_by)
-    VALUES (${params.patternId}, ${params.reformPackageId}, ${params.actionType}, ${actionDataStr}, ${now3}, ${params.userId})
+    VALUES (${params.patternId}, ${params.reformPackageId}, ${params.actionType}, ${actionDataStr}, ${now4}, ${params.userId})
   `);
   const insertId = result.insertId || 0;
   return {
@@ -68219,7 +68205,7 @@ async function recordReformAction(params) {
     actionData: params.actionData || {},
     outcomeFeedback: null,
     effectivenessScore: null,
-    createdAt: now3,
+    createdAt: now4,
     createdBy: params.userId
   };
 }
@@ -68535,7 +68521,7 @@ async function matchAdvocacyTargets(patternId, opts) {
   return { targets, coalitions: allCoalitions };
 }
 async function activateCoalition(patternId, coalitionIds, actionType) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const actionIds = [];
   const [patternRows] = await db.execute(
     sql74`SELECT * FROM pattern_registry WHERE pattern_id = ${patternId} LIMIT 1`
@@ -68566,7 +68552,7 @@ async function activateCoalition(patternId, coalitionIds, actionType) {
         recipient_target, packet_generated, response_status, notes, created_at)
       VALUES (${actionId}, ${changeId}, ${orgName}, ${actionType},
         ${pattern?.pattern_name || patternId}, ${false}, 'pending',
-        ${"Coalition activation for pattern " + patternId}, ${now3})
+        ${"Coalition activation for pattern " + patternId}, ${now4})
     `);
   }
   return { actionsCreated: actionIds.length, actionIds };
@@ -68679,21 +68665,21 @@ async function generateAdvocacyPackage(patternId) {
   };
 }
 async function recordAdvocacyOutcome(patternId, coalitionId, outcomeType, description, impactScore) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const outcomeId = genId2("AO");
   if (coalitionId) {
     await db.execute(sql74`
       INSERT INTO advocacy_outcomes (outcome_id, pattern_id, coalition_id, outcome_type,
         description, impact_score, date_occurred, created_at)
       VALUES (${outcomeId}, ${patternId}, ${coalitionId}, ${outcomeType},
-        ${description}, ${impactScore}, ${now3}, ${now3})
+        ${description}, ${impactScore}, ${now4}, ${now4})
     `);
   } else {
     await db.execute(sql74`
       INSERT INTO advocacy_outcomes (outcome_id, pattern_id, outcome_type,
         description, impact_score, date_occurred, created_at)
       VALUES (${outcomeId}, ${patternId}, ${outcomeType},
-        ${description}, ${impactScore}, ${now3}, ${now3})
+        ${description}, ${impactScore}, ${now4}, ${now4})
     `);
   }
   if (impactScore >= 60) {
@@ -68709,7 +68695,7 @@ async function recordAdvocacyOutcome(patternId, coalitionId, outcomeType, descri
         VALUES (${memId}, ${pattern.pattern_type || "advocacy"}, ${pattern.jurisdiction_scope || "national"},
           ${"advocacy_" + outcomeType},
           ${impactScore}, ${Math.min(impactScore, 100)},
-          ${`Auto-recorded from advocacy outcome ${outcomeId}: ${description.substring(0, 200)}`}, ${now3})
+          ${`Auto-recorded from advocacy outcome ${outcomeId}: ${description.substring(0, 200)}`}, ${now4})
       `);
     }
   }
@@ -70078,8 +70064,8 @@ var FRESHNESS_CONFIGS = [
 ];
 function calculateFreshnessScore(lastUpdateMs, staleDays) {
   if (!lastUpdateMs) return 0;
-  const now3 = Date.now();
-  const daysSinceUpdate = (now3 - lastUpdateMs) / (1e3 * 60 * 60 * 24);
+  const now4 = Date.now();
+  const daysSinceUpdate = (now4 - lastUpdateMs) / (1e3 * 60 * 60 * 24);
   if (daysSinceUpdate <= 0) return 100;
   if (daysSinceUpdate >= staleDays) return 0;
   return Math.round(100 * (1 - daysSinceUpdate / staleDays));
@@ -70119,7 +70105,7 @@ async function getFreshnessSummary() {
   };
 }
 async function runFreshnessCheck() {
-  const now3 = Date.now();
+  const now4 = Date.now();
   let tablesChecked = 0;
   let tablesUpdated = 0;
   const errors = [];
@@ -70157,7 +70143,7 @@ async function runFreshnessCheck() {
       const staleFlag = freshnessScore < 50;
       await db.execute(sql82.raw(
         `INSERT INTO knowledge_freshness (table_name, display_name, last_update, record_count, freshness_score, stale_flag, stale_days, category_kf, last_checked, created_at_kf, updated_at_kf)
-         VALUES ('${config.tableName}', '${config.displayName}', ${lastUpdate ?? "NULL"}, ${recordCount}, ${freshnessScore}, ${staleFlag ? 1 : 0}, ${config.staleDays}, '${config.category}', ${now3}, ${now3}, ${now3})
+         VALUES ('${config.tableName}', '${config.displayName}', ${lastUpdate ?? "NULL"}, ${recordCount}, ${freshnessScore}, ${staleFlag ? 1 : 0}, ${config.staleDays}, '${config.category}', ${now4}, ${now4}, ${now4})
          ON DUPLICATE KEY UPDATE
            display_name = VALUES(display_name),
            last_update = VALUES(last_update),
@@ -70276,7 +70262,7 @@ function getMissingCategories(counts) {
 }
 async function calculateCoverage() {
   const errors = [];
-  const now3 = Date.now();
+  const now4 = Date.now();
   const coverageMap = /* @__PURE__ */ new Map();
   function ensureCell(jurisdiction, claimType) {
     if (!coverageMap.has(jurisdiction)) coverageMap.set(jurisdiction, /* @__PURE__ */ new Map());
@@ -70433,7 +70419,7 @@ async function calculateCoverage() {
           remedy_templates_count, deadline_rules_count, coverage_score, last_calculated, created_at_kcm, updated_at_kcm)
          VALUES ('${j}', '${c}', ${cell.statuteCount}, ${cell.caseLawCount}, ${cell.agencyCount},
                  ${cell.proceduralCount}, ${cell.evidenceProfilesCount}, ${cell.advocacyTargetsCount},
-                 ${cell.remedyTemplatesCount}, ${cell.deadlineRulesCount}, ${cell.coverageScore}, ${now3}, ${now3}, ${now3})
+                 ${cell.remedyTemplatesCount}, ${cell.deadlineRulesCount}, ${cell.coverageScore}, ${now4}, ${now4}, ${now4})
          ON DUPLICATE KEY UPDATE
            statute_count = VALUES(statute_count),
            case_law_count = VALUES(case_law_count),
@@ -70637,7 +70623,7 @@ function normalizeLog(value, maxExpected) {
   return Math.min(100, Math.round(normalized * 100) / 100);
 }
 async function calculateHarmIndex() {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const errors = [];
   let processed = 0;
   try {
@@ -70689,8 +70675,8 @@ async function calculateHarmIndex() {
       const riskClass = classifyRisk(harmScore);
       await db.execute(sql84`
         INSERT INTO harm_index_entities (entity_name, entity_type, first_detected, last_updated, created_at)
-        VALUES (${entityName}, 'unknown', ${now3}, ${now3}, ${now3})
-        ON DUPLICATE KEY UPDATE last_updated = ${now3}
+        VALUES (${entityName}, 'unknown', ${now4}, ${now4}, ${now4})
+        ON DUPLICATE KEY UPDATE last_updated = ${now4}
       `);
       const entityResult = await db.execute(sql84`
         SELECT id FROM harm_index_entities WHERE entity_name = ${entityName} LIMIT 1
@@ -70704,11 +70690,11 @@ async function calculateHarmIndex() {
          systemic_harm_score, risk_classification, calculated_at)
         VALUES (${entityId}, ${complaintCount}, ${litigationCount}, ${signalCount},
                 ${geographicSpread}, ${complaintScore}, ${patternAcceleration},
-                ${harmScore}, ${riskClass}, ${now3})
+                ${harmScore}, ${riskClass}, ${now4})
       `);
       await db.execute(sql84`
         INSERT INTO harm_index_history (entity_id, systemic_harm_score, risk_classification, timestamp)
-        VALUES (${entityId}, ${harmScore}, ${riskClass}, ${now3})
+        VALUES (${entityId}, ${harmScore}, ${riskClass}, ${now4})
       `);
       processed++;
     }
@@ -70783,7 +70769,7 @@ init_db();
 init_signal_governance();
 import { sql as sql85 } from "drizzle-orm";
 async function runLitigationCorrelation() {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const errors = [];
   let totalSignalsChecked = 0;
   let matchesFound = 0;
@@ -70825,7 +70811,7 @@ async function runLitigationCorrelation() {
             const reason = exactMatch ? `Exact entity name match: "${entityName}" found in litigation registry` : `Partial entity name match: signal "${entityName}" correlates with litigation "${lit.entity_name}"`;
             await db.execute(sql85`
               INSERT INTO entity_litigation_links (entity_id, litigation_id, confidence_score, link_reason, created_at)
-              VALUES (${signal.id}, ${lit.id}, ${confidence}, ${reason}, ${now3})
+              VALUES (${signal.id}, ${lit.id}, ${confidence}, ${reason}, ${now4})
             `);
             newLinksCreated++;
           }
@@ -70916,7 +70902,7 @@ function classifyForecastRisk(score) {
   return "Stable";
 }
 async function generateRiskForecasts(horizonDays = 30) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const errors = [];
   let processed = 0;
   try {
@@ -70930,8 +70916,8 @@ async function generateRiskForecasts(horizonDays = 30) {
       ORDER BY s.systemic_harm_score DESC
       LIMIT 200
     `);
-    const thirtyDaysAgo = now3 - 30 * 24 * 60 * 60 * 1e3;
-    const sixtyDaysAgo = now3 - 60 * 24 * 60 * 60 * 1e3;
+    const thirtyDaysAgo = now4 - 30 * 24 * 60 * 60 * 1e3;
+    const sixtyDaysAgo = now4 - 60 * 24 * 60 * 60 * 1e3;
     for (const entity of entities3[0]) {
       const entityName = entity.entity_name;
       const currentHarmScore = Number(entity.systemic_harm_score) || 0;
@@ -70968,16 +70954,16 @@ async function generateRiskForecasts(horizonDays = 30) {
         (pattern_id, forecast_date, forecast_horizon_days, predicted_signal_growth,
          predicted_pressure_index, predicted_geographic_spread, predicted_entity_count,
          risk_forecast_score, confidence_level, created_at)
-        VALUES (NULL, ${now3}, ${horizonDays}, ${signalGrowth},
+        VALUES (NULL, ${now4}, ${horizonDays}, ${signalGrowth},
                 ${complaintAcceleration}, ${geoSpread}, ${recentCount},
-                ${forecastScore}, ${confidenceLevel}, ${now3})
+                ${forecastScore}, ${confidenceLevel}, ${now4})
       `);
       await db.execute(sql86`
         INSERT INTO entity_risk_projection 
         (entity_id, entity_name, industry_sector, current_harm_score, 
          predicted_harm_score, risk_category, projection_horizon_days, created_at)
         VALUES (${entity.id}, ${entityName}, ${entity.industry_sector},
-                ${currentHarmScore}, ${predictedHarmScore}, ${riskCategory}, ${horizonDays}, ${now3})
+                ${currentHarmScore}, ${predictedHarmScore}, ${riskCategory}, ${horizonDays}, ${now4})
       `);
       processed++;
     }
@@ -71032,7 +71018,7 @@ async function getRiskForecastSummary() {
 init_db();
 import { sql as sql87 } from "drizzle-orm";
 async function generateHarmMap() {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const errors = [];
   let nodesCreated = 0;
   let edgesCreated = 0;
@@ -71055,7 +71041,7 @@ async function generateHarmMap() {
         INSERT INTO harm_map_nodes 
         (node_type, node_label, entity_id, jurisdiction, industry_sector, harm_score, risk_score, status, created_at)
         VALUES ('entity', ${entity.entity_name}, ${entity.id}, ${entity.jurisdiction}, 
-                ${entity.industry_sector}, ${harmScore}, ${harmScore}, 'active', ${now3})
+                ${entity.industry_sector}, ${harmScore}, ${harmScore}, 'active', ${now4})
       `);
       const nodeResult = await db.execute(sql87`SELECT LAST_INSERT_ID() as id`);
       const nodeId = nodeResult[0][0]?.id;
@@ -71073,7 +71059,7 @@ async function generateHarmMap() {
       await db.execute(sql87`
         INSERT INTO harm_map_nodes 
         (node_type, node_label, jurisdiction, harm_score, risk_score, status, created_at)
-        VALUES ('jurisdiction', ${j.jurisdiction}, ${j.jurisdiction}, 0, 0, 'active', ${now3})
+        VALUES ('jurisdiction', ${j.jurisdiction}, ${j.jurisdiction}, 0, 0, 'active', ${now4})
       `);
       const nodeResult = await db.execute(sql87`SELECT LAST_INSERT_ID() as id`);
       const nodeId = nodeResult[0][0]?.id;
@@ -71091,7 +71077,7 @@ async function generateHarmMap() {
       await db.execute(sql87`
         INSERT INTO harm_map_nodes 
         (node_type, node_label, industry_sector, harm_score, risk_score, status, created_at)
-        VALUES ('industry', ${ind.industry_sector}, ${ind.industry_sector}, 0, 0, 'active', ${now3})
+        VALUES ('industry', ${ind.industry_sector}, ${ind.industry_sector}, 0, 0, 'active', ${now4})
       `);
       const nodeResult = await db.execute(sql87`SELECT LAST_INSERT_ID() as id`);
       const nodeId = nodeResult[0][0]?.id;
@@ -71108,7 +71094,7 @@ async function generateHarmMap() {
       await db.execute(sql87`
         INSERT INTO harm_map_edges 
         (source_node_id, target_node_id, relationship_type, strength_score, evidence_count, created_at)
-        VALUES (${entityNodeId}, ${jurisdictionNodeId}, 'shared_jurisdiction', 50, 1, ${now3})
+        VALUES (${entityNodeId}, ${jurisdictionNodeId}, 'shared_jurisdiction', 50, 1, ${now4})
       `);
       edgesCreated++;
     }
@@ -71120,7 +71106,7 @@ async function generateHarmMap() {
       await db.execute(sql87`
         INSERT INTO harm_map_edges 
         (source_node_id, target_node_id, relationship_type, strength_score, evidence_count, created_at)
-        VALUES (${entityNodeId}, ${industryNodeId}, 'shared_industry', 50, 1, ${now3})
+        VALUES (${entityNodeId}, ${industryNodeId}, 'shared_industry', 50, 1, ${now4})
       `);
       edgesCreated++;
     }
@@ -71146,7 +71132,7 @@ async function generateHarmMap() {
       await db.execute(sql87`
         INSERT INTO harm_map_edges 
         (source_node_id, target_node_id, relationship_type, strength_score, evidence_count, created_at)
-        VALUES (${sourceId}, ${targetId}, 'litigation_link', ${Number(link.confidence_score) * 100 || 50}, 1, ${now3})
+        VALUES (${sourceId}, ${targetId}, 'litigation_link', ${Number(link.confidence_score) * 100 || 50}, 1, ${now4})
       `);
       edgesCreated++;
     }
@@ -71155,9 +71141,9 @@ async function generateHarmMap() {
     await db.execute(sql87`
       INSERT INTO harm_map_snapshots 
       (snapshot_date, node_count, edge_count, top_risk_sectors, top_harm_entities, summary, created_at)
-      VALUES (${now3}, ${nodesCreated}, ${edgesCreated}, 
+      VALUES (${now4}, ${nodesCreated}, ${edgesCreated}, 
               ${JSON.stringify(topSectors)}, ${JSON.stringify(topEntities)},
-              ${`Generated ${nodesCreated} nodes and ${edgesCreated} edges`}, ${now3})
+              ${`Generated ${nodesCreated} nodes and ${edgesCreated} edges`}, ${now4})
     `);
   } catch (err) {
     errors.push(err.message || "Unknown error during harm map generation");
@@ -71242,7 +71228,7 @@ var CLAIM_TYPES = [
   "government_benefits"
 ];
 async function startIntakeSession(userId, rawStory) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const systemPrompt = `You are a legal intake specialist. Analyze the user's story and identify:
 1. The most likely jurisdiction (state/federal)
 2. Up to 3 potential legal claim types from this list: ${CLAIM_TYPES.join(", ")}
@@ -71338,7 +71324,7 @@ Respond in JSON format:
     INSERT INTO problem_intake_sessions 
     (user_id, raw_story, jurisdiction_guess, claim_candidates, confidence_score, status, created_at, updated_at)
     VALUES (${userId}, ${rawStory}, ${jurisdictionGuess}, 
-            ${JSON.stringify(claimCandidates)}, ${overallConfidence}, 'analyzed', ${now3}, ${now3})
+            ${JSON.stringify(claimCandidates)}, ${overallConfidence}, 'analyzed', ${now4}, ${now4})
   `);
   const sessionResult = await db.execute(sql88`SELECT LAST_INSERT_ID() as id`);
   const sessionId = sessionResult[0][0]?.id;
@@ -71347,7 +71333,7 @@ Respond in JSON format:
       INSERT INTO interpreter_claim_matches 
       (session_id, claim_type, confidence_score, reasoning_summary, supporting_keywords, created_at)
       VALUES (${sessionId}, ${claim.claimType}, ${claim.confidence}, 
-              ${claim.reasoning}, ${JSON.stringify(claim.supportingKeywords)}, ${now3})
+              ${claim.reasoning}, ${JSON.stringify(claim.supportingKeywords)}, ${now4})
     `);
   }
   return {
@@ -71358,7 +71344,7 @@ Respond in JSON format:
     selectedClaim: null,
     confidenceScore: overallConfidence,
     status: "analyzed",
-    createdAt: now3
+    createdAt: now4
   };
 }
 async function getClarifyingQuestions(claimType) {
@@ -71496,9 +71482,9 @@ init_db();
 import { sql as sql89 } from "drizzle-orm";
 import crypto6 from "crypto";
 async function generateShareableLink(caseId2, generatedBy, accessLevel = "summary", expiresInDays = 30, permissions = {}) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const token = crypto6.randomBytes(32).toString("hex");
-  const expiresAt = expiresInDays ? now3 + expiresInDays * 24 * 60 * 60 * 1e3 : null;
+  const expiresAt = expiresInDays ? now4 + expiresInDays * 24 * 60 * 60 * 1e3 : null;
   const perms = {
     allowEvidence: permissions.allowEvidence ?? false,
     allowNames: permissions.allowNames ?? true,
@@ -71509,7 +71495,7 @@ async function generateShareableLink(caseId2, generatedBy, accessLevel = "summar
   await db.execute(sql89`
     INSERT INTO shareable_case_links 
     (case_id, generated_by, access_level, token, expires_at, view_count, created_at)
-    VALUES (${caseId2}, ${generatedBy}, ${accessLevel}, ${token}, ${expiresAt}, 0, ${now3})
+    VALUES (${caseId2}, ${generatedBy}, ${accessLevel}, ${token}, ${expiresAt}, 0, ${now4})
   `);
   const linkResult = await db.execute(sql89`SELECT LAST_INSERT_ID() as id`);
   const linkId = linkResult[0][0]?.id;
@@ -71517,7 +71503,7 @@ async function generateShareableLink(caseId2, generatedBy, accessLevel = "summar
     INSERT INTO case_share_permissions 
     (case_id, allow_evidence, allow_names, allow_financials, allow_documents, allow_pattern_links, created_at)
     VALUES (${caseId2}, ${perms.allowEvidence}, ${perms.allowNames}, ${perms.allowFinancials}, 
-            ${perms.allowDocuments}, ${perms.allowPatternLinks}, ${now3})
+            ${perms.allowDocuments}, ${perms.allowPatternLinks}, ${now4})
   `);
   return {
     id: linkId,
@@ -71526,13 +71512,13 @@ async function generateShareableLink(caseId2, generatedBy, accessLevel = "summar
     accessLevel,
     expiresAt,
     viewCount: 0,
-    createdAt: now3,
+    createdAt: now4,
     lastViewedAt: null,
     permissions: perms
   };
 }
 async function accessSharedCase(token, viewerIp = null, viewerUserAgent = null) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const linkResult = await db.execute(sql89`
     SELECT id, case_id, access_level, expires_at, view_count
     FROM shareable_case_links
@@ -71541,7 +71527,7 @@ async function accessSharedCase(token, viewerIp = null, viewerUserAgent = null) 
   `);
   const link = linkResult[0][0];
   if (!link) return { error: "Invalid or expired link" };
-  if (link.expires_at && Number(link.expires_at) < now3) {
+  if (link.expires_at && Number(link.expires_at) < now4) {
     return { error: "This link has expired" };
   }
   const permResult = await db.execute(sql89`
@@ -71592,11 +71578,11 @@ async function accessSharedCase(token, viewerIp = null, viewerUserAgent = null) 
   }
   await db.execute(sql89`
     INSERT INTO shareable_case_views (link_id, viewer_ip, viewer_user_agent, viewer_type, viewed_at)
-    VALUES (${link.id}, ${viewerIp}, ${viewerUserAgent}, 'external', ${now3})
+    VALUES (${link.id}, ${viewerIp}, ${viewerUserAgent}, 'external', ${now4})
   `);
   await db.execute(sql89`
     UPDATE shareable_case_links 
-    SET view_count = view_count + 1, last_viewed_at = ${now3}
+    SET view_count = view_count + 1, last_viewed_at = ${now4}
     WHERE id = ${link.id}
   `);
   return {
@@ -71637,12 +71623,12 @@ async function revokeShareableLink(linkId) {
   return true;
 }
 async function getShareAnalytics(caseId2) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const links = await db.execute(sql89`
     SELECT id, expires_at, view_count FROM shareable_case_links WHERE case_id = ${caseId2}
   `);
   const totalLinks = links[0].length;
-  const activeLinks = links[0].filter((l) => !l.expires_at || Number(l.expires_at) > now3).length;
+  const activeLinks = links[0].filter((l) => !l.expires_at || Number(l.expires_at) > now4).length;
   const totalViews = links[0].reduce((sum, l) => sum + (Number(l.view_count) || 0), 0);
   const recentViews = await db.execute(sql89`
     SELECT sv.viewed_at, sv.viewer_type, sv.viewer_ip, scl.access_level
@@ -71668,7 +71654,7 @@ async function getShareAnalytics(caseId2) {
 init_db();
 import { sql as sql90 } from "drizzle-orm";
 async function findMatchingAttorneys(request) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const attorneys = await db.execute(sql90`
     SELECT id, name, firm_name, bar_number, jurisdiction, practice_areas,
            years_experience, accepts_contingency, accepts_pro_bono, accepts_new_clients,
@@ -71728,14 +71714,14 @@ async function findMatchingAttorneys(request) {
       (case_id, attorney_id, match_score, practice_match_score, jurisdiction_match_score,
        damages_match_score, pattern_match_score, created_at)
       VALUES (${request.caseId}, ${attorney.id}, ${matchScore}, ${practiceMatchScore},
-              ${jurisdictionMatchScore}, ${damagesMatchScore}, ${patternMatchScore}, ${now3})
+              ${jurisdictionMatchScore}, ${damagesMatchScore}, ${patternMatchScore}, ${now4})
     `);
   }
   matches.sort((a, b) => b.matchScore - a.matchScore);
   return matches.slice(0, 10);
 }
 async function addAttorney(attorney) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.execute(sql90`
     INSERT INTO attorney_registry 
     (name, firm_name, bar_number, jurisdiction, practice_areas, years_experience,
@@ -71743,7 +71729,7 @@ async function addAttorney(attorney) {
     VALUES (${attorney.name}, ${attorney.firmName}, ${attorney.barNumber}, ${attorney.jurisdiction},
             ${JSON.stringify(attorney.practiceAreas)}, ${attorney.yearsExperience},
             ${attorney.acceptsContingency}, ${attorney.acceptsProBono}, ${attorney.acceptsNewClients},
-            ${attorney.contactEmail}, ${attorney.website}, ${now3})
+            ${attorney.contactEmail}, ${attorney.website}, ${now4})
   `);
   const result = await db.execute(sql90`SELECT LAST_INSERT_ID() as id`);
   return result[0][0]?.id;
@@ -71772,14 +71758,14 @@ async function getAttorneyRegistry() {
   }));
 }
 async function recordOutcome3(caseId2, attorneyId, outcome) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.execute(sql90`
     INSERT INTO attorney_outcomes 
     (case_id, attorney_id, contact_made, representation_accepted, representation_declined,
      case_result, settlement_amount, created_at)
     VALUES (${caseId2}, ${attorneyId}, ${outcome.contactMade ?? false}, 
             ${outcome.representationAccepted ?? false}, ${outcome.representationDeclined ?? false},
-            ${outcome.caseResult ?? null}, ${outcome.settlementAmount ?? null}, ${now3})
+            ${outcome.caseResult ?? null}, ${outcome.settlementAmount ?? null}, ${now4})
   `);
 }
 async function getMatchAnalytics() {
@@ -72187,7 +72173,7 @@ function extractSignalsFromCase(data) {
 }
 async function storeCaseSignals(caseId2, userId, signals) {
   if (signals.length === 0) return [];
-  const now3 = Date.now();
+  const now4 = Date.now();
   const insertedIds = [];
   for (const sig of signals) {
     const [result] = await db.insert(caseSignals).values({
@@ -72213,8 +72199,8 @@ async function storeCaseSignals(caseId2, userId, signals) {
       sourceFindingIds: sig.sourceFindingIds.length > 0 ? sig.sourceFindingIds : null,
       sourceSignalFlagIds: sig.sourceSignalFlagIds.length > 0 ? sig.sourceSignalFlagIds : null,
       active: 1,
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     insertedIds.push(result.insertId);
   }
@@ -72224,7 +72210,7 @@ async function evaluatePatternCandidates(newSignals, caseId2) {
   let candidatesCreated = 0;
   let candidatesStrengthened = 0;
   let candidatesPromoted = 0;
-  const now3 = Date.now();
+  const now4 = Date.now();
   for (const signal of newSignals) {
     const matchKey = buildMatchKey(signal);
     if (!matchKey) continue;
@@ -72237,19 +72223,19 @@ async function evaluatePatternCandidates(newSignals, caseId2) {
         signalCount: newSignalCount,
         caseCount: newCaseCount,
         confidenceScore: String(newConfidence),
-        lastSignalAt: now3,
-        updatedAt: now3
+        lastSignalAt: now4,
+        updatedAt: now4
       }).where(eq46(patternCandidates.id, existingCandidate.id));
       await db.insert(casePatternLinks).values({
         caseId: caseId2,
         patternCandidateId: existingCandidate.id,
         caseSignalId: signal.id,
         contributionType: "supporting",
-        linkedAt: now3
-      }).onDuplicateKeyUpdate({ set: { linkedAt: now3 } });
+        linkedAt: now4
+      }).onDuplicateKeyUpdate({ set: { linkedAt: now4 } });
       await db.update(caseSignals).set({
         patternCandidateId: existingCandidate.id,
-        updatedAt: now3
+        updatedAt: now4
       }).where(eq46(caseSignals.id, signal.id));
       candidatesStrengthened++;
       if (existingCandidate.patternStatus === "candidate" && newSignalCount >= existingCandidate.confirmationThreshold) {
@@ -72278,24 +72264,24 @@ async function evaluatePatternCandidates(newSignals, caseId2) {
           evidenceStrength: String(signal.evidenceStrength),
           geographicSpread: 1,
           timeSpanDays: 0,
-          firstSignalAt: now3,
-          lastSignalAt: now3,
+          firstSignalAt: now4,
+          lastSignalAt: now4,
           promotionThreshold: 3,
           confirmationThreshold: 5,
           timeWindowDays: 90,
-          createdAt: now3,
-          updatedAt: now3
+          createdAt: now4,
+          updatedAt: now4
         });
         await db.insert(casePatternLinks).values({
           caseId: caseId2,
           patternCandidateId: result.insertId,
           caseSignalId: signal.id,
           contributionType: "originating",
-          linkedAt: now3
-        }).onDuplicateKeyUpdate({ set: { linkedAt: now3 } });
+          linkedAt: now4
+        }).onDuplicateKeyUpdate({ set: { linkedAt: now4 } });
         await db.update(caseSignals).set({
           patternCandidateId: result.insertId,
-          updatedAt: now3
+          updatedAt: now4
         }).where(eq46(caseSignals.id, signal.id));
         candidatesCreated++;
       }
@@ -72304,7 +72290,7 @@ async function evaluatePatternCandidates(newSignals, caseId2) {
   return { candidatesCreated, candidatesStrengthened, candidatesPromoted };
 }
 async function promoteCandidate(candidateDbId, candidateUuid) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const patternId = randomUUID10();
   try {
     const [candidate] = await db.select().from(patternCandidates).where(eq46(patternCandidates.id, candidateDbId));
@@ -72320,8 +72306,8 @@ async function promoteCandidate(candidateDbId, candidateUuid) {
       confidenceScore: Math.round(Number(candidate.confidenceScore) * 100),
       jurisdictionScope: candidate.jurisdiction,
       firstDetected: candidate.firstSignalAt,
-      lastConfirmed: now3,
-      lastUpdated: now3,
+      lastConfirmed: now4,
+      lastUpdated: now4,
       signalCount: candidate.signalCount,
       uniqueEntitiesCount: candidate.entityName ? 1 : 0,
       geographicSpread: candidate.geographicSpread || 1,
@@ -72333,13 +72319,13 @@ async function promoteCandidate(candidateDbId, candidateUuid) {
         caseCount: candidate.caseCount,
         evidenceStrength: Number(candidate.evidenceStrength)
       },
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     await db.update(patternCandidates).set({
       patternStatus: "active",
       promotedPatternId: patternId,
-      updatedAt: now3
+      updatedAt: now4
     }).where(eq46(patternCandidates.id, candidateDbId));
     await db.update(casePatternLinks).set({
       patternRegistryId: patternId
@@ -73451,9 +73437,9 @@ async function detectPolicyConvergence() {
 }
 async function detectHarmEscalation() {
   const signals = [];
-  const now3 = /* @__PURE__ */ new Date();
-  const thirtyDaysAgo = new Date(now3.getTime() - 30 * 24 * 60 * 60 * 1e3);
-  const sixtyDaysAgo = new Date(now3.getTime() - 60 * 24 * 60 * 60 * 1e3);
+  const now4 = /* @__PURE__ */ new Date();
+  const thirtyDaysAgo = new Date(now4.getTime() - 30 * 24 * 60 * 60 * 1e3);
+  const sixtyDaysAgo = new Date(now4.getTime() - 60 * 24 * 60 * 60 * 1e3);
   const recentHarms = await db.select({
     harmType: advocacyReports.harmType,
     recentCount: sql98`COUNT(*)`.as("recent_count")
@@ -75361,7 +75347,7 @@ async function scoreEntityEvidence(entityName, patternId) {
     streamCount,
     confidenceScore
   });
-  const now3 = Date.now();
+  const now4 = Date.now();
   const whereClause = patternId ? and50(eq63(entityEvidenceScores.entityName, entityName), eq63(entityEvidenceScores.patternId, patternId)) : eq63(entityEvidenceScores.entityName, entityName);
   const existing = await db.select().from(entityEvidenceScores).where(whereClause).limit(1);
   if (existing[0]) {
@@ -75374,7 +75360,7 @@ async function scoreEntityEvidence(entityName, patternId) {
       geographicSpread,
       confidenceScore,
       visibilityStatus,
-      updatedAt: now3
+      updatedAt: now4
     }).where(eq63(entityEvidenceScores.id, existing[0].id));
     const [updated] = await db.select().from(entityEvidenceScores).where(eq63(entityEvidenceScores.id, existing[0].id));
     return updated;
@@ -75390,8 +75376,8 @@ async function scoreEntityEvidence(entityName, patternId) {
     geographicSpread,
     confidenceScore,
     visibilityStatus,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   const [inserted] = await db.select().from(entityEvidenceScores).where(whereClause).orderBy(desc42(entityEvidenceScores.id)).limit(1);
   return inserted;
@@ -75965,7 +75951,7 @@ async function generateEntityBreakdown(patternId) {
   const registryEntities = await db.select().from(entityRegistry);
   const registryMap = new Map(registryEntities.map((e) => [e.entityName, e]));
   const results = [];
-  const now3 = Date.now();
+  const now4 = Date.now();
   for (const [, entity] of entityMap) {
     const regEntry = registryMap.get(entity.entityName);
     const regSignalCount = regEntry ? (regEntry.complaintCount ?? 0) + (regEntry.litigationCount ?? 0) + (regEntry.enforcementCount ?? 0) : void 0;
@@ -75985,8 +75971,8 @@ async function generateEntityBreakdown(patternId) {
       enforcementActions: entity.enforcementActions,
       patternInvolvementCount: entity.patternInvolvementCount,
       confidenceScore: confidence,
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     const rows2 = await db.select().from(patternEntitySummary).where(and52(
       eq65(patternEntitySummary.patternId, patternId),
@@ -76041,7 +76027,7 @@ async function generateResponsibleAgencyMapping(patternId) {
       agencyMap.set(key2, agency);
     }
   }
-  const now3 = Date.now();
+  const now4 = Date.now();
   const results = [];
   await db.delete(patternResponsibleAgencies).where(eq65(patternResponsibleAgencies.patternId, patternId));
   for (const [, agency] of agencyMap) {
@@ -76053,8 +76039,8 @@ async function generateResponsibleAgencyMapping(patternId) {
       complaintsReceived: agency.complaintsReceived,
       investigationsOpened: agency.investigationsOpened,
       penaltiesIssued: agency.penaltiesIssued,
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     const rows2 = await db.select().from(patternResponsibleAgencies).where(and52(
       eq65(patternResponsibleAgencies.patternId, patternId),
@@ -76258,9 +76244,9 @@ async function forecastPatternRisk(patternId, windowDays = 90) {
   const litigationSignals = signals.filter((s) => (s.signalType || "").includes("litigation"));
   const enforcementSignals = signals.filter((s) => (s.signalType || "").includes("enforcement"));
   const jurisdictions = new Set(signals.map((s) => s.jurisdictionScope).filter(Boolean));
-  const now3 = Date.now();
-  const thirtyDaysAgo = now3 - 30 * 864e5;
-  const sixtyDaysAgo = now3 - 60 * 864e5;
+  const now4 = Date.now();
+  const thirtyDaysAgo = now4 - 30 * 864e5;
+  const sixtyDaysAgo = now4 - 60 * 864e5;
   const recentSignals = signals.filter((s) => s.detectionTimestamp >= thirtyDaysAgo);
   const olderSignals = signals.filter((s) => s.detectionTimestamp >= sixtyDaysAgo && s.detectionTimestamp < thirtyDaysAgo);
   const acceleration = olderSignals.length > 0 ? (recentSignals.length - olderSignals.length) / olderSignals.length : recentSignals.length > 0 ? 1 : 0;
@@ -76284,7 +76270,7 @@ async function forecastPatternRisk(patternId, windowDays = 90) {
   if (jurisdictions.size > 3) drivers.push("geographic_spread");
   const scenarioLabel = assignScenarioLabel(riskLevel, drivers);
   const escalationDays = riskScore >= 80 ? Math.round(windowDays * 0.3) : riskScore >= 60 ? Math.round(windowDays * 0.6) : riskScore >= 40 ? windowDays : null;
-  const predictedEscalationDate = escalationDays ? now3 + escalationDays * 864e5 : null;
+  const predictedEscalationDate = escalationDays ? now4 + escalationDays * 864e5 : null;
   const nowTs = Date.now();
   await db.delete(systemicRiskForecasts).where(
     and53(
@@ -76341,8 +76327,8 @@ async function forecastPatternRisk(patternId, windowDays = 90) {
 async function forecastEntityRisk(entityName, windowDays = 90) {
   const signals = await db.select().from(detectedSignals).where(and53(eq66(detectedSignals.entityId, entityName), isNotNull2(detectedSignals.signalId)));
   const jurisdictions = new Set(signals.map((s) => s.jurisdictionScope).filter(Boolean));
-  const now3 = Date.now();
-  const thirtyDaysAgo = now3 - 30 * 864e5;
+  const now4 = Date.now();
+  const thirtyDaysAgo = now4 - 30 * 864e5;
   const recentSignals = signals.filter((s) => s.detectionTimestamp >= thirtyDaysAgo);
   const olderSignals = signals.filter((s) => s.detectionTimestamp < thirtyDaysAgo);
   const acceleration = olderSignals.length > 0 ? (recentSignals.length - olderSignals.length) / olderSignals.length : recentSignals.length > 0 ? 1 : 0;
@@ -76446,7 +76432,7 @@ init_db();
 init_schema();
 import { eq as eq67, desc as desc46, sql as sql113, and as and54, gte as gte19 } from "drizzle-orm";
 async function createSubscription(params) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.insert(alertSubscriptions).values({
     userId: params.userId,
     subscriptionType: params.subscriptionType,
@@ -76454,8 +76440,8 @@ async function createSubscription(params) {
     targetScope: params.targetName,
     alertFrequency: params.alertFrequency || "immediate",
     isPaused: 0,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   const [sub] = await db.select().from(alertSubscriptions).where(and54(
     eq67(alertSubscriptions.userId, params.userId),
@@ -76476,9 +76462,9 @@ async function deleteSubscription(subscriptionId) {
 async function checkAlertTriggers() {
   const activeSubs = await db.select().from(alertSubscriptions).where(eq67(alertSubscriptions.isPaused, 0));
   const newEvents = [];
-  const now3 = Date.now();
-  const oneDayAgo = new Date(now3 - 864e5);
-  const oneDayAgoMs = now3 - 864e5;
+  const now4 = Date.now();
+  const oneDayAgo = new Date(now4 - 864e5);
+  const oneDayAgoMs = now4 - 864e5;
   for (const sub of activeSubs) {
     let shouldTrigger = false;
     let message = "";
@@ -76533,7 +76519,7 @@ async function checkAlertTriggers() {
           riskLevel: riskScore >= 70 ? "critical" : riskScore >= 40 ? "warning" : "info",
           severity: riskScore >= 70 ? "critical" : riskScore >= 40 ? "warning" : "info",
           message,
-          createdAt: now3
+          createdAt: now4
         });
         const [evt] = await db.select().from(alertEvents).where(eq67(alertEvents.subscriptionId, sub.id)).orderBy(desc46(alertEvents.id)).limit(1);
         if (evt) newEvents.push(evt);
@@ -76545,7 +76531,7 @@ async function checkAlertTriggers() {
 async function processEventsToDelivery() {
   const undelivered = await db.select().from(alertEvents).where(sql113`${alertEvents.sentAt} IS NULL`).orderBy(alertEvents.createdAt).limit(50);
   const deliveries = [];
-  const now3 = Date.now();
+  const now4 = Date.now();
   for (const evt of undelivered) {
     const [sub] = await db.select().from(alertSubscriptions).where(eq67(alertSubscriptions.id, evt.subscriptionId)).limit(1);
     if (!sub) continue;
@@ -76555,9 +76541,9 @@ async function processEventsToDelivery() {
       channel: sub.alertFrequency || "immediate",
       recipient: sub.userId,
       status: "delivered",
-      sentAt: now3
+      sentAt: now4
     });
-    await db.update(alertEvents).set({ sentAt: now3 }).where(eq67(alertEvents.id, evt.id));
+    await db.update(alertEvents).set({ sentAt: now4 }).where(eq67(alertEvents.id, evt.id));
     const [delivery] = await db.select().from(alertDeliveryLog).where(eq67(alertDeliveryLog.alertId, evt.id)).orderBy(desc46(alertDeliveryLog.id)).limit(1);
     if (delivery) deliveries.push(delivery);
   }
@@ -76591,7 +76577,7 @@ init_db();
 init_schema();
 import { eq as eq68, desc as desc47, sql as sql114, and as and55, gte as gte20 } from "drizzle-orm";
 async function upsertMapNode(params) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const existing = await db.select().from(systemMapNodes).where(and55(
     eq68(systemMapNodes.nodeType, params.nodeType),
     eq68(systemMapNodes.nodeName, params.nodeName)
@@ -76600,7 +76586,7 @@ async function upsertMapNode(params) {
     await db.update(systemMapNodes).set({
       riskScore: params.riskScore ?? existing[0].riskScore,
       patternCount: params.patternCount ?? existing[0].patternCount,
-      updatedAt: now3
+      updatedAt: now4
     }).where(eq68(systemMapNodes.id, existing[0].id));
     const [updated] = await db.select().from(systemMapNodes).where(eq68(systemMapNodes.id, existing[0].id));
     return updated;
@@ -76612,8 +76598,8 @@ async function upsertMapNode(params) {
     industry: params.industry || null,
     riskScore: params.riskScore || 0,
     patternCount: params.patternCount || 0,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   const [inserted] = await db.select().from(systemMapNodes).where(and55(
     eq68(systemMapNodes.nodeType, params.nodeType),
@@ -76622,7 +76608,7 @@ async function upsertMapNode(params) {
   return inserted;
 }
 async function createMapEdge(params) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const existing = await db.select().from(systemMapEdges).where(and55(
     eq68(systemMapEdges.sourceNode, params.sourceNodeId),
     eq68(systemMapEdges.targetNode, params.targetNodeId),
@@ -76638,7 +76624,7 @@ async function createMapEdge(params) {
     targetNode: params.targetNodeId,
     relationshipType: params.edgeType,
     relationshipStrength: params.weight || 1,
-    createdAt: now3
+    createdAt: now4
   });
   const [inserted] = await db.select().from(systemMapEdges).where(and55(
     eq68(systemMapEdges.sourceNode, params.sourceNodeId),
@@ -76747,7 +76733,7 @@ async function getMapStats() {
   };
 }
 async function upsertFailureProfile(params) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const riskScore = calculateRiskScore2(params);
   const failureProbability = calculateFailureProbability({
     complaintVolume: params.complaintVolume || 0,
@@ -76770,7 +76756,7 @@ async function upsertFailureProfile(params) {
       riskScore,
       riskClassification,
       failureProbability,
-      lastUpdated: now3
+      lastUpdated: now4
     }).where(eq68(institutionRiskProfiles.id, existing[0].id));
     const [updated] = await db.select().from(institutionRiskProfiles).where(eq68(institutionRiskProfiles.id, existing[0].id));
     return updated;
@@ -76787,7 +76773,7 @@ async function upsertFailureProfile(params) {
     riskScore,
     riskClassification,
     failureProbability,
-    lastUpdated: now3
+    lastUpdated: now4
   });
   const [inserted] = await db.select().from(institutionRiskProfiles).where(eq68(institutionRiskProfiles.institutionId, params.institutionId)).orderBy(desc47(institutionRiskProfiles.id)).limit(1);
   return inserted;
@@ -77769,10 +77755,10 @@ async function startSession(actorType) {
     );
   }
   const sessionId = randomUUID13();
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.insert(sessionLog).values({
     sessionId,
-    startedAt: now3,
+    startedAt: now4,
     completedAt: null,
     actorType,
     governanceAnchor: chainStatus.lastValidSeqNo,
@@ -77782,12 +77768,12 @@ async function startSession(actorType) {
     governanceEntriesEnd: null,
     nextActions: [],
     stateSnapshot: {},
-    createdAt: now3
+    createdAt: now4
   });
   return {
     sessionId,
     governanceAnchor: chainStatus.lastValidSeqNo,
-    startedAt: now3
+    startedAt: now4
   };
 }
 async function getCurrentSession(actorType) {
@@ -77841,9 +77827,9 @@ async function endSession(sessionId, results, nextActions, stateSnapshot) {
       }
     }
   }
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.update(sessionLog).set({
-    completedAt: now3,
+    completedAt: now4,
     results,
     governanceEntriesStart,
     governanceEntriesEnd,
@@ -79934,8 +79920,8 @@ import { z as z82 } from "zod";
 init_db();
 import { sql as sql127 } from "drizzle-orm";
 async function finalizePipelineRun(payload) {
-  const now3 = Date.now();
-  const tracePath = payload.tracePath || `${payload.pipelineSource}:${now3}`;
+  const now4 = Date.now();
+  const tracePath = payload.tracePath || `${payload.pipelineSource}:${now4}`;
   const errors = payload.errors || [];
   if (!payload.pipelineSource) {
     throw new Error("[CanonicalCore] finalizePipelineRun: pipelineSource is required");
@@ -79948,7 +79934,7 @@ async function finalizePipelineRun(payload) {
   try {
     const [result2] = await db.execute(sql127`
       INSERT INTO pipeline_events (userId, pipelineType, eventType, stateCode, createdAt)
-      VALUES (0, ${payload.pipelineSource}, 'analysis_complete', NULL, ${now3})
+      VALUES (0, ${payload.pipelineSource}, 'analysis_complete', NULL, ${now4})
     `);
     eventId = result2.insertId || null;
   } catch (err) {
@@ -79965,13 +79951,13 @@ async function finalizePipelineRun(payload) {
   ];
   if (enginePipelines.includes(payload.pipelineSource)) {
     try {
-      const runStatus = status === "failed" ? "failed" : "completed";
+      const runStatus = status === "success" ? "completed" : status === "partial" ? "completed" : "failed";
       await db.execute(sql127`
         INSERT INTO engine_runs (caseId, userId, engineRunType, engineRunStatus, currentStage, stageResults, errorMessage, startedAt, completedAt, createdAt)
         VALUES (0, 0, 'full_pipeline', ${runStatus}, ${payload.pipelineSource},
                 ${JSON.stringify({ description: payload.description, canonicalTables: payload.canonicalTables, recordsWritten: payload.recordsWritten })},
                 ${errors.length > 0 ? errors.join("; ") : null},
-                ${now3 - 1e3}, ${now3}, ${now3})
+                ${now4 - 1e3}, ${now4}, ${now4})
       `);
     } catch (err) {
       console.error("[CanonicalCore] Failed to record engine_run:", err.message);
@@ -79984,7 +79970,7 @@ async function finalizePipelineRun(payload) {
     recordsWritten: payload.recordsWritten,
     canonicalTables: payload.canonicalTables,
     errors,
-    timestamp: now3,
+    timestamp: now4,
     tracePath
   };
   console.log(
@@ -79992,60 +79978,75 @@ async function finalizePipelineRun(payload) {
   );
   return result;
 }
-var canonicalTables = [
-  { table: "registry_jurisdictions", category: "registry" },
-  { table: "registry_programs", category: "registry" },
-  { table: "registry_oversight_bodies", category: "registry" },
-  { table: "registry_workflows", category: "registry" },
-  { table: "registry_signals", category: "registry" },
-  { table: "registry_source_traceability", category: "registry" },
-  { table: "live_signals", category: "signals" },
-  { table: "detected_signals", category: "signals" },
-  { table: "cases", category: "cases" },
-  { table: "documents", category: "cases" },
-  { table: "entities", category: "cases" },
-  { table: "claims", category: "cases" },
-  { table: "findings", category: "cases" },
-  { table: "patterns", category: "analysis" },
-  { table: "pattern_occurrences", category: "analysis" },
-  { table: "pattern_outputs", category: "analysis" },
-  { table: "strategy_outputs", category: "analysis" },
-  { table: "procedural_outputs", category: "analysis" },
-  { table: "activation_outputs", category: "analysis" },
-  { table: "legal_statutes", category: "legal" },
-  { table: "legal_case_law", category: "legal" },
-  { table: "legal_enforcement_records", category: "legal" },
-  { table: "legal_weak_joints", category: "legal" },
-  { table: "legal_contradictions", category: "legal" },
-  { table: "doctrine_registry", category: "legal" },
-  { table: "litigation_barriers", category: "legal" },
-  { table: "agency_authority_map", category: "legal" },
-  { table: "knowledge_entries", category: "knowledge" },
-  { table: "knowledge_modules", category: "knowledge" },
-  { table: "proof_frameworks", category: "knowledge" },
-  { table: "foia_requests", category: "foia" },
-  { table: "foia_statutes", category: "foia" },
-  { table: "foia_agencies", category: "foia" },
-  { table: "lighthouse_jobs", category: "lighthouse" },
-  { table: "lighthouse_posts", category: "lighthouse" },
-  { table: "lighthouse_events", category: "lighthouse" },
-  { table: "lighthouse_spotlight", category: "lighthouse" },
-  { table: "governance_log", category: "governance" },
-  { table: "governance_snapshots", category: "governance" },
-  { table: "pipeline_events", category: "pipeline" },
-  { table: "engine_runs", category: "pipeline" },
-  { table: "ingest_runs", category: "pipeline" },
-  { table: "docket_entries", category: "docket" },
-  { table: "agency_performance_metrics", category: "performance" },
-  { table: "lumensend_templates", category: "lumensend" },
-  { table: "lumensend_drafts", category: "lumensend" },
-  { table: "escalation_registry", category: "escalation" },
-  { table: "system_map_nodes", category: "system" },
-  { table: "system_map_edges", category: "system" }
-];
 async function getCanonicalCoreHealth() {
+  const canonicalTables = [
+    // Registry Core
+    { table: "registry_jurisdictions", category: "registry" },
+    { table: "registry_programs", category: "registry" },
+    { table: "registry_oversight_bodies", category: "registry" },
+    { table: "registry_workflows", category: "registry" },
+    { table: "registry_signals", category: "registry" },
+    { table: "registry_source_traceability", category: "registry" },
+    // Signals
+    { table: "live_signals", category: "signals" },
+    { table: "detected_signals", category: "signals" },
+    // Case Data
+    { table: "cases", category: "cases" },
+    { table: "documents", category: "cases" },
+    { table: "entities", category: "cases" },
+    { table: "claims", category: "cases" },
+    { table: "findings", category: "cases" },
+    // Patterns & Analysis
+    { table: "patterns", category: "analysis" },
+    { table: "pattern_occurrences", category: "analysis" },
+    { table: "pattern_outputs", category: "analysis" },
+    { table: "strategy_outputs", category: "analysis" },
+    { table: "procedural_outputs", category: "analysis" },
+    { table: "activation_outputs", category: "analysis" },
+    // Legal
+    { table: "legal_statutes", category: "legal" },
+    { table: "legal_case_law", category: "legal" },
+    { table: "legal_enforcement_records", category: "legal" },
+    { table: "legal_weak_joints", category: "legal" },
+    { table: "legal_contradictions", category: "legal" },
+    { table: "doctrine_registry", category: "legal" },
+    { table: "litigation_barriers", category: "legal" },
+    { table: "agency_authority_map", category: "legal" },
+    // Knowledge Backbone
+    { table: "knowledge_entries", category: "knowledge" },
+    { table: "knowledge_modules", category: "knowledge" },
+    { table: "proof_frameworks", category: "knowledge" },
+    // FOIA
+    { table: "foia_requests", category: "foia" },
+    { table: "foia_statutes", category: "foia" },
+    { table: "foia_agencies", category: "foia" },
+    // Lighthouse
+    { table: "lighthouse_jobs", category: "lighthouse" },
+    { table: "lighthouse_posts", category: "lighthouse" },
+    { table: "lighthouse_events", category: "lighthouse" },
+    { table: "lighthouse_spotlight", category: "lighthouse" },
+    // Governance
+    { table: "governance_log", category: "governance" },
+    { table: "governance_snapshots", category: "governance" },
+    // Pipeline Tracking
+    { table: "pipeline_events", category: "pipeline" },
+    { table: "engine_runs", category: "pipeline" },
+    { table: "ingest_runs", category: "pipeline" },
+    // Docket
+    { table: "docket_entries", category: "docket" },
+    // Agency Performance
+    { table: "agency_performance_metrics", category: "performance" },
+    // LumenSend
+    { table: "lumensend_templates", category: "lumensend" },
+    { table: "lumensend_drafts", category: "lumensend" },
+    // Escalation
+    { table: "escalation_registry", category: "escalation" },
+    // System Map
+    { table: "system_map_nodes", category: "system" },
+    { table: "system_map_edges", category: "system" }
+  ];
   const results = [];
-  let totalRecords = 0;
+  let total_records = 0;
   let populatedTables = 0;
   let emptyTables = 0;
   for (const { table, category } of canonicalTables) {
@@ -80054,7 +80055,7 @@ async function getCanonicalCoreHealth() {
       const rows2 = result.rows ?? result;
       const count18 = Number(rows2?.[0]?.c) || 0;
       results.push({ table, category, count: count18 });
-      totalRecords += count18;
+      total_records += count18;
       if (count18 > 0) populatedTables++;
       else emptyTables++;
     } catch {
@@ -80062,13 +80063,7 @@ async function getCanonicalCoreHealth() {
       emptyTables++;
     }
   }
-  return {
-    tables: results,
-    total_records: totalRecords,
-    totalRecords,
-    populatedTables,
-    emptyTables
-  };
+  return { tables: results, total_records, populatedTables, emptyTables };
 }
 async function getPipelineCompletionState() {
   const [eventRows] = await pool.query(
@@ -80102,41 +80097,19 @@ async function getPipelineCompletionState() {
       payload: r.payload ? typeof r.payload === "string" ? JSON.parse(r.payload) : r.payload : { stateCode: r.stateCode },
       createdAt: Number(r.createdAt)
     })),
-    engineRunSummary: engineRows.map((r) => {
-      const engineName = r.engine_name;
-      const totalRuns = Number(r.total_runs) || 0;
-      const lastRun = r.last_run ? Number(r.last_run) : null;
-      const lastStatus = r.last_status ?? null;
-      return {
-        engine_name: engineName,
-        engineName,
-        total_runs: totalRuns,
-        totalRuns,
-        last_run: lastRun,
-        lastRun,
-        last_status: lastStatus,
-        lastStatus
-      };
-    }),
-    ingestRunSummary: ingestRows.map((r) => {
-      const datasetId = r.dataset_id;
-      const totalRuns = Number(r.total_runs) || 0;
-      const lastRun = r.last_run ? Number(r.last_run) : null;
-      const lastStatus = r.last_status ?? null;
-      const totalRecords = Number(r.total_records) || 0;
-      return {
-        dataset_id: datasetId,
-        datasetId,
-        total_runs: totalRuns,
-        totalRuns,
-        last_run: lastRun,
-        lastRun,
-        last_status: lastStatus,
-        lastStatus,
-        total_records: totalRecords,
-        totalRecords
-      };
-    })
+    engineRunSummary: engineRows.map((r) => ({
+      engine_name: r.engine_name,
+      total_runs: Number(r.total_runs),
+      last_run: r.last_run ? Number(r.last_run) : null,
+      last_status: r.last_status
+    })),
+    ingestRunSummary: ingestRows.map((r) => ({
+      dataset_id: r.dataset_id,
+      total_runs: Number(r.total_runs),
+      last_run: r.last_run ? Number(r.last_run) : null,
+      last_status: r.last_status,
+      total_records: Number(r.total_records) || 0
+    }))
   };
 }
 
@@ -80203,7 +80176,7 @@ async function reconnectProofFrameworks() {
       if (!domainMap.has(domain)) domainMap.set(domain, []);
       domainMap.get(domain).push(p);
     }
-    const now3 = Date.now();
+    const now4 = Date.now();
     for (const [domain, progs] of domainMap) {
       try {
         const elementsOfProof = progs.slice(0, 5).map((p) => p.name || p.programName || "Unknown");
@@ -80215,8 +80188,8 @@ async function reconnectProofFrameworks() {
           standardOfReview: "De novo",
           requiredCausation: "But-for causation",
           typicalEvidence: JSON.stringify(progs.slice(0, 3).map((p) => p.description || p.name || "Documentation")),
-          createdAt: now3,
-          updatedAt: now3
+          createdAt: now4,
+          updatedAt: now4
         });
         result.recordsCreated++;
       } catch (e) {
@@ -80243,7 +80216,7 @@ async function reconnectKnowledgeModules() {
       return result;
     }
     const jurisdictions = await db.select().from(registryJurisdictions);
-    const now3 = Date.now();
+    const now4 = Date.now();
     for (const j of jurisdictions) {
       try {
         await db.insert(knowledgeModules).values({
@@ -80253,7 +80226,7 @@ async function reconnectKnowledgeModules() {
           sourceFile: "canonical-registry",
           totalEntries: 0,
           version: "1.0",
-          loadedAt: now3
+          loadedAt: now4
         });
         result.recordsCreated++;
       } catch (e) {
@@ -80286,7 +80259,7 @@ async function reconnectKnowledgeEntries() {
     }
     const programs = await db.select().from(registryPrograms);
     const workflows = await db.select().from(registryWorkflows);
-    const now3 = Date.now();
+    const now4 = Date.now();
     for (const p of programs.slice(0, 200)) {
       try {
         await db.insert(knowledgeEntries).values({
@@ -80302,7 +80275,7 @@ async function reconnectKnowledgeEntries() {
             description: p.description,
             stateCode: p.stateCode
           }),
-          createdAt: now3
+          createdAt: now4
         });
         result.recordsCreated++;
       } catch (e) {
@@ -80323,7 +80296,7 @@ async function reconnectKnowledgeEntries() {
             sourceId: w.id,
             steps: w.steps
           }),
-          createdAt: now3
+          createdAt: now4
         });
         result.recordsCreated++;
       } catch (e) {
@@ -80350,7 +80323,7 @@ async function reconnectAgencyAuthorityMap() {
       return result;
     }
     const bodies = await db.select().from(registryOversightBodies);
-    const now3 = Date.now();
+    const now4 = Date.now();
     for (const b of bodies) {
       try {
         await db.insert(agencyAuthorityMap).values({
@@ -80364,8 +80337,8 @@ async function reconnectAgencyAuthorityMap() {
             email: b.email,
             website: b.website
           }),
-          createdAt: now3,
-          updatedAt: now3
+          createdAt: now4,
+          updatedAt: now4
         });
         result.recordsCreated++;
       } catch (e) {
@@ -80392,7 +80365,7 @@ async function reconnectAgencyPerformance() {
       return result;
     }
     const bodies = await db.select().from(registryOversightBodies);
-    const now3 = Date.now();
+    const now4 = Date.now();
     for (const b of bodies) {
       try {
         await db.insert(agencyPerformanceMetrics).values({
@@ -80405,8 +80378,8 @@ async function reconnectAgencyPerformance() {
             source: "canonical-registry-derivation",
             oversightBodyId: b.id
           }),
-          createdAt: now3,
-          updatedAt: now3
+          createdAt: now4,
+          updatedAt: now4
         });
         result.recordsCreated++;
       } catch (e) {
@@ -80433,7 +80406,7 @@ async function reconnectEscalationRegistry() {
       return result;
     }
     const bodies = await db.select().from(registryOversightBodies);
-    const now3 = Date.now();
+    const now4 = Date.now();
     for (let i = 0; i < bodies.length; i++) {
       const from = bodies[i];
       for (let j = i + 1; j < Math.min(i + 3, bodies.length); j++) {
@@ -80446,7 +80419,7 @@ async function reconnectEscalationRegistry() {
               escalationType: "regulatory",
               jurisdiction: from.stateCode || "federal",
               conditions: JSON.stringify(["unresolved_complaint", "pattern_detected"]),
-              createdAt: now3
+              createdAt: now4
             });
             result.recordsCreated++;
           } catch (e) {
@@ -80598,14 +80571,14 @@ var canonicalSpineRouter = router({
       datasetId: input.datasetId,
       sourceRecordId: input.sourceRecordId
     });
-    const now3 = Date.now();
+    const now4 = Date.now();
     const metaStr = input.metadataL1L2 ? JSON.stringify(input.metadataL1L2) : null;
     const rawStr = JSON.stringify(input.rawJson);
     const { rows: result } = await pool.query(
       `INSERT INTO ingested_records (datasetId_ir, sourceRecordId, rawJson, source_hash, stream_id_ir, metadata_l1_l2, ingestedAt, updatedAt_ir, processed_for_signals)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false)
          ON DUPLICATE KEY UPDATE updatedAt_ir = VALUES(updatedAt_ir), rawJson = VALUES(rawJson), stream_id_ir = COALESCE(VALUES(stream_id_ir), stream_id_ir), metadata_l1_l2 = COALESCE(VALUES(metadata_l1_l2), metadata_l1_l2)`,
-      [input.datasetId, input.sourceRecordId, rawStr, sourceHash, input.streamId ?? null, metaStr, now3, now3]
+      [input.datasetId, input.sourceRecordId, rawStr, sourceHash, input.streamId ?? null, metaStr, now4, now4]
     );
     return { id: result.insertId, sourceHash };
   }),
@@ -80622,7 +80595,7 @@ var canonicalSpineRouter = router({
     plainLanguageExplanation: z83.string(),
     confidenceScore: z83.number()
   })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     await appendSignalFlowLog({
       signalId: input.signalId,
       vectorPath: `ingested_records \u2192 live_signals \u2192 sunam_gate \u2192 detected_signals`,
@@ -80631,7 +80604,7 @@ var canonicalSpineRouter = router({
         sourceTable: "detected_signals",
         sourceId: input.signalId,
         gateDecision: input.sunamStatus ?? "pending",
-        timestamp: now3
+        timestamp: now4
       }
     });
     return { signal_id: input.signalId, flow_logged: true };
@@ -80710,11 +80683,11 @@ var canonicalSpineRouter = router({
       if (!metaCheck.passed) {
         throw new Error(`WORLD_NODE_VALIDATION: ${metaCheck.message}`);
       }
-      const now3 = Date.now();
+      const now4 = Date.now();
       const { rows: result } = await pool.query(
         `INSERT INTO world_nodes (biome_type, node_name_wn, latitude, longitude, metadata_l10, active_remedy, last_verified_at_wn, created_at_wn, updated_at_wn)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [input.biomeType, input.nodeName, input.latitude ?? null, input.longitude ?? null, JSON.stringify(input.metadataL10), input.activeRemedy, now3, now3, now3]
+        [input.biomeType, input.nodeName, input.latitude ?? null, input.longitude ?? null, JSON.stringify(input.metadataL10), input.activeRemedy, now4, now4, now4]
       );
       return { id: result.insertId, validated: true };
     }),
@@ -80777,12 +80750,12 @@ var canonicalSpineRouter = router({
       if (!integrityCheck.passed) {
         throw new Error(`REMEDY_PATH_INTEGRITY: ${integrityCheck.message}`);
       }
-      const now3 = Date.now();
+      const now4 = Date.now();
       const status = input.blockReason ? "blocked" : "pending";
       const { rows: result } = await pool.query(
         `INSERT INTO remedy_paths (caseId, userId, title, description, pathType, viability, generatedBy, remedyStatus, createdAt, updatedAt, signal_id_rp, route_direction, target_node_id, block_reason, canonical_remedy_status)
            VALUES ($1, $2, $3, $4, $5, 'moderate', 'system', 'draft', $6, $7, $8, $9, $10, $11, $12)`,
-        [input.caseId, input.userId, input.title, input.description ?? null, input.pathType, now3, now3, input.signalId, input.routeDirection ?? null, input.targetNodeId ?? null, input.blockReason ?? null, status]
+        [input.caseId, input.userId, input.title, input.description ?? null, input.pathType, now4, now4, input.signalId, input.routeDirection ?? null, input.targetNodeId ?? null, input.blockReason ?? null, status]
       );
       return { id: result.insertId, status, integrity_check: integrityCheck.passed };
     }),
@@ -80993,7 +80966,7 @@ async function verify_case_ownership(case_id, user_id) {
 async function get_or_create_case_state(case_id, user_id) {
   const [existing] = await db.select().from(caseState).where(eq80(caseState.caseId, case_id));
   if (existing) return existing;
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.insert(caseState).values({
     caseId: case_id,
     userId: user_id,
@@ -81005,8 +80978,8 @@ async function get_or_create_case_state(case_id, user_id) {
     committedFoiaIds: [],
     committedFilingIds: [],
     completenessScore: 0,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   const [created] = await db.select().from(caseState).where(eq80(caseState.caseId, case_id));
   return created;
@@ -81033,7 +81006,7 @@ async function update_completeness(case_id) {
   await db.delete(caseFlags).where(
     and61(eq80(caseFlags.caseId, case_id), eq80(caseFlags.type, "system"), eq80(caseFlags.status, "open"))
   );
-  const now3 = Date.now();
+  const now4 = Date.now();
   const flags_to_insert = missing.map((label) => ({
     caseId: case_id,
     userId: state.userId,
@@ -81041,7 +81014,7 @@ async function update_completeness(case_id) {
     location: "completeness",
     message: `Missing: ${label}`,
     status: "open",
-    createdAt: now3
+    createdAt: now4
   }));
   if (flags_to_insert.length > 0) {
     await db.insert(caseFlags).values(flags_to_insert);
@@ -81049,7 +81022,7 @@ async function update_completeness(case_id) {
   await db.update(caseState).set({
     completenessScore: score,
     completenessBreakdown: { score, missing, present },
-    updatedAt: now3
+    updatedAt: now4
   }).where(eq80(caseState.caseId, case_id));
 }
 var caseStateRouter = router({
@@ -81228,7 +81201,7 @@ var caseStateRouter = router({
     lng: z84.number().optional()
   })).mutation(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
-    const now3 = Date.now();
+    const now4 = Date.now();
     await db.insert(caseFlags).values({
       caseId: input.case_id,
       userId: ctx.user.id,
@@ -81242,7 +81215,7 @@ var caseStateRouter = router({
       lat: input.lat ?? null,
       lng: input.lng ?? null,
       status: "open",
-      createdAt: now3
+      createdAt: now4
     });
     return { success: true };
   }),
@@ -81270,10 +81243,10 @@ var caseStateRouter = router({
     const timelines = rows2;
     if (!timelines.length) return [];
     const deadlines2 = [];
-    const now3 = /* @__PURE__ */ new Date();
+    const now4 = /* @__PURE__ */ new Date();
     for (const timeline of timelines) {
       if (timeline.filing_deadline) {
-        const deadline_date = timeline.filing_deadline_days ? new Date(now3.getTime() + timeline.filing_deadline_days * 24 * 60 * 60 * 1e3).toISOString() : null;
+        const deadline_date = timeline.filing_deadline_days ? new Date(now4.getTime() + timeline.filing_deadline_days * 24 * 60 * 60 * 1e3).toISOString() : null;
         deadlines2.push({
           id: `filing-${timeline.id}`,
           claim_type: timeline.claim_type,
@@ -81413,13 +81386,13 @@ var activationRouter = router({
     }
   }),
   start: publicProcedure.input(z85.object({ clusterId: z85.string() })).mutation(async ({ ctx, input }) => {
-    const now3 = Date.now();
-    await db.execute(sql132`UPDATE activation_outputs SET status = 'in_progress', updated_at = ${now3} WHERE cluster_id = ${input.clusterId}`);
+    const now4 = Date.now();
+    await db.execute(sql132`UPDATE activation_outputs SET status = 'in_progress', updated_at = ${now4} WHERE cluster_id = ${input.clusterId}`);
     return { success: true };
   }),
   complete: publicProcedure.input(z85.object({ clusterId: z85.string() })).mutation(async ({ ctx, input }) => {
-    const now3 = Date.now();
-    await db.execute(sql132`UPDATE activation_outputs SET status = 'completed', updated_at = ${now3} WHERE cluster_id = ${input.clusterId}`);
+    const now4 = Date.now();
+    await db.execute(sql132`UPDATE activation_outputs SET status = 'completed', updated_at = ${now4} WHERE cluster_id = ${input.clusterId}`);
     return { success: true };
   })
 });
@@ -84224,16 +84197,16 @@ var foiaRequestsRouter = router({
   })).mutation(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { foiaRequests: foiaRequests2, missingRecords: missingRecords2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const now3 = Date.now();
+    const now4 = Date.now();
     const updateData = {
       status: input.status,
-      updatedAt: now3
+      updatedAt: now4
     };
     if (input.status === "submitted") {
-      updateData.submittedAt = now3;
+      updateData.submittedAt = now4;
     }
     if (["records_produced", "partial_denial", "denied"].includes(input.status)) {
-      updateData.responseReceivedAt = now3;
+      updateData.responseReceivedAt = now4;
     }
     await db.update(foiaRequests2).set(updateData).where(and66(
       eq87(foiaRequests2.id, input.requestId),
@@ -84246,7 +84219,7 @@ var foiaRequestsRouter = router({
       if (input.status === "closed" && ["denied", "partial_denial"].includes(request.status)) {
         missingRecordStatus = "acknowledged";
       }
-      await db.update(missingRecords2).set({ status: missingRecordStatus, updatedAt: now3 }).where(eq87(missingRecords2.id, request.missingRecordId));
+      await db.update(missingRecords2).set({ status: missingRecordStatus, updatedAt: now4 }).where(eq87(missingRecords2.id, request.missingRecordId));
       notifyFoiaStatusUpdate(
         ctx.user.id,
         request.id,
@@ -84702,25 +84675,25 @@ var resourceVerificationRouter = router({
   // Verify a resource (mark as verified, update timestamp)
   verify: protectedProcedure.input(z85.object({ resourceId: z85.number() })).mutation(async ({ input, ctx }) => {
     const { pool: rawPool } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const now3 = Date.now();
+    const now4 = Date.now();
     const verifiedBy = ctx.user?.name || ctx.user?.open_id || "admin";
     await rawPool.query(
       `UPDATE unified_resources SET verificationStatus = 'verified', lastVerifiedAt = ?, verifiedBy = ?, flaggedReason = NULL, updatedAt = ? WHERE id = ?`,
-      [now3, verifiedBy, now3, input.resourceId]
+      [now4, verifiedBy, now4, input.resourceId]
     );
-    return { success: true, resource_id: input.resourceId, verified_at: now3, verifiedBy };
+    return { success: true, resource_id: input.resourceId, verified_at: now4, verifiedBy };
   }),
   // Bulk verify multiple resources
   bulkVerify: protectedProcedure.input(z85.object({ resourceIds: z85.array(z85.number()).min(1).max(100) })).mutation(async ({ input, ctx }) => {
     const { pool: rawPool } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const now3 = Date.now();
+    const now4 = Date.now();
     const verifiedBy = ctx.user?.name || ctx.user?.open_id || "admin";
     const placeholders = input.resourceIds.map(() => "?").join(",");
     await rawPool.query(
       `UPDATE unified_resources SET verificationStatus = 'verified', lastVerifiedAt = ?, verifiedBy = ?, flaggedReason = NULL, updatedAt = ? WHERE id IN (${placeholders})`,
-      [now3, verifiedBy, now3, ...input.resourceIds]
+      [now4, verifiedBy, now4, ...input.resourceIds]
     );
-    return { success: true, count: input.resourceIds.length, verified_at: now3 };
+    return { success: true, count: input.resourceIds.length, verified_at: now4 };
   }),
   // Flag a resource with a reason
   flag: protectedProcedure.input(z85.object({
@@ -84728,11 +84701,11 @@ var resourceVerificationRouter = router({
     reason: z85.string().min(1).max(1e3)
   })).mutation(async ({ input, ctx }) => {
     const { pool: rawPool } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const now3 = Date.now();
+    const now4 = Date.now();
     const flaggedBy = ctx.user?.name || ctx.user?.open_id || "admin";
     await rawPool.query(
       `UPDATE unified_resources SET verificationStatus = 'flagged', flaggedReason = ?, verifiedBy = ?, updatedAt = ? WHERE id = ?`,
-      [input.reason, flaggedBy, now3, input.resourceId]
+      [input.reason, flaggedBy, now4, input.resourceId]
     );
     try {
       const [resRow] = await rawPool.query(`SELECT name, domain, stateCode FROM unified_resources WHERE id = ? LIMIT 1`, [input.resourceId]);
@@ -84747,7 +84720,7 @@ var resourceVerificationRouter = router({
         severity: "medium",
         jurisdiction: res?.stateCode ?? "federal",
         domain: res?.domain ?? "general",
-        sourceTimestamp: now3
+        sourceTimestamp: now4
       });
     } catch {
     }
@@ -84756,10 +84729,10 @@ var resourceVerificationRouter = router({
   // Deactivate a resource
   deactivate: protectedProcedure.input(z85.object({ resourceId: z85.number() })).mutation(async ({ input }) => {
     const { pool: rawPool } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const now3 = Date.now();
+    const now4 = Date.now();
     await rawPool.query(
       `UPDATE unified_resources SET isActive = false, updatedAt = ? WHERE id = ?`,
-      [now3, input.resourceId]
+      [now4, input.resourceId]
     );
     try {
       const [resRow] = await rawPool.query(`SELECT name, domain, stateCode FROM unified_resources WHERE id = ? LIMIT 1`, [input.resourceId]);
@@ -84774,7 +84747,7 @@ var resourceVerificationRouter = router({
         severity: "high",
         jurisdiction: res?.stateCode ?? "federal",
         domain: res?.domain ?? "general",
-        sourceTimestamp: now3
+        sourceTimestamp: now4
       });
     } catch {
     }
@@ -84783,10 +84756,10 @@ var resourceVerificationRouter = router({
   // Reactivate a resource
   reactivate: protectedProcedure.input(z85.object({ resourceId: z85.number() })).mutation(async ({ input }) => {
     const { pool: rawPool } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const now3 = Date.now();
+    const now4 = Date.now();
     await rawPool.query(
       `UPDATE unified_resources SET isActive = true, updatedAt = ? WHERE id = ?`,
-      [now3, input.resourceId]
+      [now4, input.resourceId]
     );
     try {
       await resolveSignalsForTarget("unified_resources", input.resourceId, "RESOURCE_STALE");
@@ -85285,9 +85258,6 @@ var appRouter = router({
   })
 });
 
-// server/_core/context.ts
-import { TRPCError as TRPCError18 } from "@trpc/server";
-
 // server/_core/user-resolver.ts
 init_db();
 
@@ -85295,8 +85265,74 @@ init_db();
 var FRESH_TTL_MS = Number(process.env.AUTH_USER_CACHE_FRESH_TTL_MS || 6e4);
 var STALE_TTL_MS = Number(process.env.AUTH_USER_CACHE_STALE_TTL_MS || 10 * 6e4);
 var NEGATIVE_TTL_MS = Number(process.env.AUTH_USER_NEGATIVE_CACHE_TTL_MS || 15e3);
+var cache2 = /* @__PURE__ */ new Map();
+var in_flight = /* @__PURE__ */ new Map();
+function now() {
+  return Date.now();
+}
+function normalize_key(key2) {
+  return key2.trim().toLowerCase();
+}
+function get_cached_user(key2, allow_stale = false) {
+  const normalized = normalize_key(key2);
+  const entry = cache2.get(normalized);
+  if (!entry) return null;
+  const age = now() - entry.cached_at;
+  if (entry.user === null) {
+    if (age <= NEGATIVE_TTL_MS) return null;
+    cache2.delete(normalized);
+    return null;
+  }
+  if (age <= FRESH_TTL_MS) return entry.user;
+  if (allow_stale && age <= STALE_TTL_MS) return entry.user;
+  cache2.delete(normalized);
+  return null;
+}
+function set_cached_user(keys, user) {
+  const entry = { user, cached_at: now() };
+  for (const key2 of keys) {
+    if (!key2?.trim()) continue;
+    cache2.set(normalize_key(key2), entry);
+  }
+}
+async function dedupe_user_lookup(key2, lookup) {
+  const normalized = normalize_key(key2);
+  const existing = in_flight.get(normalized);
+  if (existing) {
+    console.warn("[CONTEXT] profile_lookup_in_flight_dedupe_hit", {
+      cache_key: normalized,
+      duplicate_lookup_suppressed: true,
+      in_flight_count: in_flight.size
+    });
+    return existing;
+  }
+  const promise = Promise.resolve().then(lookup).finally(() => in_flight.delete(normalized));
+  in_flight.set(normalized, promise);
+  console.warn("[CONTEXT] profile_lookup_in_flight_registered", {
+    cache_key: normalized,
+    duplicate_lookup_suppressed: false,
+    in_flight_count: in_flight.size
+  });
+  return promise;
+}
 
 // server/_core/user-resolver.ts
+function map_user(row) {
+  if (!row) return null;
+  return {
+    id: Number(row.id),
+    open_id: row.open_id ?? null,
+    name: row.name ?? null,
+    email: row.email ?? null,
+    login_method: row.login_method ?? null,
+    role: row.role ?? "user",
+    plan: row.plan ?? "free",
+    created_at: Number(row.created_at ?? 0),
+    updated_at: Number(row.updated_at ?? 0),
+    last_signed_in: Number(row.last_signed_in ?? 0)
+  };
+}
+var USER_SELECT = `select id, open_id, name, email, login_method, role, plan, created_at, updated_at, last_signed_in from public.users`;
 function read_positive_integer_env(name, fallback, minimum = 1) {
   const raw = process.env[name];
   const parsed = raw ? Number(raw) : fallback;
@@ -85313,16 +85349,159 @@ var PROFILE_QUERY_TIMEOUT_MS = read_positive_integer_env(
   2500,
   500
 );
+async function query_user_profile(label, text3, values) {
+  return query_with_diagnostics(text3, values, {
+    label,
+    pool_acquire_timeout_ms: PROFILE_POOL_ACQUIRE_TIMEOUT_MS,
+    query_timeout_ms: PROFILE_QUERY_TIMEOUT_MS
+  });
+}
+function cache_user(user) {
+  set_cached_user([user?.email, user?.open_id], user);
+}
+async function get_user_by_email_snake(email) {
+  const normalized = email.trim().toLowerCase();
+  const cached = get_cached_user(normalized);
+  if (cached) return cached;
+  try {
+    return await dedupe_user_lookup(normalized, async () => {
+      const result = await query_user_profile(
+        "profile_email_lookup",
+        `${USER_SELECT} where lower(email) = $1 limit 1`,
+        [normalized]
+      );
+      const user = map_user(result.rows[0]);
+      set_cached_user([normalized, user?.open_id], user);
+      return user;
+    });
+  } catch (error) {
+    const stale = get_cached_user(normalized, true);
+    if (stale) {
+      console.warn(
+        "[CONTEXT] Using stale cached user after DB lookup failure",
+        error instanceof Error ? error.message : String(error)
+      );
+      return stale;
+    }
+    throw error;
+  }
+}
+async function get_user_by_open_id_snake(open_id) {
+  const cached = get_cached_user(open_id);
+  if (cached) return cached;
+  try {
+    return await dedupe_user_lookup(open_id, async () => {
+      const result = await query_user_profile(
+        "profile_open_id_lookup",
+        `${USER_SELECT} where open_id = $1 limit 1`,
+        [open_id]
+      );
+      const user = map_user(result.rows[0]);
+      cache_user(user);
+      return user;
+    });
+  } catch (error) {
+    const stale = get_cached_user(open_id, true);
+    if (stale) {
+      console.warn(
+        "[CONTEXT] Using stale cached user after DB lookup failure",
+        error instanceof Error ? error.message : String(error)
+      );
+      return stale;
+    }
+    throw error;
+  }
+}
 
 // server/_core/context.ts
+init_db();
+var REQUEST_PROFILE_LOOKUP_STATE = Symbol.for(
+  "luminari.request_profile_lookup_state"
+);
+function getRequestProfileLookupState(req) {
+  const carrier = req ?? {};
+  if (!carrier[REQUEST_PROFILE_LOOKUP_STATE]) {
+    carrier[REQUEST_PROFILE_LOOKUP_STATE] = {
+      lookups: /* @__PURE__ */ new Map()
+    };
+  }
+  return carrier[REQUEST_PROFILE_LOOKUP_STATE];
+}
+function profileLookupCacheKey(kind, value) {
+  return `${kind}:${value.trim().toLowerCase()}`;
+}
+async function resolveProfileOncePerRequest(req, key2, lookup) {
+  const state = getRequestProfileLookupState(req);
+  const existing = state.lookups.get(key2);
+  if (existing?.result) {
+    logContextAuthEvent("profile_lookup_request_cache_hit", {
+      cache_key: key2,
+      duplicate_lookup_suppressed: true,
+      profile_resolution_status: existing.result.status
+    });
+    return existing.result;
+  }
+  if (existing?.promise) {
+    logContextAuthEvent("profile_lookup_duplicate_suppressed", {
+      cache_key: key2,
+      duplicate_lookup_suppressed: true
+    });
+    return existing.promise;
+  }
+  logContextAuthEvent("profile_lookup_request_cache_miss", {
+    cache_key: key2,
+    duplicate_lookup_suppressed: false,
+    pool_runtime_configuration: get_pool_runtime_configuration(),
+    profile_pool_acquire_timeout_ms: PROFILE_POOL_ACQUIRE_TIMEOUT_MS,
+    profile_query_timeout_ms: PROFILE_QUERY_TIMEOUT_MS
+  });
+  const record = {};
+  record.promise = lookup().then((result) => {
+    record.result = result;
+    return result;
+  });
+  state.lookups.set(key2, record);
+  return record.promise;
+}
 function readPositiveIntegerEnv(name, fallback) {
   const raw = process.env[name];
   if (!raw) return fallback;
   const parsed = Number(raw);
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
 }
-var CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS = readPositiveIntegerEnv("CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS", 2500);
-var CONTEXT_SLOW_USER_LOOKUP_LOG_MS = readPositiveIntegerEnv("CONTEXT_SLOW_USER_LOOKUP_LOG_MS", 250);
+var USER_LOOKUP_TIMEOUT_MS = readPositiveIntegerEnv(
+  "CONTEXT_USER_LOOKUP_TIMEOUT_MS",
+  5e3
+);
+var USER_DB_LOOKUP_TIMEOUT_MS = Math.max(
+  readPositiveIntegerEnv("CONTEXT_USER_DB_LOOKUP_TIMEOUT_MS", 5e3),
+  PROFILE_POOL_ACQUIRE_TIMEOUT_MS + 250
+);
+var CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS = readPositiveIntegerEnv(
+  "CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS",
+  Math.min(2500, USER_LOOKUP_TIMEOUT_MS)
+);
+var CONTEXT_SLOW_USER_LOOKUP_LOG_MS = readPositiveIntegerEnv(
+  "CONTEXT_SLOW_USER_LOOKUP_LOG_MS",
+  250
+);
+var CONTEXT_ERROR_LOG_THROTTLE_MS = 6e4;
+var lastContextUserLookupErrorLogAt = 0;
+var suppressedContextUserLookupErrors = 0;
+async function withTimeout(promise, ms, label) {
+  let timeout;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeout = setTimeout(
+      () => reject(new Error(`${label} timed out after ${ms}ms`)),
+      ms
+    );
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
 async function withAbortableTimeout(task, ms, label) {
   const controller = new AbortController();
   let timeout;
@@ -85341,18 +85520,30 @@ async function withAbortableTimeout(task, ms, label) {
 function errorDetail(error) {
   return error instanceof Error ? error.message : String(error);
 }
+function isTimeoutError(error) {
+  return errorDetail(error).toLowerCase().includes("timed out") || classify_db_error(error) !== "db_error";
+}
+function profile_lookup_error_code(error) {
+  const db_code = classify_db_error(error);
+  if (db_code === "pool_acquire_timeout" || db_code === "query_timeout")
+    return db_code;
+  return isTimeoutError(error) ? "profile_lookup_timeout" : "profile_lookup_error";
+}
 function createUnauthenticatedAuth() {
-  return { auth_status: "unauthenticated", supabase_user_id: null, supabase_email: null, profile_resolution_status: "not_attempted", profile_resolution_error: null };
+  return {
+    auth_status: "unauthenticated",
+    supabase_user_id: null,
+    supabase_email: null,
+    profile_resolution_status: "not_attempted",
+    profile_resolution_error: null
+  };
 }
 function createInspectionAuth() {
-  return { auth_status: "inspection_mode", supabase_user_id: null, supabase_email: null, profile_resolution_status: "resolved", profile_resolution_error: null };
-}
-function createAuthenticatedUnresolvedAuth(authUser) {
   return {
-    auth_status: "authenticated_profile_unresolved",
-    supabase_user_id: authUser.id?.trim() || null,
-    supabase_email: authUser.email?.trim().toLowerCase() || null,
-    profile_resolution_status: "not_attempted",
+    auth_status: "inspection_mode",
+    supabase_user_id: null,
+    supabase_email: null,
+    profile_resolution_status: "resolved",
     profile_resolution_error: null
   };
 }
@@ -85361,7 +85552,12 @@ function logContextAuthEvent(event, details) {
 }
 async function timeContextPhase(phase, phases, task) {
   const startedAt = Date.now();
-  const entry = { phase, status: "started", elapsed_ms: 0, started_at: startedAt };
+  const entry = {
+    phase,
+    status: "started",
+    elapsed_ms: 0,
+    started_at: startedAt
+  };
   phases.push(entry);
   try {
     const result = await task();
@@ -85375,13 +85571,60 @@ async function timeContextPhase(phase, phases, task) {
     entry.elapsed_ms = Date.now() - startedAt;
   }
 }
-function serializeContextLookupPhases(phases) {
-  const now3 = Date.now();
-  return phases.map(({ phase, status, elapsed_ms, started_at, detail }) => ({ phase, status, elapsed_ms: status === "started" ? now3 - started_at : elapsed_ms, ...detail ? { detail } : {} }));
+async function timeRequiredDbUserPhase(phase, phases, task) {
+  return withTimeout(
+    timeContextPhase(phase, phases, task),
+    USER_DB_LOOKUP_TIMEOUT_MS,
+    `tRPC context ${phase}`
+  );
 }
-function logSlowContextUserLookup(phases, total_ms) {
+async function timeOptionalDbUserPhase(phase, phases, task) {
+  try {
+    return await timeRequiredDbUserPhase(phase, phases, task);
+  } catch (error) {
+    console.warn("[CONTEXT] User DB lookup phase settled as null after error", {
+      phase,
+      timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
+      error: errorDetail(error)
+    });
+    return null;
+  }
+}
+function serializeContextLookupPhases(phases) {
+  const now4 = Date.now();
+  return phases.map(({ phase, status, elapsed_ms, started_at, detail }) => ({
+    phase,
+    status,
+    elapsed_ms: status === "started" ? now4 - started_at : elapsed_ms,
+    ...detail ? { detail } : {}
+  }));
+}
+function logContextUserLookupError(error) {
+  const now4 = Date.now();
+  const detail = errorDetail(error);
+  if (now4 - lastContextUserLookupErrorLogAt >= CONTEXT_ERROR_LOG_THROTTLE_MS) {
+    const suppressedSuffix = suppressedContextUserLookupErrors > 0 ? ` (${suppressedContextUserLookupErrors} similar user lookup errors suppressed in the last ${CONTEXT_ERROR_LOG_THROTTLE_MS / 1e3}s)` : "";
+    console.error(
+      `[CONTEXT] Error during user lookup:${suppressedSuffix}`,
+      detail
+    );
+    lastContextUserLookupErrorLogAt = now4;
+    suppressedContextUserLookupErrors = 0;
+    return;
+  }
+  suppressedContextUserLookupErrors += 1;
+}
+function logSlowContextUserLookup(phases, total_ms, user_found) {
   if (!phases.length || total_ms < CONTEXT_SLOW_USER_LOOKUP_LOG_MS) return;
-  console.warn("[CONTEXT] Slow context auth lookup", { total_ms, supabase_auth_fetch_timeout_ms: CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS, slow_log_threshold_ms: CONTEXT_SLOW_USER_LOOKUP_LOG_MS, phases: serializeContextLookupPhases(phases) });
+  console.warn("[CONTEXT] Slow user lookup", {
+    total_ms,
+    timeout_ms: USER_LOOKUP_TIMEOUT_MS,
+    db_phase_timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
+    supabase_auth_fetch_timeout_ms: CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS,
+    slow_log_threshold_ms: CONTEXT_SLOW_USER_LOOKUP_LOG_MS,
+    user_found,
+    phases: serializeContextLookupPhases(phases)
+  });
 }
 function getSupabaseConfig() {
   const url = process.env.LIGHTHOUSE_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -85394,8 +85637,19 @@ function isLighthouseInspectionMode(req) {
   return process.env.LIGHTHOUSE_INSPECTION_MODE === "true" || process.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true" || headerFlag === "true" || headerFlag === "1";
 }
 function createInspectionUser() {
-  const now3 = Date.now();
-  return { id: 0, open_id: "inspection_user", name: "Inspection User", email: "inspection@lighthouse.local", login_method: "temporary_lighthouse_inspection_mode", role: "admin", plan: "enterprise", created_at: now3, updated_at: now3, last_signed_in: now3 };
+  const now4 = Date.now();
+  return {
+    id: 0,
+    open_id: "inspection_user",
+    name: "Inspection User",
+    email: "inspection@lighthouse.local",
+    login_method: "temporary_lighthouse_inspection_mode",
+    role: "admin",
+    plan: "enterprise",
+    created_at: now4,
+    updated_at: now4,
+    last_signed_in: now4
+  };
 }
 function readHeader(req, name) {
   const value = req?.headers?.[name.toLowerCase()];
@@ -85412,15 +85666,24 @@ function getForwardedSupabaseSession(req) {
 async function fetchSupabaseAuthUser(sessionValue, signal) {
   const config = getSupabaseConfig();
   if (!config) {
-    console.warn("[CONTEXT] Supabase auth REST unavailable; missing URL or key env vars");
+    console.warn(
+      "[CONTEXT] Supabase auth REST unavailable; missing URL or key env vars"
+    );
     return null;
   }
   const headers = new Headers();
   headers.set("apikey", config.key);
-  headers.set("Authorization", `Bearer ${sessionValue}`);
-  const response = await fetch(`${config.url}/auth/v1/user`, { headers, signal });
+  headers.set("Authorization", "Bearer " + sessionValue);
+  const response = await fetch(`${config.url}/auth/v1/user`, {
+    headers,
+    signal
+  });
   if (!response.ok) {
-    console.warn("[CONTEXT] Supabase session rejected", response.status, response.statusText);
+    console.warn(
+      "[CONTEXT] Supabase session rejected",
+      response.status,
+      response.statusText
+    );
     return null;
   }
   return await response.json();
@@ -85429,28 +85692,163 @@ async function resolveSupabaseAuthUser(req, phases) {
   const sessionValue = getForwardedSupabaseSession(req);
   if (!sessionValue) return null;
   try {
-    const authUser = await withAbortableTimeout((signal) => timeContextPhase("supabase_auth_user_fetch", phases, () => fetchSupabaseAuthUser(sessionValue, signal)), CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS, "tRPC context supabase auth user fetch");
+    const authUser = await withAbortableTimeout(
+      (signal) => timeContextPhase(
+        "supabase_auth_user_fetch",
+        phases,
+        () => fetchSupabaseAuthUser(sessionValue, signal)
+      ),
+      CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS,
+      "tRPC context supabase auth user fetch"
+    );
     if (authUser) {
-      logContextAuthEvent("supabase_auth_fetch_succeeded", { supabase_user_id: authUser.id ?? null, supabase_email: authUser.email?.trim().toLowerCase() ?? null, profile_resolution_status: "not_attempted" });
+      logContextAuthEvent("supabase_auth_fetch_succeeded", {
+        supabase_user_id: authUser.id ?? null,
+        supabase_email: authUser.email?.trim().toLowerCase() ?? null
+      });
     }
     return authUser;
   } catch (error) {
-    logContextAuthEvent("supabase_auth_fetch_failed", { timeout_ms: CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS, error: errorDetail(error) });
+    logContextAuthEvent("supabase_auth_fetch_failed", {
+      timeout_ms: CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS,
+      error: errorDetail(error)
+    });
     return null;
   }
 }
-async function resolveUserFromLegacySessionWithoutDb(session) {
-  if (!session?.user && !session?.openId) return { user: null, auth: null };
-  return {
-    user: null,
-    auth: {
-      auth_status: "authenticated_profile_unresolved",
-      supabase_user_id: session?.openId ? String(session.openId) : null,
-      supabase_email: session?.user?.email ? String(session.user.email).trim().toLowerCase() : null,
-      profile_resolution_status: "not_attempted",
-      profile_resolution_error: null
-    }
-  };
+async function resolveProfileFromSupabaseAuthUser(authUser, phases, req) {
+  const authEmail = authUser.email?.trim().toLowerCase() || null;
+  const authOpenId = authUser.id?.trim() || null;
+  let first_error = null;
+  let timed_out = false;
+  if (authOpenId) {
+    return resolveProfileOncePerRequest(
+      req,
+      profileLookupCacheKey("open_id", authOpenId),
+      async () => {
+        try {
+          const user = await timeRequiredDbUserPhase(
+            "supabase_open_id_lookup",
+            phases,
+            () => get_user_by_open_id_snake(authOpenId)
+          );
+          if (user) {
+            logContextAuthEvent("profile_lookup_succeeded", {
+              lookup_key: "open_id",
+              supabase_user_id: authOpenId
+            });
+            return { user, status: "resolved", error: null };
+          }
+          logContextAuthEvent("profile_lookup_missed", {
+            lookup_key: "open_id",
+            supabase_user_id: authOpenId
+          });
+        } catch (error) {
+          first_error = errorDetail(error);
+          timed_out = isTimeoutError(error);
+          logContextAuthEvent(
+            timed_out ? "profile_lookup_timed_out" : "profile_lookup_threw",
+            {
+              lookup_key: "open_id",
+              supabase_user_id: authOpenId,
+              timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
+              error: first_error,
+              diagnostic_code: profile_lookup_error_code(error)
+            }
+          );
+          logContextAuthEvent("profile_lookup_fallback_activated", {
+            lookup_key: "open_id",
+            supabase_user_id: authOpenId,
+            fallback_activation: true,
+            profile_state: "unavailable"
+          });
+          return {
+            user: null,
+            status: timed_out ? "timed_out" : "threw",
+            error: first_error
+          };
+        }
+        return { user: null, status: "missed", error: null };
+      }
+    );
+  }
+  if (authEmail) {
+    return resolveProfileOncePerRequest(
+      req,
+      profileLookupCacheKey("email", authEmail),
+      async () => {
+        try {
+          const user = await timeRequiredDbUserPhase(
+            "supabase_email_lookup",
+            phases,
+            () => get_user_by_email_snake(authEmail)
+          );
+          if (user) {
+            logContextAuthEvent("profile_lookup_succeeded", {
+              lookup_key: "email",
+              supabase_email: authEmail
+            });
+            return { user, status: "resolved", error: null };
+          }
+          logContextAuthEvent("profile_lookup_missed", {
+            lookup_key: "email",
+            supabase_email: authEmail
+          });
+        } catch (error) {
+          const detail = errorDetail(error);
+          timed_out = timed_out || isTimeoutError(error);
+          logContextAuthEvent(
+            isTimeoutError(error) ? "profile_lookup_timed_out" : "profile_lookup_threw",
+            {
+              lookup_key: "email",
+              supabase_email: authEmail,
+              timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
+              error: detail,
+              diagnostic_code: profile_lookup_error_code(error)
+            }
+          );
+          logContextAuthEvent("profile_lookup_fallback_activated", {
+            lookup_key: "email",
+            supabase_email: authEmail,
+            fallback_activation: true,
+            profile_state: "unavailable"
+          });
+          return {
+            user: null,
+            status: isTimeoutError(error) ? "timed_out" : "threw",
+            error: detail
+          };
+        }
+        return { user: null, status: "missed", error: null };
+      }
+    );
+  }
+  if (first_error) {
+    return {
+      user: null,
+      status: timed_out ? "timed_out" : "threw",
+      error: first_error
+    };
+  }
+  return { user: null, status: "missed", error: null };
+}
+async function resolveUserFromLegacySession(session, phases) {
+  let dbUser = null;
+  if (session?.openId) {
+    dbUser = await timeOptionalDbUserPhase(
+      "session_open_id_lookup",
+      phases,
+      () => get_user_by_open_id_snake(String(session.openId))
+    );
+  }
+  if (!dbUser && session?.user?.email) {
+    dbUser = await timeOptionalDbUserPhase(
+      "session_email_lookup",
+      phases,
+      () => get_user_by_email_snake(String(session.user.email))
+    );
+  }
+  return dbUser;
 }
 async function createContext(opts) {
   let user = null;
@@ -85459,24 +85857,82 @@ async function createContext(opts) {
   const started = Date.now();
   const isInspectionMode = isLighthouseInspectionMode(opts.req);
   if (isInspectionMode) {
-    return { req: opts.req, res: opts.res, user: createInspectionUser(), auth: createInspectionAuth(), isSystem: false, isInspectionMode: true };
+    return {
+      req: opts.req,
+      res: opts.res,
+      user: createInspectionUser(),
+      auth: createInspectionAuth(),
+      isSystem: false,
+      isInspectionMode: true
+    };
   }
+  const session = opts.req.session;
   try {
     const authUser = await resolveSupabaseAuthUser(opts.req, phases);
     if (authUser) {
-      auth = createAuthenticatedUnresolvedAuth(authUser);
+      const supabase_user_id = authUser.id?.trim() || null;
+      const supabase_email = authUser.email?.trim().toLowerCase() || null;
+      const profileResult = await withTimeout(
+        resolveProfileFromSupabaseAuthUser(authUser, phases, opts.req),
+        USER_LOOKUP_TIMEOUT_MS,
+        "tRPC context supabase profile resolution"
+      ).catch((error) => {
+        const detail = errorDetail(error);
+        logContextAuthEvent(
+          isTimeoutError(error) ? "profile_lookup_timed_out" : "profile_lookup_threw",
+          {
+            lookup_key: "supabase_profile_resolution",
+            supabase_user_id,
+            supabase_email,
+            timeout_ms: USER_LOOKUP_TIMEOUT_MS,
+            error: detail,
+            diagnostic_code: profile_lookup_error_code(error)
+          }
+        );
+        return {
+          user: null,
+          status: isTimeoutError(error) ? "timed_out" : "threw",
+          error: detail
+        };
+      });
+      user = profileResult.user;
+      auth = {
+        auth_status: user ? "authenticated_profile_resolved" : "authenticated_profile_unresolved",
+        supabase_user_id,
+        supabase_email,
+        profile_resolution_status: profileResult.status,
+        profile_resolution_error: profileResult.error
+      };
     } else {
-      const legacy = await resolveUserFromLegacySessionWithoutDb(opts.req.session);
-      if (legacy.auth) auth = legacy.auth;
-      user = legacy.user;
+      user = await withTimeout(
+        resolveUserFromLegacySession(session, phases),
+        USER_LOOKUP_TIMEOUT_MS,
+        "tRPC context legacy user lookup"
+      );
+      if (user) {
+        auth = {
+          auth_status: "authenticated_profile_resolved",
+          supabase_user_id: user.open_id,
+          supabase_email: user.email?.trim().toLowerCase() || null,
+          profile_resolution_status: "resolved",
+          profile_resolution_error: null
+        };
+      }
     }
   } catch (error) {
-    logContextAuthEvent("context_auth_resolution_failed", { error: errorDetail(error) });
+    logContextUserLookupError(error);
     user = null;
   } finally {
-    logSlowContextUserLookup(phases, Date.now() - started);
+    logSlowContextUserLookup(phases, Date.now() - started, Boolean(user));
   }
-  return { req: opts.req, res: opts.res, user, auth, isSystem: false, isInspectionMode: false };
+  return {
+    req: opts.req,
+    res: opts.res,
+    user,
+    auth,
+    isSystem: false,
+    isInspectionMode: false
+  };
 }
 
 // server/_core/session-middleware.ts
@@ -85770,7 +86226,7 @@ function parseCookies(cookieHeader) {
 init_db();
 import express from "express";
 import { sql as sql133 } from "drizzle-orm";
-function now() {
+function now2() {
   return (/* @__PURE__ */ new Date()).toISOString();
 }
 async function countTable2(tableName) {
@@ -86025,7 +86481,7 @@ router2.get("/health", (_req, res) => {
   res.json({
     status: "ok",
     service: "luminari-ai-inspect",
-    last_checked: now(),
+    last_checked: now2(),
     mount: "/api/ai",
     schema_version: "2026-06-16"
   });
@@ -86058,7 +86514,7 @@ router2.get("/site-map", async (_req, res) => {
   res.json({
     platform: "Luminari / Lighthouse",
     description: "Universal civic-forensic operating system. Receives a real human problem and returns verified next action, fallback, escalation, or logged gap.",
-    last_checked: now(),
+    last_checked: now2(),
     deploy: {
       domain: "lighthouse.columbiacitycustomllc.com",
       stack: "React 19 / Express / tRPC 11 / Drizzle / Supabase (Postgres)",
@@ -86112,7 +86568,7 @@ router2.get("/site-map", async (_req, res) => {
 router2.get("/routes", (_req, res) => {
   setCache(res, "static");
   res.json({
-    last_checked: now(),
+    last_checked: now2(),
     count: ROUTE_TABLE.length,
     source: "client/src/App.tsx",
     routes: ROUTE_TABLE
@@ -86121,7 +86577,7 @@ router2.get("/routes", (_req, res) => {
 router2.get("/namespaces", (_req, res) => {
   setCache(res, "static");
   res.json({
-    last_checked: now(),
+    last_checked: now2(),
     pageCount: Object.keys(PAGE_TO_NAMESPACE).length,
     source: "all_pages_calls.tsv plus App.tsx route manifest reconciliation",
     mapping: PAGE_TO_NAMESPACE
@@ -86144,7 +86600,7 @@ router2.get("/page/mission-control", async (_req, res) => {
     component_slug: "mission_control",
     primary_namespace: PAGE_TO_NAMESPACE.mission_control,
     status: "live",
-    last_checked: now(),
+    last_checked: now2(),
     data_source: "live \u2014 cases, documents, findings, pipeline_runs, engine_runs, engine_registry, system_health_logs",
     sections: [
       { name: "Platform Counts", counts: { cases: cases_count, documents: documentsCount, findings: findingsCount } },
@@ -86170,7 +86626,7 @@ router2.get("/page/sovereign-control", async (_req, res) => {
     component_slug: "sovereign_control",
     primary_namespace: PAGE_TO_NAMESPACE.sovereign_control,
     status: "live",
-    last_checked: now(),
+    last_checked: now2(),
     data_source: "live \u2014 engine_registry, claim_validation_rules, sunam_gate_log, governance_log, constitutional_violation_log, audit_trail",
     sections: [
       { name: "Engine Registry", counts: { registered: engine_registry_count } },
@@ -86194,7 +86650,7 @@ router2.get("/page/docket", async (_req, res) => {
     component_slug: "docket_room",
     primary_namespace: PAGE_TO_NAMESPACE.docket_room,
     status: "live",
-    last_checked: now(),
+    last_checked: now2(),
     data_source: "live \u2014 cases, docket_entries, deadlines",
     sections: [
       { name: "Cases", counts: { total: cases_count } },
@@ -86217,7 +86673,7 @@ router2.get("/page/signal-registry", async (_req, res) => {
     component_slug: "signal_registry",
     primary_namespace: PAGE_TO_NAMESPACE.signal_registry,
     status: "live",
-    last_checked: now(),
+    last_checked: now2(),
     data_source: "live \u2014 signal_registry, signals, pattern_registry, signal_events",
     sections: [
       { name: "Signal Registry", counts: { total: signal_registry_count } },
@@ -86241,7 +86697,7 @@ router2.get("/page/benefits", async (_req, res) => {
     component_slug: "benefits_navigator",
     primary_namespace: PAGE_TO_NAMESPACE.benefits_navigator,
     status: "live",
-    last_checked: now(),
+    last_checked: now2(),
     data_source: "live \u2014 registry_programs, government_benefits_registry, benefit_applications, eligibility_hints",
     sections: [
       { name: "Eligibility Screener", counts: { eligibilityHints: eligibilityHintsCount } },
@@ -86264,7 +86720,7 @@ router2.get("/page/guided-intake", async (_req, res) => {
     component_slug: "guided_intake_new",
     primary_namespace: PAGE_TO_NAMESPACE.guided_intake_new,
     status: "live",
-    last_checked: now(),
+    last_checked: now2(),
     data_source: "live \u2014 intake_records, entry_runs, map_intake_sessions",
     sections: [
       { name: "Problem Framing", counts: { intakeRecords: intakeRecordsCount } },
@@ -86283,7 +86739,7 @@ router2.get("/compare/main-vs-manus", async (_req, res) => {
     route: "/compare/main-vs-manus",
     title: "Main (Render) vs Manus Reference",
     purpose: "Semantic comparison between the live Render deployment and the Manus reference build.",
-    last_checked: now(),
+    last_checked: now2(),
     main: {
       url: "https://lighthouse.columbiacitycustomllc.com",
       branch: "main",
@@ -86312,7 +86768,7 @@ var aiInspectRouter = router2;
 init_db();
 import express2 from "express";
 var router3 = express2.Router();
-function now2() {
+function now3() {
   return (/* @__PURE__ */ new Date()).toISOString();
 }
 function cacheStatic(res) {
@@ -86357,7 +86813,7 @@ router3.get("/health", async (_req, res) => {
     public_tables: table_count,
     runtime: "active",
     build_version: process.env.RENDER_GIT_COMMIT?.slice(0, 8) ?? "dev",
-    timestamp: now2()
+    timestamp: now3()
   });
 });
 router3.get("/routes", async (_req, res) => {
@@ -86464,7 +86920,7 @@ router3.get("/routes", async (_req, res) => {
     { method: "USE", path: "/api/healer/*", source: "healer-routes" }
   ];
   res.json({
-    timestamp: now2(),
+    timestamp: now3(),
     frontend: { total: frontend_routes.length, routes: frontend_routes },
     backend: { total: backend_mounts.length, mounts: backend_mounts }
   });
@@ -86497,7 +86953,7 @@ router3.get("/schema", async (_req, res) => {
     ORDER BY tc.table_name
   `);
   res.json({
-    timestamp: now2(),
+    timestamp: now3(),
     tables: { total: Array.isArray(tables) ? tables.length : 0, items: tables },
     views: { total: Array.isArray(views) ? views.length : 0, items: views },
     foreign_keys: { total: Array.isArray(foreign_keys) ? foreign_keys.length : 0, items: foreign_keys }
@@ -86514,7 +86970,7 @@ router3.get("/schema/:table_name_param", async (req, res) => {
   `);
   const row_count = await safeQuery(`SELECT COUNT(*)::int AS count FROM "${table_name_param}"`);
   res.json({
-    timestamp: now2(),
+    timestamp: now3(),
     table: table_name_param,
     columns,
     row_count: row_count[0]?.count ?? row_count[0]?.error ?? "unknown"
@@ -86569,7 +87025,7 @@ router3.get("/table-contracts", async (_req, res) => {
     }
   }
   res.json({
-    timestamp: now2(),
+    timestamp: now3(),
     canonical_pattern: { good: ["phone", "email", "website", "address"], bad: ["contact", "contacts", "domains", "metadata", "related_entities", "_rp"] },
     contact_tables: canonicalContactTables,
     blob_columns: blobDetection,
@@ -86596,7 +87052,7 @@ router3.get("/view-contracts", async (_req, res) => {
     };
   }) : [];
   res.json({
-    timestamp: now2(),
+    timestamp: now3(),
     views: { total: view_contracts.length, items: view_contracts },
     raw_definitions: view_definitions
   });
@@ -86625,7 +87081,7 @@ router3.get("/ui-bindings", async (_req, res) => {
     { page: "/spine-viewer", component_slug: "spine_viewer", queries: ["spine.export"], tables: ["corpus_snapshots"] }
   ];
   res.json({
-    timestamp: now2(),
+    timestamp: now3(),
     bindings: { total: bindings.length, items: bindings },
     note: "Each binding declares the expected tRPC queries and backing tables for a frontend page. If a table is empty or missing, the page renders zero data."
   });
@@ -86694,7 +87150,7 @@ router3.get("/runtime-map", async (_req, res) => {
     }
   };
   res.json({
-    timestamp: now2(),
+    timestamp: now3(),
     table_counts: Array.isArray(table_counts) ? table_counts : [],
     hydration_chain,
     known_issues: [
@@ -86766,7 +87222,7 @@ router3.get("/drift", async (_req, res) => {
     ORDER BY relname
   `);
   res.json({
-    timestamp: now2(),
+    timestamp: now3(),
     summary: {
       total_drift_issues: drift_checks.length,
       suffix_contamination: drift_checks.filter((d) => d.category === "suffix_contamination").length,
@@ -88414,7 +88870,6 @@ function dry_run_lane_for_candidate(candidate) {
 var CANDIDATE_PROMOTION_CONFIDENCE_THRESHOLD = 0.6;
 var PROMOTION_SOURCE_PREVIEW_CHAR_LIMIT = 750;
 var SAFE_PROMOTION_WRITE_TARGETS = /* @__PURE__ */ new Set(["luminari_resource_entities", "registry_programs"]);
-var RESOURCE_DIRECTORY_SOURCE_TABLE = "resource_directory_docx_import";
 function has_useful_bound_value(candidate) {
   const payload = candidate_payload_from_row(candidate);
   return ["phone", "email", "website", "url", "address", "eligibility", "application_method", "apply_notes", "benefit_summary", "agency", "service_type"].some((key2) => first_text_value(candidate[key2], payload?.[key2], payload?.fields?.[key2], payload?.extracted?.[key2]));
@@ -88427,7 +88882,7 @@ function verify_registry_candidate(candidate) {
   const candidate_type = resolved_candidate_type(candidate);
   const name = first_text_value(candidate.name, payload?.name);
   if (payload?.jurisdiction_mismatch_reason || payload?.classification_outcome === "provenance_mismatch") blocked_reasons.push("provenance_mismatch");
-  if (!candidate_is_resource_like({ ...candidate, candidate_type })) blocked_reasons.push("resource_like_candidate_type_required");
+  if (candidate_type !== "benefit_program") blocked_reasons.push("benefit_program_candidate_type_required");
   if (!name) blocked_reasons.push("name_required");
   else if (is_generic_header_text(name) || name.startsWith("review_fragment:")) blocked_reasons.push("non_generic_real_name_required");
   if (!first_text_value(candidate.source_file, payload?.source_file, payload?.source_name)) blocked_reasons.push("source_file_required");
@@ -88530,16 +88985,8 @@ function required_columns_present(columns, required_columns) {
 function promotion_feature_flag_enabled() {
   return process.env[CANONICAL_PROMOTION_FLAG] === "true";
 }
-function merge_plain_objects(...values) {
-  return Object.assign({}, ...values.filter((value) => value && typeof value === "object" && !Array.isArray(value)));
-}
 function candidate_payload_from_row(row) {
-  const forensic = row.forensic_provenance && typeof row.forensic_provenance === "object" ? row.forensic_provenance : {};
-  const promotion = row.promotion_ready && typeof row.promotion_ready === "object" ? row.promotion_ready : {};
-  const payload = row.payload && typeof row.payload === "object" ? row.payload : {};
-  const raw = row.raw_candidate_payload && typeof row.raw_candidate_payload === "object" ? row.raw_candidate_payload : {};
-  const candidate = row.candidate_payload && typeof row.candidate_payload === "object" ? row.candidate_payload : {};
-  return merge_plain_objects(forensic.field_metadata, forensic, promotion, payload, raw, candidate);
+  return row.candidate_payload ?? row.raw_candidate_payload ?? row.payload ?? row.promotion_ready ?? {};
 }
 function first_text_value(...values) {
   for (const value of values) {
@@ -88569,25 +89016,6 @@ function first_array_text(source, paths) {
 function promotion_ready_value(row, field) {
   return row.promotion_ready && typeof row.promotion_ready === "object" ? row.promotion_ready[field] ?? null : null;
 }
-function normalize_target_surface(value) {
-  return String(value ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
-}
-function parse_target_surfaces(value) {
-  if (Array.isArray(value)) return value.map(normalize_target_surface).filter(Boolean);
-  if (typeof value !== "string" || !value.trim()) return [];
-  try {
-    const parsed = JSON.parse(value);
-    if (Array.isArray(parsed)) return parsed.map(normalize_target_surface).filter(Boolean);
-  } catch {
-  }
-  return value.split(",").map(normalize_target_surface).filter(Boolean);
-}
-function candidate_targets_resource_directory(row) {
-  return parse_target_surfaces(row.target_surfaces).includes("resource_directory");
-}
-function candidate_source_table(row) {
-  return candidate_targets_resource_directory(row) ? RESOURCE_DIRECTORY_SOURCE_TABLE : "registry_entity_extraction_v4";
-}
 function resolved_candidate_type(row) {
   return first_text_value(promotion_ready_value(row, "candidate_type"), row.candidate_type) ?? "unknown";
 }
@@ -88614,20 +89042,9 @@ function truncate_preview(value, limit = PROMOTION_SOURCE_PREVIEW_CHAR_LIMIT) {
 function candidate_payload_text(row, keys) {
   const payload = candidate_payload_from_row(row);
   const extracted = payload?.extracted ?? {};
-  const forensic = row.forensic_provenance ?? {};
-  const metadata = forensic?.field_metadata ?? {};
-  return first_text_value(
-    ...keys.map((key2) => row?.[key2]),
-    ...keys.map((key2) => payload?.[key2]),
-    ...keys.map((key2) => extracted?.[key2]),
-    ...keys.map((key2) => forensic?.[key2]),
-    ...keys.map((key2) => metadata?.[key2])
-  );
+  return first_text_value(...keys.map((key2) => payload?.[key2]), ...keys.map((key2) => extracted?.[key2]));
 }
 function promotion_write_adapter_status(row) {
-  if (candidate_targets_resource_directory(row)) {
-    return { write_target_table: "luminari_resource_entities", write_adapter_status: "safe_resource_directory_backbone_adapter" };
-  }
   const intended_target_table = resolved_intended_target_table(row);
   if (intended_target_table === "registry_programs") {
     return resolved_candidate_type(row) === "benefit_program" ? { write_target_table: "registry_programs", write_adapter_status: "safe_registry_programs_benefit_program_adapter" } : { write_target_table: null, write_adapter_status: "no_safe_registry_programs_adapter_for_candidate_type" };
@@ -88721,15 +89138,10 @@ function candidate_source_queue_id(row) {
 function candidate_contact_values(row) {
   const payload = candidate_payload_from_row(row);
   const extracted = payload?.extracted ?? {};
-  const phone = candidate_payload_text(row, ["phone", "telephone"]);
-  const email = candidate_payload_text(row, ["email"]);
-  const website = candidate_payload_text(row, ["website", "site", "homepage", "url", "source_url", "link"]);
-  const normalize2 = (value) => value.trim();
-  const unique = (values) => [...new Set(values.map((value) => normalize2(String(value))).filter(Boolean))];
   return {
-    phones: unique([...Array.isArray(extracted.phones) ? extracted.phones : [], ...phone ? [phone] : []]),
-    emails: unique([...Array.isArray(extracted.emails) ? extracted.emails : [], ...email ? [email] : []]),
-    urls: unique([...Array.isArray(extracted.urls) ? extracted.urls : [], ...website ? [website] : []])
+    phones: Array.isArray(extracted.phones) ? extracted.phones.filter(Boolean) : [],
+    emails: Array.isArray(extracted.emails) ? extracted.emails.filter(Boolean) : [],
+    urls: Array.isArray(extracted.urls) ? extracted.urls.filter(Boolean) : []
   };
 }
 function canonical_dedupe_key(row) {
@@ -88781,21 +89193,19 @@ function hold_reason_for_material_scope(material_scope) {
 }
 function candidate_is_resource_like(candidate) {
   const candidate_type = String(candidate.candidate_type || "unknown").toLowerCase();
-  return ["benefit_program", "agency", "legal_aid", "court", "contact", "resource", "resource_block", "resource_context", "label_value", "contact_phone", "contact_website", "address"].includes(candidate_type);
+  return ["benefit_program", "agency", "legal_aid", "court", "contact", "resource"].includes(candidate_type);
 }
-async function existing_resource_entity(client, row, source_table_override) {
+async function existing_resource_entity(client, row) {
   const source_pk = row.content_hash ?? row.program_id ?? null;
   if (!source_pk) return null;
-  const source_table = source_table_override ?? candidate_source_table(row);
-  const canonical_id = `${source_table}:${source_pk}`;
   const result = await client.query(
     `select *
-      from public.luminari_resource_entities
-      where (source_table = $2 and source_pk = $1)
-         or canonical_id = $3
+       from public.luminari_resource_entities
+      where (source_table = 'registry_entity_extraction_v4' and source_pk = $1)
+         or canonical_id = $2
       order by resource_entity_id
       limit 1`,
-    [source_pk, source_table, canonical_id]
+    [source_pk, `registry_entity_extraction_v4:${source_pk}`]
   );
   return result.rows[0] ?? null;
 }
@@ -88957,9 +89367,8 @@ async function update_conveyor_run_row(client, input) {
   );
 }
 async function write_canonical_candidate(client, row, entity_columns, location_columns, contact_columns) {
+  const existing_row = await existing_resource_entity(client, row);
   const source_pk = row.content_hash ?? row.program_id;
-  const source_table = candidate_source_table(row);
-  const existing_row = await existing_resource_entity(client, row, source_table);
   const candidate_payload = candidate_payload_from_row(row);
   if (existing_row) {
     const updates = blank_update_fields(existing_row, row, entity_columns);
@@ -88972,9 +89381,9 @@ async function write_canonical_candidate(client, row, entity_columns, location_c
     return { action_type: "would_update_blank_fields", canonical_record_id: String(existing_row.resource_entity_id ?? existing_row.canonical_id ?? source_pk), bridge_record_id: null };
   }
   const insertable = {
-    canonical_id: `${source_table}:${source_pk}`,
+    canonical_id: `registry_entity_extraction_v4:${source_pk}`,
     source_family_key: "state_enriched_registry_docx_review",
-    source_table,
+    source_table: "registry_entity_extraction_v4",
     source_pk,
     source_hash: row.content_hash,
     resource_name: row.name,
@@ -88983,10 +89392,10 @@ async function write_canonical_candidate(client, row, entity_columns, location_c
     layer: "registry_resource",
     jurisdiction: row.jurisdiction,
     jurisdiction_scope: "state",
-    description: text_or_null(candidate_payload.description) ?? text_or_null(candidate_payload.purpose) ?? text_or_null(candidate_payload.normalized_excerpt) ?? text_or_null(candidate_payload.source_excerpt) ?? text_or_null(row.normalized_excerpt),
-    eligibility_summary: text_or_null(candidate_payload.eligibility_summary) ?? text_or_null(candidate_payload.eligibility),
+    description: text_or_null(candidate_payload.normalized_excerpt) ?? text_or_null(row.normalized_excerpt),
+    eligibility_summary: text_or_null(candidate_payload.eligibility_summary),
     domains: [],
-    metadata: { source: source_table, candidate_payload, forensic_provenance: row.forensic_provenance ?? {}, content_hash: row.content_hash, dedupe_behavior: "enrich_blank_fields_only" },
+    metadata: { source: "registry_entity_extraction_v4", candidate_payload, forensic_provenance: row.forensic_provenance ?? {}, content_hash: row.content_hash, dedupe_behavior: "enrich_blank_fields_only" },
     verification_status: "source_attached",
     promotion_status: "review_ready",
     provenance_status: "candidate_provenance_attached"
@@ -88995,28 +89404,14 @@ async function write_canonical_candidate(client, row, entity_columns, location_c
   const placeholders = names.map((name, index3) => Array.isArray(insertable[name]) || typeof insertable[name] === "object" && insertable[name] !== null ? `$${index3 + 1}::jsonb` : `$${index3 + 1}`);
   const inserted = await client.query(`insert into public.luminari_resource_entities (${names.join(", ")}) values (${placeholders.join(", ")}) returning resource_entity_id, canonical_id`, names.map((name) => Array.isArray(insertable[name]) || typeof insertable[name] === "object" && insertable[name] !== null ? JSON.stringify(insertable[name]) : insertable[name]));
   const canonical_record_id = String(inserted.rows[0]?.resource_entity_id ?? inserted.rows[0]?.canonical_id ?? source_pk);
-  const address = candidate_payload_text(row, ["address", "mailing_address", "physical_address"]);
-  const city = candidate_payload_text(row, ["city"]);
-  const state = candidate_payload_text(row, ["state", "addr_state"]) ?? row.jurisdiction ?? null;
-  const postal_code = candidate_payload_text(row, ["postal_code", "zip", "zip_code"]);
-  if (address && required_columns_present(location_columns, ["resource_entity_id", "address_line1", "city", "state", "postal_code", "country", "coordinate_quality", "source_table", "source_pk", "source_hash", "metadata"])) {
-    await client.query(
-      `insert into public.luminari_resource_locations
-         (resource_entity_id, address_line1, city, state, postal_code, country, coordinate_quality, source_table, source_pk, source_hash, metadata)
-       select $1,$2,$3,$4,$5,'US','ungeocoded',$6,$7,$8,$9::jsonb
-       where not exists (
-         select 1 from public.luminari_resource_locations l where l.source_table = $6 and l.source_pk = $7
-       )`,
-      [inserted.rows[0]?.resource_entity_id, address, city, state, postal_code, source_table, source_pk, row.content_hash, JSON.stringify({ source: source_table, content_hash: row.content_hash })]
-    );
-  }
   const contacts = candidate_contact_values(row);
   const contact_values = [...contacts.phones.map((value) => ["phone", value]), ...contacts.emails.map((value) => ["email", value]), ...contacts.urls.map((value) => ["url", value])];
   if (contact_values.length && required_columns_present(contact_columns, ["resource_entity_id", "canonical_id", "contact_type", "contact_value", "label", "is_primary", "contact_quality", "source_table", "source_pk", "source_hash", "metadata"])) {
     for (const [contact_type, contact_value] of contact_values.slice(0, 10)) {
-      await client.query(`insert into public.luminari_resource_contact_points (resource_entity_id, canonical_id, contact_type, contact_value, label, is_primary, contact_quality, source_table, source_pk, source_hash, metadata) values ($1,$2,$3,$4,$3,false,'candidate_extracted',$5,$6,$7,$8::jsonb) on conflict do nothing`, [inserted.rows[0]?.resource_entity_id, inserted.rows[0]?.canonical_id, contact_type, contact_value, source_table, source_pk, row.content_hash, JSON.stringify({ source: source_table, content_hash: row.content_hash })]);
+      await client.query(`insert into public.luminari_resource_contact_points (resource_entity_id, canonical_id, contact_type, contact_value, label, is_primary, contact_quality, source_table, source_pk, source_hash, metadata) values ($1,$2,$3,$4,$3,false,'candidate_extracted','registry_entity_extraction_v4',$5,$6,$7::jsonb) on conflict do nothing`, [inserted.rows[0]?.resource_entity_id, inserted.rows[0]?.canonical_id, contact_type, contact_value, source_pk, row.content_hash, JSON.stringify({ source: "registry_entity_extraction_v4", content_hash: row.content_hash })]);
     }
   }
+  void location_columns;
   return { action_type: "would_insert", canonical_record_id, bridge_record_id: null };
 }
 async function promote_registry_entity_candidates_apply(input = {}) {
@@ -89072,7 +89467,7 @@ async function promote_registry_entity_candidates_apply(input = {}) {
                 ${source_queue_sql} as resolved_source_queue_id
            from public.registry_entity_extraction_v4 c
        )
-       select candidates.*, q.id as source_queue_id, q.source_name as queue_source_name, q.storage_path as queue_storage_path, q.target_hint, q.target_surfaces
+       select candidates.*, q.id as source_queue_id, q.source_name as queue_source_name, q.storage_path as queue_storage_path, q.target_hint
          from candidates
          join public.corpus_import_queue q on q.id = candidates.resolved_source_queue_id
         where q.target_hint = $1
@@ -89243,24 +89638,24 @@ function compactNumberRecord(value) {
   return entries.length ? Object.fromEntries(entries) : void 0;
 }
 function createRuntimeEnvelope(options) {
-  const diagnostics = {
-    errors: options.errors ?? [],
-    warnings: options.warnings ?? [],
-    ...options.backend === void 0 ? {} : { backend: options.backend }
-  };
-  const blockers = options.blockers ?? diagnostics.errors.map((error) => error.code).filter(Boolean);
+  const errors = options.errors ?? [];
+  const blockers = options.blockers ?? errors.map((error) => error.code).filter(Boolean);
   return {
-    success: diagnostics.errors.length === 0,
+    success: errors.length === 0,
     source: options.source,
     ...options.action ? { action: options.action } : {},
     data: options.data ?? null,
     state: {
-      availability: options.availability ?? (diagnostics.errors.length ? "unavailable" : "available"),
+      availability: options.availability ?? (errors.length ? "unavailable" : "available"),
       ...options.dry_run === void 0 ? {} : { dry_run: options.dry_run },
       ...options.can_apply === void 0 ? {} : { can_apply: options.can_apply },
       blockers
     },
-    diagnostics,
+    diagnostics: {
+      errors,
+      warnings: options.warnings ?? [],
+      ...options.backend === void 0 ? {} : { backend: options.backend }
+    },
     ...options.counts ? { counts: options.counts } : {},
     ...options.flags ? { flags: options.flags } : {},
     ...options.meta ? { meta: options.meta } : {}
