@@ -7,6 +7,10 @@ import {
   type legiscan_bill_detail,
   type legiscan_master_bill,
 } from "../services/legiscan";
+import {
+  project_docket_cache_to_civic_genome,
+  type civic_genome_projection_result,
+} from "../civic-genome-projection";
 
 const cache_ttl_ms = 8 * 60 * 60 * 1000;
 const bill_detail_cache_ttl_ms = 24 * 60 * 60 * 1000;
@@ -34,12 +38,43 @@ type docket_bill_detail_cache_row = {
   source: string;
 };
 
+type civic_genome_projection_status =
+  | {
+      ok: true;
+      projected: true;
+      source: civic_genome_projection_result["source"];
+      states_scanned: number;
+      bills_seen: number;
+      inserted_count: number;
+      updated_count: number;
+      unchanged_count: number;
+      event_count: number;
+      family_count: number;
+    }
+  | {
+      ok: false;
+      projected: false;
+      error: string;
+    }
+  | {
+      ok: true;
+      projected: false;
+      reason: "cache_fresh_no_projection";
+    };
+
+type docket_state_refresh_result = {
+  source: string;
+  row: docket_state_cache_row;
+  civic_genome_projection: civic_genome_projection_status;
+};
+
 type docket_warm_state_result = {
   state: string;
   ok: boolean;
   bill_count: number;
   source: string;
   fetched_at: string | null;
+  civic_genome_projection?: civic_genome_projection_status;
   error?: string;
 };
 
@@ -265,13 +300,46 @@ const format_cache_status = (state: string, cached: docket_state_cache_row | nul
   is_fresh: cached ? is_fresh(cached.fetched_at) : false,
 });
 
-const refresh_state_cache = async (state: string) => {
+const summarize_civic_genome_projection = (
+  projection: civic_genome_projection_result,
+): civic_genome_projection_status => ({
+  ok: true,
+  projected: true,
+  source: projection.source,
+  states_scanned: projection.states_scanned,
+  bills_seen: projection.bills_seen,
+  inserted_count: projection.inserted_count,
+  updated_count: projection.updated_count,
+  unchanged_count: projection.unchanged_count,
+  event_count: projection.event_count,
+  family_count: projection.family_count,
+});
+
+const project_refreshed_state_to_civic_genome = async (state: string): Promise<civic_genome_projection_status> => {
+  try {
+    const projection = await project_docket_cache_to_civic_genome({ state_code: state });
+    return summarize_civic_genome_projection(projection);
+  } catch (error) {
+    return {
+      ok: false,
+      projected: false,
+      error: serialize_error(error),
+    };
+  }
+};
+
+const refresh_state_cache = async (state: string): Promise<docket_state_refresh_result> => {
   const cached = await read_state_cache(state);
 
   if (cached && is_fresh(cached.fetched_at)) {
     return {
       source: "cache",
       row: cached,
+      civic_genome_projection: {
+        ok: true,
+        projected: false,
+        reason: "cache_fresh_no_projection",
+      },
     };
   }
 
@@ -293,10 +361,12 @@ const refresh_state_cache = async (state: string) => {
   };
 
   await upsert_state_cache(row);
+  const civic_genome_projection = await project_refreshed_state_to_civic_genome(state);
 
   return {
     source: cached ? "legiscan_refresh_stale_cache" : "legiscan_refresh_empty_cache",
     row,
+    civic_genome_projection,
   };
 };
 
@@ -346,6 +416,7 @@ docket_router.post("/warm-state", async (req, res) => {
       session_id: refreshed.row.session_id,
       session_title: refreshed.row.session_title,
       fetched_at: refreshed.row.fetched_at,
+      civic_genome_projection: refreshed.civic_genome_projection,
     });
   } catch (error) {
     return res.status(500).json({
@@ -378,6 +449,7 @@ docket_router.post("/warm-next-batch", async (req, res) => {
           bill_count: refreshed.row.bill_count,
           source: refreshed.source,
           fetched_at: refreshed.row.fetched_at,
+          civic_genome_projection: refreshed.civic_genome_projection,
         });
       } catch (error) {
         results.push({
@@ -422,6 +494,7 @@ docket_router.get("/state", async (req, res) => {
       session_title: refreshed.row.session_title,
       bill_count: refreshed.row.bill_count,
       fetched_at: refreshed.row.fetched_at,
+      civic_genome_projection: refreshed.civic_genome_projection,
       bills: refreshed.row.bills,
     });
   } catch (error) {
