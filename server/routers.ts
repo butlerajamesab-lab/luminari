@@ -4223,6 +4223,7 @@ import { lighthouseOperationsRouter } from "./routers/lighthouse/operations";
 import { docketRouter } from "./routers/docket";
 import { lumensendRouter } from "./routers/lumensend";
 import { legalLibraryRouter } from "./routers/legal-library";
+import { civicGenomeRouter } from "./routers/civic-genome-router";
 import { civilGideonRouter } from "./routers/civil-gideon";
 import { registryRouter as canonical_registry_router, issueReportsRouter } from "./routers/registry-router";
 import { ingestCanonicalRegistry } from "./registry-canonical-ingest";
@@ -4939,6 +4940,7 @@ export const appRouter = router({
   docket: docketRouter,
   lumensend: lumensendRouter,
   legalLibrary: legalLibraryRouter,
+  civicGenome: civicGenomeRouter,
   civilGideon: civilGideonRouter,
   extraction: extractionRouter,
   categories: categoryRouter,
