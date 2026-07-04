@@ -82,13 +82,56 @@ const infer_policy_domain = (bill: legiscan_master_bill): string => {
 const infer_state_position = (bill: legiscan_master_bill): string => {
   const text = `${bill.title ?? ""} ${bill.description ?? ""} ${bill.last_action ?? ""}`.toLowerCase();
 
-  if (/chapter|enacted|signed by governor|became law/.test(text)) return "enacted";
+  if (/effective date|chapter|enacted|signed by governor|became law/.test(text)) return "enacted";
   if (/failed|withdrawn|dead|vetoed|postponed indefinitely/.test(text)) return "failed";
   if (/passed house and senate|passed both/.test(text)) return "advanced_two_chambers";
   if (/passed house|passed senate/.test(text)) return "advanced_one_chamber";
   if (/committee|referred|reported/.test(text)) return "active_in_committee";
 
   return "introduced";
+};
+
+const infer_docket_event_type = (bill: legiscan_master_bill, existing: { structural_dna_hash: string } | null): string => {
+  const last_action = `${bill.last_action ?? ""}`.toLowerCase();
+  const title = `${bill.title ?? ""}`.toLowerCase();
+  const text = `${title} ${last_action}`;
+
+  if (/effective date/.test(last_action)) return "effective_date_set";
+  if (/signed by governor|governor signed|became law|chapter/.test(text)) return "enacted";
+  if (/veto/.test(text)) return "vetoed";
+  if (/failed|withdrawn|dead|postponed indefinitely/.test(text)) return "failed";
+  if (/amend|engrossed|substitute|revised/.test(text)) return "amended";
+  if (/passed house and senate|passed both/.test(text)) return "passed_two_chambers";
+  if (/passed house|passed senate/.test(text)) return "passed_chamber";
+  if (/committee|referred|reported/.test(text)) return "committee_action";
+
+  return existing ? "docket_cache_changed" : "docket_cache_observed";
+};
+
+const build_event_summary = (bill: legiscan_master_bill, event_type: string): string => {
+  const action = bill.last_action ? ` Latest action: ${bill.last_action}` : "";
+  const title = bill.title ?? bill.description ?? bill.number;
+
+  switch (event_type) {
+    case "effective_date_set":
+      return `${bill.number} has an effective date on the live docket.${action}`;
+    case "enacted":
+      return `${bill.number} appears enacted or chaptered on the live docket.${action}`;
+    case "amended":
+      return `${bill.number} appears amended, substituted, engrossed, or revised on the live docket.${action}`;
+    case "passed_two_chambers":
+      return `${bill.number} appears to have passed both chambers on the live docket.${action}`;
+    case "passed_chamber":
+      return `${bill.number} appears to have passed one chamber on the live docket.${action}`;
+    case "committee_action":
+      return `${bill.number} has committee movement on the live docket.${action}`;
+    case "failed":
+      return `${bill.number} appears failed, withdrawn, dead, or indefinitely postponed on the live docket.${action}`;
+    case "vetoed":
+      return `${bill.number} appears vetoed on the live docket.${action}`;
+    default:
+      return `${bill.number} observed in Docket Room cache: ${title}.${action}`;
+  }
 };
 
 const build_family_key = (bill: legiscan_master_bill): string => {
@@ -318,7 +361,7 @@ const project_bill = async (state_row: docket_state_cache_row, bill: legiscan_ma
   );
 
   const genome_bill_id = rows[0].genome_bill_id;
-  const event_type = existing ? "docket_cache_changed" : "docket_cache_observed";
+  const event_type = infer_docket_event_type(bill, existing);
 
   if (should_append_event) {
     await pool.query(
@@ -357,10 +400,15 @@ const project_bill = async (state_row: docket_state_cache_row, bill: legiscan_ma
           },
         ]),
         JSON.stringify({
+          event_summary: build_event_summary(bill, event_type),
           prior_state_position: existing?.current_state_position ?? null,
           next_state_position: current_state_position,
           structural_dna_hash,
           source_change_hash: bill.change_hash ?? null,
+          source_status: bill.status ?? null,
+          source_status_date: bill.status_date ?? null,
+          source_last_action: bill.last_action ?? null,
+          source_last_action_date: bill.last_action_date ?? null,
         }),
       ],
     );
