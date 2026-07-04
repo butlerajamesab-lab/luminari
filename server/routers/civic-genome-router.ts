@@ -4,11 +4,12 @@
  * Lighthouse read-only surface for the living civic genome substrate.
  * Exposes families, bills, events, lineage edges, and momentum snapshots.
  *
- * Principle: Observe. Do not assert. Do not write.
- * Writes originate from Atlas/Rosetta ingestion pipelines only.
+ * Principle: Observe. Do not assert. Read procedures stay read-only.
+ * The projection command is admin-only and projects from Docket Room cache;
+ * it never calls LegiScan directly.
  */
 import { z } from "zod";
-import { router, publicProcedure } from "../_core/trpc";
+import { router, publicProcedure, adminProcedure } from "../_core/trpc";
 import {
   list_genome_families,
   get_genome_family,
@@ -19,6 +20,7 @@ import {
   list_momentum_snapshots,
   get_genome_stats,
 } from "../civic-genome-db";
+import { project_docket_cache_to_civic_genome } from "../civic-genome-projection";
 
 const uuid_param = z.string().uuid();
 
@@ -27,6 +29,18 @@ export const civicGenomeRouter = router({
   stats: publicProcedure.query(async () => {
     return get_genome_stats();
   }),
+
+  // ─── Projection ─────────────────────────────────────────────────────────
+  project_from_docket_cache: adminProcedure
+    .input(
+      z.object({
+        state_code: z.string().max(10).optional(),
+        limit: z.number().min(1).max(500).optional(),
+      }).optional()
+    )
+    .mutation(async ({ input }) => {
+      return project_docket_cache_to_civic_genome(input ?? {});
+    }),
 
   // ─── Families ───────────────────────────────────────────────────────────
   list_families: publicProcedure
