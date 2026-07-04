@@ -11,6 +11,7 @@ import { systemVisibilityRouter } from "../routes/system-visibility-router";
 import { conveyorRouter } from "../routes/conveyor-router";
 import { civicMapRouter } from "../routes/civic-map-router";
 import { atlasProxyRouter } from "../routes/atlas-proxy-router";
+import { ingestion_control_read_cache_router } from "../routes/ingestion_control_read_cache_router";
 import { ingestion_control_rest_router } from "../routes/ingestion_control_router";
 import { docket_router } from "../routes/docket";
 import { registerExecutorRoutes } from "../executor-routes";
@@ -18,8 +19,6 @@ import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";
 import { serveStatic, setupVite } from "./vite";
 import { livenessPayload, sendDatabaseDiagnostic, SUPABASE_PROJECT } from "./health-diagnostics";
-
-
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -128,7 +127,9 @@ async function startServer() {
   app.use("/api/civic-map", civicMapRouter);
   // Atlas API proxy — same-origin bridge to the Atlas service
   app.use("/api/atlas", atlasProxyRouter);
-  // Ingestion Control API — server-side queue visibility, before static fallback
+  // Ingestion Control hot reads — short TTL + in-flight dedupe before full REST router
+  app.use("/api/ingestion-control", ingestion_control_read_cache_router);
+  // Ingestion Control API — server-side queue visibility/actions, before static fallback
   app.use("/api/ingestion-control", ingestion_control_rest_router);
   // Docket Room API — LegiScan-backed state bill cache
   app.use("/api/docket", docket_router);
