@@ -1,5 +1,6 @@
 import { createHash } from "crypto";
 import { getPool } from "./db";
+import { classify_docket_event } from "./civic-genome-event-classifier";
 import type { legiscan_master_bill } from "./services/legiscan";
 
 type docket_state_cache_row = {
@@ -318,7 +319,8 @@ const project_bill = async (state_row: docket_state_cache_row, bill: legiscan_ma
   );
 
   const genome_bill_id = rows[0].genome_bill_id;
-  const event_type = existing ? "docket_cache_changed" : "docket_cache_observed";
+  const classification = classify_docket_event(bill, existing);
+  const event_type = classification.event_type;
 
   if (should_append_event) {
     await pool.query(
@@ -357,6 +359,7 @@ const project_bill = async (state_row: docket_state_cache_row, bill: legiscan_ma
           },
         ]),
         JSON.stringify({
+          event_summary: classification.event_summary,
           prior_state_position: existing?.current_state_position ?? null,
           next_state_position: current_state_position,
           structural_dna_hash,
