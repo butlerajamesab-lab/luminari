@@ -17,6 +17,7 @@ type projected_bill_result = {
   state_code: string;
   source_bill_id: number;
   source_bill_number: string;
+  source_offset: number;
   bill_id: string;
   family_id: string;
   genome_bill_id: string;
@@ -28,6 +29,12 @@ export type civic_genome_projection_result = {
   ok: true;
   source: "docket_room_cache";
   states_scanned: number;
+  total_candidate_count: number;
+  batch_offset: number;
+  batch_size: number | null;
+  next_offset: number | null;
+  remaining_count: number;
+  has_more: boolean;
   bills_seen: number;
   inserted_count: number;
   updated_count: number;
@@ -63,6 +70,30 @@ const normalize_state_code = (value: string): string => value.trim().toUpperCase
 
 const normalize_bill_text = (bill: legiscan_master_bill): string =>
   bill.title ?? bill.description ?? bill.number ?? `bill_${bill.bill_id}`;
+
+const normalize_projection_offset = (offset: number | undefined): number => {
+  if (offset === undefined) {
+    return 0;
+  }
+
+  if (!Number.isSafeInteger(offset) || offset < 0) {
+    throw new Error("invalid_civic_genome_projection_offset");
+  }
+
+  return offset;
+};
+
+const normalize_projection_batch_size = (batch_size: number | undefined): number | null => {
+  if (batch_size === undefined) {
+    return null;
+  }
+
+  if (!Number.isSafeInteger(batch_size) || batch_size <= 0) {
+    throw new Error("invalid_civic_genome_projection_batch_size");
+  }
+
+  return batch_size;
+};
 
 const infer_policy_domain = (bill: legiscan_master_bill): string => {
   const text = `${bill.title ?? ""} ${bill.description ?? ""}`.toLowerCase();
@@ -220,7 +251,11 @@ const refresh_family_rollups = async (family_id: string): Promise<void> => {
   );
 };
 
-const project_bill = async (state_row: docket_state_cache_row, bill: legiscan_master_bill): Promise<projected_bill_result> => {
+const project_bill = async (
+  state_row: docket_state_cache_row,
+  bill: legiscan_master_bill,
+  source_offset: number,
+): Promise<projected_bill_result> => {
   const pool = getPool();
   const state_code = normalize_state_code(state_row.state);
   const source_bill_number = bill.number;
@@ -375,6 +410,7 @@ const project_bill = async (state_row: docket_state_cache_row, bill: legiscan_ma
     state_code,
     source_bill_id: bill.bill_id,
     source_bill_number,
+    source_offset,
     bill_id,
     family_id,
     genome_bill_id,
@@ -385,11 +421,16 @@ const project_bill = async (state_row: docket_state_cache_row, bill: legiscan_ma
 
 export async function project_docket_cache_to_civic_genome(opts?: {
   state_code?: string;
+  offset?: number;
+  batch_size?: number;
   limit?: number;
 }): Promise<civic_genome_projection_result> {
   const pool = getPool();
   const params: unknown[] = [];
   const conditions: string[] = [];
+  const batch_offset = normalize_projection_offset(opts?.offset);
+  const batch_size = normalize_projection_batch_size(opts?.batch_size ?? opts?.limit);
+  const batch_end = batch_size === null ? null : batch_offset + batch_size;
 
   if (opts?.state_code) {
     params.push(normalize_state_code(opts.state_code));
@@ -405,28 +446,47 @@ export async function project_docket_cache_to_civic_genome(opts?: {
     params,
   );
   const results: projected_bill_result[] = [];
+  let total_candidate_count = 0;
   let bills_seen = 0;
 
   for (const state_row of rows) {
     const bills = Array.isArray(state_row.bills) ? state_row.bills : [];
-    const limited_bills = typeof opts?.limit === "number" ? bills.slice(0, opts.limit) : bills;
 
-    for (const bill of limited_bills) {
+    for (const bill of bills) {
       if (!bill?.bill_id || !bill?.number) {
         continue;
       }
 
+      const source_offset = total_candidate_count;
+      total_candidate_count += 1;
+
+      if (source_offset < batch_offset) {
+        continue;
+      }
+
+      if (batch_end !== null && source_offset >= batch_end) {
+        continue;
+      }
+
       bills_seen += 1;
-      results.push(await project_bill(state_row, bill));
+      results.push(await project_bill(state_row, bill, source_offset));
     }
   }
 
+  const next_offset = batch_end !== null && batch_end < total_candidate_count ? batch_end : null;
+  const remaining_count = next_offset === null ? 0 : total_candidate_count - next_offset;
   const family_ids = new Set(results.map(result => result.family_id));
 
   return {
     ok: true,
     source: "docket_room_cache",
     states_scanned: rows.length,
+    total_candidate_count,
+    batch_offset,
+    batch_size,
+    next_offset,
+    remaining_count,
+    has_more: next_offset !== null,
     bills_seen,
     inserted_count: results.filter(result => result.action === "inserted").length,
     updated_count: results.filter(result => result.action === "updated").length,
