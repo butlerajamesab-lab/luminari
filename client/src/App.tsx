@@ -61,6 +61,9 @@ import ImportBundle from "./pages/ImportBundle";
 import MyApplications from "./pages/MyApplications";
 import DiscoverBenefits from "./pages/DiscoverBenefits";
 import MissionControl from "./pages/MissionControl";
+import MissionControlShell from "./pages/MissionControlShell";
+import MissionControlLive from "./pages/MissionControlLive";
+import MissionControlIntake from "./pages/MissionControlIntake";
 import Lighthouse from "./pages/Lighthouse";
 import CivicMap from "./pages/CivicMap";
 import AnomalyViewfinder from "./pages/AnomalyViewfinder";
@@ -195,10 +198,10 @@ function DashboardRouter() {
         <Route path="/foia" component={FoiaTracking} />
         <Route path="/narrative" component={StatementOfFacts} />
         <Route path="/patterns" component={Patterns} />
-                <Route path="/presentations" component={Presentations} />
-                <Route path="/presentations/:id" component={PresentationEditor} />
-                <Route path="/extraction" component={ExtractionDashboard} />
-                <Route component={NotFound} />
+        <Route path="/presentations" component={Presentations} />
+        <Route path="/presentations/:id" component={PresentationEditor} />
+        <Route path="/extraction" component={ExtractionDashboard} />
+        <Route component={NotFound} />
       </Switch>
     </DashboardLayout>
   );
@@ -214,7 +217,8 @@ function App() {
             <CaseProvider>
               <Switch>
                 {/* Guided Advocacy Shell — standalone pages (no sidebar) */}
-                <Route path="/welcome" component={Welcome} />                <Route path="/intake">
+                <Route path="/welcome" component={Welcome} />
+                <Route path="/intake">
                   <ValidationRouteWrapper>
                     <Intake />
                   </ValidationRouteWrapper>
@@ -239,7 +243,10 @@ function App() {
                 <Route path="/invite/:token" component={InviteLanding} />
                 <Route path="/templates" component={CaseTemplates} />
                 <Route path="/import-bundle" component={ImportBundle} />
-                <Route path="/mission-control" component={MissionControl} />
+                <Route path="/mission-control/live" component={MissionControlLive} />
+                <Route path="/mission-control/intake" component={MissionControlIntake} />
+                <Route path="/mission-control/full" component={MissionControl} />
+                <Route path="/mission-control" component={MissionControlShell} />
                 <Route path="/sovereign-control" component={SovereignControl} />
                 <Route path="/ingestion-control" component={ingestion_control} />
                 <Route path="/" component={HomeOrWelcome} />
