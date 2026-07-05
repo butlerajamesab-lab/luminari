@@ -17,7 +17,6 @@ const bill_detail_cache_ttl_ms = 24 * 60 * 60 * 1000;
 const warm_state_delay_ms = 750;
 const warm_next_batch_default_limit = 5;
 const warm_next_batch_max_limit = 10;
-const civic_genome_auto_projection_bill_limit = 10;
 
 export const docket_router = Router();
 
@@ -318,10 +317,7 @@ const summarize_civic_genome_projection = (
 
 const project_refreshed_state_to_civic_genome = async (state: string): Promise<civic_genome_projection_status> => {
   try {
-    const projection = await project_docket_cache_to_civic_genome({
-      state_code: state,
-      limit: civic_genome_auto_projection_bill_limit,
-    });
+    const projection = await project_docket_cache_to_civic_genome({ state_code: state });
     return summarize_civic_genome_projection(projection);
   } catch (error) {
     return {
