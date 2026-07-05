@@ -9,6 +9,7 @@ const lease_seconds = Number(process.env.CORPUS_IMPORT_WORKER_LEASE_SECONDS ?? 3
 const max_attempts = Number(process.env.CORPUS_IMPORT_WORKER_MAX_ATTEMPTS ?? 5);
 
 export type corpus_import_worker_action =
+  | "execute_sql_substrate_handoff"
   | "extract_docx_queue_row"
   | "normalize_docx_queue_row"
   | "route_corpus_queue_dry_run";
@@ -34,9 +35,16 @@ function normalize_text(input: string) {
 }
 
 function row_matches_action(row: claimed_queue_row, action: corpus_import_worker_action) {
+  if (action === "execute_sql_substrate_handoff") {
+    return row.source_ext === ".sql"
+      && row.import_status === "pending_bucket_content_scan"
+      && (row.target_hint === "cream_substrate_sql_handoff" || row.target_hint === "full_substrate_sql_handoff")
+      && Boolean(row.storage_bucket)
+      && Boolean(row.storage_path);
+  }
   if (action === "extract_docx_queue_row") return row.source_ext === ".docx" && row.import_status === "pending_bucket_content_scan";
   if (action === "normalize_docx_queue_row") return row.source_ext === ".docx" && row.import_status === "pending_docx_normalization";
-  return row.source_ext !== ".docx" && row.import_status === "pending_bucket_content_scan" && Boolean(row.target_hint);
+  return row.source_ext !== ".docx" && row.source_ext !== ".sql" && row.import_status === "pending_bucket_content_scan" && Boolean(row.target_hint);
 }
 
 async function claim_next_row(action: corpus_import_worker_action): Promise<claimed_queue_row | null> {
@@ -67,6 +75,48 @@ async function mark_failure(row: claimed_queue_row, error: any, operation_result
     `select * from public.mark_corpus_import_queue_failure($1, $2, $3, $4, $5, $6::jsonb)`,
     [row.id, worker_id, error?.code ?? "worker_error", error?.message ?? String(error), retryable, JSON.stringify(operation_result_json)],
   );
+}
+
+async function run_worker_script(row: claimed_queue_row, action: corpus_import_worker_action, script_path: string, timeout_ms: number, max_buffer_mb = 20) {
+  const started_at = Date.now();
+  try {
+    const { stdout, stderr } = await execFileAsync(process.execPath, [script_path, `--id=${row.id}`], {
+      cwd: process.cwd(),
+      timeout: timeout_ms,
+      maxBuffer: 1024 * 1024 * max_buffer_mb,
+      env: process.env,
+    });
+
+    let parsed: any = null;
+    try { parsed = stdout.trim() ? JSON.parse(stdout.trim()) : null; } catch {}
+    if (parsed?.success === false) {
+      throw Object.assign(new Error(parsed?.message ?? `${action}_reported_failure`), {
+        code: parsed?.error ?? `${action}_reported_failure`,
+        operation_result_json: {
+          action,
+          runtime_ms: Date.now() - started_at,
+          parsed,
+          stdout_preview: stdout.slice(0, 4000),
+          stderr_preview: stderr.slice(0, 4000),
+        },
+      });
+    }
+    return { stdout, stderr, parsed, runtime_ms: Date.now() - started_at };
+  } catch (error: any) {
+    await mark_failure(row, error, error?.operation_result_json ?? {
+      action,
+      runtime_ms: Date.now() - started_at,
+      storage_bucket: row.storage_bucket,
+      storage_path: row.storage_path,
+      storage_mode: row.storage_mode,
+    });
+    return null;
+  }
+}
+
+async function handle_execute_sql_substrate(row: claimed_queue_row) {
+  const result = await run_worker_script(row, "execute_sql_substrate_handoff", "scripts/apply-sql-substrate-corpus-queue.mjs", 600000, 40);
+  return Boolean(result);
 }
 
 async function handle_extract_docx(row: claimed_queue_row) {
@@ -151,13 +201,14 @@ async function handle_route_dry_run(row: claimed_queue_row) {
 export async function process_one_corpus_import_queue_row(action: corpus_import_worker_action) {
   const row = await claim_next_row(action);
   if (!row) return false;
+  if (action === "execute_sql_substrate_handoff") return handle_execute_sql_substrate(row);
   if (action === "extract_docx_queue_row") return handle_extract_docx(row);
   if (action === "normalize_docx_queue_row") return handle_normalize_docx(row);
   return handle_route_dry_run(row);
 }
 
 export async function corpus_import_queue_worker_loop() {
-  const actions: corpus_import_worker_action[] = ["extract_docx_queue_row", "extract_docx_queue_row", "normalize_docx_queue_row", "route_corpus_queue_dry_run"];
+  const actions: corpus_import_worker_action[] = ["execute_sql_substrate_handoff", "extract_docx_queue_row", "extract_docx_queue_row", "normalize_docx_queue_row", "route_corpus_queue_dry_run"];
   for (;;) {
     let did_work = false;
     for (const action of actions) did_work = (await process_one_corpus_import_queue_row(action)) || did_work;
