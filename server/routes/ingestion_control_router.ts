@@ -2,6 +2,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { Router } from "express";
 import { allowed_target_hints, create_candidates_from_ready_queue, list_corpus_import_queue, get_corpus_import_queue_row, get_registry_entity_candidates_summary, list_registry_entity_candidates, set_corpus_import_queue_target_hint, verify_registry_entity_candidates_dry_run, promote_registry_entity_candidates_apply } from "../engines/ingestion_control";
+import { process_one_corpus_import_queue_row, type corpus_import_worker_action } from "../workers/corpus-import-queue-worker";
 import { classify_db_error, getPool } from "../db";
 import { inferRuntimeCounts, withRuntimeEnvelope } from "../../shared/runtime-envelope";
 
@@ -35,7 +36,6 @@ function runtime_error(error: string, message: string | undefined, options: { st
     backend: options.backend,
   });
 }
-
 
 function clamp_integer(value: unknown, fallback: number, min: number, max: number) {
   const parsed = typeof value === "string" || typeof value === "number" ? Number(value) : fallback;
@@ -81,6 +81,27 @@ async function persist_extract_command_diagnostic(id: number, diagnostic: Record
      where id = $1`,
     [id, JSON.stringify(diagnostic)],
   );
+}
+
+function worker_actions_from_body(value: unknown): corpus_import_worker_action[] {
+  const allowed = new Set<corpus_import_worker_action>([
+    "execute_sql_substrate_handoff",
+    "extract_docx_queue_row",
+    "normalize_docx_queue_row",
+    "create_registry_candidates",
+    "promote_registry_candidates",
+    "route_corpus_queue_dry_run",
+  ]);
+  const fallback: corpus_import_worker_action[] = [
+    "execute_sql_substrate_handoff",
+    "extract_docx_queue_row",
+    "normalize_docx_queue_row",
+    "create_registry_candidates",
+    "promote_registry_candidates",
+  ];
+  if (!Array.isArray(value)) return fallback;
+  const parsed = value.filter((entry): entry is corpus_import_worker_action => typeof entry === "string" && allowed.has(entry as corpus_import_worker_action));
+  return parsed.length ? parsed : fallback;
 }
 
 ingestion_control_rest_router.get("/registry-entity-candidates", async (req, res) => {
@@ -133,6 +154,38 @@ ingestion_control_rest_router.post("/registry-entity-candidates/promote-apply", 
   }
 });
 
+ingestion_control_rest_router.post("/corpus-import-queue/worker-drain", async (req, res) => {
+  const started_at = Date.now();
+  try {
+    const iterations = clamp_integer(req.body?.iterations, 10, 1, 50);
+    const actions = worker_actions_from_body(req.body?.actions);
+    const results: Array<{ iteration: number; action: corpus_import_worker_action; did_work: boolean }> = [];
+    let did_work_count = 0;
+
+    for (let iteration = 0; iteration < iterations; iteration += 1) {
+      let iteration_work = false;
+      for (const action of actions) {
+        const did_work = await process_one_corpus_import_queue_row(action);
+        if (did_work) did_work_count += 1;
+        iteration_work = did_work || iteration_work;
+        results.push({ iteration: iteration + 1, action, did_work });
+      }
+      if (!iteration_work) break;
+    }
+
+    return res.json(runtime_response({
+      success: true,
+      action: "corpus_import_queue_worker_drain",
+      runtime_ms: Date.now() - started_at,
+      iterations_requested: iterations,
+      actions,
+      did_work_count,
+      results,
+    }, { action: "corpus_import_queue_worker_drain", data: { results }, counts: { did_work_count } }));
+  } catch (error: any) {
+    return res.status(500).json(runtime_error("corpus_import_queue_worker_drain_failed", error?.message ?? String(error), { action: "corpus_import_queue_worker_drain", backend: error, extra: { runtime_ms: Date.now() - started_at } }));
+  }
+});
 
 ingestion_control_rest_router.get("/corpus-import-queue", async (req, res) => {
   try {
