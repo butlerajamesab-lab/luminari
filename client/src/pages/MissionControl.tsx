@@ -37,6 +37,7 @@ import { StreamUploader } from "@/components/StreamUploader";
 import { CanonicalSpineDashboard } from "@/components/CanonicalSpineDashboard";
 import { FlagQueuePanel } from "@/components/FlagQueuePanel";
 import { FlagButton } from "@/components/FlagButton";
+import { MissionControlSchemaLedgerPanel } from "@/components/mission/MissionControlSchemaLedgerPanel";
 
 type DatabaseDiagnosticContract = {
   ok: boolean;
@@ -262,6 +263,8 @@ function SystemHealthPanel() {
           {diagnostic.error && <div className="mt-3 text-xs text-red-300">{diagnostic.error}</div>}
         </CardContent>
       </Card>
+
+      <MissionControlSchemaLedgerPanel />
 
       {/* Server Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
