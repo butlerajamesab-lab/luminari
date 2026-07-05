@@ -11,6 +11,9 @@ async function fetchMissionControlPayload(): Promise<MissionControlPayload> {
   }
 
   const fallbackResponse = await fetch(FALLBACK_ENDPOINT, { cache: "no-store" });
+  if (!fallbackResponse.ok) {
+    throw new Error(`schema_ledger_fetch_failed_${fallbackResponse.status}`);
+  }
   return normalizeMissionControlPayload(await fallbackResponse.json());
 }
 
