@@ -9469,8 +9469,8 @@ async function getUserById(id) {
   return mapUserRow(result.rows[0]);
 }
 async function upsertUser(data) {
-  const now3 = Date.now();
-  const lastSignedIn = data.lastSignedIn instanceof Date ? data.lastSignedIn.getTime() : data.lastSignedIn ?? now3;
+  const now4 = Date.now();
+  const lastSignedIn = data.lastSignedIn instanceof Date ? data.lastSignedIn.getTime() : data.lastSignedIn ?? now4;
   const ownerOpenId = process.env.OWNER_OPEN_ID ?? "";
   const isOwner = Boolean(ownerOpenId && data.openId === ownerOpenId);
   const existing = await getUserByOpenId(data.openId);
@@ -9486,19 +9486,19 @@ async function upsertUser(data) {
          last_signed_in = $6,
          updated_at = $7
        where open_id = $1`,
-      [data.openId, data.name ?? null, data.email ?? null, data.loginMethod ?? null, role, lastSignedIn, now3]
+      [data.openId, data.name ?? null, data.email ?? null, data.loginMethod ?? null, role, lastSignedIn, now4]
     );
   } else {
     await getPool().query(
       `insert into public.users (open_id, name, email, login_method, role, plan, created_at, updated_at, last_signed_in)
        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [data.openId, data.name ?? null, data.email ?? null, data.loginMethod ?? null, isOwner ? "admin" : "user", "free", now3, now3, lastSignedIn]
+      [data.openId, data.name ?? null, data.email ?? null, data.loginMethod ?? null, isOwner ? "admin" : "user", "free", now4, now4, lastSignedIn]
     );
   }
 }
 async function logAudit(entry) {
-  const now3 = Date.now();
-  const payload = JSON.stringify({ ...entry, createdAt: now3, previousHash: lastAuditHash });
+  const now4 = Date.now();
+  const payload = JSON.stringify({ ...entry, createdAt: now4, previousHash: lastAuditHash });
   const hash = createHash3("sha256").update(payload).digest("hex");
   lastAuditHash = hash;
   await db.insert(auditTrail).values({
@@ -9509,21 +9509,21 @@ async function logAudit(entry) {
     targetId: entry.targetId ?? null,
     details: entry.details ?? null,
     hash,
-    createdAt: now3
+    createdAt: now4
   });
   return hash;
 }
 async function createCorpusSnapshot(data) {
   const [latest] = await db.select({ maxVersion: sql2`COALESCE(MAX(version), -1)` }).from(corpusSnapshots).where(eq(corpusSnapshots.caseId, data.caseId));
   const nextVersion = (latest?.maxVersion ?? -1) + 1;
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(corpusSnapshots).values({
     caseId: data.caseId,
     version: nextVersion,
     engineVersion: data.engineVersion,
     documentIds: data.documentIds,
     documentHashes: data.documentHashes,
-    createdAt: now3,
+    createdAt: now4,
     status: "open"
   });
   return { id: result.insertId, version: nextVersion };
@@ -9599,9 +9599,9 @@ async function updateSnapshotManifest(snapshotId, documentIds, documentHashes) {
   }).where(eq(corpusSnapshots.id, snapshotId));
 }
 async function createCase(userId, name, description, domain, container, pipelineType) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const normalizedDomain = domain ? domain.toLowerCase().trim() : null;
-  const [result] = await db.insert(cases).values({ userId, name, description: description ?? null, domain: normalizedDomain, container: container ?? null, pipelineType: pipelineType ?? null, createdAt: now3, updatedAt: now3 });
+  const [result] = await db.insert(cases).values({ userId, name, description: description ?? null, domain: normalizedDomain, container: container ?? null, pipelineType: pipelineType ?? null, createdAt: now4, updatedAt: now4 });
   return result.insertId;
 }
 async function updateCaseDomainContainer(id, userId, data) {
@@ -9627,13 +9627,13 @@ async function getCollaboratorAccess(caseId2, userId) {
   return row ?? null;
 }
 async function addCollaborator(caseId2, userId, grantedBy, accessLevel = "READ_ONLY") {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(caseCollaborators).values({
     caseId: caseId2,
     userId,
     accessLevel,
     grantedBy,
-    grantedAt: now3
+    grantedAt: now4
   });
   return result.insertId;
 }
@@ -10187,8 +10187,8 @@ async function removeSelfReferencingCorrelations(caseId2, snapshotId, userId) {
   return ids.length;
 }
 async function createPresentation(p) {
-  const now3 = Date.now();
-  const [result] = await db.insert(presentations).values({ ...p, slideCount: 0, createdAt: now3, updatedAt: now3 });
+  const now4 = Date.now();
+  const [result] = await db.insert(presentations).values({ ...p, slideCount: 0, createdAt: now4, updatedAt: now4 });
   return result.insertId;
 }
 async function getPresentation(id) {
@@ -10416,7 +10416,7 @@ async function clearCaseFindings(caseId2, opts) {
   await db.delete(documentCorrelations).where(eq(documentCorrelations.caseId, caseId2));
 }
 async function createUploadSession(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(uploadSessions).values({
     caseId: data.caseId,
     userId: data.userId,
@@ -10425,8 +10425,8 @@ async function createUploadSession(data) {
     failedFiles: 0,
     duplicateFiles: 0,
     status: "uploading",
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   }).$returningId();
   return result.id;
 }
@@ -10448,10 +10448,10 @@ async function listUploadSessions(userId, caseId2) {
   return db.select().from(uploadSessions).where(and(...conditions)).orderBy(desc(uploadSessions.createdAt)).limit(50);
 }
 async function incrementUploadSessionCounter(sessionId, field, amount = 1) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.update(uploadSessions).set({
     [field]: sql2`${uploadSessions[field]} + ${amount}`,
-    updatedAt: now3
+    updatedAt: now4
   }).where(eq(uploadSessions.id, sessionId));
 }
 async function updateUploadSessionStatus(sessionId, status) {
@@ -10997,14 +10997,14 @@ async function checkReplacementEligibility(documentId) {
   return { eligible: true, document: doc };
 }
 async function createChecklistItems(caseId2, items) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const rows2 = items.map((item) => ({
     caseId: caseId2,
     label: item.label,
     description: item.description ?? null,
     priority: item.priority,
     sortOrder: item.sortOrder,
-    createdAt: now3
+    createdAt: now4
   }));
   if (rows2.length === 0) return [];
   await db.insert(checklistItems).values(rows2);
@@ -11066,7 +11066,7 @@ async function getPipelineAnalytics() {
   return { byPipeline, totalEvents: allEvents.length, recentEvents: allEvents.slice(0, 20) };
 }
 async function createShareLink(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const result = await db.insert(shareLinks).values({
     caseId: data.caseId,
     createdBy: data.createdBy,
@@ -11075,7 +11075,7 @@ async function createShareLink(data) {
     permissions: data.permissions || "read_only",
     expiresAt: data.expiresAt,
     accessCount: 0,
-    createdAt: now3
+    createdAt: now4
   }).$returningId();
   return { id: result[0].id, token: data.token };
 }
@@ -11224,7 +11224,7 @@ function getExecuteRows(result) {
   return Array.isArray(maybeRows) ? maybeRows : [];
 }
 async function createAdminInvite(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const rows2 = getExecuteRows(await db.execute(sql2`
     INSERT INTO public.admin_invites (
       token,
@@ -11248,7 +11248,7 @@ async function createAdminInvite(data) {
       0,
       ${data.expires_at},
       'active',
-      ${now3}
+      ${now4}
     )
     RETURNING id
   `));
@@ -11319,7 +11319,7 @@ async function revokeAdminInvite(id) {
   `);
 }
 async function redeemInvite(invite_id, user_id, target_role, target_plan) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const rows2 = getExecuteRows(await db.execute(sql2`
     SELECT max_uses, use_count
     FROM public.admin_invites
@@ -11335,9 +11335,9 @@ async function redeemInvite(invite_id, user_id, target_role, target_plan) {
   `);
   await db.execute(sql2`
     INSERT INTO public.invite_redemptions (invite_id, user_id, redeemed_at)
-    VALUES (${invite_id}, ${user_id}, ${now3})
+    VALUES (${invite_id}, ${user_id}, ${now4})
   `);
-  await db.update(users).set({ role: target_role, plan: target_plan, updatedAt: now3 }).where(eq(users.id, user_id));
+  await db.update(users).set({ role: target_role, plan: target_plan, updatedAt: now4 }).where(eq(users.id, user_id));
 }
 async function listInviteRedemptions(invite_id) {
   return getExecuteRows(await db.execute(sql2`
@@ -11504,8 +11504,8 @@ function computeDeadlineStatus(request) {
   if (["closed", "appeal_prepared", "appeal_submitted"].includes(request.status)) {
     return { deadlineState: "not_applicable", daysRemaining: null, daysOverdue: null };
   }
-  const now3 = Date.now();
-  const msRemaining = request.responseDueAt - now3;
+  const now4 = Date.now();
+  const msRemaining = request.responseDueAt - now4;
   const daysRemaining = Math.ceil(msRemaining / (24 * 60 * 60 * 1e3));
   if (daysRemaining < 0) {
     return {
@@ -11552,7 +11552,7 @@ async function getFoiaCaseSummary(caseId2) {
   };
 }
 async function findOverdueFoiaRequests(userId) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const rows2 = await db.select({
     id: foiaRequests.id,
     caseId: foiaRequests.caseId,
@@ -11565,16 +11565,16 @@ async function findOverdueFoiaRequests(userId) {
   }).from(foiaRequests).leftJoin(cases, eq(foiaRequests.caseId, cases.id)).where(and(
     eq(foiaRequests.userId, userId),
     sql2`${foiaRequests.responseDueAt} IS NOT NULL`,
-    sql2`${foiaRequests.responseDueAt} < ${now3}`,
+    sql2`${foiaRequests.responseDueAt} < ${now4}`,
     sql2`${foiaRequests.responseReceivedAt} IS NULL`,
     sql2`${foiaRequests.status} IN ('submitted', 'acknowledged', 'in_processing')`
   ));
   return rows2;
 }
 async function findApproachingDeadlineFoiaRequests(userId) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const sevenDaysMs = 7 * 24 * 60 * 60 * 1e3;
-  const cutoff = now3 + sevenDaysMs;
+  const cutoff = now4 + sevenDaysMs;
   const rows2 = await db.select({
     id: foiaRequests.id,
     caseId: foiaRequests.caseId,
@@ -11587,7 +11587,7 @@ async function findApproachingDeadlineFoiaRequests(userId) {
   }).from(foiaRequests).leftJoin(cases, eq(foiaRequests.caseId, cases.id)).where(and(
     eq(foiaRequests.userId, userId),
     sql2`${foiaRequests.responseDueAt} IS NOT NULL`,
-    sql2`${foiaRequests.responseDueAt} > ${now3}`,
+    sql2`${foiaRequests.responseDueAt} > ${now4}`,
     sql2`${foiaRequests.responseDueAt} <= ${cutoff}`,
     sql2`${foiaRequests.responseReceivedAt} IS NULL`,
     sql2`${foiaRequests.status} IN ('submitted', 'acknowledged', 'in_processing')`
@@ -11855,7 +11855,7 @@ function truncate(str, maxLen) {
   return str.slice(0, maxLen - 3) + "...";
 }
 async function upsertCaseNarrative(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [existing] = await db.select({ id: caseNarratives.id }).from(caseNarratives).where(eq(caseNarratives.caseId, data.caseId));
   if (existing) {
     await db.update(caseNarratives).set({
@@ -11864,8 +11864,8 @@ async function upsertCaseNarrative(data) {
       sourceMap: data.sourceMap,
       timelineItemCount: data.timelineItemCount,
       snapshotId: data.snapshotId ?? null,
-      generatedAt: now3,
-      updatedAt: now3
+      generatedAt: now4,
+      updatedAt: now4
     }).where(eq(caseNarratives.id, existing.id));
     const [updated] = await db.select().from(caseNarratives).where(eq(caseNarratives.id, existing.id));
     return updated;
@@ -11877,8 +11877,8 @@ async function upsertCaseNarrative(data) {
       sourceMap: data.sourceMap,
       timelineItemCount: data.timelineItemCount,
       snapshotId: data.snapshotId ?? null,
-      generatedAt: now3,
-      updatedAt: now3
+      generatedAt: now4,
+      updatedAt: now4
     });
     const [inserted] = await db.select().from(caseNarratives).where(eq(caseNarratives.caseId, data.caseId));
     return inserted;
@@ -11889,7 +11889,7 @@ async function getCaseNarrative(caseId2) {
   return row ?? null;
 }
 async function createBenefitApplication(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(benefitApplications).values({
     userId: data.userId,
     caseId: data.caseId ?? null,
@@ -11900,8 +11900,8 @@ async function createBenefitApplication(data) {
     applicationUrl: data.applicationUrl ?? null,
     documentsNeeded: data.documentsNeeded ?? null,
     documentsSubmitted: [],
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   const [row] = await db.select().from(benefitApplications).where(eq(benefitApplications.id, result.insertId));
   return row;
@@ -11923,16 +11923,16 @@ async function getBenefitApplication(id, userId) {
   return row ?? null;
 }
 async function updateBenefitApplicationStatus(id, userId, status, extra) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const updateData = {
     status,
-    updatedAt: now3
+    updatedAt: now4
   };
   if (status === "applied" && !extra?.appliedAt) {
-    updateData.appliedAt = now3;
+    updateData.appliedAt = now4;
   }
   if ((status === "approved" || status === "denied") && !extra?.decisionAt) {
-    updateData.decisionAt = now3;
+    updateData.decisionAt = now4;
   }
   if (extra?.appliedAt) updateData.appliedAt = extra.appliedAt;
   if (extra?.decisionAt) updateData.decisionAt = extra.decisionAt;
@@ -11986,10 +11986,10 @@ async function deleteBenefitApplication(id, userId) {
   return result.affectedRows > 0;
 }
 async function getUpcomingBenefitDeadlines(userId) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   return db.select().from(benefitApplications).where(and(
     eq(benefitApplications.userId, userId),
-    gt(benefitApplications.nextDeadline, now3)
+    gt(benefitApplications.nextDeadline, now4)
   )).orderBy(asc(benefitApplications.nextDeadline));
 }
 async function getBenefitApplicationSummary(userId) {
@@ -12012,14 +12012,14 @@ function markLighthouseSuggestionsUnavailable(error) {
   return false;
 }
 async function createSuggestion(userId, content) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(lighthouseSuggestions).values({
     userId,
     content,
     status: "pending",
     votes: 0,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   return result.insertId;
 }
@@ -12038,9 +12038,9 @@ async function listSuggestions(opts) {
 }
 async function voteSuggestion(suggestionId, userId) {
   try {
-    const now3 = Date.now();
-    await db.insert(lighthouseSuggestionVotes).values({ suggestionId, userId, createdAt: now3 });
-    await db.update(lighthouseSuggestions).set({ votes: sql2`votes + 1`, updatedAt: now3 }).where(eq(lighthouseSuggestions.id, suggestionId));
+    const now4 = Date.now();
+    await db.insert(lighthouseSuggestionVotes).values({ suggestionId, userId, createdAt: now4 });
+    await db.update(lighthouseSuggestions).set({ votes: sql2`votes + 1`, updatedAt: now4 }).where(eq(lighthouseSuggestions.id, suggestionId));
     return true;
   } catch (e) {
     if (e?.code === "ER_DUP_ENTRY" || e?.message?.includes("Duplicate")) return false;
@@ -12048,13 +12048,13 @@ async function voteSuggestion(suggestionId, userId) {
   }
 }
 async function unvoteSuggestion(suggestionId, userId) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.delete(lighthouseSuggestionVotes).where(and(
     eq(lighthouseSuggestionVotes.suggestionId, suggestionId),
     eq(lighthouseSuggestionVotes.userId, userId)
   ));
   if (result.affectedRows > 0) {
-    await db.update(lighthouseSuggestions).set({ votes: sql2`GREATEST(votes - 1, 0)`, updatedAt: now3 }).where(eq(lighthouseSuggestions.id, suggestionId));
+    await db.update(lighthouseSuggestions).set({ votes: sql2`GREATEST(votes - 1, 0)`, updatedAt: now4 }).where(eq(lighthouseSuggestions.id, suggestionId));
     return true;
   }
   return false;
@@ -12081,7 +12081,7 @@ async function deleteSuggestion(id) {
   await db.delete(lighthouseSuggestions).where(eq(lighthouseSuggestions.id, id));
 }
 async function listSpotlightItems(activeOnly = true) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   let query = db.select().from(lighthouseSpotlight);
   if (activeOnly) {
     query = query.where(eq(lighthouseSpotlight.active, true));
@@ -12089,11 +12089,11 @@ async function listSpotlightItems(activeOnly = true) {
   return query.orderBy(asc(lighthouseSpotlight.sortOrder), desc(lighthouseSpotlight.createdAt));
 }
 async function createSpotlightItem(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(lighthouseSpotlight).values({
     ...data,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   return result.insertId;
 }
@@ -12123,11 +12123,11 @@ async function getJob(id) {
   return row ?? null;
 }
 async function createJob(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(lighthouseJobs).values({
     ...data,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   return result.insertId;
 }
@@ -12157,13 +12157,13 @@ async function getPost(id) {
   return row ?? null;
 }
 async function createPost(data) {
-  const now3 = Date.now();
-  const expiresAt = data.expiresAt ?? now3 + 30 * 24 * 60 * 60 * 1e3;
+  const now4 = Date.now();
+  const expiresAt = data.expiresAt ?? now4 + 30 * 24 * 60 * 60 * 1e3;
   const [result] = await db.insert(lighthousePosts).values({
     ...data,
     expiresAt,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   return result.insertId;
 }
@@ -12196,11 +12196,11 @@ async function getPostWithAuthor(id) {
   return row ?? null;
 }
 async function createEvent_lh(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(lighthouseEvents).values({
     ...data,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   return result.insertId;
 }
@@ -12356,7 +12356,7 @@ async function getNearbyEvents(lat, lng, radiusKm) {
   ));
 }
 async function createMapIntakeSession(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(mapIntakeSessions).values({
     userId: data.userId,
     lat: data.lat,
@@ -12369,10 +12369,10 @@ async function createMapIntakeSession(data) {
     nearestPrograms: data.nearestPrograms ?? null,
     nearestOversight: data.nearestOversight ?? null,
     radiusKm: data.radiusKm ?? 50,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
-  return { id: result.insertId, createdAt: now3 };
+  return { id: result.insertId, createdAt: now4 };
 }
 async function getMapIntakeSession(sessionId, userId) {
   const rows2 = await db.select().from(mapIntakeSessions).where(
@@ -12399,13 +12399,13 @@ async function expireOldMapIntakeSessions() {
   ));
 }
 async function createEvidenceItem(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(evidenceItems).values({
     ...data,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
-  return { id: result.insertId, ...data, createdAt: now3, updatedAt: now3 };
+  return { id: result.insertId, ...data, createdAt: now4, updatedAt: now4 };
 }
 async function listEvidenceItems(caseId2) {
   return db.select().from(evidenceItems).where(eq(evidenceItems.caseId, caseId2)).orderBy(evidenceItems.createdAt);
@@ -13426,18 +13426,18 @@ Return JSON array: [{"index": 0, "claimType": "...", "evidentiaryWeight": "...",
     }
     console.log(`[ClaimGen] Classified: ${allClassifications.length}/${uniqueQuotes.length}`);
     if (allClassifications.length === 0) return 0;
-    const now3 = Date.now();
+    const now4 = Date.now();
     const snapResult = await db.insert(dataSnapshots).values({
-      snapshotDate: now3,
+      snapshotDate: now4,
       sourceTable: "claims",
       recordCount: 0,
       snapshotMetadata: {
         description: `Auto-generated claims for doc ${documentId} in case ${caseId2}`
       },
       status: "pending",
-      createdAt: now3
+      createdAt: now4
     });
-    const snapRows = await db.select().from(dataSnapshots).where(sql5`snapshot_date = ${now3} AND source_table = 'claims'`).orderBy(sql5`id DESC`).limit(1);
+    const snapRows = await db.select().from(dataSnapshots).where(sql5`snapshot_date = ${now4} AND source_table = 'claims'`).orderBy(sql5`id DESC`).limit(1);
     const snapshotId = snapRows.length > 0 ? snapRows[0].id : 1;
     console.log(`[ClaimGen] Created snapshot id=${snapshotId}`);
     let inserted = 0;
@@ -16301,7 +16301,7 @@ async function storeGovernedSignal(input) {
     );
   }
   const signalId = generateSignalId();
-  const now3 = Date.now();
+  const now4 = Date.now();
   const confidence = await calculateSignalConfidence(input);
   const template = await findTemplate(input.signalType);
   const explanation = template ? renderTemplate(template.templateText, input) : input.explanation || `${input.signalType} signal detected in dataset ${input.datasetId}`;
@@ -16315,13 +16315,13 @@ async function storeGovernedSignal(input) {
        signalType, datasetId, confidenceScore, severity, title, explanation,
        jurisdiction, detectedAt, createdAt, sunam_status)
     VALUES
-      (${signalId}, ${input.signalType}, ${input.datasetId}, ${now3}, ${confidence.totalScore},
-       ${JSON.stringify(input.sourceRecordIds || [])}, ${now3},
+      (${signalId}, ${input.signalType}, ${input.datasetId}, ${now4}, ${confidence.totalScore},
+       ${JSON.stringify(input.sourceRecordIds || [])}, ${now4},
        ${input.jurisdictionScope || null}, ${input.severityLevel},
-       ${explanation}, ${escalationTier}, ${now3}, ${now3},
+       ${explanation}, ${escalationTier}, ${now4}, ${now4},
        ${input.gateLogId},
        ${input.signalType}, ${input.datasetId || ""}, ${confidence.totalScore}, ${input.severityLevel}, ${input.title}, ${explanation},
-       ${input.jurisdictionScope || null}, ${now3}, ${now3}, ${"governed"})
+       ${input.jurisdictionScope || null}, ${now4}, ${now4}, ${"governed"})
   `);
   await logGenerationStep(signalId, "confidence_calculation", template?.templateId || null, {
     inputFactors: {
@@ -16346,7 +16346,7 @@ async function storeGovernedSignal(input) {
     }, confidence.totalScore >= template.confidenceRequired ? "verified" : "partial", null);
   }
   if (input.datasetId) {
-    await updateProvenance(input.datasetId, { lastFetched: now3 });
+    await updateProvenance(input.datasetId, { lastFetched: now4 });
   }
   return {
     signalId,
@@ -16360,7 +16360,7 @@ async function storeGovernedSignal(input) {
     jurisdictionScope: input.jurisdictionScope || null,
     statisticalContext: input.statisticalContext || null,
     sourceRecordIds: input.sourceRecordIds || null,
-    extractionTimestamp: now3,
+    extractionTimestamp: now4,
     escalationTier,
     templateUsed: template?.templateId || null
   };
@@ -16473,7 +16473,7 @@ async function updateGovernedSignal(signalId, updates) {
     throw new Error("[GATE ENFORCEMENT] updateGovernedSignal: signalId is required");
   }
   const setClauses = [];
-  const now3 = Date.now();
+  const now4 = Date.now();
   if (updates.confidenceScore !== void 0) {
     setClauses.push(`confidence_score = ${updates.confidenceScore}`);
   }
@@ -16486,7 +16486,7 @@ async function updateGovernedSignal(signalId, updates) {
   if (updates.observedValue !== void 0) {
     setClauses.push(`observed_value = ${updates.observedValue}`);
   }
-  setClauses.push(`updated_at = ${now3}`);
+  setClauses.push(`updated_at = ${now4}`);
   if (setClauses.length <= 1) {
     return;
   }
@@ -16711,7 +16711,7 @@ async function promoteSignal(signal, decision, gateLogId) {
   return governed.signalId;
 }
 async function stageSignal(signal, decision) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const result = await db.execute(sql16`
     INSERT INTO extraction_staging
       (signal_type, dataset_id, jurisdiction, domain, severity, title, explanation,
@@ -16733,12 +16733,12 @@ async function stageSignal(signal, decision) {
        ${decision.score}, ${decision.threshold},
        ${JSON.stringify(decision.breakdown)},
        'staged', ${decision.reason},
-       ${now3}, ${now3}, ${now3})
+       ${now4}, ${now4}, ${now4})
   `);
   return result[0]?.insertId || 0;
 }
 async function logGateDecision(signal, decision, outcome, promotedSignalId, stagingId, actor = null) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.execute(sql16`
     INSERT INTO sunam_gate_log
       (live_signal_id, signal_fingerprint, signal_type, dataset_id,
@@ -16752,7 +16752,7 @@ async function logGateDecision(signal, decision, outcome, promotedSignalId, stag
        ${JSON.stringify(decision.breakdown)},
        ${outcome}, ${decision.reason},
        ${promotedSignalId}, ${stagingId}, ${actor},
-       ${now3}, ${now3})
+       ${now4}, ${now4})
   `);
   const [rows2] = await db.execute(sql16`SELECT LAST_INSERT_ID() as id`);
   return Number(rows2[0]?.id) || 0;
@@ -16844,7 +16844,7 @@ async function manualPromote(stagingId, actor) {
     return { success: false, error: "Staged signal not found or already processed" };
   }
   const staged = arr[0];
-  const now3 = Date.now();
+  const now4 = Date.now();
   const signalLike = {
     id: staged.live_signal_id || 0,
     signalType: staged.signal_type,
@@ -16885,7 +16885,7 @@ async function manualPromote(stagingId, actor) {
        ${JSON.stringify(staged.score_breakdown)},
        'manual_promote', ${`Manually promoted by ${actor}`},
        ${null}, ${stagingId}, ${actor},
-       ${now3}, ${now3})
+       ${now4}, ${now4})
   `);
   const [gateRows] = await db.execute(sql16`SELECT LAST_INSERT_ID() as id`);
   const gateLogId = Number(gateRows[0]?.id) || 0;
@@ -16896,11 +16896,11 @@ async function manualPromote(stagingId, actor) {
   await db.execute(sql16`
     UPDATE extraction_staging
     SET gate_decision = 'promoted',
-        promoted_at = ${now3},
+        promoted_at = ${now4},
         promoted_signal_id = ${signalId},
         reviewed_by = ${actor},
-        reviewed_at = ${now3},
-        updated_at = ${now3}
+        reviewed_at = ${now4},
+        updated_at = ${now4}
     WHERE id = ${stagingId}
   `);
   return { success: true, signalId };
@@ -16914,14 +16914,14 @@ async function manualReject(stagingId, actor, reason) {
     return { success: false, error: "Staged signal not found or already processed" };
   }
   const staged = arr[0];
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.execute(sql16`
     UPDATE extraction_staging
     SET gate_decision = 'rejected',
         reviewed_by = ${actor},
-        reviewed_at = ${now3},
+        reviewed_at = ${now4},
         review_notes = ${reason},
-        updated_at = ${now3}
+        updated_at = ${now4}
     WHERE id = ${stagingId}
   `);
   await db.execute(sql16`
@@ -16938,7 +16938,7 @@ async function manualReject(stagingId, actor, reason) {
        ${JSON.stringify(staged.score_breakdown)},
        'manual_reject', ${reason},
        ${null}, ${stagingId}, ${actor},
-       ${now3}, ${now3})
+       ${now4}, ${now4})
   `);
   return { success: true };
 }
@@ -17845,14 +17845,14 @@ async function getPatternTypeId(patternType) {
 async function registerPatternOccurrence(params) {
   const signature = generateSignature(params.patternType, params.signatureComponents);
   const patternTypeId = await getPatternTypeId(params.patternType);
-  const now3 = Date.now();
+  const now4 = Date.now();
   let isNewPattern = false;
   let [existingPattern] = await db.select({ id: patterns.id }).from(patterns).where(eq15(patterns.signature, signature));
   let patternId;
   if (existingPattern) {
     patternId = existingPattern.id;
     await db.update(patterns).set({
-      lastSeenAt: now3,
+      lastSeenAt: now4,
       occurrenceCount: sql30`${patterns.occurrenceCount} + 1`
     }).where(eq15(patterns.id, patternId));
   } else {
@@ -17861,10 +17861,10 @@ async function registerPatternOccurrence(params) {
       patternType: params.patternType,
       signature,
       description: params.description,
-      firstSeenAt: now3,
-      lastSeenAt: now3,
+      firstSeenAt: now4,
+      lastSeenAt: now4,
       occurrenceCount: 1,
-      createdAt: now3
+      createdAt: now4
     });
     patternId = inserted.insertId;
   }
@@ -17878,7 +17878,7 @@ async function registerPatternOccurrence(params) {
       agencyId: params.agencyId ?? null,
       evidenceReferenceId: params.evidenceReferenceId,
       evidenceReferenceType: params.evidenceReferenceType,
-      createdAt: now3
+      createdAt: now4
     });
     occurrenceId = inserted.insertId;
     isNewOccurrence = true;
@@ -18055,9 +18055,9 @@ async function detectAgencyBehaviorPattern(caseId2, foiaRequestIds) {
   }).from(foiaRequests).where(inArray5(foiaRequests.id, foiaRequestIds));
   let detected = 0;
   let registered = 0;
-  const now3 = Date.now();
+  const now4 = Date.now();
   const overdueRequests = caseRequests.filter(
-    (r) => r.responseDueAt && r.responseDueAt < now3 && !r.responseReceivedAt && !["records_produced", "closed"].includes(r.status)
+    (r) => r.responseDueAt && r.responseDueAt < now4 && !r.responseReceivedAt && !["records_produced", "closed"].includes(r.status)
   );
   for (const req of overdueRequests) {
     if (!req.agencyName) continue;
@@ -18068,7 +18068,7 @@ async function detectAgencyBehaviorPattern(caseId2, foiaRequestIds) {
     }).from(foiaRequests).where(
       and13(
         sql30`LOWER(${foiaRequests.agencyName}) = ${normalizedAgency}`,
-        sql30`${foiaRequests.responseDueAt} < ${now3}`,
+        sql30`${foiaRequests.responseDueAt} < ${now4}`,
         sql30`${foiaRequests.responseReceivedAt} IS NULL`,
         sql30`${foiaRequests.caseId} != ${caseId2}`
       )
@@ -19566,7 +19566,7 @@ var init_intake_autodetect = __esm({
 });
 
 // server/governance-log.ts
-import { createHash as createHash12 } from "crypto";
+import { createHash as createHash11 } from "crypto";
 import { eq as eq26, desc as desc13, sql as sql42 } from "drizzle-orm";
 function validateRationale(rationale) {
   if (!rationale || rationale.trim().length < MINIMUM_RATIONALE_LENGTH) {
@@ -19626,7 +19626,7 @@ function validateEventType(eventType) {
   }
 }
 function hashActorId(actorId) {
-  return createHash12("sha256").update(actorId).digest("hex");
+  return createHash11("sha256").update(actorId).digest("hex");
 }
 function computeEntryHash(entry) {
   const canonical = canonicalStringify({
@@ -19641,7 +19641,7 @@ function computeEntryHash(entry) {
     rationale: entry.rationale,
     scope: entry.scope
   });
-  return createHash12("sha256").update(canonical).digest("hex");
+  return createHash11("sha256").update(canonical).digest("hex");
 }
 async function writeGovernanceLog(tx, input) {
   if (!tx || typeof tx.insert !== "function") {
@@ -19660,7 +19660,7 @@ async function writeGovernanceLog(tx, input) {
   const actorHash = hashActorId(input.actorId);
   const previousStateJson = input.previousState != null ? canonicalStringify(input.previousState) : null;
   const newStateJson = canonicalStringify(input.newState);
-  const now3 = Date.now();
+  const now4 = Date.now();
   const entryHash = computeEntryHash({
     eventType: input.eventType,
     component: input.component,
@@ -19670,7 +19670,7 @@ async function writeGovernanceLog(tx, input) {
     rationale: input.rationale,
     actorHash,
     actorRole: input.actorRole,
-    createdAt: now3,
+    createdAt: now4,
     previousHash
   });
   await tx.insert(governanceLog).values({
@@ -19685,7 +19685,7 @@ async function writeGovernanceLog(tx, input) {
     actorRole: input.actorRole,
     previousHash,
     entryHash,
-    createdAt: now3
+    createdAt: now4
   });
   return { seqNo: nextSeqNo, entryHash };
 }
@@ -19939,7 +19939,7 @@ async function governedVersionChange(input) {
 }
 async function governedDataStreamCreate(input) {
   return await db.transaction(async (tx) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     await tx.insert(dataStreamRegistry).values({
       streamId: input.streamData.streamId,
       streamName: input.streamData.streamName,
@@ -19955,15 +19955,15 @@ async function governedDataStreamCreate(input) {
       enabled: true,
       recordsIngested: 0,
       cronExpression: input.streamData.cronExpression ?? null,
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     const result = await writeGovernanceLog(tx, {
       eventType: "data_stream_created",
       component: "data_stream_registry",
       scope: `stream_id:${input.streamData.streamId}`,
       previousState: null,
-      newState: { ...input.streamData, enabled: true, createdAt: now3 },
+      newState: { ...input.streamData, enabled: true, createdAt: now4 },
       rationale: input.rationale,
       actorId: input.actorId,
       actorRole: input.actorRole
@@ -20629,7 +20629,7 @@ async function upsertRecords(datasetId, records) {
   let inserted = 0;
   let updated = 0;
   const errors = [];
-  const now3 = Date.now();
+  const now4 = Date.now();
   const BATCH_SIZE4 = 200;
   for (let i = 0; i < records.length; i += BATCH_SIZE4) {
     const batch = records.slice(i, i + BATCH_SIZE4);
@@ -20637,8 +20637,8 @@ async function upsertRecords(datasetId, records) {
       const values = batch.map((record) => ({
         datasetId,
         sourceRecordId: record.sourceRecordId,
-        ingestedAt: now3,
-        updatedAt: now3,
+        ingestedAt: now4,
+        updatedAt: now4,
         rawJson: record.rawJson,
         normalizedDate: record.normalizedDate,
         normalizedCategory: record.normalizedCategory,
@@ -20676,8 +20676,8 @@ async function upsertRecords(datasetId, records) {
           await db.insert(ingestedRecords).values({
             datasetId,
             sourceRecordId: record.sourceRecordId,
-            ingestedAt: now3,
-            updatedAt: now3,
+            ingestedAt: now4,
+            updatedAt: now4,
             rawJson: record.rawJson,
             normalizedDate: record.normalizedDate,
             normalizedCategory: record.normalizedCategory,
@@ -23253,7 +23253,7 @@ function genId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 async function generateReformPackage(patternId) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [patternRows] = await db.execute(
     sql71`SELECT * FROM pattern_registry WHERE pattern_id = ${patternId} LIMIT 1`
   );
@@ -23411,7 +23411,7 @@ async function generateReformPackage(patternId) {
       implementation_roadmap_section, supporting_data_section, jurisdiction, reform_type, created_at, updated_at)
     VALUES (${packageId}, ${patternId}, ${title}, 'draft', ${executiveSummary}, ${evidenceSection},
       ${rootCauseSection}, ${interventionHistorySection}, ${recommendedReformsSection},
-      ${implementationRoadmapSection}, ${supportingDataSection}, ${jurisdiction}, ${reformType}, ${now3}, ${now3})
+      ${implementationRoadmapSection}, ${supportingDataSection}, ${jurisdiction}, ${reformType}, ${now4}, ${now4})
   `);
   return {
     packageId,
@@ -23427,8 +23427,8 @@ async function generateReformPackage(patternId) {
     supportingDataSection,
     jurisdiction,
     reformType,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   };
 }
 async function exportReformPackage(packageId, format) {
@@ -23621,11 +23621,11 @@ h3{color:#533483}hr{border:none;border-top:1px solid #eee;margin:2rem 0}</style>
   return { content: md, mimeType: "text/markdown", filename: `${packageId}.md` };
 }
 async function updateReformPackageStatus(packageId, newStatus, opts) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const validStatuses = ["draft", "review", "submitted", "under_consideration", "adopted", "rejected"];
   if (!validStatuses.includes(newStatus)) throw new Error(`Invalid status: ${newStatus}`);
   await db.execute(sql71`
-    UPDATE reform_packages SET status = ${newStatus}, updated_at = ${now3}
+    UPDATE reform_packages SET status = ${newStatus}, updated_at = ${now4}
     WHERE package_id = ${packageId}
   `);
   if (newStatus === "submitted" && opts?.submittedTo) {
@@ -23635,7 +23635,7 @@ async function updateReformPackageStatus(packageId, newStatus, opts) {
   }
   if (newStatus === "adopted") {
     await db.execute(sql71`
-      UPDATE reform_packages SET adopted_date = ${now3},
+      UPDATE reform_packages SET adopted_date = ${now4},
         signal_reduction_pct = ${opts?.signalReductionPct || null},
         systemic_impact_score = ${opts?.systemicImpactScore || null}
       WHERE package_id = ${packageId}
@@ -23648,7 +23648,7 @@ async function updateReformPackageStatus(packageId, newStatus, opts) {
       const changeId = genId("PCH");
       await db.execute(sql71`
         INSERT INTO policy_change_registry (change_id, pattern_type, jurisdiction, reform_type, proposal_title, priority_score, status, created_at, updated_at)
-        VALUES (${changeId}, ${pkg.reform_type || "reform"}, ${pkg.jurisdiction}, 'legislative_fix', ${"Reform Adopted: " + packageId}, 90, 'approved', ${now3}, ${now3})
+        VALUES (${changeId}, ${pkg.reform_type || "reform"}, ${pkg.jurisdiction}, 'legislative_fix', ${"Reform Adopted: " + packageId}, 90, 'approved', ${now4}, ${now4})
       `);
       await db.execute(sql71`
         INSERT INTO strategy_memory (memory_id, pattern_type, jurisdiction, intervention_type,
@@ -23656,7 +23656,7 @@ async function updateReformPackageStatus(packageId, newStatus, opts) {
         VALUES (${genId("MEM")}, ${pkg.reform_type || "reform"}, ${pkg.jurisdiction}, 'reform_adopted',
           ${opts?.signalReductionPct ? opts.signalReductionPct * 10 : 75},
           ${opts?.signalReductionPct ? Math.min(opts.signalReductionPct * 10, 100) : 70},
-          ${"Auto-recorded from adopted reform package " + packageId}, ${now3})
+          ${"Auto-recorded from adopted reform package " + packageId}, ${now4})
       `);
     }
   }
@@ -23841,12 +23841,12 @@ async function registerEntity(params) {
   const canonicalName = resolveEntityName(params.entityName);
   const entityType = params.entityType ?? classifyEntityType(canonicalName);
   const industry = params.industry ?? inferIndustry(canonicalName);
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [existing] = await db.select().from(entityRegistry).where(eq54(entityRegistry.canonicalName, canonicalName)).limit(1);
   if (existing) {
     await db.update(entityRegistry).set({
-      lastSeenAt: now3,
-      updatedAt: now3,
+      lastSeenAt: now4,
+      updatedAt: now4,
       ...industry && !existing.industry ? { industry } : {},
       ...params.jurisdiction && !existing.jurisdiction ? { jurisdiction: params.jurisdiction } : {}
     }).where(eq54(entityRegistry.id, existing.id));
@@ -23866,10 +23866,10 @@ async function registerEntity(params) {
     litigationCount: 0,
     enforcementCount: 0,
     patternCount: 0,
-    firstSeenAt: now3,
-    lastSeenAt: now3,
-    createdAt: now3,
-    updatedAt: now3
+    firstSeenAt: now4,
+    lastSeenAt: now4,
+    createdAt: now4,
+    updatedAt: now4
   });
   return { id: inserted.insertId, canonicalName, entityType };
 }
@@ -24638,12 +24638,12 @@ async function upsertCapturePattern(params) {
     conditions.push(eq56(regulatoryCapturePatterns.regulatedEntity, params.regulatedEntity));
   }
   const [existing] = await db.select().from(regulatoryCapturePatterns).where(and45(...conditions)).limit(1);
-  const now3 = Date.now();
+  const now4 = Date.now();
   if (existing) {
     await db.update(regulatoryCapturePatterns).set({
       captureRiskScore: riskScore,
       patternStatus: status,
-      updatedAt: now3
+      updatedAt: now4
     }).where(eq56(regulatoryCapturePatterns.id, existing.id));
     return { id: existing.id, riskScore, status, updated: true };
   }
@@ -24661,8 +24661,8 @@ async function upsertCapturePattern(params) {
     campaignContributions: 0,
     policyChanges: 0,
     patternStatus: status,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   for (const ind of params.indicators.filter((i) => i.detected)) {
     await db.insert(regulatoryCaptureSignals).values({
@@ -24674,7 +24674,7 @@ async function upsertCapturePattern(params) {
       sourceStreamRcs: "cross_stream_analysis",
       confidenceScoreRcs: ind.strength,
       evidenceReferenceRcs: ind.evidence,
-      createdAtRcs: now3
+      createdAtRcs: now4
     });
   }
   return { id: inserted.insertId, riskScore, status, updated: false };
@@ -24827,18 +24827,18 @@ async function calculateCrisisProbability(params) {
   return { probability, indicators, riskLevel };
 }
 function estimateEscalationDate(probability, patternAge, signalVelocity) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   if (probability >= 75) {
     const daysUntil = Math.max(30, Math.round(90 - (probability - 75)));
-    return now3 + daysUntil * 864e5;
+    return now4 + daysUntil * 864e5;
   } else if (probability >= 50) {
     const daysUntil = Math.max(90, Math.round(180 - (probability - 50) * 3.6));
-    return now3 + daysUntil * 864e5;
+    return now4 + daysUntil * 864e5;
   } else if (probability >= 25) {
     const daysUntil = Math.max(180, Math.round(365 - (probability - 25) * 7.4));
-    return now3 + daysUntil * 864e5;
+    return now4 + daysUntil * 864e5;
   } else {
-    return now3 + 365 * 864e5;
+    return now4 + 365 * 864e5;
   }
 }
 function identifyTriggerFactors(indicators) {
@@ -26636,14 +26636,14 @@ function startQuarterlyExportCron() {
   }, {
     timezone: "UTC"
   });
-  const now3 = /* @__PURE__ */ new Date();
-  const nextQuarter = new Date(now3);
+  const now4 = /* @__PURE__ */ new Date();
+  const nextQuarter = new Date(now4);
   nextQuarter.setUTCDate(1);
   nextQuarter.setUTCHours(0, 0, 0, 0);
-  const currentMonth = now3.getUTCMonth();
+  const currentMonth = now4.getUTCMonth();
   const nextQuarterMonth = Math.ceil((currentMonth + 1) / 3) * 3;
   if (nextQuarterMonth >= 12) {
-    nextQuarter.setUTCFullYear(now3.getUTCFullYear() + 1);
+    nextQuarter.setUTCFullYear(now4.getUTCFullYear() + 1);
     nextQuarter.setUTCMonth(0);
   } else {
     nextQuarter.setUTCMonth(nextQuarterMonth);
@@ -27228,7 +27228,7 @@ async function listStreams() {
   }));
 }
 async function addStream(input, adminId, adminName) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   await pool.query(
     `INSERT INTO data_stream_registry (
       stream_id_dsr, stream_name_dsr, stream_type_dsr, source_url_dsr, update_freq_dsr,
@@ -27245,7 +27245,7 @@ async function addStream(input, adminId, adminName) {
       input.confidence_multiplier ?? 100,
       input.description ?? null,
       input.field_mapping ? JSON.stringify(input.field_mapping) : null,
-      now3
+      now4
     ]
   );
   await logChange({
@@ -28728,8 +28728,8 @@ function map_jurisdiction_rows(rows2) {
   }));
 }
 async function getJurisdictions() {
-  const now3 = Date.now();
-  if (jurisdictions_cache && jurisdictions_cache.expires_at > now3) {
+  const now4 = Date.now();
+  if (jurisdictions_cache && jurisdictions_cache.expires_at > now4) {
     return jurisdictions_cache.rows;
   }
   try {
@@ -28743,7 +28743,7 @@ async function getJurisdictions() {
       }
     );
     const rows2 = map_jurisdiction_rows(result.rows);
-    jurisdictions_cache = { expires_at: now3 + JURISDICTIONS_CACHE_TTL_MS, rows: rows2 };
+    jurisdictions_cache = { expires_at: now4 + JURISDICTIONS_CACHE_TTL_MS, rows: rows2 };
     return rows2;
   } catch (error) {
     if (jurisdictions_cache) {
@@ -28889,7 +28889,7 @@ var init_pg_pool = __esm({
 
 // server/services/caseService.ts
 async function createCase2(data) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const query = `
     INSERT INTO luminari_cases (
       user_id,
@@ -28908,8 +28908,8 @@ async function createCase2(data) {
     data.category,
     data.selected_workflow_id,
     "active",
-    now3,
-    now3
+    now4,
+    now4
   ]);
   return result.rows[0];
 }
@@ -28922,7 +28922,7 @@ async function getCaseById(caseId2) {
   return result.rows[0] || null;
 }
 async function addCaseNote(caseId2, content) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const query = `
     INSERT INTO luminari_case_notes (
       case_id,
@@ -28931,7 +28931,7 @@ async function addCaseNote(caseId2, content) {
     ) VALUES ($1, $2, $3)
     RETURNING *;
   `;
-  const result = await pool2.query(query, [caseId2, content, now3]);
+  const result = await pool2.query(query, [caseId2, content, now4]);
   return result.rows[0];
 }
 async function getCaseNotes(caseId2) {
@@ -28944,7 +28944,7 @@ async function getCaseNotes(caseId2) {
   return result.rows;
 }
 async function recordCaseAction(caseId2, actionType, metadata) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const query = `
     INSERT INTO luminari_case_actions (
       case_id,
@@ -28954,11 +28954,11 @@ async function recordCaseAction(caseId2, actionType, metadata) {
     ) VALUES ($1, $2, $3, $4)
     RETURNING *;
   `;
-  const result = await pool2.query(query, [caseId2, actionType, JSON.stringify(metadata), now3]);
+  const result = await pool2.query(query, [caseId2, actionType, JSON.stringify(metadata), now4]);
   return result.rows[0];
 }
 async function recordCaseEvent(caseId2, eventType, eventData) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const query = `
     INSERT INTO luminari_case_events (
       case_id,
@@ -28968,7 +28968,7 @@ async function recordCaseEvent(caseId2, eventType, eventData) {
     ) VALUES ($1, $2, $3, $4)
     RETURNING *;
   `;
-  const result = await pool2.query(query, [caseId2, eventType, JSON.stringify(eventData), now3]);
+  const result = await pool2.query(query, [caseId2, eventType, JSON.stringify(eventData), now4]);
   return result.rows[0];
 }
 async function getCaseTimeline(caseId2) {
@@ -28984,14 +28984,14 @@ async function getCaseTimeline(caseId2) {
   return result.rows;
 }
 async function updateCaseStatus(caseId2, status) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const query = `
     UPDATE luminari_cases
     SET status = $1, updated_at = $2
     WHERE id = $3
     RETURNING *;
   `;
-  const result = await pool2.query(query, [status, now3, caseId2]);
+  const result = await pool2.query(query, [status, now4, caseId2]);
   return result.rows[0];
 }
 async function markCaseForExpungement(caseId2) {
@@ -29724,7 +29724,7 @@ async function processSignalsBatch2(input) {
           LIMIT 1
         `);
         if (existingByFp[0].length > 0) {
-          const now3 = Date.now();
+          const now4 = Date.now();
           await db.execute(sql123`
             INSERT INTO sunam_gate_log
               (live_signal_id, signal_fingerprint, signal_type, dataset_id,
@@ -29737,7 +29737,7 @@ async function processSignalsBatch2(input) {
                ${0}, ${0}, ${"{}"},
                'approve', ${"Skipped: fingerprint already promoted via prior path"},
                ${null}, ${null}, ${"process_signals_batch"},
-               ${now3}, ${now3})
+               ${now4}, ${now4})
           `);
           skipped++;
           details?.push({
@@ -30902,7 +30902,7 @@ var init_sunam_executor = __esm({
 });
 
 // server/canonical-enforcement.ts
-import { createHash as createHash13 } from "crypto";
+import { createHash as createHash12 } from "crypto";
 function enforceSignalFlowReadOnly(operation) {
   if (operation === "INSERT" || operation === "SELECT") {
     return {
@@ -31085,7 +31085,7 @@ async function validateWorldNodeForRemedy(nodeId) {
 }
 function computeDeterministicHash(input) {
   const normalized = JSON.stringify(input, Object.keys(input).sort());
-  return createHash13("sha256").update(normalized).digest("hex");
+  return createHash12("sha256").update(normalized).digest("hex");
 }
 function verifyDeterminism(inputHash, outputHash, expectedOutputHash) {
   if (!inputHash || !outputHash) {
@@ -31188,10 +31188,10 @@ var proof_stream_exports = {};
 __export(proof_stream_exports, {
   runProofStream: () => runProofStream
 });
-import { createHash as createHash14 } from "crypto";
+import { createHash as createHash13 } from "crypto";
 function hashInput(data) {
   const sorted = JSON.stringify(data, Object.keys(data).sort());
-  return createHash14("sha256").update(sorted).digest("hex");
+  return createHash13("sha256").update(sorted).digest("hex");
 }
 async function stageIngest(liveSignalId) {
   const stage = {
@@ -31221,7 +31221,7 @@ async function stageIngest(liveSignalId) {
     signalType: signal.signalType,
     fingerprint: signal.signalFingerprint
   });
-  const sourceHash = createHash14("sha256").update(`live_signal:${signal.id}:${signal.signalFingerprint}`).digest("hex");
+  const sourceHash = createHash13("sha256").update(`live_signal:${signal.id}:${signal.signalFingerprint}`).digest("hex");
   const { rows: existing } = await pool.query(
     `SELECT id FROM ingested_records WHERE source_hash = $1`,
     [sourceHash]
@@ -31529,12 +31529,12 @@ async function stageWorldNode(domain) {
     stage.details = { error: metaValidation.message, metadata: metadataL10 };
     return stage;
   }
-  const now3 = Date.now();
+  const now4 = Date.now();
   const { rows: wnResult } = await pool.query(
     `INSERT INTO world_nodes
      (biome_type, node_name_wn, latitude, longitude, metadata_l10, active_remedy, last_verified_at_wn, created_at_wn, updated_at_wn)
      VALUES ($1, $2, 0, 0, $3, 1, $4, $5, $6)`,
-    [biomeType, nodeName, JSON.stringify(metadataL10), now3, now3, now3]
+    [biomeType, nodeName, JSON.stringify(metadataL10), now4, now4, now4]
   );
   const wnId = wnResult.insertId;
   stage.status = "completed";
@@ -32345,11 +32345,11 @@ __export(provenance_alerting_exports, {
 });
 import { eq as eq82, and as and62, gt as gt3 } from "drizzle-orm";
 async function isInCooldown(alertType) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [recent] = await db.select().from(provenanceAlertEvents).where(
     and62(
       eq82(provenanceAlertEvents.alertType, alertType),
-      gt3(provenanceAlertEvents.cooldownUntil, now3)
+      gt3(provenanceAlertEvents.cooldownUntil, now4)
     )
   ).limit(1);
   return !!recent;
@@ -32979,7 +32979,7 @@ async function detectEvidenceGaps(caseId2, pipelineType) {
 async function detectAndPersistGaps(caseId2, pipelineType) {
   const result = await detectEvidenceGaps(caseId2, pipelineType);
   if (!result) return null;
-  const now3 = Date.now();
+  const now4 = Date.now();
   const ruleSet = getDomainRules(pipelineType);
   const existing = await db.select().from(missingRecords).where(and63(
     eq83(missingRecords.caseId, caseId2),
@@ -33005,15 +33005,15 @@ async function detectAndPersistGaps(caseId2, pipelineType) {
         agencyType: rule.agencyType,
         foiaEligible: missing.foiaEligible,
         status: "detected",
-        detectedAt: now3,
-        updatedAt: now3
+        detectedAt: now4,
+        updatedAt: now4
       });
     }
   }
   for (const recordType of Object.keys(existingByType)) {
     const existingRecord = existingByType[recordType];
     if (!missingTypes.has(recordType) && existingRecord.status === "detected") {
-      await db.update(missingRecords).set({ status: "received", updatedAt: now3 }).where(eq83(missingRecords.id, existingRecord.id));
+      await db.update(missingRecords).set({ status: "received", updatedAt: now4 }).where(eq83(missingRecords.id, existingRecord.id));
     }
   }
   try {
@@ -33124,7 +33124,7 @@ __export(foia_generator_exports, {
   generateFingerprint: () => generateFingerprint,
   generateFoiaRequest: () => generateFoiaRequest
 });
-import { createHash as createHash15 } from "crypto";
+import { createHash as createHash14 } from "crypto";
 import { eq as eq84, and as and64, inArray as inArray13, sql as sql130 } from "drizzle-orm";
 async function evaluateCaseReadiness(caseId2) {
   const [caseRow] = await db.select().from(cases).where(eq84(cases.id, caseId2));
@@ -33204,7 +33204,7 @@ function generateFingerprint(domain, recordType, agencyId, stateCode) {
     agencyId?.toString() ?? "no_agency",
     stateCode.toLowerCase().trim()
   ].join("|");
-  return createHash15("sha256").update(normalized).digest("hex").slice(0, 32);
+  return createHash14("sha256").update(normalized).digest("hex").slice(0, 32);
 }
 function assessWarmHandoff(caseRow, gaps) {
   const reasons = [];
@@ -33384,8 +33384,8 @@ async function generateFoiaRequest(caseId2, missingRecordId, userId, requesterIn
       error: `Letter generation failed: ${err instanceof Error ? err.message : "Unknown error"}`
     };
   }
-  const now3 = Date.now();
-  const responseDueAt = primaryAgency?.statute.responseDeadlineDays ? now3 + primaryAgency.statute.responseDeadlineDays * 24 * 60 * 60 * 1e3 : null;
+  const now4 = Date.now();
+  const responseDueAt = primaryAgency?.statute.responseDeadlineDays ? now4 + primaryAgency.statute.responseDeadlineDays * 24 * 60 * 60 * 1e3 : null;
   const gatingReason = JSON.stringify({
     severity: missingRecord.severity,
     foiaEligible: missingRecord.foiaEligible,
@@ -33414,12 +33414,12 @@ async function generateFoiaRequest(caseId2, missingRecordId, userId, requesterIn
     gatingReason,
     warmHandoff,
     warmHandoffReason: warmHandoffReasons.length > 0 ? warmHandoffReasons.join("\n\n") : null,
-    createdAt: now3,
-    updatedAt: now3,
+    createdAt: now4,
+    updatedAt: now4,
     responseDueAt
   });
   const requestId = result.insertId;
-  await db.update(missingRecords).set({ status: "requested", updatedAt: now3 }).where(eq84(missingRecords.id, missingRecordId));
+  await db.update(missingRecords).set({ status: "requested", updatedAt: now4 }).where(eq84(missingRecords.id, missingRecordId));
   try {
     const { runPatternDetection: runPatternDetection2 } = await Promise.resolve().then(() => (init_pattern_detection(), pattern_detection_exports));
     const patternResult = await runPatternDetection2({
@@ -33668,7 +33668,7 @@ __export(lens_engine_exports, {
   resolveDependencies: () => resolveDependencies,
   validateRegistry: () => validateRegistry2
 });
-import { createHash as createHash16 } from "crypto";
+import { createHash as createHash15 } from "crypto";
 import { readFileSync as readFileSync10 } from "fs";
 import { join as join10 } from "path";
 function mapSignalFlags(flagTypes) {
@@ -33706,7 +33706,7 @@ function computeRegistryHash(registry) {
     signals: registry.signals.slice().sort(),
     mutual_exclusion_groups: registry.mutual_exclusion_groups || []
   });
-  return createHash16("sha256").update(payload).digest("hex");
+  return createHash15("sha256").update(payload).digest("hex");
 }
 function validateRegistry2(registry) {
   const errors = [];
@@ -34358,7 +34358,7 @@ __export(pipeline_resolver_exports, {
 });
 import { readFileSync as readFileSync11 } from "fs";
 import { join as join11 } from "path";
-import { createHash as createHash17 } from "crypto";
+import { createHash as createHash16 } from "crypto";
 function loadPipelineRegistry(configDir2) {
   const dir = configDir2 || join11(import.meta.dirname, "config");
   const typesRaw = readFileSync11(join11(dir, "pipeline_types.json"), "utf-8");
@@ -34425,7 +34425,7 @@ function loadPipelineRegistry(configDir2) {
     preservedLegacy.add(normalized);
   }
   const hashInput2 = typesRaw + "\n---\n" + aliasesRaw;
-  const registryHash = createHash17("sha256").update(hashInput2).digest("hex");
+  const registryHash = createHash16("sha256").update(hashInput2).digest("hex");
   cache = {
     canonicalIds,
     canonicalEntries,
@@ -34878,7 +34878,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 
 // server/routers.ts
 init_live_signal_emitter();
-import { z as z86 } from "zod";
+import { z as z85 } from "zod";
 
 // server/routers/signal-extraction-router.ts
 import { z } from "zod";
@@ -35656,10 +35656,10 @@ async function buildDatabaseDiagnostic() {
   }
 }
 async function getDatabaseDiagnostic() {
-  const now3 = Date.now();
-  if (cached_diagnostic && cached_diagnostic.expires_at > now3) return cached_diagnostic.payload;
+  const now4 = Date.now();
+  if (cached_diagnostic && cached_diagnostic.expires_at > now4) return cached_diagnostic.payload;
   const payload = await buildDatabaseDiagnostic();
-  cached_diagnostic = { expires_at: now3 + CACHE_TTL_MS, payload };
+  cached_diagnostic = { expires_at: now4 + CACHE_TTL_MS, payload };
   return payload;
 }
 async function sendDatabaseDiagnostic(res) {
@@ -38534,7 +38534,7 @@ function assertOutputRefsFormat(value) {
 init_db();
 import { sql as sql11 } from "drizzle-orm";
 async function scanSchema() {
-  const now3 = Date.now();
+  const now4 = Date.now();
   let newTables = 0;
   let newFields = 0;
   const [allTables] = await db.execute(sql11`
@@ -38563,14 +38563,14 @@ async function scanSchema() {
       await db.execute(sql11`
         UPDATE table_registry 
         SET rowCount = ${rowCount}, columnCount = ${columnCount}, 
-            lastScannedAt = ${now3}, updatedAt = ${now3},
+            lastScannedAt = ${now4}, updatedAt = ${now4},
             status = ${rowCount > 0 ? "active" : "empty"}
         WHERE id = ${tableId}
       `);
     } else {
       const [ins] = await db.execute(sql11`
         INSERT INTO table_registry (tableName, category, description, rowCount, columnCount, lastScannedAt, status, createdAt, updatedAt)
-        VALUES (${tableName}, ${category}, ${`Auto-scanned: ${tableName}`}, ${rowCount}, ${columnCount}, ${now3}, ${rowCount > 0 ? "active" : "empty"}, ${now3}, ${now3})
+        VALUES (${tableName}, ${category}, ${`Auto-scanned: ${tableName}`}, ${rowCount}, ${columnCount}, ${now4}, ${rowCount > 0 ? "active" : "empty"}, ${now4}, ${now4})
       `);
       tableId = ins.insertId;
       newTables++;
@@ -38596,7 +38596,7 @@ async function scanSchema() {
             ${f.IS_NULLABLE === "YES" ? 1 : 0}, 
             ${f.COLUMN_KEY === "PRI" ? 1 : 0}, 
             ${f.COLUMN_KEY !== "" ? 1 : 0}, 
-            ${now3}
+            ${now4}
           )
         `);
         newFields++;
@@ -38649,7 +38649,7 @@ async function detectDrift() {
   };
 }
 async function logConduitEvent(params) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.execute(sql11`
     INSERT INTO conduit_events (event_type, pipeline_id, engine_id, run_id, snapshot_id, metadata, createdAt)
     VALUES (
@@ -38659,7 +38659,7 @@ async function logConduitEvent(params) {
       ${params.runId ?? null},
       ${params.snapshotId ?? null},
       ${JSON.stringify(params.metadata ?? {})},
-      ${now3}
+      ${now4}
     )
   `);
   return result.insertId;
@@ -38760,7 +38760,7 @@ async function generateOutput(snapshotId) {
       completed_at: r.completedAt
     }))
   };
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [ins] = await db.execute(sql11`
     INSERT INTO alpha_lake_exports (snapshot_id, export_type, engine_run_ids, output_payload, status, createdAt)
     VALUES (
@@ -38769,7 +38769,7 @@ async function generateOutput(snapshotId) {
       ${JSON.stringify(runs.map((r) => r.run_id))},
       ${JSON.stringify(assembled)},
       ${"completed"},
-      ${now3}
+      ${now4}
     )
   `);
   const exportId = ins.insertId;
@@ -38777,7 +38777,7 @@ async function generateOutput(snapshotId) {
     eventType: "ALPHA_EXPORT",
     pipelineId: "alpha_lake",
     snapshotId,
-    metadata: { export_id: exportId, engine_count: runs.length, timestamp: now3 }
+    metadata: { export_id: exportId, engine_count: runs.length, timestamp: now4 }
   });
   return { snapshotId, runs: assembled.runs, exportId };
 }
@@ -38796,7 +38796,7 @@ function syncStatus(s) {
 }
 async function wrapEngineExecution(config, engineFn, extractOutputRefs) {
   const runId = `run_${config.engineId}_${Date.now()}_${randomUUID().slice(0, 8)}`;
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.insert(engineRuns).values({
     runId,
     caseId: config.caseId,
@@ -38808,8 +38808,8 @@ async function wrapEngineExecution(config, engineFn, extractOutputRefs) {
     stageResults: null,
     outputRefs: null,
     snapshotId: config.snapshotId ?? null,
-    startedAt: now3,
-    createdAt: now3
+    startedAt: now4,
+    createdAt: now4
   });
   await db.update(engineRuns).set({ ...syncStatus("running"), currentStage: "executing" }).where(sql12`run_id = ${runId}`);
   try {
@@ -39086,11 +39086,11 @@ async function checkAndCreateCampaigns() {
 }
 async function createCampaign(params) {
   const id = randomUUID2();
-  const now3 = (/* @__PURE__ */ new Date()).toISOString();
+  const now4 = (/* @__PURE__ */ new Date()).toISOString();
   const stageHistory = [{
     stage: 1,
     stageName: "Detection",
-    enteredAt: now3
+    enteredAt: now4
   }];
   const stageHistoryJson = JSON.stringify(stageHistory);
   const patternId = params.patternId || null;
@@ -39151,13 +39151,13 @@ async function advanceCampaignStage(campaignId, notes) {
   const campaign = await getCampaign(campaignId);
   if (!campaign) throw new Error("Campaign not found");
   if (campaign.currentStage >= 6) throw new Error("Campaign already at final stage");
-  const now3 = (/* @__PURE__ */ new Date()).toISOString();
+  const now4 = (/* @__PURE__ */ new Date()).toISOString();
   const newStage = campaign.currentStage + 1;
   const stageDef = CAMPAIGN_STAGES.find((s) => s.number === newStage);
   const history = [...campaign.stageHistory];
   const currentEntry = history.find((h) => h.stage === campaign.currentStage && !h.completedAt);
-  if (currentEntry) currentEntry.completedAt = now3;
-  history.push({ stage: newStage, stageName: stageDef.name, enteredAt: now3, notes });
+  if (currentEntry) currentEntry.completedAt = now4;
+  history.push({ stage: newStage, stageName: stageDef.name, enteredAt: now4, notes });
   let status = "analysis";
   if (newStage === 2) status = "strategy";
   else if (newStage === 3) status = "reform_package";
@@ -39965,12 +39965,12 @@ var sunamGateRouter = router({
     return updateThreshold(id, updates, ctx.user.name ?? "admin");
   }),
   activateThreshold: adminProcedure.input(z6.object({ id: z6.number() })).mutation(async ({ ctx, input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const actor = ctx.user.name ?? "admin";
-    await db.execute(sql17`UPDATE sunam_thresholds SET is_active = 0, updated_at = ${now3}`);
+    await db.execute(sql17`UPDATE sunam_thresholds SET is_active = 0, updated_at = ${now4}`);
     await db.execute(sql17`
         UPDATE sunam_thresholds 
-        SET is_active = 1, updated_by = ${actor}, updated_at = ${now3}
+        SET is_active = 1, updated_by = ${actor}, updated_at = ${now4}
         WHERE id = ${input.id}
       `);
     invalidateThresholdCache();
@@ -41686,20 +41686,20 @@ var businessRouter = router({
     stddevAmount: z15.string().optional(),
     sampleCount: z15.number()
   })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const result = await db.insert(businessBaselines).values({
       entityType: input.entityType,
       entityId: input.entityId,
       avgAmount: input.avgAmount,
       stddevAmount: input.stddevAmount,
       sampleCount: input.sampleCount,
-      lastUpdated: now3
+      lastUpdated: now4
     }).onDuplicateKeyUpdate({
       set: {
         avgAmount: input.avgAmount,
         stddevAmount: input.stddevAmount,
         sampleCount: input.sampleCount,
-        lastUpdated: now3
+        lastUpdated: now4
       }
     });
     return { success: true, id: result?.[0]?.insertId ?? result.insertId };
@@ -43402,13 +43402,13 @@ async function verifyTenantAccess(caseId2, userId) {
 async function createPhase2Run(caseId2, snapshotId, userId) {
   await verifyTenantAccess(caseId2, userId);
   await verifySealedSnapshot(snapshotId, caseId2);
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(phase2Runs).values({
     caseId: caseId2,
     snapshotId,
     engineVersionReference: ENGINE_VERSION,
     status: "open",
-    createdAt: now3
+    createdAt: now4
   });
   const id = result.insertId;
   const [run] = await db.select().from(phase2Runs).where(eq9(phase2Runs.id, id));
@@ -43451,12 +43451,12 @@ async function createEvidenceRequirement(runId, payload) {
       message: `Phase-2 run ${runId} is ${run.status}. Artifacts can only be added to open runs.`
     });
   }
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(phase2EvidenceRequirements).values({
     runId,
     snapshotId: run.snapshotId,
     payload,
-    createdAt: now3
+    createdAt: now4
   });
   const id = result.insertId;
   const [row] = await db.select().from(phase2EvidenceRequirements).where(eq9(phase2EvidenceRequirements.id, id));
@@ -43473,13 +43473,13 @@ async function createStructuredNote(runId, payload, temporalAnchors) {
       message: `Phase-2 run ${runId} is ${run.status}. Artifacts can only be added to open runs.`
     });
   }
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.insert(phase2StructuredNotes).values({
     runId,
     snapshotId: run.snapshotId,
     payload,
     temporalAnchors: temporalAnchors ?? [],
-    createdAt: now3
+    createdAt: now4
   });
   const id = result.insertId;
   const [row] = await db.select().from(phase2StructuredNotes).where(eq9(phase2StructuredNotes.id, id));
@@ -52006,11 +52006,11 @@ var docketRouter = router({
   }),
   /** Create a new docket entry (admin only) */
   create: adminProcedure.input(docketEntryInput).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const id = await createDocketEntry({
       ...input,
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     return { id };
   }),
@@ -52029,7 +52029,7 @@ var docketRouter = router({
     impacts: z24.array(impactInput),
     sources: z24.array(sourceInput)
   })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const existing = await getDocketEntryBySlug(input.entry.slug);
     if (existing) {
       await updateDocketEntry(existing.id, input.entry);
@@ -52037,29 +52037,29 @@ var docketRouter = router({
       await deleteImpactsForDocket(existing.id);
       await deleteSourcesForDocket(existing.id);
       if (input.actors.length > 0) {
-        await bulkCreateActors(input.actors.map((a) => ({ ...a, docketId: existing.id, createdAt: now3 })));
+        await bulkCreateActors(input.actors.map((a) => ({ ...a, docketId: existing.id, createdAt: now4 })));
       }
       if (input.impacts.length > 0) {
-        await bulkCreateImpacts(input.impacts.map((i) => ({ ...i, docketId: existing.id, createdAt: now3 })));
+        await bulkCreateImpacts(input.impacts.map((i) => ({ ...i, docketId: existing.id, createdAt: now4 })));
       }
       if (input.sources.length > 0) {
-        await bulkCreateSources(input.sources.map((s) => ({ ...s, docketId: existing.id, createdAt: now3 })));
+        await bulkCreateSources(input.sources.map((s) => ({ ...s, docketId: existing.id, createdAt: now4 })));
       }
       return { id: existing.id, updated: true };
     }
     const id = await createDocketEntry({
       ...input.entry,
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     if (input.actors.length > 0) {
-      await bulkCreateActors(input.actors.map((a) => ({ ...a, docketId: id, createdAt: now3 })));
+      await bulkCreateActors(input.actors.map((a) => ({ ...a, docketId: id, createdAt: now4 })));
     }
     if (input.impacts.length > 0) {
-      await bulkCreateImpacts(input.impacts.map((i) => ({ ...i, docketId: id, createdAt: now3 })));
+      await bulkCreateImpacts(input.impacts.map((i) => ({ ...i, docketId: id, createdAt: now4 })));
     }
     if (input.sources.length > 0) {
-      await bulkCreateSources(input.sources.map((s) => ({ ...s, docketId: id, createdAt: now3 })));
+      await bulkCreateSources(input.sources.map((s) => ({ ...s, docketId: id, createdAt: now4 })));
     }
     return { id, updated: false };
   }),
@@ -52108,7 +52108,7 @@ var docketRouter = router({
       fileName: z24.string().max(512).optional(),
       notes: z24.string().max(2e3).optional()
     })).mutation(async ({ ctx, input }) => {
-      const now3 = Date.now();
+      const now4 = Date.now();
       const id = await createDocketSubmission({
         userId: ctx.user.id,
         userName: ctx.user.name ?? void 0,
@@ -52121,8 +52121,8 @@ var docketRouter = router({
         fileName: input.fileName,
         notes: input.notes,
         status: "pending",
-        createdAt: now3,
-        updatedAt: now3
+        createdAt: now4,
+        updatedAt: now4
       });
       const fileNote = input.fileName ? ` [Attached: ${input.fileName}]` : "";
       await notifyOwner({
@@ -52651,7 +52651,7 @@ var lumensendRouter = router({
       ...input,
       senderName: input.senderName
     });
-    const now3 = Date.now();
+    const now4 = Date.now();
     const draft = await createDraft({
       userId: ctx.user.id,
       documentType: input.documentType,
@@ -52672,8 +52672,8 @@ var lumensendRouter = router({
       jurisdiction: input.stateCode,
       relatedActions: letter.relatedActions?.length ? JSON.stringify(letter.relatedActions) : null,
       status: "draft",
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     return {
       draft_id: draft.id,
@@ -53378,683 +53378,8 @@ var legalLibraryRouter = router({
   })
 });
 
-// server/routers/civic-genome-router.ts
-import { z as z27 } from "zod";
-
-// server/civic-genome-db.ts
-init_db();
-async function list_genome_families(opts) {
-  const pool3 = getPool();
-  const conditions = [];
-  const params = [];
-  if (opts?.policy_domain) {
-    params.push(opts.policy_domain);
-    conditions.push(`policy_domain = $${params.length}`);
-  }
-  if (opts?.family_status) {
-    params.push(opts.family_status);
-    conditions.push(`family_status = $${params.length}`);
-  }
-  const where = conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
-  const limit = Math.min(opts?.limit ?? 50, 200);
-  const offset = opts?.offset ?? 0;
-  params.push(limit, offset);
-  const { rows: rows2 } = await pool3.query(
-    `select * from civic_genome_family
-     ${where}
-     order by momentum_score desc, last_event_at desc nulls last
-     limit $${params.length - 1} offset $${params.length}`,
-    params
-  );
-  return rows2;
-}
-async function get_genome_family(family_id) {
-  const pool3 = getPool();
-  const { rows: rows2 } = await pool3.query(
-    `select * from civic_genome_family where family_id = $1 limit 1`,
-    [family_id]
-  );
-  return rows2[0] ?? null;
-}
-async function list_genome_bills(opts) {
-  const pool3 = getPool();
-  const conditions = [];
-  const params = [];
-  if (opts?.family_id) {
-    params.push(opts.family_id);
-    conditions.push(`family_id = $${params.length}`);
-  }
-  if (opts?.state_code) {
-    params.push(opts.state_code);
-    conditions.push(`state_code = $${params.length}`);
-  }
-  if (opts?.bill_status) {
-    params.push(opts.bill_status);
-    conditions.push(`bill_status = $${params.length}`);
-  }
-  if (opts?.current_state_position) {
-    params.push(opts.current_state_position);
-    conditions.push(`current_state_position = $${params.length}`);
-  }
-  const where = conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
-  const limit = Math.min(opts?.limit ?? 50, 200);
-  const offset = opts?.offset ?? 0;
-  params.push(limit, offset);
-  const { rows: rows2 } = await pool3.query(
-    `select * from civic_genome_bill
-     ${where}
-     order by last_action_at desc nulls last, introduced_at desc nulls last
-     limit $${params.length - 1} offset $${params.length}`,
-    params
-  );
-  return rows2;
-}
-async function get_genome_bill(genome_bill_id) {
-  const pool3 = getPool();
-  const { rows: rows2 } = await pool3.query(
-    `select * from civic_genome_bill where genome_bill_id = $1 limit 1`,
-    [genome_bill_id]
-  );
-  return rows2[0] ?? null;
-}
-async function list_genome_events(opts) {
-  const pool3 = getPool();
-  const conditions = [];
-  const params = [];
-  if (opts?.family_id) {
-    params.push(opts.family_id);
-    conditions.push(`family_id = $${params.length}`);
-  }
-  if (opts?.genome_bill_id) {
-    params.push(opts.genome_bill_id);
-    conditions.push(`genome_bill_id = $${params.length}`);
-  }
-  if (opts?.state_code) {
-    params.push(opts.state_code);
-    conditions.push(`state_code = $${params.length}`);
-  }
-  if (opts?.event_type) {
-    params.push(opts.event_type);
-    conditions.push(`event_type = $${params.length}`);
-  }
-  const where = conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
-  const limit = Math.min(opts?.limit ?? 100, 500);
-  const offset = opts?.offset ?? 0;
-  params.push(limit, offset);
-  const { rows: rows2 } = await pool3.query(
-    `select * from civic_genome_event
-     ${where}
-     order by event_timestamp desc
-     limit $${params.length - 1} offset $${params.length}`,
-    params
-  );
-  return rows2;
-}
-async function list_lineage_edges(opts) {
-  const pool3 = getPool();
-  const conditions = [];
-  const params = [];
-  if (opts?.family_id) {
-    params.push(opts.family_id);
-    conditions.push(`family_id = $${params.length}`);
-  }
-  if (opts?.from_bill_id) {
-    params.push(opts.from_bill_id);
-    conditions.push(`from_bill_id = $${params.length}`);
-  }
-  if (opts?.to_bill_id) {
-    params.push(opts.to_bill_id);
-    conditions.push(`to_bill_id = $${params.length}`);
-  }
-  if (opts?.relationship_type) {
-    params.push(opts.relationship_type);
-    conditions.push(`relationship_type = $${params.length}`);
-  }
-  const where = conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
-  const limit = Math.min(opts?.limit ?? 100, 500);
-  params.push(limit);
-  const { rows: rows2 } = await pool3.query(
-    `select * from bill_lineage_edge
-     ${where}
-     order by confidence_score desc, created_at desc
-     limit $${params.length}`,
-    params
-  );
-  return rows2;
-}
-async function list_momentum_snapshots(opts) {
-  const pool3 = getPool();
-  const limit = Math.min(opts?.limit ?? 90, 365);
-  const { rows: rows2 } = await pool3.query(
-    `select * from family_momentum_snapshot
-     where family_id = $1
-     order by snapshot_date desc
-     limit $2`,
-    [opts.family_id, limit]
-  );
-  return rows2;
-}
-async function get_genome_stats() {
-  const pool3 = getPool();
-  const { rows: rows2 } = await pool3.query(
-    `select
-       (select count(*)::text from civic_genome_family) as total_families,
-       (select count(*)::text from civic_genome_family where family_status = 'active') as active_families,
-       (select count(*)::text from civic_genome_bill) as total_bills,
-       (select count(*)::text from civic_genome_event) as total_events`
-  );
-  const { rows: domain_rows } = await pool3.query(
-    `select distinct policy_domain from civic_genome_family order by policy_domain`
-  );
-  const r = rows2[0];
-  return {
-    total_families: parseInt(r.total_families, 10),
-    active_families: parseInt(r.active_families, 10),
-    total_bills: parseInt(r.total_bills, 10),
-    total_events: parseInt(r.total_events, 10),
-    policy_domains: domain_rows.map((d) => d.policy_domain)
-  };
-}
-
-// server/civic-genome-projection.ts
-init_db();
-import { createHash as createHash11 } from "crypto";
-
-// server/civic-genome-event-classifier.ts
-var bill_text = (bill) => `${bill.title ?? ""} ${bill.description ?? ""} ${bill.last_action ?? ""}`.toLowerCase();
-var latest_action = (bill) => bill.last_action ? ` Latest action: ${bill.last_action}` : "";
-var summarize = (bill, summary) => `${bill.number} ${summary}.${latest_action(bill)}`;
-var classify_docket_event = (bill, existing) => {
-  const text3 = bill_text(bill);
-  const last_action = `${bill.last_action ?? ""}`.toLowerCase();
-  if (/effective date/.test(last_action)) {
-    return {
-      event_type: "effective_date_set",
-      event_summary: summarize(bill, "has an effective date on the live docket")
-    };
-  }
-  if (/signed by governor|governor signed|became law|chapter/.test(text3)) {
-    return {
-      event_type: "enacted",
-      event_summary: summarize(bill, "appears enacted or chaptered on the live docket")
-    };
-  }
-  if (/veto/.test(text3)) {
-    return {
-      event_type: "vetoed",
-      event_summary: summarize(bill, "appears vetoed on the live docket")
-    };
-  }
-  if (/failed|withdrawn|dead|postponed indefinitely/.test(text3)) {
-    return {
-      event_type: "failed",
-      event_summary: summarize(bill, "appears failed, withdrawn, dead, or indefinitely postponed on the live docket")
-    };
-  }
-  if (/amend|engrossed|substitute|revised/.test(text3)) {
-    return {
-      event_type: "amended",
-      event_summary: summarize(bill, "appears amended, substituted, engrossed, or revised on the live docket")
-    };
-  }
-  if (/passed house and senate|passed both/.test(text3)) {
-    return {
-      event_type: "passed_two_chambers",
-      event_summary: summarize(bill, "appears to have passed both chambers on the live docket")
-    };
-  }
-  if (/passed house|passed senate/.test(text3)) {
-    return {
-      event_type: "passed_chamber",
-      event_summary: summarize(bill, "appears to have passed one chamber on the live docket")
-    };
-  }
-  if (/committee|referred|reported/.test(text3)) {
-    return {
-      event_type: "committee_action",
-      event_summary: summarize(bill, "has committee movement on the live docket")
-    };
-  }
-  return {
-    event_type: existing ? "docket_cache_changed" : "docket_cache_observed",
-    event_summary: summarize(bill, existing ? "changed in the Docket Room cache" : "was observed in the Docket Room cache")
-  };
-};
-
-// server/civic-genome-projection.ts
-var sha2562 = (value) => createHash11("sha256").update(value).digest("hex");
-var stable_uuid = (value) => {
-  const hash = sha2562(value);
-  const variant = (parseInt(hash[16] ?? "8", 16) & 3 | 8).toString(16);
-  return [
-    hash.slice(0, 8),
-    hash.slice(8, 12),
-    `4${hash.slice(13, 16)}`,
-    `${variant}${hash.slice(17, 20)}`,
-    hash.slice(20, 32)
-  ].join("-");
-};
-var slugify = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 120) || "unclassified_bill_family";
-var normalize_state_code = (value) => value.trim().toUpperCase();
-var normalize_bill_text = (bill) => bill.title ?? bill.description ?? bill.number ?? `bill_${bill.bill_id}`;
-var infer_policy_domain = (bill) => {
-  const text3 = `${bill.title ?? ""} ${bill.description ?? ""}`.toLowerCase();
-  if (/medicaid|medicare|health|hospital|mental health|behavioral health/.test(text3)) return "health";
-  if (/housing|tenant|landlord|eviction|homeless/.test(text3)) return "housing";
-  if (/education|school|student|teacher|university/.test(text3)) return "education";
-  if (/tax|revenue|appropriation|budget|funding|grant/.test(text3)) return "finance";
-  if (/criminal|court|sentence|probation|police|jail|prison/.test(text3)) return "justice";
-  if (/labor|wage|employment|worker|unemployment/.test(text3)) return "labor";
-  if (/election|voter|ballot|campaign/.test(text3)) return "elections";
-  if (/tribal|tribe|indian nation|native/.test(text3)) return "tribal_governance";
-  if (/commend|memorial|celebrat|honor|recogniz/.test(text3)) return "commending_resolution";
-  return "unclassified_legislation";
-};
-var infer_state_position = (bill) => {
-  const text3 = `${bill.title ?? ""} ${bill.description ?? ""} ${bill.last_action ?? ""}`.toLowerCase();
-  if (/chapter|enacted|signed by governor|became law/.test(text3)) return "enacted";
-  if (/failed|withdrawn|dead|vetoed|postponed indefinitely/.test(text3)) return "failed";
-  if (/passed house and senate|passed both/.test(text3)) return "advanced_two_chambers";
-  if (/passed house|passed senate/.test(text3)) return "advanced_one_chamber";
-  if (/committee|referred|reported/.test(text3)) return "active_in_committee";
-  return "introduced";
-};
-var build_family_key = (bill) => {
-  const policy_domain = infer_policy_domain(bill);
-  const basis = normalize_bill_text(bill);
-  return `${policy_domain}:${slugify(basis)}`;
-};
-var build_structural_dna_json = (state_row, bill) => ({
-  source_layer: "docket_room_cache",
-  source_provider: state_row.source,
-  state_code: state_row.state,
-  session_id: state_row.session_id,
-  session_title: state_row.session_title,
-  source_bill_id: bill.bill_id,
-  source_bill_number: bill.number,
-  source_bill_title: bill.title ?? null,
-  source_bill_description: bill.description ?? null,
-  source_bill_url: bill.url ?? null,
-  source_change_hash: bill.change_hash ?? null,
-  source_status: bill.status ?? null,
-  source_status_date: bill.status_date ?? null,
-  source_last_action: bill.last_action ?? null,
-  source_last_action_date: bill.last_action_date ?? null
-});
-var should_append_change_event = (existing_hash, next_hash) => existing_hash === null || existing_hash !== next_hash;
-var upsert_family = async (family_key, bill) => {
-  const pool3 = getPool();
-  const policy_domain = infer_policy_domain(bill);
-  const family_label = normalize_bill_text(bill).slice(0, 240);
-  const signature_json = {
-    assignment_method: "docket_title_policy_domain_signature_v1",
-    policy_domain,
-    family_key
-  };
-  const { rows: rows2 } = await pool3.query(
-    `insert into public.civic_genome_family (
-       family_key,
-       family_label,
-       policy_domain,
-       family_status,
-       first_seen_at,
-       last_seen_at,
-       signature_json
-     ) values ($1, $2, $3, 'active', now(), now(), $4::jsonb)
-     on conflict (family_key) do update set
-       family_label = excluded.family_label,
-       policy_domain = excluded.policy_domain,
-       last_seen_at = now(),
-       updated_at = now(),
-       signature_json = public.civic_genome_family.signature_json || excluded.signature_json
-     returning family_id`,
-    [family_key, family_label, policy_domain, JSON.stringify(signature_json)]
-  );
-  return rows2[0].family_id;
-};
-var refresh_family_rollups = async (family_id) => {
-  const pool3 = getPool();
-  await pool3.query(
-    `with rollup as (
-       select
-         count(distinct state_code) filter (where current_state_position not in ('failed'))::int as active_state_count,
-         count(distinct state_code) filter (where current_state_position in ('introduced', 'active_in_committee', 'advanced_one_chamber', 'advanced_two_chambers'))::int as introduced_state_count,
-         count(distinct state_code) filter (where current_state_position = 'enacted')::int as enacted_state_count,
-         count(distinct state_code) filter (where current_state_position = 'failed')::int as failed_state_count,
-         max(coalesce(last_action_at, introduced_at, updated_at)) as last_event_at
-       from public.civic_genome_bill
-       where family_id = $1
-     )
-     update public.civic_genome_family family
-     set
-       active_state_count = coalesce(rollup.active_state_count, 0),
-       introduced_state_count = coalesce(rollup.introduced_state_count, 0),
-       enacted_state_count = coalesce(rollup.enacted_state_count, 0),
-       failed_state_count = coalesce(rollup.failed_state_count, 0),
-       last_event_at = rollup.last_event_at,
-       momentum_score = least(1, coalesce(rollup.active_state_count, 0)::numeric / 50),
-       acceleration_score = 0,
-       collapse_score = least(1, coalesce(rollup.failed_state_count, 0)::numeric / greatest(coalesce(rollup.active_state_count, 0) + coalesce(rollup.failed_state_count, 0), 1)),
-       updated_at = now()
-     from rollup
-     where family.family_id = $1`,
-    [family_id]
-  );
-  await pool3.query(
-    `insert into public.family_momentum_snapshot (
-       family_id,
-       snapshot_date,
-       active_state_count,
-       introduced_state_count,
-       enacted_state_count,
-       failed_state_count,
-       new_state_count,
-       velocity_score,
-       acceleration_score,
-       collapse_score
-     )
-     select
-       family_id,
-       current_date,
-       active_state_count,
-       introduced_state_count,
-       enacted_state_count,
-       failed_state_count,
-       0,
-       momentum_score,
-       acceleration_score,
-       collapse_score
-     from public.civic_genome_family
-     where family_id = $1
-     on conflict (family_id, snapshot_date) do update set
-       active_state_count = excluded.active_state_count,
-       introduced_state_count = excluded.introduced_state_count,
-       enacted_state_count = excluded.enacted_state_count,
-       failed_state_count = excluded.failed_state_count,
-       velocity_score = excluded.velocity_score,
-       acceleration_score = excluded.acceleration_score,
-       collapse_score = excluded.collapse_score`,
-    [family_id]
-  );
-};
-var project_bill = async (state_row, bill) => {
-  const pool3 = getPool();
-  const state_code = normalize_state_code(state_row.state);
-  const source_bill_number = bill.number;
-  const bill_id = stable_uuid(`docket_room:legiscan:${bill.bill_id}`);
-  const family_key = build_family_key(bill);
-  const family_id = await upsert_family(family_key, bill);
-  const current_state_position = infer_state_position(bill);
-  const structural_dna_json = build_structural_dna_json(state_row, bill);
-  const structural_dna_hash = sha2562(JSON.stringify(structural_dna_json));
-  const bill_status = bill.status === void 0 || bill.status === null ? null : `legiscan_status_${bill.status}`;
-  const { rows: existing_rows } = await pool3.query(
-    `select genome_bill_id, structural_dna_hash, current_state_position, bill_status
-     from public.civic_genome_bill
-     where bill_id = $1
-     limit 1`,
-    [bill_id]
-  );
-  const existing = existing_rows[0] ?? null;
-  const should_append_event = should_append_change_event(existing?.structural_dna_hash ?? null, structural_dna_hash);
-  const { rows: rows2 } = await pool3.query(
-    `insert into public.civic_genome_bill (
-       family_id,
-       bill_id,
-       state_code,
-       session_key,
-       source_bill_number,
-       source_bill_title,
-       source_bill_url,
-       bill_status,
-       introduced_at,
-       last_action_at,
-       structural_dna_hash,
-       structural_dna_json,
-       procedural_lifecycle_json,
-       jurisdiction_lineage_json,
-       constitutional_dependency_json,
-       fiscal_effects_json,
-       enforcement_graph_json,
-       downstream_impact_graph_json,
-       current_state_position
-     ) values (
-       $1, $2, $3, $4, $5, $6, $7, $8,
-       $9::timestamptz, $10::timestamptz, $11, $12::jsonb,
-       $13::jsonb, $14::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, $15
-     )
-     on conflict (bill_id) do update set
-       family_id = excluded.family_id,
-       state_code = excluded.state_code,
-       session_key = excluded.session_key,
-       source_bill_number = excluded.source_bill_number,
-       source_bill_title = excluded.source_bill_title,
-       source_bill_url = excluded.source_bill_url,
-       bill_status = excluded.bill_status,
-       last_action_at = excluded.last_action_at,
-       structural_dna_hash = excluded.structural_dna_hash,
-       structural_dna_json = excluded.structural_dna_json,
-       procedural_lifecycle_json = excluded.procedural_lifecycle_json,
-       jurisdiction_lineage_json = excluded.jurisdiction_lineage_json,
-       current_state_position = excluded.current_state_position,
-       updated_at = now()
-     returning genome_bill_id`,
-    [
-      family_id,
-      bill_id,
-      state_code,
-      String(state_row.session_id),
-      source_bill_number,
-      bill.title ?? bill.description ?? null,
-      bill.url ?? null,
-      bill_status,
-      bill.status_date ?? bill.last_action_date ?? null,
-      bill.last_action_date ?? bill.status_date ?? null,
-      structural_dna_hash,
-      JSON.stringify(structural_dna_json),
-      JSON.stringify({
-        source_status: bill.status ?? null,
-        source_status_date: bill.status_date ?? null,
-        last_action: bill.last_action ?? null,
-        last_action_date: bill.last_action_date ?? null
-      }),
-      JSON.stringify({
-        state_code,
-        session_id: state_row.session_id,
-        session_title: state_row.session_title
-      }),
-      current_state_position
-    ]
-  );
-  const genome_bill_id = rows2[0].genome_bill_id;
-  const classification = classify_docket_event(bill, existing);
-  const event_type = classification.event_type;
-  if (should_append_event) {
-    await pool3.query(
-      `insert into public.civic_genome_event (
-         family_id,
-         genome_bill_id,
-         bill_id,
-         state_code,
-         event_type,
-         event_timestamp,
-         prior_status,
-         next_status,
-         amendment_version,
-         source_trace,
-         event_payload_json
-       ) values ($1, $2, $3, $4, $5, coalesce($6::timestamptz, now()), $7, $8, $9, $10::jsonb, $11::jsonb)`,
-      [
-        family_id,
-        genome_bill_id,
-        bill_id,
-        state_code,
-        event_type,
-        bill.last_action_date ?? bill.status_date ?? state_row.fetched_at ?? null,
-        existing?.bill_status ?? null,
-        bill_status,
-        bill.change_hash ?? null,
-        JSON.stringify([
-          {
-            source_layer: "docket_room_cache",
-            source_table: "docket_bill_state_cache",
-            state_code,
-            session_id: state_row.session_id,
-            source_bill_id: bill.bill_id,
-            source_bill_number,
-            source_url: bill.url ?? null
-          }
-        ]),
-        JSON.stringify({
-          event_summary: classification.event_summary,
-          prior_state_position: existing?.current_state_position ?? null,
-          next_state_position: current_state_position,
-          structural_dna_hash,
-          source_change_hash: bill.change_hash ?? null
-        })
-      ]
-    );
-  }
-  await refresh_family_rollups(family_id);
-  return {
-    state_code,
-    source_bill_id: bill.bill_id,
-    source_bill_number,
-    bill_id,
-    family_id,
-    genome_bill_id,
-    event_type,
-    action: existing ? should_append_event ? "updated" : "unchanged" : "inserted"
-  };
-};
-async function project_docket_cache_to_civic_genome(opts) {
-  const pool3 = getPool();
-  const params = [];
-  const conditions = [];
-  if (opts?.state_code) {
-    params.push(normalize_state_code(opts.state_code));
-    conditions.push(`state = $${params.length}`);
-  }
-  const where = conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
-  const { rows: rows2 } = await pool3.query(
-    `select state, session_id, session_title, bills, bill_count, fetched_at, source
-     from public.docket_bill_state_cache
-     ${where}
-     order by fetched_at desc`,
-    params
-  );
-  const results = [];
-  let bills_seen = 0;
-  for (const state_row of rows2) {
-    const bills = Array.isArray(state_row.bills) ? state_row.bills : [];
-    const limited_bills = typeof opts?.limit === "number" ? bills.slice(0, opts.limit) : bills;
-    for (const bill of limited_bills) {
-      if (!bill?.bill_id || !bill?.number) {
-        continue;
-      }
-      bills_seen += 1;
-      results.push(await project_bill(state_row, bill));
-    }
-  }
-  const family_ids = new Set(results.map((result) => result.family_id));
-  return {
-    ok: true,
-    source: "docket_room_cache",
-    states_scanned: rows2.length,
-    bills_seen,
-    inserted_count: results.filter((result) => result.action === "inserted").length,
-    updated_count: results.filter((result) => result.action === "updated").length,
-    unchanged_count: results.filter((result) => result.action === "unchanged").length,
-    event_count: results.filter((result) => result.action !== "unchanged").length,
-    family_count: family_ids.size,
-    results
-  };
-}
-
-// server/routers/civic-genome-router.ts
-var uuid_param = z27.string().uuid();
-var civicGenomeRouter = router({
-  // ─── Stats ──────────────────────────────────────────────────────────────
-  stats: publicProcedure.query(async () => {
-    return get_genome_stats();
-  }),
-  // ─── Projection ─────────────────────────────────────────────────────────
-  project_from_docket_cache: adminProcedure.input(
-    z27.object({
-      state_code: z27.string().max(10).optional(),
-      limit: z27.number().min(1).max(500).optional()
-    }).optional()
-  ).mutation(async ({ input }) => {
-    return project_docket_cache_to_civic_genome(input ?? {});
-  }),
-  // ─── Families ───────────────────────────────────────────────────────────
-  list_families: publicProcedure.input(
-    z27.object({
-      policy_domain: z27.string().optional(),
-      family_status: z27.string().optional(),
-      limit: z27.number().min(1).max(200).optional(),
-      offset: z27.number().min(0).optional()
-    }).optional()
-  ).query(async ({ input }) => {
-    return list_genome_families(input ?? {});
-  }),
-  get_family: publicProcedure.input(z27.object({ family_id: uuid_param })).query(async ({ input }) => {
-    return get_genome_family(input.family_id);
-  }),
-  // ─── Bills ──────────────────────────────────────────────────────────────
-  list_bills: publicProcedure.input(
-    z27.object({
-      family_id: uuid_param.optional(),
-      state_code: z27.string().max(10).optional(),
-      bill_status: z27.string().optional(),
-      current_state_position: z27.string().optional(),
-      limit: z27.number().min(1).max(200).optional(),
-      offset: z27.number().min(0).optional()
-    }).optional()
-  ).query(async ({ input }) => {
-    return list_genome_bills(input ?? {});
-  }),
-  get_bill: publicProcedure.input(z27.object({ genome_bill_id: uuid_param })).query(async ({ input }) => {
-    return get_genome_bill(input.genome_bill_id);
-  }),
-  // ─── Events ─────────────────────────────────────────────────────────────
-  list_events: publicProcedure.input(
-    z27.object({
-      family_id: uuid_param.optional(),
-      genome_bill_id: uuid_param.optional(),
-      state_code: z27.string().max(10).optional(),
-      event_type: z27.string().optional(),
-      limit: z27.number().min(1).max(500).optional(),
-      offset: z27.number().min(0).optional()
-    }).optional()
-  ).query(async ({ input }) => {
-    return list_genome_events(input ?? {});
-  }),
-  // ─── Lineage Edges ───────────────────────────────────────────────────────
-  list_lineage_edges: publicProcedure.input(
-    z27.object({
-      family_id: uuid_param.optional(),
-      from_bill_id: uuid_param.optional(),
-      to_bill_id: uuid_param.optional(),
-      relationship_type: z27.string().optional(),
-      limit: z27.number().min(1).max(500).optional()
-    }).optional()
-  ).query(async ({ input }) => {
-    return list_lineage_edges(input ?? {});
-  }),
-  // ─── Momentum Snapshots ──────────────────────────────────────────────────
-  list_momentum_snapshots: publicProcedure.input(
-    z27.object({
-      family_id: uuid_param,
-      limit: z27.number().min(1).max(365).optional()
-    })
-  ).query(async ({ input }) => {
-    return list_momentum_snapshots(input);
-  })
-});
-
 // server/routers/civil-gideon.ts
-import { z as z28 } from "zod";
+import { z as z27 } from "zod";
 
 // server/civil-gideon.ts
 var __dirname22 = import.meta.dirname ?? new URL(".", import.meta.url).pathname;
@@ -54764,7 +54089,7 @@ var civilGideonRouter = router({
     return getRTCProfiles();
   }),
   /** Single state RTC profile */
-  rtcProfile: publicProcedure.input(z28.object({ state: z28.string().length(2) })).query(({ input }) => {
+  rtcProfile: publicProcedure.input(z27.object({ state: z27.string().length(2) })).query(({ input }) => {
     return getRTCProfile(input.state) ?? null;
   }),
   /** Full precedent chain */
@@ -54772,7 +54097,7 @@ var civilGideonRouter = router({
     return getPrecedentChain();
   }),
   /** Single precedent node */
-  precedentNode: publicProcedure.input(z28.object({ id: z28.string() })).query(({ input }) => {
+  precedentNode: publicProcedure.input(z27.object({ id: z27.string() })).query(({ input }) => {
     return getPrecedentNode(input.id) ?? null;
   }),
   /** All structural bias profiles */
@@ -54780,13 +54105,13 @@ var civilGideonRouter = router({
     return getStructuralBiasProfiles();
   }),
   /** Single state structural bias profile */
-  biasProfile: publicProcedure.input(z28.object({ state: z28.string().length(2) })).query(({ input }) => {
+  biasProfile: publicProcedure.input(z27.object({ state: z27.string().length(2) })).query(({ input }) => {
     return getStructuralBiasProfile(input.state) ?? null;
   })
 });
 
 // server/routers/registry-router.ts
-import { z as z29 } from "zod";
+import { z as z28 } from "zod";
 import { TRPCError as TRPCError12 } from "@trpc/server";
 
 // server/registry-db.ts
@@ -54920,7 +54245,7 @@ var registryRouter2 = router({
   listJurisdictions: publicProcedure.query(async () => {
     return listJurisdictions();
   }),
-  getJurisdiction: publicProcedure.input(z29.object({ id: z29.string() })).query(async ({ input }) => {
+  getJurisdiction: publicProcedure.input(z28.object({ id: z28.string() })).query(async ({ input }) => {
     const jurisdiction = await getJurisdiction(input.id);
     if (!jurisdiction) return null;
     const programs = await listPrograms(input.id);
@@ -54941,9 +54266,9 @@ var registryRouter2 = router({
       program_categories: categories
     };
   }),
-  listPrograms: publicProcedure.input(z29.object({
-    jurisdictionId: z29.string().optional(),
-    category: z29.string().optional()
+  listPrograms: publicProcedure.input(z28.object({
+    jurisdictionId: z28.string().optional(),
+    category: z28.string().optional()
   }).optional()).query(async ({ input }) => {
     return listPrograms(input?.jurisdictionId, input?.category);
   }),
@@ -54951,13 +54276,13 @@ var registryRouter2 = router({
    * Full-text search across all registry_programs (3,395 rows).
    * Supports filtering by jurisdiction abbreviation (e.g., "WA") or jurisdiction_id.
    */
-  searchPrograms: publicProcedure.input(z29.object({
-    query: z29.string().min(1),
-    stateCode: z29.string().optional(),
+  searchPrograms: publicProcedure.input(z28.object({
+    query: z28.string().min(1),
+    stateCode: z28.string().optional(),
     // e.g. "WA"
-    category: z29.string().optional(),
-    limit: z29.number().min(1).max(100).default(20),
-    offset: z29.number().min(0).default(0)
+    category: z28.string().optional(),
+    limit: z28.number().min(1).max(100).default(20),
+    offset: z28.number().min(0).default(0)
   })).query(async ({ input }) => {
     const conditions = [];
     const params = [];
@@ -55005,7 +54330,7 @@ var registryRouter2 = router({
    * - Enforcement pathways from those oversight bodies
    * - Related workflows for the jurisdiction
    */
-  getProgramChain: publicProcedure.input(z29.object({ programId: z29.string() })).query(async ({ input }) => {
+  getProgramChain: publicProcedure.input(z28.object({ programId: z28.string() })).query(async ({ input }) => {
     const [progRows] = await pool.query(
       `SELECT p.id, p.name_rp AS name, p.agency_rp AS agency, p.category_rp AS category,
                 p.eligibility_rp AS eligibility, p.contact_rp AS contact, p.website_rp AS website,
@@ -55069,10 +54394,10 @@ var registryRouter2 = router({
    * that the user might not have considered. This powers the "You might also qualify for..." 
    * section in the Benefits Navigator.
    */
-  getCrossAvenuePrograms: publicProcedure.input(z29.object({
-    category: z29.string(),
-    stateCode: z29.string().optional(),
-    limit: z29.number().min(1).max(50).default(10)
+  getCrossAvenuePrograms: publicProcedure.input(z28.object({
+    category: z28.string(),
+    stateCode: z28.string().optional(),
+    limit: z28.number().min(1).max(50).default(10)
   })).query(async ({ input }) => {
     const ADJACENT_CATEGORIES = {
       food: ["cash_assistance", "housing", "healthcare", "children_families"],
@@ -55117,29 +54442,29 @@ var registryRouter2 = router({
       adjacent_categories: adjacent
     };
   }),
-  listPolicyAlerts: publicProcedure.input(z29.object({
-    jurisdictionId: z29.string().optional()
+  listPolicyAlerts: publicProcedure.input(z28.object({
+    jurisdictionId: z28.string().optional()
   }).optional()).query(async ({ input }) => {
     return listPolicyAlerts(input?.jurisdictionId);
   }),
-  listWorkflows: publicProcedure.input(z29.object({
-    jurisdictionId: z29.string().optional()
+  listWorkflows: publicProcedure.input(z28.object({
+    jurisdictionId: z28.string().optional()
   }).optional()).query(async ({ input }) => {
     return listWorkflows(input?.jurisdictionId);
   }),
-  listOversightBodies: publicProcedure.input(z29.object({
-    jurisdictionId: z29.string().optional()
+  listOversightBodies: publicProcedure.input(z28.object({
+    jurisdictionId: z28.string().optional()
   }).optional()).query(async ({ input }) => {
     return listOversightBodies(input?.jurisdictionId);
   }),
   /**
    * Full-text search across all registry_oversight_bodies (1,362 rows).
    */
-  searchOversightBodies: publicProcedure.input(z29.object({
-    query: z29.string().min(1),
-    stateCode: z29.string().optional(),
-    limit: z29.number().min(1).max(100).default(20),
-    offset: z29.number().min(0).default(0)
+  searchOversightBodies: publicProcedure.input(z28.object({
+    query: z28.string().min(1),
+    stateCode: z28.string().optional(),
+    limit: z28.number().min(1).max(100).default(20),
+    offset: z28.number().min(0).default(0)
   })).query(async ({ input }) => {
     const conditions = [];
     const params = [];
@@ -55174,9 +54499,9 @@ var registryRouter2 = router({
       total: Number(countRows[0]?.total ?? 0)
     };
   }),
-  getSignals: publicProcedure.input(z29.object({
-    jurisdictionId: z29.string().optional(),
-    signalType: z29.string().optional()
+  getSignals: publicProcedure.input(z28.object({
+    jurisdictionId: z28.string().optional(),
+    signalType: z28.string().optional()
   }).optional()).query(async ({ input }) => {
     return getSignals(input?.jurisdictionId, input?.signalType);
   }),
@@ -55186,19 +54511,19 @@ var registryRouter2 = router({
 });
 var issueReportsRouter = router({
   /** Submit a new flag/report */
-  report: publicProcedure.input(z29.object({
-    targetType: z29.enum(["program", "signal", "finding", "kb_table", "oversight_body", "workflow", "area", "other"]),
-    targetId: z29.string(),
-    targetLabel: z29.string().optional(),
-    issueType: z29.enum(["incorrect_data", "broken_link", "missing_info", "duplicate", "other"]).default("incorrect_data"),
-    description: z29.string().max(2e3).optional(),
+  report: publicProcedure.input(z28.object({
+    targetType: z28.enum(["program", "signal", "finding", "kb_table", "oversight_body", "workflow", "area", "other"]),
+    targetId: z28.string(),
+    targetLabel: z28.string().optional(),
+    issueType: z28.enum(["incorrect_data", "broken_link", "missing_info", "duplicate", "other"]).default("incorrect_data"),
+    description: z28.string().max(2e3).optional(),
     // Geographic area flagging
-    areaName: z29.string().max(255).optional(),
-    stateCode: z29.string().max(10).optional(),
-    lat: z29.number().optional(),
-    lng: z29.number().optional()
+    areaName: z28.string().max(255).optional(),
+    stateCode: z28.string().max(10).optional(),
+    lat: z28.number().optional(),
+    lng: z28.number().optional()
   })).mutation(async ({ ctx, input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const user = ctx.user;
     await pool.query(
       `INSERT INTO issue_reports (target_type, target_id, target_label, issue_type, description, reporter_id, reporter_name, status, area_name, state_code, lat, lng, created_at, updated_at)
@@ -55215,18 +54540,18 @@ var issueReportsRouter = router({
         input.stateCode ?? null,
         input.lat ?? null,
         input.lng ?? null,
-        now3,
-        now3
+        now4,
+        now4
       ]
     );
     return { success: true };
   }),
   /** List all flags (admin use) */
-  listOpen: publicProcedure.input(z29.object({
-    status: z29.enum(["open", "reviewed", "resolved", "dismissed", "all"]).default("open"),
-    targetType: z29.string().optional(),
-    limit: z29.number().min(1).max(100).default(50),
-    offset: z29.number().min(0).default(0)
+  listOpen: publicProcedure.input(z28.object({
+    status: z28.enum(["open", "reviewed", "resolved", "dismissed", "all"]).default("open"),
+    targetType: z28.string().optional(),
+    limit: z28.number().min(1).max(100).default(50),
+    offset: z28.number().min(0).default(0)
   })).query(async ({ input }) => {
     const conditions = [];
     const params = [];
@@ -55270,10 +54595,10 @@ var issueReportsRouter = router({
     };
   }),
   /** Resolve or dismiss a flag */
-  resolve: publicProcedure.input(z29.object({
-    id: z29.number(),
-    status: z29.enum(["reviewed", "resolved", "dismissed"]),
-    note: z29.string().optional()
+  resolve: publicProcedure.input(z28.object({
+    id: z28.number(),
+    status: z28.enum(["reviewed", "resolved", "dismissed"]),
+    note: z28.string().optional()
   })).mutation(async ({ input }) => {
     await pool.query(
       `UPDATE issue_reports SET status = ?, resolution_note = ?, updated_at = ? WHERE id = ?`,
@@ -55296,10 +54621,10 @@ function fingerprint(...parts) {
 }
 async function ingestCanonicalRegistry(data) {
   const errors = [];
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [runResult] = await db.insert(ingestRuns).values({
     datasetId: "luminari_canonical_registry",
-    startTime: now3,
+    startTime: now4,
     status: "running",
     recordsProcessed: 0,
     recordsInserted: 0,
@@ -55340,7 +54665,7 @@ async function ingestCanonicalRegistry(data) {
           uiMax: meta.ui_max || null,
           wageSol: meta.wage_sol || null,
           civilRightsSol: meta.civil_rights_sol || null,
-          createdAt: now3
+          createdAt: now4
         }).onDuplicateKeyUpdate({ set: { name: sql35`VALUES(name)` } });
         totalJurisdictions++;
         const alerts = jData.layer_0_policy_alerts || [];
@@ -55353,7 +54678,7 @@ async function ingestCanonicalRegistry(data) {
             severity: a.severity || null,
             title: a.title || null,
             description: a.description || a.raw || null,
-            createdAt: now3
+            createdAt: now4
           }).onDuplicateKeyUpdate({ set: { title: sql35`VALUES(title)` } });
           totalAlerts++;
         }
@@ -55376,7 +54701,7 @@ async function ingestCanonicalRegistry(data) {
                 website: p.website || null,
                 applyNotes: p.apply_notes || null,
                 fingerprint: fp,
-                createdAt: now3
+                createdAt: now4
               }).onDuplicateKeyUpdate({ set: { name: sql35`VALUES(name)` } });
               totalPrograms++;
             }
@@ -55394,7 +54719,7 @@ async function ingestCanonicalRegistry(data) {
             steps: w.steps || [],
             deadlines: Array.isArray(w.deadlines) ? w.deadlines.join("; ") : w.deadlines || null,
             escalationPaths: Array.isArray(w.escalation_paths) ? w.escalation_paths.join("; ") : w.escalation_paths || null,
-            createdAt: now3
+            createdAt: now4
           }).onDuplicateKeyUpdate({ set: { workflowType: sql35`VALUES(workflow_type)` } });
           totalWorkflows++;
         }
@@ -55411,7 +54736,7 @@ async function ingestCanonicalRegistry(data) {
             contact: o.contact || null,
             pathway: o.pathway || null,
             escalation: o.escalation || null,
-            createdAt: now3
+            createdAt: now4
           }).onDuplicateKeyUpdate({ set: { agencyName: sql35`VALUES(agency_name)` } });
           totalOversight++;
         }
@@ -55425,7 +54750,7 @@ async function ingestCanonicalRegistry(data) {
             sourceVariants: st.source_variants || [],
             notesOnMerge: Array.isArray(st.notes_on_merge) ? st.notes_on_merge.join("; ") : null,
             conflicts: st.conflicts || [],
-            createdAt: now3
+            createdAt: now4
           }).onDuplicateKeyUpdate({ set: { sourceDocuments: sql35`VALUES(source_documents)` } });
           totalTraceability++;
         }
@@ -55439,7 +54764,7 @@ async function ingestCanonicalRegistry(data) {
             severity: sig.severity,
             sourceReference: sig.sourceReference,
             fingerprint: sig.fingerprint,
-            createdAt: now3
+            createdAt: now4
           }).onDuplicateKeyUpdate({ set: { category: sql35`VALUES(category)` } });
           totalSignals++;
           const lsFp = fingerprint("registry", sig.signalType, jId, sig.category);
@@ -55457,12 +54782,12 @@ async function ingestCanonicalRegistry(data) {
                 recordsAnalyzed: 1,
                 patternCount: 1,
                 percentageAffected: 100,
-                timeRange: { from: now3, to: now3 },
+                timeRange: { from: now4, to: now4 },
                 jurisdictionsAffected: [key2],
                 dataSource: "luminari_canonical_registry"
               },
               confidenceScore: "0.9000",
-              detectedAt: now3,
+              detectedAt: now4,
               ingestRunId: runId,
               signalFingerprint: lsFp,
               active: true
@@ -55632,7 +54957,7 @@ import fs3 from "fs";
 import path2 from "path";
 
 // server/routers/agency-metrics.ts
-import { z as z30 } from "zod";
+import { z as z29 } from "zod";
 init_db();
 init_schema();
 import { eq as eq21, desc as desc9, sql as sql36, like as like3 } from "drizzle-orm";
@@ -55653,7 +54978,7 @@ var agencyMetricsRouter = router({
     return rows2;
   }),
   // Get all yearly data for a specific agency
-  getAgencyTimeline: publicProcedure.input(z30.object({ agencyName: z30.string() })).query(async ({ input }) => {
+  getAgencyTimeline: publicProcedure.input(z29.object({ agencyName: z29.string() })).query(async ({ input }) => {
     const rows2 = await db.select().from(agencyPerformanceMetrics).where(eq21(agencyPerformanceMetrics.agencyName, input.agencyName)).orderBy(desc9(agencyPerformanceMetrics.fiscalYear));
     return rows2;
   }),
@@ -55666,7 +54991,7 @@ var agencyMetricsRouter = router({
     return rows2;
   }),
   // Get weak joints related to an agency (by matching statuteCitation keywords)
-  getAgencyWeakJoints: publicProcedure.input(z30.object({ agencyName: z30.string() })).query(async ({ input }) => {
+  getAgencyWeakJoints: publicProcedure.input(z29.object({ agencyName: z29.string() })).query(async ({ input }) => {
     const citationPatterns = {
       "Equal Employment Opportunity Commission": ["2000e", "Title VII", "ADA", "ADEA", "EPA", "GINA"],
       "HUD Office of Fair Housing": ["3601", "3604", "3605", "Fair Housing"],
@@ -55700,44 +55025,44 @@ var agencyMetricsRouter = router({
 });
 
 // server/routers/enforcement-intelligence.ts
-import { z as z31 } from "zod";
+import { z as z30 } from "zod";
 init_db();
 init_schema();
 init_schema();
 import { eq as eq22, desc as desc10, sql as sql37, like as like4, inArray as inArray7, and as and18 } from "drizzle-orm";
 var enforcementIntelligenceRouter = router({
   // ═══ Agency Forms ═══
-  listForms: publicProcedure.input(z31.object({ agency: z31.string().optional() }).optional()).query(async ({ input }) => {
+  listForms: publicProcedure.input(z30.object({ agency: z30.string().optional() }).optional()).query(async ({ input }) => {
     const where = input?.agency ? eq22(agencyForms.agency_short, input.agency) : void 0;
     return db.select().from(agencyForms).where(where).orderBy(agencyForms.agency);
   }),
-  getForm: publicProcedure.input(z31.object({ id: z31.number() })).query(async ({ input }) => {
+  getForm: publicProcedure.input(z30.object({ id: z30.number() })).query(async ({ input }) => {
     const [row] = await db.select().from(agencyForms).where(eq22(agencyForms.id, input.id));
     return row ?? null;
   }),
   // ═══ Regulatory Guidance ═══
-  listGuidance: publicProcedure.input(z31.object({ agency: z31.string().optional(), issue_area: z31.string().optional() }).optional()).query(async ({ input }) => {
+  listGuidance: publicProcedure.input(z30.object({ agency: z30.string().optional(), issue_area: z30.string().optional() }).optional()).query(async ({ input }) => {
     const conditions = [];
     if (input?.agency) conditions.push(eq22(regulatoryGuidance.agency_short, input.agency));
     if (input?.issue_area) conditions.push(like4(regulatoryGuidance.issue_area, `%${input.issue_area}%`));
     const where = conditions.length > 0 ? conditions.length === 1 ? conditions[0] : sql37`${conditions[0]} AND ${conditions[1]}` : void 0;
     return db.select().from(regulatoryGuidance).where(where).orderBy(regulatoryGuidance.agency);
   }),
-  getGuidance: publicProcedure.input(z31.object({ id: z31.number() })).query(async ({ input }) => {
+  getGuidance: publicProcedure.input(z30.object({ id: z30.number() })).query(async ({ input }) => {
     const [row] = await db.select().from(regulatoryGuidance).where(eq22(regulatoryGuidance.id, input.id));
     return row ?? null;
   }),
   // ═══ Enforcement Penalties ═══
-  listPenalties: publicProcedure.input(z31.object({ agency: z31.string().optional() }).optional()).query(async ({ input }) => {
+  listPenalties: publicProcedure.input(z30.object({ agency: z30.string().optional() }).optional()).query(async ({ input }) => {
     const where = input?.agency ? eq22(enforcementPenalties.agency_short, input.agency) : void 0;
     return db.select().from(enforcementPenalties).where(where).orderBy(enforcementPenalties.agency);
   }),
-  getPenalty: publicProcedure.input(z31.object({ id: z31.number() })).query(async ({ input }) => {
+  getPenalty: publicProcedure.input(z30.object({ id: z30.number() })).query(async ({ input }) => {
     const [row] = await db.select().from(enforcementPenalties).where(eq22(enforcementPenalties.id, input.id));
     return row ?? null;
   }),
   // ═══ Enforcement Viability Rules ═══
-  listViabilityRules: publicProcedure.input(z31.object({ agency: z31.string().optional(), pipeline_category: z31.string().optional() }).optional()).query(async ({ input }) => {
+  listViabilityRules: publicProcedure.input(z30.object({ agency: z30.string().optional(), pipeline_category: z30.string().optional() }).optional()).query(async ({ input }) => {
     const conditions = [];
     if (input?.agency) conditions.push(eq22(enforcementViabilityRules.agency_short, input.agency));
     if (input?.pipeline_category) conditions.push(eq22(enforcementViabilityRules.pipeline_category, input.pipeline_category));
@@ -55761,7 +55086,7 @@ var enforcementIntelligenceRouter = router({
     `);
     return rows2 ?? [];
   }),
-  getDoctrine: publicProcedure.input(z31.object({ id: z31.string().uuid() })).query(async ({ input }) => {
+  getDoctrine: publicProcedure.input(z30.object({ id: z30.string().uuid() })).query(async ({ input }) => {
     const { rows: rows2 } = await getPool().query(`
         select
           id,
@@ -55778,7 +55103,7 @@ var enforcementIntelligenceRouter = router({
       `, [input.id]);
     return rows2[0] ?? null;
   }),
-  listDoctrineEdges: publicProcedure.input(z31.object({ edge_type: z31.string().optional() }).optional()).query(async ({ input }) => {
+  listDoctrineEdges: publicProcedure.input(z30.object({ edge_type: z30.string().optional() }).optional()).query(async ({ input }) => {
     const params = [];
     const where = input?.edge_type ? `where edge_type = $1` : "";
     if (input?.edge_type) params.push(input.edge_type);
@@ -55847,7 +55172,7 @@ var enforcementIntelligenceRouter = router({
   listBarriers: publicProcedure.query(async () => {
     return db.select().from(litigationBarriers).orderBy(litigationBarriers.barrier_type);
   }),
-  getBarrier: publicProcedure.input(z31.object({ id: z31.number() })).query(async ({ input }) => {
+  getBarrier: publicProcedure.input(z30.object({ id: z30.number() })).query(async ({ input }) => {
     const [row] = await db.select().from(litigationBarriers).where(eq22(litigationBarriers.id, input.id));
     return row ?? null;
   }),
@@ -55855,7 +55180,7 @@ var enforcementIntelligenceRouter = router({
   listSignals: publicProcedure.query(async () => {
     return db.select().from(signalRegistry).where(sql37`"signal_type" NOT LIKE 'contradiction_%' AND "signal_type" NOT LIKE 'missing_evidence_%' AND "signal_type" NOT LIKE 'inconsistency_%'`).orderBy(signalRegistry.signal_type);
   }),
-  getSignal: publicProcedure.input(z31.object({ id: z31.number() })).query(async ({ input }) => {
+  getSignal: publicProcedure.input(z30.object({ id: z30.number() })).query(async ({ input }) => {
     const [row] = await db.select().from(signalRegistry).where(eq22(signalRegistry.id, input.id));
     return row ?? null;
   }),
@@ -55871,7 +55196,7 @@ var enforcementIntelligenceRouter = router({
   listWorkflows: publicProcedure.query(async () => {
     return db.select().from(workflowDefinitions).orderBy(workflowDefinitions.name);
   }),
-  getWorkflow: publicProcedure.input(z31.object({ id: z31.number() })).query(async ({ input }) => {
+  getWorkflow: publicProcedure.input(z30.object({ id: z30.number() })).query(async ({ input }) => {
     const [row] = await db.select().from(workflowDefinitions).where(eq22(workflowDefinitions.id, input.id));
     return row ?? null;
   }),
@@ -55896,15 +55221,15 @@ var enforcementIntelligenceRouter = router({
     return db.select().from(enforcementTrends).orderBy(enforcementTrends.agency);
   }),
   // ═══ Deadline Calculator ═══
-  calculateDeadline: publicProcedure.input(z31.object({
-    incidentDate: z31.string(),
+  calculateDeadline: publicProcedure.input(z30.object({
+    incidentDate: z30.string(),
     // ISO date string
-    formId: z31.number().optional(),
-    agency_short: z31.string().optional()
+    formId: z30.number().optional(),
+    agency_short: z30.string().optional()
   })).query(async ({ input }) => {
     const forms = input.formId ? await db.select().from(agencyForms).where(eq22(agencyForms.id, input.formId)) : input.agency_short ? await db.select().from(agencyForms).where(eq22(agencyForms.agency_short, input.agency_short)) : await db.select().from(agencyForms);
     const incident = new Date(input.incidentDate);
-    const now3 = /* @__PURE__ */ new Date();
+    const now4 = /* @__PURE__ */ new Date();
     const deadlineRules2 = [];
     const deadlineMap = {
       "EEOC": { primaryDays: 180, extendedDays: 300, extendedCondition: "In deferral states with state/local agency", noDeadline: false },
@@ -55914,11 +55239,11 @@ var enforcementIntelligenceRouter = router({
     };
     return forms.map((f) => {
       const rule = deadlineMap[f.agency_short] || { primaryDays: null, extendedDays: null, extendedCondition: null, noDeadline: true };
-      const daysSinceIncident = Math.floor((now3.getTime() - incident.getTime()) / (1e3 * 60 * 60 * 24));
+      const daysSinceIncident = Math.floor((now4.getTime() - incident.getTime()) / (1e3 * 60 * 60 * 24));
       const primaryDeadlineDate = rule.primaryDays ? new Date(incident.getTime() + rule.primaryDays * 24 * 60 * 60 * 1e3) : null;
       const extendedDeadlineDate = rule.extendedDays ? new Date(incident.getTime() + rule.extendedDays * 24 * 60 * 60 * 1e3) : null;
-      const primaryDaysRemaining = primaryDeadlineDate ? Math.floor((primaryDeadlineDate.getTime() - now3.getTime()) / (1e3 * 60 * 60 * 24)) : null;
-      const extendedDaysRemaining = extendedDeadlineDate ? Math.floor((extendedDeadlineDate.getTime() - now3.getTime()) / (1e3 * 60 * 60 * 24)) : null;
+      const primaryDaysRemaining = primaryDeadlineDate ? Math.floor((primaryDeadlineDate.getTime() - now4.getTime()) / (1e3 * 60 * 60 * 24)) : null;
+      const extendedDaysRemaining = extendedDeadlineDate ? Math.floor((extendedDeadlineDate.getTime() - now4.getTime()) / (1e3 * 60 * 60 * 24)) : null;
       let urgency = "no_deadline";
       if (rule.noDeadline) {
         urgency = "no_deadline";
@@ -55949,11 +55274,11 @@ var enforcementIntelligenceRouter = router({
     });
   }),
   // ═══ Cross-Link: Gap → Enforcement Resources ═══
-  suggestResourcesForGap: publicProcedure.input(z31.object({
-    domain: z31.string().optional(),
-    gapType: z31.string().optional(),
-    agencyType: z31.string().optional(),
-    severity: z31.string().optional()
+  suggestResourcesForGap: publicProcedure.input(z30.object({
+    domain: z30.string().optional(),
+    gapType: z30.string().optional(),
+    agencyType: z30.string().optional(),
+    severity: z30.string().optional()
   })).query(async ({ input }) => {
     const domainToPipeline = {
       "civil_rights": ["civil_rights"],
@@ -55989,7 +55314,7 @@ var enforcementIntelligenceRouter = router({
     };
   }),
   // ═══ Cross-Link: Case Missing Records → Resources ═══
-  suggestResourcesForCase: publicProcedure.input(z31.object({ caseId: z31.number() })).query(async ({ input }) => {
+  suggestResourcesForCase: publicProcedure.input(z30.object({ caseId: z30.number() })).query(async ({ input }) => {
     const gaps = await db.select().from(missingRecords).where(eq22(missingRecords.caseId, input.caseId));
     if (gaps.length === 0) return { gaps: [], suggestions: [] };
     const domains = [...new Set(gaps.map((g) => g.domain).filter(Boolean))];
@@ -56036,23 +55361,23 @@ var enforcementIntelligenceRouter = router({
   // Weighted model: legal severity (25), evidence strength (25),
   // timeline support (20), cross-doc corroboration (20), systemic risk (10)
   // ═══════════════════════════════════════════════════════════════
-  scoreContradiction: publicProcedure.input(z31.object({
-    contradictionId: z31.number().optional(),
+  scoreContradiction: publicProcedure.input(z30.object({
+    contradictionId: z30.number().optional(),
     // Or provide raw contradiction data for ad-hoc scoring
-    doctrineA: z31.string().optional(),
-    doctrineB: z31.string().optional(),
-    domain: z31.string().optional(),
-    jurisdiction: z31.string().optional(),
+    doctrineA: z30.string().optional(),
+    doctrineB: z30.string().optional(),
+    domain: z30.string().optional(),
+    jurisdiction: z30.string().optional(),
     // Evidence context
-    hasDirectEvidence: z31.boolean().default(false),
-    hasCorroboratingDocs: z31.boolean().default(false),
-    docCount: z31.number().default(1),
-    hasTimelineSupport: z31.boolean().default(false),
-    timelineGapDays: z31.number().optional(),
+    hasDirectEvidence: z30.boolean().default(false),
+    hasCorroboratingDocs: z30.boolean().default(false),
+    docCount: z30.number().default(1),
+    hasTimelineSupport: z30.boolean().default(false),
+    timelineGapDays: z30.number().optional(),
     // Systemic indicators
-    affectsMultipleParties: z31.boolean().default(false),
-    hasPatternEvidence: z31.boolean().default(false),
-    linkedToWeakJoint: z31.boolean().default(false)
+    affectsMultipleParties: z30.boolean().default(false),
+    hasPatternEvidence: z30.boolean().default(false),
+    linkedToWeakJoint: z30.boolean().default(false)
   })).query(async ({ input }) => {
     let contradiction = null;
     if (input.contradictionId) {
@@ -56154,10 +55479,10 @@ var enforcementIntelligenceRouter = router({
   // IMPROVEMENT 2: Enforcement Pattern Model Switching
   // 4 models: EEOC charge, HUD adjudication, OSHA inspection, FTC oversight
   // ═══════════════════════════════════════════════════════════════
-  getEnforcementPathway: publicProcedure.input(z31.object({
-    agency_short: z31.string().optional(),
-    claim_type: z31.string().optional(),
-    pipeline_category: z31.string().optional()
+  getEnforcementPathway: publicProcedure.input(z30.object({
+    agency_short: z30.string().optional(),
+    claim_type: z30.string().optional(),
+    pipeline_category: z30.string().optional()
   })).query(async ({ input }) => {
     const pathwayModels = {
       "EEOC": {
@@ -56277,9 +55602,9 @@ var enforcementIntelligenceRouter = router({
     };
   }),
   // ═══ List ALL enforcement pathway models from DB ═══
-  listAllPathways: publicProcedure.input(z31.object({
-    jurisdiction: z31.string().optional(),
-    domain: z31.string().optional()
+  listAllPathways: publicProcedure.input(z30.object({
+    jurisdiction: z30.string().optional(),
+    domain: z30.string().optional()
   }).optional()).query(async ({ input }) => {
     const conditions = [];
     if (input?.jurisdiction) conditions.push(sql37`jurisdiction ILIKE ${"%" + input.jurisdiction + "%"}`);
@@ -56296,14 +55621,14 @@ var enforcementIntelligenceRouter = router({
   // IMPROVEMENT 3: Investigation Workflow Generator
   // Generates structured investigation workflows from case context
   // ═══════════════════════════════════════════════════════════════
-  generateInvestigationWorkflow: publicProcedure.input(z31.object({
-    domain: z31.string(),
-    claim_type: z31.string().optional(),
-    pipeline_category: z31.string().optional(),
-    incidentDate: z31.string().optional(),
-    hasDocuments: z31.boolean().default(false),
-    hasWitnesses: z31.boolean().default(false),
-    agency_short: z31.string().optional()
+  generateInvestigationWorkflow: publicProcedure.input(z30.object({
+    domain: z30.string(),
+    claim_type: z30.string().optional(),
+    pipeline_category: z30.string().optional(),
+    incidentDate: z30.string().optional(),
+    hasDocuments: z30.boolean().default(false),
+    hasWitnesses: z30.boolean().default(false),
+    agency_short: z30.string().optional()
   })).query(async ({ input }) => {
     const weakJoints = await db.select().from(legalWeakJoints).where(sql37`JSON_CONTAINS(domains, JSON_QUOTE(${input.domain}))`);
     const signals = await db.select().from(signalRegistry).where(eq22(signalRegistry.domain, input.domain));
@@ -56322,8 +55647,8 @@ var enforcementIntelligenceRouter = router({
     });
     if (input.incidentDate) {
       const incident = new Date(input.incidentDate);
-      const now3 = /* @__PURE__ */ new Date();
-      const daysSince = Math.floor((now3.getTime() - incident.getTime()) / (1e3 * 60 * 60 * 24));
+      const now4 = /* @__PURE__ */ new Date();
+      const daysSince = Math.floor((now4.getTime() - incident.getTime()) / (1e3 * 60 * 60 * 24));
       if (input.agency_short === "OSHA" && daysSince > 15) {
         immediateActions.push({
           priority: 1,
@@ -56504,12 +55829,12 @@ var enforcementIntelligenceRouter = router({
     };
   }),
   // ═══ Detected Signals (Sunam-approved, canonical source) ═══
-  getLiveSignals: publicProcedure.input(z31.object({
-    limit: z31.number().min(1).max(500).default(100),
-    offset: z31.number().min(0).default(0),
-    severity: z31.enum(["critical", "high", "medium", "low"]).optional(),
-    datasetId: z31.string().optional(),
-    activeOnly: z31.boolean().default(true)
+  getLiveSignals: publicProcedure.input(z30.object({
+    limit: z30.number().min(1).max(500).default(100),
+    offset: z30.number().min(0).default(0),
+    severity: z30.enum(["critical", "high", "medium", "low"]).optional(),
+    datasetId: z30.string().optional(),
+    activeOnly: z30.boolean().default(true)
   }).optional()).query(async ({ input }) => {
     const opts = input ?? {};
     const conditions = [];
@@ -56533,16 +55858,16 @@ var enforcementIntelligenceRouter = router({
       by_dataset: byDataset.map((r) => ({ dataset_id: r.datasetId, count: r.count }))
     };
   }),
-  getLiveSignal: publicProcedure.input(z31.object({ id: z31.string() })).query(async ({ input }) => {
+  getLiveSignal: publicProcedure.input(z30.object({ id: z30.string() })).query(async ({ input }) => {
     const [row] = await db.select().from(detectedSignals).where(eq22(detectedSignals.signalId, input.id)).limit(1);
     return row ?? null;
   }),
   // ═══ Registry Signals (per-jurisdiction instances, 59 rows) ═══
-  listRegistrySignals: publicProcedure.input(z31.object({
-    jurisdiction: z31.string().optional(),
-    category: z31.string().optional(),
-    severity: z31.string().optional(),
-    limit: z31.number().min(1).max(500).default(100)
+  listRegistrySignals: publicProcedure.input(z30.object({
+    jurisdiction: z30.string().optional(),
+    category: z30.string().optional(),
+    severity: z30.string().optional(),
+    limit: z30.number().min(1).max(500).default(100)
   }).optional()).query(async ({ input }) => {
     const conditions = [];
     if (input?.jurisdiction) conditions.push(eq22(registrySignals.jurisdictionId, input.jurisdiction));
@@ -56551,24 +55876,24 @@ var enforcementIntelligenceRouter = router({
     return db.select().from(registrySignals).where(conditions.length > 0 ? and18(...conditions) : void 0).orderBy(desc10(registrySignals.createdAt)).limit(input?.limit ?? 100);
   }),
   // ═══ Registry Workflows (27 workflows) ═══
-  listRegistryWorkflows: publicProcedure.input(z31.object({
-    domain: z31.string().optional(),
-    jurisdiction: z31.string().optional()
+  listRegistryWorkflows: publicProcedure.input(z30.object({
+    domain: z30.string().optional(),
+    jurisdiction: z30.string().optional()
   }).optional()).query(async ({ input }) => {
     const conditions = [];
     if (input?.domain) conditions.push(like4(registryWorkflows.workflowType, `%${input.domain}%`));
     if (input?.jurisdiction) conditions.push(eq22(registryWorkflows.jurisdictionId, input.jurisdiction));
     return db.select().from(registryWorkflows).where(conditions.length > 0 ? and18(...conditions) : void 0).orderBy(registryWorkflows.workflowType);
   }),
-  getRegistryWorkflow: publicProcedure.input(z31.object({ id: z31.string() })).query(async ({ input }) => {
+  getRegistryWorkflow: publicProcedure.input(z30.object({ id: z30.string() })).query(async ({ input }) => {
     const [row] = await db.select().from(registryWorkflows).where(eq22(registryWorkflows.id, input.id));
     return row ?? null;
   }),
   // ═══ Litigation Barriers + Weak Joints combined ═══
-  listAllBarriers: publicProcedure.input(z31.object({
-    barrier_type: z31.string().optional(),
-    domain: z31.string().optional(),
-    search: z31.string().optional()
+  listAllBarriers: publicProcedure.input(z30.object({
+    barrier_type: z30.string().optional(),
+    domain: z30.string().optional(),
+    search: z30.string().optional()
   }).optional()).query(async ({ input }) => {
     const barriers = await db.select().from(litigationBarriers).orderBy(litigationBarriers.barrier_type);
     const weakJoints = await db.select().from(legalWeakJoints).orderBy(sql37`jurisdiction`);
@@ -56603,7 +55928,7 @@ var enforcementIntelligenceRouter = router({
 });
 
 // server/routers/architecture-map.ts
-import { z as z32 } from "zod";
+import { z as z31 } from "zod";
 init_db();
 init_schema();
 import { eq as eq23, like as like5, count as count2 } from "drizzle-orm";
@@ -56621,59 +55946,59 @@ var architectureMapRouter = router({
   // ═══════════════════════════════════════════════════
   // PROOF FRAMEWORKS
   // ═══════════════════════════════════════════════════
-  listProofFrameworks: publicProcedure.input(z32.object({ domain: z32.string().optional(), search: z32.string().optional() }).optional()).query(async ({ input }) => {
+  listProofFrameworks: publicProcedure.input(z31.object({ domain: z31.string().optional(), search: z31.string().optional() }).optional()).query(async ({ input }) => {
     let q = db.select().from(proofFrameworks);
     if (input?.domain) q = q.where(eq23(proofFrameworks.domain, input.domain));
     if (input?.search) q = q.where(like5(proofFrameworks.claimType, `%${input.search}%`));
     return q.orderBy(proofFrameworks.domain, proofFrameworks.claimType);
   }),
-  getProofFramework: publicProcedure.input(z32.object({ id: z32.number() })).query(async ({ input }) => {
+  getProofFramework: publicProcedure.input(z31.object({ id: z31.number() })).query(async ({ input }) => {
     const [row] = await db.select().from(proofFrameworks).where(eq23(proofFrameworks.id, input.id));
     return row ?? null;
   }),
-  getProofByClaimType: publicProcedure.input(z32.object({ claimType: z32.string() })).query(async ({ input }) => {
+  getProofByClaimType: publicProcedure.input(z31.object({ claimType: z31.string() })).query(async ({ input }) => {
     const rows2 = await db.select().from(proofFrameworks).where(like5(proofFrameworks.claimType, `%${input.claimType}%`));
     return rows2;
   }),
   // ═══════════════════════════════════════════════════
   // CLAIM ELEMENT MATRIX
   // ═══════════════════════════════════════════════════
-  listClaimElements: publicProcedure.input(z32.object({ claimType: z32.string().optional(), domain: z32.string().optional() }).optional()).query(async ({ input }) => {
+  listClaimElements: publicProcedure.input(z31.object({ claimType: z31.string().optional(), domain: z31.string().optional() }).optional()).query(async ({ input }) => {
     let q = db.select().from(claimElementMatrix);
     if (input?.claimType) q = q.where(eq23(claimElementMatrix.claimType, input.claimType));
     if (input?.domain) q = q.where(eq23(claimElementMatrix.domain, input.domain));
     return q.orderBy(claimElementMatrix.claimType, claimElementMatrix.elementOrder);
   }),
-  getClaimElementsByType: publicProcedure.input(z32.object({ claimType: z32.string() })).query(async ({ input }) => {
+  getClaimElementsByType: publicProcedure.input(z31.object({ claimType: z31.string() })).query(async ({ input }) => {
     return db.select().from(claimElementMatrix).where(eq23(claimElementMatrix.claimType, input.claimType)).orderBy(claimElementMatrix.elementOrder);
   }),
   // ═══════════════════════════════════════════════════
   // INVESTIGATION GUIDANCE
   // ═══════════════════════════════════════════════════
-  listInvestigationGuidance: publicProcedure.input(z32.object({ agencyShort: z32.string().optional(), pipelineCategory: z32.string().optional() }).optional()).query(async ({ input }) => {
+  listInvestigationGuidance: publicProcedure.input(z31.object({ agencyShort: z31.string().optional(), pipelineCategory: z31.string().optional() }).optional()).query(async ({ input }) => {
     let q = db.select().from(investigationGuidance);
     if (input?.agencyShort) q = q.where(eq23(investigationGuidance.agencyShort, input.agencyShort));
     if (input?.pipelineCategory) q = q.where(eq23(investigationGuidance.pipelineCategory, input.pipelineCategory));
     return q.orderBy(investigationGuidance.agency, investigationGuidance.claimType);
   }),
-  getInvestigationGuidance: publicProcedure.input(z32.object({ id: z32.number() })).query(async ({ input }) => {
+  getInvestigationGuidance: publicProcedure.input(z31.object({ id: z31.number() })).query(async ({ input }) => {
     const [row] = await db.select().from(investigationGuidance).where(eq23(investigationGuidance.id, input.id));
     return row ?? null;
   }),
   // ═══════════════════════════════════════════════════
   // FILING GENERATOR
   // ═══════════════════════════════════════════════════
-  listFilingTemplates: publicProcedure.input(z32.object({ agencyShort: z32.string().optional(), pipelineCategory: z32.string().optional() }).optional()).query(async ({ input }) => {
+  listFilingTemplates: publicProcedure.input(z31.object({ agencyShort: z31.string().optional(), pipelineCategory: z31.string().optional() }).optional()).query(async ({ input }) => {
     let q = db.select().from(filingGenerator);
     if (input?.agencyShort) q = q.where(eq23(filingGenerator.agencyShort, input.agencyShort));
     if (input?.pipelineCategory) q = q.where(eq23(filingGenerator.pipelineCategory, input.pipelineCategory));
     return q.orderBy(filingGenerator.agency, filingGenerator.claimType);
   }),
-  getFilingTemplate: publicProcedure.input(z32.object({ id: z32.number() })).query(async ({ input }) => {
+  getFilingTemplate: publicProcedure.input(z31.object({ id: z31.number() })).query(async ({ input }) => {
     const [row] = await db.select().from(filingGenerator).where(eq23(filingGenerator.id, input.id));
     return row ?? null;
   }),
-  getFilingReadiness: publicProcedure.input(z32.object({ claimType: z32.string(), agencyShort: z32.string() })).query(async ({ input }) => {
+  getFilingReadiness: publicProcedure.input(z31.object({ claimType: z31.string(), agencyShort: z31.string() })).query(async ({ input }) => {
     const templates = await db.select().from(filingGenerator).where(eq23(filingGenerator.agencyShort, input.agencyShort));
     const matching = templates.filter(
       (t2) => t2.claimType.toLowerCase().includes(input.claimType.toLowerCase())
@@ -56918,26 +56243,26 @@ var architectureMapRouter = router({
 });
 
 // server/routers/procedural-engine.ts
-import { z as z33 } from "zod";
+import { z as z32 } from "zod";
 init_db();
 init_schema();
 import { eq as eq24, desc as desc12, sql as sql39, and as and19, gte, lte as lte2, like as like6 } from "drizzle-orm";
 var proceduralEngineRouter = router({
   // ─── Jurisdiction Hierarchy ───────────────────────────────────────────
-  listJurisdictions: publicProcedure.input(z33.object({
-    type: z33.enum(["federal", "state", "county", "city", "tribal", "territory"]).optional(),
-    status: z33.enum(["active", "inactive", "pending"]).optional()
+  listJurisdictions: publicProcedure.input(z32.object({
+    type: z32.enum(["federal", "state", "county", "city", "tribal", "territory"]).optional(),
+    status: z32.enum(["active", "inactive", "pending"]).optional()
   }).optional()).query(async ({ input }) => {
     const conditions = [];
     if (input?.type) conditions.push(eq24(jurisdictionHierarchy.type, input.type));
     if (input?.status) conditions.push(eq24(jurisdictionHierarchy.status, input.status));
     return db.select().from(jurisdictionHierarchy).where(conditions.length ? and19(...conditions) : void 0).orderBy(jurisdictionHierarchy.level, jurisdictionHierarchy.name);
   }),
-  getJurisdiction: publicProcedure.input(z33.object({ id: z33.number() })).query(async ({ input }) => {
+  getJurisdiction: publicProcedure.input(z32.object({ id: z32.number() })).query(async ({ input }) => {
     const [row] = await db.select().from(jurisdictionHierarchy).where(eq24(jurisdictionHierarchy.id, input.id));
     return row ?? null;
   }),
-  getHierarchyChain: publicProcedure.input(z33.object({ id: z33.number() })).query(async ({ input }) => {
+  getHierarchyChain: publicProcedure.input(z32.object({ id: z32.number() })).query(async ({ input }) => {
     const chain = [];
     let currentId = input.id;
     while (currentId) {
@@ -56949,23 +56274,23 @@ var proceduralEngineRouter = router({
     }
     return chain;
   }),
-  resolveJurisdiction: publicProcedure.input(z33.object({ name: z33.string() })).query(async ({ input }) => {
+  resolveJurisdiction: publicProcedure.input(z32.object({ name: z32.string() })).query(async ({ input }) => {
     return db.select().from(jurisdictionHierarchy).where(like6(jurisdictionHierarchy.name, `%${input.name}%`));
   }),
   // ─── Node Timeline ────────────────────────────────────────────────────
-  listNodeTimeline: publicProcedure.input(z33.object({
-    nodeType: z33.enum(["doctrine", "statute", "regulation", "case_law", "agency_guidance", "executive_order"]).optional(),
-    domain: z33.string().optional()
+  listNodeTimeline: publicProcedure.input(z32.object({
+    nodeType: z32.enum(["doctrine", "statute", "regulation", "case_law", "agency_guidance", "executive_order"]).optional(),
+    domain: z32.string().optional()
   }).optional()).query(async ({ input }) => {
     const conditions = [];
     if (input?.nodeType) conditions.push(eq24(nodeTimeline.nodeType, input.nodeType));
     if (input?.domain) conditions.push(eq24(nodeTimeline.domain, input.domain));
     return db.select().from(nodeTimeline).where(conditions.length ? and19(...conditions) : void 0).orderBy(desc12(nodeTimeline.effectiveDate));
   }),
-  getNodeTimeline: publicProcedure.input(z33.object({ nodeId: z33.string() })).query(async ({ input }) => {
+  getNodeTimeline: publicProcedure.input(z32.object({ nodeId: z32.string() })).query(async ({ input }) => {
     return db.select().from(nodeTimeline).where(eq24(nodeTimeline.nodeId, input.nodeId)).orderBy(desc12(nodeTimeline.effectiveDate));
   }),
-  resolveAtDate: publicProcedure.input(z33.object({ nodeId: z33.string(), date: z33.number() })).query(async ({ input }) => {
+  resolveAtDate: publicProcedure.input(z32.object({ nodeId: z32.string(), date: z32.number() })).query(async ({ input }) => {
     const rows2 = await db.select().from(nodeTimeline).where(and19(
       eq24(nodeTimeline.nodeId, input.nodeId),
       lte2(nodeTimeline.effectiveDate, input.date)
@@ -56973,12 +56298,12 @@ var proceduralEngineRouter = router({
     return rows2[0] ?? null;
   }),
   // ─── Timeline Events ──────────────────────────────────────────────────
-  listTimelineEvents: publicProcedure.input(z33.object({
-    eventType: z33.enum(["court_decision", "statute_enactment", "statute_amendment", "regulation_change", "agency_guidance", "doctrine_shift", "executive_order", "legislative_action"]).optional(),
-    jurisdiction: z33.string().optional(),
-    domain: z33.string().optional(),
-    startDate: z33.number().optional(),
-    endDate: z33.number().optional()
+  listTimelineEvents: publicProcedure.input(z32.object({
+    eventType: z32.enum(["court_decision", "statute_enactment", "statute_amendment", "regulation_change", "agency_guidance", "doctrine_shift", "executive_order", "legislative_action"]).optional(),
+    jurisdiction: z32.string().optional(),
+    domain: z32.string().optional(),
+    startDate: z32.number().optional(),
+    endDate: z32.number().optional()
   }).optional()).query(async ({ input }) => {
     const conditions = [];
     if (input?.eventType) conditions.push(eq24(timelineEvents.eventType, input.eventType));
@@ -56989,9 +56314,9 @@ var proceduralEngineRouter = router({
     return db.select().from(timelineEvents).where(conditions.length ? and19(...conditions) : void 0).orderBy(desc12(timelineEvents.date));
   }),
   // ─── Timeline Edges ───────────────────────────────────────────────────
-  getTimelineEdges: publicProcedure.input(z33.object({
-    nodeId: z33.string().optional(),
-    relationshipType: z33.enum(["supersedes", "amends", "overturns", "interprets", "limits", "expands", "narrows", "clarifies", "codifies", "implements"]).optional()
+  getTimelineEdges: publicProcedure.input(z32.object({
+    nodeId: z32.string().optional(),
+    relationshipType: z32.enum(["supersedes", "amends", "overturns", "interprets", "limits", "expands", "narrows", "clarifies", "codifies", "implements"]).optional()
   }).optional()).query(async ({ input }) => {
     const conditions = [];
     if (input?.nodeId) {
@@ -57001,16 +56326,16 @@ var proceduralEngineRouter = router({
     return db.select().from(timelineEdges).where(conditions.length ? and19(...conditions) : void 0).orderBy(desc12(timelineEdges.effectiveDate));
   }),
   // ─── Workflow Master ──────────────────────────────────────────────────
-  listWorkflows: publicProcedure.input(z33.object({
-    domain: z33.string().optional(),
-    status: z33.enum(["draft", "active", "deprecated", "archived"]).optional()
+  listWorkflows: publicProcedure.input(z32.object({
+    domain: z32.string().optional(),
+    status: z32.enum(["draft", "active", "deprecated", "archived"]).optional()
   }).optional()).query(async ({ input }) => {
     const conditions = [];
     if (input?.domain) conditions.push(eq24(workflowMaster.domain, input.domain));
     if (input?.status) conditions.push(eq24(workflowMaster.status, input.status));
     return db.select().from(workflowMaster).where(conditions.length ? and19(...conditions) : void 0).orderBy(workflowMaster.title);
   }),
-  getWorkflow: publicProcedure.input(z33.object({ id: z33.number() })).query(async ({ input }) => {
+  getWorkflow: publicProcedure.input(z32.object({ id: z32.number() })).query(async ({ input }) => {
     const [workflow] = await db.select().from(workflowMaster).where(eq24(workflowMaster.id, input.id));
     if (!workflow) return null;
     const steps = await db.select().from(workflowSteps).where(eq24(workflowSteps.workflowId, String(input.id))).orderBy(workflowSteps.stepOrder);
@@ -57018,9 +56343,9 @@ var proceduralEngineRouter = router({
     const profile = workflow.evidenceProfileId ? (await db.select().from(evidenceProfiles).where(eq24(evidenceProfiles.id, workflow.evidenceProfileId)))[0] : null;
     return { ...workflow, steps, escalations, evidence_profile: profile };
   }),
-  resolveWorkflow: publicProcedure.input(z33.object({
-    issueType: z33.string(),
-    jurisdiction: z33.string().optional()
+  resolveWorkflow: publicProcedure.input(z32.object({
+    issueType: z32.string(),
+    jurisdiction: z32.string().optional()
   })).query(async ({ input }) => {
     const allWorkflows = await db.select().from(workflowMaster).where(eq24(workflowMaster.status, "active"));
     return allWorkflows.filter((w) => {
@@ -57033,25 +56358,25 @@ var proceduralEngineRouter = router({
     });
   }),
   // ─── Workflow Steps ───────────────────────────────────────────────────
-  getWorkflowSteps: publicProcedure.input(z33.object({ workflowId: z33.number() })).query(async ({ input }) => {
+  getWorkflowSteps: publicProcedure.input(z32.object({ workflowId: z32.number() })).query(async ({ input }) => {
     return db.select().from(workflowSteps).where(eq24(workflowSteps.workflowId, String(input.workflowId))).orderBy(workflowSteps.stepOrder);
   }),
   // ─── Evidence Profiles ────────────────────────────────────────────────
   listEvidenceProfiles: publicProcedure.query(async () => {
     return db.select().from(evidenceProfiles);
   }),
-  getEvidenceProfile: publicProcedure.input(z33.object({ id: z33.number() })).query(async ({ input }) => {
+  getEvidenceProfile: publicProcedure.input(z32.object({ id: z32.number() })).query(async ({ input }) => {
     const [row] = await db.select().from(evidenceProfiles).where(eq24(evidenceProfiles.id, input.id));
     return row ?? null;
   }),
   // ─── Escalation Routes ───────────────────────────────────────────────
-  getEscalationRoutes: publicProcedure.input(z33.object({ workflowId: z33.number() })).query(async ({ input }) => {
+  getEscalationRoutes: publicProcedure.input(z32.object({ workflowId: z32.number() })).query(async ({ input }) => {
     return db.select().from(escalationRoutes).where(eq24(escalationRoutes.workflowId, input.workflowId));
   }),
   // ─── Deadline Rules ───────────────────────────────────────────────────
-  listDeadlineRules: publicProcedure.input(z33.object({
-    claimType: z33.string().optional(),
-    jurisdiction: z33.string().optional()
+  listDeadlineRules: publicProcedure.input(z32.object({
+    claimType: z32.string().optional(),
+    jurisdiction: z32.string().optional()
   }).optional()).query(async ({ input }) => {
     const conditions = [];
     if (input?.claimType) conditions.push(eq24(deadlineRules.claimType, input.claimType));
@@ -57059,16 +56384,16 @@ var proceduralEngineRouter = router({
     return db.select().from(deadlineRules).where(conditions.length ? and19(...conditions) : void 0);
   }),
   // ─── Weak Joint Triggers ──────────────────────────────────────────────
-  listWeakJointTriggers: publicProcedure.input(z33.object({ weakJointId: z33.number().optional() }).optional()).query(async ({ input }) => {
+  listWeakJointTriggers: publicProcedure.input(z32.object({ weakJointId: z32.number().optional() }).optional()).query(async ({ input }) => {
     if (input?.weakJointId) {
       return db.select().from(weakJointTriggers).where(eq24(weakJointTriggers.weakJointId, input.weakJointId));
     }
     return db.select().from(weakJointTriggers);
   }),
   // ─── Claim Detection Rules ────────────────────────────────────────────
-  listClaimDetectionRules: publicProcedure.input(z33.object({
-    pipelineCategory: z33.string().optional(),
-    claimType: z33.string().optional()
+  listClaimDetectionRules: publicProcedure.input(z32.object({
+    pipelineCategory: z32.string().optional(),
+    claimType: z32.string().optional()
   }).optional()).query(async ({ input }) => {
     const conditions = [];
     if (input?.pipelineCategory) conditions.push(eq24(claimDetectionRules.pipelineCategory, input.pipelineCategory));
@@ -57103,7 +56428,7 @@ var proceduralEngineRouter = router({
     };
   }),
   // ─── Case Pipeline: Claim Viability Assessment ────────────────────────
-  getCaseViability: protectedProcedure.input(z33.object({ caseId: z33.number() })).query(async ({ input }) => {
+  getCaseViability: protectedProcedure.input(z32.object({ caseId: z32.number() })).query(async ({ input }) => {
     const viabilityRows = await db.select().from(claimViability).where(eq24(claimViability.caseId, input.caseId));
     const contradictions = await db.select().from(contradictionScores).where(eq24(contradictionScores.caseId, input.caseId));
     const elements = await db.select().from(elementStrength).where(eq24(elementStrength.caseId, input.caseId));
@@ -57121,28 +56446,28 @@ var proceduralEngineRouter = router({
       detectionResults
     };
   }),
-  getCaseContradictions: protectedProcedure.input(z33.object({ caseId: z33.number() })).query(async ({ input }) => {
+  getCaseContradictions: protectedProcedure.input(z32.object({ caseId: z32.number() })).query(async ({ input }) => {
     return db.select().from(contradictionScores).where(eq24(contradictionScores.caseId, input.caseId));
   }),
-  getCaseElementStrength: protectedProcedure.input(z33.object({ caseId: z33.number() })).query(async ({ input }) => {
+  getCaseElementStrength: protectedProcedure.input(z32.object({ caseId: z32.number() })).query(async ({ input }) => {
     return db.select().from(elementStrength).where(eq24(elementStrength.caseId, input.caseId));
   }),
-  getCaseEvidenceRecords: protectedProcedure.input(z33.object({ caseId: z33.number() })).query(async ({ input }) => {
+  getCaseEvidenceRecords: protectedProcedure.input(z32.object({ caseId: z32.number() })).query(async ({ input }) => {
     return db.select().from(evidenceRecords).where(eq24(evidenceRecords.caseId, input.caseId));
   }),
-  getCaseWeakJointHits: protectedProcedure.input(z33.object({ caseId: z33.number() })).query(async ({ input }) => {
+  getCaseWeakJointHits: protectedProcedure.input(z32.object({ caseId: z32.number() })).query(async ({ input }) => {
     return db.select().from(weakJointHits).where(eq24(weakJointHits.caseId, input.caseId));
   }),
-  getCaseFactClaims: protectedProcedure.input(z33.object({ caseId: z33.number() })).query(async ({ input }) => {
+  getCaseFactClaims: protectedProcedure.input(z32.object({ caseId: z32.number() })).query(async ({ input }) => {
     return db.select().from(factClaims).where(eq24(factClaims.caseId, input.caseId));
   }),
-  getCaseDetectionResults: protectedProcedure.input(z33.object({ caseId: z33.number() })).query(async ({ input }) => {
+  getCaseDetectionResults: protectedProcedure.input(z32.object({ caseId: z32.number() })).query(async ({ input }) => {
     return db.select().from(claimDetectionResults).where(eq24(claimDetectionResults.caseId, input.caseId));
   })
 });
 
 // server/routers/viability-engine.ts
-import { z as z34 } from "zod";
+import { z as z33 } from "zod";
 init_llm();
 init_db();
 init_schema();
@@ -57153,9 +56478,9 @@ var viabilityEngineRouter = router({
   // Process: Read all claims/quotes from case documents, extract structured
   //          fact assertions (actor, factType, factValue, eventDate)
   // Output: Rows inserted into fact_claims table
-  extractFactClaims: protectedProcedure.input(z34.object({ caseId: z34.number() })).mutation(async ({ input }) => {
+  extractFactClaims: protectedProcedure.input(z33.object({ caseId: z33.number() })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.VIABILITY, caseId: input.caseId, runType: "viability_only" }, async () => {
-      const now3 = Date.now();
+      const now4 = Date.now();
       const caseClaims = await db.select().from(claims).where(eq25(claims.caseId, String(input.caseId)));
       if (caseClaims.length === 0) {
         return { extracted: 0, message: "No claims found in case. Upload and analyze documents first." };
@@ -57239,7 +56564,7 @@ ${claimTexts}`
           relatedEvent: fact.relatedEvent || null,
           eventDate: fact.eventDate || null,
           confidenceScore: String(Math.min(1, Math.max(0, fact.confidenceScore ?? 0.5))),
-          createdAt: now3
+          createdAt: now4
         });
         inserted++;
       }
@@ -57250,7 +56575,7 @@ ${claimTexts}`
           caseId: input.caseId,
           pipelineCategory,
           factText: fact.factValue,
-          createdAt: now3
+          createdAt: now4
         });
       }
       return { extracted: inserted, message: `Extracted ${inserted} fact claims from ${caseClaims.length} document claims.` };
@@ -57261,8 +56586,8 @@ ${claimTexts}`
   // Process: Match case fact patterns against claim_detection_rules using
   //          keyword/phrase matching. Each rule has a triggerPhrase and weight.
   // Output: Rows inserted into claim_detection_results
-  detectClaims: protectedProcedure.input(z34.object({ caseId: z34.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  detectClaims: protectedProcedure.input(z33.object({ caseId: z33.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const patterns3 = await db.select().from(caseFactPatterns).where(eq25(caseFactPatterns.caseId, input.caseId));
     if (patterns3.length === 0) {
       return { detected: 0, message: "No fact patterns found. Run fact extraction first (T1)." };
@@ -57295,7 +56620,7 @@ ${claimTexts}`
           claimType,
           confidenceScore: normalizedScore.toFixed(2),
           matchedRules: data.matchedRuleIds,
-          createdAt: now3
+          createdAt: now4
         });
         detected++;
       }
@@ -57314,19 +56639,19 @@ ${claimTexts}`
   // Process: For each detected claim, look up deadline_rules and compute
   //          days remaining, status (valid/warning/expired/unknown)
   // Output: SOL status per claim type (used in T7 viability)
-  evaluateDeadlines: protectedProcedure.input(z34.object({
-    caseId: z34.number(),
-    incidentDate: z34.number(),
+  evaluateDeadlines: protectedProcedure.input(z33.object({
+    caseId: z33.number(),
+    incidentDate: z33.number(),
     // Unix timestamp ms
-    jurisdiction: z34.string().default("federal")
+    jurisdiction: z33.string().default("federal")
   })).query(async ({ input }) => {
     const detected = await db.select().from(claimDetectionResults).where(eq25(claimDetectionResults.caseId, input.caseId));
     if (detected.length === 0) {
       return { results: [], message: "No detected claims. Run claim detection first (T2)." };
     }
     const allRules = await db.select().from(deadlineRules);
-    const now3 = Date.now();
-    const daysSinceIncident = Math.floor((now3 - input.incidentDate) / (1e3 * 60 * 60 * 24));
+    const now4 = Date.now();
+    const daysSinceIncident = Math.floor((now4 - input.incidentDate) / (1e3 * 60 * 60 * 24));
     const results = detected.map((d) => {
       const matchingRules = allRules.filter(
         (r) => r.claimType.toLowerCase() === d.claimType.toLowerCase() && (r.jurisdiction === input.jurisdiction || r.jurisdiction === "federal" || r.jurisdiction === "all")
@@ -57388,8 +56713,8 @@ ${claimTexts}`
   //          claim_element_matrix. Evaluate which elements are supported
   //          by the case's evidence records and fact claims.
   // Output: Rows inserted into element_strength table
-  evaluateElements: protectedProcedure.input(z34.object({ caseId: z34.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  evaluateElements: protectedProcedure.input(z33.object({ caseId: z33.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const detected = await db.select().from(claimDetectionResults).where(eq25(claimDetectionResults.caseId, input.caseId));
     if (detected.length === 0) {
       return { evaluated: 0, message: "No detected claims. Run claim detection first (T2)." };
@@ -57437,7 +56762,7 @@ ${claimTexts}`
           supportingEvidence: matchingEvidence.map((e) => e.id),
           strengthScore: score.toFixed(2),
           confidenceLevel,
-          createdAt: now3
+          createdAt: now4
         });
         evaluated++;
       }
@@ -57449,8 +56774,8 @@ ${claimTexts}`
   // Process: Compare fact claims pairwise to find contradictions.
   //          Also check against contradiction templates.
   // Output: Rows inserted into contradiction_scores table
-  detectContradictions: protectedProcedure.input(z34.object({ caseId: z34.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  detectContradictions: protectedProcedure.input(z33.object({ caseId: z33.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const facts = await db.select().from(factClaims).where(eq25(factClaims.caseId, input.caseId));
     if (facts.length < 2) {
       return { detected: 0, message: "Need at least 2 fact claims to detect contradictions." };
@@ -57532,7 +56857,7 @@ ${factTexts}`
         factClaimA: c.factIdA || null,
         factClaimB: c.factIdB || null,
         evidenceReferences: [],
-        createdAt: now3
+        createdAt: now4
       });
       inserted++;
     }
@@ -57553,7 +56878,7 @@ ${factTexts}`
           factClaimA: null,
           factClaimB: null,
           evidenceReferences: [],
-          createdAt: now3
+          createdAt: now4
         });
         templateMatches++;
         inserted++;
@@ -57571,8 +56896,8 @@ ${factTexts}`
   // Process: Check case fact patterns against weak joint trigger conditions.
   //          Each trigger has a condition string that is matched against facts.
   // Output: Rows inserted into weak_joint_hits table
-  checkWeakJoints: protectedProcedure.input(z34.object({ caseId: z34.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  checkWeakJoints: protectedProcedure.input(z33.object({ caseId: z33.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const facts = await db.select().from(factClaims).where(eq25(factClaims.caseId, input.caseId));
     const patterns3 = await db.select().from(caseFactPatterns).where(eq25(caseFactPatterns.caseId, input.caseId));
     if (facts.length === 0 && patterns3.length === 0) {
@@ -57596,7 +56921,7 @@ ${factTexts}`
           triggerId: trigger.id,
           hitStrength: hitStrength.toFixed(2),
           supportingFactPatterns: matchingPatternIds,
-          createdAt: now3
+          createdAt: now4
         });
         hits++;
       }
@@ -57622,19 +56947,19 @@ ${factTexts}`
   // Process: Aggregate all pipeline outputs into a final viability score
   //          per detected claim type.
   // Output: Rows inserted into claim_viability table
-  computeViability: protectedProcedure.input(z34.object({
-    caseId: z34.number(),
-    incidentDate: z34.number(),
-    jurisdiction: z34.string().default("federal")
+  computeViability: protectedProcedure.input(z33.object({
+    caseId: z33.number(),
+    incidentDate: z33.number(),
+    jurisdiction: z33.string().default("federal")
   })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const detected = await db.select().from(claimDetectionResults).where(eq25(claimDetectionResults.caseId, input.caseId));
     const elements = await db.select().from(elementStrength).where(eq25(elementStrength.caseId, input.caseId));
     const contradictions = await db.select().from(contradictionScores).where(eq25(contradictionScores.caseId, input.caseId));
     const wjHits = await db.select().from(weakJointHits).where(eq25(weakJointHits.caseId, input.caseId));
     const evidence = await db.select().from(evidenceRecords).where(eq25(evidenceRecords.caseId, input.caseId));
     const allDeadlineRules = await db.select().from(deadlineRules);
-    const daysSinceIncident = Math.floor((now3 - input.incidentDate) / (1e3 * 60 * 60 * 24));
+    const daysSinceIncident = Math.floor((now4 - input.incidentDate) / (1e3 * 60 * 60 * 24));
     if (detected.length === 0) {
       return { viability: [], message: "No detected claims. Run the full pipeline first." };
     }
@@ -57710,7 +57035,7 @@ ${factTexts}`
         agencyRouting: framework?.domain || null,
         contradictionCount,
         weakJointCount,
-        evaluatedAt: now3
+        evaluatedAt: now4
       });
       results.push({
         claimType: detection.claimType,
@@ -57735,10 +57060,10 @@ ${factTexts}`
   // NOTE: This is a stub that returns pipeline instructions.
   // The actual orchestration is done by calling each stage endpoint
   // individually from the frontend in sequence.
-  runFullPipeline: protectedProcedure.input(z34.object({
-    caseId: z34.number(),
-    incidentDate: z34.number(),
-    jurisdiction: z34.string().default("federal")
+  runFullPipeline: protectedProcedure.input(z33.object({
+    caseId: z33.number(),
+    incidentDate: z33.number(),
+    jurisdiction: z33.string().default("federal")
   })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.VIABILITY, caseId: input.caseId, runType: "full_pipeline" }, async () => {
       return {
@@ -57757,7 +57082,7 @@ ${factTexts}`
   }),
   // ─── Pipeline Status ─────────────────────────────────────────────────
   // Check what pipeline stages have been run for a case
-  getPipelineStatus: protectedProcedure.input(z34.object({ caseId: z34.number() })).query(async ({ input }) => {
+  getPipelineStatus: protectedProcedure.input(z33.object({ caseId: z33.number() })).query(async ({ input }) => {
     const [factCount] = await db.select({ c: count3() }).from(factClaims).where(eq25(factClaims.caseId, input.caseId));
     const [patternCount] = await db.select({ c: count3() }).from(caseFactPatterns).where(eq25(caseFactPatterns.caseId, input.caseId));
     const [detectionCount] = await db.select({ c: count3() }).from(claimDetectionResults).where(eq25(claimDetectionResults.caseId, input.caseId));
@@ -57783,7 +57108,7 @@ ${factTexts}`
 });
 
 // server/routers/strategy-engine.ts
-import { z as z35 } from "zod";
+import { z as z34 } from "zod";
 init_llm();
 init_db();
 init_schema();
@@ -57800,8 +57125,8 @@ function assertCanonical2(table) {
 }
 async function canonicalInsert(table, data, entityType) {
   assertCanonical2(table);
-  const now3 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
-  const record = { ...data, createdAt: data.createdAt || now3, updatedAt: data.updatedAt || now3 };
+  const now4 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+  const record = { ...data, createdAt: data.createdAt || now4, updatedAt: data.updatedAt || now4 };
   const cols = Object.keys(record).filter((k) => k !== "id");
   const placeholders = cols.map(() => "?").join(", ");
   const values = cols.map((k) => {
@@ -57829,8 +57154,8 @@ async function canonicalInsert(table, data, entityType) {
 }
 async function canonicalUpdate(table, id, data) {
   assertCanonical2(table);
-  const now3 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
-  const record = { ...data, updatedAt: now3 };
+  const now4 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+  const record = { ...data, updatedAt: now4 };
   const setClauses = Object.entries(record).filter(([k]) => k !== "id").map(([k, v]) => {
     if (v === null) return `"${k}" = NULL`;
     if (typeof v === "object") return `"${k}" = '${JSON.stringify(v).replace(/'/g, "''")}'`;
@@ -57849,8 +57174,8 @@ async function writeStrategyWorkflow(data) {
 // server/routers/strategy-engine.ts
 var strategyEngineRouter = router({
   // ─── S1: Build Matter Profile ───────────────────────────────────────
-  buildMatterProfile: protectedProcedure.input(z35.object({ caseId: z35.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  buildMatterProfile: protectedProcedure.input(z34.object({ caseId: z34.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const [caseRow] = await db.select().from(cases).where(eq28(cases.id, String(input.caseId)));
     if (!caseRow) throw new Error("Case not found");
     const caseEntities = await db.select().from(entities).where(eq28(entities.caseId, String(input.caseId)));
@@ -57908,14 +57233,14 @@ ${eventSummary}`
       keyFacts: profile.keyFacts ?? [],
       riskFactors: profile.riskFactors ?? [],
       statusSummary: profile.statusSummary ?? "",
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     return { matter_profile_id: inserted.insertId, profile };
   }),
   // ─── S2: Build Fact Matrix ──────────────────────────────────────────
-  buildFactMatrix: protectedProcedure.input(z35.object({ caseId: z35.number(), matterProfileId: z35.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  buildFactMatrix: protectedProcedure.input(z34.object({ caseId: z34.number(), matterProfileId: z34.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const caseQuotes = await db.select().from(quotes).where(eq28(quotes.caseId, String(input.caseId)));
     const caseFindings = await db.select().from(findings).where(eq28(findings.caseId, String(input.caseId)));
     const caseClaims = await db.select().from(claims).where(eq28(claims.caseId, String(input.caseId)));
@@ -57971,15 +57296,15 @@ Extract only explicitly stated facts. Maximum 50 facts.`
         sourceDocumentId: null,
         relevanceScore: String(fact.relevanceScore ?? 0.5),
         disputeStatus: "unknown",
-        createdAt: now3
+        createdAt: now4
       });
       inserted++;
     }
     return { facts_inserted: inserted };
   }),
   // ─── S3: Generate Claim Candidates ──────────────────────────────────
-  generateClaimCandidates: protectedProcedure.input(z35.object({ caseId: z35.number(), matterProfileId: z35.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  generateClaimCandidates: protectedProcedure.input(z34.object({ caseId: z34.number(), matterProfileId: z34.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const [profile] = await db.select().from(strategyMatterProfile).where(eq28(strategyMatterProfile.id, input.matterProfileId));
     if (!profile) throw new Error("Matter profile not found");
     const facts = await db.select().from(strategyFactMatrix).where(and21(
@@ -58047,15 +57372,15 @@ ${catalogSummary}`
         solStatus: cand.solStatus ?? "unknown",
         recommendation: cand.recommendation ?? "investigate_further",
         notes: cand.notes ?? null,
-        createdAt: now3
+        createdAt: now4
       });
       inserted++;
     }
     return { candidates_generated: inserted };
   }),
   // ─── S4: Evaluate Viability ─────────────────────────────────────────
-  evaluateViability: protectedProcedure.input(z35.object({ caseId: z35.number(), matterProfileId: z35.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  evaluateViability: protectedProcedure.input(z34.object({ caseId: z34.number(), matterProfileId: z34.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const candidates = await db.select().from(strategyClaimCandidates).where(and21(
       eq28(strategyClaimCandidates.caseId, input.caseId),
       eq28(strategyClaimCandidates.matterProfileId, input.matterProfileId)
@@ -58116,15 +57441,15 @@ ${factText}`
         solScore: String(assessment.solScore ?? 0),
         patternBonus: String(assessment.patternBonus ?? 0),
         assessmentDetails: assessment.assessmentDetails ?? {},
-        createdAt: now3
+        createdAt: now4
       });
       assessmentsCreated++;
     }
     return { assessmentsCreated };
   }),
   // ─── S5: Compute Deadlines ──────────────────────────────────────────
-  computeDeadlines: protectedProcedure.input(z35.object({ caseId: z35.number(), matterProfileId: z35.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  computeDeadlines: protectedProcedure.input(z34.object({ caseId: z34.number(), matterProfileId: z34.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const [profile] = await db.select().from(strategyMatterProfile).where(eq28(strategyMatterProfile.id, input.matterProfileId));
     if (!profile) throw new Error("Matter profile not found");
     const candidates = await db.select().from(strategyClaimCandidates).where(and21(
@@ -58143,7 +57468,7 @@ ${factText}`
         const deadline = new Date(trigger);
         deadline.setFullYear(deadline.getFullYear() + solYears);
         deadlineDate = deadline.toISOString().split("T")[0];
-        daysRemaining = Math.ceil((deadline.getTime() - now3) / (1e3 * 60 * 60 * 24));
+        daysRemaining = Math.ceil((deadline.getTime() - now4) / (1e3 * 60 * 60 * 24));
       }
       await db.insert(strategyDeadlineEngine).values({
         caseId: input.caseId,
@@ -58157,15 +57482,15 @@ ${factText}`
         tollingApplied: false,
         deadlineStatus: daysRemaining !== null ? daysRemaining < 0 ? "expired" : "active" : "active",
         sourceRuleId: catalogEntry?.id ?? null,
-        createdAt: now3
+        createdAt: now4
       });
       deadlinesCreated++;
     }
     return { deadlinesCreated };
   }),
   // ─── S6: Link Elements to Facts ─────────────────────────────────────
-  linkElementsToFacts: protectedProcedure.input(z35.object({ caseId: z35.number(), matterProfileId: z35.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  linkElementsToFacts: protectedProcedure.input(z34.object({ caseId: z34.number(), matterProfileId: z34.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const candidates = await db.select().from(strategyClaimCandidates).where(and21(
       eq28(strategyClaimCandidates.caseId, input.caseId),
       eq28(strategyClaimCandidates.matterProfileId, input.matterProfileId)
@@ -58192,7 +57517,7 @@ ${factText}`
           quoteId: matchingFact?.sourceQuoteId ?? null,
           linkStrength: elem.strength ?? "absent",
           notes: elem.evidence ?? null,
-          createdAt: now3
+          createdAt: now4
         });
         linksCreated++;
       }
@@ -58200,8 +57525,8 @@ ${factText}`
     return { linksCreated };
   }),
   // ─── S7: Identify Missing Evidence ──────────────────────────────────
-  identifyMissingEvidence: protectedProcedure.input(z35.object({ caseId: z35.number(), matterProfileId: z35.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  identifyMissingEvidence: protectedProcedure.input(z34.object({ caseId: z34.number(), matterProfileId: z34.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const links = await db.select().from(strategyElementFactLinks).where(eq28(strategyElementFactLinks.caseId, input.caseId));
     const weakLinks = links.filter((l) => l.linkStrength === "weak" || l.linkStrength === "absent");
     if (weakLinks.length === 0) return { tasks_created: 0, message: "No missing evidence identified." };
@@ -58248,8 +57573,8 @@ ${elemList}` }
           suggestedSource: task.suggestedSource ?? null,
           taskPriority: task.taskPriority ?? "medium",
           taskStatus: "open",
-          createdAt: now3,
-          updatedAt: now3
+          createdAt: now4,
+          updatedAt: now4
         });
         tasksCreated++;
       }
@@ -58257,8 +57582,8 @@ ${elemList}` }
     return { tasksCreated };
   }),
   // ─── S8: Generate Strategy Paths ────────────────────────────────────
-  generateStrategyPaths: protectedProcedure.input(z35.object({ caseId: z35.number(), matterProfileId: z35.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  generateStrategyPaths: protectedProcedure.input(z34.object({ caseId: z34.number(), matterProfileId: z34.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const [profile] = await db.select().from(strategyMatterProfile).where(eq28(strategyMatterProfile.id, input.matterProfileId));
     if (!profile) throw new Error("Matter profile not found");
     const candidates = await db.select().from(strategyClaimCandidates).where(and21(
@@ -58334,15 +57659,15 @@ ${forumSummary}`
         disadvantages: path5.disadvantages ?? [],
         priorityRank: path5.priorityRank ?? pathsCreated + 1,
         pathStatus: "recommended",
-        createdAt: now3,
-        updatedAt: now3
+        createdAt: now4,
+        updatedAt: now4
       });
       pathsCreated++;
     }
     return { pathsCreated };
   }),
   // ─── Full Pipeline Init ─────────────────────────────────────────────
-  runFullPipeline: protectedProcedure.input(z35.object({ caseId: z35.number() })).mutation(async ({ ctx, input }) => {
+  runFullPipeline: protectedProcedure.input(z34.object({ caseId: z34.number() })).mutation(async ({ ctx, input }) => {
     return withEngineTracking({
       engineId: ENGINE_IDS.STRATEGY,
       caseId: input.caseId,
@@ -58374,34 +57699,34 @@ ${forumSummary}`
     });
   }),
   // ─── Read Endpoints ─────────────────────────────────────────────────
-  getMatterProfile: protectedProcedure.input(z35.object({ caseId: z35.number() })).query(async ({ input }) => {
+  getMatterProfile: protectedProcedure.input(z34.object({ caseId: z34.number() })).query(async ({ input }) => {
     return db.select().from(strategyMatterProfile).where(eq28(strategyMatterProfile.caseId, input.caseId)).orderBy(desc14(strategyMatterProfile.createdAt));
   }),
-  getFactMatrix: protectedProcedure.input(z35.object({ caseId: z35.number(), matterProfileId: z35.number() })).query(async ({ input }) => {
+  getFactMatrix: protectedProcedure.input(z34.object({ caseId: z34.number(), matterProfileId: z34.number() })).query(async ({ input }) => {
     return db.select().from(strategyFactMatrix).where(and21(
       eq28(strategyFactMatrix.caseId, input.caseId),
       eq28(strategyFactMatrix.matterProfileId, input.matterProfileId)
     ));
   }),
-  getClaimCandidates: protectedProcedure.input(z35.object({ caseId: z35.number(), matterProfileId: z35.number() })).query(async ({ input }) => {
+  getClaimCandidates: protectedProcedure.input(z34.object({ caseId: z34.number(), matterProfileId: z34.number() })).query(async ({ input }) => {
     return db.select().from(strategyClaimCandidates).where(and21(
       eq28(strategyClaimCandidates.caseId, input.caseId),
       eq28(strategyClaimCandidates.matterProfileId, input.matterProfileId)
     ));
   }),
-  getViabilityAssessments: protectedProcedure.input(z35.object({ caseId: z35.number() })).query(async ({ input }) => {
+  getViabilityAssessments: protectedProcedure.input(z34.object({ caseId: z34.number() })).query(async ({ input }) => {
     return db.select().from(strategyViabilityAssessment).where(eq28(strategyViabilityAssessment.caseId, input.caseId));
   }),
-  getDeadlines: protectedProcedure.input(z35.object({ caseId: z35.number() })).query(async ({ input }) => {
+  getDeadlines: protectedProcedure.input(z34.object({ caseId: z34.number() })).query(async ({ input }) => {
     return db.select().from(strategyDeadlineEngine).where(eq28(strategyDeadlineEngine.caseId, input.caseId));
   }),
-  getStrategyPaths: protectedProcedure.input(z35.object({ caseId: z35.number() })).query(async ({ input }) => {
+  getStrategyPaths: protectedProcedure.input(z34.object({ caseId: z34.number() })).query(async ({ input }) => {
     return db.select().from(strategyPaths).where(eq28(strategyPaths.caseId, String(input.caseId))).orderBy(strategyPaths.priorityRank);
   }),
-  getElementFactLinks: protectedProcedure.input(z35.object({ caseId: z35.number() })).query(async ({ input }) => {
+  getElementFactLinks: protectedProcedure.input(z34.object({ caseId: z34.number() })).query(async ({ input }) => {
     return db.select().from(strategyElementFactLinks).where(eq28(strategyElementFactLinks.caseId, input.caseId));
   }),
-  getMissingEvidenceTasks: protectedProcedure.input(z35.object({ caseId: z35.number() })).query(async ({ input }) => {
+  getMissingEvidenceTasks: protectedProcedure.input(z34.object({ caseId: z34.number() })).query(async ({ input }) => {
     return db.select().from(strategyMissingEvidenceTasks).where(eq28(strategyMissingEvidenceTasks.caseId, input.caseId));
   }),
   getClaimCatalog: protectedProcedure.query(async () => {
@@ -58410,10 +57735,10 @@ ${forumSummary}`
   getForumRules: protectedProcedure.query(async () => {
     return db.select().from(strategyForumRules);
   }),
-  updatePathStatus: protectedProcedure.input(z35.object({
-    pathId: z35.number(),
-    status: z35.enum(["draft", "recommended", "selected", "rejected"]),
-    rationale: z35.string().min(10).optional()
+  updatePathStatus: protectedProcedure.input(z34.object({
+    pathId: z34.number(),
+    status: z34.enum(["draft", "recommended", "selected", "rejected"]),
+    rationale: z34.string().min(10).optional()
   })).mutation(async ({ ctx, input }) => {
     const { governedStrategyPathUpdate: governedStrategyPathUpdate2 } = await Promise.resolve().then(() => (init_governance_hooks(), governance_hooks_exports));
     await governedStrategyPathUpdate2({
@@ -58425,10 +57750,10 @@ ${forumSummary}`
     });
     return { success: true };
   }),
-  updateEvidenceTaskStatus: protectedProcedure.input(z35.object({
-    taskId: z35.number(),
-    status: z35.enum(["open", "in_progress", "obtained", "unavailable"]),
-    notes: z35.string().optional()
+  updateEvidenceTaskStatus: protectedProcedure.input(z34.object({
+    taskId: z34.number(),
+    status: z34.enum(["open", "in_progress", "obtained", "unavailable"]),
+    notes: z34.string().optional()
   })).mutation(async ({ input }) => {
     await db.update(strategyMissingEvidenceTasks).set({
       taskStatus: input.status,
@@ -58440,21 +57765,21 @@ ${forumSummary}`
 });
 
 // server/routers/assembly-engine.ts
-import { z as z36 } from "zod";
+import { z as z35 } from "zod";
 init_llm();
 init_db();
 init_schema();
 import { eq as eq29, and as and22, desc as desc15 } from "drizzle-orm";
 var assemblyEngineRouter = router({
   // ─── A1: Initialize Filing Packet ───────────────────────────────────
-  initializePacket: protectedProcedure.input(z36.object({
-    caseId: z36.number(),
-    strategyPathId: z36.number().optional(),
-    packetType: z36.string().default("complaint"),
-    packetName: z36.string().optional()
+  initializePacket: protectedProcedure.input(z35.object({
+    caseId: z35.number(),
+    strategyPathId: z35.number().optional(),
+    packetType: z35.string().default("complaint"),
+    packetName: z35.string().optional()
   })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.ASSEMBLY, caseId: input.caseId, runType: "assembly_only" }, async () => {
-      const now3 = Date.now();
+      const now4 = Date.now();
       const [caseRow] = await db.select().from(cases).where(eq29(cases.id, String(input.caseId)));
       if (!caseRow) throw new Error("Case not found");
       let pathRow = null;
@@ -58471,15 +57796,15 @@ var assemblyEngineRouter = router({
         jurisdiction: pathRow ? null : null,
         claimTypes: pathRow?.claimCandidateIds ?? [],
         packetStatus: "draft",
-        createdAt: now3,
-        updatedAt: now3
+        createdAt: now4,
+        updatedAt: now4
       });
       return { packet_id: inserted.insertId };
     });
   }),
   // ─── A2: Designate Parties ──────────────────────────────────────────
-  designateParties: protectedProcedure.input(z36.object({ caseId: z36.number(), packetId: z36.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  designateParties: protectedProcedure.input(z35.object({ caseId: z35.number(), packetId: z35.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const caseEntities = await db.select().from(entities).where(eq29(entities.caseId, String(input.caseId)));
     if (caseEntities.length === 0) return { parties_designated: 0, message: "No entities found." };
     const entitySummary = caseEntities.slice(0, 30).map(
@@ -58522,15 +57847,15 @@ ${entitySummary}` }
         entityId: p.entityId ?? null,
         partyType: p.partyType ?? null,
         notes: p.notes ?? null,
-        createdAt: now3
+        createdAt: now4
       });
       designated++;
     }
     return { parties_designated: designated };
   }),
   // ─── A3: Build Exhibit Index ────────────────────────────────────────
-  buildExhibitIndex: protectedProcedure.input(z36.object({ caseId: z36.number(), packetId: z36.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  buildExhibitIndex: protectedProcedure.input(z35.object({ caseId: z35.number(), packetId: z35.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const caseDocs = await db.select().from(documents).where(eq29(documents.caseId, String(input.caseId)));
     const caseQuotes = await db.select().from(quotes).where(eq29(quotes.caseId, String(input.caseId)));
     if (caseDocs.length === 0) return { exhibits_created: 0, message: "No documents found." };
@@ -58582,15 +57907,15 @@ Quotes available: ${caseQuotes.length}` }
         relevantElements: [],
         orderIndex: ex.orderIndex ?? created,
         exhibitStatus: "draft",
-        createdAt: now3
+        createdAt: now4
       });
       created++;
     }
     return { exhibits_created: created };
   }),
   // ─── A4: Generate Fact Narrative Blocks ─────────────────────────────
-  generateFactNarrative: protectedProcedure.input(z36.object({ caseId: z36.number(), packetId: z36.number(), matterProfileId: z36.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  generateFactNarrative: protectedProcedure.input(z35.object({ caseId: z35.number(), packetId: z35.number(), matterProfileId: z35.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const facts = await db.select().from(strategyFactMatrix).where(and22(
       eq29(strategyFactMatrix.caseId, input.caseId),
       eq29(strategyFactMatrix.matterProfileId, input.matterProfileId)
@@ -58649,15 +57974,15 @@ Available Exhibits: ${exhibitRef}`
         quoteIds: [],
         exhibitRefs: block.exhibitRefs ?? [],
         timelinePosition: block.timelinePosition ?? null,
-        createdAt: now3
+        createdAt: now4
       });
       created++;
     }
     return { blocks_created: created };
   }),
   // ─── A5: Generate Legal Argument Blocks ─────────────────────────────
-  generateLegalArguments: protectedProcedure.input(z36.object({ caseId: z36.number(), packetId: z36.number(), matterProfileId: z36.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  generateLegalArguments: protectedProcedure.input(z35.object({ caseId: z35.number(), packetId: z35.number(), matterProfileId: z35.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const candidates = await db.select().from(strategyClaimCandidates).where(and22(
       eq29(strategyClaimCandidates.caseId, input.caseId),
       eq29(strategyClaimCandidates.matterProfileId, input.matterProfileId)
@@ -58707,15 +58032,15 @@ SOL Status: ${cand.solStatus}`
         supportingFacts: arg.supportingFacts ?? [],
         elementsCovered: arg.elementsCovered ?? [],
         counterarguments: arg.counterarguments ?? [],
-        createdAt: now3
+        createdAt: now4
       });
       argumentsCreated++;
     }
     return { argumentsCreated };
   }),
   // ─── A6: Build Citation Index ───────────────────────────────────────
-  buildCitationIndex: protectedProcedure.input(z36.object({ caseId: z36.number(), packetId: z36.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  buildCitationIndex: protectedProcedure.input(z35.object({ caseId: z35.number(), packetId: z35.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const args = await db.select().from(assemblyLegalArgumentBlocks).where(and22(
       eq29(assemblyLegalArgumentBlocks.caseId, input.caseId),
       eq29(assemblyLegalArgumentBlocks.packetId, input.packetId)
@@ -58738,15 +58063,15 @@ SOL Status: ${cand.solStatus}`
         // LLM already formats in Bluebook style
         relevantClaims: [],
         sectionIds: [],
-        createdAt: now3
+        createdAt: now4
       });
       created++;
     }
     return { citations_indexed: created };
   }),
   // ─── A7: Generate Relief Requests ───────────────────────────────────
-  generateReliefRequests: protectedProcedure.input(z36.object({ caseId: z36.number(), packetId: z36.number(), matterProfileId: z36.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  generateReliefRequests: protectedProcedure.input(z35.object({ caseId: z35.number(), packetId: z35.number(), matterProfileId: z35.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const candidates = await db.select().from(strategyClaimCandidates).where(and22(
       eq29(strategyClaimCandidates.caseId, input.caseId),
       eq29(strategyClaimCandidates.matterProfileId, input.matterProfileId)
@@ -58788,15 +58113,15 @@ SOL Status: ${cand.solStatus}`
         estimatedValue: r.estimatedValue ?? null,
         claimTypes: r.claimTypes ?? [],
         orderIndex: created,
-        createdAt: now3
+        createdAt: now4
       });
       created++;
     }
     return { reliefs_generated: created };
   }),
   // ─── A8: Generate Document Sections ─────────────────────────────────
-  generateSections: protectedProcedure.input(z36.object({ caseId: z36.number(), packetId: z36.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  generateSections: protectedProcedure.input(z35.object({ caseId: z35.number(), packetId: z35.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const [packet] = await db.select().from(assemblyFilingPackets).where(eq29(assemblyFilingPackets.id, input.packetId));
     if (!packet) throw new Error("Packet not found");
     const templates = await db.select().from(assemblyDocumentTemplates);
@@ -58830,20 +58155,20 @@ ${a.argumentText}`).join("\n\n");
         orderIndex: sectionsGenerated,
         generatedContent,
         sectionStatus: "generated",
-        createdAt: now3,
-        updatedAt: now3
+        createdAt: now4,
+        updatedAt: now4
       });
       sectionsGenerated++;
     }
     await db.update(assemblyFilingPackets).set({
       packetStatus: "in_progress",
-      updatedAt: now3
+      updatedAt: now4
     }).where(eq29(assemblyFilingPackets.id, input.packetId));
     return { sectionsGenerated };
   }),
   // ─── A9: Run Compliance Checklist ───────────────────────────────────
-  runComplianceCheck: protectedProcedure.input(z36.object({ caseId: z36.number(), packetId: z36.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  runComplianceCheck: protectedProcedure.input(z35.object({ caseId: z35.number(), packetId: z35.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const sections = await db.select().from(assemblyGeneratedSections).where(and22(
       eq29(assemblyGeneratedSections.caseId, input.caseId),
       eq29(assemblyGeneratedSections.packetId, input.packetId)
@@ -58867,7 +58192,7 @@ ${a.argumentText}`).join("\n\n");
         checkItem: check.item,
         category: check.category,
         checkStatus: check.passed ? "passed" : "pending",
-        createdAt: now3
+        createdAt: now4
       });
       created++;
     }
@@ -58875,16 +58200,16 @@ ${a.argumentText}`).join("\n\n");
     if (allPassed) {
       await db.update(assemblyFilingPackets).set({
         packetStatus: "review",
-        updatedAt: now3
+        updatedAt: now4
       }).where(eq29(assemblyFilingPackets.id, input.packetId));
     }
     return { checks_run: created, allPassed };
   }),
   // ─── Read Endpoints ─────────────────────────────────────────────────
-  getPackets: protectedProcedure.input(z36.object({ caseId: z36.number() })).query(async ({ input }) => {
+  getPackets: protectedProcedure.input(z35.object({ caseId: z35.number() })).query(async ({ input }) => {
     return db.select().from(assemblyFilingPackets).where(eq29(assemblyFilingPackets.caseId, input.caseId)).orderBy(desc15(assemblyFilingPackets.createdAt));
   }),
-  getPacketDetail: protectedProcedure.input(z36.object({ packetId: z36.number() })).query(async ({ input }) => {
+  getPacketDetail: protectedProcedure.input(z35.object({ packetId: z35.number() })).query(async ({ input }) => {
     const [packet] = await db.select().from(assemblyFilingPackets).where(eq29(assemblyFilingPackets.id, input.packetId));
     if (!packet) return null;
     const sections = await db.select().from(assemblyGeneratedSections).where(eq29(assemblyGeneratedSections.packetId, input.packetId));
@@ -58900,23 +58225,23 @@ ${a.argumentText}`).join("\n\n");
   getTemplates: protectedProcedure.query(async () => {
     return db.select().from(assemblyDocumentTemplates);
   }),
-  getSectionLibrary: protectedProcedure.input(z36.object({ templateId: z36.number().optional() })).query(async ({ input }) => {
+  getSectionLibrary: protectedProcedure.input(z35.object({ templateId: z35.number().optional() })).query(async ({ input }) => {
     if (input.templateId) {
       return db.select().from(assemblySectionLibrary).where(eq29(assemblySectionLibrary.templateId, input.templateId));
     }
     return db.select().from(assemblySectionLibrary);
   }),
-  getVersionHistory: protectedProcedure.input(z36.object({ packetId: z36.number() })).query(async ({ input }) => {
+  getVersionHistory: protectedProcedure.input(z35.object({ packetId: z35.number() })).query(async ({ input }) => {
     return db.select().from(assemblyVersionHistory).where(eq29(assemblyVersionHistory.packetId, input.packetId)).orderBy(desc15(assemblyVersionHistory.createdAt));
   }),
-  getOutputs: protectedProcedure.input(z36.object({ packetId: z36.number() })).query(async ({ input }) => {
+  getOutputs: protectedProcedure.input(z35.object({ packetId: z35.number() })).query(async ({ input }) => {
     return db.select().from(assemblyOutputRegistry).where(eq29(assemblyOutputRegistry.packetId, input.packetId));
   }),
   // ─── Update Endpoints ──────────────────────────────────────────────
-  updateSectionContent: protectedProcedure.input(z36.object({
-    sectionId: z36.number(),
-    content: z36.string(),
-    status: z36.enum(["generated", "reviewed", "approved", "needs_revision"]).optional()
+  updateSectionContent: protectedProcedure.input(z35.object({
+    sectionId: z35.number(),
+    content: z35.string(),
+    status: z35.enum(["generated", "reviewed", "approved", "needs_revision"]).optional()
   })).mutation(async ({ input }) => {
     await db.update(assemblyGeneratedSections).set({
       generatedContent: input.content,
@@ -58925,9 +58250,9 @@ ${a.argumentText}`).join("\n\n");
     }).where(eq29(assemblyGeneratedSections.id, input.sectionId));
     return { success: true };
   }),
-  updatePacketStatus: protectedProcedure.input(z36.object({
-    packetId: z36.number(),
-    status: z36.enum(["draft", "in_progress", "review", "finalized", "filed"])
+  updatePacketStatus: protectedProcedure.input(z35.object({
+    packetId: z35.number(),
+    status: z35.enum(["draft", "in_progress", "review", "finalized", "filed"])
   })).mutation(async ({ input }) => {
     await db.update(assemblyFilingPackets).set({
       packetStatus: input.status,
@@ -58935,9 +58260,9 @@ ${a.argumentText}`).join("\n\n");
     }).where(eq29(assemblyFilingPackets.id, input.packetId));
     return { success: true };
   }),
-  updateExhibitStatus: protectedProcedure.input(z36.object({
-    exhibitId: z36.number(),
-    status: z36.enum(["draft", "included", "excluded", "pending_review"])
+  updateExhibitStatus: protectedProcedure.input(z35.object({
+    exhibitId: z35.number(),
+    status: z35.enum(["draft", "included", "excluded", "pending_review"])
   })).mutation(async ({ input }) => {
     await db.update(assemblyExhibitIndex).set({
       exhibitStatus: input.status
@@ -58947,7 +58272,7 @@ ${a.argumentText}`).join("\n\n");
 });
 
 // server/routers/pattern-engine.ts
-import { z as z37 } from "zod";
+import { z as z36 } from "zod";
 init_llm();
 init_db();
 init_governance_hooks();
@@ -58955,8 +58280,8 @@ init_schema();
 import { eq as eq30, desc as desc16, sql as sql44 } from "drizzle-orm";
 var patternEngineRouter = router({
   // ─── P1: Cluster Entities ───────────────────────────────────────────
-  clusterEntities: protectedProcedure.input(z37.object({ caseIds: z37.array(z37.number()).optional() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  clusterEntities: protectedProcedure.input(z36.object({ caseIds: z36.array(z36.number()).optional() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     let allEntities;
     if (input.caseIds && input.caseIds.length > 0) {
       allEntities = [];
@@ -59009,22 +58334,22 @@ ${entitySummary}` }
         aliases: c.aliases ?? [],
         caseIds: c.caseIds ?? [],
         caseCount: (c.caseIds ?? []).length,
-        firstSeen: now3,
-        lastSeen: now3,
+        firstSeen: now4,
+        lastSeen: now4,
         jurisdictions: c.jurisdictions ?? [],
         claimTypes: c.claimTypes ?? [],
         riskScore: String(c.riskScore ?? 0),
         notes: c.notes ?? null,
-        createdAt: now3,
-        updatedAt: now3
+        createdAt: now4,
+        updatedAt: now4
       });
       created++;
     }
     return { clusters_created: created };
   }),
   // ─── P2: Cluster Conduct ────────────────────────────────────────────
-  clusterConduct: protectedProcedure.input(z37.object({ caseIds: z37.array(z37.number()).optional() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  clusterConduct: protectedProcedure.input(z36.object({ caseIds: z36.array(z36.number()).optional() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     let allClaims;
     if (input.caseIds && input.caseIds.length > 0) {
       allClaims = [];
@@ -59088,16 +58413,16 @@ Entity Clusters: ${entityRef}`
         commonElements: c.commonElements ?? [],
         frequencyScore: String(c.frequencyScore ?? 0),
         severityScore: String(c.severityScore ?? 0),
-        createdAt: now3,
-        updatedAt: now3
+        createdAt: now4,
+        updatedAt: now4
       });
       created++;
     }
     return { clusters_created: created };
   }),
   // ─── P3: Detect Case Links ─────────────────────────────────────────
-  detectCaseLinks: protectedProcedure.input(z37.object({ caseIds: z37.array(z37.number()).optional() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  detectCaseLinks: protectedProcedure.input(z36.object({ caseIds: z36.array(z36.number()).optional() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const entityClusters = await db.select().from(patternEntityClusters);
     const conductClusters = await db.select().from(patternConductClusters);
     const links = [];
@@ -59140,7 +58465,7 @@ Entity Clusters: ${entityRef}`
         sharedEntityClusterIds: link.sharedEntities,
         sharedConductClusterIds: link.sharedConduct,
         similarityScore: String(Math.min(link.score, 1)),
-        createdAt: now3
+        createdAt: now4
       });
       created++;
     }
@@ -59148,7 +58473,7 @@ Entity Clusters: ${entityRef}`
   }),
   // ─── P4: Generate Systemic Inferences ───────────────────────────────
   generateSystemicInferences: protectedProcedure.mutation(async () => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const entityClusters = await db.select().from(patternEntityClusters);
     const conductClusters = await db.select().from(patternConductClusters);
     const caseLinks = await db.select().from(patternCaseLinks);
@@ -59211,16 +58536,16 @@ Case Links: ${caseLinks.length} connections found`
         confidenceScore: String(inf.confidenceScore ?? 0),
         legalImplications: inf.legalImplications ?? null,
         recommendedActions: inf.recommendedActions ?? [],
-        createdAt: now3,
-        updatedAt: now3
+        createdAt: now4,
+        updatedAt: now4
       });
       created++;
     }
     return { inferences_generated: created };
   }),
   // ─── P5: Apply Feedback Loop ────────────────────────────────────────
-  applyFeedbackLoop: protectedProcedure.input(z37.object({ caseId: z37.number() })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+  applyFeedbackLoop: protectedProcedure.input(z36.object({ caseId: z36.number() })).mutation(async ({ input }) => {
+    const now4 = Date.now();
     const paths = await db.select().from(strategyPaths).where(eq30(strategyPaths.caseId, String(input.caseId)));
     if (paths.length === 0) return { feedback_applied: 0, message: "No strategy paths found." };
     const entityClusters = await db.select().from(patternEntityClusters);
@@ -59259,15 +58584,15 @@ Case Links: ${caseLinks.length} connections found`
         feedbackType: "pattern_boost",
         adjustmentApplied: `+${(totalBoost * 100).toFixed(1)}% confidence from ${relevantEntities.length} entity + ${relevantConduct.length} conduct clusters`,
         confidenceDelta: String(totalBoost),
-        appliedAt: now3,
-        createdAt: now3
+        appliedAt: now4,
+        createdAt: now4
       });
       feedbackApplied++;
     }
     return { feedbackApplied };
   }),
   // ─── Full Pattern Run ───────────────────────────────────────────────
-  runFullAggregation: protectedProcedure.input(z37.object({ caseIds: z37.array(z37.number()).optional() })).mutation(async ({ input }) => {
+  runFullAggregation: protectedProcedure.input(z36.object({ caseIds: z36.array(z36.number()).optional() })).mutation(async ({ input }) => {
     return withEngineTracking({
       engineId: ENGINE_IDS.PATTERN,
       caseId: 0,
@@ -59317,13 +58642,13 @@ Case Links: ${caseLinks.length} connections found`
   getConductClusters: protectedProcedure.query(async () => {
     return db.select().from(patternConductClusters).orderBy(desc16(patternConductClusters.caseCount));
   }),
-  getOutcomeAnalytics: protectedProcedure.input(z37.object({ claimType: z37.string().optional() })).query(async ({ input }) => {
+  getOutcomeAnalytics: protectedProcedure.input(z36.object({ claimType: z36.string().optional() })).query(async ({ input }) => {
     if (input.claimType) {
       return db.select().from(patternOutcomeAnalytics).where(eq30(patternOutcomeAnalytics.claimType, input.claimType));
     }
     return db.select().from(patternOutcomeAnalytics);
   }),
-  getOutcomeDivergence: protectedProcedure.input(z37.object({ claimType: z37.string().optional() })).query(async ({ input }) => {
+  getOutcomeDivergence: protectedProcedure.input(z36.object({ claimType: z36.string().optional() })).query(async ({ input }) => {
     if (input.claimType) {
       return db.select().from(patternOutcomeDivergence).where(eq30(patternOutcomeDivergence.claimType, input.claimType));
     }
@@ -59332,7 +58657,7 @@ Case Links: ${caseLinks.length} connections found`
   getSystemicInferences: protectedProcedure.query(async () => {
     return db.select().from(patternSystemicInferences).orderBy(desc16(patternSystemicInferences.confidenceScore));
   }),
-  getTemporalTrends: protectedProcedure.input(z37.object({ claimType: z37.string().optional() })).query(async ({ input }) => {
+  getTemporalTrends: protectedProcedure.input(z36.object({ claimType: z36.string().optional() })).query(async ({ input }) => {
     if (input.claimType) {
       return db.select().from(patternTemporalTrends).where(eq30(patternTemporalTrends.claimType, input.claimType));
     }
@@ -59344,19 +58669,19 @@ Case Links: ${caseLinks.length} connections found`
   getIndustryProfiles: protectedProcedure.query(async () => {
     return db.select().from(patternIndustryProfiles);
   }),
-  getEvidenceCorrelations: protectedProcedure.input(z37.object({ claimType: z37.string().optional() })).query(async ({ input }) => {
+  getEvidenceCorrelations: protectedProcedure.input(z36.object({ claimType: z36.string().optional() })).query(async ({ input }) => {
     if (input.claimType) {
       return db.select().from(patternEvidenceCorrelations).where(eq30(patternEvidenceCorrelations.claimType, input.claimType));
     }
     return db.select().from(patternEvidenceCorrelations);
   }),
-  getDefenseStrategies: protectedProcedure.input(z37.object({ claimType: z37.string().optional() })).query(async ({ input }) => {
+  getDefenseStrategies: protectedProcedure.input(z36.object({ claimType: z36.string().optional() })).query(async ({ input }) => {
     if (input.claimType) {
       return db.select().from(patternDefenseStrategies).where(eq30(patternDefenseStrategies.claimType, input.claimType));
     }
     return db.select().from(patternDefenseStrategies);
   }),
-  getCaseLinks: protectedProcedure.input(z37.object({ caseId: z37.number().optional() })).query(async ({ input }) => {
+  getCaseLinks: protectedProcedure.input(z36.object({ caseId: z36.number().optional() })).query(async ({ input }) => {
     if (input.caseId) {
       return db.select().from(patternCaseLinks).where(
         sql44`${patternCaseLinks.caseIdA} = ${input.caseId} OR ${patternCaseLinks.caseIdB} = ${input.caseId}`
@@ -59367,7 +58692,7 @@ Case Links: ${caseLinks.length} connections found`
   getAggregationRuns: protectedProcedure.query(async () => {
     return db.select().from(patternAggregationRuns).orderBy(desc16(patternAggregationRuns.createdAt));
   }),
-  getFeedbackLoop: protectedProcedure.input(z37.object({ strategyPathId: z37.number().optional() })).query(async ({ input }) => {
+  getFeedbackLoop: protectedProcedure.input(z36.object({ strategyPathId: z36.number().optional() })).query(async ({ input }) => {
     if (input.strategyPathId) {
       return db.select().from(patternFeedbackLoop).where(eq30(patternFeedbackLoop.strategyPathId, input.strategyPathId));
     }
@@ -59376,17 +58701,17 @@ Case Links: ${caseLinks.length} connections found`
 });
 
 // server/routers/pipeline-orchestration.ts
-import { z as z38 } from "zod";
+import { z as z37 } from "zod";
 init_db();
 init_schema();
 import { eq as eq31, and as and24, desc as desc17 } from "drizzle-orm";
 var pipelineOrchestrationRouter = router({
   // ─── Get Engine Runs for a Case ─────────────────────────────────────
-  getEngineRuns: protectedProcedure.input(z38.object({ caseId: z38.number() })).query(async ({ input }) => {
+  getEngineRuns: protectedProcedure.input(z37.object({ caseId: z37.number() })).query(async ({ input }) => {
     return db.select().from(engineRuns).where(eq31(engineRuns.caseId, input.caseId)).orderBy(desc17(engineRuns.createdAt));
   }),
   // ─── Get Full Pipeline Status ───────────────────────────────────────
-  getPipelineStatus: protectedProcedure.input(z38.object({ caseId: z38.number() })).query(async ({ input }) => {
+  getPipelineStatus: protectedProcedure.input(z37.object({ caseId: z37.number() })).query(async ({ input }) => {
     const matterProfiles = await db.select().from(strategyMatterProfile).where(eq31(strategyMatterProfile.caseId, input.caseId));
     const latestProfile = matterProfiles[0];
     let factCount = 0;
@@ -59450,12 +58775,12 @@ var pipelineOrchestrationRouter = router({
     };
   }),
   // ─── Get Latest Engine Run ──────────────────────────────────────────
-  getLatestRun: protectedProcedure.input(z38.object({ caseId: z38.number() })).query(async ({ input }) => {
+  getLatestRun: protectedProcedure.input(z37.object({ caseId: z37.number() })).query(async ({ input }) => {
     const [run] = await db.select().from(engineRuns).where(eq31(engineRuns.caseId, input.caseId)).orderBy(desc17(engineRuns.createdAt)).limit(1);
     return run ?? null;
   }),
   // ─── Cancel Engine Run ──────────────────────────────────────────────
-  cancelRun: protectedProcedure.input(z38.object({ runId: z38.number() })).mutation(async ({ input }) => {
+  cancelRun: protectedProcedure.input(z37.object({ runId: z37.number() })).mutation(async ({ input }) => {
     await db.update(engineRuns).set({
       runStatus: "cancelled",
       completedAt: Date.now()
@@ -59465,7 +58790,7 @@ var pipelineOrchestrationRouter = router({
 });
 
 // server/routers/knowledge-ingestion.ts
-import { z as z39 } from "zod";
+import { z as z38 } from "zod";
 init_db();
 init_schema();
 import { TRPCError as TRPCError13 } from "@trpc/server";
@@ -59478,10 +58803,10 @@ async function bulkInsert(table, rows2, addedBy) {
   let inserted = 0;
   let skipped = 0;
   const errors = [];
-  const now3 = Date.now();
+  const now4 = Date.now();
   for (let i = 0; i < rows2.length; i++) {
     try {
-      const row = { ...rows2[i], createdAt: now3, updatedAt: now3, addedBy };
+      const row = { ...rows2[i], createdAt: now4, updatedAt: now4, addedBy };
       await db.insert(table).values(row);
       inserted++;
     } catch (err) {
@@ -59494,114 +58819,114 @@ async function bulkInsert(table, rows2, addedBy) {
   }
   return { inserted, skipped, errors };
 }
-var statuteImportSchema = z39.object({
-  jurisdiction: z39.string(),
-  citation: z39.string(),
-  title: z39.string(),
-  fullText: z39.string().optional(),
-  summary: z39.string().optional(),
-  domains: z39.array(z39.string()),
-  sourceType: z39.enum(["statute", "regulation", "case_law", "executive_order", "agency_guidance", "model_legislation"]).default("statute"),
-  keyRequirements: z39.array(z39.string()).optional(),
-  deadlines: z39.array(z39.object({ description: z39.string(), days: z39.number(), from: z39.string() })).optional(),
-  effectiveDate: z39.number().optional(),
-  sourceUrl: z39.string().optional(),
-  keyProvisions: z39.array(z39.string()).optional(),
-  definitions: z39.array(z39.string()).optional(),
-  administrativeAgencies: z39.array(z39.string()).optional(),
-  enforcementTriggers: z39.array(z39.string()).optional(),
-  neutralSummaryCard: z39.string().optional()
+var statuteImportSchema = z38.object({
+  jurisdiction: z38.string(),
+  citation: z38.string(),
+  title: z38.string(),
+  fullText: z38.string().optional(),
+  summary: z38.string().optional(),
+  domains: z38.array(z38.string()),
+  sourceType: z38.enum(["statute", "regulation", "case_law", "executive_order", "agency_guidance", "model_legislation"]).default("statute"),
+  keyRequirements: z38.array(z38.string()).optional(),
+  deadlines: z38.array(z38.object({ description: z38.string(), days: z38.number(), from: z38.string() })).optional(),
+  effectiveDate: z38.number().optional(),
+  sourceUrl: z38.string().optional(),
+  keyProvisions: z38.array(z38.string()).optional(),
+  definitions: z38.array(z38.string()).optional(),
+  administrativeAgencies: z38.array(z38.string()).optional(),
+  enforcementTriggers: z38.array(z38.string()).optional(),
+  neutralSummaryCard: z38.string().optional()
 });
-var caseLawImportSchema = z39.object({
-  jurisdiction: z39.string(),
-  citation: z39.string(),
-  caseName: z39.string(),
-  court: z39.string(),
-  yearDecided: z39.number().optional(),
-  holding: z39.string().optional(),
-  keyQuotes: z39.array(z39.object({ quote: z39.string(), page: z39.string().optional(), context: z39.string().optional() })).optional(),
-  statutesInterpreted: z39.array(z39.string()).optional(),
-  domains: z39.array(z39.string()),
-  subsequentHistory: z39.string().optional(),
-  sourceUrl: z39.string().optional()
+var caseLawImportSchema = z38.object({
+  jurisdiction: z38.string(),
+  citation: z38.string(),
+  caseName: z38.string(),
+  court: z38.string(),
+  yearDecided: z38.number().optional(),
+  holding: z38.string().optional(),
+  keyQuotes: z38.array(z38.object({ quote: z38.string(), page: z38.string().optional(), context: z38.string().optional() })).optional(),
+  statutesInterpreted: z38.array(z38.string()).optional(),
+  domains: z38.array(z38.string()),
+  subsequentHistory: z38.string().optional(),
+  sourceUrl: z38.string().optional()
 });
-var agencyImportSchema = z39.object({
-  statute: z39.string(),
-  agency: z39.string(),
-  agencyShort: z39.string(),
-  domain: z39.string(),
-  complaintTypes: z39.array(z39.string()),
-  statutoryAuthority: z39.array(z39.string()),
-  responseTimelineDays: z39.number().optional(),
-  complaintPathway: z39.string().optional(),
-  commonOutcomes: z39.array(z39.string()),
-  linkedWeakJoints: z39.array(z39.string()).optional()
+var agencyImportSchema = z38.object({
+  statute: z38.string(),
+  agency: z38.string(),
+  agencyShort: z38.string(),
+  domain: z38.string(),
+  complaintTypes: z38.array(z38.string()),
+  statutoryAuthority: z38.array(z38.string()),
+  responseTimelineDays: z38.number().optional(),
+  complaintPathway: z38.string().optional(),
+  commonOutcomes: z38.array(z38.string()),
+  linkedWeakJoints: z38.array(z38.string()).optional()
 });
-var claimCatalogImportSchema = z39.object({
-  claimType: z39.string(),
-  jurisdiction: z39.string().optional(),
-  statuteCitation: z39.string().optional(),
-  elementsRequired: z39.any().optional(),
-  standardOfProof: z39.string().optional(),
-  typicalForum: z39.string().optional(),
-  solYears: z39.number().optional(),
-  damagesAvailable: z39.any().optional(),
-  defenses: z39.any().optional(),
-  notes: z39.string().optional()
+var claimCatalogImportSchema = z38.object({
+  claimType: z38.string(),
+  jurisdiction: z38.string().optional(),
+  statuteCitation: z38.string().optional(),
+  elementsRequired: z38.any().optional(),
+  standardOfProof: z38.string().optional(),
+  typicalForum: z38.string().optional(),
+  solYears: z38.number().optional(),
+  damagesAvailable: z38.any().optional(),
+  defenses: z38.any().optional(),
+  notes: z38.string().optional()
 });
-var templateImportSchema = z39.object({
-  documentType: z39.enum(["appeal", "complaint", "inquiry", "application", "follow_up", "demand", "notice"]),
-  name: z39.string(),
-  description: z39.string().optional(),
-  subjectTemplate: z39.string(),
-  bodyTemplate: z39.string()
+var templateImportSchema = z38.object({
+  documentType: z38.enum(["appeal", "complaint", "inquiry", "application", "follow_up", "demand", "notice"]),
+  name: z38.string(),
+  description: z38.string().optional(),
+  subjectTemplate: z38.string(),
+  bodyTemplate: z38.string()
 });
-var sectionLibraryImportSchema = z39.object({
-  sectionName: z39.string(),
-  sectionType: z39.string(),
-  templateId: z39.number().optional(),
-  orderIndex: z39.number().optional(),
-  contentTemplate: z39.string().optional(),
-  placeholders: z39.any().optional(),
-  conditionalRules: z39.any().optional(),
-  legalStandards: z39.any().optional(),
-  exampleContent: z39.string().optional(),
-  notes: z39.string().optional()
+var sectionLibraryImportSchema = z38.object({
+  sectionName: z38.string(),
+  sectionType: z38.string(),
+  templateId: z38.number().optional(),
+  orderIndex: z38.number().optional(),
+  contentTemplate: z38.string().optional(),
+  placeholders: z38.any().optional(),
+  conditionalRules: z38.any().optional(),
+  legalStandards: z38.any().optional(),
+  exampleContent: z38.string().optional(),
+  notes: z38.string().optional()
 });
-var legislatorImportSchema = z39.object({
-  fullName: z39.string(),
-  title: z39.string().optional(),
-  jurisdiction: z39.string(),
-  chamber: z39.enum(["federal_senate", "federal_house", "state_senate", "state_house", "state_assembly", "city_council", "county_commission", "other"]),
-  party: z39.string().optional(),
-  district: z39.string().optional(),
-  state: z39.string().optional(),
-  contactEmail: z39.string().optional(),
-  contactPhone: z39.string().optional(),
-  officeAddress: z39.string().optional(),
-  website: z39.string().optional(),
-  committees: z39.array(z39.string()).optional(),
-  domains: z39.array(z39.string()).optional(),
-  termStart: z39.number().optional(),
-  termEnd: z39.number().optional(),
-  notes: z39.string().optional()
+var legislatorImportSchema = z38.object({
+  fullName: z38.string(),
+  title: z38.string().optional(),
+  jurisdiction: z38.string(),
+  chamber: z38.enum(["federal_senate", "federal_house", "state_senate", "state_house", "state_assembly", "city_council", "county_commission", "other"]),
+  party: z38.string().optional(),
+  district: z38.string().optional(),
+  state: z38.string().optional(),
+  contactEmail: z38.string().optional(),
+  contactPhone: z38.string().optional(),
+  officeAddress: z38.string().optional(),
+  website: z38.string().optional(),
+  committees: z38.array(z38.string()).optional(),
+  domains: z38.array(z38.string()).optional(),
+  termStart: z38.number().optional(),
+  termEnd: z38.number().optional(),
+  notes: z38.string().optional()
 });
-var advocacyOrgImportSchema = z39.object({
-  name: z39.string(),
-  orgType: z39.enum(["legal_aid", "nonprofit", "community_org", "union", "bar_association", "government_program", "advocacy_group", "research_institute", "other"]),
-  jurisdiction: z39.string(),
-  state: z39.string().optional(),
-  domains: z39.array(z39.string()).optional(),
-  contactEmail: z39.string().optional(),
-  contactPhone: z39.string().optional(),
-  website: z39.string().optional(),
-  address: z39.string().optional(),
-  description: z39.string().optional(),
-  servicesOffered: z39.array(z39.string()).optional(),
-  eligibilityCriteria: z39.string().optional(),
-  languages: z39.array(z39.string()).optional(),
-  hoursOfOperation: z39.string().optional(),
-  intakeUrl: z39.string().optional()
+var advocacyOrgImportSchema = z38.object({
+  name: z38.string(),
+  orgType: z38.enum(["legal_aid", "nonprofit", "community_org", "union", "bar_association", "government_program", "advocacy_group", "research_institute", "other"]),
+  jurisdiction: z38.string(),
+  state: z38.string().optional(),
+  domains: z38.array(z38.string()).optional(),
+  contactEmail: z38.string().optional(),
+  contactPhone: z38.string().optional(),
+  website: z38.string().optional(),
+  address: z38.string().optional(),
+  description: z38.string().optional(),
+  servicesOffered: z38.array(z38.string()).optional(),
+  eligibilityCriteria: z38.string().optional(),
+  languages: z38.array(z38.string()).optional(),
+  hoursOfOperation: z38.string().optional(),
+  intakeUrl: z38.string().optional()
 });
 var knowledgeBackboneTableList = [
   { name: "legal_statutes", label: "Statutes", target: 900 },
@@ -59695,29 +59020,29 @@ var knowledgeIngestionRouter = router({
     };
   }),
   /* ── Bulk Import: Statutes ── */
-  importStatutes: adminProcedure3.input(z39.object({ records: z39.array(statuteImportSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => {
+  importStatutes: adminProcedure3.input(z38.object({ records: z38.array(statuteImportSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => {
     return bulkInsert(legalStatutes, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
   }),
   /* ── Bulk Import: Case Law ── */
-  importCaseLaw: adminProcedure3.input(z39.object({ records: z39.array(caseLawImportSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => {
+  importCaseLaw: adminProcedure3.input(z38.object({ records: z38.array(caseLawImportSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => {
     return bulkInsert(legalCaseLaw, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
   }),
   /* ── Bulk Import: Agency Authority Map ── */
-  importAgencyAuthorities: adminProcedure3.input(z39.object({ records: z39.array(agencyImportSchema).min(1).max(200) })).mutation(async ({ ctx, input }) => {
+  importAgencyAuthorities: adminProcedure3.input(z38.object({ records: z38.array(agencyImportSchema).min(1).max(200) })).mutation(async ({ ctx, input }) => {
     return bulkInsert(agencyAuthorityMap, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
   }),
   /* ── Bulk Import: Claim Catalog ── */
-  importClaimCatalog: adminProcedure3.input(z39.object({ records: z39.array(claimCatalogImportSchema).min(1).max(200) })).mutation(async ({ ctx, input }) => {
+  importClaimCatalog: adminProcedure3.input(z38.object({ records: z38.array(claimCatalogImportSchema).min(1).max(200) })).mutation(async ({ ctx, input }) => {
     return bulkInsert(strategyClaimCatalog, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
   }),
   /* ── Bulk Import: LumenSend Templates ── */
-  importTemplates: adminProcedure3.input(z39.object({ records: z39.array(templateImportSchema).min(1).max(100) })).mutation(async ({ ctx, input }) => {
-    const now3 = Date.now();
+  importTemplates: adminProcedure3.input(z38.object({ records: z38.array(templateImportSchema).min(1).max(100) })).mutation(async ({ ctx, input }) => {
+    const now4 = Date.now();
     let inserted = 0;
     const errors = [];
     for (let i = 0; i < input.records.length; i++) {
       try {
-        await db.insert(lumensendTemplates).values({ ...input.records[i], createdAt: now3 });
+        await db.insert(lumensendTemplates).values({ ...input.records[i], createdAt: now4 });
         inserted++;
       } catch (err) {
         errors.push(`Row ${i}: ${err?.message ?? "Unknown error"}`);
@@ -59726,13 +59051,13 @@ var knowledgeIngestionRouter = router({
     return { inserted, skipped: 0, errors };
   }),
   /* ── Bulk Import: Assembly Section Library ── */
-  importSectionLibrary: adminProcedure3.input(z39.object({ records: z39.array(sectionLibraryImportSchema).min(1).max(200) })).mutation(async ({ ctx, input }) => {
-    const now3 = Date.now();
+  importSectionLibrary: adminProcedure3.input(z38.object({ records: z38.array(sectionLibraryImportSchema).min(1).max(200) })).mutation(async ({ ctx, input }) => {
+    const now4 = Date.now();
     let inserted = 0;
     const errors = [];
     for (let i = 0; i < input.records.length; i++) {
       try {
-        await db.insert(assemblySectionLibrary).values({ ...input.records[i], createdAt: now3 });
+        await db.insert(assemblySectionLibrary).values({ ...input.records[i], createdAt: now4 });
         inserted++;
       } catch (err) {
         errors.push(`Row ${i}: ${err?.message ?? "Unknown error"}`);
@@ -59741,151 +59066,151 @@ var knowledgeIngestionRouter = router({
     return { inserted, skipped: 0, errors };
   }),
   /* ── Bulk Import: Legislator Contacts ── */
-  importLegislators: adminProcedure3.input(z39.object({ records: z39.array(legislatorImportSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => {
+  importLegislators: adminProcedure3.input(z38.object({ records: z38.array(legislatorImportSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => {
     return bulkInsert(legislatorContacts, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
   }),
   /* ── Bulk Import: Advocacy Organizations ── */
-  importAdvocacyOrgs: adminProcedure3.input(z39.object({ records: z39.array(advocacyOrgImportSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => {
+  importAdvocacyOrgs: adminProcedure3.input(z38.object({ records: z38.array(advocacyOrgImportSchema).min(1).max(500) })).mutation(async ({ ctx, input }) => {
     return bulkInsert(advocacyOrganizations, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
   }),
   /* ── Bulk Import: Doctrine Registry ── */
-  importDoctrineRegistry: adminProcedure3.input(z39.object({ records: z39.array(z39.object({
-    name: z39.string(),
-    description: z39.string(),
-    primaryCases: z39.array(z39.string()),
-    domains: z39.array(z39.string())
+  importDoctrineRegistry: adminProcedure3.input(z38.object({ records: z38.array(z38.object({
+    name: z38.string(),
+    description: z38.string(),
+    primaryCases: z38.array(z38.string()),
+    domains: z38.array(z38.string())
   })).min(1).max(200) })).mutation(async ({ ctx, input }) => {
     return bulkInsert(doctrineRegistry, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
   }),
   /* ── Bulk Import: Court Directory ── */
-  importCourtDirectory: adminProcedure3.input(z39.object({ records: z39.array(z39.object({
-    courtName: z39.string(),
-    courtType: z39.string(),
-    jurisdiction: z39.string(),
-    address: z39.string().optional(),
-    phone: z39.string().optional(),
-    website: z39.string().optional(),
-    filingUrl: z39.string().optional(),
-    clerkName: z39.string().optional(),
-    clerkEmail: z39.string().optional(),
-    domains: z39.array(z39.string()).optional(),
-    notes: z39.string().optional()
+  importCourtDirectory: adminProcedure3.input(z38.object({ records: z38.array(z38.object({
+    courtName: z38.string(),
+    courtType: z38.string(),
+    jurisdiction: z38.string(),
+    address: z38.string().optional(),
+    phone: z38.string().optional(),
+    website: z38.string().optional(),
+    filingUrl: z38.string().optional(),
+    clerkName: z38.string().optional(),
+    clerkEmail: z38.string().optional(),
+    domains: z38.array(z38.string()).optional(),
+    notes: z38.string().optional()
   })).min(1).max(200) })).mutation(async ({ ctx, input }) => {
     return bulkInsert(courtDirectory, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
   }),
   /* ── Bulk Import: Workflow Master ── */
-  importWorkflowMaster: adminProcedure3.input(z39.object({ records: z39.array(z39.object({
-    title: z39.string(),
-    domain: z39.string(),
-    issueTypes: z39.array(z39.string()),
-    jurisdiction: z39.string(),
-    primaryAgency: z39.string(),
-    triggerConditions: z39.array(z39.string()).optional(),
-    entryForms: z39.array(z39.string()).optional(),
-    initialDeadlineRule: z39.string().optional(),
-    appealChain: z39.array(z39.any()).optional(),
-    estimatedDuration: z39.string().optional(),
-    successRate: z39.string().optional(),
-    remedies: z39.array(z39.string()).optional()
+  importWorkflowMaster: adminProcedure3.input(z38.object({ records: z38.array(z38.object({
+    title: z38.string(),
+    domain: z38.string(),
+    issueTypes: z38.array(z38.string()),
+    jurisdiction: z38.string(),
+    primaryAgency: z38.string(),
+    triggerConditions: z38.array(z38.string()).optional(),
+    entryForms: z38.array(z38.string()).optional(),
+    initialDeadlineRule: z38.string().optional(),
+    appealChain: z38.array(z38.any()).optional(),
+    estimatedDuration: z38.string().optional(),
+    successRate: z38.string().optional(),
+    remedies: z38.array(z38.string()).optional()
   })).min(1).max(200) })).mutation(async ({ ctx, input }) => {
     return bulkInsert(workflowMaster, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
   }),
   /* ── Bulk Import: Evidence Profiles ── */
-  importEvidenceProfiles: adminProcedure3.input(z39.object({ records: z39.array(z39.object({
-    issueType: z39.string(),
-    domain: z39.string().optional(),
-    requiredMinimum: z39.array(z39.string()),
-    recommended: z39.array(z39.string()).optional(),
-    highValue: z39.array(z39.string()).optional(),
-    commonFailureModes: z39.array(z39.string()).optional(),
-    preservationNotes: z39.string().optional(),
-    spoliationRisks: z39.array(z39.string()).optional()
+  importEvidenceProfiles: adminProcedure3.input(z38.object({ records: z38.array(z38.object({
+    issueType: z38.string(),
+    domain: z38.string().optional(),
+    requiredMinimum: z38.array(z38.string()),
+    recommended: z38.array(z38.string()).optional(),
+    highValue: z38.array(z38.string()).optional(),
+    commonFailureModes: z38.array(z38.string()).optional(),
+    preservationNotes: z38.string().optional(),
+    spoliationRisks: z38.array(z38.string()).optional()
   })).min(1).max(200) })).mutation(async ({ ctx, input }) => {
     return bulkInsert(evidenceProfiles, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
   }),
   /* ── Bulk Import: Deadline Rules ── */
-  importDeadlineRules: adminProcedure3.input(z39.object({ records: z39.array(z39.object({
-    domain: z39.string(),
-    jurisdiction: z39.string(),
-    claimType: z39.string(),
-    deadlineType: z39.enum(["filing", "response", "appeal", "discovery", "administrative_exhaustion", "tolling_expiry", "statute_of_limitations"]),
-    timeLimitDays: z39.number().optional(),
-    extendedLimitDays: z39.number().optional(),
-    extendedCondition: z39.string().optional(),
-    tollingPossible: z39.boolean().optional(),
-    tollingConditions: z39.array(z39.string()).optional(),
-    authority: z39.string().optional(),
-    notes: z39.string().optional()
+  importDeadlineRules: adminProcedure3.input(z38.object({ records: z38.array(z38.object({
+    domain: z38.string(),
+    jurisdiction: z38.string(),
+    claimType: z38.string(),
+    deadlineType: z38.enum(["filing", "response", "appeal", "discovery", "administrative_exhaustion", "tolling_expiry", "statute_of_limitations"]),
+    timeLimitDays: z38.number().optional(),
+    extendedLimitDays: z38.number().optional(),
+    extendedCondition: z38.string().optional(),
+    tollingPossible: z38.boolean().optional(),
+    tollingConditions: z38.array(z38.string()).optional(),
+    authority: z38.string().optional(),
+    notes: z38.string().optional()
   })).min(1).max(200) })).mutation(async ({ ctx, input }) => {
     return bulkInsert(deadlineRules, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
   }),
   /* ── Bulk Import: Escalation Routes ── */
-  importEscalationRoutes: adminProcedure3.input(z39.object({ records: z39.array(z39.object({
-    workflowId: z39.number(),
-    title: z39.string().optional(),
-    triggerConditions: z39.array(z39.string()),
-    routes: z39.array(z39.any()),
-    priority: z39.enum(["low", "medium", "high", "critical"]).optional(),
-    preservationRequirements: z39.array(z39.string()).optional(),
-    notes: z39.string().optional()
+  importEscalationRoutes: adminProcedure3.input(z38.object({ records: z38.array(z38.object({
+    workflowId: z38.number(),
+    title: z38.string().optional(),
+    triggerConditions: z38.array(z38.string()),
+    routes: z38.array(z38.any()),
+    priority: z38.enum(["low", "medium", "high", "critical"]).optional(),
+    preservationRequirements: z38.array(z38.string()).optional(),
+    notes: z38.string().optional()
   })).min(1).max(200) })).mutation(async ({ ctx, input }) => {
     return bulkInsert(escalationRoutes, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
   }),
   /* ── Bulk Import: Weak Joint Triggers ── */
-  importWeakJointTriggers: adminProcedure3.input(z39.object({ records: z39.array(z39.object({
-    weakJointId: z39.number(),
-    triggerName: z39.string(),
-    triggerCondition: z39.string(),
-    severityWeight: z39.string()
+  importWeakJointTriggers: adminProcedure3.input(z38.object({ records: z38.array(z38.object({
+    weakJointId: z38.number(),
+    triggerName: z38.string(),
+    triggerCondition: z38.string(),
+    severityWeight: z38.string()
   })).min(1).max(200) })).mutation(async ({ ctx, input }) => {
     return bulkInsert(weakJointTriggers, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
   }),
   /* ── Bulk Import: Proof Frameworks ── */
-  importProofFrameworks: adminProcedure3.input(z39.object({ records: z39.array(z39.object({
-    claimType: z39.string(),
-    domain: z39.string(),
-    elementsOfProof: z39.array(z39.string()),
-    burdenOfProof: z39.string(),
-    standardOfReview: z39.string().optional(),
-    requiredCausation: z39.string().optional(),
-    typicalEvidence: z39.array(z39.string()).optional(),
-    commonDefenses: z39.array(z39.string()).optional(),
-    keyPrecedents: z39.array(z39.string()).optional(),
-    notes: z39.string().optional()
+  importProofFrameworks: adminProcedure3.input(z38.object({ records: z38.array(z38.object({
+    claimType: z38.string(),
+    domain: z38.string(),
+    elementsOfProof: z38.array(z38.string()),
+    burdenOfProof: z38.string(),
+    standardOfReview: z38.string().optional(),
+    requiredCausation: z38.string().optional(),
+    typicalEvidence: z38.array(z38.string()).optional(),
+    commonDefenses: z38.array(z38.string()).optional(),
+    keyPrecedents: z38.array(z38.string()).optional(),
+    notes: z38.string().optional()
   })).min(1).max(200) })).mutation(async ({ ctx, input }) => {
     return bulkInsert(proofFrameworks, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
   }),
   /* ── Bulk Import: Signal Registry ── */
-  importSignalRegistry: adminProcedure3.input(z39.object({ records: z39.array(z39.object({
-    signalId: z39.string(),
-    domain: z39.string(),
-    triggerPatterns: z39.array(z39.string()),
-    linkedDoctrine: z39.array(z39.string()).optional(),
-    linkedWeakJoints: z39.array(z39.string()).optional(),
-    severity: z39.enum(["critical", "high", "medium", "low"]).optional(),
-    explanation: z39.string(),
-    recommendedNextSteps: z39.array(z39.string()).optional()
+  importSignalRegistry: adminProcedure3.input(z38.object({ records: z38.array(z38.object({
+    signalId: z38.string(),
+    domain: z38.string(),
+    triggerPatterns: z38.array(z38.string()),
+    linkedDoctrine: z38.array(z38.string()).optional(),
+    linkedWeakJoints: z38.array(z38.string()).optional(),
+    severity: z38.enum(["critical", "high", "medium", "low"]).optional(),
+    explanation: z38.string(),
+    recommendedNextSteps: z38.array(z38.string()).optional()
   })).min(1).max(200) })).mutation(async ({ ctx, input }) => {
     return bulkInsert(signalRegistry, input.records, ctx.user.name ?? ctx.user.open_id ?? "");
   }),
   /* ── Bulk Import: Pattern Registry ── */
-  importPatternRegistry: adminProcedure3.input(z39.object({ records: z39.array(z39.object({
-    patternId: z39.string(),
-    patternName: z39.string(),
-    patternDescription: z39.string().optional(),
-    patternType: z39.string().optional(),
-    signalType: z39.string().optional(),
-    jurisdictionScope: z39.string().optional(),
-    relatedLaws: z39.array(z39.string()).optional(),
-    relatedAgencies: z39.array(z39.string()).optional(),
-    harmDomains: z39.array(z39.string()).optional()
+  importPatternRegistry: adminProcedure3.input(z38.object({ records: z38.array(z38.object({
+    patternId: z38.string(),
+    patternName: z38.string(),
+    patternDescription: z38.string().optional(),
+    patternType: z38.string().optional(),
+    signalType: z38.string().optional(),
+    jurisdictionScope: z38.string().optional(),
+    relatedLaws: z38.array(z38.string()).optional(),
+    relatedAgencies: z38.array(z38.string()).optional(),
+    harmDomains: z38.array(z38.string()).optional()
   })).min(1).max(200) })).mutation(async ({ ctx, input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     let inserted = 0;
     const errors = [];
     for (let i = 0; i < input.records.length; i++) {
       try {
-        await db.insert(patternRegistry).values({ ...input.records[i], createdAt: now3, updatedAt: now3 });
+        await db.insert(patternRegistry).values({ ...input.records[i], createdAt: now4, updatedAt: now4 });
         inserted++;
       } catch (err) {
         if (err?.code === "ER_DUP_ENTRY") {
@@ -59897,16 +59222,16 @@ var knowledgeIngestionRouter = router({
     return { inserted, skipped: input.records.length - inserted - errors.length, errors };
   }),
   /* ── Bulk Import: Settlement Formulas ── */
-  importSettlementFormulas: adminProcedure3.input(z39.object({ records: z39.array(z39.object({
-    formulaId: z39.string(),
-    formulaName: z39.string(),
-    claimType: z39.string(),
-    jurisdiction: z39.string(),
-    formulaExpression: z39.string(),
-    variables: z39.array(z39.string()).optional(),
-    multiplierRanges: z39.any().optional(),
-    statutoryBasis: z39.array(z39.string()).optional(),
-    notes: z39.string().optional()
+  importSettlementFormulas: adminProcedure3.input(z38.object({ records: z38.array(z38.object({
+    formulaId: z38.string(),
+    formulaName: z38.string(),
+    claimType: z38.string(),
+    jurisdiction: z38.string(),
+    formulaExpression: z38.string(),
+    variables: z38.array(z38.string()).optional(),
+    multiplierRanges: z38.any().optional(),
+    statutoryBasis: z38.array(z38.string()).optional(),
+    notes: z38.string().optional()
   })).min(1).max(200) })).mutation(async ({ ctx, input }) => {
     let inserted = 0;
     const errors = [];
@@ -59924,9 +59249,9 @@ var knowledgeIngestionRouter = router({
     return { inserted, skipped: input.records.length - inserted - errors.length, errors };
   }),
   /* ── Universal JSON Import (auto-detect format, flatten domain groups, preserve snake_case fields) ── */
-  importUniversalJSON: adminProcedure3.input(z39.object({
-    targetTable: z39.string(),
-    rawJson: z39.string().max(5e6)
+  importUniversalJSON: adminProcedure3.input(z38.object({
+    targetTable: z38.string(),
+    rawJson: z38.string().max(5e6)
   })).mutation(async ({ ctx, input }) => {
     const added_by = ctx.user.name ?? ctx.user.open_id ?? "";
     let parsed;
@@ -60072,12 +59397,12 @@ var knowledgeIngestionRouter = router({
      KNOWLEDGE BACKBONE EXPLORER — Browse / Search endpoints
      ══════════════════════════════════════════════════════════════ */
   /** Browse statutes with optional search & jurisdiction filter */
-  browseStatutes: protectedProcedure.input(z39.object({
-    search: z39.string().optional(),
-    jurisdiction: z39.string().optional(),
-    domain: z39.string().optional(),
-    limit: z39.number().min(1).max(100).default(25),
-    offset: z39.number().min(0).default(0)
+  browseStatutes: protectedProcedure.input(z38.object({
+    search: z38.string().optional(),
+    jurisdiction: z38.string().optional(),
+    domain: z38.string().optional(),
+    limit: z38.number().min(1).max(100).default(25),
+    offset: z38.number().min(0).default(0)
   })).query(async ({ input }) => {
     const conditions = [];
     if (input.search) conditions.push(`(title LIKE '%${input.search.replace(/'/g, "''")}%' OR citation LIKE '%${input.search.replace(/'/g, "''")}%' OR summary LIKE '%${input.search.replace(/'/g, "''")}%')`);
@@ -60089,12 +59414,12 @@ var knowledgeIngestionRouter = router({
     return { rows: rows2, total: Number(countRows[0]?.cnt ?? 0) };
   }),
   /** Browse case law with optional search & jurisdiction filter */
-  browseCaseLaw: protectedProcedure.input(z39.object({
-    search: z39.string().optional(),
-    jurisdiction: z39.string().optional(),
-    domain: z39.string().optional(),
-    limit: z39.number().min(1).max(100).default(25),
-    offset: z39.number().min(0).default(0)
+  browseCaseLaw: protectedProcedure.input(z38.object({
+    search: z38.string().optional(),
+    jurisdiction: z38.string().optional(),
+    domain: z38.string().optional(),
+    limit: z38.number().min(1).max(100).default(25),
+    offset: z38.number().min(0).default(0)
   })).query(async ({ input }) => {
     const conditions = [];
     if (input.search) conditions.push(`(case_name LIKE '%${input.search.replace(/'/g, "''")}%' OR citation LIKE '%${input.search.replace(/'/g, "''")}%' OR summary LIKE '%${input.search.replace(/'/g, "''")}%')`);
@@ -60106,11 +59431,11 @@ var knowledgeIngestionRouter = router({
     return { rows: rows2, total: Number(countRows[0]?.cnt ?? 0) };
   }),
   /** Browse agency authorities — primary source: agencies_registry (20 real agencies with contact info) */
-  browseAgencies: protectedProcedure.input(z39.object({
-    search: z39.string().optional(),
-    jurisdiction: z39.string().optional(),
-    limit: z39.number().min(1).max(100).default(25),
-    offset: z39.number().min(0).default(0)
+  browseAgencies: protectedProcedure.input(z38.object({
+    search: z38.string().optional(),
+    jurisdiction: z38.string().optional(),
+    limit: z38.number().min(1).max(100).default(25),
+    offset: z38.number().min(0).default(0)
   })).query(async ({ input }) => {
     const conditions = [];
     if (input.search) conditions.push(`(agency_name LIKE '%${input.search.replace(/'/g, "''")}%' OR jurisdiction LIKE '%${input.search.replace(/'/g, "''")}%')`);
@@ -60121,12 +59446,12 @@ var knowledgeIngestionRouter = router({
     return { rows: rows2, total: Number(countRows[0]?.cnt ?? 0) };
   }),
   /** Browse court directory */
-  browseCourts: protectedProcedure.input(z39.object({
-    search: z39.string().optional(),
-    jurisdiction: z39.string().optional(),
-    courtType: z39.string().optional(),
-    limit: z39.number().min(1).max(100).default(25),
-    offset: z39.number().min(0).default(0)
+  browseCourts: protectedProcedure.input(z38.object({
+    search: z38.string().optional(),
+    jurisdiction: z38.string().optional(),
+    courtType: z38.string().optional(),
+    limit: z38.number().min(1).max(100).default(25),
+    offset: z38.number().min(0).default(0)
   })).query(async ({ input }) => {
     const conditions = [];
     if (input.search) conditions.push(`(agency_name_rob LIKE '%${input.search.replace(/'/g, "''")}%' OR function_rob LIKE '%${input.search.replace(/'/g, "''")}%')`);
@@ -60137,11 +59462,11 @@ var knowledgeIngestionRouter = router({
     return { rows: rows2, total: Number(countRows[0]?.cnt ?? 0) };
   }),
   /** Browse advocacy targets */
-  browseAdvocacyTargets: protectedProcedure.input(z39.object({
-    search: z39.string().optional(),
-    targetType: z39.string().optional(),
-    limit: z39.number().min(1).max(100).default(25),
-    offset: z39.number().min(0).default(0)
+  browseAdvocacyTargets: protectedProcedure.input(z38.object({
+    search: z38.string().optional(),
+    targetType: z38.string().optional(),
+    limit: z38.number().min(1).max(100).default(25),
+    offset: z38.number().min(0).default(0)
   })).query(async ({ input }) => {
     const conditions = [];
     if (input.search) conditions.push(`(name_rp LIKE '%${input.search.replace(/'/g, "''")}%' OR agency_rp LIKE '%${input.search.replace(/'/g, "''")}%' OR eligibility_rp LIKE '%${input.search.replace(/'/g, "''")}%')`);
@@ -60152,11 +59477,11 @@ var knowledgeIngestionRouter = router({
     return { rows: rows2, total: Number(countRows[0]?.cnt ?? 0) };
   }),
   /** Browse settlement formulas */
-  browseSettlementFormulas: protectedProcedure.input(z39.object({
-    search: z39.string().optional(),
-    claimType: z39.string().optional(),
-    limit: z39.number().min(1).max(100).default(25),
-    offset: z39.number().min(0).default(0)
+  browseSettlementFormulas: protectedProcedure.input(z38.object({
+    search: z38.string().optional(),
+    claimType: z38.string().optional(),
+    limit: z38.number().min(1).max(100).default(25),
+    offset: z38.number().min(0).default(0)
   })).query(async ({ input }) => {
     const conditions = [];
     if (input.search) conditions.push(`(formula_name LIKE '%${input.search.replace(/'/g, "''")}%' OR claim_type LIKE '%${input.search.replace(/'/g, "''")}%' OR notes LIKE '%${input.search.replace(/'/g, "''")}%')`);
@@ -60263,12 +59588,12 @@ var knowledgeIngestionRouter = router({
   /* ══════════════════════════════════════════════════════════════
      SQL PASTE IMPORT — Parse INSERT INTO statements
      ══════════════════════════════════════════════════════════════ */
-  importSQL: adminProcedure3.input(z39.object({
-    targetTable: z39.string(),
-    rawSql: z39.string().max(5e6)
+  importSQL: adminProcedure3.input(z38.object({
+    targetTable: z38.string(),
+    rawSql: z38.string().max(5e6)
   })).mutation(async ({ ctx, input }) => {
     const added_by = ctx.user.name ?? ctx.user.open_id ?? "";
-    const now3 = Date.now();
+    const now4 = Date.now();
     const allowedTables = /* @__PURE__ */ new Set([
       "legal_statutes",
       "legal_case_law",
@@ -60399,8 +59724,8 @@ var knowledgeIngestionRouter = router({
     for (let i = 0; i < records.length; i++) {
       try {
         const rec = records[i];
-        if ("created_at" in rec && !rec.created_at) rec.created_at = now3;
-        if ("updated_at" in rec && !rec.updated_at) rec.updated_at = now3;
+        if ("created_at" in rec && !rec.created_at) rec.created_at = now4;
+        if ("updated_at" in rec && !rec.updated_at) rec.updated_at = now4;
         if ("added_by" in rec && !rec.added_by) rec.added_by = added_by;
         const cols = Object.keys(rec);
         const vals = cols.map((c) => {
@@ -60493,7 +59818,7 @@ function parseSqlValues(tuple) {
 }
 
 // server/routers/admin-dashboard.ts
-import { z as z40 } from "zod";
+import { z as z39 } from "zod";
 init_db();
 var toMillis = (value) => {
   if (value == null) return null;
@@ -60534,7 +59859,6 @@ var adminDashboardRouter = router({
     const successRate = recentRuns ? Math.round(completedRuns / recentRuns * 100) : 100;
     const serverUptime = process.uptime();
     return {
-      total_runs: totalRuns,
       totalRuns,
       last24h: {
         total: recentRuns,
@@ -60574,19 +59898,16 @@ var adminDashboardRouter = router({
          LIMIT 10`
       )
     ]);
-    const recentCases = recentCasesRows.rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      created_at: toMillis(row.created_at) ?? Date.now(),
-      createdAt: toMillis(row.created_at) ?? Date.now()
-    }));
     return {
-      cases: { total: totalCases, today: casesToday, this_week: casesThisWeek, thisWeek: casesThisWeek },
+      cases: { total: totalCases, today: casesToday, this_week: casesThisWeek },
       documents: { total: totalDocs, today: docsToday },
       findings: { total: totalFindings, today: findingsToday },
       users: { total: totalUsers, today: usersToday },
-      recent_cases: recentCases,
-      recentCases
+      recent_cases: recentCasesRows.rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        created_at: toMillis(row.created_at) ?? Date.now()
+      }))
     };
   }),
   /* ── Panel 4: Structural Signals (aggregated) ── */
@@ -60614,30 +59935,18 @@ var adminDashboardRouter = router({
       ),
       getCount(`SELECT COUNT(*)::int AS cnt FROM detected_signals`)
     ]);
-    const bySeverity = severityRows.rows.map((row) => ({ severity: row.severity, count: Number(row.cnt ?? 0) }));
-    const byCategory = categoryRows.rows.map((row) => ({ category: row.category, count: Number(row.cnt ?? 0) }));
-    const criticalFindings = criticalRows.rows.map((row) => {
-      const createdAt = toMillis(row.created_at) ?? Date.now();
-      return {
+    return {
+      by_severity: severityRows.rows.map((row) => ({ severity: row.severity, count: Number(row.cnt ?? 0) })),
+      by_category: categoryRows.rows.map((row) => ({ category: row.category, count: Number(row.cnt ?? 0) })),
+      critical_findings: criticalRows.rows.map((row) => ({
         id: row.id,
         case_id: row.case_id,
-        caseId: row.case_id,
         title: row.title,
         severity: row.severity,
         category: row.category,
-        created_at: createdAt,
-        createdAt
-      };
-    });
-    return {
-      by_severity: bySeverity,
-      bySeverity,
-      by_category: byCategory,
-      byCategory,
-      critical_findings: criticalFindings,
-      criticalFindings,
-      total_findings: totalSignals,
-      totalFindings: totalSignals
+        created_at: toMillis(row.created_at) ?? Date.now()
+      })),
+      total_findings: totalSignals
     };
   }),
   /* ── Panel 5: Work Queue ── */
@@ -60668,27 +59977,32 @@ var adminDashboardRouter = router({
          LIMIT 10`
       )
     ]);
-    const running = runningRows.rows.map((row) => {
-      const createdAt = toMillis(row.started_at) ?? Date.now();
-      return { id: row.id, case_id: row.case_id, caseId: row.case_id, run_type: row.run_type, runType: row.run_type, run_status: row.run_status, runStatus: row.run_status, created_at: createdAt, createdAt };
-    });
-    const failed = failedRows.rows.map((row) => {
-      const createdAt = toMillis(row.started_at) ?? Date.now();
-      return { id: row.id, case_id: row.case_id, caseId: row.case_id, run_type: row.run_type, runType: row.run_type, run_status: row.run_status, runStatus: row.run_status, error_message: row.error_message, errorMessage: row.error_message, created_at: createdAt, createdAt };
-    });
-    const recentlyCompleted = completedRows.rows.map((row) => {
-      const completedAt = toMillis(row.completed_at) ?? toMillis(row.started_at) ?? Date.now();
-      return { id: row.id, case_id: row.case_id, caseId: row.case_id, run_type: row.run_type, runType: row.run_type, completed_at: completedAt, completedAt };
-    });
     return {
-      running,
-      failed,
-      recently_completed: recentlyCompleted,
-      recentlyCompleted
+      running: runningRows.rows.map((row) => ({
+        id: row.id,
+        case_id: row.case_id,
+        run_type: row.run_type,
+        run_status: row.run_status,
+        created_at: toMillis(row.started_at) ?? Date.now()
+      })),
+      failed: failedRows.rows.map((row) => ({
+        id: row.id,
+        case_id: row.case_id,
+        run_type: row.run_type,
+        run_status: row.run_status,
+        error_message: row.error_message,
+        created_at: toMillis(row.started_at) ?? Date.now()
+      })),
+      recently_completed: completedRows.rows.map((row) => ({
+        id: row.id,
+        case_id: row.case_id,
+        run_type: row.run_type,
+        completed_at: toMillis(row.completed_at) ?? toMillis(row.started_at)
+      }))
     };
   }),
   /* ── Findings drill-through by severity ── */
-  findingsBySeverity: publicProcedure.input(z40.object({ severity: z40.string().optional() })).query(async ({ input }) => {
+  findingsBySeverity: publicProcedure.input(z39.object({ severity: z39.string().optional() })).query(async ({ input }) => {
     const params = [];
     let whereClause = "";
     if (input.severity) {
@@ -60706,19 +60020,17 @@ var adminDashboardRouter = router({
     );
     return rows2.map((row) => ({
       id: row.id,
-      case_id: row.case_id,
       caseId: row.case_id,
       title: row.title,
       severity: row.severity,
       category: row.category,
-      created_at: toMillis(row.created_at) ?? Date.now(),
       createdAt: toMillis(row.created_at) ?? Date.now()
     }));
   })
 });
 
 // server/routers/dual-lens.ts
-import { z as z41 } from "zod";
+import { z as z40 } from "zod";
 init_db();
 init_schema();
 init_interpretation_layer();
@@ -60744,10 +60056,10 @@ var dualLensRouter = router({
    * Step 1: Match a user's problem description to claim types.
    * Returns top claim matches with confidence scores.
    */
-  matchClaims: publicProcedure.input(z41.object({
-    problemDescription: z41.string().min(5),
-    jurisdiction: z41.string().optional(),
-    category: z41.string().optional()
+  matchClaims: publicProcedure.input(z40.object({
+    problemDescription: z40.string().min(5),
+    jurisdiction: z40.string().optional(),
+    category: z40.string().optional()
   })).query(async ({ input }) => {
     const allClaims = await db.select().from(strategyClaimCatalog);
     const keywords = input.problemDescription.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
@@ -60792,9 +60104,9 @@ var dualLensRouter = router({
    * Step 2: Get proof requirements for a matched claim.
    * Returns the proof framework with required elements.
    */
-  getProofChecklist: publicProcedure.input(z41.object({
-    claimType: z41.string(),
-    domain: z41.string().optional()
+  getProofChecklist: publicProcedure.input(z40.object({
+    claimType: z40.string(),
+    domain: z40.string().optional()
   })).query(async ({ input }) => {
     const frameworks = await db.select().from(proofFrameworks).where(like8(proofFrameworks.claimType, `%${input.claimType}%`));
     let results = frameworks;
@@ -60821,10 +60133,10 @@ var dualLensRouter = router({
    * Step 3: Get barrier alerts for a claim type and jurisdiction.
    * Returns litigation barriers that could block or delay the case.
    */
-  getBarrierAlerts: publicProcedure.input(z41.object({
-    claimType: z41.string(),
-    jurisdiction: z41.string().optional(),
-    domain: z41.string().optional()
+  getBarrierAlerts: publicProcedure.input(z40.object({
+    claimType: z40.string(),
+    jurisdiction: z40.string().optional(),
+    domain: z40.string().optional()
   })).query(async ({ input }) => {
     const allBarriers = await db.select().from(litigationBarriers);
     const keywords = input.claimType.toLowerCase().split(/[\s_-]+/);
@@ -60859,10 +60171,10 @@ var dualLensRouter = router({
    * Step 4: Find the right agency and forum for a claim.
    * Returns agencies, courts, and filing information.
    */
-  findAgencyAndForum: publicProcedure.input(z41.object({
-    claimType: z41.string(),
-    jurisdiction: z41.string(),
-    domain: z41.string().optional()
+  findAgencyAndForum: publicProcedure.input(z40.object({
+    claimType: z40.string(),
+    jurisdiction: z40.string(),
+    domain: z40.string().optional()
   })).query(async ({ input }) => {
     const jur = input.jurisdiction.toUpperCase();
     const allAgencies = await db.select().from(agencyAuthorityMap);
@@ -60957,10 +60269,10 @@ var dualLensRouter = router({
    * Step 5: Generate the next action recommendation.
    * Combines all resolution data into a prioritized action list.
    */
-  getNextAction: publicProcedure.input(z41.object({
-    claimType: z41.string(),
-    jurisdiction: z41.string(),
-    domain: z41.string().optional()
+  getNextAction: publicProcedure.input(z40.object({
+    claimType: z40.string(),
+    jurisdiction: z40.string(),
+    domain: z40.string().optional()
   })).query(async ({ input }) => {
     const jur = input.jurisdiction.toUpperCase();
     const deadlines2 = await db.select().from(deadlineRules);
@@ -61023,10 +60335,10 @@ var dualLensRouter = router({
    * Full resolution pipeline — runs all 5 steps in sequence.
    * Returns the complete case resolution package.
    */
-  resolveCase: publicProcedure.input(z41.object({
-    problemDescription: z41.string().min(5),
-    jurisdiction: z41.string(),
-    category: z41.string().optional()
+  resolveCase: publicProcedure.input(z40.object({
+    problemDescription: z40.string().min(5),
+    jurisdiction: z40.string(),
+    category: z40.string().optional()
   })).query(async ({ input }) => {
     const allClaims = await db.select().from(strategyClaimCatalog);
     const keywords = input.problemDescription.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
@@ -61067,8 +60379,8 @@ var dualLensRouter = router({
   /**
    * Get barrier clusters — recurring barriers grouped by type.
    */
-  getBarrierClusters: publicProcedure.input(z41.object({
-    domain: z41.string().optional()
+  getBarrierClusters: publicProcedure.input(z40.object({
+    domain: z40.string().optional()
   })).query(async ({ input }) => {
     const allBarriers = await db.select().from(litigationBarriers);
     const clusters = {};
@@ -61088,8 +60400,8 @@ var dualLensRouter = router({
   /**
    * Get doctrine clusters — doctrines grouped by domain with case connections.
    */
-  getDoctrineClusters: publicProcedure.input(z41.object({
-    domain: z41.string().optional()
+  getDoctrineClusters: publicProcedure.input(z40.object({
+    domain: z40.string().optional()
   })).query(async ({ input }) => {
     const allDoctrines = await db.select().from(doctrineRegistry);
     const clusters = {};
@@ -61114,8 +60426,8 @@ var dualLensRouter = router({
   /**
    * Get affected institutions — agencies with the most barriers and signals.
    */
-  getAffectedInstitutions: publicProcedure.input(z41.object({
-    domain: z41.string().optional()
+  getAffectedInstitutions: publicProcedure.input(z40.object({
+    domain: z40.string().optional()
   })).query(async ({ input }) => {
     const agencies = await db.select().from(agencyAuthorityMap);
     const signals = await db.select().from(signalRegistry);
@@ -61149,9 +60461,9 @@ var dualLensRouter = router({
   /**
    * Get systemic resolution paths — reform pathways based on pattern analysis.
    */
-  getSystemicPaths: publicProcedure.input(z41.object({
-    domain: z41.string().optional(),
-    barrierType: z41.string().optional()
+  getSystemicPaths: publicProcedure.input(z40.object({
+    domain: z40.string().optional(),
+    barrierType: z40.string().optional()
   })).query(async ({ input }) => {
     const barriers = await db.select().from(litigationBarriers);
     const doctrines = await db.select().from(doctrineRegistry);
@@ -61185,8 +60497,8 @@ var dualLensRouter = router({
   /**
    * Get signal patterns — recurring signals grouped by type.
    */
-  getSignalPatterns: publicProcedure.input(z41.object({
-    domain: z41.string().optional()
+  getSignalPatterns: publicProcedure.input(z40.object({
+    domain: z40.string().optional()
   })).query(async ({ input }) => {
     const signals = await db.select().from(signalRegistry);
     const patterns3 = {};
@@ -61210,9 +60522,9 @@ var dualLensRouter = router({
    * Expand a single node in the graph — returns connected nodes one level deep.
    * Follows the ladder: Claim → Proof → Barrier → Agency → Action → Pattern
    */
-  expandNode: publicProcedure.input(z41.object({
-    nodeId: z41.string(),
-    nodeType: z41.enum(["claim", "proof", "barrier", "agency", "action", "pattern", "doctrine", "statute", "case"])
+  expandNode: publicProcedure.input(z40.object({
+    nodeId: z40.string(),
+    nodeType: z40.enum(["claim", "proof", "barrier", "agency", "action", "pattern", "doctrine", "statute", "case"])
   })).query(async ({ input }) => {
     const conn = await getDbConnection();
     const [outRows] = await conn.query(
@@ -61248,11 +60560,11 @@ var dualLensRouter = router({
    * Groups by signal type, includes explanations, stats, and dataset info.
    * Supports filtering by jurisdiction, domain, severity.
    */
-  getLiveSignalsForDiagnostics: publicProcedure.input(z41.object({
-    jurisdiction: z41.string().optional(),
-    domain: z41.string().optional(),
-    severity: z41.enum(["critical", "high", "medium", "low"]).optional(),
-    limit: z41.number().default(100)
+  getLiveSignalsForDiagnostics: publicProcedure.input(z40.object({
+    jurisdiction: z40.string().optional(),
+    domain: z40.string().optional(),
+    severity: z40.enum(["critical", "high", "medium", "low"]).optional(),
+    limit: z40.number().default(100)
   })).query(async ({ input }) => {
     const conditions = [isNotNull(detectedSignals.signalId)];
     if (input.jurisdiction) conditions.push(eq33(detectedSignals.jurisdictionScope, input.jurisdiction));
@@ -61329,13 +60641,13 @@ var dualLensRouter = router({
    * Returns related laws, harm type, timeline expectations, status meanings,
    * scope classification, and action recommendations.
    */
-  getSignalInterpretation: publicProcedure.input(z41.object({
-    signalId: z41.number(),
-    signalType: z41.string(),
-    datasetId: z41.string(),
-    severity: z41.string(),
-    title: z41.string(),
-    supportingStatistics: z41.any()
+  getSignalInterpretation: publicProcedure.input(z40.object({
+    signalId: z40.number(),
+    signalType: z40.string(),
+    datasetId: z40.string(),
+    severity: z40.string(),
+    title: z40.string(),
+    supportingStatistics: z40.any()
   })).query(async ({ input }) => {
     const enrichment = await enrichSignalWithInterpretation(input);
     return enrichment;
@@ -61344,7 +60656,7 @@ var dualLensRouter = router({
    * Get interpretation pack summary for a dataset.
    * Returns counts and key metadata about available interpretation data.
    */
-  getInterpretationPackSummary: publicProcedure.input(z41.object({ datasetId: z41.string() })).query(async ({ input }) => {
+  getInterpretationPackSummary: publicProcedure.input(z40.object({ datasetId: z40.string() })).query(async ({ input }) => {
     const pack = await loadInterpretationPack(input.datasetId);
     if (!pack) return { available: false, dataset_id: input.datasetId };
     return {
@@ -61366,7 +60678,7 @@ var dualLensRouter = router({
    * Get all category interpretations for a dataset.
    * Used by the Structural Diagnostics lens to show domain context.
    */
-  getDatasetInterpretations: publicProcedure.input(z41.object({ datasetId: z41.string() })).query(async ({ input }) => {
+  getDatasetInterpretations: publicProcedure.input(z40.object({ datasetId: z40.string() })).query(async ({ input }) => {
     const pack = await loadInterpretationPack(input.datasetId);
     if (!pack) return { categories: [], harm_mappings: [], jurisdiction_scopes: [] };
     return {
@@ -61426,7 +60738,7 @@ var dualLensRouter = router({
 });
 
 // server/routers/evidence-layer.ts
-import { z as z42 } from "zod";
+import { z as z41 } from "zod";
 init_db();
 init_schema();
 import { TRPCError as TRPCError14 } from "@trpc/server";
@@ -61435,43 +60747,43 @@ var evidenceLayerRouter = router({
   // EVIDENCE ITEMS CRUD
   // ═══════════════════════════════════════════════════════════════════════
   /** Create a new evidence item */
-  create: protectedProcedure.input(z42.object({
-    caseId: z42.number(),
-    evidenceType: z42.string(),
-    title: z42.string().min(1).max(512),
-    description: z42.string().optional(),
-    sourceName: z42.string().optional(),
-    sourceDate: z42.number().optional(),
-    fileReference: z42.string().optional(),
-    extractedText: z42.string().optional(),
-    metadata: z42.record(z42.string(), z42.unknown()).optional()
+  create: protectedProcedure.input(z41.object({
+    caseId: z41.number(),
+    evidenceType: z41.string(),
+    title: z41.string().min(1).max(512),
+    description: z41.string().optional(),
+    sourceName: z41.string().optional(),
+    sourceDate: z41.number().optional(),
+    fileReference: z41.string().optional(),
+    extractedText: z41.string().optional(),
+    metadata: z41.record(z41.string(), z41.unknown()).optional()
   })).mutation(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return createEvidenceItem(input);
   }),
   /** List all evidence items for a case */
-  list: protectedProcedure.input(z42.object({ caseId: z42.number() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z41.object({ caseId: z41.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return listEvidenceItems(input.caseId);
   }),
   /** Get a single evidence item */
-  get: protectedProcedure.input(z42.object({ id: z42.number() })).query(async ({ ctx, input }) => {
+  get: protectedProcedure.input(z41.object({ id: z41.number() })).query(async ({ ctx, input }) => {
     const item = await getEvidenceItem(input.id);
     if (!item) throw new TRPCError14({ code: "NOT_FOUND", message: "Evidence item not found" });
     await verifyCaseOwnership(item.caseId, ctx.user.id);
     return item;
   }),
   /** Update an evidence item */
-  update: protectedProcedure.input(z42.object({
-    id: z42.number(),
-    evidenceType: z42.string().optional(),
-    title: z42.string().min(1).max(512).optional(),
-    description: z42.string().optional(),
-    sourceName: z42.string().optional(),
-    sourceDate: z42.number().optional(),
-    fileReference: z42.string().optional(),
-    extractedText: z42.string().optional(),
-    metadata: z42.record(z42.string(), z42.unknown()).optional()
+  update: protectedProcedure.input(z41.object({
+    id: z41.number(),
+    evidenceType: z41.string().optional(),
+    title: z41.string().min(1).max(512).optional(),
+    description: z41.string().optional(),
+    sourceName: z41.string().optional(),
+    sourceDate: z41.number().optional(),
+    fileReference: z41.string().optional(),
+    extractedText: z41.string().optional(),
+    metadata: z41.record(z41.string(), z41.unknown()).optional()
   })).mutation(async ({ ctx, input }) => {
     const item = await getEvidenceItem(input.id);
     if (!item) throw new TRPCError14({ code: "NOT_FOUND", message: "Evidence item not found" });
@@ -61481,7 +60793,7 @@ var evidenceLayerRouter = router({
     return { success: true };
   }),
   /** Delete an evidence item and all related links */
-  delete: protectedProcedure.input(z42.object({ id: z42.number() })).mutation(async ({ ctx, input }) => {
+  delete: protectedProcedure.input(z41.object({ id: z41.number() })).mutation(async ({ ctx, input }) => {
     const item = await getEvidenceItem(input.id);
     if (!item) throw new TRPCError14({ code: "NOT_FOUND", message: "Evidence item not found" });
     await verifyCaseOwnership(item.caseId, ctx.user.id);
@@ -61499,12 +60811,12 @@ var evidenceLayerRouter = router({
   // EVIDENCE → PROOF LINKS
   // ═══════════════════════════════════════════════════════════════════════
   /** Link evidence to a proof framework element */
-  linkToProof: protectedProcedure.input(z42.object({
-    evidenceId: z42.number(),
-    frameworkId: z42.number(),
-    elementNumber: z42.number().min(1),
-    relationshipStrength: z42.string().optional(),
-    notes: z42.string().optional()
+  linkToProof: protectedProcedure.input(z41.object({
+    evidenceId: z41.number(),
+    frameworkId: z41.number(),
+    elementNumber: z41.number().min(1),
+    relationshipStrength: z41.string().optional(),
+    notes: z41.string().optional()
   })).mutation(async ({ ctx, input }) => {
     const item = await getEvidenceItem(input.evidenceId);
     if (!item) throw new TRPCError14({ code: "NOT_FOUND", message: "Evidence item not found" });
@@ -61512,21 +60824,21 @@ var evidenceLayerRouter = router({
     return createEvidenceProofLink(input);
   }),
   /** List proof links for an evidence item */
-  proofLinksByEvidence: protectedProcedure.input(z42.object({ evidenceId: z42.number() })).query(async ({ ctx, input }) => {
+  proofLinksByEvidence: protectedProcedure.input(z41.object({ evidenceId: z41.number() })).query(async ({ ctx, input }) => {
     const item = await getEvidenceItem(input.evidenceId);
     if (!item) throw new TRPCError14({ code: "NOT_FOUND", message: "Evidence item not found" });
     await verifyCaseOwnership(item.caseId, ctx.user.id);
     return listEvidenceProofLinksByEvidence(input.evidenceId);
   }),
   /** List evidence linked to a specific proof element */
-  proofLinksByElement: protectedProcedure.input(z42.object({
-    frameworkId: z42.number(),
-    elementNumber: z42.number()
+  proofLinksByElement: protectedProcedure.input(z41.object({
+    frameworkId: z41.number(),
+    elementNumber: z41.number()
   })).query(async ({ input }) => {
     return listEvidenceProofLinksByElement(input.frameworkId, input.elementNumber);
   }),
   /** Remove a proof link */
-  unlinkFromProof: protectedProcedure.input(z42.object({ linkId: z42.number() })).mutation(async ({ input }) => {
+  unlinkFromProof: protectedProcedure.input(z41.object({ linkId: z41.number() })).mutation(async ({ input }) => {
     await deleteEvidenceProofLink(input.linkId);
     return { success: true };
   }),
@@ -61534,11 +60846,11 @@ var evidenceLayerRouter = router({
   // EVIDENCE → EVENT LINKS
   // ═══════════════════════════════════════════════════════════════════════
   /** Link evidence to an event */
-  linkToEvent: protectedProcedure.input(z42.object({
-    evidenceId: z42.number(),
-    eventId: z42.number(),
-    relationship: z42.enum(["proves", "corroborates", "contradicts", "references"]),
-    notes: z42.string().optional()
+  linkToEvent: protectedProcedure.input(z41.object({
+    evidenceId: z41.number(),
+    eventId: z41.number(),
+    relationship: z41.enum(["proves", "corroborates", "contradicts", "references"]),
+    notes: z41.string().optional()
   })).mutation(async ({ ctx, input }) => {
     const item = await getEvidenceItem(input.evidenceId);
     if (!item) throw new TRPCError14({ code: "NOT_FOUND", message: "Evidence item not found" });
@@ -61546,18 +60858,18 @@ var evidenceLayerRouter = router({
     return createEvidenceEventLink(input);
   }),
   /** List event links for an evidence item */
-  eventLinksByEvidence: protectedProcedure.input(z42.object({ evidenceId: z42.number() })).query(async ({ ctx, input }) => {
+  eventLinksByEvidence: protectedProcedure.input(z41.object({ evidenceId: z41.number() })).query(async ({ ctx, input }) => {
     const item = await getEvidenceItem(input.evidenceId);
     if (!item) throw new TRPCError14({ code: "NOT_FOUND", message: "Evidence item not found" });
     await verifyCaseOwnership(item.caseId, ctx.user.id);
     return listEvidenceEventLinksByEvidence(input.evidenceId);
   }),
   /** List evidence linked to a specific event */
-  eventLinksByEvent: protectedProcedure.input(z42.object({ eventId: z42.number() })).query(async ({ input }) => {
+  eventLinksByEvent: protectedProcedure.input(z41.object({ eventId: z41.number() })).query(async ({ input }) => {
     return listEvidenceEventLinksByEvent(input.eventId);
   }),
   /** Remove an event link */
-  unlinkFromEvent: protectedProcedure.input(z42.object({ linkId: z42.number() })).mutation(async ({ input }) => {
+  unlinkFromEvent: protectedProcedure.input(z41.object({ linkId: z41.number() })).mutation(async ({ input }) => {
     await deleteEvidenceEventLink(input.linkId);
     return { success: true };
   }),
@@ -61565,32 +60877,32 @@ var evidenceLayerRouter = router({
   // EVIDENCE GRAPH EDGES
   // ═══════════════════════════════════════════════════════════════════════
   /** Create a graph edge from evidence/event to claim/barrier/agency */
-  createGraphEdge: protectedProcedure.input(z42.object({
-    caseId: z42.number(),
-    fromType: z42.enum(["evidence", "event"]),
-    fromId: z42.number(),
-    edgeType: z42.enum(["proves", "supports", "triggers", "involves", "corroborates", "contradicts"]),
-    toType: z42.enum(["event", "claim", "barrier", "agency", "proof_element"]),
-    toId: z42.string(),
-    strength: z42.enum(["strong", "moderate", "weak"]).optional(),
-    notes: z42.string().optional()
+  createGraphEdge: protectedProcedure.input(z41.object({
+    caseId: z41.number(),
+    fromType: z41.enum(["evidence", "event"]),
+    fromId: z41.number(),
+    edgeType: z41.enum(["proves", "supports", "triggers", "involves", "corroborates", "contradicts"]),
+    toType: z41.enum(["event", "claim", "barrier", "agency", "proof_element"]),
+    toId: z41.string(),
+    strength: z41.enum(["strong", "moderate", "weak"]).optional(),
+    notes: z41.string().optional()
   })).mutation(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return createEvidenceGraphEdge(input);
   }),
   /** List graph edges for a case with optional filters */
-  listGraphEdges: protectedProcedure.input(z42.object({
-    caseId: z42.number(),
-    fromType: z42.enum(["evidence", "event"]).optional(),
-    toType: z42.enum(["event", "claim", "barrier", "agency", "proof_element"]).optional(),
-    edgeType: z42.string().optional()
+  listGraphEdges: protectedProcedure.input(z41.object({
+    caseId: z41.number(),
+    fromType: z41.enum(["evidence", "event"]).optional(),
+    toType: z41.enum(["event", "claim", "barrier", "agency", "proof_element"]).optional(),
+    edgeType: z41.string().optional()
   })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { caseId: caseId2, ...filters } = input;
     return listEvidenceGraphEdges(caseId2, filters);
   }),
   /** Delete a graph edge */
-  deleteGraphEdge: protectedProcedure.input(z42.object({ id: z42.number() })).mutation(async ({ input }) => {
+  deleteGraphEdge: protectedProcedure.input(z41.object({ id: z41.number() })).mutation(async ({ input }) => {
     await deleteEvidenceGraphEdge(input.id);
     return { success: true };
   }),
@@ -61598,9 +60910,9 @@ var evidenceLayerRouter = router({
   // EVIDENCE COVERAGE ANALYSIS
   // ═══════════════════════════════════════════════════════════════════════
   /** Analyze evidence coverage against a proof framework */
-  coverage: protectedProcedure.input(z42.object({
-    caseId: z42.number(),
-    frameworkId: z42.number()
+  coverage: protectedProcedure.input(z41.object({
+    caseId: z41.number(),
+    frameworkId: z41.number()
   })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return getEvidenceCoverage(input.caseId, input.frameworkId);
@@ -61608,7 +60920,7 @@ var evidenceLayerRouter = router({
 });
 
 // server/routers/ingestion.ts
-import { z as z43 } from "zod";
+import { z as z42 } from "zod";
 init_db();
 init_schema();
 init_scheduler();
@@ -61695,7 +61007,6 @@ async function get_atlas_signal_intelligence_cards(input = {}) {
   const limit = Math.min(Math.max(input.limit ?? 25, 1), 100);
   let query = atlas_client_result.atlas_client.schema("atlas").from("v_signal_intelligence_cards").select(ATLAS_SIGNAL_INTELLIGENCE_CARD_COLUMNS, { count: "exact" });
   if (!input.include_excluded) {
-    query = query.or("exclude_from_production.is.false,exclude_from_production.is.null");
     query = query.eq("exclude_from_production", false);
   }
   if (input.canonical_signal_code) {
@@ -62097,7 +61408,7 @@ function findMergeCandidates(entities3, similarityThreshold = 0.8) {
   return suggestions;
 }
 async function applyMerge(suggestion) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   try {
     await db.insert(entityAliases).values({
       canonicalName: suggestion.canonicalName,
@@ -62105,7 +61416,7 @@ async function applyMerge(suggestion) {
       entityType: suggestion.entityType,
       confidence: suggestion.confidence.toFixed(4),
       source: "dedup_merge",
-      createdAt: now3
+      createdAt: now4
     }).onDuplicateKeyUpdate({
       set: {
         canonicalName: suggestion.canonicalName,
@@ -62122,7 +61433,7 @@ async function applyMerge(suggestion) {
         entityType: suggestion.entityType,
         confidence: suggestion.confidence.toFixed(4),
         source: "dedup_merge",
-        createdAt: now3
+        createdAt: now4
       }).onDuplicateKeyUpdate({
         set: {
           canonicalName: suggestion.canonicalName,
@@ -62174,21 +61485,21 @@ var ingestionRouter = router({
   listDatasets: publicProcedure.query(async () => {
     return get_unified_ingestion_metrics();
   }),
-  getDataset: protectedProcedure.input(z43.object({ datasetId: z43.string() })).query(async ({ input }) => {
+  getDataset: protectedProcedure.input(z42.object({ datasetId: z42.string() })).query(async ({ input }) => {
     const [dataset] = await db.select().from(dataStreamRegistry).where(eq41(dataStreamRegistry.streamId, input.datasetId)).limit(1);
     return dataset ?? null;
   }),
-  registerDataset: adminProcedure.input(z43.object({
-    datasetId: z43.string(),
-    datasetName: z43.string(),
-    source: z43.string(),
-    apiUrl: z43.string(),
-    updateFrequency: z43.enum(["hourly", "daily", "weekly", "monthly", "manual"]).default("daily"),
-    jurisdiction: z43.string(),
-    domain: z43.string(),
-    description: z43.string().optional(),
-    fieldMapping: z43.record(z43.string(), z43.string()).optional(),
-    cronExpression: z43.string().optional()
+  registerDataset: adminProcedure.input(z42.object({
+    datasetId: z42.string(),
+    datasetName: z42.string(),
+    source: z42.string(),
+    apiUrl: z42.string(),
+    updateFrequency: z42.enum(["hourly", "daily", "weekly", "monthly", "manual"]).default("daily"),
+    jurisdiction: z42.string(),
+    domain: z42.string(),
+    description: z42.string().optional(),
+    fieldMapping: z42.record(z42.string(), z42.string()).optional(),
+    cronExpression: z42.string().optional()
   })).mutation(async ({ ctx, input }) => {
     await governedDataStreamCreate({
       streamData: {
@@ -62212,10 +61523,10 @@ var ingestionRouter = router({
     await refreshSchedules();
     return { success: true, dataset_id: input.datasetId };
   }),
-  toggleDataset: adminProcedure.input(z43.object({
-    datasetId: z43.string(),
-    enabled: z43.boolean(),
-    rationale: z43.string().min(10).optional()
+  toggleDataset: adminProcedure.input(z42.object({
+    datasetId: z42.string(),
+    enabled: z42.boolean(),
+    rationale: z42.string().min(10).optional()
   })).mutation(async ({ ctx, input }) => {
     await governedDataStreamToggle({
       datasetId: input.datasetId,
@@ -62227,9 +61538,9 @@ var ingestionRouter = router({
     await refreshSchedules();
     return { success: true };
   }),
-  deleteDataset: adminProcedure.input(z43.object({
-    datasetId: z43.string(),
-    rationale: z43.string().min(10).optional()
+  deleteDataset: adminProcedure.input(z42.object({
+    datasetId: z42.string(),
+    rationale: z42.string().min(10).optional()
   })).mutation(async ({ ctx, input }) => {
     await governedDataStreamDelete({
       datasetId: input.datasetId,
@@ -62242,11 +61553,11 @@ var ingestionRouter = router({
   }),
   // ─── Atlas Population Engine ───
   get_atlas_public_stream_catalog: publicProcedure.query(() => summarizeAtlasCatalog()),
-  list_signal_intelligence_cards: publicProcedure.input(z43.object({
-    limit: z43.number().int().min(1).max(100).default(25),
-    canonical_signal_code: z43.string().optional(),
-    signal_family: z43.string().optional(),
-    include_excluded: z43.boolean().default(false)
+  list_signal_intelligence_cards: publicProcedure.input(z42.object({
+    limit: z42.number().int().min(1).max(100).default(25),
+    canonical_signal_code: z42.string().optional(),
+    signal_family: z42.string().optional(),
+    include_excluded: z42.boolean().default(false)
   }).optional()).query(({ input }) => get_atlas_signal_intelligence_cards({
     limit: input?.limit,
     canonical_signal_code: input?.canonical_signal_code,
@@ -62254,8 +61565,8 @@ var ingestionRouter = router({
     include_excluded: input?.include_excluded
   })),
   get_signal_intelligence_summary: publicProcedure.query(() => get_atlas_signal_intelligence_summary()),
-  seed_atlas_population_streams: adminProcedure.input(z43.object({
-    stream_ids: z43.array(z43.string()).optional()
+  seed_atlas_population_streams: adminProcedure.input(z42.object({
+    stream_ids: z42.array(z42.string()).optional()
   }).optional()).mutation(async ({ ctx, input }) => {
     const result = await populateAtlasPublicStreams({
       streamIds: input?.stream_ids,
@@ -62267,7 +61578,7 @@ var ingestionRouter = router({
   }),
   // ─── Seed Preconfigured Datasets ───
   seedDefaultDatasets: adminProcedure.mutation(async () => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     const datasets = [
       {
         ...WA_CONSUMER_COMPLAINTS,
@@ -62317,9 +61628,9 @@ var ingestionRouter = router({
     return { seeded, total: datasets.length };
   }),
   // ─── Manual Ingestion Trigger ───
-  triggerIngestion: adminProcedure.input(z43.object({
-    datasetId: z43.string(),
-    maxRecords: z43.number().optional()
+  triggerIngestion: adminProcedure.input(z42.object({
+    datasetId: z42.string(),
+    maxRecords: z42.number().optional()
   })).mutation(async ({ input }) => {
     const resultPromise = triggerManualIngestion(input.datasetId, input.maxRecords);
     const result = await Promise.race([
@@ -62339,24 +61650,24 @@ var ingestionRouter = router({
     };
   }),
   // ─── Ingest Run History ───
-  listRuns: publicProcedure.input(z43.object({
-    datasetId: z43.string().optional(),
-    limit: z43.number().default(20)
+  listRuns: publicProcedure.input(z42.object({
+    datasetId: z42.string().optional(),
+    limit: z42.number().default(20)
   })).query(async ({ input }) => {
     const conditions = input.datasetId ? eq41(ingestRuns.datasetId, input.datasetId) : void 0;
     return db.select().from(ingestRuns).where(conditions).orderBy(desc20(ingestRuns.startTime)).limit(input.limit);
   }),
-  getRunDetails: protectedProcedure.input(z43.object({ runId: z43.number() })).query(async ({ input }) => {
+  getRunDetails: protectedProcedure.input(z42.object({ runId: z42.number() })).query(async ({ input }) => {
     const [run] = await db.select().from(ingestRuns).where(eq41(ingestRuns.id, input.runId)).limit(1);
     return run ?? null;
   }),
   // ─── Live Signals ───
-  listLiveSignals: publicProcedure.input(z43.object({
-    datasetId: z43.string().optional(),
-    jurisdiction: z43.string().optional(),
-    severity: z43.enum(["critical", "high", "medium", "low"]).optional(),
-    activeOnly: z43.boolean().default(true),
-    limit: z43.number().default(50)
+  listLiveSignals: publicProcedure.input(z42.object({
+    datasetId: z42.string().optional(),
+    jurisdiction: z42.string().optional(),
+    severity: z42.enum(["critical", "high", "medium", "low"]).optional(),
+    activeOnly: z42.boolean().default(true),
+    limit: z42.number().default(50)
   })).query(async ({ input }) => {
     const signals = await get_unified_signals({
       stream_id: input.datasetId,
@@ -62369,7 +61680,7 @@ var ingestionRouter = router({
     return get_unified_signal_summary();
   }),
   // ─── Ingested Records Stats ───
-  getRecordStats: protectedProcedure.input(z43.object({ datasetId: z43.string() })).query(async ({ input }) => {
+  getRecordStats: protectedProcedure.input(z42.object({ datasetId: z42.string() })).query(async ({ input }) => {
     const [totalResult] = await db.select({ count: count6() }).from(ingestedRecords).where(eq41(ingestedRecords.datasetId, input.datasetId));
     const byCategory = await db.select({
       category: ingestedRecords.normalizedCategory,
@@ -62386,7 +61697,7 @@ var ingestionRouter = router({
     };
   }),
   // ─── Dataset Run Status (for UI button state) ───
-  datasetRunStatus: publicProcedure.input(z43.object({ datasetId: z43.string() })).query(({ input }) => {
+  datasetRunStatus: publicProcedure.input(z42.object({ datasetId: z42.string() })).query(({ input }) => {
     return {
       running: isDatasetRunning(input.datasetId),
       queued: isDatasetQueued(input.datasetId)
@@ -62397,7 +61708,7 @@ var ingestionRouter = router({
     return getSchedulerStatus();
   }),
   // ─── Entity Classification (Session 65) ───
-  classifyEntity: protectedProcedure.input(z43.object({ entityName: z43.string() })).query(({ input }) => {
+  classifyEntity: protectedProcedure.input(z42.object({ entityName: z42.string() })).query(({ input }) => {
     return classifyEntity(input.entityName);
   }),
   /** Backfill entity classifications for existing repeat_entity signals */
@@ -62498,17 +61809,17 @@ var ingestionRouter = router({
     };
   }),
   /** Find merge candidates from existing entity aliases */
-  findMergeCandidates: adminProcedure.input(z43.object({ similarityThreshold: z43.number().default(0.8) })).mutation(async ({ input }) => {
+  findMergeCandidates: adminProcedure.input(z42.object({ similarityThreshold: z42.number().default(0.8) })).mutation(async ({ input }) => {
     const entities3 = await db.select({ title: liveSignals.title }).from(liveSignals).where(sql52`${liveSignals.signalType} = 'repeat_entity' AND ${liveSignals.active} = true`);
     const entityNames = entities3.map((e) => e.title.replace(/^Repeat (Company|Agency|Entity):\s*/, "").replace(/^Repeat Entity:\s*/, "").trim()).filter(Boolean);
     return findMergeCandidates(entityNames, input.similarityThreshold);
   }),
   /** Apply a confirmed entity merge */
-  applyEntityMerge: adminProcedure.input(z43.object({
-    canonicalName: z43.string(),
-    entityType: z43.string(),
-    variants: z43.array(z43.string()),
-    confidence: z43.number()
+  applyEntityMerge: adminProcedure.input(z42.object({
+    canonicalName: z42.string(),
+    entityType: z42.string(),
+    variants: z42.array(z42.string()),
+    confidence: z42.number()
   })).mutation(async ({ input }) => {
     await applyMerge({
       canonicalName: input.canonicalName,
@@ -62520,7 +61831,7 @@ var ingestionRouter = router({
     return { success: true };
   }),
   /** Get entity alias registry */
-  listEntityAliases: protectedProcedure.input(z43.object({ limit: z43.number().default(100) })).query(async ({ input }) => {
+  listEntityAliases: protectedProcedure.input(z42.object({ limit: z42.number().default(100) })).query(async ({ input }) => {
     return db.select().from(entityAliases).orderBy(desc20(entityAliases.createdAt)).limit(input.limit);
   }),
   /** Get entity type distribution for active signals (reads from detected_signals canonical source) */
@@ -62537,7 +61848,7 @@ var ingestionRouter = router({
 });
 
 // server/routers/knowledge-backbone.ts
-import { z as z44 } from "zod";
+import { z as z43 } from "zod";
 
 // server/knowledge-backbone.ts
 init_db();
@@ -62779,25 +62090,25 @@ var knowledgeBackboneRouter = router({
     return listModules();
   }),
   /** Get entries for a specific module with optional filters */
-  getEntries: protectedProcedure.input(z44.object({
-    moduleType: z44.string(),
-    category: z44.string().optional(),
-    severity: z44.string().optional(),
-    domain: z44.string().optional(),
-    limit: z44.number().optional(),
-    offset: z44.number().optional()
+  getEntries: protectedProcedure.input(z43.object({
+    moduleType: z43.string(),
+    category: z43.string().optional(),
+    severity: z43.string().optional(),
+    domain: z43.string().optional(),
+    limit: z43.number().optional(),
+    offset: z43.number().optional()
   })).query(async ({ input }) => {
     return getEntriesByModule(input.moduleType, input);
   }),
   /** Get a single entry by ID */
-  getEntry: protectedProcedure.input(z44.object({ entryId: z44.string() })).query(async ({ input }) => {
+  getEntry: protectedProcedure.input(z43.object({ entryId: z43.string() })).query(async ({ input }) => {
     return getEntryById(input.entryId);
   }),
   /** Search across all modules */
-  search: protectedProcedure.input(z44.object({
-    query: z44.string().min(1),
-    moduleTypes: z44.array(z44.string()).optional(),
-    limit: z44.number().optional()
+  search: protectedProcedure.input(z43.object({
+    query: z43.string().min(1),
+    moduleTypes: z43.array(z43.string()).optional(),
+    limit: z43.number().optional()
   })).query(async ({ input }) => {
     return searchEntries(input.query, {
       moduleTypes: input.moduleTypes,
@@ -62805,32 +62116,32 @@ var knowledgeBackboneRouter = router({
     });
   }),
   /** Get cross-references for a module */
-  crossRefs: protectedProcedure.input(z44.object({ moduleType: z44.string() })).query(async ({ input }) => {
+  crossRefs: protectedProcedure.input(z43.object({ moduleType: z43.string() })).query(async ({ input }) => {
     return getCrossRefs(input.moduleType);
   }),
   /** Get related entries for a specific entry */
-  relatedEntries: protectedProcedure.input(z44.object({ entryId: z44.string() })).query(async ({ input }) => {
+  relatedEntries: protectedProcedure.input(z43.object({ entryId: z43.string() })).query(async ({ input }) => {
     return getRelatedEntries(input.entryId);
   }),
   // ─── Specialized Queries ────────────────────────────────────
   /** Look up claim types from the Claim Catalog */
-  lookupClaim: protectedProcedure.input(z44.object({ query: z44.string() })).query(async ({ input }) => {
+  lookupClaim: protectedProcedure.input(z43.object({ query: z43.string() })).query(async ({ input }) => {
     return lookupClaim(input.query);
   }),
   /** Route a claim type to the appropriate federal agency */
-  routeToAgency: protectedProcedure.input(z44.object({ claimType: z44.string() })).query(async ({ input }) => {
+  routeToAgency: protectedProcedure.input(z43.object({ claimType: z43.string() })).query(async ({ input }) => {
     return routeToAgency(input.claimType);
   }),
   /** Check SOL collision scenarios */
-  checkSOLCollision: protectedProcedure.input(z44.object({ category: z44.string() })).query(async ({ input }) => {
+  checkSOLCollision: protectedProcedure.input(z43.object({ category: z43.string() })).query(async ({ input }) => {
     return checkSOLCollision(input.category);
   }),
   /** Get benefits cascade pathways */
-  cascadePathways: protectedProcedure.input(z44.object({ trigger: z44.string().optional() })).query(async ({ input }) => {
+  cascadePathways: protectedProcedure.input(z43.object({ trigger: z43.string().optional() })).query(async ({ input }) => {
     return getCascadePathways(input.trigger);
   }),
   /** Find no-remedy gaps */
-  findGaps: protectedProcedure.input(z44.object({ category: z44.string().optional() })).query(async ({ input }) => {
+  findGaps: protectedProcedure.input(z43.object({ category: z43.string().optional() })).query(async ({ input }) => {
     return findGaps(input.category);
   }),
   /** Get confidence engine specification */
@@ -62838,16 +62149,16 @@ var knowledgeBackboneRouter = router({
     return getConfidenceEngineSpec();
   }),
   /** Get policy events with optional filters */
-  policyEvents: protectedProcedure.input(z44.object({
-    direction: z44.string().optional(),
-    type: z44.string().optional()
+  policyEvents: protectedProcedure.input(z43.object({
+    direction: z43.string().optional(),
+    type: z43.string().optional()
   })).query(async ({ input }) => {
     return getPolicyEvents(input);
   })
 });
 
 // server/routers/signal-governance.ts
-import { z as z45 } from "zod";
+import { z as z44 } from "zod";
 init_signal_governance();
 init_db();
 init_unified_queries();
@@ -62856,14 +62167,14 @@ var signalGovernanceRouter = router({
   /**
    * Signal Dashboard — ranked list of governed signals
    */
-  dashboard: publicProcedure.input(z45.object({
-    datasetId: z45.string().optional(),
-    severityLevel: z45.string().optional(),
-    escalationTier: z45.string().optional(),
-    minConfidence: z45.number().min(0).max(100).optional(),
-    governedOnly: z45.boolean().optional(),
-    limit: z45.number().min(1).max(100).optional(),
-    offset: z45.number().min(0).optional()
+  dashboard: publicProcedure.input(z44.object({
+    datasetId: z44.string().optional(),
+    severityLevel: z44.string().optional(),
+    escalationTier: z44.string().optional(),
+    minConfidence: z44.number().min(0).max(100).optional(),
+    governedOnly: z44.boolean().optional(),
+    limit: z44.number().min(1).max(100).optional(),
+    offset: z44.number().min(0).optional()
   }).optional()).query(async ({ input }) => {
     const signals = await get_unified_signals({
       stream_id: input?.datasetId,
@@ -62885,7 +62196,7 @@ var signalGovernanceRouter = router({
   /**
    * Signal Audit Trail — full generation log for a specific signal
    */
-  auditTrail: publicProcedure.input(z45.object({ signalId: z45.string() })).query(async ({ input }) => {
+  auditTrail: publicProcedure.input(z44.object({ signalId: z44.string() })).query(async ({ input }) => {
     return getSignalAuditTrail(input.signalId);
   }),
   /**
@@ -62897,7 +62208,7 @@ var signalGovernanceRouter = router({
   /**
    * Dataset Provenance — source metadata for a dataset
    */
-  provenance: protectedProcedure.input(z45.object({ datasetId: z45.string() })).query(async ({ input }) => {
+  provenance: protectedProcedure.input(z44.object({ datasetId: z44.string() })).query(async ({ input }) => {
     return getProvenance(input.datasetId);
   }),
   /**
@@ -62938,9 +62249,9 @@ var signalGovernanceRouter = router({
    * Extended Templates — signal explanation templates with confidence requirements
    * Uses snake_case column names from actual DB
    */
-  templates: protectedProcedure.input(z45.object({
-    signalType: z45.string().optional(),
-    datasetId: z45.string().optional()
+  templates: protectedProcedure.input(z44.object({
+    signalType: z44.string().optional(),
+    datasetId: z44.string().optional()
   }).optional()).query(async ({ input }) => {
     let query = "SELECT * FROM signal_explanations_extended WHERE 1=1";
     if (input?.signalType) query += ` AND signal_type = '${input.signalType}'`;
@@ -62961,7 +62272,7 @@ var signalGovernanceRouter = router({
 });
 
 // server/routers/workbench.ts
-import { z as z46 } from "zod";
+import { z as z45 } from "zod";
 init_db();
 init_schema();
 import { eq as eq43, and as and31, sql as sql55, desc as desc21 } from "drizzle-orm";
@@ -62982,7 +62293,7 @@ var workbenchRouter = router({
   /**
    * Full workbench overview — aggregates counts and recent items
    */
-  overview: protectedProcedure.input(z46.object({ caseId: z46.string().uuid() })).query(async ({ ctx, input }) => {
+  overview: protectedProcedure.input(z45.object({ caseId: z45.string().uuid() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership2(input.caseId, ctx.user.id);
     const caseId2 = input.caseId;
     const [
@@ -63056,7 +62367,7 @@ var workbenchRouter = router({
   /**
    * Parts Checklist — what is present, what is missing
    */
-  checklist: protectedProcedure.input(z46.object({ caseId: z46.string().uuid() })).query(async ({ ctx, input }) => {
+  checklist: protectedProcedure.input(z45.object({ caseId: z45.string().uuid() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership2(input.caseId, ctx.user.id);
     const [items, missing] = await Promise.all([
       db.select().from(checklistItems).where(eq43(checklistItems.caseId, input.caseId)).orderBy(checklistItems.sortOrder),
@@ -63068,7 +62379,7 @@ var workbenchRouter = router({
    * Evidence summary — recent evidence items with proof/event link counts
    */
   evidenceSummary: protectedProcedure.input(
-    z46.object({ caseId: z46.string().uuid(), limit: z46.number().default(20) })
+    z45.object({ caseId: z45.string().uuid(), limit: z45.number().default(20) })
   ).query(async ({ ctx, input }) => {
     await verifyCaseOwnership2(input.caseId, ctx.user.id);
     const items = await db.select().from(evidenceItems).where(eq43(evidenceItems.caseId, input.caseId)).orderBy(desc21(evidenceItems.createdAt)).limit(input.limit);
@@ -63091,7 +62402,7 @@ var workbenchRouter = router({
    * Recent activity — latest events, findings, signals
    */
   recentActivity: protectedProcedure.input(
-    z46.object({ caseId: z46.string().uuid(), limit: z46.number().default(15) })
+    z45.object({ caseId: z45.string().uuid(), limit: z45.number().default(15) })
   ).query(async ({ ctx, input }) => {
     await verifyCaseOwnership2(input.caseId, ctx.user.id);
     const [recentEvents, recentFindings, recentSignals] = await Promise.all([
@@ -63127,7 +62438,7 @@ var workbenchRouter = router({
    * Next steps — computed from case state
    * Returns prioritized list of recommended actions
    */
-  nextSteps: protectedProcedure.input(z46.object({ caseId: z46.string().uuid() })).query(async ({ ctx, input }) => {
+  nextSteps: protectedProcedure.input(z45.object({ caseId: z45.string().uuid() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership2(input.caseId, ctx.user.id);
     const caseId2 = input.caseId;
     const [
@@ -63255,7 +62566,7 @@ var workbenchRouter = router({
   /**
    * Claims breakdown — grouped by type with status
    */
-  claimsBreakdown: protectedProcedure.input(z46.object({ caseId: z46.string().uuid() })).query(async ({ ctx, input }) => {
+  claimsBreakdown: protectedProcedure.input(z45.object({ caseId: z45.string().uuid() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership2(input.caseId, ctx.user.id);
     const allClaims = await db.select({
       id: claims.id,
@@ -63270,93 +62581,93 @@ var workbenchRouter = router({
 });
 
 // server/routers/remedy.ts
-import { z as z47 } from "zod";
+import { z as z46 } from "zod";
 var remedyRouter = router({
-  generate: protectedProcedure.input(z47.object({ caseId: z47.number() })).mutation(async ({ input }) => {
+  generate: protectedProcedure.input(z46.object({ caseId: z46.number() })).mutation(async ({ input }) => {
     return await runAction(input.caseId, "generateRemedyPaths", input);
   }),
-  list: protectedProcedure.input(z47.object({ caseId: z47.number() })).query(async ({ input }) => {
+  list: protectedProcedure.input(z46.object({ caseId: z46.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  updateStep: protectedProcedure.input(z47.object({
-    stepId: z47.number(),
-    status: z47.enum(["pending", "in_progress", "completed", "skipped", "blocked"]),
-    caseId: z47.number()
+  updateStep: protectedProcedure.input(z46.object({
+    stepId: z46.number(),
+    status: z46.enum(["pending", "in_progress", "completed", "skipped", "blocked"]),
+    caseId: z46.number()
   })).mutation(async ({ input }) => {
     return await runAction(input.caseId, "updateStepStatus", input);
   }),
-  fulfillDoc: protectedProcedure.input(z47.object({
-    reqId: z47.number(),
-    docId: z47.number().nullable(),
-    caseId: z47.number()
+  fulfillDoc: protectedProcedure.input(z46.object({
+    reqId: z46.number(),
+    docId: z46.number().nullable(),
+    caseId: z46.number()
   })).mutation(async ({ input }) => {
     return await runAction(input.caseId, "fulfillDocRequirement", input);
   }),
-  updatePathStatus: protectedProcedure.input(z47.object({
-    pathId: z47.number(),
-    status: z47.string(),
-    caseId: z47.number()
+  updatePathStatus: protectedProcedure.input(z46.object({
+    pathId: z46.number(),
+    status: z46.string(),
+    caseId: z46.number()
   })).mutation(async ({ input }) => {
     return await runAction(input.caseId, "updateRemedyPathStatus", input);
   }),
-  getRemedy: protectedProcedure.input(z47.object({ caseId: z47.number() })).query(async ({ input }) => {
+  getRemedy: protectedProcedure.input(z46.object({ caseId: z46.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  matchRemedy: protectedProcedure.input(z47.object({ caseId: z47.number() })).query(async ({ input }) => {
+  matchRemedy: protectedProcedure.input(z46.object({ caseId: z46.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  calculateRemedyViability: protectedProcedure.input(z47.object({ caseId: z47.number() })).query(async ({ input }) => {
+  calculateRemedyViability: protectedProcedure.input(z46.object({ caseId: z46.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  recommendRemedy: protectedProcedure.input(z47.object({ caseId: z47.number() })).query(async ({ input }) => {
+  recommendRemedy: protectedProcedure.input(z46.object({ caseId: z46.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   })
 });
 
 // server/routers/paperwork.ts
-import { z as z48 } from "zod";
+import { z as z47 } from "zod";
 var paperworkRouter = router({
-  templates: protectedProcedure.input(z48.object({ type: z48.string().optional() }).optional()).query(async ({ input }) => {
+  templates: protectedProcedure.input(z47.object({ type: z47.string().optional() }).optional()).query(async ({ input }) => {
     return { message: "Templates available through interpretation-service" };
   }),
-  generate: protectedProcedure.input(z48.object({
-    caseId: z48.number(),
-    templateId: z48.number().optional(),
-    documentType: z48.string(),
-    recipientName: z48.string().optional(),
-    recipientAddress: z48.string().optional(),
-    customInstructions: z48.string().optional(),
-    remedyStepId: z48.number().optional()
+  generate: protectedProcedure.input(z47.object({
+    caseId: z47.number(),
+    templateId: z47.number().optional(),
+    documentType: z47.string(),
+    recipientName: z47.string().optional(),
+    recipientAddress: z47.string().optional(),
+    customInstructions: z47.string().optional(),
+    remedyStepId: z47.number().optional()
   })).mutation(async ({ input }) => {
     return await runAction(input.caseId, "generateDocument", input);
   }),
-  list: protectedProcedure.input(z48.object({ caseId: z48.number() })).query(async ({ input }) => {
+  list: protectedProcedure.input(z47.object({ caseId: z47.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  get: protectedProcedure.input(z48.object({ docId: z48.number(), caseId: z48.number() })).query(async ({ input }) => {
+  get: protectedProcedure.input(z47.object({ docId: z47.number(), caseId: z47.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  update: protectedProcedure.input(z48.object({
-    docId: z48.number(),
-    caseId: z48.number(),
-    content: z48.string().optional(),
-    status: z48.string().optional()
+  update: protectedProcedure.input(z47.object({
+    docId: z47.number(),
+    caseId: z47.number(),
+    content: z47.string().optional(),
+    status: z47.string().optional()
   })).mutation(async ({ input }) => {
     return await runAction(input.caseId, "updateGeneratedDoc", input);
   }),
-  populateForm: protectedProcedure.input(z48.object({ caseId: z48.number(), formId: z48.number() })).mutation(async ({ input }) => {
+  populateForm: protectedProcedure.input(z47.object({ caseId: z47.number(), formId: z47.number() })).mutation(async ({ input }) => {
     return await runAction(input.caseId, "populateForm", input);
   }),
-  validateForm: protectedProcedure.input(z48.object({ caseId: z48.number(), formId: z48.number() })).query(async ({ input }) => {
+  validateForm: protectedProcedure.input(z47.object({ caseId: z47.number(), formId: z47.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  submitForm: protectedProcedure.input(z48.object({ caseId: z48.number(), formId: z48.number() })).mutation(async ({ input }) => {
+  submitForm: protectedProcedure.input(z47.object({ caseId: z47.number(), formId: z47.number() })).mutation(async ({ input }) => {
     return await runAction(input.caseId, "submitForm", input);
   })
 });
 
 // server/routers/pattern-registry.ts
-import { z as z49 } from "zod";
+import { z as z48 } from "zod";
 
 // server/pattern-registry.ts
 init_db();
@@ -63364,12 +62675,12 @@ init_schema();
 import { eq as eq44, and as and32, sql as sql56, desc as desc22, gte as gte5 } from "drizzle-orm";
 import { randomUUID as randomUUID3 } from "crypto";
 async function evaluateSignalsForPatterns() {
-  const now3 = Date.now();
+  const now4 = Date.now();
   let patternsCreated = 0;
   let patternsUpdated = 0;
   const thresholds = await db.select().from(patternCreationThresholds);
   for (const threshold of thresholds) {
-    const windowStart = now3 - threshold.timeWindowDays * 24 * 60 * 60 * 1e3;
+    const windowStart = now4 - threshold.timeWindowDays * 24 * 60 * 60 * 1e3;
     let signalQuery;
     let signalParams;
     if (threshold.signalType === "any") {
@@ -63410,18 +62721,18 @@ async function evaluateSignalsForPatterns() {
     ));
     if (existingPatterns.length > 0) {
       for (const existing of existingPatterns) {
-        await updatePatternWithSignals(existing, signals, now3);
+        await updatePatternWithSignals(existing, signals, now4);
         patternsUpdated++;
       }
     } else {
-      await createPatternFromSignals(threshold, signals, now3);
+      await createPatternFromSignals(threshold, signals, now4);
       patternsCreated++;
     }
   }
-  const patternsDecayed = await runDecayLifecycle(now3);
+  const patternsDecayed = await runDecayLifecycle(now4);
   return { patternsCreated, patternsUpdated, patternsDecayed };
 }
-async function createPatternFromSignals(threshold, signals, now3) {
+async function createPatternFromSignals(threshold, signals, now4) {
   const patternId = randomUUID3();
   const agg = aggregateSignalData(signals);
   const confidence = await calculatePatternConfidence(threshold.patternType, signals, agg);
@@ -63445,7 +62756,7 @@ async function createPatternFromSignals(threshold, signals, now3) {
     jurisdictionScope: agg.primaryJurisdiction,
     firstDetected: Math.min(...timestamps),
     lastConfirmed: Math.max(...timestamps),
-    lastUpdated: now3,
+    lastUpdated: now4,
     signalCount: signals.length,
     uniqueEntitiesCount: agg.uniqueEntities,
     geographicSpread: agg.geographicAreas,
@@ -63455,8 +62766,8 @@ async function createPatternFromSignals(threshold, signals, now3) {
     relatedAgencies: agg.relatedAgencies,
     harmDomains: agg.harmDomains,
     metadata: { signalTypes: agg.signalTypeCounts, avgConfidence: agg.avgConfidence },
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   for (const signal of signals) {
     await db.insert(patternSignalLinks).values({
@@ -63465,24 +62776,24 @@ async function createPatternFromSignals(threshold, signals, now3) {
       signalType: signal.signal_type,
       confidenceAtLink: signal.confidence_score,
       contributingFactor: String(1 / signals.length),
-      linkedAt: now3,
+      linkedAt: now4,
       datasetId: signal.dataset_id,
       sourceRecordIds: signal.source_record_ids
     }).onDuplicateKeyUpdate({ set: { confidenceAtLink: signal.confidence_score } });
   }
   await db.insert(patternEvolution).values({
     patternId,
-    snapshotDate: now3,
+    snapshotDate: now4,
     signalCount: signals.length,
     confidenceScore: String(confidence),
     geographicSpread: agg.geographicAreas,
     status: "active",
     notes: `Pattern created with ${signals.length} signals`,
-    createdAt: now3
+    createdAt: now4
   });
   return patternId;
 }
-async function updatePatternWithSignals(pattern, signals, now3) {
+async function updatePatternWithSignals(pattern, signals, now4) {
   const existingLinks = await db.select({ signalId: patternSignalLinks.signalId }).from(patternSignalLinks).where(eq44(patternSignalLinks.patternId, pattern.patternId));
   const existingIds = new Set(existingLinks.map((l) => l.signalId));
   const newSignals = signals.filter((s) => !existingIds.has(s.signal_id));
@@ -63494,7 +62805,7 @@ async function updatePatternWithSignals(pattern, signals, now3) {
       signalType: signal.signal_type,
       confidenceAtLink: signal.confidence_score,
       contributingFactor: String(1 / signals.length),
-      linkedAt: now3,
+      linkedAt: now4,
       datasetId: signal.dataset_id,
       sourceRecordIds: signal.source_record_ids
     }).onDuplicateKeyUpdate({ set: { confidenceAtLink: signal.confidence_score } });
@@ -63506,7 +62817,7 @@ async function updatePatternWithSignals(pattern, signals, now3) {
   await db.update(patternRegistry).set({
     confidenceScore: confidence,
     lastConfirmed: Math.max(...timestamps),
-    lastUpdated: now3,
+    lastUpdated: now4,
     signalCount: signals.length,
     uniqueEntitiesCount: agg.uniqueEntities,
     geographicSpread: agg.geographicAreas,
@@ -63515,17 +62826,17 @@ async function updatePatternWithSignals(pattern, signals, now3) {
     relatedAgencies: agg.relatedAgencies,
     harmDomains: agg.harmDomains,
     metadata: { signalTypes: agg.signalTypeCounts, avgConfidence: agg.avgConfidence },
-    updatedAt: now3
+    updatedAt: now4
   }).where(eq44(patternRegistry.patternId, pattern.patternId));
   await db.insert(patternEvolution).values({
     patternId: pattern.patternId,
-    snapshotDate: now3,
+    snapshotDate: now4,
     signalCount: signals.length,
     confidenceScore: String(confidence),
     geographicSpread: agg.geographicAreas,
     status: "active",
     notes: `Updated with ${newSignals.length} new signals (total: ${signals.length})`,
-    createdAt: now3
+    createdAt: now4
   });
 }
 function aggregateSignalData(signals) {
@@ -63652,17 +62963,17 @@ async function calculatePatternConfidence(patternType, signals, agg) {
   }
   return totalWeight > 0 ? Math.round(weightedScore / totalWeight) : agg.avgConfidence;
 }
-async function runDecayLifecycle(now3) {
+async function runDecayLifecycle(now4) {
   const rules = await db.select().from(patternDecayRules);
   let decayed = 0;
   for (const rule of rules) {
-    const dormantCutoff = now3 - rule.dormantAfterDays * 24 * 60 * 60 * 1e3;
-    const archiveCutoff = now3 - rule.archiveAfterDays * 24 * 60 * 60 * 1e3;
+    const dormantCutoff = now4 - rule.dormantAfterDays * 24 * 60 * 60 * 1e3;
+    const archiveCutoff = now4 - rule.archiveAfterDays * 24 * 60 * 60 * 1e3;
     const [dormantResult] = await db.execute(sql56`
       UPDATE pattern_registry
       SET decay_status = 'dormant',
           decay_reason = ${`No confirming signals for ${rule.dormantAfterDays} days`},
-          updated_at = ${now3}
+          updated_at = ${now4}
       WHERE pattern_type = ${rule.patternType}
         AND decay_status = 'active'
         AND last_confirmed < ${dormantCutoff}
@@ -63672,7 +62983,7 @@ async function runDecayLifecycle(now3) {
       UPDATE pattern_registry
       SET decay_status = 'archived',
           decay_reason = ${`Dormant for ${rule.archiveAfterDays} days, archived`},
-          updated_at = ${now3}
+          updated_at = ${now4}
       WHERE pattern_type = ${rule.patternType}
         AND decay_status = 'dormant'
         AND last_confirmed < ${archiveCutoff}
@@ -63681,7 +62992,7 @@ async function runDecayLifecycle(now3) {
   }
   return decayed;
 }
-async function checkReactivation(patternId, now3) {
+async function checkReactivation(patternId, now4) {
   const [pattern] = await db.select().from(patternRegistry).where(eq44(patternRegistry.patternId, patternId));
   if (!pattern || pattern.decayStatus !== "dormant") return false;
   const [rule] = await db.select().from(patternDecayRules).where(eq44(patternDecayRules.patternType, pattern.patternType || ""));
@@ -63696,25 +63007,25 @@ async function checkReactivation(patternId, now3) {
     await db.update(patternRegistry).set({
       decayStatus: "active",
       decayReason: null,
-      lastConfirmed: now3,
-      updatedAt: now3
+      lastConfirmed: now4,
+      updatedAt: now4
     }).where(eq44(patternRegistry.patternId, patternId));
     await db.insert(patternEvolution).values({
       patternId,
-      snapshotDate: now3,
+      snapshotDate: now4,
       signalCount: pattern.signalCount,
       confidenceScore: String(pattern.confidenceScore),
       geographicSpread: pattern.geographicSpread,
       status: "reactivated",
       notes: `Reactivated with ${newSignals[0].cnt} new signals`,
-      createdAt: now3
+      createdAt: now4
     });
     return true;
   }
   return false;
 }
 async function discoverRelationships() {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const activePatterns = await db.select().from(patternRegistry).where(eq44(patternRegistry.decayStatus, "active"));
   let discovered = 0;
   for (let i = 0; i < activePatterns.length; i++) {
@@ -63740,15 +63051,15 @@ async function discoverRelationships() {
             targetPatternId: b.patternId,
             relationshipType: relType,
             confidenceScore: confidence,
-            discoveredAt: now3,
-            lastObserved: now3,
+            discoveredAt: now4,
+            lastObserved: now4,
             metadata: { sharedSignals: shared[0].cnt }
           });
           discovered++;
         } else {
           await db.update(patternRelationships).set({
             confidenceScore: confidence,
-            lastObserved: now3,
+            lastObserved: now4,
             metadata: { sharedSignals: shared[0].cnt }
           }).where(eq44(patternRelationships.id, existing[0].id));
         }
@@ -63891,19 +63202,19 @@ async function getPatternSummaryForMissionControl() {
 // server/routers/pattern-registry.ts
 var patternRegistryRouter = router({
   /** Dashboard: list patterns with optional filters */
-  dashboard: protectedProcedure.input(z49.object({
-    status: z49.string().optional(),
-    patternType: z49.string().optional(),
-    minConfidence: z49.number().optional()
+  dashboard: protectedProcedure.input(z48.object({
+    status: z48.string().optional(),
+    patternType: z48.string().optional(),
+    minConfidence: z48.number().optional()
   }).optional()).query(async ({ input }) => {
     return getPatternDashboard(input || void 0);
   }),
   /** Detail: full pattern info with linked signals, evolution, relationships */
-  detail: protectedProcedure.input(z49.object({ patternId: z49.string() })).query(async ({ input }) => {
+  detail: protectedProcedure.input(z48.object({ patternId: z48.string() })).query(async ({ input }) => {
     return getPatternDetail(input.patternId);
   }),
   /** Evolution timeline for a specific pattern */
-  evolution: protectedProcedure.input(z49.object({ patternId: z49.string() })).query(async ({ input }) => {
+  evolution: protectedProcedure.input(z48.object({ patternId: z48.string() })).query(async ({ input }) => {
     return getPatternEvolutionTimeline(input.patternId);
   }),
   /** Relationship graph: all active patterns and their connections */
@@ -63929,14 +63240,14 @@ var patternRegistryRouter = router({
     return { discovered };
   }),
   /** Check if a dormant pattern should be reactivated */
-  checkReactivation: protectedProcedure.input(z49.object({ patternId: z49.string() })).mutation(async ({ input }) => {
+  checkReactivation: protectedProcedure.input(z48.object({ patternId: z48.string() })).mutation(async ({ input }) => {
     const reactivated = await checkReactivation(input.patternId, Date.now());
     return { reactivated };
   })
 });
 
 // server/routers/trend-engine.ts
-import { z as z50 } from "zod";
+import { z as z49 } from "zod";
 
 // server/trend-engine.ts
 init_db();
@@ -64045,8 +63356,8 @@ function evaluateAlertRules(rules, metrics) {
   return triggered;
 }
 async function updatePatternTrend(patternId) {
-  const now3 = /* @__PURE__ */ new Date();
-  const todayStr = now3.toISOString().split("T")[0];
+  const now4 = /* @__PURE__ */ new Date();
+  const todayStr = now4.toISOString().split("T")[0];
   const [pattern] = await db.execute(sql57`
     SELECT pattern_id, pattern_type, signal_count, confidence_score, 
             geographic_spread, severity, jurisdiction, first_seen, last_seen
@@ -64067,8 +63378,8 @@ async function updatePatternTrend(patternId) {
   const signalCount = Number(p.signal_count) || 0;
   const geoSpread = Number(p.geographic_spread) || 0;
   const confidence = Number(p.confidence_score) || 0;
-  const firstSeen = p.first_seen ? new Date(p.first_seen) : now3;
-  const timeSpanDays = Math.max(1, Math.round((now3.getTime() - firstSeen.getTime()) / (1e3 * 60 * 60 * 24)));
+  const firstSeen = p.first_seen ? new Date(p.first_seen) : now4;
+  const timeSpanDays = Math.max(1, Math.round((now4.getTime() - firstSeen.getTime()) / (1e3 * 60 * 60 * 24)));
   const [snap7d] = await db.execute(sql57`
     SELECT signal_count FROM trend_snapshots 
      WHERE pattern_id = ${patternId} AND snapshot_date <= DATE_SUB(${todayStr}, INTERVAL 7 DAY) 
@@ -64340,17 +63651,17 @@ async function getAlertRules() {
 var trendEngineRouter = router({
   /** Dashboard: list all current trends with classification, pressure, momentum */
   dashboard: protectedProcedure.input(
-    z50.object({
-      classification: z50.string().optional(),
-      minPressure: z50.number().optional(),
-      limit: z50.number().optional(),
-      offset: z50.number().optional()
+    z49.object({
+      classification: z49.string().optional(),
+      minPressure: z49.number().optional(),
+      limit: z49.number().optional(),
+      offset: z49.number().optional()
     }).optional()
   ).query(async ({ input }) => {
     return getTrendDashboard(input || void 0);
   }),
   /** Detail: full trend data for a single pattern including snapshots and pressure history */
-  detail: protectedProcedure.input(z50.object({ patternId: z50.string() })).query(async ({ input }) => {
+  detail: protectedProcedure.input(z49.object({ patternId: z49.string() })).query(async ({ input }) => {
     return getTrendDetail(input.patternId);
   }),
   /** Mission Control summary widget */
@@ -64362,7 +63673,7 @@ var trendEngineRouter = router({
     return getAlertRules();
   }),
   /** Update trend for a single pattern */
-  updatePattern: protectedProcedure.input(z50.object({ patternId: z50.string() })).mutation(async ({ input }) => {
+  updatePattern: protectedProcedure.input(z49.object({ patternId: z49.string() })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.TREND, caseId: 0 }, async () => {
       return updatePatternTrend(input.patternId);
     });
@@ -64376,7 +63687,7 @@ var trendEngineRouter = router({
 });
 
 // server/routers/systemic-strategy-router.ts
-import { z as z51 } from "zod";
+import { z as z50 } from "zod";
 
 // server/systemic-strategy-engine.ts
 init_db();
@@ -64588,51 +63899,51 @@ async function evaluatePatternsForStrategies() {
   return { evaluated: patterns3.length, strategiesGenerated, results };
 }
 async function updateStepStatus(stepId, status, notes) {
-  const now3 = /* @__PURE__ */ new Date();
+  const now4 = /* @__PURE__ */ new Date();
   if (status === "in_progress") {
     await db.execute(sql58`
-      UPDATE strategy_steps SET step_status = ${status}, started_at = ${now3},
-        notes = COALESCE(${notes || null}, notes), updated_at = ${now3}
+      UPDATE strategy_steps SET step_status = ${status}, started_at = ${now4},
+        notes = COALESCE(${notes || null}, notes), updated_at = ${now4}
       WHERE step_id = ${stepId}
     `);
   } else if (status === "completed") {
     await db.execute(sql58`
-      UPDATE strategy_steps SET step_status = ${status}, completed_at = ${now3},
-        notes = COALESCE(${notes || null}, notes), updated_at = ${now3}
+      UPDATE strategy_steps SET step_status = ${status}, completed_at = ${now4},
+        notes = COALESCE(${notes || null}, notes), updated_at = ${now4}
       WHERE step_id = ${stepId}
     `);
   } else {
     await db.execute(sql58`
       UPDATE strategy_steps SET step_status = ${status},
-        notes = COALESCE(${notes || null}, notes), updated_at = ${now3}
+        notes = COALESCE(${notes || null}, notes), updated_at = ${now4}
       WHERE step_id = ${stepId}
     `);
   }
   return { success: true };
 }
 async function updatePathStatus(pathId, status, approvedBy) {
-  const now3 = /* @__PURE__ */ new Date();
+  const now4 = /* @__PURE__ */ new Date();
   if (status === "approved") {
     await db.execute(sql58`
       UPDATE sys_strategy_paths SET path_status = ${status},
-        approved_by = ${approvedBy || null}, approved_at = ${now3}, updated_at = ${now3}
+        approved_by = ${approvedBy || null}, approved_at = ${now4}, updated_at = ${now4}
       WHERE path_id = ${pathId}
     `);
   } else if (status === "in_progress") {
     await db.execute(sql58`
       UPDATE sys_strategy_paths SET path_status = ${status},
-        started_at = ${now3}, updated_at = ${now3}
+        started_at = ${now4}, updated_at = ${now4}
       WHERE path_id = ${pathId}
     `);
   } else if (status === "completed") {
     await db.execute(sql58`
       UPDATE sys_strategy_paths SET path_status = ${status},
-        completed_at = ${now3}, updated_at = ${now3}
+        completed_at = ${now4}, updated_at = ${now4}
       WHERE path_id = ${pathId}
     `);
   } else {
     await db.execute(sql58`
-      UPDATE sys_strategy_paths SET path_status = ${status}, updated_at = ${now3}
+      UPDATE sys_strategy_paths SET path_status = ${status}, updated_at = ${now4}
       WHERE path_id = ${pathId}
     `);
   }
@@ -64826,7 +64137,7 @@ Use formal but accessible language. The person filing this may not be a lawyer.`
   const content = response.choices?.[0]?.message?.content;
   if (!content) throw new Error("No response from LLM");
   const title = templateTitle || `${docLabel} \u2014 ${caseRow.name}`;
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [inserted] = await db.insert(generatedDocuments).values({
     caseId: input.caseId,
     userId: input.userId,
@@ -64837,8 +64148,8 @@ Use formal but accessible language. The person filing this may not be a lawyer.`
     content,
     recipientName: input.recipientName || null,
     recipientAddress: input.recipientAddress || null,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   return inserted.insertId;
 }
@@ -65086,34 +64397,34 @@ async function getPaperworkTriggerStatus() {
 var systemicStrategyRouter = router({
   /** Dashboard: list all strategy paths with joined strategy + pattern info */
   dashboard: protectedProcedure.input(
-    z51.object({
-      status: z51.string().optional(),
-      strategyType: z51.string().optional(),
-      limit: z51.number().optional(),
-      offset: z51.number().optional()
+    z50.object({
+      status: z50.string().optional(),
+      strategyType: z50.string().optional(),
+      limit: z50.number().optional(),
+      offset: z50.number().optional()
     }).optional()
   ).query(async ({ input }) => {
     return getStrategyDashboard(input || void 0);
   }),
   /** Detail: full strategy path with steps, strategy info, pattern info */
-  detail: protectedProcedure.input(z51.object({ pathId: z51.string() })).query(async ({ input }) => {
+  detail: protectedProcedure.input(z50.object({ pathId: z50.string() })).query(async ({ input }) => {
     return getStrategyPathDetail(input.pathId);
   }),
   /** Select best strategy for a pattern based on type, trend, and pressure */
-  selectStrategy: protectedProcedure.input(z51.object({
-    patternType: z51.string(),
-    trendClassification: z51.string(),
-    pressureIndex: z51.number()
+  selectStrategy: protectedProcedure.input(z50.object({
+    patternType: z50.string(),
+    trendClassification: z50.string(),
+    pressureIndex: z50.number()
   })).query(async ({ input }) => {
     return selectStrategy(input.patternType, input.trendClassification, input.pressureIndex);
   }),
   /** Calculate success probability for a strategy */
-  calculateProbability: protectedProcedure.input(z51.object({
-    historicalSuccessRate: z51.number(),
-    pressureIndex: z51.number(),
-    trendClassification: z51.string(),
-    signalCount: z51.number(),
-    geographicSpread: z51.number()
+  calculateProbability: protectedProcedure.input(z50.object({
+    historicalSuccessRate: z50.number(),
+    pressureIndex: z50.number(),
+    trendClassification: z50.string(),
+    signalCount: z50.number(),
+    geographicSpread: z50.number()
   })).query(async ({ input }) => {
     const probability = calculateSuccessProbability(
       input.historicalSuccessRate,
@@ -65125,16 +64436,16 @@ var systemicStrategyRouter = router({
     return { probability };
   }),
   /** Generate a strategy path for a pattern */
-  generatePath: protectedProcedure.input(z51.object({
-    patternId: z51.string(),
-    strategyId: z51.string(),
-    pathName: z51.string(),
-    pathDescription: z51.string().optional(),
-    trendClassification: z51.string(),
-    pressureIndex: z51.number(),
-    signalCount: z51.number(),
-    geographicScope: z51.any().optional(),
-    assignedLead: z51.string().optional()
+  generatePath: protectedProcedure.input(z50.object({
+    patternId: z50.string(),
+    strategyId: z50.string(),
+    pathName: z50.string(),
+    pathDescription: z50.string().optional(),
+    trendClassification: z50.string(),
+    pressureIndex: z50.number(),
+    signalCount: z50.number(),
+    geographicScope: z50.any().optional(),
+    assignedLead: z50.string().optional()
   })).mutation(async ({ input }) => {
     return generateStrategyPath(input);
   }),
@@ -65143,14 +64454,14 @@ var systemicStrategyRouter = router({
     return evaluatePatternsForStrategies();
   }),
   /** Update a strategy step status — with automated paperwork trigger */
-  updateStep: protectedProcedure.input(z51.object({
-    stepId: z51.string(),
-    status: z51.string(),
-    notes: z51.string().optional(),
-    caseId: z51.number().optional(),
-    patternId: z51.string().optional(),
-    strategyId: z51.string().optional(),
-    pathId: z51.string().optional()
+  updateStep: protectedProcedure.input(z50.object({
+    stepId: z50.string(),
+    status: z50.string(),
+    notes: z50.string().optional(),
+    caseId: z50.number().optional(),
+    patternId: z50.string().optional(),
+    strategyId: z50.string().optional(),
+    pathId: z50.string().optional()
   })).mutation(async ({ input, ctx }) => {
     const result = await updateStepStatus(input.stepId, input.status, input.notes);
     let paperworkResult = null;
@@ -65173,20 +64484,20 @@ var systemicStrategyRouter = router({
     return { ...result, paperwork: paperworkResult };
   }),
   /** Update a strategy path status */
-  updatePathStatus: protectedProcedure.input(z51.object({
-    pathId: z51.string(),
-    status: z51.string(),
-    approvedBy: z51.string().optional()
+  updatePathStatus: protectedProcedure.input(z50.object({
+    pathId: z50.string(),
+    status: z50.string(),
+    approvedBy: z50.string().optional()
   })).mutation(async ({ input }) => {
     return updatePathStatus(input.pathId, input.status, input.approvedBy);
   }),
   /** Trigger paperwork for all eligible steps in a path */
-  triggerPathPaperwork: protectedProcedure.input(z51.object({
-    pathId: z51.string(),
-    caseId: z51.number(),
-    patternId: z51.string().optional(),
-    strategyId: z51.string().optional(),
-    statusFilter: z51.string().optional()
+  triggerPathPaperwork: protectedProcedure.input(z50.object({
+    pathId: z50.string(),
+    caseId: z50.number(),
+    patternId: z50.string().optional(),
+    strategyId: z50.string().optional(),
+    statusFilter: z50.string().optional()
   })).mutation(async ({ input, ctx }) => {
     return triggerPaperworkForPath({
       ...input,
@@ -65194,11 +64505,11 @@ var systemicStrategyRouter = router({
     });
   }),
   /** Get auto-generated documents for a step */
-  stepDocuments: protectedProcedure.input(z51.object({ stepId: z51.string() })).query(async ({ input }) => {
+  stepDocuments: protectedProcedure.input(z50.object({ stepId: z50.string() })).query(async ({ input }) => {
     return getAutoGeneratedDocsForStep(input.stepId);
   }),
   /** Get auto-generated documents for a path */
-  pathDocuments: protectedProcedure.input(z51.object({ pathId: z51.string() })).query(async ({ input }) => {
+  pathDocuments: protectedProcedure.input(z50.object({ pathId: z50.string() })).query(async ({ input }) => {
     return getAutoGeneratedDocsForPath(input.pathId);
   }),
   /** Paperwork trigger status summary */
@@ -65212,7 +64523,7 @@ var systemicStrategyRouter = router({
 });
 
 // server/routers/outcome-engine-router.ts
-import { z as z52 } from "zod";
+import { z as z51 } from "zod";
 
 // server/outcome-engine.ts
 init_db();
@@ -65549,48 +64860,48 @@ var outcomeEngineRouter = router({
     return getMissionControlOutcomeSummary();
   }),
   /** Record a new outcome for a completed strategy path */
-  recordOutcome: protectedProcedure.input(z52.object({
-    pathId: z52.string(),
-    strategyId: z52.string(),
-    patternId: z52.string(),
-    outcomeStatus: z52.string(),
-    outcomeDescription: z52.string().optional(),
-    interventionStartDate: z52.string().optional(),
-    interventionEndDate: z52.string().optional(),
-    lessonsLearned: z52.string().optional()
+  recordOutcome: protectedProcedure.input(z51.object({
+    pathId: z51.string(),
+    strategyId: z51.string(),
+    patternId: z51.string(),
+    outcomeStatus: z51.string(),
+    outcomeDescription: z51.string().optional(),
+    interventionStartDate: z51.string().optional(),
+    interventionEndDate: z51.string().optional(),
+    lessonsLearned: z51.string().optional()
   })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.OUTCOME, caseId: 0 }, async () => {
       return recordOutcome2(input);
     });
   }),
   /** Update outcome with post-intervention metrics */
-  updateMetrics: protectedProcedure.input(z52.object({
-    outcomeId: z52.string(),
-    outcomeStatus: z52.string().optional(),
-    signalsAfter: z52.number().optional(),
-    pressureAfter: z52.number().optional(),
-    trendAfter: z52.string().optional(),
-    entitiesAffected: z52.number().optional(),
-    geographicAreasAffected: z52.number().optional(),
-    totalCost: z52.number().optional(),
-    lessonsLearned: z52.string().optional()
+  updateMetrics: protectedProcedure.input(z51.object({
+    outcomeId: z51.string(),
+    outcomeStatus: z51.string().optional(),
+    signalsAfter: z51.number().optional(),
+    pressureAfter: z51.number().optional(),
+    trendAfter: z51.string().optional(),
+    entitiesAffected: z51.number().optional(),
+    geographicAreasAffected: z51.number().optional(),
+    totalCost: z51.number().optional(),
+    lessonsLearned: z51.string().optional()
   })).mutation(async ({ input }) => {
     const { outcomeId, ...params } = input;
     return updateOutcomeMetrics(outcomeId, params);
   }),
   /** Record a granular metric measurement */
-  recordMetric: protectedProcedure.input(z52.object({
-    outcomeId: z52.string(),
-    metricName: z52.string(),
-    metricCategory: z52.string(),
-    valueBefore: z52.number(),
-    valueAfter: z52.number(),
-    notes: z52.string().optional()
+  recordMetric: protectedProcedure.input(z51.object({
+    outcomeId: z51.string(),
+    metricName: z51.string(),
+    metricCategory: z51.string(),
+    valueBefore: z51.number(),
+    valueAfter: z51.number(),
+    notes: z51.string().optional()
   })).mutation(async ({ input }) => {
     return recordOutcomeMetric(input);
   }),
   /** Trigger full feedback loop for a completed outcome */
-  triggerFeedback: protectedProcedure.input(z52.object({ outcomeId: z52.string() })).mutation(async ({ input }) => {
+  triggerFeedback: protectedProcedure.input(z51.object({ outcomeId: z51.string() })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.OUTCOME, caseId: 0 }, async () => {
       return feedbackLoop(input.outcomeId);
     });
@@ -65598,7 +64909,7 @@ var outcomeEngineRouter = router({
 });
 
 // server/routers/intervention-network-router.ts
-import { z as z53 } from "zod";
+import { z as z52 } from "zod";
 
 // server/intervention-network-engine.ts
 init_db();
@@ -65975,102 +65286,102 @@ var interventionNetworkRouter = router({
     return getMissionControlInterventionSummary();
   }),
   // ─── Endpoints ─────────────────────────────────────────────────────
-  endpoints: protectedProcedure.input(z53.object({
-    jurisdictionScope: z53.string().optional(),
-    interventionType: z53.string().optional()
+  endpoints: protectedProcedure.input(z52.object({
+    jurisdictionScope: z52.string().optional(),
+    interventionType: z52.string().optional()
   }).optional()).query(async ({ input }) => {
     return getEndpointsFiltered(input);
   }),
-  endpointDetail: protectedProcedure.input(z53.object({ endpointId: z53.string() })).query(async ({ input }) => {
+  endpointDetail: protectedProcedure.input(z52.object({ endpointId: z52.string() })).query(async ({ input }) => {
     return getEndpointById(input.endpointId);
   }),
   // ─── Routing ───────────────────────────────────────────────────────
-  routesForPattern: protectedProcedure.input(z53.object({
-    patternType: z53.string(),
-    harmDomain: z53.string().optional(),
-    jurisdictionScope: z53.string().optional()
+  routesForPattern: protectedProcedure.input(z52.object({
+    patternType: z52.string(),
+    harmDomain: z52.string().optional(),
+    jurisdictionScope: z52.string().optional()
   })).query(async ({ input }) => {
     return getRoutesForPattern(input.patternType, input.harmDomain, input.jurisdictionScope);
   }),
   // ─── Escalation ────────────────────────────────────────────────────
-  checkEscalation: protectedProcedure.input(z53.object({
-    patternType: z53.string(),
-    harmDomain: z53.string().optional(),
-    signalCount: z53.number(),
-    pressureIndex: z53.number(),
-    confidenceScore: z53.number()
+  checkEscalation: protectedProcedure.input(z52.object({
+    patternType: z52.string(),
+    harmDomain: z52.string().optional(),
+    signalCount: z52.number(),
+    pressureIndex: z52.number(),
+    confidenceScore: z52.number()
   })).mutation(async ({ input }) => {
     return checkEscalationRules(input);
   }),
   // ─── Submissions ───────────────────────────────────────────────────
-  submissionsForPattern: protectedProcedure.input(z53.object({ patternId: z53.string() })).query(async ({ input }) => {
+  submissionsForPattern: protectedProcedure.input(z52.object({ patternId: z52.string() })).query(async ({ input }) => {
     return getSubmissionsForPattern(input.patternId);
   }),
-  submissionsForCase: protectedProcedure.input(z53.object({ caseId: z53.number() })).query(async ({ input }) => {
+  submissionsForCase: protectedProcedure.input(z52.object({ caseId: z52.number() })).query(async ({ input }) => {
     return getSubmissionsForCase(input.caseId);
   }),
-  createSubmission: protectedProcedure.input(z53.object({
-    endpointId: z53.string(),
-    patternId: z53.string().optional(),
-    strategyId: z53.string().optional(),
-    pathId: z53.string().optional(),
-    caseId: z53.number().optional(),
-    actionType: z53.string(),
-    actionDescription: z53.string().optional(),
-    submittedBy: z53.string().optional()
+  createSubmission: protectedProcedure.input(z52.object({
+    endpointId: z52.string(),
+    patternId: z52.string().optional(),
+    strategyId: z52.string().optional(),
+    pathId: z52.string().optional(),
+    caseId: z52.number().optional(),
+    actionType: z52.string(),
+    actionDescription: z52.string().optional(),
+    submittedBy: z52.string().optional()
   })).mutation(async ({ input, ctx }) => {
     return createSubmission({
       ...input,
       submittedBy: input.submittedBy || ctx.user.name || "system"
     });
   }),
-  updateSubmissionStatus: protectedProcedure.input(z53.object({
-    submissionId: z53.string(),
-    status: z53.string(),
-    responseDetails: z53.string().optional()
+  updateSubmissionStatus: protectedProcedure.input(z52.object({
+    submissionId: z52.string(),
+    status: z52.string(),
+    responseDetails: z52.string().optional()
   })).mutation(async ({ input }) => {
     return updateSubmissionStatus(input.submissionId, input.status, input.responseDetails);
   }),
   // ─── Action Builder ────────────────────────────────────────────────
-  buildAction: protectedProcedure.input(z53.object({
-    actionType: z53.enum(INTERVENTION_ACTION_TYPES),
-    endpointId: z53.string(),
-    caseId: z53.number().optional(),
-    patternId: z53.string().optional()
+  buildAction: protectedProcedure.input(z52.object({
+    actionType: z52.enum(INTERVENTION_ACTION_TYPES),
+    endpointId: z52.string(),
+    caseId: z52.number().optional(),
+    patternId: z52.string().optional()
   })).mutation(async ({ input }) => {
     return buildInterventionAction(input);
   }),
-  executeIntervention: protectedProcedure.input(z53.object({
-    actionType: z53.enum(INTERVENTION_ACTION_TYPES),
-    endpointId: z53.string(),
-    caseId: z53.number().optional(),
-    patternId: z53.string().optional(),
-    strategyId: z53.string().optional(),
-    pathId: z53.string().optional(),
-    customDescription: z53.string().optional()
+  executeIntervention: protectedProcedure.input(z52.object({
+    actionType: z52.enum(INTERVENTION_ACTION_TYPES),
+    endpointId: z52.string(),
+    caseId: z52.number().optional(),
+    patternId: z52.string().optional(),
+    strategyId: z52.string().optional(),
+    pathId: z52.string().optional(),
+    customDescription: z52.string().optional()
   })).mutation(async ({ input, ctx }) => {
     return executeIntervention({
       ...input,
       userId: ctx.user.name || "system"
     });
   }),
-  recommendedActions: protectedProcedure.input(z53.object({
-    patternType: z53.string(),
-    harmDomain: z53.string().optional(),
-    jurisdictionScope: z53.string().optional()
+  recommendedActions: protectedProcedure.input(z52.object({
+    patternType: z52.string(),
+    harmDomain: z52.string().optional(),
+    jurisdictionScope: z52.string().optional()
   })).query(async ({ input }) => {
     return getRecommendedActions(input);
   }),
-  gatherEvidence: protectedProcedure.input(z53.object({
-    caseId: z53.number().optional(),
-    patternId: z53.string().optional()
+  gatherEvidence: protectedProcedure.input(z52.object({
+    caseId: z52.number().optional(),
+    patternId: z52.string().optional()
   })).query(async ({ input }) => {
     return gatherEvidenceBundle(input);
   })
 });
 
 // server/routers/policy-impact-router.ts
-import { z as z54 } from "zod";
+import { z as z53 } from "zod";
 
 // server/policy-impact-engine.ts
 init_db();
@@ -66287,53 +65598,53 @@ var policyImpactRouter = router({
     return getPolicyDashboard();
   }),
   // ─── Policy Events ─────────────────────────────────────────────────
-  events: protectedProcedure.input(z54.object({
-    policyType: z54.string().optional(),
-    jurisdiction: z54.string().optional()
+  events: protectedProcedure.input(z53.object({
+    policyType: z53.string().optional(),
+    jurisdiction: z53.string().optional()
   }).optional()).query(async ({ input }) => {
     return getPolicyEvents2(input);
   }),
-  eventDetail: protectedProcedure.input(z54.object({ policyId: z54.string() })).query(async ({ input }) => {
+  eventDetail: protectedProcedure.input(z53.object({ policyId: z53.string() })).query(async ({ input }) => {
     return getPolicyEventById(input.policyId);
   }),
-  createEvent: protectedProcedure.input(z54.object({
-    policyName: z54.string(),
-    policyType: z54.string(),
-    jurisdiction: z54.string().optional(),
-    effectiveDate: z54.string().optional(),
-    enactedDate: z54.string().optional(),
-    affectedDomains: z54.array(z54.string()).optional(),
-    relatedLaws: z54.array(z54.string()).optional(),
-    description: z54.string().optional(),
-    sourceUrl: z54.string().optional()
+  createEvent: protectedProcedure.input(z53.object({
+    policyName: z53.string(),
+    policyType: z53.string(),
+    jurisdiction: z53.string().optional(),
+    effectiveDate: z53.string().optional(),
+    enactedDate: z53.string().optional(),
+    affectedDomains: z53.array(z53.string()).optional(),
+    relatedLaws: z53.array(z53.string()).optional(),
+    description: z53.string().optional(),
+    sourceUrl: z53.string().optional()
   })).mutation(async ({ input }) => {
     return createPolicyEvent(input);
   }),
   // ─── Impact Measurement ────────────────────────────────────────────
-  measureImpact: protectedProcedure.input(z54.object({
-    policyId: z54.string(),
-    patternId: z54.string(),
-    measurementWindowDays: z54.number().optional()
+  measureImpact: protectedProcedure.input(z53.object({
+    policyId: z53.string(),
+    patternId: z53.string(),
+    measurementWindowDays: z53.number().optional()
   })).mutation(async ({ input }) => {
     return measurePolicyImpact(input);
   }),
-  impactsForPattern: protectedProcedure.input(z54.object({ patternId: z54.string() })).query(async ({ input }) => {
+  impactsForPattern: protectedProcedure.input(z53.object({ patternId: z53.string() })).query(async ({ input }) => {
     return getImpactsForPattern(input.patternId);
   }),
-  impactsForPolicy: protectedProcedure.input(z54.object({ policyId: z54.string() })).query(async ({ input }) => {
+  impactsForPolicy: protectedProcedure.input(z53.object({ policyId: z53.string() })).query(async ({ input }) => {
     return getImpactsForPolicy(input.policyId);
   }),
   // ─── Policy Timeline (for Trend Overlay) ───────────────────────────
-  timeline: protectedProcedure.input(z54.object({
-    patternId: z54.string().optional(),
-    domain: z54.string().optional()
+  timeline: protectedProcedure.input(z53.object({
+    patternId: z53.string().optional(),
+    domain: z53.string().optional()
   }).optional()).query(async ({ input }) => {
     return getPolicyTimelineForTrend(input || {});
   })
 });
 
 // server/routers/learning-loop-router.ts
-import { z as z55 } from "zod";
+import { z as z54 } from "zod";
 
 // server/strategy-learning-loop.ts
 init_db();
@@ -66795,17 +66106,17 @@ var learningLoopRouter = router({
     return getLearningLoopStatus();
   }),
   /** Complete a strategy path and record its outcome in one step */
-  completePathWithOutcome: protectedProcedure.input(z55.object({
-    pathId: z55.string(),
-    outcomeStatus: z55.enum(["successful", "partial", "failed"]),
-    outcomeDescription: z55.string().optional(),
-    signalsAfter: z55.number().optional(),
-    pressureAfter: z55.number().optional(),
-    trendAfter: z55.string().optional(),
-    entitiesAffected: z55.number().optional(),
-    geographicAreasAffected: z55.number().optional(),
-    totalCost: z55.number().optional(),
-    lessonsLearned: z55.string().optional()
+  completePathWithOutcome: protectedProcedure.input(z54.object({
+    pathId: z54.string(),
+    outcomeStatus: z54.enum(["successful", "partial", "failed"]),
+    outcomeDescription: z54.string().optional(),
+    signalsAfter: z54.number().optional(),
+    pressureAfter: z54.number().optional(),
+    trendAfter: z54.string().optional(),
+    entitiesAffected: z54.number().optional(),
+    geographicAreasAffected: z54.number().optional(),
+    totalCost: z54.number().optional(),
+    lessonsLearned: z54.string().optional()
   })).mutation(async ({ input }) => {
     return completeStrategyPathWithOutcome(input);
   }),
@@ -66832,130 +66143,130 @@ var learningLoopRouter = router({
 });
 
 // server/routers/submission-workflow-router.ts
-import { z as z56 } from "zod";
+import { z as z55 } from "zod";
 var submissionWorkflowRouter = router({
-  createDraft: protectedProcedure.input(z56.object({
-    endpointId: z56.string(),
-    patternId: z56.string().optional(),
-    strategyId: z56.string().optional(),
-    pathId: z56.string().optional(),
-    caseId: z56.number().optional(),
-    actionType: z56.string(),
-    actionDescription: z56.string().optional()
+  createDraft: protectedProcedure.input(z55.object({
+    endpointId: z55.string(),
+    patternId: z55.string().optional(),
+    strategyId: z55.string().optional(),
+    pathId: z55.string().optional(),
+    caseId: z55.number().optional(),
+    actionType: z55.string(),
+    actionDescription: z55.string().optional()
   })).mutation(async ({ input }) => {
     const caseId2 = input.caseId || 0;
     return await runAction(caseId2, "createDraftSubmission", input);
   }),
-  attachEvidence: protectedProcedure.input(z56.object({
-    submissionId: z56.string(),
-    caseId: z56.number().optional(),
-    patternId: z56.string().optional(),
-    additionalEvidence: z56.array(z56.object({
-      title: z56.string(),
-      type: z56.string(),
-      reference: z56.string()
+  attachEvidence: protectedProcedure.input(z55.object({
+    submissionId: z55.string(),
+    caseId: z55.number().optional(),
+    patternId: z55.string().optional(),
+    additionalEvidence: z55.array(z55.object({
+      title: z55.string(),
+      type: z55.string(),
+      reference: z55.string()
     })).optional()
   })).mutation(async ({ input }) => {
     const caseId2 = input.caseId || 0;
     return await runAction(caseId2, "attachEvidence", input);
   }),
-  generatePackage: protectedProcedure.input(z56.object({
-    submissionId: z56.string(),
-    caseId: z56.number().optional(),
-    pathId: z56.string().optional(),
-    patternId: z56.string().optional(),
-    strategyId: z56.string().optional()
+  generatePackage: protectedProcedure.input(z55.object({
+    submissionId: z55.string(),
+    caseId: z55.number().optional(),
+    pathId: z55.string().optional(),
+    patternId: z55.string().optional(),
+    strategyId: z55.string().optional()
   })).mutation(async ({ input }) => {
     const caseId2 = input.caseId || 0;
     return await runAction(caseId2, "generateSubmissionPackage", input);
   }),
-  confirmSubmission: protectedProcedure.input(z56.object({
-    submissionId: z56.string(),
-    caseId: z56.number().optional()
+  confirmSubmission: protectedProcedure.input(z55.object({
+    submissionId: z55.string(),
+    caseId: z55.number().optional()
   })).mutation(async ({ input }) => {
     const caseId2 = input.caseId || 0;
     return await runAction(caseId2, "confirmSubmission", input);
   }),
-  transitionStatus: protectedProcedure.input(z56.object({
-    submissionId: z56.string(),
-    newStatus: z56.string(),
-    caseId: z56.number().optional()
+  transitionStatus: protectedProcedure.input(z55.object({
+    submissionId: z55.string(),
+    newStatus: z55.string(),
+    caseId: z55.number().optional()
   })).mutation(async ({ input }) => {
     const caseId2 = input.caseId || 0;
     return await runAction(caseId2, "transitionSubmissionStatus", input);
   }),
-  getWorkflowState: protectedProcedure.input(z56.object({
-    submissionId: z56.string(),
-    caseId: z56.number()
+  getWorkflowState: protectedProcedure.input(z55.object({
+    submissionId: z55.string(),
+    caseId: z55.number()
   })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  listActiveWorkflows: protectedProcedure.input(z56.object({ caseId: z56.number() })).query(async ({ input }) => {
+  listActiveWorkflows: protectedProcedure.input(z55.object({ caseId: z55.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  getWorkflowSummary: protectedProcedure.input(z56.object({ caseId: z56.number() })).query(async ({ input }) => {
+  getWorkflowSummary: protectedProcedure.input(z55.object({ caseId: z55.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   })
 });
 
 // server/routers/settlement-calculator-router.ts
-import { z as z57 } from "zod";
+import { z as z56 } from "zod";
 var settlementCalculatorRouter = router({
-  dashboard: protectedProcedure.input(z57.object({ caseId: z57.number().optional() })).query(async ({ input }) => {
+  dashboard: protectedProcedure.input(z56.object({ caseId: z56.number().optional() })).query(async ({ input }) => {
     if (input?.caseId) {
       return await runRead(input.caseId);
     }
     return { message: "Dashboard available through interpretation-service" };
   }),
-  calculate: protectedProcedure.input(z57.object({
-    claimType: z57.string(),
-    jurisdiction: z57.string(),
-    formulaId: z57.string().optional(),
-    variables: z57.record(z57.string(), z57.number()),
-    caseId: z57.number().optional(),
-    patternId: z57.string().optional()
+  calculate: protectedProcedure.input(z56.object({
+    claimType: z56.string(),
+    jurisdiction: z56.string(),
+    formulaId: z56.string().optional(),
+    variables: z56.record(z56.string(), z56.number()),
+    caseId: z56.number().optional(),
+    patternId: z56.string().optional()
   })).mutation(async ({ input }) => {
     const caseId2 = input.caseId || 0;
     return await runAction(caseId2, "calculateSettlement", input);
   }),
-  formulas: protectedProcedure.input(z57.object({
-    claimType: z57.string().optional(),
-    jurisdiction: z57.string().optional()
+  formulas: protectedProcedure.input(z56.object({
+    claimType: z56.string().optional(),
+    jurisdiction: z56.string().optional()
   }).optional()).query(async ({ input }) => {
     return { message: "Formulas available through interpretation-service" };
   }),
-  history: protectedProcedure.input(z57.object({
-    caseId: z57.number().optional(),
-    patternId: z57.string().optional(),
-    limit: z57.number().optional()
+  history: protectedProcedure.input(z56.object({
+    caseId: z56.number().optional(),
+    patternId: z56.string().optional(),
+    limit: z56.number().optional()
   }).optional()).query(async ({ input }) => {
     if (input?.caseId) {
       return await runRead(input.caseId);
     }
     return { message: "History available through interpretation-service" };
   }),
-  jurisdictionRules: protectedProcedure.input(z57.object({ jurisdiction: z57.string(), caseId: z57.number().optional() })).query(async ({ input }) => {
+  jurisdictionRules: protectedProcedure.input(z56.object({ jurisdiction: z56.string(), caseId: z56.number().optional() })).query(async ({ input }) => {
     if (input.caseId) {
       return await runRead(input.caseId);
     }
     return { message: "Jurisdiction rules available through interpretation-service" };
   }),
-  compareFormulas: protectedProcedure.input(z57.object({ caseId: z57.number() })).query(async ({ input }) => {
+  compareFormulas: protectedProcedure.input(z56.object({ caseId: z56.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  estimateDamages: protectedProcedure.input(z57.object({ caseId: z57.number() })).query(async ({ input }) => {
+  estimateDamages: protectedProcedure.input(z56.object({ caseId: z56.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  compareSettlements: protectedProcedure.input(z57.object({ caseId: z57.number() })).query(async ({ input }) => {
+  compareSettlements: protectedProcedure.input(z56.object({ caseId: z56.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  getSettlementHistory: protectedProcedure.input(z57.object({ caseId: z57.number() })).query(async ({ input }) => {
+  getSettlementHistory: protectedProcedure.input(z56.object({ caseId: z56.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   })
 });
 
 // server/routers/remedy-template-router.ts
-import { z as z58 } from "zod";
+import { z as z57 } from "zod";
 
 // server/remedy-template-service.ts
 init_db();
@@ -67009,8 +66320,8 @@ async function generateDocument2(templateId, placeholderValues, options) {
     const placeholder = `[${key2}]`;
     filledContent = filledContent.split(placeholder).join(value);
   }
-  const now3 = /* @__PURE__ */ new Date();
-  filledContent = filledContent.split("[CURRENT_DATE]").join(now3.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }));
+  const now4 = /* @__PURE__ */ new Date();
+  filledContent = filledContent.split("[CURRENT_DATE]").join(now4.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }));
   const docId = randomUUID9();
   await db.execute(
     sql67`INSERT INTO remedy_doc_generated 
@@ -67035,7 +66346,7 @@ async function generateDocument2(templateId, placeholderValues, options) {
     documentContent: filledContent,
     documentType: template.templateType,
     status: "draft",
-    createdAt: now3
+    createdAt: now4
   };
 }
 async function listGeneratedDocs(filters) {
@@ -67154,7 +66465,7 @@ async function getQueueStatus3() {
 }
 async function recordDocOutcome(input) {
   const trackingId = randomUUID9();
-  const now3 = Date.now();
+  const now4 = Date.now();
   const isSuccess = ["resolved", "settled", "favorable", "accepted", "successful"].includes(input.outcomeStatus);
   const [existing] = await db.execute(
     sql67`SELECT * FROM template_effectiveness WHERE template_id = ${input.templateId} LIMIT 1`
@@ -67173,8 +66484,8 @@ async function recordDocOutcome(input) {
         avg_settlement_amount = ${newAvgSettlement},
         avg_response_time_days = ${newAvgDays},
         avg_effectiveness_score = ${newAvgScore},
-        last_calculated_at = ${now3},
-        updated_at = ${now3}
+        last_calculated_at = ${now4},
+        updated_at = ${now4}
       WHERE template_id = ${input.templateId}
     `);
   } else {
@@ -67185,7 +66496,7 @@ async function recordDocOutcome(input) {
       VALUES (
         ${trackingId}, ${input.templateId}, 1, ${isSuccess ? 1 : 0},
         ${input.settlementAmount || 0}, ${input.daysToResolution || 0},
-        ${input.effectivenessScore || 0}, ${now3}, ${now3}, ${now3}
+        ${input.effectivenessScore || 0}, ${now4}, ${now4}, ${now4}
       )
     `);
   }
@@ -67763,34 +67074,34 @@ var remedyTemplateRouter = router({
     return getMissionControlRemedySummary();
   }),
   // List templates with filters
-  list: protectedProcedure.input(z58.object({
-    claimType: z58.string().optional(),
-    jurisdiction: z58.string().optional(),
-    templateType: z58.string().optional(),
-    difficultyLevel: z58.string().optional(),
-    search: z58.string().optional()
+  list: protectedProcedure.input(z57.object({
+    claimType: z57.string().optional(),
+    jurisdiction: z57.string().optional(),
+    templateType: z57.string().optional(),
+    difficultyLevel: z57.string().optional(),
+    search: z57.string().optional()
   }).optional()).query(async ({ input }) => {
     return listTemplates2(input || void 0);
   }),
   // Get single template detail
-  detail: protectedProcedure.input(z58.object({ templateId: z58.string() })).query(async ({ input }) => {
+  detail: protectedProcedure.input(z57.object({ templateId: z57.string() })).query(async ({ input }) => {
     return getTemplate(input.templateId);
   }),
   // Find matching templates for a claim
-  findMatching: protectedProcedure.input(z58.object({
-    claimType: z58.string(),
-    jurisdiction: z58.string(),
-    templateType: z58.string().optional()
+  findMatching: protectedProcedure.input(z57.object({
+    claimType: z57.string(),
+    jurisdiction: z57.string(),
+    templateType: z57.string().optional()
   })).query(async ({ input }) => {
     return findMatchingTemplates(input.claimType, input.jurisdiction, input.templateType);
   }),
   // Generate document from template
-  generate: protectedProcedure.input(z58.object({
-    templateId: z58.string(),
-    placeholderValues: z58.record(z58.string(), z58.string()),
-    caseId: z58.number().optional(),
-    patternId: z58.string().optional(),
-    strategyPathId: z58.string().optional()
+  generate: protectedProcedure.input(z57.object({
+    templateId: z57.string(),
+    placeholderValues: z57.record(z57.string(), z57.string()),
+    caseId: z57.number().optional(),
+    patternId: z57.string().optional(),
+    strategyPathId: z57.string().optional()
   })).mutation(async ({ input, ctx }) => {
     return generateDocument2(input.templateId, input.placeholderValues, {
       caseId: input.caseId,
@@ -67800,36 +67111,36 @@ var remedyTemplateRouter = router({
     });
   }),
   // List generated documents
-  generatedDocs: protectedProcedure.input(z58.object({
-    caseId: z58.number().optional(),
-    patternId: z58.string().optional(),
-    strategyPathId: z58.string().optional(),
-    status: z58.string().optional(),
-    limit: z58.number().optional()
+  generatedDocs: protectedProcedure.input(z57.object({
+    caseId: z57.number().optional(),
+    patternId: z57.string().optional(),
+    strategyPathId: z57.string().optional(),
+    status: z57.string().optional(),
+    limit: z57.number().optional()
   }).optional()).query(async ({ input }) => {
     return listGeneratedDocs(input || void 0);
   }),
   // Update document status
-  updateDocStatus: protectedProcedure.input(z58.object({
-    docId: z58.string(),
-    status: z58.string()
+  updateDocStatus: protectedProcedure.input(z57.object({
+    docId: z57.string(),
+    status: z57.string()
   })).mutation(async ({ input }) => {
     await updateDocStatus(input.docId, input.status);
     return { success: true };
   }),
   // Enqueue document generation
-  enqueue: protectedProcedure.input(z58.object({
-    caseId: z58.number().optional(),
-    patternId: z58.string().optional(),
-    templateId: z58.string().optional(),
-    strategyPathId: z58.string().optional(),
-    priority: z58.number().optional()
+  enqueue: protectedProcedure.input(z57.object({
+    caseId: z57.number().optional(),
+    patternId: z57.string().optional(),
+    templateId: z57.string().optional(),
+    strategyPathId: z57.string().optional(),
+    priority: z57.number().optional()
   })).mutation(async ({ input, ctx }) => {
     const queueId = await enqueueGeneration({ ...input, userId: ctx.user.id });
     return { queueId };
   }),
   // Process generation queue
-  processQueue: protectedProcedure.input(z58.object({ limit: z58.number().optional() }).optional()).mutation(async ({ input }) => {
+  processQueue: protectedProcedure.input(z57.object({ limit: z57.number().optional() }).optional()).mutation(async ({ input }) => {
     return processQueue(input?.limit);
   }),
   // Get queue status
@@ -67837,31 +67148,31 @@ var remedyTemplateRouter = router({
     return getQueueStatus3();
   }),
   // Auto-fill from case evidence
-  autoFill: protectedProcedure.input(z58.object({
-    caseId: z58.number(),
-    claimType: z58.string()
+  autoFill: protectedProcedure.input(z57.object({
+    caseId: z57.number(),
+    claimType: z57.string()
   })).query(async ({ input }) => {
     return scanCaseEvidence(input.caseId, input.claimType);
   }),
   // Export document as PDF
-  exportPDF: protectedProcedure.input(z58.object({ docId: z58.string() })).mutation(async ({ input }) => {
+  exportPDF: protectedProcedure.input(z57.object({ docId: z57.string() })).mutation(async ({ input }) => {
     return exportDocumentPDF(input.docId);
   }),
   // Export document as TXT
-  exportTXT: protectedProcedure.input(z58.object({ docId: z58.string() })).mutation(async ({ input }) => {
+  exportTXT: protectedProcedure.input(z57.object({ docId: z57.string() })).mutation(async ({ input }) => {
     return exportDocumentTXT(input.docId);
   }),
   // Record document outcome
-  recordOutcome: protectedProcedure.input(z58.object({
-    docId: z58.string(),
-    templateId: z58.string(),
-    caseId: z58.number().optional(),
-    outcomeStatus: z58.string(),
-    settlementAmount: z58.number().optional(),
-    responseReceived: z58.boolean().optional(),
-    daysToResolution: z58.number().optional(),
-    effectivenessScore: z58.number().optional(),
-    notes: z58.string().optional()
+  recordOutcome: protectedProcedure.input(z57.object({
+    docId: z57.string(),
+    templateId: z57.string(),
+    caseId: z57.number().optional(),
+    outcomeStatus: z57.string(),
+    settlementAmount: z57.number().optional(),
+    responseReceived: z57.boolean().optional(),
+    daysToResolution: z57.number().optional(),
+    effectivenessScore: z57.number().optional(),
+    notes: z57.string().optional()
   })).mutation(async ({ input }) => {
     const trackingId = await recordDocOutcome(input);
     return { trackingId };
@@ -67869,98 +67180,98 @@ var remedyTemplateRouter = router({
 });
 
 // server/routers/operational-workflow-router.ts
-import { z as z59 } from "zod";
+import { z as z58 } from "zod";
 var Report = async (..._args) => ({ success: true, data: null });
 var operationalWorkflowRouter = router({
   // ─── Strategy Review ────────────────────────────────────────────────────
-  strategyReview: protectedProcedure.input(z59.object({ caseId: z59.number() })).query(async ({ input }) => {
+  strategyReview: protectedProcedure.input(z58.object({ caseId: z58.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  approveStrategy: protectedProcedure.input(z59.object({ pathId: z59.string(), caseId: z59.number() })).mutation(async ({ input }) => {
+  approveStrategy: protectedProcedure.input(z58.object({ pathId: z58.string(), caseId: z58.number() })).mutation(async ({ input }) => {
     return await runAction(input.caseId, "approveStrategy", input);
   }),
-  rejectStrategy: protectedProcedure.input(z59.object({ pathId: z59.string(), reason: z59.string() })).mutation(async ({ input }) => {
+  rejectStrategy: protectedProcedure.input(z58.object({ pathId: z58.string(), reason: z58.string() })).mutation(async ({ input }) => {
     return await runAction(input.pathId, "rejectStrategy", input);
   }),
-  modifyStrategy: protectedProcedure.input(z59.object({ pathId: z59.string(), modifications: z59.record(z59.string(), z59.any()) })).mutation(async ({ input }) => {
+  modifyStrategy: protectedProcedure.input(z58.object({ pathId: z58.string(), modifications: z58.record(z58.string(), z58.any()) })).mutation(async ({ input }) => {
     return await runAction(input.pathId, "modifyStrategy", input);
   }),
-  exportStrategyPlan: protectedProcedure.input(z59.object({ pathId: z59.string(), caseId: z59.number() })).mutation(async ({ input }) => {
+  exportStrategyPlan: protectedProcedure.input(z58.object({ pathId: z58.string(), caseId: z58.number() })).mutation(async ({ input }) => {
     return await Report(input.caseId, input);
   }),
   // ─── Claim-to-Remedy Pipeline ───────────────────────────────────────────
-  claimIntake: protectedProcedure.input(z59.object({
-    caseId: z59.number(),
-    claimType: z59.string(),
-    jurisdiction: z59.string(),
-    eventDates: z59.array(z59.string()).optional(),
-    actorsInvolved: z59.array(z59.string()).optional(),
-    damagesAmount: z59.number().optional(),
-    evidenceAvailable: z59.array(z59.string()).optional(),
-    description: z59.string().optional()
+  claimIntake: protectedProcedure.input(z58.object({
+    caseId: z58.number(),
+    claimType: z58.string(),
+    jurisdiction: z58.string(),
+    eventDates: z58.array(z58.string()).optional(),
+    actorsInvolved: z58.array(z58.string()).optional(),
+    damagesAmount: z58.number().optional(),
+    evidenceAvailable: z58.array(z58.string()).optional(),
+    description: z58.string().optional()
   })).mutation(async ({ input }) => {
     return await runAction(input.caseId, "claimIntake", input);
   }),
-  classifyClaim: protectedProcedure.input(z59.object({
-    claimType: z59.string(),
-    evidenceTags: z59.array(z59.string()).optional(),
-    jurisdiction: z59.string().optional()
+  classifyClaim: protectedProcedure.input(z58.object({
+    claimType: z58.string(),
+    evidenceTags: z58.array(z58.string()).optional(),
+    jurisdiction: z58.string().optional()
   })).query(async ({ input }) => {
     return { message: "Claim classification available through interpretation-service" };
   }),
-  evidenceChecklist: protectedProcedure.input(z59.object({
-    claimType: z59.string(),
-    existingEvidence: z59.array(z59.string()).optional()
+  evidenceChecklist: protectedProcedure.input(z58.object({
+    claimType: z58.string(),
+    existingEvidence: z58.array(z58.string()).optional()
   })).query(async ({ input }) => {
     return { message: "Evidence checklist available through interpretation-service" };
   }),
-  claimsForCase: protectedProcedure.input(z59.object({ caseId: z59.number() })).query(async ({ input }) => {
+  claimsForCase: protectedProcedure.input(z58.object({ caseId: z58.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
   // ─── Case-to-Pattern Pipeline ───────────────────────────────────────────
-  runCaseToPattern: protectedProcedure.input(z59.object({
-    caseId: z59.number(),
-    claimType: z59.string(),
-    entities: z59.array(z59.string()).optional(),
-    agencies: z59.array(z59.string()).optional(),
-    damages: z59.number().optional(),
-    location: z59.string().optional()
+  runCaseToPattern: protectedProcedure.input(z58.object({
+    caseId: z58.number(),
+    claimType: z58.string(),
+    entities: z58.array(z58.string()).optional(),
+    agencies: z58.array(z58.string()).optional(),
+    damages: z58.number().optional(),
+    location: z58.string().optional()
   })).mutation(async ({ input }) => {
     return await runAction(input.caseId, "runCaseToPattern", input);
   }),
-  systemImpact: protectedProcedure.input(z59.object({ caseId: z59.number() })).query(async ({ input }) => {
+  systemImpact: protectedProcedure.input(z58.object({ caseId: z58.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
   // ─── Signal-to-Policy Pipeline ──────────────────────────────────────────
   policyDashboard: protectedProcedure.query(async () => {
     return { message: "Policy dashboard available through interpretation-service" };
   }),
-  generatePolicyRecommendation: protectedProcedure.input(z59.object({ patternId: z59.string() })).mutation(async ({ input }) => {
+  generatePolicyRecommendation: protectedProcedure.input(z58.object({ patternId: z58.string() })).mutation(async ({ input }) => {
     return await runAction(input.patternId, "generatePolicyRecommendation", input);
   }),
-  generatePolicyBrief: protectedProcedure.input(z59.object({ recommendationId: z59.number(), caseId: z59.number() })).mutation(async ({ input }) => {
+  generatePolicyBrief: protectedProcedure.input(z58.object({ recommendationId: z58.number(), caseId: z58.number() })).mutation(async ({ input }) => {
     return await Report(input.caseId, input);
   }),
-  generateLegislativeMemo: protectedProcedure.input(z59.object({ recommendationId: z59.number(), caseId: z59.number() })).mutation(async ({ input }) => {
+  generateLegislativeMemo: protectedProcedure.input(z58.object({ recommendationId: z58.number(), caseId: z58.number() })).mutation(async ({ input }) => {
     return await Report(input.caseId, input);
   }),
   // ─── System Hardening ───────────────────────────────────────────────────
-  evidenceConfidence: protectedProcedure.input(z59.object({ caseId: z59.number() })).query(async ({ input }) => {
+  evidenceConfidence: protectedProcedure.input(z58.object({ caseId: z58.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  workflowState: protectedProcedure.input(z59.object({ caseId: z59.number() })).query(async ({ input }) => {
+  workflowState: protectedProcedure.input(z58.object({ caseId: z58.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  primaryAction: protectedProcedure.input(z59.object({ caseId: z59.number() })).query(async ({ input }) => {
+  primaryAction: protectedProcedure.input(z58.object({ caseId: z58.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  handoffLog: protectedProcedure.input(z59.object({ caseId: z59.number() })).query(async ({ input }) => {
+  handoffLog: protectedProcedure.input(z58.object({ caseId: z58.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  guardrailCheck: protectedProcedure.input(z59.object({
-    type: z59.enum(["strategy", "remedy"]),
-    confidenceScore: z59.number().optional(),
-    missingInputs: z59.array(z59.string()).optional()
+  guardrailCheck: protectedProcedure.input(z58.object({
+    type: z58.enum(["strategy", "remedy"]),
+    confidenceScore: z58.number().optional(),
+    missingInputs: z58.array(z58.string()).optional()
   })).query(async ({ input }) => {
     return { message: "Guardrail check available through interpretation-service" };
   }),
@@ -67978,41 +67289,41 @@ var operationalWorkflowRouter = router({
     return { message: "Feedback logs available through interpretation-service" };
   }),
   // ─── Memory Engine ──────────────────────────────────────────────────────
-  captureMemory: protectedProcedure.input(z59.object({
-    outcomeId: z59.string(),
-    caseId: z59.string(),
-    patternType: z59.string(),
-    claimType: z59.string(),
-    jurisdiction: z59.string(),
-    strategyId: z59.string(),
-    remedyTemplateId: z59.string().optional(),
-    interventionType: z59.string(),
-    signalsBefore: z59.number(),
-    signalsAfter: z59.number(),
-    pressureBefore: z59.number(),
-    pressureAfter: z59.number(),
-    timeToImpactDays: z59.number(),
-    cost: z59.number()
+  captureMemory: protectedProcedure.input(z58.object({
+    outcomeId: z58.string(),
+    caseId: z58.string(),
+    patternType: z58.string(),
+    claimType: z58.string(),
+    jurisdiction: z58.string(),
+    strategyId: z58.string(),
+    remedyTemplateId: z58.string().optional(),
+    interventionType: z58.string(),
+    signalsBefore: z58.number(),
+    signalsAfter: z58.number(),
+    pressureBefore: z58.number(),
+    pressureAfter: z58.number(),
+    timeToImpactDays: z58.number(),
+    cost: z58.number()
   })).mutation(async ({ input }) => {
     return await runAction(input.caseId, "captureMemory", input);
   }),
   aggregateMemory: protectedProcedure.mutation(async () => {
     return await runAction("system", "aggregateMemory", {});
   }),
-  consultMemory: protectedProcedure.input(z59.object({
-    patternType: z59.string(),
-    jurisdiction: z59.string().optional(),
-    claimType: z59.string().optional()
+  consultMemory: protectedProcedure.input(z58.object({
+    patternType: z58.string(),
+    jurisdiction: z58.string().optional(),
+    claimType: z58.string().optional()
   })).query(async ({ input }) => {
     return { message: "Memory consultation available through interpretation-service" };
   }),
   memoryDashboard: protectedProcedure.query(async () => {
     return { message: "Memory dashboard available through interpretation-service" };
   }),
-  memoryRecords: protectedProcedure.input(z59.object({
-    patternType: z59.string().optional(),
-    jurisdiction: z59.string().optional(),
-    limit: z59.number().optional()
+  memoryRecords: protectedProcedure.input(z58.object({
+    patternType: z58.string().optional(),
+    jurisdiction: z58.string().optional(),
+    limit: z58.number().optional()
   })).query(async ({ input }) => {
     return { message: "Memory records available through interpretation-service" };
   }),
@@ -68020,43 +67331,43 @@ var operationalWorkflowRouter = router({
   reformCandidates: protectedProcedure.query(async () => {
     return { message: "Reform candidates available through interpretation-service" };
   }),
-  createReform: protectedProcedure.input(z59.object({
-    patternId: z59.string().optional(),
-    patternType: z59.string(),
-    harmDomain: z59.string(),
-    jurisdiction: z59.string(),
-    reformType: z59.enum(["legislative_change", "regulatory_update", "agency_procedure_change", "enforcement_priority", "public_awareness", "data_transparency_requirement"]),
-    reformTitle: z59.string(),
-    reformDescription: z59.string(),
-    supportingPatterns: z59.array(z59.string()).optional(),
-    supportingOutcomes: z59.array(z59.string()).optional()
+  createReform: protectedProcedure.input(z58.object({
+    patternId: z58.string().optional(),
+    patternType: z58.string(),
+    harmDomain: z58.string(),
+    jurisdiction: z58.string(),
+    reformType: z58.enum(["legislative_change", "regulatory_update", "agency_procedure_change", "enforcement_priority", "public_awareness", "data_transparency_requirement"]),
+    reformTitle: z58.string(),
+    reformDescription: z58.string(),
+    supportingPatterns: z58.array(z58.string()).optional(),
+    supportingOutcomes: z58.array(z58.string()).optional()
   })).mutation(async ({ input }) => {
     return await runAction(input.jurisdiction, "createReform", input);
   }),
-  updateReformStatus: protectedProcedure.input(z59.object({
-    reformId: z59.string(),
-    status: z59.enum(["draft", "under_review", "approved", "published", "archived"])
+  updateReformStatus: protectedProcedure.input(z58.object({
+    reformId: z58.string(),
+    status: z58.enum(["draft", "under_review", "approved", "published", "archived"])
   })).mutation(async ({ input }) => {
     return await runAction(input.reformId, "updateReformStatus", input);
   }),
-  listReforms: protectedProcedure.input(z59.object({
-    status: z59.string().optional(),
-    patternType: z59.string().optional(),
-    jurisdiction: z59.string().optional(),
-    limit: z59.number().optional()
+  listReforms: protectedProcedure.input(z58.object({
+    status: z58.string().optional(),
+    patternType: z58.string().optional(),
+    jurisdiction: z58.string().optional(),
+    limit: z58.number().optional()
   })).query(async ({ input }) => {
     return { message: "Reform list available through interpretation-service" };
   }),
   reformDashboard: protectedProcedure.query(async () => {
     return { message: "Reform dashboard available through interpretation-service" };
   }),
-  reformPolicyBrief: protectedProcedure.input(z59.object({ reformId: z59.string(), caseId: z59.string() })).mutation(async ({ input }) => {
+  reformPolicyBrief: protectedProcedure.input(z58.object({ reformId: z58.string(), caseId: z58.string() })).mutation(async ({ input }) => {
     return await Report(input.caseId, input);
   })
 });
 
 // server/routers/memory-strategy-overlay-router.ts
-import { z as z60 } from "zod";
+import { z as z59 } from "zod";
 init_db();
 import { sql as sql70 } from "drizzle-orm";
 function reliabilityLevel(sampleSize) {
@@ -68074,11 +67385,11 @@ var memoryStrategyOverlayRouter = router({
   /**
    * T1: Historical Guidance — top recommendations for a pattern type + optional jurisdiction
    */
-  historicalGuidance: protectedProcedure.input(z60.object({
-    patternType: z60.string(),
-    jurisdiction: z60.string().optional(),
-    claimType: z60.string().optional(),
-    limit: z60.number().optional().default(5)
+  historicalGuidance: protectedProcedure.input(z59.object({
+    patternType: z59.string(),
+    jurisdiction: z59.string().optional(),
+    claimType: z59.string().optional(),
+    limit: z59.number().optional().default(5)
   })).query(async ({ input }) => {
     const { patternType, jurisdiction, claimType, limit } = input;
     let q = sql70`
@@ -68123,8 +67434,8 @@ var memoryStrategyOverlayRouter = router({
   /**
    * T2: Strategy Comparison — compare current strategy path against memory alternatives
    */
-  compareStrategy: protectedProcedure.input(z60.object({
-    pathId: z60.string()
+  compareStrategy: protectedProcedure.input(z59.object({
+    pathId: z59.string()
   })).query(async ({ input }) => {
     const [pathRows] = await db.execute(sql70`
         SELECT sp.*, sr.strategy_name, sr.strategy_type, sr.historical_success_rate,
@@ -68201,10 +67512,10 @@ var memoryStrategyOverlayRouter = router({
   /**
    * T3: Remedy Memory Context — memory-informed data for remedy generation
    */
-  remedyContext: protectedProcedure.input(z60.object({
-    patternType: z60.string(),
-    jurisdiction: z60.string().optional(),
-    claimType: z60.string().optional()
+  remedyContext: protectedProcedure.input(z59.object({
+    patternType: z59.string(),
+    jurisdiction: z59.string().optional(),
+    claimType: z59.string().optional()
   })).query(async ({ input }) => {
     const { patternType, jurisdiction, claimType } = input;
     let stratQ = sql70`
@@ -68341,9 +67652,9 @@ var memoryStrategyOverlayRouter = router({
   /**
    * T5: Apply memory-informed strategy — analyst picks a historical alternative
    */
-  applyHistoricalStrategy: protectedProcedure.input(z60.object({
-    pathId: z60.string(),
-    newStrategyId: z60.string()
+  applyHistoricalStrategy: protectedProcedure.input(z59.object({
+    pathId: z59.string(),
+    newStrategyId: z59.string()
   })).mutation(async ({ input }) => {
     await db.execute(sql70`
         UPDATE sys_strategy_paths
@@ -68356,7 +67667,7 @@ var memoryStrategyOverlayRouter = router({
 });
 
 // server/routers/reform-package-router.ts
-import { z as z61 } from "zod";
+import { z as z60 } from "zod";
 init_reform_package_export_service();
 
 // server/reform-pipeline.ts
@@ -68743,7 +68054,7 @@ async function getCoalitionIntelligence(domain) {
 init_db();
 import { sql as sql73 } from "drizzle-orm";
 async function snapshotPackageVersion(packageId, changeSummary, userId) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [rows2] = await db.execute(
     sql73`SELECT * FROM reform_packages WHERE package_id = ${packageId} LIMIT 1`
   );
@@ -68770,7 +68081,7 @@ async function snapshotPackageVersion(packageId, changeSummary, userId) {
   });
   await db.execute(sql73`
     INSERT INTO reform_package_versions (package_id, version_number, package_data, change_summary, created_at, created_by)
-    VALUES (${packageId}, ${nextVersion}, ${packageData}, ${changeSummary}, ${now3}, ${userId})
+    VALUES (${packageId}, ${nextVersion}, ${packageData}, ${changeSummary}, ${now4}, ${userId})
   `);
   return {
     id: 0,
@@ -68778,7 +68089,7 @@ async function snapshotPackageVersion(packageId, changeSummary, userId) {
     versionNumber: nextVersion,
     packageData: JSON.parse(packageData),
     changeSummary,
-    createdAt: now3,
+    createdAt: now4,
     createdBy: userId
   };
 }
@@ -68831,10 +68142,10 @@ function mapVersionRow(r) {
   };
 }
 async function recordExport(packageId, exportFormat, userId, exportUrl, fileSize) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const [result] = await db.execute(sql73`
     INSERT INTO reform_package_exports (package_id, export_format, export_url, file_size, created_at, created_by)
-    VALUES (${packageId}, ${exportFormat}, ${exportUrl || null}, ${fileSize || null}, ${now3}, ${userId})
+    VALUES (${packageId}, ${exportFormat}, ${exportUrl || null}, ${fileSize || null}, ${now4}, ${userId})
   `);
   const insertId = result.insertId || 0;
   return {
@@ -68843,7 +68154,7 @@ async function recordExport(packageId, exportFormat, userId, exportUrl, fileSize
     exportFormat,
     exportUrl: exportUrl || null,
     fileSize: fileSize || null,
-    createdAt: now3,
+    createdAt: now4,
     createdBy: userId
   };
 }
@@ -68879,11 +68190,11 @@ async function getExportStats(packageId) {
   return { totalExports, byFormat, lastExport };
 }
 async function recordReformAction(params) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const actionDataStr = JSON.stringify(params.actionData || {});
   const [result] = await db.execute(sql73`
     INSERT INTO reform_strategy_memory (pattern_id, reform_package_id, action_type, action_data, created_at, created_by)
-    VALUES (${params.patternId}, ${params.reformPackageId}, ${params.actionType}, ${actionDataStr}, ${now3}, ${params.userId})
+    VALUES (${params.patternId}, ${params.reformPackageId}, ${params.actionType}, ${actionDataStr}, ${now4}, ${params.userId})
   `);
   const insertId = result.insertId || 0;
   return {
@@ -68894,7 +68205,7 @@ async function recordReformAction(params) {
     actionData: params.actionData || {},
     outcomeFeedback: null,
     effectivenessScore: null,
-    createdAt: now3,
+    createdAt: now4,
     createdBy: params.userId
   };
 }
@@ -69006,7 +68317,7 @@ async function exportWithLogging(packageId, format, userId) {
 // server/routers/reform-package-router.ts
 var reformPackageRouter = router({
   // ── Core CRUD ──────────────────────────────────────────────────────
-  generate: protectedProcedure.input(z61.object({ patternId: z61.string() })).mutation(async ({ input, ctx }) => {
+  generate: protectedProcedure.input(z60.object({ patternId: z60.string() })).mutation(async ({ input, ctx }) => {
     const pkg = await generateReformPackage(input.patternId);
     await recordReformAction({
       patternId: input.patternId,
@@ -69017,18 +68328,18 @@ var reformPackageRouter = router({
     });
     return pkg;
   }),
-  detail: protectedProcedure.input(z61.object({ packageId: z61.string() })).query(async ({ input }) => {
+  detail: protectedProcedure.input(z60.object({ packageId: z60.string() })).query(async ({ input }) => {
     return getReformPackageDetail(input.packageId);
   }),
   dashboard: protectedProcedure.query(async () => {
     return getReformPackageDashboard();
   }),
-  updateStatus: protectedProcedure.input(z61.object({
-    packageId: z61.string(),
-    newStatus: z61.enum(["draft", "review", "submitted", "under_consideration", "adopted", "rejected"]),
-    submittedTo: z61.string().optional(),
-    signalReductionPct: z61.number().optional(),
-    systemicImpactScore: z61.number().optional()
+  updateStatus: protectedProcedure.input(z60.object({
+    packageId: z60.string(),
+    newStatus: z60.enum(["draft", "review", "submitted", "under_consideration", "adopted", "rejected"]),
+    submittedTo: z60.string().optional(),
+    signalReductionPct: z60.number().optional(),
+    systemicImpactScore: z60.number().optional()
   })).mutation(async ({ input, ctx }) => {
     await snapshotPackageVersion(input.packageId, `Status change to ${input.newStatus}`, ctx.user.id.toString());
     await updateReformPackageStatus(input.packageId, input.newStatus, {
@@ -69039,47 +68350,47 @@ var reformPackageRouter = router({
     return { success: true };
   }),
   // ── Export ─────────────────────────────────────────────────────────
-  export: protectedProcedure.input(z61.object({
-    packageId: z61.string(),
-    format: z61.enum(["markdown", "html", "json"])
+  export: protectedProcedure.input(z60.object({
+    packageId: z60.string(),
+    format: z60.enum(["markdown", "html", "json"])
   })).query(async ({ input, ctx }) => {
     return exportWithLogging(input.packageId, input.format, ctx.user.id.toString());
   }),
-  exportHistory: protectedProcedure.input(z61.object({ packageId: z61.string() })).query(async ({ input }) => {
+  exportHistory: protectedProcedure.input(z60.object({ packageId: z60.string() })).query(async ({ input }) => {
     return listExportHistory(input.packageId);
   }),
-  exportStats: protectedProcedure.input(z61.object({ packageId: z61.string() })).query(async ({ input }) => {
+  exportStats: protectedProcedure.input(z60.object({ packageId: z60.string() })).query(async ({ input }) => {
     return getExportStats(input.packageId);
   }),
   // ── Version Tracking ───────────────────────────────────────────────
-  versions: protectedProcedure.input(z61.object({ packageId: z61.string() })).query(async ({ input }) => {
+  versions: protectedProcedure.input(z60.object({ packageId: z60.string() })).query(async ({ input }) => {
     return listPackageVersions(input.packageId);
   }),
-  versionDetail: protectedProcedure.input(z61.object({ packageId: z61.string(), versionNumber: z61.number() })).query(async ({ input }) => {
+  versionDetail: protectedProcedure.input(z60.object({ packageId: z60.string(), versionNumber: z60.number() })).query(async ({ input }) => {
     return getPackageVersion(input.packageId, input.versionNumber);
   }),
-  compareVersions: protectedProcedure.input(z61.object({
-    packageId: z61.string(),
-    versionA: z61.number(),
-    versionB: z61.number()
+  compareVersions: protectedProcedure.input(z60.object({
+    packageId: z60.string(),
+    versionA: z60.number(),
+    versionB: z60.number()
   })).query(async ({ input }) => {
     return compareVersions(input.packageId, input.versionA, input.versionB);
   }),
-  regenerate: protectedProcedure.input(z61.object({ packageId: z61.string() })).mutation(async ({ input, ctx }) => {
+  regenerate: protectedProcedure.input(z60.object({ packageId: z60.string() })).mutation(async ({ input, ctx }) => {
     return regenerateReformPackage(input.packageId, ctx.user.id.toString());
   }),
   // ── Strategy Memory ────────────────────────────────────────────────
-  strategyMemory: protectedProcedure.input(z61.object({ packageId: z61.string() })).query(async ({ input }) => {
+  strategyMemory: protectedProcedure.input(z60.object({ packageId: z60.string() })).query(async ({ input }) => {
     return listPackageStrategyMemory(input.packageId);
   }),
-  strategyEffectiveness: protectedProcedure.input(z61.object({ patternId: z61.string() })).query(async ({ input }) => {
+  strategyEffectiveness: protectedProcedure.input(z60.object({ patternId: z60.string() })).query(async ({ input }) => {
     return getStrategyEffectivenessSummary(input.patternId);
   }),
-  recordAction: protectedProcedure.input(z61.object({
-    patternId: z61.string(),
-    reformPackageId: z61.string(),
-    actionType: z61.string(),
-    actionData: z61.any().optional()
+  recordAction: protectedProcedure.input(z60.object({
+    patternId: z60.string(),
+    reformPackageId: z60.string(),
+    actionType: z60.string(),
+    actionData: z60.any().optional()
   })).mutation(async ({ input, ctx }) => {
     return recordReformAction({
       patternId: input.patternId,
@@ -69089,22 +68400,22 @@ var reformPackageRouter = router({
       userId: ctx.user.id.toString()
     });
   }),
-  updateOutcome: protectedProcedure.input(z61.object({
-    actionId: z61.number(),
-    outcomeFeedback: z61.string(),
-    effectivenessScore: z61.number().min(0).max(100)
+  updateOutcome: protectedProcedure.input(z60.object({
+    actionId: z60.number(),
+    outcomeFeedback: z60.string(),
+    effectivenessScore: z60.number().min(0).max(100)
   })).mutation(async ({ input }) => {
     await updateActionOutcome(input.actionId, input.outcomeFeedback, input.effectivenessScore);
     return { success: true };
   }),
   // ── Reform Pipeline (Lumina spec) ──────────────────────────────────
-  pipelineAction: protectedProcedure.input(z61.object({
-    domain: z61.string(),
-    patternId: z61.string().optional(),
-    signalCount: z61.number().optional(),
-    failureRate: z61.number().min(0).max(1).optional(),
-    geographicSpread: z61.number().min(0).max(57).optional(),
-    recurrenceCount: z61.number().optional()
+  pipelineAction: protectedProcedure.input(z60.object({
+    domain: z60.string(),
+    patternId: z60.string().optional(),
+    signalCount: z60.number().optional(),
+    failureRate: z60.number().min(0).max(1).optional(),
+    geographicSpread: z60.number().min(0).max(57).optional(),
+    recurrenceCount: z60.number().optional()
   })).query(async ({ input }) => {
     return generateReformAction({
       domain: input.domain,
@@ -69115,19 +68426,19 @@ var reformPackageRouter = router({
       recurrenceCount: input.recurrenceCount
     });
   }),
-  pipelineByPattern: protectedProcedure.input(z61.object({ patternId: z61.string() })).query(async ({ input }) => {
+  pipelineByPattern: protectedProcedure.input(z60.object({ patternId: z60.string() })).query(async ({ input }) => {
     return getReformActionByPatternId(input.patternId);
   }),
   allPackagesSummary: protectedProcedure.query(async () => {
     return getAllReformPackagesSummary();
   }),
-  coalitionIntelligence: protectedProcedure.input(z61.object({ domain: z61.string() })).query(async ({ input }) => {
+  coalitionIntelligence: protectedProcedure.input(z60.object({ domain: z60.string() })).query(async ({ input }) => {
     return getCoalitionIntelligence(input.domain);
   })
 });
 
 // server/routers/coalition-advocacy-router.ts
-import { z as z62 } from "zod";
+import { z as z61 } from "zod";
 init_db();
 import { sql as sql75 } from "drizzle-orm";
 
@@ -69210,7 +68521,7 @@ async function matchAdvocacyTargets(patternId, opts) {
   return { targets, coalitions: allCoalitions };
 }
 async function activateCoalition(patternId, coalitionIds, actionType) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const actionIds = [];
   const [patternRows] = await db.execute(
     sql74`SELECT * FROM pattern_registry WHERE pattern_id = ${patternId} LIMIT 1`
@@ -69241,7 +68552,7 @@ async function activateCoalition(patternId, coalitionIds, actionType) {
         recipient_target, packet_generated, response_status, notes, created_at)
       VALUES (${actionId}, ${changeId}, ${orgName}, ${actionType},
         ${pattern?.pattern_name || patternId}, ${false}, 'pending',
-        ${"Coalition activation for pattern " + patternId}, ${now3})
+        ${"Coalition activation for pattern " + patternId}, ${now4})
     `);
   }
   return { actionsCreated: actionIds.length, actionIds };
@@ -69354,21 +68665,21 @@ async function generateAdvocacyPackage(patternId) {
   };
 }
 async function recordAdvocacyOutcome(patternId, coalitionId, outcomeType, description, impactScore) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const outcomeId = genId2("AO");
   if (coalitionId) {
     await db.execute(sql74`
       INSERT INTO advocacy_outcomes (outcome_id, pattern_id, coalition_id, outcome_type,
         description, impact_score, date_occurred, created_at)
       VALUES (${outcomeId}, ${patternId}, ${coalitionId}, ${outcomeType},
-        ${description}, ${impactScore}, ${now3}, ${now3})
+        ${description}, ${impactScore}, ${now4}, ${now4})
     `);
   } else {
     await db.execute(sql74`
       INSERT INTO advocacy_outcomes (outcome_id, pattern_id, outcome_type,
         description, impact_score, date_occurred, created_at)
       VALUES (${outcomeId}, ${patternId}, ${outcomeType},
-        ${description}, ${impactScore}, ${now3}, ${now3})
+        ${description}, ${impactScore}, ${now4}, ${now4})
     `);
   }
   if (impactScore >= 60) {
@@ -69384,7 +68695,7 @@ async function recordAdvocacyOutcome(patternId, coalitionId, outcomeType, descri
         VALUES (${memId}, ${pattern.pattern_type || "advocacy"}, ${pattern.jurisdiction_scope || "national"},
           ${"advocacy_" + outcomeType},
           ${impactScore}, ${Math.min(impactScore, 100)},
-          ${`Auto-recorded from advocacy outcome ${outcomeId}: ${description.substring(0, 200)}`}, ${now3})
+          ${`Auto-recorded from advocacy outcome ${outcomeId}: ${description.substring(0, 200)}`}, ${now4})
       `);
     }
   }
@@ -69439,11 +68750,11 @@ async function getCoalitionDashboard() {
 // server/routers/coalition-advocacy-router.ts
 var coalitionAdvocacyRouter = router({
   // Match advocacy targets for a pattern
-  matchTargets: protectedProcedure.input(z62.object({
-    patternId: z62.string(),
-    jurisdiction: z62.string().optional(),
-    issueDomain: z62.string().optional(),
-    limit: z62.number().optional()
+  matchTargets: protectedProcedure.input(z61.object({
+    patternId: z61.string(),
+    jurisdiction: z61.string().optional(),
+    issueDomain: z61.string().optional(),
+    limit: z61.number().optional()
   })).query(async ({ input }) => {
     return matchAdvocacyTargets(input.patternId, {
       jurisdiction: input.jurisdiction,
@@ -69452,10 +68763,10 @@ var coalitionAdvocacyRouter = router({
     });
   }),
   // Activate coalition outreach
-  activate: protectedProcedure.input(z62.object({
-    patternId: z62.string(),
-    coalitionIds: z62.array(z62.string()),
-    actionType: z62.enum([
+  activate: protectedProcedure.input(z61.object({
+    patternId: z61.string(),
+    coalitionIds: z61.array(z61.string()),
+    actionType: z61.enum([
       "coalition_share",
       "advocacy_outreach",
       "legislator_contact",
@@ -69467,14 +68778,14 @@ var coalitionAdvocacyRouter = router({
     return activateCoalition(input.patternId, input.coalitionIds, input.actionType);
   }),
   // Generate advocacy package
-  generatePackage: protectedProcedure.input(z62.object({ patternId: z62.string() })).mutation(async ({ input }) => {
+  generatePackage: protectedProcedure.input(z61.object({ patternId: z61.string() })).mutation(async ({ input }) => {
     return generateAdvocacyPackage(input.patternId);
   }),
   // Record an advocacy outcome
-  recordOutcome: protectedProcedure.input(z62.object({
-    patternId: z62.string(),
-    coalitionId: z62.string().nullable(),
-    outcomeType: z62.enum([
+  recordOutcome: protectedProcedure.input(z61.object({
+    patternId: z61.string(),
+    coalitionId: z61.string().nullable(),
+    outcomeType: z61.enum([
       "media_coverage",
       "policy_hearing",
       "legislation_introduced",
@@ -69482,8 +68793,8 @@ var coalitionAdvocacyRouter = router({
       "coalition_participation",
       "public_campaign_result"
     ]),
-    description: z62.string(),
-    impactScore: z62.number().min(0).max(100)
+    description: z61.string(),
+    impactScore: z61.number().min(0).max(100)
   })).mutation(async ({ input }) => {
     const outcomeId = await recordAdvocacyOutcome(
       input.patternId,
@@ -69499,9 +68810,9 @@ var coalitionAdvocacyRouter = router({
     return getCoalitionDashboard();
   }),
   // ─── Escalation Route Catalog ─────────────────────────────────────────────
-  escalationRoutes: protectedProcedure.input(z62.object({
-    domain: z62.string().optional(),
-    claimType: z62.string().optional()
+  escalationRoutes: protectedProcedure.input(z61.object({
+    domain: z61.string().optional(),
+    claimType: z61.string().optional()
   })).query(async ({ input }) => {
     let q;
     if (input.domain && input.claimType) {
@@ -69543,9 +68854,9 @@ var coalitionAdvocacyRouter = router({
     }));
   }),
   // ─── Deadline Rule Catalog ────────────────────────────────────────────────
-  deadlineRules: protectedProcedure.input(z62.object({
-    jurisdiction: z62.string().optional(),
-    claimType: z62.string().optional()
+  deadlineRules: protectedProcedure.input(z61.object({
+    jurisdiction: z61.string().optional(),
+    claimType: z61.string().optional()
   })).query(async ({ input }) => {
     let q;
     if (input.jurisdiction && input.claimType) {
@@ -69575,7 +68886,7 @@ var coalitionAdvocacyRouter = router({
 });
 
 // server/routers/evidence-confidence-router.ts
-import { z as z63 } from "zod";
+import { z as z62 } from "zod";
 
 // server/evidence-confidence-engine-service.ts
 init_db();
@@ -69769,40 +69080,40 @@ async function getEvidenceRuleDetail(claimType) {
 }
 
 // server/routers/evidence-confidence-router.ts
-var evidenceItemSchema = z63.object({
-  type: z63.string(),
-  description: z63.string().optional(),
-  source: z63.enum(["first_party", "third_party", "government", "employer", "other"]).optional(),
-  has_contradictions: z63.boolean().optional(),
-  corroborated: z63.boolean().optional()
+var evidenceItemSchema = z62.object({
+  type: z62.string(),
+  description: z62.string().optional(),
+  source: z62.enum(["first_party", "third_party", "government", "employer", "other"]).optional(),
+  has_contradictions: z62.boolean().optional(),
+  corroborated: z62.boolean().optional()
 });
 var evidenceConfidenceRouter = router({
   // Full analysis: scoring + pathfinding + remedy
-  analyze: protectedProcedure.input(z63.object({
-    claimType: z63.string(),
-    evidence: z63.array(evidenceItemSchema)
+  analyze: protectedProcedure.input(z62.object({
+    claimType: z62.string(),
+    evidence: z62.array(evidenceItemSchema)
   })).mutation(async ({ input }) => {
     return analyzeEvidenceConfidence(input.claimType, input.evidence);
   }),
   // Score only
-  calculateScore: protectedProcedure.input(z63.object({
-    claimType: z63.string(),
-    evidence: z63.array(evidenceItemSchema)
+  calculateScore: protectedProcedure.input(z62.object({
+    claimType: z62.string(),
+    evidence: z62.array(evidenceItemSchema)
   })).mutation(async ({ input }) => {
     return calculateEvidenceConfidence(input.claimType, input.evidence);
   }),
   // Strategy path from score
-  getStrategyPath: protectedProcedure.input(z63.object({
-    claimType: z63.string(),
-    confidenceScore: z63.number(),
-    evidenceGaps: z63.array(z63.string())
+  getStrategyPath: protectedProcedure.input(z62.object({
+    claimType: z62.string(),
+    confidenceScore: z62.number(),
+    evidenceGaps: z62.array(z62.string())
   })).query(async ({ input }) => {
     return determineStrategyPath(input.claimType, input.confidenceScore, input.evidenceGaps);
   }),
   // Remedy recommendation from score
-  getRemedy: protectedProcedure.input(z63.object({
-    confidenceScore: z63.number(),
-    claimType: z63.string()
+  getRemedy: protectedProcedure.input(z62.object({
+    confidenceScore: z62.number(),
+    claimType: z62.string()
   })).query(async ({ input }) => {
     return recommendRemedy(input.confidenceScore, input.claimType);
   }),
@@ -69815,13 +69126,13 @@ var evidenceConfidenceRouter = router({
     return getAvailableClaimTypes();
   }),
   // Rule detail
-  ruleDetail: protectedProcedure.input(z63.object({ claimType: z63.string() })).query(async ({ input }) => {
+  ruleDetail: protectedProcedure.input(z62.object({ claimType: z62.string() })).query(async ({ input }) => {
     return getEvidenceRuleDetail(input.claimType);
   })
 });
 
 // server/routers/claim-validation-router.ts
-import { z as z64 } from "zod";
+import { z as z63 } from "zod";
 
 // server/claim-validation-engine-service.ts
 init_db();
@@ -69989,22 +69300,22 @@ async function getClaimElements(claimType) {
 }
 
 // server/routers/claim-validation-router.ts
-var evidenceItemSchema2 = z64.object({
-  type: z64.string(),
-  description: z64.string().optional()
+var evidenceItemSchema2 = z63.object({
+  type: z63.string(),
+  description: z63.string().optional()
 });
 var claimValidationRouter = router({
   // Validate a single claim type
-  validate: protectedProcedure.input(z64.object({
-    claimType: z64.string(),
-    evidence: z64.array(evidenceItemSchema2)
+  validate: protectedProcedure.input(z63.object({
+    claimType: z63.string(),
+    evidence: z63.array(evidenceItemSchema2)
   })).mutation(async ({ input }) => {
     return validateClaim(input.claimType, input.evidence);
   }),
   // Full case analysis across multiple claim types
-  analyzeCase: protectedProcedure.input(z64.object({
-    claimTypes: z64.array(z64.string()),
-    evidence: z64.array(evidenceItemSchema2)
+  analyzeCase: protectedProcedure.input(z63.object({
+    claimTypes: z63.array(z63.string()),
+    evidence: z63.array(evidenceItemSchema2)
   })).mutation(async ({ input }) => {
     return analyzeCaseEvidence(input.claimTypes, input.evidence);
   }),
@@ -70017,66 +69328,66 @@ var claimValidationRouter = router({
     return getAvailableClaimTypesForValidation();
   }),
   // Get elements for a claim type
-  elements: protectedProcedure.input(z64.object({ claimType: z64.string() })).query(async ({ input }) => {
+  elements: protectedProcedure.input(z63.object({ claimType: z63.string() })).query(async ({ input }) => {
     return getClaimElements(input.claimType);
   })
 });
 
 // server/routers/remedy-feasibility-router.ts
-import { z as z65 } from "zod";
-var resourceProfileSchema = z65.object({
-  budget: z65.number(),
-  timeAvailableDays: z65.number(),
-  hasAttorney: z65.boolean(),
-  prerequisitesMet: z65.array(z65.string())
+import { z as z64 } from "zod";
+var resourceProfileSchema = z64.object({
+  budget: z64.number(),
+  timeAvailableDays: z64.number(),
+  hasAttorney: z64.boolean(),
+  prerequisitesMet: z64.array(z64.string())
 });
 var remedyFeasibilityRouter = router({
-  assess: protectedProcedure.input(z65.object({
-    strategyType: z65.string(),
-    evidenceScore: z65.number(),
+  assess: protectedProcedure.input(z64.object({
+    strategyType: z64.string(),
+    evidenceScore: z64.number(),
     resources: resourceProfileSchema,
-    caseId: z65.number()
+    caseId: z64.number()
   })).mutation(async ({ input }) => {
     return await runAction(input.caseId, "assessRemedyFeasibility", input);
   }),
-  compare: protectedProcedure.input(z65.object({
-    strategyTypes: z65.array(z65.string()),
-    evidenceScore: z65.number(),
+  compare: protectedProcedure.input(z64.object({
+    strategyTypes: z64.array(z64.string()),
+    evidenceScore: z64.number(),
     resources: resourceProfileSchema,
-    caseId: z65.number()
+    caseId: z64.number()
   })).mutation(async ({ input }) => {
     return await runAction(input.caseId, "compareRemedyOptions", input);
   }),
-  saveResult: protectedProcedure.input(z65.object({
-    caseId: z65.number(),
-    strategyType: z65.string(),
-    evidenceScore: z65.number(),
+  saveResult: protectedProcedure.input(z64.object({
+    caseId: z64.number(),
+    strategyType: z64.string(),
+    evidenceScore: z64.number(),
     resources: resourceProfileSchema
   })).mutation(async ({ input }) => {
     return await runAction(input.caseId, "saveAssessmentResult", input);
   }),
-  dashboard: protectedProcedure.input(z65.object({ caseId: z65.number() })).query(async ({ input }) => {
+  dashboard: protectedProcedure.input(z64.object({ caseId: z64.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
   availableStrategies: protectedProcedure.query(async () => {
     return { message: "Available strategies through interpretation-service" };
   }),
-  strategyDetail: protectedProcedure.input(z65.object({ strategyId: z65.string(), caseId: z65.number() })).query(async ({ input }) => {
+  strategyDetail: protectedProcedure.input(z64.object({ strategyId: z64.string(), caseId: z64.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  getRiskFactors: protectedProcedure.input(z65.object({ caseId: z65.number() })).query(async ({ input }) => {
+  getRiskFactors: protectedProcedure.input(z64.object({ caseId: z64.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  calculateSuccessProbability: protectedProcedure.input(z65.object({ caseId: z65.number() })).query(async ({ input }) => {
+  calculateSuccessProbability: protectedProcedure.input(z64.object({ caseId: z64.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
-  compareFeasibility: protectedProcedure.input(z65.object({ caseId: z65.number() })).query(async ({ input }) => {
+  compareFeasibility: protectedProcedure.input(z64.object({ caseId: z64.number() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   })
 });
 
 // server/routers/procedural-path-engine-router.ts
-import { z as z66 } from "zod";
+import { z as z65 } from "zod";
 init_db();
 import { sql as sql78 } from "drizzle-orm";
 async function getDistinctClaimTypes() {
@@ -70160,19 +69471,19 @@ async function resolveProceduralPath(claimType, jurisdiction) {
 }
 var proceduralPathEngineRouter = router({
   // Resolve path by claim type + jurisdiction — queries procedural_paths table
-  resolve: protectedProcedure.input(z66.object({
-    claimType: z66.string(),
-    jurisdiction: z66.string(),
-    caseId: z66.number().optional()
+  resolve: protectedProcedure.input(z65.object({
+    claimType: z65.string(),
+    jurisdiction: z65.string(),
+    caseId: z65.number().optional()
   })).query(async ({ input }) => {
     return resolveProceduralPath(input.claimType, input.jurisdiction);
   }),
   // Track progress against a resolved path
-  trackProgress: protectedProcedure.input(z66.object({
-    claimType: z66.string(),
-    jurisdiction: z66.string(),
-    completedStepNumbers: z66.array(z66.number()),
-    caseId: z66.number().optional()
+  trackProgress: protectedProcedure.input(z65.object({
+    claimType: z65.string(),
+    jurisdiction: z65.string(),
+    completedStepNumbers: z65.array(z65.number()),
+    caseId: z65.number().optional()
   })).query(async ({ input }) => {
     const pathData = await resolveProceduralPath(input.claimType, input.jurisdiction);
     if (!pathData) return null;
@@ -70187,37 +69498,37 @@ var proceduralPathEngineRouter = router({
     return { ...pathData, steps, completionPct };
   }),
   // Save result to case
-  saveResult: protectedProcedure.input(z66.object({
-    caseId: z66.number(),
-    claimType: z66.string(),
-    jurisdiction: z66.string()
+  saveResult: protectedProcedure.input(z65.object({
+    caseId: z65.number(),
+    claimType: z65.string(),
+    jurisdiction: z65.string()
   })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.PROCEDURAL_PATH, caseId: input.caseId }, async () => {
       return await runAction(input.caseId, "saveProceduralResult", input);
     });
   }),
   // Dashboard — aggregate stats, no caseId required
-  dashboard: protectedProcedure.input(z66.object({ caseId: z66.number() }).optional()).query(async () => {
+  dashboard: protectedProcedure.input(z65.object({ caseId: z65.number() }).optional()).query(async () => {
     return getProceduralDashboard();
   }),
   // Aliases matching what the UI calls
   claimTypes: protectedProcedure.query(async () => {
     return getDistinctClaimTypes();
   }),
-  jurisdictions: protectedProcedure.input(z66.object({ claimType: z66.string() }).optional()).query(async ({ input }) => {
+  jurisdictions: protectedProcedure.input(z65.object({ claimType: z65.string() }).optional()).query(async ({ input }) => {
     return getDistinctJurisdictions(input?.claimType);
   }),
   // Original names kept for backward compatibility
   availableClaimTypes: protectedProcedure.query(async () => {
     return getDistinctClaimTypes();
   }),
-  availableJurisdictions: protectedProcedure.input(z66.object({ claimType: z66.string() }).optional()).query(async ({ input }) => {
+  availableJurisdictions: protectedProcedure.input(z65.object({ claimType: z65.string() }).optional()).query(async ({ input }) => {
     return getDistinctJurisdictions(input?.claimType);
   })
 });
 
 // server/routers/system-hardening-pipeline-router.ts
-import { z as z67 } from "zod";
+import { z as z66 } from "zod";
 
 // server/system-hardening-pipeline-service.ts
 init_db();
@@ -70653,39 +69964,39 @@ async function getPipelineDashboard() {
 }
 
 // server/routers/system-hardening-pipeline-router.ts
-var resourceProfileSchema2 = z67.object({
-  budget: z67.number(),
-  timeAvailableDays: z67.number(),
-  hasAttorney: z67.boolean(),
-  prerequisitesMet: z67.array(z67.string())
+var resourceProfileSchema2 = z66.object({
+  budget: z66.number(),
+  timeAvailableDays: z66.number(),
+  hasAttorney: z66.boolean(),
+  prerequisitesMet: z66.array(z66.string())
 });
-var evidenceItemSchema3 = z67.object({
-  type: z67.string(),
-  description: z67.string().optional(),
-  source: z67.string().optional(),
-  has_contradictions: z67.boolean().optional(),
-  corroborated: z67.boolean().optional()
+var evidenceItemSchema3 = z66.object({
+  type: z66.string(),
+  description: z66.string().optional(),
+  source: z66.string().optional(),
+  has_contradictions: z66.boolean().optional(),
+  corroborated: z66.boolean().optional()
 });
 var systemHardeningPipelineRouter = router({
   // Execute full pipeline
-  execute: protectedProcedure.input(z67.object({
-    caseId: z67.string(),
-    claimType: z67.string(),
-    jurisdiction: z67.string(),
-    strategyType: z67.string(),
-    evidence: z67.array(evidenceItemSchema3),
+  execute: protectedProcedure.input(z66.object({
+    caseId: z66.string(),
+    claimType: z66.string(),
+    jurisdiction: z66.string(),
+    strategyType: z66.string(),
+    evidence: z66.array(evidenceItemSchema3),
     resources: resourceProfileSchema2
   })).mutation(async ({ input }) => {
     const result = await executePipeline(input);
     return result;
   }),
   // Execute and save pipeline result
-  executeAndSave: protectedProcedure.input(z67.object({
-    caseId: z67.string(),
-    claimType: z67.string(),
-    jurisdiction: z67.string(),
-    strategyType: z67.string(),
-    evidence: z67.array(evidenceItemSchema3),
+  executeAndSave: protectedProcedure.input(z66.object({
+    caseId: z66.string(),
+    claimType: z66.string(),
+    jurisdiction: z66.string(),
+    strategyType: z66.string(),
+    evidence: z66.array(evidenceItemSchema3),
     resources: resourceProfileSchema2
   })).mutation(async ({ input }) => {
     const result = await executePipeline(input);
@@ -70693,11 +70004,11 @@ var systemHardeningPipelineRouter = router({
     return { id, result };
   }),
   // Get pipeline history for a case
-  history: protectedProcedure.input(z67.object({ caseId: z67.string() })).query(async ({ input }) => {
+  history: protectedProcedure.input(z66.object({ caseId: z66.string() })).query(async ({ input }) => {
     return getPipelineHistory(input.caseId);
   }),
   // Get pipeline detail by ID
-  detail: protectedProcedure.input(z67.object({ id: z67.number() })).query(async ({ input }) => {
+  detail: protectedProcedure.input(z66.object({ id: z66.number() })).query(async ({ input }) => {
     return getPipelineDetail2(input.id);
   }),
   // Dashboard
@@ -70717,7 +70028,7 @@ var systemHardeningPipelineRouter = router({
 });
 
 // server/routers/knowledge-health-router.ts
-import { z as z68 } from "zod";
+import { z as z67 } from "zod";
 
 // server/knowledge-freshness-service.ts
 init_db();
@@ -70753,8 +70064,8 @@ var FRESHNESS_CONFIGS = [
 ];
 function calculateFreshnessScore(lastUpdateMs, staleDays) {
   if (!lastUpdateMs) return 0;
-  const now3 = Date.now();
-  const daysSinceUpdate = (now3 - lastUpdateMs) / (1e3 * 60 * 60 * 24);
+  const now4 = Date.now();
+  const daysSinceUpdate = (now4 - lastUpdateMs) / (1e3 * 60 * 60 * 24);
   if (daysSinceUpdate <= 0) return 100;
   if (daysSinceUpdate >= staleDays) return 0;
   return Math.round(100 * (1 - daysSinceUpdate / staleDays));
@@ -70794,7 +70105,7 @@ async function getFreshnessSummary() {
   };
 }
 async function runFreshnessCheck() {
-  const now3 = Date.now();
+  const now4 = Date.now();
   let tablesChecked = 0;
   let tablesUpdated = 0;
   const errors = [];
@@ -70832,7 +70143,7 @@ async function runFreshnessCheck() {
       const staleFlag = freshnessScore < 50;
       await db.execute(sql82.raw(
         `INSERT INTO knowledge_freshness (table_name, display_name, last_update, record_count, freshness_score, stale_flag, stale_days, category_kf, last_checked, created_at_kf, updated_at_kf)
-         VALUES ('${config.tableName}', '${config.displayName}', ${lastUpdate ?? "NULL"}, ${recordCount}, ${freshnessScore}, ${staleFlag ? 1 : 0}, ${config.staleDays}, '${config.category}', ${now3}, ${now3}, ${now3})
+         VALUES ('${config.tableName}', '${config.displayName}', ${lastUpdate ?? "NULL"}, ${recordCount}, ${freshnessScore}, ${staleFlag ? 1 : 0}, ${config.staleDays}, '${config.category}', ${now4}, ${now4}, ${now4})
          ON DUPLICATE KEY UPDATE
            display_name = VALUES(display_name),
            last_update = VALUES(last_update),
@@ -70951,7 +70262,7 @@ function getMissingCategories(counts) {
 }
 async function calculateCoverage() {
   const errors = [];
-  const now3 = Date.now();
+  const now4 = Date.now();
   const coverageMap = /* @__PURE__ */ new Map();
   function ensureCell(jurisdiction, claimType) {
     if (!coverageMap.has(jurisdiction)) coverageMap.set(jurisdiction, /* @__PURE__ */ new Map());
@@ -71108,7 +70419,7 @@ async function calculateCoverage() {
           remedy_templates_count, deadline_rules_count, coverage_score, last_calculated, created_at_kcm, updated_at_kcm)
          VALUES ('${j}', '${c}', ${cell.statuteCount}, ${cell.caseLawCount}, ${cell.agencyCount},
                  ${cell.proceduralCount}, ${cell.evidenceProfilesCount}, ${cell.advocacyTargetsCount},
-                 ${cell.remedyTemplatesCount}, ${cell.deadlineRulesCount}, ${cell.coverageScore}, ${now3}, ${now3}, ${now3})
+                 ${cell.remedyTemplatesCount}, ${cell.deadlineRulesCount}, ${cell.coverageScore}, ${now4}, ${now4}, ${now4})
          ON DUPLICATE KEY UPDATE
            statute_count = VALUES(statute_count),
            case_law_count = VALUES(case_law_count),
@@ -71220,9 +70531,9 @@ var knowledgeHealthRouter = router({
   calculateCoverage: protectedProcedure.mutation(async () => {
     return calculateCoverage();
   }),
-  cellDetail: protectedProcedure.input(z68.object({
-    jurisdiction: z68.string(),
-    claimType: z68.string()
+  cellDetail: protectedProcedure.input(z67.object({
+    jurisdiction: z67.string(),
+    claimType: z67.string()
   })).query(async ({ input }) => {
     return getCellDetail(input.jurisdiction, input.claimType);
   }),
@@ -71294,7 +70605,7 @@ Return a single JSON object. No markdown wrapping. No explanatory text outside t
 });
 
 // server/routers/engines-router.ts
-import { z as z69 } from "zod";
+import { z as z68 } from "zod";
 
 // server/engines/harm-index-service.ts
 init_db();
@@ -71312,7 +70623,7 @@ function normalizeLog(value, maxExpected) {
   return Math.min(100, Math.round(normalized * 100) / 100);
 }
 async function calculateHarmIndex() {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const errors = [];
   let processed = 0;
   try {
@@ -71364,8 +70675,8 @@ async function calculateHarmIndex() {
       const riskClass = classifyRisk(harmScore);
       await db.execute(sql84`
         INSERT INTO harm_index_entities (entity_name, entity_type, first_detected, last_updated, created_at)
-        VALUES (${entityName}, 'unknown', ${now3}, ${now3}, ${now3})
-        ON DUPLICATE KEY UPDATE last_updated = ${now3}
+        VALUES (${entityName}, 'unknown', ${now4}, ${now4}, ${now4})
+        ON DUPLICATE KEY UPDATE last_updated = ${now4}
       `);
       const entityResult = await db.execute(sql84`
         SELECT id FROM harm_index_entities WHERE entity_name = ${entityName} LIMIT 1
@@ -71379,11 +70690,11 @@ async function calculateHarmIndex() {
          systemic_harm_score, risk_classification, calculated_at)
         VALUES (${entityId}, ${complaintCount}, ${litigationCount}, ${signalCount},
                 ${geographicSpread}, ${complaintScore}, ${patternAcceleration},
-                ${harmScore}, ${riskClass}, ${now3})
+                ${harmScore}, ${riskClass}, ${now4})
       `);
       await db.execute(sql84`
         INSERT INTO harm_index_history (entity_id, systemic_harm_score, risk_classification, timestamp)
-        VALUES (${entityId}, ${harmScore}, ${riskClass}, ${now3})
+        VALUES (${entityId}, ${harmScore}, ${riskClass}, ${now4})
       `);
       processed++;
     }
@@ -71458,7 +70769,7 @@ init_db();
 init_signal_governance();
 import { sql as sql85 } from "drizzle-orm";
 async function runLitigationCorrelation() {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const errors = [];
   let totalSignalsChecked = 0;
   let matchesFound = 0;
@@ -71500,7 +70811,7 @@ async function runLitigationCorrelation() {
             const reason = exactMatch ? `Exact entity name match: "${entityName}" found in litigation registry` : `Partial entity name match: signal "${entityName}" correlates with litigation "${lit.entity_name}"`;
             await db.execute(sql85`
               INSERT INTO entity_litigation_links (entity_id, litigation_id, confidence_score, link_reason, created_at)
-              VALUES (${signal.id}, ${lit.id}, ${confidence}, ${reason}, ${now3})
+              VALUES (${signal.id}, ${lit.id}, ${confidence}, ${reason}, ${now4})
             `);
             newLinksCreated++;
           }
@@ -71591,7 +70902,7 @@ function classifyForecastRisk(score) {
   return "Stable";
 }
 async function generateRiskForecasts(horizonDays = 30) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const errors = [];
   let processed = 0;
   try {
@@ -71605,8 +70916,8 @@ async function generateRiskForecasts(horizonDays = 30) {
       ORDER BY s.systemic_harm_score DESC
       LIMIT 200
     `);
-    const thirtyDaysAgo = now3 - 30 * 24 * 60 * 60 * 1e3;
-    const sixtyDaysAgo = now3 - 60 * 24 * 60 * 60 * 1e3;
+    const thirtyDaysAgo = now4 - 30 * 24 * 60 * 60 * 1e3;
+    const sixtyDaysAgo = now4 - 60 * 24 * 60 * 60 * 1e3;
     for (const entity of entities3[0]) {
       const entityName = entity.entity_name;
       const currentHarmScore = Number(entity.systemic_harm_score) || 0;
@@ -71643,16 +70954,16 @@ async function generateRiskForecasts(horizonDays = 30) {
         (pattern_id, forecast_date, forecast_horizon_days, predicted_signal_growth,
          predicted_pressure_index, predicted_geographic_spread, predicted_entity_count,
          risk_forecast_score, confidence_level, created_at)
-        VALUES (NULL, ${now3}, ${horizonDays}, ${signalGrowth},
+        VALUES (NULL, ${now4}, ${horizonDays}, ${signalGrowth},
                 ${complaintAcceleration}, ${geoSpread}, ${recentCount},
-                ${forecastScore}, ${confidenceLevel}, ${now3})
+                ${forecastScore}, ${confidenceLevel}, ${now4})
       `);
       await db.execute(sql86`
         INSERT INTO entity_risk_projection 
         (entity_id, entity_name, industry_sector, current_harm_score, 
          predicted_harm_score, risk_category, projection_horizon_days, created_at)
         VALUES (${entity.id}, ${entityName}, ${entity.industry_sector},
-                ${currentHarmScore}, ${predictedHarmScore}, ${riskCategory}, ${horizonDays}, ${now3})
+                ${currentHarmScore}, ${predictedHarmScore}, ${riskCategory}, ${horizonDays}, ${now4})
       `);
       processed++;
     }
@@ -71707,7 +71018,7 @@ async function getRiskForecastSummary() {
 init_db();
 import { sql as sql87 } from "drizzle-orm";
 async function generateHarmMap() {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const errors = [];
   let nodesCreated = 0;
   let edgesCreated = 0;
@@ -71730,7 +71041,7 @@ async function generateHarmMap() {
         INSERT INTO harm_map_nodes 
         (node_type, node_label, entity_id, jurisdiction, industry_sector, harm_score, risk_score, status, created_at)
         VALUES ('entity', ${entity.entity_name}, ${entity.id}, ${entity.jurisdiction}, 
-                ${entity.industry_sector}, ${harmScore}, ${harmScore}, 'active', ${now3})
+                ${entity.industry_sector}, ${harmScore}, ${harmScore}, 'active', ${now4})
       `);
       const nodeResult = await db.execute(sql87`SELECT LAST_INSERT_ID() as id`);
       const nodeId = nodeResult[0][0]?.id;
@@ -71748,7 +71059,7 @@ async function generateHarmMap() {
       await db.execute(sql87`
         INSERT INTO harm_map_nodes 
         (node_type, node_label, jurisdiction, harm_score, risk_score, status, created_at)
-        VALUES ('jurisdiction', ${j.jurisdiction}, ${j.jurisdiction}, 0, 0, 'active', ${now3})
+        VALUES ('jurisdiction', ${j.jurisdiction}, ${j.jurisdiction}, 0, 0, 'active', ${now4})
       `);
       const nodeResult = await db.execute(sql87`SELECT LAST_INSERT_ID() as id`);
       const nodeId = nodeResult[0][0]?.id;
@@ -71766,7 +71077,7 @@ async function generateHarmMap() {
       await db.execute(sql87`
         INSERT INTO harm_map_nodes 
         (node_type, node_label, industry_sector, harm_score, risk_score, status, created_at)
-        VALUES ('industry', ${ind.industry_sector}, ${ind.industry_sector}, 0, 0, 'active', ${now3})
+        VALUES ('industry', ${ind.industry_sector}, ${ind.industry_sector}, 0, 0, 'active', ${now4})
       `);
       const nodeResult = await db.execute(sql87`SELECT LAST_INSERT_ID() as id`);
       const nodeId = nodeResult[0][0]?.id;
@@ -71783,7 +71094,7 @@ async function generateHarmMap() {
       await db.execute(sql87`
         INSERT INTO harm_map_edges 
         (source_node_id, target_node_id, relationship_type, strength_score, evidence_count, created_at)
-        VALUES (${entityNodeId}, ${jurisdictionNodeId}, 'shared_jurisdiction', 50, 1, ${now3})
+        VALUES (${entityNodeId}, ${jurisdictionNodeId}, 'shared_jurisdiction', 50, 1, ${now4})
       `);
       edgesCreated++;
     }
@@ -71795,7 +71106,7 @@ async function generateHarmMap() {
       await db.execute(sql87`
         INSERT INTO harm_map_edges 
         (source_node_id, target_node_id, relationship_type, strength_score, evidence_count, created_at)
-        VALUES (${entityNodeId}, ${industryNodeId}, 'shared_industry', 50, 1, ${now3})
+        VALUES (${entityNodeId}, ${industryNodeId}, 'shared_industry', 50, 1, ${now4})
       `);
       edgesCreated++;
     }
@@ -71821,7 +71132,7 @@ async function generateHarmMap() {
       await db.execute(sql87`
         INSERT INTO harm_map_edges 
         (source_node_id, target_node_id, relationship_type, strength_score, evidence_count, created_at)
-        VALUES (${sourceId}, ${targetId}, 'litigation_link', ${Number(link.confidence_score) * 100 || 50}, 1, ${now3})
+        VALUES (${sourceId}, ${targetId}, 'litigation_link', ${Number(link.confidence_score) * 100 || 50}, 1, ${now4})
       `);
       edgesCreated++;
     }
@@ -71830,9 +71141,9 @@ async function generateHarmMap() {
     await db.execute(sql87`
       INSERT INTO harm_map_snapshots 
       (snapshot_date, node_count, edge_count, top_risk_sectors, top_harm_entities, summary, created_at)
-      VALUES (${now3}, ${nodesCreated}, ${edgesCreated}, 
+      VALUES (${now4}, ${nodesCreated}, ${edgesCreated}, 
               ${JSON.stringify(topSectors)}, ${JSON.stringify(topEntities)},
-              ${`Generated ${nodesCreated} nodes and ${edgesCreated} edges`}, ${now3})
+              ${`Generated ${nodesCreated} nodes and ${edgesCreated} edges`}, ${now4})
     `);
   } catch (err) {
     errors.push(err.message || "Unknown error during harm map generation");
@@ -71917,7 +71228,7 @@ var CLAIM_TYPES = [
   "government_benefits"
 ];
 async function startIntakeSession(userId, rawStory) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const systemPrompt = `You are a legal intake specialist. Analyze the user's story and identify:
 1. The most likely jurisdiction (state/federal)
 2. Up to 3 potential legal claim types from this list: ${CLAIM_TYPES.join(", ")}
@@ -72013,7 +71324,7 @@ Respond in JSON format:
     INSERT INTO problem_intake_sessions 
     (user_id, raw_story, jurisdiction_guess, claim_candidates, confidence_score, status, created_at, updated_at)
     VALUES (${userId}, ${rawStory}, ${jurisdictionGuess}, 
-            ${JSON.stringify(claimCandidates)}, ${overallConfidence}, 'analyzed', ${now3}, ${now3})
+            ${JSON.stringify(claimCandidates)}, ${overallConfidence}, 'analyzed', ${now4}, ${now4})
   `);
   const sessionResult = await db.execute(sql88`SELECT LAST_INSERT_ID() as id`);
   const sessionId = sessionResult[0][0]?.id;
@@ -72022,7 +71333,7 @@ Respond in JSON format:
       INSERT INTO interpreter_claim_matches 
       (session_id, claim_type, confidence_score, reasoning_summary, supporting_keywords, created_at)
       VALUES (${sessionId}, ${claim.claimType}, ${claim.confidence}, 
-              ${claim.reasoning}, ${JSON.stringify(claim.supportingKeywords)}, ${now3})
+              ${claim.reasoning}, ${JSON.stringify(claim.supportingKeywords)}, ${now4})
     `);
   }
   return {
@@ -72033,7 +71344,7 @@ Respond in JSON format:
     selectedClaim: null,
     confidenceScore: overallConfidence,
     status: "analyzed",
-    createdAt: now3
+    createdAt: now4
   };
 }
 async function getClarifyingQuestions(claimType) {
@@ -72171,9 +71482,9 @@ init_db();
 import { sql as sql89 } from "drizzle-orm";
 import crypto6 from "crypto";
 async function generateShareableLink(caseId2, generatedBy, accessLevel = "summary", expiresInDays = 30, permissions = {}) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const token = crypto6.randomBytes(32).toString("hex");
-  const expiresAt = expiresInDays ? now3 + expiresInDays * 24 * 60 * 60 * 1e3 : null;
+  const expiresAt = expiresInDays ? now4 + expiresInDays * 24 * 60 * 60 * 1e3 : null;
   const perms = {
     allowEvidence: permissions.allowEvidence ?? false,
     allowNames: permissions.allowNames ?? true,
@@ -72184,7 +71495,7 @@ async function generateShareableLink(caseId2, generatedBy, accessLevel = "summar
   await db.execute(sql89`
     INSERT INTO shareable_case_links 
     (case_id, generated_by, access_level, token, expires_at, view_count, created_at)
-    VALUES (${caseId2}, ${generatedBy}, ${accessLevel}, ${token}, ${expiresAt}, 0, ${now3})
+    VALUES (${caseId2}, ${generatedBy}, ${accessLevel}, ${token}, ${expiresAt}, 0, ${now4})
   `);
   const linkResult = await db.execute(sql89`SELECT LAST_INSERT_ID() as id`);
   const linkId = linkResult[0][0]?.id;
@@ -72192,7 +71503,7 @@ async function generateShareableLink(caseId2, generatedBy, accessLevel = "summar
     INSERT INTO case_share_permissions 
     (case_id, allow_evidence, allow_names, allow_financials, allow_documents, allow_pattern_links, created_at)
     VALUES (${caseId2}, ${perms.allowEvidence}, ${perms.allowNames}, ${perms.allowFinancials}, 
-            ${perms.allowDocuments}, ${perms.allowPatternLinks}, ${now3})
+            ${perms.allowDocuments}, ${perms.allowPatternLinks}, ${now4})
   `);
   return {
     id: linkId,
@@ -72201,13 +71512,13 @@ async function generateShareableLink(caseId2, generatedBy, accessLevel = "summar
     accessLevel,
     expiresAt,
     viewCount: 0,
-    createdAt: now3,
+    createdAt: now4,
     lastViewedAt: null,
     permissions: perms
   };
 }
 async function accessSharedCase(token, viewerIp = null, viewerUserAgent = null) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const linkResult = await db.execute(sql89`
     SELECT id, case_id, access_level, expires_at, view_count
     FROM shareable_case_links
@@ -72216,7 +71527,7 @@ async function accessSharedCase(token, viewerIp = null, viewerUserAgent = null) 
   `);
   const link = linkResult[0][0];
   if (!link) return { error: "Invalid or expired link" };
-  if (link.expires_at && Number(link.expires_at) < now3) {
+  if (link.expires_at && Number(link.expires_at) < now4) {
     return { error: "This link has expired" };
   }
   const permResult = await db.execute(sql89`
@@ -72267,11 +71578,11 @@ async function accessSharedCase(token, viewerIp = null, viewerUserAgent = null) 
   }
   await db.execute(sql89`
     INSERT INTO shareable_case_views (link_id, viewer_ip, viewer_user_agent, viewer_type, viewed_at)
-    VALUES (${link.id}, ${viewerIp}, ${viewerUserAgent}, 'external', ${now3})
+    VALUES (${link.id}, ${viewerIp}, ${viewerUserAgent}, 'external', ${now4})
   `);
   await db.execute(sql89`
     UPDATE shareable_case_links 
-    SET view_count = view_count + 1, last_viewed_at = ${now3}
+    SET view_count = view_count + 1, last_viewed_at = ${now4}
     WHERE id = ${link.id}
   `);
   return {
@@ -72312,12 +71623,12 @@ async function revokeShareableLink(linkId) {
   return true;
 }
 async function getShareAnalytics(caseId2) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const links = await db.execute(sql89`
     SELECT id, expires_at, view_count FROM shareable_case_links WHERE case_id = ${caseId2}
   `);
   const totalLinks = links[0].length;
-  const activeLinks = links[0].filter((l) => !l.expires_at || Number(l.expires_at) > now3).length;
+  const activeLinks = links[0].filter((l) => !l.expires_at || Number(l.expires_at) > now4).length;
   const totalViews = links[0].reduce((sum, l) => sum + (Number(l.view_count) || 0), 0);
   const recentViews = await db.execute(sql89`
     SELECT sv.viewed_at, sv.viewer_type, sv.viewer_ip, scl.access_level
@@ -72343,7 +71654,7 @@ async function getShareAnalytics(caseId2) {
 init_db();
 import { sql as sql90 } from "drizzle-orm";
 async function findMatchingAttorneys(request) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const attorneys = await db.execute(sql90`
     SELECT id, name, firm_name, bar_number, jurisdiction, practice_areas,
            years_experience, accepts_contingency, accepts_pro_bono, accepts_new_clients,
@@ -72403,14 +71714,14 @@ async function findMatchingAttorneys(request) {
       (case_id, attorney_id, match_score, practice_match_score, jurisdiction_match_score,
        damages_match_score, pattern_match_score, created_at)
       VALUES (${request.caseId}, ${attorney.id}, ${matchScore}, ${practiceMatchScore},
-              ${jurisdictionMatchScore}, ${damagesMatchScore}, ${patternMatchScore}, ${now3})
+              ${jurisdictionMatchScore}, ${damagesMatchScore}, ${patternMatchScore}, ${now4})
     `);
   }
   matches.sort((a, b) => b.matchScore - a.matchScore);
   return matches.slice(0, 10);
 }
 async function addAttorney(attorney) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.execute(sql90`
     INSERT INTO attorney_registry 
     (name, firm_name, bar_number, jurisdiction, practice_areas, years_experience,
@@ -72418,7 +71729,7 @@ async function addAttorney(attorney) {
     VALUES (${attorney.name}, ${attorney.firmName}, ${attorney.barNumber}, ${attorney.jurisdiction},
             ${JSON.stringify(attorney.practiceAreas)}, ${attorney.yearsExperience},
             ${attorney.acceptsContingency}, ${attorney.acceptsProBono}, ${attorney.acceptsNewClients},
-            ${attorney.contactEmail}, ${attorney.website}, ${now3})
+            ${attorney.contactEmail}, ${attorney.website}, ${now4})
   `);
   const result = await db.execute(sql90`SELECT LAST_INSERT_ID() as id`);
   return result[0][0]?.id;
@@ -72447,14 +71758,14 @@ async function getAttorneyRegistry() {
   }));
 }
 async function recordOutcome3(caseId2, attorneyId, outcome) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.execute(sql90`
     INSERT INTO attorney_outcomes 
     (case_id, attorney_id, contact_made, representation_accepted, representation_declined,
      case_result, settlement_amount, created_at)
     VALUES (${caseId2}, ${attorneyId}, ${outcome.contactMade ?? false}, 
             ${outcome.representationAccepted ?? false}, ${outcome.representationDeclined ?? false},
-            ${outcome.caseResult ?? null}, ${outcome.settlementAmount ?? null}, ${now3})
+            ${outcome.caseResult ?? null}, ${outcome.settlementAmount ?? null}, ${now4})
   `);
 }
 async function getMatchAnalytics() {
@@ -72491,7 +71802,7 @@ var enginesRouter = router({
     getSummary: protectedProcedure.query(async () => {
       return await getHarmIndexSummary();
     }),
-    getEntityHistory: protectedProcedure.input(z69.object({ entityId: z69.number() })).query(async ({ input }) => {
+    getEntityHistory: protectedProcedure.input(z68.object({ entityId: z68.number() })).query(async ({ input }) => {
       return await getEntityHarmHistory(input.entityId);
     })
   }),
@@ -72502,7 +71813,7 @@ var enginesRouter = router({
         return await runLitigationCorrelation();
       });
     }),
-    getEntityMatches: protectedProcedure.input(z69.object({ entityName: z69.string() })).query(async ({ input }) => {
+    getEntityMatches: protectedProcedure.input(z68.object({ entityName: z68.string() })).query(async ({ input }) => {
       return await getEntityLitigationMatches(input.entityName);
     }),
     getSummary: protectedProcedure.query(async () => {
@@ -72511,7 +71822,7 @@ var enginesRouter = router({
   }),
   // ─── Engine 3: Systemic Risk Forecast ───
   riskForecast: router({
-    generate: protectedProcedure.input(z69.object({ horizonDays: z69.number().default(30) }).optional()).mutation(async ({ input }) => {
+    generate: protectedProcedure.input(z68.object({ horizonDays: z68.number().default(30) }).optional()).mutation(async ({ input }) => {
       return withEngineTracking({ engineId: ENGINE_IDS.RISK_FORECAST, caseId: 0 }, async () => {
         return await generateRiskForecasts(input?.horizonDays ?? 30);
       });
@@ -72533,36 +71844,36 @@ var enginesRouter = router({
   }),
   // ─── Engine 5: Problem Interpreter / Front Door ───
   interpreter: router({
-    startSession: protectedProcedure.input(z69.object({ story: z69.string().min(10) })).mutation(async ({ ctx, input }) => {
+    startSession: protectedProcedure.input(z68.object({ story: z68.string().min(10) })).mutation(async ({ ctx, input }) => {
       return withEngineTracking({ engineId: ENGINE_IDS.PROBLEM_INTERPRETER, caseId: 0, userId: ctx.user?.id }, async () => {
         return await startIntakeSession(ctx.user.id, input.story);
       });
     }),
-    getSession: protectedProcedure.input(z69.object({ sessionId: z69.number() })).query(async ({ input }) => {
+    getSession: protectedProcedure.input(z68.object({ sessionId: z68.number() })).query(async ({ input }) => {
       return await getIntakeSession(input.sessionId);
     }),
     getMySessions: protectedProcedure.query(async ({ ctx }) => {
       return await getUserSessions(ctx.user.id);
     }),
-    getClarifyingQuestions: protectedProcedure.input(z69.object({ claimType: z69.string() })).query(async ({ input }) => {
+    getClarifyingQuestions: protectedProcedure.input(z68.object({ claimType: z68.string() })).query(async ({ input }) => {
       return await getClarifyingQuestions(input.claimType);
     }),
-    getEvidenceGuidance: protectedProcedure.input(z69.object({ claimType: z69.string() })).query(async ({ input }) => {
+    getEvidenceGuidance: protectedProcedure.input(z68.object({ claimType: z68.string() })).query(async ({ input }) => {
       return await getEvidenceGuidance(input.claimType);
     })
   }),
   // ─── Engine 6: Case Link / Shareable Case ───
   caseLink: router({
-    generate: protectedProcedure.input(z69.object({
-      caseId: z69.number(),
-      accessLevel: z69.string().default("summary"),
-      expiresInDays: z69.number().nullable().default(30),
-      permissions: z69.object({
-        allowEvidence: z69.boolean().default(false),
-        allowNames: z69.boolean().default(true),
-        allowFinancials: z69.boolean().default(false),
-        allowDocuments: z69.boolean().default(false),
-        allowPatternLinks: z69.boolean().default(true)
+    generate: protectedProcedure.input(z68.object({
+      caseId: z68.number(),
+      accessLevel: z68.string().default("summary"),
+      expiresInDays: z68.number().nullable().default(30),
+      permissions: z68.object({
+        allowEvidence: z68.boolean().default(false),
+        allowNames: z68.boolean().default(true),
+        allowFinancials: z68.boolean().default(false),
+        allowDocuments: z68.boolean().default(false),
+        allowPatternLinks: z68.boolean().default(true)
       }).optional()
     })).mutation(async ({ ctx, input }) => {
       return withEngineTracking({ engineId: ENGINE_IDS.CASE_LINK, caseId: input.caseId, userId: ctx.user?.id }, async () => {
@@ -72575,49 +71886,49 @@ var enginesRouter = router({
         );
       });
     }),
-    access: publicProcedure.input(z69.object({ token: z69.string() })).query(async ({ input, ctx }) => {
+    access: publicProcedure.input(z68.object({ token: z68.string() })).query(async ({ input, ctx }) => {
       const ip = ctx.req?.ip || null;
       const ua = ctx.req?.headers?.["user-agent"] || null;
       return await accessSharedCase(input.token, ip, ua);
     }),
-    getCaseLinks: protectedProcedure.input(z69.object({ caseId: z69.number() })).query(async ({ input }) => {
+    getCaseLinks: protectedProcedure.input(z68.object({ caseId: z68.number() })).query(async ({ input }) => {
       return await getCaseShareLinks(input.caseId);
     }),
-    revoke: protectedProcedure.input(z69.object({ linkId: z69.number() })).mutation(async ({ input }) => {
+    revoke: protectedProcedure.input(z68.object({ linkId: z68.number() })).mutation(async ({ input }) => {
       return withEngineTracking({ engineId: ENGINE_IDS.CASE_LINK, caseId: 0 }, async () => {
         return await revokeShareableLink(input.linkId);
       });
     }),
-    getAnalytics: protectedProcedure.input(z69.object({ caseId: z69.number() })).query(async ({ input }) => {
+    getAnalytics: protectedProcedure.input(z68.object({ caseId: z68.number() })).query(async ({ input }) => {
       return await getShareAnalytics(input.caseId);
     })
   }),
   // ─── Engine 7: Attorney Match ───
   attorneyMatch: router({
-    findMatches: protectedProcedure.input(z69.object({
-      caseId: z69.number(),
-      claimType: z69.string(),
-      jurisdiction: z69.string(),
-      estimatedDamages: z69.number().optional(),
-      needsContingency: z69.boolean().optional(),
-      needsProBono: z69.boolean().optional()
+    findMatches: protectedProcedure.input(z68.object({
+      caseId: z68.number(),
+      claimType: z68.string(),
+      jurisdiction: z68.string(),
+      estimatedDamages: z68.number().optional(),
+      needsContingency: z68.boolean().optional(),
+      needsProBono: z68.boolean().optional()
     })).mutation(async ({ input }) => {
       return withEngineTracking({ engineId: ENGINE_IDS.ATTORNEY_MATCH, caseId: input.caseId }, async () => {
         return await findMatchingAttorneys(input);
       });
     }),
-    addAttorney: protectedProcedure.input(z69.object({
-      name: z69.string(),
-      firmName: z69.string().nullable().optional(),
-      barNumber: z69.string().nullable().optional(),
-      jurisdiction: z69.string().nullable().optional(),
-      practiceAreas: z69.array(z69.string()).default([]),
-      yearsExperience: z69.number().default(0),
-      acceptsContingency: z69.boolean().default(false),
-      acceptsProBono: z69.boolean().default(false),
-      acceptsNewClients: z69.boolean().default(true),
-      contactEmail: z69.string().nullable().optional(),
-      website: z69.string().nullable().optional()
+    addAttorney: protectedProcedure.input(z68.object({
+      name: z68.string(),
+      firmName: z68.string().nullable().optional(),
+      barNumber: z68.string().nullable().optional(),
+      jurisdiction: z68.string().nullable().optional(),
+      practiceAreas: z68.array(z68.string()).default([]),
+      yearsExperience: z68.number().default(0),
+      acceptsContingency: z68.boolean().default(false),
+      acceptsProBono: z68.boolean().default(false),
+      acceptsNewClients: z68.boolean().default(true),
+      contactEmail: z68.string().nullable().optional(),
+      website: z68.string().nullable().optional()
     })).mutation(async ({ input }) => {
       return withEngineTracking({ engineId: ENGINE_IDS.ATTORNEY_MATCH, caseId: 0 }, async () => {
         return await addAttorney({
@@ -72633,14 +71944,14 @@ var enginesRouter = router({
     getRegistry: protectedProcedure.query(async () => {
       return await getAttorneyRegistry();
     }),
-    recordOutcome: protectedProcedure.input(z69.object({
-      caseId: z69.number(),
-      attorneyId: z69.number(),
-      contactMade: z69.boolean().optional(),
-      representationAccepted: z69.boolean().optional(),
-      representationDeclined: z69.boolean().optional(),
-      caseResult: z69.string().optional(),
-      settlementAmount: z69.number().optional()
+    recordOutcome: protectedProcedure.input(z68.object({
+      caseId: z68.number(),
+      attorneyId: z68.number(),
+      contactMade: z68.boolean().optional(),
+      representationAccepted: z68.boolean().optional(),
+      representationDeclined: z68.boolean().optional(),
+      caseResult: z68.string().optional(),
+      settlementAmount: z68.number().optional()
     })).mutation(async ({ input }) => {
       return withEngineTracking({ engineId: ENGINE_IDS.ATTORNEY_MATCH, caseId: input.caseId }, async () => {
         await recordOutcome3(input.caseId, input.attorneyId, input);
@@ -72654,7 +71965,7 @@ var enginesRouter = router({
 });
 
 // server/routers/case-pattern-bridge-router.ts
-import { z as z70 } from "zod";
+import { z as z69 } from "zod";
 
 // server/case-pattern-bridge.ts
 init_db();
@@ -72862,7 +72173,7 @@ function extractSignalsFromCase(data) {
 }
 async function storeCaseSignals(caseId2, userId, signals) {
   if (signals.length === 0) return [];
-  const now3 = Date.now();
+  const now4 = Date.now();
   const insertedIds = [];
   for (const sig of signals) {
     const [result] = await db.insert(caseSignals).values({
@@ -72888,8 +72199,8 @@ async function storeCaseSignals(caseId2, userId, signals) {
       sourceFindingIds: sig.sourceFindingIds.length > 0 ? sig.sourceFindingIds : null,
       sourceSignalFlagIds: sig.sourceSignalFlagIds.length > 0 ? sig.sourceSignalFlagIds : null,
       active: 1,
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     insertedIds.push(result.insertId);
   }
@@ -72899,7 +72210,7 @@ async function evaluatePatternCandidates(newSignals, caseId2) {
   let candidatesCreated = 0;
   let candidatesStrengthened = 0;
   let candidatesPromoted = 0;
-  const now3 = Date.now();
+  const now4 = Date.now();
   for (const signal of newSignals) {
     const matchKey = buildMatchKey(signal);
     if (!matchKey) continue;
@@ -72912,19 +72223,19 @@ async function evaluatePatternCandidates(newSignals, caseId2) {
         signalCount: newSignalCount,
         caseCount: newCaseCount,
         confidenceScore: String(newConfidence),
-        lastSignalAt: now3,
-        updatedAt: now3
+        lastSignalAt: now4,
+        updatedAt: now4
       }).where(eq46(patternCandidates.id, existingCandidate.id));
       await db.insert(casePatternLinks).values({
         caseId: caseId2,
         patternCandidateId: existingCandidate.id,
         caseSignalId: signal.id,
         contributionType: "supporting",
-        linkedAt: now3
-      }).onDuplicateKeyUpdate({ set: { linkedAt: now3 } });
+        linkedAt: now4
+      }).onDuplicateKeyUpdate({ set: { linkedAt: now4 } });
       await db.update(caseSignals).set({
         patternCandidateId: existingCandidate.id,
-        updatedAt: now3
+        updatedAt: now4
       }).where(eq46(caseSignals.id, signal.id));
       candidatesStrengthened++;
       if (existingCandidate.patternStatus === "candidate" && newSignalCount >= existingCandidate.confirmationThreshold) {
@@ -72953,24 +72264,24 @@ async function evaluatePatternCandidates(newSignals, caseId2) {
           evidenceStrength: String(signal.evidenceStrength),
           geographicSpread: 1,
           timeSpanDays: 0,
-          firstSignalAt: now3,
-          lastSignalAt: now3,
+          firstSignalAt: now4,
+          lastSignalAt: now4,
           promotionThreshold: 3,
           confirmationThreshold: 5,
           timeWindowDays: 90,
-          createdAt: now3,
-          updatedAt: now3
+          createdAt: now4,
+          updatedAt: now4
         });
         await db.insert(casePatternLinks).values({
           caseId: caseId2,
           patternCandidateId: result.insertId,
           caseSignalId: signal.id,
           contributionType: "originating",
-          linkedAt: now3
-        }).onDuplicateKeyUpdate({ set: { linkedAt: now3 } });
+          linkedAt: now4
+        }).onDuplicateKeyUpdate({ set: { linkedAt: now4 } });
         await db.update(caseSignals).set({
           patternCandidateId: result.insertId,
-          updatedAt: now3
+          updatedAt: now4
         }).where(eq46(caseSignals.id, signal.id));
         candidatesCreated++;
       }
@@ -72979,7 +72290,7 @@ async function evaluatePatternCandidates(newSignals, caseId2) {
   return { candidatesCreated, candidatesStrengthened, candidatesPromoted };
 }
 async function promoteCandidate(candidateDbId, candidateUuid) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const patternId = randomUUID10();
   try {
     const [candidate] = await db.select().from(patternCandidates).where(eq46(patternCandidates.id, candidateDbId));
@@ -72995,8 +72306,8 @@ async function promoteCandidate(candidateDbId, candidateUuid) {
       confidenceScore: Math.round(Number(candidate.confidenceScore) * 100),
       jurisdictionScope: candidate.jurisdiction,
       firstDetected: candidate.firstSignalAt,
-      lastConfirmed: now3,
-      lastUpdated: now3,
+      lastConfirmed: now4,
+      lastUpdated: now4,
       signalCount: candidate.signalCount,
       uniqueEntitiesCount: candidate.entityName ? 1 : 0,
       geographicSpread: candidate.geographicSpread || 1,
@@ -73008,13 +72319,13 @@ async function promoteCandidate(candidateDbId, candidateUuid) {
         caseCount: candidate.caseCount,
         evidenceStrength: Number(candidate.evidenceStrength)
       },
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     await db.update(patternCandidates).set({
       patternStatus: "active",
       promotedPatternId: patternId,
-      updatedAt: now3
+      updatedAt: now4
     }).where(eq46(patternCandidates.id, candidateDbId));
     await db.update(casePatternLinks).set({
       patternRegistryId: patternId
@@ -73193,16 +72504,16 @@ init_governance_hooks();
 import { eq as eq47, sql as sql92 } from "drizzle-orm";
 var casePatternBridgeRouter = router({
   // Run the full bridge pipeline for a case
-  runBridge: protectedProcedure.input(z70.object({ caseId: z70.number() })).mutation(async ({ ctx, input }) => {
+  runBridge: protectedProcedure.input(z69.object({ caseId: z69.number() })).mutation(async ({ ctx, input }) => {
     const result = await runCasePatternBridge(input.caseId, ctx.user.id);
     return result;
   }),
   // Get all signals extracted from a specific case
-  getCaseSignals: protectedProcedure.input(z70.object({ caseId: z70.number() })).query(async ({ input }) => {
+  getCaseSignals: protectedProcedure.input(z69.object({ caseId: z69.number() })).query(async ({ input }) => {
     return getCaseSignals(input.caseId);
   }),
   // Get all pattern candidates linked to a specific case
-  getCasePatterns: protectedProcedure.input(z70.object({ caseId: z70.number() })).query(async ({ input }) => {
+  getCasePatterns: protectedProcedure.input(z69.object({ caseId: z69.number() })).query(async ({ input }) => {
     return getCasePatterns(input.caseId);
   }),
   // Get the pattern candidate dashboard (all candidates with stats)
@@ -73210,15 +72521,15 @@ var casePatternBridgeRouter = router({
     return getPatternCandidateDashboard();
   }),
   // Get cases supporting a specific pattern candidate
-  supportingCases: protectedProcedure.input(z70.object({ candidateId: z70.number() })).query(async ({ input }) => {
+  supportingCases: protectedProcedure.input(z69.object({ candidateId: z69.number() })).query(async ({ input }) => {
     return getPatternSupportingCases(input.candidateId);
   }),
   // Update pattern candidate status (promote, reject, dormant)
   // GOVERNED: Pattern candidate status is a control-plane decision
-  updateCandidateStatus: protectedProcedure.input(z70.object({
-    candidateId: z70.number(),
-    status: z70.enum(["candidate", "active", "dormant", "rejected"]),
-    rationale: z70.string().min(10)
+  updateCandidateStatus: protectedProcedure.input(z69.object({
+    candidateId: z69.number(),
+    status: z69.enum(["candidate", "active", "dormant", "rejected"]),
+    rationale: z69.string().min(10)
   })).mutation(async ({ ctx, input }) => {
     await governedPatternCandidateStatus({
       candidateId: input.candidateId,
@@ -73296,7 +72607,7 @@ var casePatternBridgeRouter = router({
 });
 
 // server/routers/streams-router.ts
-import { z as z71 } from "zod";
+import { z as z70 } from "zod";
 
 // server/streams/lobbying-stream.ts
 init_db();
@@ -74126,9 +73437,9 @@ async function detectPolicyConvergence() {
 }
 async function detectHarmEscalation() {
   const signals = [];
-  const now3 = /* @__PURE__ */ new Date();
-  const thirtyDaysAgo = new Date(now3.getTime() - 30 * 24 * 60 * 60 * 1e3);
-  const sixtyDaysAgo = new Date(now3.getTime() - 60 * 24 * 60 * 60 * 1e3);
+  const now4 = /* @__PURE__ */ new Date();
+  const thirtyDaysAgo = new Date(now4.getTime() - 30 * 24 * 60 * 60 * 1e3);
+  const sixtyDaysAgo = new Date(now4.getTime() - 60 * 24 * 60 * 60 * 1e3);
   const recentHarms = await db.select({
     harmType: advocacyReports.harmType,
     recentCount: sql98`COUNT(*)`.as("recent_count")
@@ -74242,114 +73553,114 @@ async function runAdvocacySignalDetection() {
 // server/routers/streams-router.ts
 var streamsRouter = router({
   // ── Lobbying ────────────────────────────────────────────────────
-  lobbyingIngest: protectedProcedure.input(z71.object({
-    records: z71.array(z71.object({
-      lobbyistName: z71.string().optional(),
-      lobbyingFirm: z71.string().optional(),
-      clientName: z71.string(),
-      industry: z71.string().optional(),
-      policyArea: z71.string().optional(),
-      lobbyingAmount: z71.number().optional(),
-      reportingPeriod: z71.string().optional(),
-      jurisdiction: z71.string().optional(),
-      legislatorsContacted: z71.string().optional(),
-      sourceUrl: z71.string().optional()
+  lobbyingIngest: protectedProcedure.input(z70.object({
+    records: z70.array(z70.object({
+      lobbyistName: z70.string().optional(),
+      lobbyingFirm: z70.string().optional(),
+      clientName: z70.string(),
+      industry: z70.string().optional(),
+      policyArea: z70.string().optional(),
+      lobbyingAmount: z70.number().optional(),
+      reportingPeriod: z70.string().optional(),
+      jurisdiction: z70.string().optional(),
+      legislatorsContacted: z70.string().optional(),
+      sourceUrl: z70.string().optional()
     }))
   })).mutation(async ({ input }) => ingestLobbyingRecords(input.records)),
   lobbyingDetectSignals: protectedProcedure.mutation(async () => runLobbyingSignalDetection()),
   lobbyingStats: protectedProcedure.query(async () => getLobbyingStats()),
-  lobbyingTopFirms: protectedProcedure.input(z71.object({ limit: z71.number().optional() }).optional()).query(async ({ input }) => getTopLobbyingFirms(input?.limit)),
-  lobbyingByPolicy: protectedProcedure.input(z71.object({ limit: z71.number().optional() }).optional()).query(async ({ input }) => getLobbyingByPolicyArea(input?.limit)),
+  lobbyingTopFirms: protectedProcedure.input(z70.object({ limit: z70.number().optional() }).optional()).query(async ({ input }) => getTopLobbyingFirms(input?.limit)),
+  lobbyingByPolicy: protectedProcedure.input(z70.object({ limit: z70.number().optional() }).optional()).query(async ({ input }) => getLobbyingByPolicyArea(input?.limit)),
   // ── Federal Litigation ──────────────────────────────────────────
-  litigationIngest: protectedProcedure.input(z71.object({
-    records: z71.array(z71.object({
-      caseId: z71.string().optional(),
-      courtName: z71.string().optional(),
-      jurisdiction: z71.string().optional(),
-      filingDate: z71.string().optional(),
-      caseType: z71.string().optional(),
-      natureOfSuit: z71.string().optional(),
-      plaintiffName: z71.string().optional(),
-      defendantName: z71.string().optional(),
-      lawFirm: z71.string().optional(),
-      judge: z71.string().optional(),
-      industry: z71.string().optional(),
-      caseStatus: z71.string().optional(),
-      sourceUrl: z71.string().optional()
+  litigationIngest: protectedProcedure.input(z70.object({
+    records: z70.array(z70.object({
+      caseId: z70.string().optional(),
+      courtName: z70.string().optional(),
+      jurisdiction: z70.string().optional(),
+      filingDate: z70.string().optional(),
+      caseType: z70.string().optional(),
+      natureOfSuit: z70.string().optional(),
+      plaintiffName: z70.string().optional(),
+      defendantName: z70.string().optional(),
+      lawFirm: z70.string().optional(),
+      judge: z70.string().optional(),
+      industry: z70.string().optional(),
+      caseStatus: z70.string().optional(),
+      sourceUrl: z70.string().optional()
     }))
   })).mutation(async ({ input }) => ingestLitigationRecords(input.records)),
   litigationDetectSignals: protectedProcedure.mutation(async () => runLitigationSignalDetection()),
   litigationStats: protectedProcedure.query(async () => getLitigationStats()),
-  litigationRecentFilings: protectedProcedure.input(z71.object({ limit: z71.number().optional() }).optional()).query(async ({ input }) => getRecentFilings(input?.limit)),
-  litigationByDefendant: protectedProcedure.input(z71.object({ defendantName: z71.string() })).query(async ({ input }) => getCasesByDefendant(input.defendantName)),
+  litigationRecentFilings: protectedProcedure.input(z70.object({ limit: z70.number().optional() }).optional()).query(async ({ input }) => getRecentFilings(input?.limit)),
+  litigationByDefendant: protectedProcedure.input(z70.object({ defendantName: z70.string() })).query(async ({ input }) => getCasesByDefendant(input.defendantName)),
   litigationOutcomes: protectedProcedure.query(async () => getCaseOutcomeBreakdown()),
   // ── Administrative Decisions ────────────────────────────────────
-  adminDecisionsIngest: protectedProcedure.input(z71.object({
-    records: z71.array(z71.object({
-      decisionId: z71.string().optional(),
-      agency: z71.string(),
-      program: z71.string().optional(),
-      jurisdiction: z71.string().optional(),
-      claimType: z71.string().optional(),
-      decisionDate: z71.string().optional(),
-      initialOutcome: z71.string().optional(),
-      appealOutcome: z71.string().optional(),
-      processingTimeDays: z71.number().optional(),
-      hearingRequested: z71.boolean().optional(),
-      reversal: z71.boolean().optional(),
-      entityOrAgency: z71.string().optional(),
-      sourceUrl: z71.string().optional()
+  adminDecisionsIngest: protectedProcedure.input(z70.object({
+    records: z70.array(z70.object({
+      decisionId: z70.string().optional(),
+      agency: z70.string(),
+      program: z70.string().optional(),
+      jurisdiction: z70.string().optional(),
+      claimType: z70.string().optional(),
+      decisionDate: z70.string().optional(),
+      initialOutcome: z70.string().optional(),
+      appealOutcome: z70.string().optional(),
+      processingTimeDays: z70.number().optional(),
+      hearingRequested: z70.boolean().optional(),
+      reversal: z70.boolean().optional(),
+      entityOrAgency: z70.string().optional(),
+      sourceUrl: z70.string().optional()
     }))
   })).mutation(async ({ input }) => ingestAdminDecisions(input.records)),
   adminDecisionsDetectSignals: protectedProcedure.mutation(async () => runAdminDecisionSignalDetection()),
   adminDecisionsStats: protectedProcedure.query(async () => getAdminDecisionStats()),
-  adminDecisionsOutcomesByAgency: protectedProcedure.input(z71.object({ limit: z71.number().optional() }).optional()).query(async ({ input }) => getOutcomesByAgency(input?.limit)),
+  adminDecisionsOutcomesByAgency: protectedProcedure.input(z70.object({ limit: z70.number().optional() }).optional()).query(async ({ input }) => getOutcomesByAgency(input?.limit)),
   // ── Verified User Reports ───────────────────────────────────────
-  submitReport: protectedProcedure.input(z71.object({
-    reporterType: z71.string(),
-    jurisdiction: z71.string().optional(),
-    industry: z71.string().optional(),
-    entityNamed: z71.string().optional(),
-    claimType: z71.string().optional(),
-    evidenceCount: z71.number().optional(),
-    narrative: z71.string().optional()
+  submitReport: protectedProcedure.input(z70.object({
+    reporterType: z70.string(),
+    jurisdiction: z70.string().optional(),
+    industry: z70.string().optional(),
+    entityNamed: z70.string().optional(),
+    claimType: z70.string().optional(),
+    evidenceCount: z70.number().optional(),
+    narrative: z70.string().optional()
   })).mutation(async ({ input, ctx }) => submitReport({ ...input, submittedBy: ctx.user.id })),
-  updateVerification: protectedProcedure.input(z71.object({
-    reportId: z71.string(),
-    status: z71.enum(["unverified", "community_confirmed", "evidence_verified", "legal_verified"])
+  updateVerification: protectedProcedure.input(z70.object({
+    reportId: z70.string(),
+    status: z70.enum(["unverified", "community_confirmed", "evidence_verified", "legal_verified"])
   })).mutation(async ({ input }) => updateVerificationStatus(input.reportId, input.status)),
   verifiedSignals: protectedProcedure.mutation(async () => generateVerifiedSignals()),
   verifiedReportStats: protectedProcedure.query(async () => getVerifiedReportStats()),
-  recentReports: protectedProcedure.input(z71.object({ limit: z71.number().optional() }).optional()).query(async ({ input }) => getRecentReports(input?.limit)),
+  recentReports: protectedProcedure.input(z70.object({ limit: z70.number().optional() }).optional()).query(async ({ input }) => getRecentReports(input?.limit)),
   // ── Civil Society / Advocacy ────────────────────────────────────
-  advocacyIngest: protectedProcedure.input(z71.object({
-    records: z71.array(z71.object({
-      organizationName: z71.string(),
-      organizationType: z71.string().optional(),
-      reportTitle: z71.string(),
-      reportType: z71.string().optional(),
-      jurisdiction: z71.string().optional(),
-      policyArea: z71.string().optional(),
-      industry: z71.string().optional(),
-      entityNamed: z71.string().optional(),
-      claimType: z71.string().optional(),
-      harmType: z71.string().optional(),
-      affectedPopulation: z71.string().optional(),
-      estimatedAffectedCount: z71.number().optional(),
-      keyFindings: z71.string().optional(),
-      recommendedActions: z71.string().optional(),
-      sourceUrl: z71.string().optional(),
-      publishDate: z71.string().optional(),
-      tags: z71.array(z71.string()).optional()
+  advocacyIngest: protectedProcedure.input(z70.object({
+    records: z70.array(z70.object({
+      organizationName: z70.string(),
+      organizationType: z70.string().optional(),
+      reportTitle: z70.string(),
+      reportType: z70.string().optional(),
+      jurisdiction: z70.string().optional(),
+      policyArea: z70.string().optional(),
+      industry: z70.string().optional(),
+      entityNamed: z70.string().optional(),
+      claimType: z70.string().optional(),
+      harmType: z70.string().optional(),
+      affectedPopulation: z70.string().optional(),
+      estimatedAffectedCount: z70.number().optional(),
+      keyFindings: z70.string().optional(),
+      recommendedActions: z70.string().optional(),
+      sourceUrl: z70.string().optional(),
+      publishDate: z70.string().optional(),
+      tags: z70.array(z70.string()).optional()
     }))
   })).mutation(async ({ input, ctx }) => ingestAdvocacyReports(input.records, ctx.user.id)),
   advocacyDetectSignals: protectedProcedure.mutation(async () => runAdvocacySignalDetection()),
   advocacyStats: protectedProcedure.query(async () => getAdvocacyStats()),
-  advocacyRecentReports: protectedProcedure.input(z71.object({ limit: z71.number().optional() }).optional()).query(async ({ input }) => getRecentAdvocacyReports(input?.limit)),
-  advocacyByOrganization: protectedProcedure.input(z71.object({ limit: z71.number().optional() }).optional()).query(async ({ input }) => getAdvocacyByOrganization(input?.limit)),
-  advocacyByHarmType: protectedProcedure.input(z71.object({ limit: z71.number().optional() }).optional()).query(async ({ input }) => getAdvocacyByHarmType(input?.limit)),
+  advocacyRecentReports: protectedProcedure.input(z70.object({ limit: z70.number().optional() }).optional()).query(async ({ input }) => getRecentAdvocacyReports(input?.limit)),
+  advocacyByOrganization: protectedProcedure.input(z70.object({ limit: z70.number().optional() }).optional()).query(async ({ input }) => getAdvocacyByOrganization(input?.limit)),
+  advocacyByHarmType: protectedProcedure.input(z70.object({ limit: z70.number().optional() }).optional()).query(async ({ input }) => getAdvocacyByHarmType(input?.limit)),
   // ── Cross-Stream Correlation ────────────────────────────────────
-  detectCorrelations: protectedProcedure.input(z71.object({ timeWindowDays: z71.number().optional() }).optional()).mutation(async ({ input }) => {
+  detectCorrelations: protectedProcedure.input(z70.object({ timeWindowDays: z70.number().optional() }).optional()).mutation(async ({ input }) => {
     const correlations = await detectCrossStreamCorrelations(input?.timeWindowDays);
     if (correlations.length > 0) {
       await storeCorrelations(correlations);
@@ -74357,12 +73668,12 @@ var streamsRouter = router({
     return { found: correlations.length, correlations };
   }),
   correlationStats: protectedProcedure.query(async () => getCorrelationStats()),
-  recentCorrelations: protectedProcedure.input(z71.object({ limit: z71.number().optional() }).optional()).query(async ({ input }) => getRecentCorrelations(input?.limit)),
-  correlationsByEntity: protectedProcedure.input(z71.object({ entity: z71.string() })).query(async ({ input }) => getCorrelationsByEntity(input.entity))
+  recentCorrelations: protectedProcedure.input(z70.object({ limit: z70.number().optional() }).optional()).query(async ({ input }) => getRecentCorrelations(input?.limit)),
+  correlationsByEntity: protectedProcedure.input(z70.object({ entity: z70.string() })).query(async ({ input }) => getCorrelationsByEntity(input.entity))
 });
 
 // server/routers/time-travel-router.ts
-import { z as z72 } from "zod";
+import { z as z71 } from "zod";
 
 // server/engines/time-travel-engine.ts
 init_db();
@@ -75315,52 +74626,52 @@ var timeTravelRouter = router({
   // ── Algorithm Versions ───────────────────────────────────────────
   algorithmVersions: protectedProcedure.query(() => getAlgorithmVersions()),
   // ── Snapshots ────────────────────────────────────────────────────
-  createSnapshot: protectedProcedure.input(z72.object({
-    sourceTable: z72.enum(["ingested_records", "detected_signals", "pattern_registry"]),
-    dateRange: z72.object({
-      from: z72.number(),
-      to: z72.number()
+  createSnapshot: protectedProcedure.input(z71.object({
+    sourceTable: z71.enum(["ingested_records", "detected_signals", "pattern_registry"]),
+    dateRange: z71.object({
+      from: z71.number(),
+      to: z71.number()
     }).optional()
   })).mutation(
     async ({ input, ctx }) => createSnapshot(input.sourceTable, input.dateRange, ctx.user.id)
   ),
-  listSnapshots: protectedProcedure.input(z72.object({ limit: z72.number().optional() }).optional()).query(async ({ input }) => listSnapshots2(input?.limit)),
-  getSnapshot: protectedProcedure.input(z72.object({ id: z72.number() })).query(async ({ input }) => getSnapshot2(input.id)),
+  listSnapshots: protectedProcedure.input(z71.object({ limit: z71.number().optional() }).optional()).query(async ({ input }) => listSnapshots2(input?.limit)),
+  getSnapshot: protectedProcedure.input(z71.object({ id: z71.number() })).query(async ({ input }) => getSnapshot2(input.id)),
   // ── Historical Replay ────────────────────────────────────────────
-  runHistoricalReplay: protectedProcedure.input(z72.object({
-    snapshotId: z72.number().optional(),
-    algorithmVersion: z72.string(),
-    startDate: z72.number().optional(),
-    endDate: z72.number().optional(),
-    datasetIds: z72.array(z72.string()).optional(),
-    notes: z72.string().optional()
+  runHistoricalReplay: protectedProcedure.input(z71.object({
+    snapshotId: z71.number().optional(),
+    algorithmVersion: z71.string(),
+    startDate: z71.number().optional(),
+    endDate: z71.number().optional(),
+    datasetIds: z71.array(z71.string()).optional(),
+    notes: z71.string().optional()
   })).mutation(
     async ({ input, ctx }) => runHistoricalReplay({ ...input, createdBy: ctx.user.id })
   ),
   // ── Counterfactual Replay ────────────────────────────────────────
-  runCounterfactualReplay: protectedProcedure.input(z72.object({
-    snapshotId: z72.number().optional(),
-    algorithmVersion: z72.string(),
-    startDate: z72.number().optional(),
-    endDate: z72.number().optional(),
-    datasetIds: z72.array(z72.string()).optional(),
-    notes: z72.string().optional(),
-    parameters: z72.array(z72.object({
-      name: z72.string(),
-      value: z72.string(),
-      type: z72.enum(["weight_override", "filter_toggle", "threshold_change", "stream_inclusion", "date_shift", "entity_filter"]),
-      description: z72.string().optional()
+  runCounterfactualReplay: protectedProcedure.input(z71.object({
+    snapshotId: z71.number().optional(),
+    algorithmVersion: z71.string(),
+    startDate: z71.number().optional(),
+    endDate: z71.number().optional(),
+    datasetIds: z71.array(z71.string()).optional(),
+    notes: z71.string().optional(),
+    parameters: z71.array(z71.object({
+      name: z71.string(),
+      value: z71.string(),
+      type: z71.enum(["weight_override", "filter_toggle", "threshold_change", "stream_inclusion", "date_shift", "entity_filter"]),
+      description: z71.string().optional()
     }))
   })).mutation(
     async ({ input, ctx }) => runCounterfactualReplay({ ...input, createdBy: ctx.user.id })
   ),
   // ── Algorithm Comparison ─────────────────────────────────────────
-  compareAlgorithms: protectedProcedure.input(z72.object({
-    versionA: z72.string(),
-    versionB: z72.string(),
-    startDate: z72.number().optional(),
-    endDate: z72.number().optional(),
-    datasetIds: z72.array(z72.string()).optional()
+  compareAlgorithms: protectedProcedure.input(z71.object({
+    versionA: z71.string(),
+    versionB: z71.string(),
+    startDate: z71.number().optional(),
+    endDate: z71.number().optional(),
+    datasetIds: z71.array(z71.string()).optional()
   })).mutation(
     async ({ input, ctx }) => compareAlgorithmVersions(input.versionA, input.versionB, {
       startDate: input.startDate,
@@ -75370,23 +74681,23 @@ var timeTravelRouter = router({
     })
   ),
   // ── Earliest Detection ───────────────────────────────────────────
-  detectEarliest: protectedProcedure.input(z72.object({
-    patternType: z72.string(),
-    entityName: z72.string().optional(),
-    algorithmVersion: z72.string().optional()
+  detectEarliest: protectedProcedure.input(z71.object({
+    patternType: z71.string(),
+    entityName: z71.string().optional(),
+    algorithmVersion: z71.string().optional()
   })).mutation(
     async ({ input }) => detectEarliestPatternDate(input.patternType, input.entityName, input.algorithmVersion)
   ),
   // ── Report Generation ────────────────────────────────────────────
-  generateReport: protectedProcedure.input(z72.object({ runId: z72.number() })).query(async ({ input }) => generateReplayReport(input.runId)),
+  generateReport: protectedProcedure.input(z71.object({ runId: z71.number() })).query(async ({ input }) => generateReplayReport(input.runId)),
   // ── Run Management ───────────────────────────────────────────────
-  listRuns: protectedProcedure.input(z72.object({ limit: z72.number().optional() }).optional()).query(async ({ input }) => listRuns(input?.limit)),
-  getRun: protectedProcedure.input(z72.object({ runId: z72.number() })).query(async ({ input }) => getRun2(input.runId)),
+  listRuns: protectedProcedure.input(z71.object({ limit: z71.number().optional() }).optional()).query(async ({ input }) => listRuns(input?.limit)),
+  getRun: protectedProcedure.input(z71.object({ runId: z71.number() })).query(async ({ input }) => getRun2(input.runId)),
   getStats: protectedProcedure.query(() => getRunStats())
 });
 
 // server/routers/engines-v2-router.ts
-import { z as z73 } from "zod";
+import { z as z72 } from "zod";
 var enginesV2Router = router({
   // ═══════════════════════════════════════════
   // Entity Intelligence Layer
@@ -75395,28 +74706,28 @@ var enginesV2Router = router({
     const { getEntityStats: getEntityStats2 } = await Promise.resolve().then(() => (init_entity_intelligence(), entity_intelligence_exports));
     return getEntityStats2();
   }),
-  entityList: protectedProcedure.input(z73.object({
-    type: z73.string().optional(),
-    industry: z73.string().optional(),
-    search: z73.string().optional(),
-    limit: z73.number().optional(),
-    offset: z73.number().optional()
+  entityList: protectedProcedure.input(z72.object({
+    type: z72.string().optional(),
+    industry: z72.string().optional(),
+    search: z72.string().optional(),
+    limit: z72.number().optional(),
+    offset: z72.number().optional()
   }).optional()).query(async ({ input }) => {
     const { listEntities: listEntities3 } = await Promise.resolve().then(() => (init_entity_intelligence(), entity_intelligence_exports));
     return listEntities3(input);
   }),
-  entityProfile: protectedProcedure.input(z73.object({ entityId: z73.number() })).query(async ({ input }) => {
+  entityProfile: protectedProcedure.input(z72.object({ entityId: z72.number() })).query(async ({ input }) => {
     const { getEntityProfile: getEntityProfile2 } = await Promise.resolve().then(() => (init_entity_intelligence(), entity_intelligence_exports));
     return getEntityProfile2(input.entityId);
   }),
-  entityRelationships: protectedProcedure.input(z73.object({ entityId: z73.number() })).query(async ({ input }) => {
+  entityRelationships: protectedProcedure.input(z72.object({ entityId: z72.number() })).query(async ({ input }) => {
     const { getEntityRelationships } = await Promise.resolve().then(() => (init_entity_intelligence(), entity_intelligence_exports));
     return getEntityRelationships(input.entityId);
   }),
-  resolveEntity: protectedProcedure.input(z73.object({
-    rawName: z73.string(),
-    datasetId: z73.string().optional(),
-    industry: z73.string().optional()
+  resolveEntity: protectedProcedure.input(z72.object({
+    rawName: z72.string(),
+    datasetId: z72.string().optional(),
+    industry: z72.string().optional()
   })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.ENTITY_INTELLIGENCE, caseId: 0 }, async () => {
       const { resolveEntity } = await Promise.resolve().then(() => (init_entity_intelligence(), entity_intelligence_exports));
@@ -75436,12 +74747,12 @@ var enginesV2Router = router({
     const { getInstitutionStats: getInstitutionStats2 } = await Promise.resolve().then(() => (init_institutional_accountability(), institutional_accountability_exports));
     return getInstitutionStats2();
   }),
-  institutionList: protectedProcedure.input(z73.object({
-    type: z73.string().optional(),
-    jurisdiction: z73.string().optional(),
-    search: z73.string().optional(),
-    limit: z73.number().optional(),
-    offset: z73.number().optional()
+  institutionList: protectedProcedure.input(z72.object({
+    type: z72.string().optional(),
+    jurisdiction: z72.string().optional(),
+    search: z72.string().optional(),
+    limit: z72.number().optional(),
+    offset: z72.number().optional()
   }).optional()).query(async ({ input }) => {
     const { listInstitutions: listInstitutions2 } = await Promise.resolve().then(() => (init_institutional_accountability(), institutional_accountability_exports));
     return listInstitutions2(input);
@@ -75454,7 +74765,7 @@ var enginesV2Router = router({
     const { generateAccountabilityAlerts: generateAccountabilityAlerts2 } = await Promise.resolve().then(() => (init_institutional_accountability(), institutional_accountability_exports));
     return generateAccountabilityAlerts2();
   }),
-  calculateAccountability: protectedProcedure.input(z73.object({ institutionId: z73.number() })).mutation(async ({ input }) => {
+  calculateAccountability: protectedProcedure.input(z72.object({ institutionId: z72.number() })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.INSTITUTIONAL_ACCOUNTABILITY, caseId: 0 }, async () => {
       const { calculateAccountabilityScore: calculateAccountabilityScore2 } = await Promise.resolve().then(() => (init_institutional_accountability(), institutional_accountability_exports));
       return { score: await calculateAccountabilityScore2(input.institutionId) };
@@ -75466,23 +74777,23 @@ var enginesV2Router = router({
       return seedDefaultInstitutions2();
     });
   }),
-  linkPatternToInstitutions: protectedProcedure.input(z73.object({
-    patternId: z73.number(),
-    industry: z73.string().nullable(),
-    jurisdiction: z73.string().nullable()
+  linkPatternToInstitutions: protectedProcedure.input(z72.object({
+    patternId: z72.number(),
+    industry: z72.string().nullable(),
+    jurisdiction: z72.string().nullable()
   })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.INSTITUTIONAL_ACCOUNTABILITY, caseId: 0 }, async () => {
       const { linkPatternToInstitutions: linkPatternToInstitutions2 } = await Promise.resolve().then(() => (init_institutional_accountability(), institutional_accountability_exports));
       return linkPatternToInstitutions2(input.patternId, input.industry, input.jurisdiction);
     });
   }),
-  recordInstitutionActivity: protectedProcedure.input(z73.object({
-    institutionId: z73.number(),
-    activityType: z73.enum(["investigation_opened", "enforcement_action", "hearing_announced", "regulation_proposed", "policy_change", "public_statement"]),
-    patternId: z73.number().optional(),
-    entityName: z73.string().optional(),
-    description: z73.string().optional(),
-    sourceStream: z73.string().optional()
+  recordInstitutionActivity: protectedProcedure.input(z72.object({
+    institutionId: z72.number(),
+    activityType: z72.enum(["investigation_opened", "enforcement_action", "hearing_announced", "regulation_proposed", "policy_change", "public_statement"]),
+    patternId: z72.number().optional(),
+    entityName: z72.string().optional(),
+    description: z72.string().optional(),
+    sourceStream: z72.string().optional()
   })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.INSTITUTIONAL_ACCOUNTABILITY, caseId: 0 }, async () => {
       const { recordInstitutionActivity: recordInstitutionActivity2 } = await Promise.resolve().then(() => (init_institutional_accountability(), institutional_accountability_exports));
@@ -75496,30 +74807,30 @@ var enginesV2Router = router({
     const { getCaptureStats: getCaptureStats2 } = await Promise.resolve().then(() => (init_regulatory_capture(), regulatory_capture_exports));
     return getCaptureStats2();
   }),
-  capturePatterns: protectedProcedure.input(z73.object({
-    status: z73.string().optional(),
-    industry: z73.string().optional(),
-    minRiskScore: z73.number().optional(),
-    limit: z73.number().optional(),
-    offset: z73.number().optional()
+  capturePatterns: protectedProcedure.input(z72.object({
+    status: z72.string().optional(),
+    industry: z72.string().optional(),
+    minRiskScore: z72.number().optional(),
+    limit: z72.number().optional(),
+    offset: z72.number().optional()
   }).optional()).query(async ({ input }) => {
     const { listCapturePatterns: listCapturePatterns2 } = await Promise.resolve().then(() => (init_regulatory_capture(), regulatory_capture_exports));
     return listCapturePatterns2(input);
   }),
-  analyzeCaptureRisk: protectedProcedure.input(z73.object({
-    industry: z73.string(),
-    entityName: z73.string().optional(),
-    jurisdiction: z73.string().optional()
+  analyzeCaptureRisk: protectedProcedure.input(z72.object({
+    industry: z72.string(),
+    entityName: z72.string().optional(),
+    jurisdiction: z72.string().optional()
   })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.REGULATORY_CAPTURE, caseId: 0 }, async () => {
       const { analyzeCaptureRisk: analyzeCaptureRisk2 } = await Promise.resolve().then(() => (init_regulatory_capture(), regulatory_capture_exports));
       return analyzeCaptureRisk2(input);
     });
   }),
-  detectCaptureIndicators: protectedProcedure.input(z73.object({
-    industry: z73.string(),
-    entityName: z73.string().optional(),
-    jurisdiction: z73.string().optional()
+  detectCaptureIndicators: protectedProcedure.input(z72.object({
+    industry: z72.string(),
+    entityName: z72.string().optional(),
+    jurisdiction: z72.string().optional()
   })).query(async ({ input }) => {
     const { detectCaptureIndicators: detectCaptureIndicators2 } = await Promise.resolve().then(() => (init_regulatory_capture(), regulatory_capture_exports));
     return detectCaptureIndicators2(input);
@@ -75531,30 +74842,30 @@ var enginesV2Router = router({
     const { getCrisisPredictionStats: getCrisisPredictionStats2 } = await Promise.resolve().then(() => (init_crisis_prediction(), crisis_prediction_exports));
     return getCrisisPredictionStats2();
   }),
-  crisisPredictions: protectedProcedure.input(z73.object({
-    riskLevel: z73.enum(["low", "moderate", "high", "critical"]).optional(),
-    predictionType: z73.enum(["industry_crisis", "institutional_failure", "enforcement_collapse", "policy_shockwave"]).optional(),
-    minProbability: z73.number().optional(),
-    limit: z73.number().optional(),
-    offset: z73.number().optional()
+  crisisPredictions: protectedProcedure.input(z72.object({
+    riskLevel: z72.enum(["low", "moderate", "high", "critical"]).optional(),
+    predictionType: z72.enum(["industry_crisis", "institutional_failure", "enforcement_collapse", "policy_shockwave"]).optional(),
+    minProbability: z72.number().optional(),
+    limit: z72.number().optional(),
+    offset: z72.number().optional()
   }).optional()).query(async ({ input }) => {
     const { listCrisisPredictions: listCrisisPredictions2 } = await Promise.resolve().then(() => (init_crisis_prediction(), crisis_prediction_exports));
     return listCrisisPredictions2(input);
   }),
-  generateCrisisPrediction: protectedProcedure.input(z73.object({
-    industry: z73.string().optional(),
-    entityName: z73.string().optional(),
-    jurisdiction: z73.string().optional()
+  generateCrisisPrediction: protectedProcedure.input(z72.object({
+    industry: z72.string().optional(),
+    entityName: z72.string().optional(),
+    jurisdiction: z72.string().optional()
   }).optional()).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.CRISIS_PREDICTION, caseId: 0 }, async () => {
       const { generateCrisisPrediction: generateCrisisPrediction2 } = await Promise.resolve().then(() => (init_crisis_prediction(), crisis_prediction_exports));
       return generateCrisisPrediction2(input ?? {});
     });
   }),
-  calculateCrisisProbability: protectedProcedure.input(z73.object({
-    industry: z73.string().optional(),
-    entityName: z73.string().optional(),
-    jurisdiction: z73.string().optional()
+  calculateCrisisProbability: protectedProcedure.input(z72.object({
+    industry: z72.string().optional(),
+    entityName: z72.string().optional(),
+    jurisdiction: z72.string().optional()
   }).optional()).query(async ({ input }) => {
     const { calculateCrisisProbability: calculateCrisisProbability2 } = await Promise.resolve().then(() => (init_crisis_prediction(), crisis_prediction_exports));
     return calculateCrisisProbability2(input ?? {});
@@ -75563,29 +74874,29 @@ var enginesV2Router = router({
   // Additional Data Streams
   // ═══════════════════════════════════════════
   // Enforcement Actions
-  ingestEnforcementAction: protectedProcedure.input(z73.object({
-    agencyName: z73.string(),
-    entityName: z73.string(),
-    industry: z73.string().optional(),
-    jurisdiction: z73.string().optional(),
-    violationType: z73.string().optional(),
-    penaltyAmount: z73.number().optional(),
-    investigationStartDate: z73.number().optional(),
-    resolutionDate: z73.number().optional(),
-    caseReference: z73.string().optional(),
-    sourceUrl: z73.string().optional()
+  ingestEnforcementAction: protectedProcedure.input(z72.object({
+    agencyName: z72.string(),
+    entityName: z72.string(),
+    industry: z72.string().optional(),
+    jurisdiction: z72.string().optional(),
+    violationType: z72.string().optional(),
+    penaltyAmount: z72.number().optional(),
+    investigationStartDate: z72.number().optional(),
+    resolutionDate: z72.number().optional(),
+    caseReference: z72.string().optional(),
+    sourceUrl: z72.string().optional()
   })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.INGESTION, caseId: 0 }, async () => {
       const { ingestEnforcementAction: ingestEnforcementAction2 } = await Promise.resolve().then(() => (init_additional_streams(), additional_streams_exports));
       return ingestEnforcementAction2(input);
     });
   }),
-  enforcementActions: protectedProcedure.input(z73.object({
-    agency: z73.string().optional(),
-    entity: z73.string().optional(),
-    industry: z73.string().optional(),
-    limit: z73.number().optional(),
-    offset: z73.number().optional()
+  enforcementActions: protectedProcedure.input(z72.object({
+    agency: z72.string().optional(),
+    entity: z72.string().optional(),
+    industry: z72.string().optional(),
+    limit: z72.number().optional(),
+    offset: z72.number().optional()
   }).optional()).query(async ({ input }) => {
     const { queryEnforcementActions: queryEnforcementActions2 } = await Promise.resolve().then(() => (init_additional_streams(), additional_streams_exports));
     return queryEnforcementActions2(input);
@@ -75595,32 +74906,32 @@ var enginesV2Router = router({
     return getEnforcementStats2();
   }),
   // Litigation Cases
-  ingestLitigationCase: protectedProcedure.input(z73.object({
-    courtName: z73.string(),
-    jurisdiction: z73.string().optional(),
-    filingDate: z73.number().optional(),
-    caseType: z73.string().optional(),
-    claimType: z73.string().optional(),
-    plaintiffName: z73.string().optional(),
-    defendantName: z73.string().optional(),
-    lawFirm: z73.string().optional(),
-    judge: z73.string().optional(),
-    caseStatus: z73.enum(["filed", "pending", "discovery", "trial", "settled", "dismissed", "appealed"]).optional(),
-    industry: z73.string().optional(),
-    sourceUrl: z73.string().optional()
+  ingestLitigationCase: protectedProcedure.input(z72.object({
+    courtName: z72.string(),
+    jurisdiction: z72.string().optional(),
+    filingDate: z72.number().optional(),
+    caseType: z72.string().optional(),
+    claimType: z72.string().optional(),
+    plaintiffName: z72.string().optional(),
+    defendantName: z72.string().optional(),
+    lawFirm: z72.string().optional(),
+    judge: z72.string().optional(),
+    caseStatus: z72.enum(["filed", "pending", "discovery", "trial", "settled", "dismissed", "appealed"]).optional(),
+    industry: z72.string().optional(),
+    sourceUrl: z72.string().optional()
   })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.INGESTION, caseId: 0 }, async () => {
       const { ingestLitigationCase: ingestLitigationCase2 } = await Promise.resolve().then(() => (init_additional_streams(), additional_streams_exports));
       return ingestLitigationCase2(input);
     });
   }),
-  litigationCases: protectedProcedure.input(z73.object({
-    defendant: z73.string().optional(),
-    plaintiff: z73.string().optional(),
-    court: z73.string().optional(),
-    status: z73.string().optional(),
-    limit: z73.number().optional(),
-    offset: z73.number().optional()
+  litigationCases: protectedProcedure.input(z72.object({
+    defendant: z72.string().optional(),
+    plaintiff: z72.string().optional(),
+    court: z72.string().optional(),
+    status: z72.string().optional(),
+    limit: z72.number().optional(),
+    offset: z72.number().optional()
   }).optional()).query(async ({ input }) => {
     const { queryLitigationCases: queryLitigationCases2 } = await Promise.resolve().then(() => (init_additional_streams(), additional_streams_exports));
     return queryLitigationCases2(input);
@@ -75630,27 +74941,27 @@ var enginesV2Router = router({
     return getLitigationStats3();
   }),
   // Investigative Reports
-  ingestInvestigativeReport: protectedProcedure.input(z73.object({
-    publicationName: z73.string(),
-    reportTitle: z73.string(),
-    issueArea: z73.string().optional(),
-    entitiesNamed: z73.array(z73.string()).optional(),
-    jurisdiction: z73.string().optional(),
-    summary: z73.string().optional(),
-    sourceUrl: z73.string().optional(),
-    publicationDate: z73.number().optional(),
-    credibilityScore: z73.number().optional()
+  ingestInvestigativeReport: protectedProcedure.input(z72.object({
+    publicationName: z72.string(),
+    reportTitle: z72.string(),
+    issueArea: z72.string().optional(),
+    entitiesNamed: z72.array(z72.string()).optional(),
+    jurisdiction: z72.string().optional(),
+    summary: z72.string().optional(),
+    sourceUrl: z72.string().optional(),
+    publicationDate: z72.number().optional(),
+    credibilityScore: z72.number().optional()
   })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.INGESTION, caseId: 0 }, async () => {
       const { ingestInvestigativeReport: ingestInvestigativeReport2 } = await Promise.resolve().then(() => (init_additional_streams(), additional_streams_exports));
       return ingestInvestigativeReport2(input);
     });
   }),
-  investigativeReports: protectedProcedure.input(z73.object({
-    publication: z73.string().optional(),
-    issueArea: z73.string().optional(),
-    limit: z73.number().optional(),
-    offset: z73.number().optional()
+  investigativeReports: protectedProcedure.input(z72.object({
+    publication: z72.string().optional(),
+    issueArea: z72.string().optional(),
+    limit: z72.number().optional(),
+    offset: z72.number().optional()
   }).optional()).query(async ({ input }) => {
     const { queryInvestigativeReports: queryInvestigativeReports2 } = await Promise.resolve().then(() => (init_additional_streams(), additional_streams_exports));
     return queryInvestigativeReports2(input);
@@ -75660,28 +74971,28 @@ var enginesV2Router = router({
     return getInvestigativeReportStats2();
   }),
   // Oversight Reports
-  ingestOversightReport: protectedProcedure.input(z73.object({
-    oversightBody: z73.string(),
-    reportTitle: z73.string(),
-    issueArea: z73.string().optional(),
-    agencyReviewed: z73.string().optional(),
-    jurisdiction: z73.string().optional(),
-    findingsSummary: z73.string().optional(),
-    sourceUrl: z73.string().optional(),
-    publicationDate: z73.number().optional(),
-    credibilityScore: z73.number().optional()
+  ingestOversightReport: protectedProcedure.input(z72.object({
+    oversightBody: z72.string(),
+    reportTitle: z72.string(),
+    issueArea: z72.string().optional(),
+    agencyReviewed: z72.string().optional(),
+    jurisdiction: z72.string().optional(),
+    findingsSummary: z72.string().optional(),
+    sourceUrl: z72.string().optional(),
+    publicationDate: z72.number().optional(),
+    credibilityScore: z72.number().optional()
   })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.INGESTION, caseId: 0 }, async () => {
       const { ingestOversightReport: ingestOversightReport2 } = await Promise.resolve().then(() => (init_additional_streams(), additional_streams_exports));
       return ingestOversightReport2(input);
     });
   }),
-  oversightReports: protectedProcedure.input(z73.object({
-    oversightBody: z73.string().optional(),
-    agencyReviewed: z73.string().optional(),
-    issueArea: z73.string().optional(),
-    limit: z73.number().optional(),
-    offset: z73.number().optional()
+  oversightReports: protectedProcedure.input(z72.object({
+    oversightBody: z72.string().optional(),
+    agencyReviewed: z72.string().optional(),
+    issueArea: z72.string().optional(),
+    limit: z72.number().optional(),
+    offset: z72.number().optional()
   }).optional()).query(async ({ input }) => {
     const { queryOversightReports: queryOversightReports2 } = await Promise.resolve().then(() => (init_additional_streams(), additional_streams_exports));
     return queryOversightReports2(input);
@@ -75698,7 +75009,7 @@ var enginesV2Router = router({
 });
 
 // server/routers/engines-v3-router.ts
-import { z as z74 } from "zod";
+import { z as z73 } from "zod";
 var enginesV3Router = router({
   // ═══════════════════════════════════════════
   // Systemic Simulation Engine
@@ -75707,13 +75018,13 @@ var enginesV3Router = router({
     const { getSimulationStats: getSimulationStats2 } = await Promise.resolve().then(() => (init_systemic_simulation(), systemic_simulation_exports));
     return getSimulationStats2();
   }),
-  runSimulation: protectedProcedure.input(z74.object({
-    simulationType: z74.enum(["policy_change", "enforcement_increase", "penalty_adjustment", "staffing_change", "jurisdiction_reform"]),
-    targetIndustry: z74.string().optional(),
-    targetEntity: z74.string().optional(),
-    jurisdiction: z74.string().optional(),
-    parameters: z74.record(z74.string(), z74.number()),
-    description: z74.string().optional()
+  runSimulation: protectedProcedure.input(z73.object({
+    simulationType: z73.enum(["policy_change", "enforcement_increase", "penalty_adjustment", "staffing_change", "jurisdiction_reform"]),
+    targetIndustry: z73.string().optional(),
+    targetEntity: z73.string().optional(),
+    jurisdiction: z73.string().optional(),
+    parameters: z73.record(z73.string(), z73.number()),
+    description: z73.string().optional()
   })).mutation(async ({ input, ctx }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.SYSTEMIC_SIMULATION, caseId: 0 }, async () => {
       const { runSimulation: runSimulation2 } = await Promise.resolve().then(() => (init_systemic_simulation(), systemic_simulation_exports));
@@ -75723,24 +75034,24 @@ var enginesV3Router = router({
       });
     });
   }),
-  simulationHistory: protectedProcedure.input(z74.object({
-    simulationType: z74.string().optional(),
-    industry: z74.string().optional(),
-    limit: z74.number().optional(),
-    offset: z74.number().optional()
+  simulationHistory: protectedProcedure.input(z73.object({
+    simulationType: z73.string().optional(),
+    industry: z73.string().optional(),
+    limit: z73.number().optional(),
+    offset: z73.number().optional()
   }).optional()).query(async ({ input }) => {
     const { listSimulations } = await Promise.resolve().then(() => (init_systemic_simulation(), systemic_simulation_exports));
     return listSimulations(input);
   }),
-  simulationDetail: protectedProcedure.input(z74.object({ simulationId: z74.number() })).query(async ({ input }) => {
+  simulationDetail: protectedProcedure.input(z73.object({ simulationId: z73.number() })).query(async ({ input }) => {
     const { getSimulationById: getSimulationById2 } = await Promise.resolve().then(() => (init_systemic_simulation(), systemic_simulation_exports));
     return getSimulationById2(input.simulationId);
   }),
-  compareSimulations: protectedProcedure.input(z74.object({ simulationIds: z74.array(z74.number()).min(2).max(5) })).query(async ({ input }) => {
+  compareSimulations: protectedProcedure.input(z73.object({ simulationIds: z73.array(z73.number()).min(2).max(5) })).query(async ({ input }) => {
     const { compareSimulations } = await Promise.resolve().then(() => (init_systemic_simulation(), systemic_simulation_exports));
     return compareSimulations(input.simulationIds);
   }),
-  simulationReport: protectedProcedure.input(z74.object({ simulationId: z74.number() })).query(async ({ input }) => {
+  simulationReport: protectedProcedure.input(z73.object({ simulationId: z73.number() })).query(async ({ input }) => {
     const { generateSimulationReport: generateSimulationReport2 } = await Promise.resolve().then(() => (init_systemic_simulation(), systemic_simulation_exports));
     return generateSimulationReport2(input.simulationId);
   }),
@@ -75751,16 +75062,16 @@ var enginesV3Router = router({
     const { getTransparencyStats: getTransparencyStats2 } = await Promise.resolve().then(() => (init_public_transparency(), public_transparency_exports));
     return getTransparencyStats2();
   }),
-  generateExplainer: protectedProcedure.input(z74.object({
-    patternId: z74.number().optional(),
-    patternName: z74.string().optional(),
-    entityName: z74.string().optional(),
-    jurisdiction: z74.string().optional(),
-    signalCount: z74.number().optional(),
-    complaintCount: z74.number().optional(),
-    pressureIndex: z74.number().optional(),
-    trendClassification: z74.string().optional(),
-    audienceLevel: z74.enum(["general_public", "affected_community", "journalist", "policymaker"]).optional()
+  generateExplainer: protectedProcedure.input(z73.object({
+    patternId: z73.number().optional(),
+    patternName: z73.string().optional(),
+    entityName: z73.string().optional(),
+    jurisdiction: z73.string().optional(),
+    signalCount: z73.number().optional(),
+    complaintCount: z73.number().optional(),
+    pressureIndex: z73.number().optional(),
+    trendClassification: z73.string().optional(),
+    audienceLevel: z73.enum(["general_public", "affected_community", "journalist", "policymaker"]).optional()
   })).mutation(async ({ input, ctx }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.TRANSPARENCY, caseId: 0 }, async () => {
       const { generatePatternExplainer: generatePatternExplainer2 } = await Promise.resolve().then(() => (init_public_transparency(), public_transparency_exports));
@@ -75770,20 +75081,20 @@ var enginesV3Router = router({
       });
     });
   }),
-  generateBrief: protectedProcedure.input(z74.object({
-    briefType: z74.enum(["accountability_report", "crisis_warning", "enforcement_gap_brief", "industry_overview"]),
-    industry: z74.string().optional(),
-    jurisdiction: z74.string().optional(),
-    entityNames: z74.array(z74.string()).optional(),
-    institutionNames: z74.array(z74.string()).optional(),
-    signalCount: z74.number().optional(),
-    complaintCount: z74.number().optional(),
-    enforcementCount: z74.number().optional(),
-    enforcementGap: z74.number().optional(),
-    accountabilityScore: z74.number().optional(),
-    crisisProbability: z74.number().optional(),
-    pressureIndex: z74.number().optional(),
-    trendClassification: z74.string().optional()
+  generateBrief: protectedProcedure.input(z73.object({
+    briefType: z73.enum(["accountability_report", "crisis_warning", "enforcement_gap_brief", "industry_overview"]),
+    industry: z73.string().optional(),
+    jurisdiction: z73.string().optional(),
+    entityNames: z73.array(z73.string()).optional(),
+    institutionNames: z73.array(z73.string()).optional(),
+    signalCount: z73.number().optional(),
+    complaintCount: z73.number().optional(),
+    enforcementCount: z73.number().optional(),
+    enforcementGap: z73.number().optional(),
+    accountabilityScore: z73.number().optional(),
+    crisisProbability: z73.number().optional(),
+    pressureIndex: z73.number().optional(),
+    trendClassification: z73.string().optional()
   })).mutation(async ({ input, ctx }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.TRANSPARENCY, caseId: 0 }, async () => {
       const { generatePublicBrief } = await Promise.resolve().then(() => (init_public_transparency(), public_transparency_exports));
@@ -75793,20 +75104,20 @@ var enginesV3Router = router({
       });
     });
   }),
-  transparencyDocuments: protectedProcedure.input(z74.object({
-    documentType: z74.string().optional(),
-    audienceLevel: z74.string().optional(),
-    limit: z74.number().optional(),
-    offset: z74.number().optional()
+  transparencyDocuments: protectedProcedure.input(z73.object({
+    documentType: z73.string().optional(),
+    audienceLevel: z73.string().optional(),
+    limit: z73.number().optional(),
+    offset: z73.number().optional()
   }).optional()).query(async ({ input }) => {
     const { listTransparencyDocuments } = await Promise.resolve().then(() => (init_public_transparency(), public_transparency_exports));
     return listTransparencyDocuments(input);
   }),
-  transparencyDocument: protectedProcedure.input(z74.object({ documentId: z74.number() })).query(async ({ input }) => {
+  transparencyDocument: protectedProcedure.input(z73.object({ documentId: z73.number() })).query(async ({ input }) => {
     const { getTransparencyDocumentById } = await Promise.resolve().then(() => (init_public_transparency(), public_transparency_exports));
     return getTransparencyDocumentById(input.documentId);
   }),
-  translateJargon: protectedProcedure.input(z74.object({ text: z74.string() })).query(async ({ input }) => {
+  translateJargon: protectedProcedure.input(z73.object({ text: z73.string() })).query(async ({ input }) => {
     const { translateJargon: translateJargon2 } = await Promise.resolve().then(() => (init_public_transparency(), public_transparency_exports));
     return { translated: translateJargon2(input.text) };
   }),
@@ -75817,27 +75128,27 @@ var enginesV3Router = router({
     const { getDossierStats: getDossierStats2 } = await Promise.resolve().then(() => (init_evidence_dossier(), evidence_dossier_exports));
     return getDossierStats2();
   }),
-  generateDossier: protectedProcedure.input(z74.object({
-    dossierType: z74.enum(["investigation_kit", "legal_bundle", "policy_packet", "regulator_referral", "entity_dossier", "pattern_dossier"]),
-    patternId: z74.number().optional(),
-    patternName: z74.string().optional(),
-    entityId: z74.number().optional(),
-    entityName: z74.string().optional(),
-    jurisdiction: z74.string().optional(),
-    audienceType: z74.enum(["journalist", "attorney", "policymaker", "regulator", "advocate", "internal"]),
-    signalCount: z74.number().optional(),
-    complaintCount: z74.number().optional(),
-    litigationCount: z74.number().optional(),
-    enforcementCount: z74.number().optional(),
-    entityNames: z74.array(z74.string()).optional(),
-    institutionNames: z74.array(z74.string()).optional(),
-    pressureIndex: z74.number().optional(),
-    accountabilityScore: z74.number().optional(),
-    enforcementGap: z74.number().optional(),
-    crisisProbability: z74.number().optional(),
-    trendClassification: z74.string().optional(),
-    topSignals: z74.array(z74.object({ title: z74.string(), severity: z74.number(), date: z74.string() })).optional(),
-    relatedPatterns: z74.array(z74.object({ name: z74.string(), pressureIndex: z74.number() })).optional()
+  generateDossier: protectedProcedure.input(z73.object({
+    dossierType: z73.enum(["investigation_kit", "legal_bundle", "policy_packet", "regulator_referral", "entity_dossier", "pattern_dossier"]),
+    patternId: z73.number().optional(),
+    patternName: z73.string().optional(),
+    entityId: z73.number().optional(),
+    entityName: z73.string().optional(),
+    jurisdiction: z73.string().optional(),
+    audienceType: z73.enum(["journalist", "attorney", "policymaker", "regulator", "advocate", "internal"]),
+    signalCount: z73.number().optional(),
+    complaintCount: z73.number().optional(),
+    litigationCount: z73.number().optional(),
+    enforcementCount: z73.number().optional(),
+    entityNames: z73.array(z73.string()).optional(),
+    institutionNames: z73.array(z73.string()).optional(),
+    pressureIndex: z73.number().optional(),
+    accountabilityScore: z73.number().optional(),
+    enforcementGap: z73.number().optional(),
+    crisisProbability: z73.number().optional(),
+    trendClassification: z73.string().optional(),
+    topSignals: z73.array(z73.object({ title: z73.string(), severity: z73.number(), date: z73.string() })).optional(),
+    relatedPatterns: z73.array(z73.object({ name: z73.string(), pressureIndex: z73.number() })).optional()
   })).mutation(async ({ input, ctx }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.EVIDENCE_DOSSIER, caseId: 0 }, async () => {
       const mod = await Promise.resolve().then(() => (init_evidence_dossier(), evidence_dossier_exports));
@@ -75860,13 +75171,13 @@ var enginesV3Router = router({
       }
     });
   }),
-  dossierDetail: protectedProcedure.input(z74.object({ dossierId: z74.number() })).query(async ({ input }) => {
+  dossierDetail: protectedProcedure.input(z73.object({ dossierId: z73.number() })).query(async ({ input }) => {
     const { getDossierById: getDossierById2 } = await Promise.resolve().then(() => (init_evidence_dossier(), evidence_dossier_exports));
     return getDossierById2(input.dossierId);
   }),
-  exportDossier: protectedProcedure.input(z74.object({
-    dossierId: z74.number(),
-    format: z74.enum(["markdown", "html", "json"]).optional()
+  exportDossier: protectedProcedure.input(z73.object({
+    dossierId: z73.number(),
+    format: z73.enum(["markdown", "html", "json"]).optional()
   })).query(async ({ input }) => {
     const { exportDossier: exportDossier2 } = await Promise.resolve().then(() => (init_evidence_dossier(), evidence_dossier_exports));
     return { content: await exportDossier2(input.dossierId, input.format ?? "markdown") };
@@ -75878,95 +75189,95 @@ var enginesV3Router = router({
     const { getCollaborationStats: getCollaborationStats2 } = await Promise.resolve().then(() => (init_external_collaboration(), external_collaboration_exports));
     return getCollaborationStats2();
   }),
-  registerPartner: protectedProcedure.input(z74.object({
-    name: z74.string(),
-    organization: z74.string().optional(),
-    partnerType: z74.enum(["journalist", "attorney", "regulator", "advocate", "researcher", "other"]),
-    email: z74.string().optional(),
-    jurisdiction: z74.string().optional(),
-    notes: z74.string().optional()
+  registerPartner: protectedProcedure.input(z73.object({
+    name: z73.string(),
+    organization: z73.string().optional(),
+    partnerType: z73.enum(["journalist", "attorney", "regulator", "advocate", "researcher", "other"]),
+    email: z73.string().optional(),
+    jurisdiction: z73.string().optional(),
+    notes: z73.string().optional()
   })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.COLLABORATION, caseId: 0 }, async () => {
       const { registerPartner: registerPartner2 } = await Promise.resolve().then(() => (init_external_collaboration(), external_collaboration_exports));
       return registerPartner2(input);
     });
   }),
-  verifyPartner: adminProcedure.input(z74.object({ partnerId: z74.number() })).mutation(async ({ input }) => {
+  verifyPartner: adminProcedure.input(z73.object({ partnerId: z73.number() })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.COLLABORATION, caseId: 0 }, async () => {
       const { verifyPartner: verifyPartner2 } = await Promise.resolve().then(() => (init_external_collaboration(), external_collaboration_exports));
       await verifyPartner2(input.partnerId);
       return { success: true };
     });
   }),
-  listPartners: protectedProcedure.input(z74.object({
-    type: z74.enum(["journalist", "attorney", "regulator", "advocate", "researcher", "other"]).optional(),
-    status: z74.string().optional()
+  listPartners: protectedProcedure.input(z73.object({
+    type: z73.enum(["journalist", "attorney", "regulator", "advocate", "researcher", "other"]).optional(),
+    status: z73.string().optional()
   }).optional()).query(async ({ input }) => {
     const { listPartners: listPartners2 } = await Promise.resolve().then(() => (init_external_collaboration(), external_collaboration_exports));
     return listPartners2(input);
   }),
-  createShare: protectedProcedure.input(z74.object({
-    dossierId: z74.number(),
-    partnerId: z74.number(),
-    accessLevel: z74.enum(["view_only", "view_download", "view_comment", "full_access"]).optional(),
-    expiresInDays: z74.number().optional()
+  createShare: protectedProcedure.input(z73.object({
+    dossierId: z73.number(),
+    partnerId: z73.number(),
+    accessLevel: z73.enum(["view_only", "view_download", "view_comment", "full_access"]).optional(),
+    expiresInDays: z73.number().optional()
   })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.COLLABORATION, caseId: 0 }, async () => {
       const { createShare: createShare2 } = await Promise.resolve().then(() => (init_external_collaboration(), external_collaboration_exports));
       return createShare2(input);
     });
   }),
-  revokeShare: protectedProcedure.input(z74.object({ shareId: z74.number() })).mutation(async ({ input }) => {
+  revokeShare: protectedProcedure.input(z73.object({ shareId: z73.number() })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.COLLABORATION, caseId: 0 }, async () => {
       const { revokeShare: revokeShare2 } = await Promise.resolve().then(() => (init_external_collaboration(), external_collaboration_exports));
       await revokeShare2(input.shareId);
       return { success: true };
     });
   }),
-  validateShareToken: protectedProcedure.input(z74.object({ token: z74.string() })).query(async ({ input }) => {
+  validateShareToken: protectedProcedure.input(z73.object({ token: z73.string() })).query(async ({ input }) => {
     const { validateShareToken: validateShareToken2 } = await Promise.resolve().then(() => (init_external_collaboration(), external_collaboration_exports));
     return validateShareToken2(input.token);
   }),
-  shareAccessLog: protectedProcedure.input(z74.object({ shareId: z74.number() })).query(async ({ input }) => {
+  shareAccessLog: protectedProcedure.input(z73.object({ shareId: z73.number() })).query(async ({ input }) => {
     const { getAccessLog: getAccessLog2 } = await Promise.resolve().then(() => (init_external_collaboration(), external_collaboration_exports));
     return getAccessLog2(input.shareId);
   }),
-  sharesForDossier: protectedProcedure.input(z74.object({ dossierId: z74.number() })).query(async ({ input }) => {
+  sharesForDossier: protectedProcedure.input(z73.object({ dossierId: z73.number() })).query(async ({ input }) => {
     const { listSharesForDossier: listSharesForDossier2 } = await Promise.resolve().then(() => (init_external_collaboration(), external_collaboration_exports));
     return listSharesForDossier2(input.dossierId);
   }),
-  addComment: protectedProcedure.input(z74.object({
-    shareId: z74.number(),
-    partnerId: z74.number(),
-    commentText: z74.string(),
-    sectionId: z74.number().optional()
+  addComment: protectedProcedure.input(z73.object({
+    shareId: z73.number(),
+    partnerId: z73.number(),
+    commentText: z73.string(),
+    sectionId: z73.number().optional()
   })).mutation(async ({ input }) => {
     const { addComment: addComment2 } = await Promise.resolve().then(() => (init_external_collaboration(), external_collaboration_exports));
     await addComment2(input.shareId, input.partnerId, input.commentText, input.sectionId);
     return { success: true };
   }),
-  shareComments: protectedProcedure.input(z74.object({ shareId: z74.number() })).query(async ({ input }) => {
+  shareComments: protectedProcedure.input(z73.object({ shareId: z73.number() })).query(async ({ input }) => {
     const { getCommentsForShare: getCommentsForShare2 } = await Promise.resolve().then(() => (init_external_collaboration(), external_collaboration_exports));
     return getCommentsForShare2(input.shareId);
   }),
-  addRedaction: protectedProcedure.input(z74.object({
-    dossierId: z74.number(),
-    sectionId: z74.number().optional(),
-    redactedText: z74.string(),
-    reason: z74.string().optional()
+  addRedaction: protectedProcedure.input(z73.object({
+    dossierId: z73.number(),
+    sectionId: z73.number().optional(),
+    redactedText: z73.string(),
+    reason: z73.string().optional()
   })).mutation(async ({ input, ctx }) => {
     const { addRedaction: addRedaction2 } = await Promise.resolve().then(() => (init_external_collaboration(), external_collaboration_exports));
     await addRedaction2({ ...input, createdBy: ctx.user?.name ?? "system" });
     return { success: true };
   }),
-  dossierRedactions: protectedProcedure.input(z74.object({ dossierId: z74.number() })).query(async ({ input }) => {
+  dossierRedactions: protectedProcedure.input(z73.object({ dossierId: z73.number() })).query(async ({ input }) => {
     const { getRedactionsForDossier: getRedactionsForDossier2 } = await Promise.resolve().then(() => (init_external_collaboration(), external_collaboration_exports));
     return getRedactionsForDossier2(input.dossierId);
   })
 });
 
 // server/routers/engines-v4-router.ts
-import { z as z75 } from "zod";
+import { z as z74 } from "zod";
 
 // server/engines/investigative-query-engine.ts
 init_db();
@@ -76036,7 +75347,7 @@ async function scoreEntityEvidence(entityName, patternId) {
     streamCount,
     confidenceScore
   });
-  const now3 = Date.now();
+  const now4 = Date.now();
   const whereClause = patternId ? and50(eq63(entityEvidenceScores.entityName, entityName), eq63(entityEvidenceScores.patternId, patternId)) : eq63(entityEvidenceScores.entityName, entityName);
   const existing = await db.select().from(entityEvidenceScores).where(whereClause).limit(1);
   if (existing[0]) {
@@ -76049,7 +75360,7 @@ async function scoreEntityEvidence(entityName, patternId) {
       geographicSpread,
       confidenceScore,
       visibilityStatus,
-      updatedAt: now3
+      updatedAt: now4
     }).where(eq63(entityEvidenceScores.id, existing[0].id));
     const [updated] = await db.select().from(entityEvidenceScores).where(eq63(entityEvidenceScores.id, existing[0].id));
     return updated;
@@ -76065,8 +75376,8 @@ async function scoreEntityEvidence(entityName, patternId) {
     geographicSpread,
     confidenceScore,
     visibilityStatus,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   const [inserted] = await db.select().from(entityEvidenceScores).where(whereClause).orderBy(desc42(entityEvidenceScores.id)).limit(1);
   return inserted;
@@ -76640,7 +75951,7 @@ async function generateEntityBreakdown(patternId) {
   const registryEntities = await db.select().from(entityRegistry);
   const registryMap = new Map(registryEntities.map((e) => [e.entityName, e]));
   const results = [];
-  const now3 = Date.now();
+  const now4 = Date.now();
   for (const [, entity] of entityMap) {
     const regEntry = registryMap.get(entity.entityName);
     const regSignalCount = regEntry ? (regEntry.complaintCount ?? 0) + (regEntry.litigationCount ?? 0) + (regEntry.enforcementCount ?? 0) : void 0;
@@ -76660,8 +75971,8 @@ async function generateEntityBreakdown(patternId) {
       enforcementActions: entity.enforcementActions,
       patternInvolvementCount: entity.patternInvolvementCount,
       confidenceScore: confidence,
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     const rows2 = await db.select().from(patternEntitySummary).where(and52(
       eq65(patternEntitySummary.patternId, patternId),
@@ -76716,7 +76027,7 @@ async function generateResponsibleAgencyMapping(patternId) {
       agencyMap.set(key2, agency);
     }
   }
-  const now3 = Date.now();
+  const now4 = Date.now();
   const results = [];
   await db.delete(patternResponsibleAgencies).where(eq65(patternResponsibleAgencies.patternId, patternId));
   for (const [, agency] of agencyMap) {
@@ -76728,8 +76039,8 @@ async function generateResponsibleAgencyMapping(patternId) {
       complaintsReceived: agency.complaintsReceived,
       investigationsOpened: agency.investigationsOpened,
       penaltiesIssued: agency.penaltiesIssued,
-      createdAt: now3,
-      updatedAt: now3
+      createdAt: now4,
+      updatedAt: now4
     });
     const rows2 = await db.select().from(patternResponsibleAgencies).where(and52(
       eq65(patternResponsibleAgencies.patternId, patternId),
@@ -76933,9 +76244,9 @@ async function forecastPatternRisk(patternId, windowDays = 90) {
   const litigationSignals = signals.filter((s) => (s.signalType || "").includes("litigation"));
   const enforcementSignals = signals.filter((s) => (s.signalType || "").includes("enforcement"));
   const jurisdictions = new Set(signals.map((s) => s.jurisdictionScope).filter(Boolean));
-  const now3 = Date.now();
-  const thirtyDaysAgo = now3 - 30 * 864e5;
-  const sixtyDaysAgo = now3 - 60 * 864e5;
+  const now4 = Date.now();
+  const thirtyDaysAgo = now4 - 30 * 864e5;
+  const sixtyDaysAgo = now4 - 60 * 864e5;
   const recentSignals = signals.filter((s) => s.detectionTimestamp >= thirtyDaysAgo);
   const olderSignals = signals.filter((s) => s.detectionTimestamp >= sixtyDaysAgo && s.detectionTimestamp < thirtyDaysAgo);
   const acceleration = olderSignals.length > 0 ? (recentSignals.length - olderSignals.length) / olderSignals.length : recentSignals.length > 0 ? 1 : 0;
@@ -76959,7 +76270,7 @@ async function forecastPatternRisk(patternId, windowDays = 90) {
   if (jurisdictions.size > 3) drivers.push("geographic_spread");
   const scenarioLabel = assignScenarioLabel(riskLevel, drivers);
   const escalationDays = riskScore >= 80 ? Math.round(windowDays * 0.3) : riskScore >= 60 ? Math.round(windowDays * 0.6) : riskScore >= 40 ? windowDays : null;
-  const predictedEscalationDate = escalationDays ? now3 + escalationDays * 864e5 : null;
+  const predictedEscalationDate = escalationDays ? now4 + escalationDays * 864e5 : null;
   const nowTs = Date.now();
   await db.delete(systemicRiskForecasts).where(
     and53(
@@ -77016,8 +76327,8 @@ async function forecastPatternRisk(patternId, windowDays = 90) {
 async function forecastEntityRisk(entityName, windowDays = 90) {
   const signals = await db.select().from(detectedSignals).where(and53(eq66(detectedSignals.entityId, entityName), isNotNull2(detectedSignals.signalId)));
   const jurisdictions = new Set(signals.map((s) => s.jurisdictionScope).filter(Boolean));
-  const now3 = Date.now();
-  const thirtyDaysAgo = now3 - 30 * 864e5;
+  const now4 = Date.now();
+  const thirtyDaysAgo = now4 - 30 * 864e5;
   const recentSignals = signals.filter((s) => s.detectionTimestamp >= thirtyDaysAgo);
   const olderSignals = signals.filter((s) => s.detectionTimestamp < thirtyDaysAgo);
   const acceleration = olderSignals.length > 0 ? (recentSignals.length - olderSignals.length) / olderSignals.length : recentSignals.length > 0 ? 1 : 0;
@@ -77121,7 +76432,7 @@ init_db();
 init_schema();
 import { eq as eq67, desc as desc46, sql as sql113, and as and54, gte as gte19 } from "drizzle-orm";
 async function createSubscription(params) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.insert(alertSubscriptions).values({
     userId: params.userId,
     subscriptionType: params.subscriptionType,
@@ -77129,8 +76440,8 @@ async function createSubscription(params) {
     targetScope: params.targetName,
     alertFrequency: params.alertFrequency || "immediate",
     isPaused: 0,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   const [sub] = await db.select().from(alertSubscriptions).where(and54(
     eq67(alertSubscriptions.userId, params.userId),
@@ -77151,9 +76462,9 @@ async function deleteSubscription(subscriptionId) {
 async function checkAlertTriggers() {
   const activeSubs = await db.select().from(alertSubscriptions).where(eq67(alertSubscriptions.isPaused, 0));
   const newEvents = [];
-  const now3 = Date.now();
-  const oneDayAgo = new Date(now3 - 864e5);
-  const oneDayAgoMs = now3 - 864e5;
+  const now4 = Date.now();
+  const oneDayAgo = new Date(now4 - 864e5);
+  const oneDayAgoMs = now4 - 864e5;
   for (const sub of activeSubs) {
     let shouldTrigger = false;
     let message = "";
@@ -77208,7 +76519,7 @@ async function checkAlertTriggers() {
           riskLevel: riskScore >= 70 ? "critical" : riskScore >= 40 ? "warning" : "info",
           severity: riskScore >= 70 ? "critical" : riskScore >= 40 ? "warning" : "info",
           message,
-          createdAt: now3
+          createdAt: now4
         });
         const [evt] = await db.select().from(alertEvents).where(eq67(alertEvents.subscriptionId, sub.id)).orderBy(desc46(alertEvents.id)).limit(1);
         if (evt) newEvents.push(evt);
@@ -77220,7 +76531,7 @@ async function checkAlertTriggers() {
 async function processEventsToDelivery() {
   const undelivered = await db.select().from(alertEvents).where(sql113`${alertEvents.sentAt} IS NULL`).orderBy(alertEvents.createdAt).limit(50);
   const deliveries = [];
-  const now3 = Date.now();
+  const now4 = Date.now();
   for (const evt of undelivered) {
     const [sub] = await db.select().from(alertSubscriptions).where(eq67(alertSubscriptions.id, evt.subscriptionId)).limit(1);
     if (!sub) continue;
@@ -77230,9 +76541,9 @@ async function processEventsToDelivery() {
       channel: sub.alertFrequency || "immediate",
       recipient: sub.userId,
       status: "delivered",
-      sentAt: now3
+      sentAt: now4
     });
-    await db.update(alertEvents).set({ sentAt: now3 }).where(eq67(alertEvents.id, evt.id));
+    await db.update(alertEvents).set({ sentAt: now4 }).where(eq67(alertEvents.id, evt.id));
     const [delivery] = await db.select().from(alertDeliveryLog).where(eq67(alertDeliveryLog.alertId, evt.id)).orderBy(desc46(alertDeliveryLog.id)).limit(1);
     if (delivery) deliveries.push(delivery);
   }
@@ -77266,7 +76577,7 @@ init_db();
 init_schema();
 import { eq as eq68, desc as desc47, sql as sql114, and as and55, gte as gte20 } from "drizzle-orm";
 async function upsertMapNode(params) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const existing = await db.select().from(systemMapNodes).where(and55(
     eq68(systemMapNodes.nodeType, params.nodeType),
     eq68(systemMapNodes.nodeName, params.nodeName)
@@ -77275,7 +76586,7 @@ async function upsertMapNode(params) {
     await db.update(systemMapNodes).set({
       riskScore: params.riskScore ?? existing[0].riskScore,
       patternCount: params.patternCount ?? existing[0].patternCount,
-      updatedAt: now3
+      updatedAt: now4
     }).where(eq68(systemMapNodes.id, existing[0].id));
     const [updated] = await db.select().from(systemMapNodes).where(eq68(systemMapNodes.id, existing[0].id));
     return updated;
@@ -77287,8 +76598,8 @@ async function upsertMapNode(params) {
     industry: params.industry || null,
     riskScore: params.riskScore || 0,
     patternCount: params.patternCount || 0,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   const [inserted] = await db.select().from(systemMapNodes).where(and55(
     eq68(systemMapNodes.nodeType, params.nodeType),
@@ -77297,7 +76608,7 @@ async function upsertMapNode(params) {
   return inserted;
 }
 async function createMapEdge(params) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const existing = await db.select().from(systemMapEdges).where(and55(
     eq68(systemMapEdges.sourceNode, params.sourceNodeId),
     eq68(systemMapEdges.targetNode, params.targetNodeId),
@@ -77313,7 +76624,7 @@ async function createMapEdge(params) {
     targetNode: params.targetNodeId,
     relationshipType: params.edgeType,
     relationshipStrength: params.weight || 1,
-    createdAt: now3
+    createdAt: now4
   });
   const [inserted] = await db.select().from(systemMapEdges).where(and55(
     eq68(systemMapEdges.sourceNode, params.sourceNodeId),
@@ -77422,7 +76733,7 @@ async function getMapStats() {
   };
 }
 async function upsertFailureProfile(params) {
-  const now3 = Date.now();
+  const now4 = Date.now();
   const riskScore = calculateRiskScore2(params);
   const failureProbability = calculateFailureProbability({
     complaintVolume: params.complaintVolume || 0,
@@ -77445,7 +76756,7 @@ async function upsertFailureProfile(params) {
       riskScore,
       riskClassification,
       failureProbability,
-      lastUpdated: now3
+      lastUpdated: now4
     }).where(eq68(institutionRiskProfiles.id, existing[0].id));
     const [updated] = await db.select().from(institutionRiskProfiles).where(eq68(institutionRiskProfiles.id, existing[0].id));
     return updated;
@@ -77462,7 +76773,7 @@ async function upsertFailureProfile(params) {
     riskScore,
     riskClassification,
     failureProbability,
-    lastUpdated: now3
+    lastUpdated: now4
   });
   const [inserted] = await db.select().from(institutionRiskProfiles).where(eq68(institutionRiskProfiles.institutionId, params.institutionId)).orderBy(desc47(institutionRiskProfiles.id)).limit(1);
   return inserted;
@@ -77516,37 +76827,37 @@ async function getFailurePredictionStats() {
 // server/routers/engines-v4-router.ts
 var enginesV4Router = router({
   // ─── Entity Transparency ─────────────────────────────────────────
-  entityBreakdown: protectedProcedure.input(z75.object({ patternId: z75.number() })).query(({ input }) => getEntityBreakdown(input.patternId)),
-  generateEntityBreakdown: protectedProcedure.input(z75.object({ patternId: z75.number() })).mutation(({ input }) => withEngineTracking({ engineId: ENGINE_IDS.ENTITY_TRANSPARENCY, caseId: 0 }, () => generateEntityBreakdown(input.patternId))),
-  responsibleAgencies: protectedProcedure.input(z75.object({ patternId: z75.number() })).query(({ input }) => getResponsibleAgencies(input.patternId)),
-  generateAgencyMapping: protectedProcedure.input(z75.object({ patternId: z75.number() })).mutation(({ input }) => withEngineTracking({ engineId: ENGINE_IDS.ENTITY_TRANSPARENCY, caseId: 0 }, () => generateResponsibleAgencyMapping(input.patternId))),
-  topEntities: protectedProcedure.input(z75.object({ limit: z75.number().optional() }).optional()).query(({ input }) => getTopEntitiesLeaderboard(input?.limit)),
-  investigativeBrief: protectedProcedure.input(z75.object({ patternId: z75.number() })).query(({ input }) => generateInvestigativeBrief(input.patternId)),
+  entityBreakdown: protectedProcedure.input(z74.object({ patternId: z74.number() })).query(({ input }) => getEntityBreakdown(input.patternId)),
+  generateEntityBreakdown: protectedProcedure.input(z74.object({ patternId: z74.number() })).mutation(({ input }) => withEngineTracking({ engineId: ENGINE_IDS.ENTITY_TRANSPARENCY, caseId: 0 }, () => generateEntityBreakdown(input.patternId))),
+  responsibleAgencies: protectedProcedure.input(z74.object({ patternId: z74.number() })).query(({ input }) => getResponsibleAgencies(input.patternId)),
+  generateAgencyMapping: protectedProcedure.input(z74.object({ patternId: z74.number() })).mutation(({ input }) => withEngineTracking({ engineId: ENGINE_IDS.ENTITY_TRANSPARENCY, caseId: 0 }, () => generateResponsibleAgencyMapping(input.patternId))),
+  topEntities: protectedProcedure.input(z74.object({ limit: z74.number().optional() }).optional()).query(({ input }) => getTopEntitiesLeaderboard(input?.limit)),
+  investigativeBrief: protectedProcedure.input(z74.object({ patternId: z74.number() })).query(({ input }) => generateInvestigativeBrief(input.patternId)),
   entityTransparencyStats: protectedProcedure.query(() => getEntityTransparencyStats()),
   // ─── Entity Evidence Threshold ───────────────────────────────────
-  scoreEvidence: protectedProcedure.input(z75.object({
-    entityName: z75.string(),
-    patternId: z75.number().optional()
+  scoreEvidence: protectedProcedure.input(z74.object({
+    entityName: z74.string(),
+    patternId: z74.number().optional()
   })).mutation(({ input }) => withEngineTracking({ engineId: ENGINE_IDS.EVIDENCE_THRESHOLD, caseId: 0 }, () => scoreEntityEvidence(input.entityName, input.patternId))),
-  entityEvidenceScore: protectedProcedure.input(z75.object({
-    entityName: z75.string(),
-    patternId: z75.number().optional()
+  entityEvidenceScore: protectedProcedure.input(z74.object({
+    entityName: z74.string(),
+    patternId: z74.number().optional()
   })).query(({ input }) => getEntityEvidenceScore(input.entityName, input.patternId)),
-  entityVisibility: protectedProcedure.input(z75.object({
-    signalCount: z75.number(),
-    lawsuitCount: z75.number(),
-    enforcementCount: z75.number(),
-    streamCount: z75.number(),
-    confidenceScore: z75.number()
+  entityVisibility: protectedProcedure.input(z74.object({
+    signalCount: z74.number(),
+    lawsuitCount: z74.number(),
+    enforcementCount: z74.number(),
+    streamCount: z74.number(),
+    confidenceScore: z74.number()
   })).query(({ input }) => ({ result: evaluateVisibility(input) })),
   visibleEntities: protectedProcedure.query(() => getVisibleEntities()),
   provisionalEntities: protectedProcedure.query(() => getProvisionalEntities()),
-  safeLanguage: protectedProcedure.input(z75.object({
-    entityName: z75.string(),
-    complaintCount: z75.number(),
-    lawsuitCount: z75.number().optional(),
-    enforcementCount: z75.number().optional(),
-    issue: z75.string()
+  safeLanguage: protectedProcedure.input(z74.object({
+    entityName: z74.string(),
+    complaintCount: z74.number(),
+    lawsuitCount: z74.number().optional(),
+    enforcementCount: z74.number().optional(),
+    issue: z74.string()
   })).query(({ input }) => ({
     text: renderSafeLanguage(input.entityName, {
       complaintCount: input.complaintCount,
@@ -77555,48 +76866,48 @@ var enginesV4Router = router({
       issue: input.issue
     })
   })),
-  exportEvidence: protectedProcedure.input(z75.object({ entityName: z75.string() })).query(({ input }) => exportEntityEvidence(input.entityName)),
+  exportEvidence: protectedProcedure.input(z74.object({ entityName: z74.string() })).query(({ input }) => exportEntityEvidence(input.entityName)),
   evidenceThresholdStats: protectedProcedure.query(() => getEvidenceThresholdStats()),
   // ─── Systemic Risk Forecast ──────────────────────────────────────
-  calculateRisk: protectedProcedure.input(z75.object({
-    patternPressure: z75.number(),
-    signalVelocity: z75.number(),
-    streamDiversity: z75.number(),
-    enforcementGap: z75.number(),
-    geographicSpread: z75.number()
+  calculateRisk: protectedProcedure.input(z74.object({
+    patternPressure: z74.number(),
+    signalVelocity: z74.number(),
+    streamDiversity: z74.number(),
+    enforcementGap: z74.number(),
+    geographicSpread: z74.number()
   })).query(({ input }) => ({ score: calculateRiskScore(input) })),
-  forecastPatternRisk: protectedProcedure.input(z75.object({
-    patternId: z75.number(),
-    windowDays: z75.number().optional()
+  forecastPatternRisk: protectedProcedure.input(z74.object({
+    patternId: z74.number(),
+    windowDays: z74.number().optional()
   })).mutation(({ input }) => withEngineTracking({ engineId: ENGINE_IDS.RISK_FORECAST, caseId: 0 }, () => forecastPatternRisk(input.patternId, input.windowDays))),
-  forecastEntityRisk: protectedProcedure.input(z75.object({
-    entityName: z75.string(),
-    windowDays: z75.number().optional()
+  forecastEntityRisk: protectedProcedure.input(z74.object({
+    entityName: z74.string(),
+    windowDays: z74.number().optional()
   })).mutation(({ input }) => withEngineTracking({ engineId: ENGINE_IDS.RISK_FORECAST, caseId: 0 }, () => forecastEntityRisk(input.entityName, input.windowDays))),
-  compareForecastWindows: protectedProcedure.input(z75.object({
-    scope: z75.string(),
-    scopeId: z75.number().nullable().optional(),
-    scopeName: z75.string()
+  compareForecastWindows: protectedProcedure.input(z74.object({
+    scope: z74.string(),
+    scopeId: z74.number().nullable().optional(),
+    scopeName: z74.string()
   })).query(({ input }) => compareForecastWindows(input.scope, input.scopeId ?? null, input.scopeName)),
-  forecastReport: protectedProcedure.input(z75.object({
-    scope: z75.string(),
-    scopeId: z75.number().nullable().optional(),
-    scopeName: z75.string()
+  forecastReport: protectedProcedure.input(z74.object({
+    scope: z74.string(),
+    scopeId: z74.number().nullable().optional(),
+    scopeName: z74.string()
   })).query(({ input }) => generateForecastReport(input.scope, input.scopeId ?? null, input.scopeName)),
-  listForecasts: protectedProcedure.input(z75.object({
-    scope: z75.string().optional(),
-    limit: z75.number().optional()
+  listForecasts: protectedProcedure.input(z74.object({
+    scope: z74.string().optional(),
+    limit: z74.number().optional()
   }).optional()).query(({ input }) => listForecasts(input?.scope, input?.limit)),
   riskForecastStats: protectedProcedure.query(() => getForecastStats()),
   // ─── Public Alerting & Subscriptions ─────────────────────────────
-  createSubscription: protectedProcedure.input(z75.object({
-    subscriptionType: z75.string(),
-    targetId: z75.number().optional(),
-    targetName: z75.string(),
-    alertChannel: z75.string().optional(),
-    alertFrequency: z75.string().optional(),
-    thresholdRiskScore: z75.number().optional(),
-    thresholdSignalCount: z75.number().optional()
+  createSubscription: protectedProcedure.input(z74.object({
+    subscriptionType: z74.string(),
+    targetId: z74.number().optional(),
+    targetName: z74.string(),
+    alertChannel: z74.string().optional(),
+    alertFrequency: z74.string().optional(),
+    thresholdRiskScore: z74.number().optional(),
+    thresholdSignalCount: z74.number().optional()
   })).mutation(({ ctx, input }) => withEngineTracking({ engineId: "public-alerting-engine", caseId: 0 }, () => createSubscription({
     userId: ctx.user.id.toString(),
     subscriptionType: input.subscriptionType,
@@ -77608,36 +76919,36 @@ var enginesV4Router = router({
     thresholdSignalCount: input.thresholdSignalCount
   }))),
   mySubscriptions: protectedProcedure.query(({ ctx }) => listUserSubscriptions(ctx.user.id.toString())),
-  toggleSubscription: protectedProcedure.input(z75.object({ subscriptionId: z75.number(), isActive: z75.boolean() })).mutation(({ input }) => withEngineTracking({ engineId: "public-alerting-engine", caseId: 0 }, () => toggleSubscription(input.subscriptionId, input.isActive))),
-  deleteSubscription: protectedProcedure.input(z75.object({ subscriptionId: z75.number() })).mutation(({ input }) => withEngineTracking({ engineId: "public-alerting-engine", caseId: 0 }, () => deleteSubscription(input.subscriptionId))),
+  toggleSubscription: protectedProcedure.input(z74.object({ subscriptionId: z74.number(), isActive: z74.boolean() })).mutation(({ input }) => withEngineTracking({ engineId: "public-alerting-engine", caseId: 0 }, () => toggleSubscription(input.subscriptionId, input.isActive))),
+  deleteSubscription: protectedProcedure.input(z74.object({ subscriptionId: z74.number() })).mutation(({ input }) => withEngineTracking({ engineId: "public-alerting-engine", caseId: 0 }, () => deleteSubscription(input.subscriptionId))),
   checkAlerts: protectedProcedure.mutation(() => withEngineTracking({ engineId: "public-alerting-engine", caseId: 0 }, () => checkAlertTriggers())),
   processDeliveries: protectedProcedure.mutation(() => withEngineTracking({ engineId: "public-alerting-engine", caseId: 0 }, () => processEventsToDelivery())),
-  myNotifications: protectedProcedure.input(z75.object({ limit: z75.number().optional() }).optional()).query(({ ctx, input }) => getUserNotifications(ctx.user.id.toString(), input?.limit)),
-  markNotificationRead: protectedProcedure.input(z75.object({ eventId: z75.number() })).mutation(({ input }) => withEngineTracking({ engineId: "public-alerting-engine", caseId: 0 }, () => markNotificationRead2(input.eventId))),
+  myNotifications: protectedProcedure.input(z74.object({ limit: z74.number().optional() }).optional()).query(({ ctx, input }) => getUserNotifications(ctx.user.id.toString(), input?.limit)),
+  markNotificationRead: protectedProcedure.input(z74.object({ eventId: z74.number() })).mutation(({ input }) => withEngineTracking({ engineId: "public-alerting-engine", caseId: 0 }, () => markNotificationRead2(input.eventId))),
   alertingStats: protectedProcedure.query(() => getAlertingStats()),
   // ─── Global Systemic Intelligence Map ────────────────────────────
-  upsertNode: protectedProcedure.input(z75.object({
-    nodeType: z75.string(),
-    nodeName: z75.string(),
-    jurisdiction: z75.string().optional(),
-    industry: z75.string().optional(),
-    riskScore: z75.number().optional(),
-    patternCount: z75.number().optional()
+  upsertNode: protectedProcedure.input(z74.object({
+    nodeType: z74.string(),
+    nodeName: z74.string(),
+    jurisdiction: z74.string().optional(),
+    industry: z74.string().optional(),
+    riskScore: z74.number().optional(),
+    patternCount: z74.number().optional()
   })).mutation(({ input }) => withEngineTracking({ engineId: "systemic-map-engine", caseId: 0 }, () => upsertMapNode(input))),
-  createEdge: protectedProcedure.input(z75.object({
-    sourceNodeId: z75.number(),
-    targetNodeId: z75.number(),
-    edgeType: z75.string(),
-    weight: z75.number().optional()
+  createEdge: protectedProcedure.input(z74.object({
+    sourceNodeId: z74.number(),
+    targetNodeId: z74.number(),
+    edgeType: z74.string(),
+    weight: z74.number().optional()
   })).mutation(({ input }) => withEngineTracking({ engineId: "systemic-map-engine", caseId: 0 }, () => createMapEdge(input))),
   buildMap: protectedProcedure.mutation(() => withEngineTracking({ engineId: "systemic-map-engine", caseId: 0 }, () => buildMapFromSignals())),
-  mapData: protectedProcedure.input(z75.object({
-    nodeType: z75.string().optional(),
-    minRiskScore: z75.number().optional()
+  mapData: protectedProcedure.input(z74.object({
+    nodeType: z74.string().optional(),
+    minRiskScore: z74.number().optional()
   }).optional()).query(({ input }) => getMapData(input || void 0)),
-  addAnnotation: protectedProcedure.input(z75.object({
-    nodeId: z75.number(),
-    note: z75.string()
+  addAnnotation: protectedProcedure.input(z74.object({
+    nodeId: z74.number(),
+    note: z74.string()
   })).mutation(({ ctx, input }) => withEngineTracking({ engineId: "systemic-map-engine", caseId: 0 }, () => addAnnotation({
     nodeId: input.nodeId,
     analyst: ctx.user.name || ctx.user.id.toString(),
@@ -77645,45 +76956,45 @@ var enginesV4Router = router({
   }))),
   mapStats: protectedProcedure.query(() => getMapStats()),
   // ─── Institutional Failure Prediction ────────────────────────────
-  upsertFailureProfile: protectedProcedure.input(z75.object({
-    institutionId: z75.number(),
-    complaintVolume: z75.number().optional(),
-    litigationVolume: z75.number().optional(),
-    regulatoryActions: z75.number().optional(),
-    enforcementActions: z75.number().optional(),
-    appealReversalRate: z75.number().optional(),
-    processingDelayIndex: z75.number().optional(),
-    policyShockScore: z75.number().optional()
+  upsertFailureProfile: protectedProcedure.input(z74.object({
+    institutionId: z74.number(),
+    complaintVolume: z74.number().optional(),
+    litigationVolume: z74.number().optional(),
+    regulatoryActions: z74.number().optional(),
+    enforcementActions: z74.number().optional(),
+    appealReversalRate: z74.number().optional(),
+    processingDelayIndex: z74.number().optional(),
+    policyShockScore: z74.number().optional()
   })).mutation(({ input }) => withEngineTracking({ engineId: "failure-prediction-engine", caseId: 0 }, () => upsertFailureProfile(input))),
-  calculateFailureProbability: protectedProcedure.input(z75.object({
-    complaintVolume: z75.number(),
-    enforcementRate: z75.number(),
-    responseTime: z75.number(),
-    historicalFailures: z75.number(),
-    budgetPressure: z75.number()
+  calculateFailureProbability: protectedProcedure.input(z74.object({
+    complaintVolume: z74.number(),
+    enforcementRate: z74.number(),
+    responseTime: z74.number(),
+    historicalFailures: z74.number(),
+    budgetPressure: z74.number()
   })).query(({ input }) => ({ probability: calculateFailureProbability(input) })),
-  failureProfiles: protectedProcedure.input(z75.object({ minProbability: z75.number().optional() }).optional()).query(({ input }) => getFailureProfiles(input?.minProbability)),
-  profileTimeline: protectedProcedure.input(z75.object({ institutionId: z75.number() })).query(({ input }) => getProfileTimeline(input.institutionId)),
-  recordTimelineEvent: protectedProcedure.input(z75.object({
-    institutionId: z75.number(),
-    eventType: z75.string(),
-    impactScore: z75.number().optional(),
-    metadata: z75.record(z75.string(), z75.unknown()).optional()
+  failureProfiles: protectedProcedure.input(z74.object({ minProbability: z74.number().optional() }).optional()).query(({ input }) => getFailureProfiles(input?.minProbability)),
+  profileTimeline: protectedProcedure.input(z74.object({ institutionId: z74.number() })).query(({ input }) => getProfileTimeline(input.institutionId)),
+  recordTimelineEvent: protectedProcedure.input(z74.object({
+    institutionId: z74.number(),
+    eventType: z74.string(),
+    impactScore: z74.number().optional(),
+    metadata: z74.record(z74.string(), z74.unknown()).optional()
   })).mutation(({ input }) => withEngineTracking({ engineId: "failure-prediction-engine", caseId: 0 }, () => recordTimelineEvent(input))),
   failurePredictionStats: protectedProcedure.query(() => getFailurePredictionStats()),
   // ─── Investigative Query Engine ──────────────────────────────────
-  runInvestigativeQuery: protectedProcedure.input(z75.object({ queryText: z75.string() })).mutation(({ ctx, input }) => withEngineTracking({ engineId: ENGINE_IDS.INVESTIGATIVE_QUERY, caseId: 0 }, () => executeInvestigativeQuery(input.queryText, ctx.user.id.toString()))),
-  parseQuery: protectedProcedure.input(z75.object({ queryText: z75.string() })).query(({ input }) => ({ parsed: parseInvestigativeQuery(input.queryText) })),
-  queryHistory: protectedProcedure.input(z75.object({ limit: z75.number().optional() }).optional()).query(({ ctx, input }) => getQueryHistory(ctx.user.id.toString(), input?.limit)),
-  queryResults: protectedProcedure.input(z75.object({ queryId: z75.number() })).query(({ input }) => getQueryResults(input.queryId)),
+  runInvestigativeQuery: protectedProcedure.input(z74.object({ queryText: z74.string() })).mutation(({ ctx, input }) => withEngineTracking({ engineId: ENGINE_IDS.INVESTIGATIVE_QUERY, caseId: 0 }, () => executeInvestigativeQuery(input.queryText, ctx.user.id.toString()))),
+  parseQuery: protectedProcedure.input(z74.object({ queryText: z74.string() })).query(({ input }) => ({ parsed: parseInvestigativeQuery(input.queryText) })),
+  queryHistory: protectedProcedure.input(z74.object({ limit: z74.number().optional() }).optional()).query(({ ctx, input }) => getQueryHistory(ctx.user.id.toString(), input?.limit)),
+  queryResults: protectedProcedure.input(z74.object({ queryId: z74.number() })).query(({ input }) => getQueryResults(input.queryId)),
   suggestedQueries: protectedProcedure.query(() => SUGGESTED_QUERIES),
   investigativeQueryStats: protectedProcedure.query(() => getInvestigativeQueryStats())
 });
 
 // server/routers/session76-router.ts
-import { z as z76 } from "zod";
+import { z as z75 } from "zod";
 var exportSpineRouter = router({
-  runExport: adminProcedure.input(z76.object({ exportType: z76.enum(["full", "schema", "config", "deployment"]) })).mutation(async ({ ctx, input }) => {
+  runExport: adminProcedure.input(z75.object({ exportType: z75.enum(["full", "schema", "config", "deployment"]) })).mutation(async ({ ctx, input }) => {
     const { runExport: runExport2 } = await Promise.resolve().then(() => (init_export_spine_engine(), export_spine_engine_exports));
     return runExport2(input.exportType, ctx.user.id.toString());
   }),
@@ -77691,7 +77002,7 @@ var exportSpineRouter = router({
     const { getExportHistory: getExportHistory2 } = await Promise.resolve().then(() => (init_export_spine_engine(), export_spine_engine_exports));
     return getExportHistory2();
   }),
-  getRun: adminProcedure.input(z76.object({ runId: z76.number() })).query(async ({ input }) => {
+  getRun: adminProcedure.input(z75.object({ runId: z75.number() })).query(async ({ input }) => {
     const { getExportRun: getExportRun2 } = await Promise.resolve().then(() => (init_export_spine_engine(), export_spine_engine_exports));
     return getExportRun2(input.runId);
   }),
@@ -77719,13 +77030,13 @@ var exportSpineRouter = router({
   })
 });
 var restoreSpineRouter = router({
-  validate: adminProcedure.input(z76.object({ bundleJson: z76.string() })).mutation(async ({ input }) => {
+  validate: adminProcedure.input(z75.object({ bundleJson: z75.string() })).mutation(async ({ input }) => {
     const { validateBundle: validateBundle2 } = await Promise.resolve().then(() => (init_restore_spine_engine(), restore_spine_engine_exports));
     return validateBundle2(input.bundleJson);
   }),
-  execute: adminProcedure.input(z76.object({
-    bundleJson: z76.string(),
-    restoreType: z76.enum(["full", "schema", "config", "deployment"])
+  execute: adminProcedure.input(z75.object({
+    bundleJson: z75.string(),
+    restoreType: z75.enum(["full", "schema", "config", "deployment"])
   })).mutation(async ({ ctx, input }) => {
     const { executeRestore: executeRestore2 } = await Promise.resolve().then(() => (init_restore_spine_engine(), restore_spine_engine_exports));
     return executeRestore2(input.bundleJson, input.restoreType, ctx.user.id.toString());
@@ -77734,7 +77045,7 @@ var restoreSpineRouter = router({
     const { getRestoreHistory: getRestoreHistory2 } = await Promise.resolve().then(() => (init_restore_spine_engine(), restore_spine_engine_exports));
     return getRestoreHistory2();
   }),
-  getRun: adminProcedure.input(z76.object({ runId: z76.number() })).query(async ({ input }) => {
+  getRun: adminProcedure.input(z75.object({ runId: z75.number() })).query(async ({ input }) => {
     const { getRestoreRun: getRestoreRun2 } = await Promise.resolve().then(() => (init_restore_spine_engine(), restore_spine_engine_exports));
     return getRestoreRun2(input.runId);
   })
@@ -77745,26 +77056,26 @@ var adminControlRouter = router({
     const { listEngines: listEngines2 } = await Promise.resolve().then(() => (init_admin_sovereign_control(), admin_sovereign_control_exports));
     return listEngines2();
   }),
-  addEngine: adminProcedure.input(z76.object({
-    engineId: z76.string(),
-    engineName: z76.string(),
-    description: z76.string().optional(),
-    category: z76.string().optional(),
-    config: z76.record(z76.string(), z76.any()).optional(),
-    version: z76.string().optional()
+  addEngine: adminProcedure.input(z75.object({
+    engineId: z75.string(),
+    engineName: z75.string(),
+    description: z75.string().optional(),
+    category: z75.string().optional(),
+    config: z75.record(z75.string(), z75.any()).optional(),
+    version: z75.string().optional()
   })).mutation(async ({ ctx, input }) => {
     const { addEngine: addEngine2 } = await Promise.resolve().then(() => (init_admin_sovereign_control(), admin_sovereign_control_exports));
     return addEngine2(input, ctx.user.id.toString(), ctx.user.name ?? void 0);
   }),
-  removeEngine: adminProcedure.input(z76.object({ engineId: z76.string() })).mutation(async ({ ctx, input }) => {
+  removeEngine: adminProcedure.input(z75.object({ engineId: z75.string() })).mutation(async ({ ctx, input }) => {
     const { removeEngine: removeEngine2 } = await Promise.resolve().then(() => (init_admin_sovereign_control(), admin_sovereign_control_exports));
     return removeEngine2(input.engineId, ctx.user.id.toString(), ctx.user.name ?? void 0);
   }),
-  toggleEngine: adminProcedure.input(z76.object({ engineId: z76.string(), enabled: z76.boolean() })).mutation(async ({ ctx, input }) => {
+  toggleEngine: adminProcedure.input(z75.object({ engineId: z75.string(), enabled: z75.boolean() })).mutation(async ({ ctx, input }) => {
     const { toggleEngine: toggleEngine2 } = await Promise.resolve().then(() => (init_admin_sovereign_control(), admin_sovereign_control_exports));
     return toggleEngine2(input.engineId, input.enabled, ctx.user.id.toString(), ctx.user.name ?? void 0);
   }),
-  reorderEngines: adminProcedure.input(z76.object({ orderedIds: z76.array(z76.string()) })).mutation(async ({ ctx, input }) => {
+  reorderEngines: adminProcedure.input(z75.object({ orderedIds: z75.array(z75.string()) })).mutation(async ({ ctx, input }) => {
     const { reorderEngines: reorderEngines2 } = await Promise.resolve().then(() => (init_admin_sovereign_control(), admin_sovereign_control_exports));
     return reorderEngines2(input.orderedIds, ctx.user.id.toString(), ctx.user.name ?? void 0);
   }),
@@ -77773,16 +77084,16 @@ var adminControlRouter = router({
     const { listStreams: listStreams2 } = await Promise.resolve().then(() => (init_admin_sovereign_control(), admin_sovereign_control_exports));
     return listStreams2();
   }),
-  addStream: adminProcedure.input(z76.object({
-    stream_id: z76.string(),
-    stream_name: z76.string(),
-    stream_type: z76.string(),
-    source_url: z76.string().optional(),
-    update_frequency: z76.string().optional(),
-    signal_weight: z76.number().optional(),
-    confidence_multiplier: z76.number().optional(),
-    description: z76.string().optional(),
-    field_mapping: z76.record(z76.string(), z76.string()).optional()
+  addStream: adminProcedure.input(z75.object({
+    stream_id: z75.string(),
+    stream_name: z75.string(),
+    stream_type: z75.string(),
+    source_url: z75.string().optional(),
+    update_frequency: z75.string().optional(),
+    signal_weight: z75.number().optional(),
+    confidence_multiplier: z75.number().optional(),
+    description: z75.string().optional(),
+    field_mapping: z75.record(z75.string(), z75.string()).optional()
   })).mutation(async ({ ctx, input }) => {
     const { addStream: addStream2 } = await Promise.resolve().then(() => (init_admin_sovereign_control(), admin_sovereign_control_exports));
     const result = await addStream2(input, ctx.user.id.toString(), ctx.user.name ?? void 0);
@@ -77793,16 +77104,16 @@ var adminControlRouter = router({
     }
     return result;
   }),
-  editStream: adminProcedure.input(z76.object({
-    stream_id: z76.string(),
-    updates: z76.object({
-      stream_name: z76.string().optional(),
-      signal_weight: z76.number().optional(),
-      confidence_multiplier: z76.number().optional(),
-      enabled: z76.boolean().optional(),
-      description: z76.string().optional(),
-      source_url: z76.string().optional(),
-      update_frequency: z76.string().optional()
+  editStream: adminProcedure.input(z75.object({
+    stream_id: z75.string(),
+    updates: z75.object({
+      stream_name: z75.string().optional(),
+      signal_weight: z75.number().optional(),
+      confidence_multiplier: z75.number().optional(),
+      enabled: z75.boolean().optional(),
+      description: z75.string().optional(),
+      source_url: z75.string().optional(),
+      update_frequency: z75.string().optional()
     })
   })).mutation(async ({ ctx, input }) => {
     const { editStream: editStream2 } = await Promise.resolve().then(() => (init_admin_sovereign_control(), admin_sovereign_control_exports));
@@ -77814,7 +77125,7 @@ var adminControlRouter = router({
     }
     return result;
   }),
-  disableStream: adminProcedure.input(z76.object({ stream_id: z76.string() })).mutation(async ({ ctx, input }) => {
+  disableStream: adminProcedure.input(z75.object({ stream_id: z75.string() })).mutation(async ({ ctx, input }) => {
     const { disableStream: disableStream2 } = await Promise.resolve().then(() => (init_admin_sovereign_control(), admin_sovereign_control_exports));
     const result = await disableStream2(input.stream_id, ctx.user.id.toString(), ctx.user.name ?? void 0);
     try {
@@ -77829,25 +77140,25 @@ var adminControlRouter = router({
     const { listTables: listTables2 } = await Promise.resolve().then(() => (init_admin_sovereign_control(), admin_sovereign_control_exports));
     return listTables2();
   }),
-  inspectTable: adminProcedure.input(z76.object({ tableName: z76.string() })).query(async ({ input }) => {
+  inspectTable: adminProcedure.input(z75.object({ tableName: z75.string() })).query(async ({ input }) => {
     const { inspectTable: inspectTable3 } = await Promise.resolve().then(() => (init_admin_sovereign_control(), admin_sovereign_control_exports));
     return inspectTable3(input.tableName);
   }),
   // Migration runner
-  previewSql: adminProcedure.input(z76.object({ sql: z76.string() })).mutation(async ({ input }) => {
+  previewSql: adminProcedure.input(z75.object({ sql: z75.string() })).mutation(async ({ input }) => {
     const { previewSql: previewSql2 } = await Promise.resolve().then(() => (init_admin_sovereign_control(), admin_sovereign_control_exports));
     return previewSql2(input.sql);
   }),
-  executeSql: adminProcedure.input(z76.object({ sql: z76.string() })).mutation(async ({ ctx, input }) => {
+  executeSql: adminProcedure.input(z75.object({ sql: z75.string() })).mutation(async ({ ctx, input }) => {
     const { executeSql: executeSql2 } = await Promise.resolve().then(() => (init_admin_sovereign_control(), admin_sovereign_control_exports));
     return executeSql2(input.sql, ctx.user.id.toString(), ctx.user.name ?? void 0);
   }),
   // Change log
-  getChangeLog: adminProcedure.input(z76.object({ limit: z76.number().optional() }).optional()).query(async ({ input }) => {
+  getChangeLog: adminProcedure.input(z75.object({ limit: z75.number().optional() }).optional()).query(async ({ input }) => {
     const { getChangeLog: getChangeLog2 } = await Promise.resolve().then(() => (init_admin_sovereign_control(), admin_sovereign_control_exports));
     return getChangeLog2(input?.limit);
   }),
-  rollbackChange: adminProcedure.input(z76.object({ changeId: z76.number() })).mutation(async ({ ctx, input }) => {
+  rollbackChange: adminProcedure.input(z75.object({ changeId: z75.number() })).mutation(async ({ ctx, input }) => {
     const { rollbackChange: rollbackChange2 } = await Promise.resolve().then(() => (init_admin_sovereign_control(), admin_sovereign_control_exports));
     return rollbackChange2(input.changeId, ctx.user.id.toString(), ctx.user.name ?? void 0);
   }),
@@ -77862,20 +77173,20 @@ var dataStreamRouter = router({
     const { getStreamsWithHealth: getStreamsWithHealth2 } = await Promise.resolve().then(() => (init_data_stream_manager(), data_stream_manager_exports));
     return getStreamsWithHealth2();
   }),
-  getStreamDetail: adminProcedure.input(z76.object({ stream_id: z76.string() })).query(async ({ input }) => {
+  getStreamDetail: adminProcedure.input(z75.object({ stream_id: z75.string() })).query(async ({ input }) => {
     const { getStreamDetail: getStreamDetail2 } = await Promise.resolve().then(() => (init_data_stream_manager(), data_stream_manager_exports));
     return getStreamDetail2(input.stream_id);
   }),
-  createStream: adminProcedure.input(z76.object({
-    stream_id: z76.string(),
-    stream_name: z76.string(),
-    stream_type: z76.string(),
-    source_url: z76.string().optional(),
-    update_frequency: z76.string().optional(),
-    signal_weight: z76.number().optional(),
-    confidence_multiplier: z76.number().optional(),
-    description: z76.string().optional(),
-    field_mapping: z76.record(z76.string(), z76.string()).optional()
+  createStream: adminProcedure.input(z75.object({
+    stream_id: z75.string(),
+    stream_name: z75.string(),
+    stream_type: z75.string(),
+    source_url: z75.string().optional(),
+    update_frequency: z75.string().optional(),
+    signal_weight: z75.number().optional(),
+    confidence_multiplier: z75.number().optional(),
+    description: z75.string().optional(),
+    field_mapping: z75.record(z75.string(), z75.string()).optional()
   })).mutation(async ({ input }) => {
     const { createStream: createStream2 } = await Promise.resolve().then(() => (init_data_stream_manager(), data_stream_manager_exports));
     const result = await createStream2(input);
@@ -77886,17 +77197,17 @@ var dataStreamRouter = router({
     }
     return result;
   }),
-  updateStream: adminProcedure.input(z76.object({
-    stream_id: z76.string(),
-    updates: z76.object({
-      stream_name: z76.string().optional(),
-      signal_weight: z76.number().optional(),
-      confidence_multiplier: z76.number().optional(),
-      enabled: z76.boolean().optional(),
-      description: z76.string().optional(),
-      source_url: z76.string().optional(),
-      update_frequency: z76.string().optional(),
-      field_mapping: z76.record(z76.string(), z76.string()).optional()
+  updateStream: adminProcedure.input(z75.object({
+    stream_id: z75.string(),
+    updates: z75.object({
+      stream_name: z75.string().optional(),
+      signal_weight: z75.number().optional(),
+      confidence_multiplier: z75.number().optional(),
+      enabled: z75.boolean().optional(),
+      description: z75.string().optional(),
+      source_url: z75.string().optional(),
+      update_frequency: z75.string().optional(),
+      field_mapping: z75.record(z75.string(), z75.string()).optional()
     })
   })).mutation(async ({ input }) => {
     const { updateStream: updateStream2 } = await Promise.resolve().then(() => (init_data_stream_manager(), data_stream_manager_exports));
@@ -77908,7 +77219,7 @@ var dataStreamRouter = router({
     }
     return result;
   }),
-  deleteStream: adminProcedure.input(z76.object({ stream_id: z76.string() })).mutation(async ({ input }) => {
+  deleteStream: adminProcedure.input(z75.object({ stream_id: z75.string() })).mutation(async ({ input }) => {
     const { deleteStream: deleteStream2 } = await Promise.resolve().then(() => (init_data_stream_manager(), data_stream_manager_exports));
     const result = await deleteStream2(input.stream_id);
     try {
@@ -77928,28 +77239,28 @@ var dataStreamRouter = router({
   })
 });
 var interventionTimelineRouter = router({
-  recordEvent: adminProcedure.input(z76.object({
-    patternId: z76.string(),
-    eventType: z76.enum(["pattern_detected", "strategy_generated", "intervention_started", "intervention_completed", "outcome_recorded", "trend_shift", "policy_change"]),
-    title: z76.string(),
-    description: z76.string().optional(),
-    eventSource: z76.string().optional(),
-    impactScore: z76.number().optional(),
-    metadata: z76.record(z76.string(), z76.any()).optional(),
-    timestamp: z76.number().optional()
+  recordEvent: adminProcedure.input(z75.object({
+    patternId: z75.string(),
+    eventType: z75.enum(["pattern_detected", "strategy_generated", "intervention_started", "intervention_completed", "outcome_recorded", "trend_shift", "policy_change"]),
+    title: z75.string(),
+    description: z75.string().optional(),
+    eventSource: z75.string().optional(),
+    impactScore: z75.number().optional(),
+    metadata: z75.record(z75.string(), z75.any()).optional(),
+    timestamp: z75.number().optional()
   })).mutation(async ({ input }) => {
     const { recordTimelineEvent: recordTimelineEvent3 } = await Promise.resolve().then(() => (init_intervention_timeline_engine(), intervention_timeline_engine_exports));
     return recordTimelineEvent3(input);
   }),
-  getPatternTimeline: protectedProcedure.input(z76.object({ patternId: z76.string() })).query(async ({ input }) => {
+  getPatternTimeline: protectedProcedure.input(z75.object({ patternId: z75.string() })).query(async ({ input }) => {
     const { getPatternTimeline: getPatternTimeline2 } = await Promise.resolve().then(() => (init_intervention_timeline_engine(), intervention_timeline_engine_exports));
     return getPatternTimeline2(input.patternId);
   }),
-  getAllTimelines: protectedProcedure.input(z76.object({ limit: z76.number().optional() }).optional()).query(async ({ input }) => {
+  getAllTimelines: protectedProcedure.input(z75.object({ limit: z75.number().optional() }).optional()).query(async ({ input }) => {
     const { getAllTimelines: getAllTimelines2 } = await Promise.resolve().then(() => (init_intervention_timeline_engine(), intervention_timeline_engine_exports));
     return getAllTimelines2(input?.limit);
   }),
-  getRecentEvents: protectedProcedure.input(z76.object({ limit: z76.number().optional() }).optional()).query(async ({ input }) => {
+  getRecentEvents: protectedProcedure.input(z75.object({ limit: z75.number().optional() }).optional()).query(async ({ input }) => {
     const { getRecentEvents: getRecentEvents2 } = await Promise.resolve().then(() => (init_intervention_timeline_engine(), intervention_timeline_engine_exports));
     return getRecentEvents2(input?.limit);
   }),
@@ -77957,17 +77268,17 @@ var interventionTimelineRouter = router({
     const { getTimelineStats: getTimelineStats2 } = await Promise.resolve().then(() => (init_intervention_timeline_engine(), intervention_timeline_engine_exports));
     return getTimelineStats2();
   }),
-  deleteEvent: adminProcedure.input(z76.object({ eventId: z76.number() })).mutation(async ({ input }) => {
+  deleteEvent: adminProcedure.input(z75.object({ eventId: z75.number() })).mutation(async ({ input }) => {
     const { deleteTimelineEvent: deleteTimelineEvent2 } = await Promise.resolve().then(() => (init_intervention_timeline_engine(), intervention_timeline_engine_exports));
     return deleteTimelineEvent2(input.eventId);
   }),
-  updateEvent: adminProcedure.input(z76.object({
-    eventId: z76.number(),
-    updates: z76.object({
-      title: z76.string().optional(),
-      description: z76.string().optional(),
-      impactScore: z76.number().optional(),
-      metadata: z76.record(z76.string(), z76.any()).optional()
+  updateEvent: adminProcedure.input(z75.object({
+    eventId: z75.number(),
+    updates: z75.object({
+      title: z75.string().optional(),
+      description: z75.string().optional(),
+      impactScore: z75.number().optional(),
+      metadata: z75.record(z75.string(), z75.any()).optional()
     })
   })).mutation(async ({ input }) => {
     const { updateTimelineEvent: updateTimelineEvent2 } = await Promise.resolve().then(() => (init_intervention_timeline_engine(), intervention_timeline_engine_exports));
@@ -77979,7 +77290,7 @@ var interventionTimelineRouter = router({
   })
 });
 var copilotRouter = router({
-  createConversation: adminProcedure.input(z76.object({ title: z76.string().optional() }).optional()).mutation(async ({ ctx, input }) => {
+  createConversation: adminProcedure.input(z75.object({ title: z75.string().optional() }).optional()).mutation(async ({ ctx, input }) => {
     const { createConversation: createConversation2 } = await Promise.resolve().then(() => (init_system_copilot_sunam(), system_copilot_sunam_exports));
     return createConversation2(ctx.user.id.toString(), input?.title);
   }),
@@ -77987,20 +77298,20 @@ var copilotRouter = router({
     const { getConversations: getConversations2 } = await Promise.resolve().then(() => (init_system_copilot_sunam(), system_copilot_sunam_exports));
     return getConversations2(ctx.user.id.toString());
   }),
-  getMessages: adminProcedure.input(z76.object({ conversationId: z76.number() })).query(async ({ input }) => {
+  getMessages: adminProcedure.input(z75.object({ conversationId: z75.number() })).query(async ({ input }) => {
     const { getConversationMessages: getConversationMessages2 } = await Promise.resolve().then(() => (init_system_copilot_sunam(), system_copilot_sunam_exports));
     return getConversationMessages2(input.conversationId);
   }),
-  chat: adminProcedure.input(z76.object({ conversationId: z76.number(), message: z76.string() })).mutation(async ({ ctx, input }) => {
+  chat: adminProcedure.input(z75.object({ conversationId: z75.number(), message: z75.string() })).mutation(async ({ ctx, input }) => {
     const { chat: chat2 } = await Promise.resolve().then(() => (init_system_copilot_sunam(), system_copilot_sunam_exports));
     return chat2(input.conversationId, input.message, ctx.user.id.toString());
   }),
-  archiveConversation: adminProcedure.input(z76.object({ conversationId: z76.number() })).mutation(async ({ input }) => {
+  archiveConversation: adminProcedure.input(z75.object({ conversationId: z75.number() })).mutation(async ({ input }) => {
     const { archiveConversation: archiveConversation2 } = await Promise.resolve().then(() => (init_system_copilot_sunam(), system_copilot_sunam_exports));
     return archiveConversation2(input.conversationId);
   }),
   // Artifact management
-  getArtifact: adminProcedure.input(z76.object({ artifactId: z76.number() })).query(async ({ input }) => {
+  getArtifact: adminProcedure.input(z75.object({ artifactId: z75.number() })).query(async ({ input }) => {
     const { getArtifact: getArtifact2 } = await Promise.resolve().then(() => (init_system_copilot_sunam(), system_copilot_sunam_exports));
     return getArtifact2(input.artifactId);
   }),
@@ -78008,33 +77319,33 @@ var copilotRouter = router({
     const { getPendingArtifacts: getPendingArtifacts2 } = await Promise.resolve().then(() => (init_system_copilot_sunam(), system_copilot_sunam_exports));
     return getPendingArtifacts2();
   }),
-  approveArtifact: adminProcedure.input(z76.object({ artifactId: z76.number() })).mutation(async ({ input }) => {
+  approveArtifact: adminProcedure.input(z75.object({ artifactId: z75.number() })).mutation(async ({ input }) => {
     const { approveArtifact: approveArtifact2 } = await Promise.resolve().then(() => (init_system_copilot_sunam(), system_copilot_sunam_exports));
     return approveArtifact2(input.artifactId);
   }),
-  rejectArtifact: adminProcedure.input(z76.object({ artifactId: z76.number() })).mutation(async ({ input }) => {
+  rejectArtifact: adminProcedure.input(z75.object({ artifactId: z75.number() })).mutation(async ({ input }) => {
     const { rejectArtifact: rejectArtifact2 } = await Promise.resolve().then(() => (init_system_copilot_sunam(), system_copilot_sunam_exports));
     return rejectArtifact2(input.artifactId);
   }),
-  executeArtifact: adminProcedure.input(z76.object({ artifactId: z76.number() })).mutation(async ({ ctx, input }) => {
+  executeArtifact: adminProcedure.input(z75.object({ artifactId: z75.number() })).mutation(async ({ ctx, input }) => {
     const { executeArtifact: executeArtifact2 } = await Promise.resolve().then(() => (init_system_copilot_sunam(), system_copilot_sunam_exports));
     return executeArtifact2(input.artifactId, ctx.user.id.toString());
   }),
-  rollbackArtifact: adminProcedure.input(z76.object({ artifactId: z76.number() })).mutation(async ({ ctx, input }) => {
+  rollbackArtifact: adminProcedure.input(z75.object({ artifactId: z75.number() })).mutation(async ({ ctx, input }) => {
     const { rollbackArtifact: rollbackArtifact2 } = await Promise.resolve().then(() => (init_system_copilot_sunam(), system_copilot_sunam_exports));
     return rollbackArtifact2(input.artifactId, ctx.user.id.toString());
   }),
   // Quick inspect
-  inspectTable: adminProcedure.input(z76.object({ tableName: z76.string() })).query(async ({ input }) => {
+  inspectTable: adminProcedure.input(z75.object({ tableName: z75.string() })).query(async ({ input }) => {
     const { inspectTable: inspectTable3 } = await Promise.resolve().then(() => (init_system_copilot_sunam(), system_copilot_sunam_exports));
     return inspectTable3(input.tableName);
   }),
   // ─── DIRECT EXECUTION — No artifact, no approval, immediate action ───
   // Sunam receives an instruction, calls tools directly, returns results.
   // This is the full operator endpoint.
-  execute: protectedProcedure.input(z76.object({
-    instruction: z76.string().describe("Natural language instruction for Sunam to execute"),
-    maxSteps: z76.number().default(10).optional()
+  execute: protectedProcedure.input(z75.object({
+    instruction: z75.string().describe("Natural language instruction for Sunam to execute"),
+    maxSteps: z75.number().default(10).optional()
   })).mutation(async ({ ctx, input }) => {
     const { sunamExecute: sunamExecute2 } = await Promise.resolve().then(() => (init_sunam_executor(), sunam_executor_exports));
     return sunamExecute2(
@@ -78054,9 +77365,9 @@ var copilotRouter = router({
     }));
   }),
   // Direct tool dispatch — call a single tool by name with args
-  dispatchTool: protectedProcedure.input(z76.object({
-    toolName: z76.string(),
-    args: z76.record(z76.string(), z76.any())
+  dispatchTool: protectedProcedure.input(z75.object({
+    toolName: z75.string(),
+    args: z75.record(z75.string(), z75.any())
   })).mutation(async ({ ctx, input }) => {
     const { dispatchTool: dispatchTool2 } = await Promise.resolve().then(() => (init_sunam_executor(), sunam_executor_exports));
     return dispatchTool2(input.toolName, input.args, ctx.user.id.toString());
@@ -78064,9 +77375,9 @@ var copilotRouter = router({
 });
 var executionBridgeRouter = router({
   // Run a single stream — calls triggerManualIngestion (same as ingestion.triggerIngestion)
-  runStream: adminProcedure.input(z76.object({
-    stream_id: z76.string(),
-    maxRecords: z76.number().optional()
+  runStream: adminProcedure.input(z75.object({
+    stream_id: z75.string(),
+    maxRecords: z75.number().optional()
   })).mutation(async ({ input }) => {
     const { triggerManualIngestion: triggerManualIngestion2 } = await Promise.resolve().then(() => (init_scheduler(), scheduler_exports));
     const result = await Promise.race([
@@ -78129,7 +77440,7 @@ var executionBridgeRouter = router({
     };
   }),
   // Retry failed runs — find recent failed runs and re-trigger their streams
-  retryFailedRuns: adminProcedure.input(z76.object({ hoursBack: z76.number().default(24) }).optional()).mutation(async ({ input }) => {
+  retryFailedRuns: adminProcedure.input(z75.object({ hoursBack: z75.number().default(24) }).optional()).mutation(async ({ input }) => {
     const { ingestRuns: ingestRuns2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
     const { eq: eq88, sql: sql135 } = await import("drizzle-orm");
@@ -78170,7 +77481,7 @@ var executionBridgeRouter = router({
     };
   }),
   // Get stream execution status — stream identity/metrics come from the unified query layer
-  getStreamStatus: adminProcedure.input(z76.object({ stream_id: z76.string() })).query(async ({ input }) => {
+  getStreamStatus: adminProcedure.input(z75.object({ stream_id: z75.string() })).query(async ({ input }) => {
     const { ingestRuns: ingestRuns2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
     const { eq: eq88, sql: sql135, desc: desc59 } = await import("drizzle-orm");
@@ -78200,12 +77511,12 @@ var executionBridgeRouter = router({
   }),
   // ─── Self-Healing Controls (Session 80) ───
   // Re-enable an auto-disabled stream
-  reenableStream: adminProcedure.input(z76.object({ stream_id: z76.string() })).mutation(async ({ input }) => {
+  reenableStream: adminProcedure.input(z75.object({ stream_id: z75.string() })).mutation(async ({ input }) => {
     const { reenableStream: reenableStream2 } = await Promise.resolve().then(() => (init_scheduler(), scheduler_exports));
     return reenableStream2(input.stream_id);
   }),
   // Reset failure counters for a stream
-  resetFailureCounters: adminProcedure.input(z76.object({ stream_id: z76.string() })).mutation(async ({ input }) => {
+  resetFailureCounters: adminProcedure.input(z75.object({ stream_id: z75.string() })).mutation(async ({ input }) => {
     const { resetFailureCounters: resetFailureCounters2 } = await Promise.resolve().then(() => (init_scheduler(), scheduler_exports));
     return resetFailureCounters2(input.stream_id);
   }),
@@ -78217,15 +77528,15 @@ var executionBridgeRouter = router({
     return { success: true, ...getSchedulerStatus3() };
   }),
   // Update stream configuration (api_url, cron_expression, field_mapping, etc.)
-  updateStreamConfig: adminProcedure.input(z76.object({
-    stream_id: z76.string(),
-    api_url: z76.string().optional(),
-    cron_expression: z76.string().optional(),
-    field_mapping: z76.record(z76.string(), z76.string()).optional(),
-    source_url: z76.string().optional(),
-    parser_mode: z76.string().optional(),
-    post_processing_engine_name: z76.string().optional(),
-    rationale: z76.string().min(10).optional()
+  updateStreamConfig: adminProcedure.input(z75.object({
+    stream_id: z75.string(),
+    api_url: z75.string().optional(),
+    cron_expression: z75.string().optional(),
+    field_mapping: z75.record(z75.string(), z75.string()).optional(),
+    source_url: z75.string().optional(),
+    parser_mode: z75.string().optional(),
+    post_processing_engine_name: z75.string().optional(),
+    rationale: z75.string().min(10).optional()
   })).mutation(async ({ ctx, input }) => {
     const { governedDataStreamConfigChange: governedDataStreamConfigChange2 } = await Promise.resolve().then(() => (init_governance_hooks(), governance_hooks_exports));
     const { stream_id, rationale, ...updates } = input;
@@ -78254,18 +77565,18 @@ var executionBridgeRouter = router({
   }),
   // ─── Engine Operational Control (Session 80) ───
   // Reorder engines
-  reorderEngines: adminProcedure.input(z76.object({ orderedIds: z76.array(z76.string()) })).mutation(async ({ ctx, input }) => {
+  reorderEngines: adminProcedure.input(z75.object({ orderedIds: z75.array(z75.string()) })).mutation(async ({ ctx, input }) => {
     const { reorderEngines: reorderEngines2 } = await Promise.resolve().then(() => (init_admin_sovereign_control(), admin_sovereign_control_exports));
     return reorderEngines2(input.orderedIds, ctx.user.id.toString(), ctx.user.name ?? void 0);
   }),
   // Update engine config
-  updateEngineConfig: adminProcedure.input(z76.object({
-    engineId: z76.string(),
-    config: z76.record(z76.string(), z76.any()).optional(),
-    version: z76.string().optional(),
-    description: z76.string().optional(),
-    category: z76.string().optional(),
-    rationale: z76.string().min(10).optional()
+  updateEngineConfig: adminProcedure.input(z75.object({
+    engineId: z75.string(),
+    config: z75.record(z75.string(), z75.any()).optional(),
+    version: z75.string().optional(),
+    description: z75.string().optional(),
+    category: z75.string().optional(),
+    rationale: z75.string().min(10).optional()
   })).mutation(async ({ ctx, input }) => {
     const { governedEngineConfigDB: governedEngineConfigDB2 } = await Promise.resolve().then(() => (init_governance_hooks(), governance_hooks_exports));
     const changes = {};
@@ -78283,7 +77594,7 @@ var executionBridgeRouter = router({
     return { success: true };
   }),
   // Get stream diagnostics (last run details with unified stream metrics)
-  getStreamDiagnostics: adminProcedure.input(z76.object({ stream_id: z76.string() })).query(async ({ input }) => {
+  getStreamDiagnostics: adminProcedure.input(z75.object({ stream_id: z75.string() })).query(async ({ input }) => {
     const { ingestRuns: ingestRuns2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
     const { eq: eq88, desc: desc59 } = await import("drizzle-orm");
@@ -78316,12 +77627,12 @@ var executionBridgeRouter = router({
   }),
   // ─── Executor Service Endpoints (Session 81) ───
   // Reset stream checkpoint — clears lastIngestedAt for force re-ingestion
-  resetCheckpoint: adminProcedure.input(z76.object({ stream_id: z76.string() })).mutation(async ({ ctx, input }) => {
+  resetCheckpoint: adminProcedure.input(z75.object({ stream_id: z75.string() })).mutation(async ({ ctx, input }) => {
     const { resetStreamCheckpoint: resetStreamCheckpoint2 } = await Promise.resolve().then(() => (init_executor_service(), executor_service_exports));
     return resetStreamCheckpoint2(input.stream_id, ctx.user.id.toString(), ctx.user.name ?? void 0);
   }),
   // Force re-ingestion — reset checkpoint + immediately run
-  forceReingestion: adminProcedure.input(z76.object({ stream_id: z76.string(), maxRecords: z76.number().optional() })).mutation(async ({ ctx, input }) => {
+  forceReingestion: adminProcedure.input(z75.object({ stream_id: z75.string(), maxRecords: z75.number().optional() })).mutation(async ({ ctx, input }) => {
     const { resetStreamCheckpoint: resetStreamCheckpoint2 } = await Promise.resolve().then(() => (init_executor_service(), executor_service_exports));
     const resetResult = await resetStreamCheckpoint2(input.stream_id, ctx.user.id.toString(), ctx.user.name ?? void 0);
     if (!resetResult.success) return { ...resetResult, records_processed: 0, signals_generated: 0 };
@@ -78340,35 +77651,35 @@ var executionBridgeRouter = router({
     };
   }),
   // Apply engine patch via executor service (with diff, impact analysis, rollback)
-  applyEnginePatch: adminProcedure.input(z76.object({
-    engineId: z76.string(),
-    updates: z76.object({
-      engineName: z76.string().optional(),
-      description: z76.string().optional(),
-      category: z76.string().optional(),
-      version: z76.string().optional(),
-      configJson: z76.record(z76.string(), z76.any()).optional(),
-      enabled: z76.boolean().optional(),
-      sortOrder: z76.number().optional()
+  applyEnginePatch: adminProcedure.input(z75.object({
+    engineId: z75.string(),
+    updates: z75.object({
+      engineName: z75.string().optional(),
+      description: z75.string().optional(),
+      category: z75.string().optional(),
+      version: z75.string().optional(),
+      configJson: z75.record(z75.string(), z75.any()).optional(),
+      enabled: z75.boolean().optional(),
+      sortOrder: z75.number().optional()
     })
   })).mutation(async ({ ctx, input }) => {
     const { applyEnginePatch: applyEnginePatch2 } = await Promise.resolve().then(() => (init_executor_service(), executor_service_exports));
     return applyEnginePatch2(input.engineId, input.updates, ctx.user.id.toString(), ctx.user.name ?? void 0);
   }),
   // Apply stream patch via executor service (with diff, impact analysis, rollback)
-  applyStreamPatch: adminProcedure.input(z76.object({
-    stream_id: z76.string(),
-    updates: z76.object({
-      stream_name: z76.string().optional(),
-      api_url: z76.string().optional(),
-      source_url: z76.string().optional(),
-      field_mapping: z76.record(z76.string(), z76.string()).optional(),
-      cron_expression: z76.string().optional(),
-      signal_weight: z76.number().optional(),
-      confidence_multiplier: z76.number().optional(),
-      enabled: z76.boolean().optional(),
-      post_processing_engine_name: z76.string().optional(),
-      parser_mode: z76.string().optional()
+  applyStreamPatch: adminProcedure.input(z75.object({
+    stream_id: z75.string(),
+    updates: z75.object({
+      stream_name: z75.string().optional(),
+      api_url: z75.string().optional(),
+      source_url: z75.string().optional(),
+      field_mapping: z75.record(z75.string(), z75.string()).optional(),
+      cron_expression: z75.string().optional(),
+      signal_weight: z75.number().optional(),
+      confidence_multiplier: z75.number().optional(),
+      enabled: z75.boolean().optional(),
+      post_processing_engine_name: z75.string().optional(),
+      parser_mode: z75.string().optional()
     })
   })).mutation(async ({ ctx, input }) => {
     const { applyStreamPatch: applyStreamPatch2 } = await Promise.resolve().then(() => (init_executor_service(), executor_service_exports));
@@ -78383,29 +77694,29 @@ var executionBridgeRouter = router({
     return result;
   }),
   // Apply schema patch via executor service (with rollback SQL)
-  applySchemaPatch: adminProcedure.input(z76.object({
-    sql: z76.string(),
-    rollbackSql: z76.string().nullable().optional(),
-    description: z76.string()
+  applySchemaPatch: adminProcedure.input(z75.object({
+    sql: z75.string(),
+    rollbackSql: z75.string().nullable().optional(),
+    description: z75.string()
   })).mutation(async ({ ctx, input }) => {
     const { applySchemaPatch: applySchemaPatch3 } = await Promise.resolve().then(() => (init_executor_service(), executor_service_exports));
     return applySchemaPatch3(input.sql, input.rollbackSql ?? null, input.description, ctx.user.id.toString(), ctx.user.name ?? void 0);
   }),
   // Rollback a patch by change log ID
-  rollbackPatch: adminProcedure.input(z76.object({ changeId: z76.number() })).mutation(async ({ ctx, input }) => {
+  rollbackPatch: adminProcedure.input(z75.object({ changeId: z75.number() })).mutation(async ({ ctx, input }) => {
     const { rollbackPatch: rollbackPatch3 } = await Promise.resolve().then(() => (init_executor_service(), executor_service_exports));
     return rollbackPatch3(input.changeId, ctx.user.id.toString(), ctx.user.name ?? void 0);
   }),
   // Get execution log
-  getExecutionLog: adminProcedure.input(z76.object({ limit: z76.number().default(50) }).optional()).query(async ({ input }) => {
+  getExecutionLog: adminProcedure.input(z75.object({ limit: z75.number().default(50) }).optional()).query(async ({ input }) => {
     const { getExecutionLog: getExecutionLog3 } = await Promise.resolve().then(() => (init_executor_service(), executor_service_exports));
     return getExecutionLog3(input?.limit ?? 50);
   }),
   // List ingestion runs — same data as Mission Control's listRuns
-  listRuns: adminProcedure.input(z76.object({
-    stream_id: z76.string().optional(),
-    status: z76.enum(["running", "completed", "failed"]).optional(),
-    limit: z76.number().default(50)
+  listRuns: adminProcedure.input(z75.object({
+    stream_id: z75.string().optional(),
+    status: z75.enum(["running", "completed", "failed"]).optional(),
+    limit: z75.number().default(50)
   }).optional()).query(async ({ input }) => {
     const { ingestRuns: ingestRuns2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
@@ -78428,7 +77739,7 @@ var session76Router = router({
 });
 
 // server/routers/session-router.ts
-import { z as z77 } from "zod";
+import { z as z76 } from "zod";
 
 // server/session-management.ts
 init_db();
@@ -78444,10 +77755,10 @@ async function startSession(actorType) {
     );
   }
   const sessionId = randomUUID13();
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.insert(sessionLog).values({
     sessionId,
-    startedAt: now3,
+    startedAt: now4,
     completedAt: null,
     actorType,
     governanceAnchor: chainStatus.lastValidSeqNo,
@@ -78457,12 +77768,12 @@ async function startSession(actorType) {
     governanceEntriesEnd: null,
     nextActions: [],
     stateSnapshot: {},
-    createdAt: now3
+    createdAt: now4
   });
   return {
     sessionId,
     governanceAnchor: chainStatus.lastValidSeqNo,
-    startedAt: now3
+    startedAt: now4
   };
 }
 async function getCurrentSession(actorType) {
@@ -78516,9 +77827,9 @@ async function endSession(sessionId, results, nextActions, stateSnapshot) {
       }
     }
   }
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.update(sessionLog).set({
-    completedAt: now3,
+    completedAt: now4,
     results,
     governanceEntriesStart,
     governanceEntriesEnd,
@@ -78574,13 +77885,13 @@ var sessionRouter = router({
   /**
    * Start a new session anchored to the current verified governance state
    */
-  startSession: adminProcedure.input(z77.enum(["tsunam", "luminari"])).mutation(async ({ input: actorType }) => {
+  startSession: adminProcedure.input(z76.enum(["tsunam", "luminari"])).mutation(async ({ input: actorType }) => {
     return await startSession(actorType);
   }),
   /**
    * Get the current active session for an actor
    */
-  getCurrentSession: adminProcedure.input(z77.enum(["tsunam", "luminari"])).query(async ({ input: actorType }) => {
+  getCurrentSession: adminProcedure.input(z76.enum(["tsunam", "luminari"])).query(async ({ input: actorType }) => {
     const session = await getCurrentSession(actorType);
     if (!session) {
       return null;
@@ -78597,10 +77908,10 @@ var sessionRouter = router({
    * Record an action in the current session
    */
   recordAction: adminProcedure.input(
-    z77.object({
-      sessionId: z77.string().uuid(),
-      action: z77.string(),
-      input: z77.record(z77.string(), z77.unknown())
+    z76.object({
+      sessionId: z76.string().uuid(),
+      action: z76.string(),
+      input: z76.record(z76.string(), z76.unknown())
     })
   ).mutation(async ({ input }) => {
     await recordSessionAction(input.sessionId, {
@@ -78614,17 +77925,17 @@ var sessionRouter = router({
    * End the session and produce a handoff
    */
   endSession: adminProcedure.input(
-    z77.object({
-      sessionId: z77.string().uuid(),
-      results: z77.record(z77.string(), z77.unknown()),
-      nextActions: z77.array(
-        z77.object({
-          action: z77.string(),
-          description: z77.string(),
-          inputs: z77.record(z77.string(), z77.unknown()).optional()
+    z76.object({
+      sessionId: z76.string().uuid(),
+      results: z76.record(z76.string(), z76.unknown()),
+      nextActions: z76.array(
+        z76.object({
+          action: z76.string(),
+          description: z76.string(),
+          inputs: z76.record(z76.string(), z76.unknown()).optional()
         })
       ),
-      stateSnapshot: z77.record(z77.string(), z77.unknown())
+      stateSnapshot: z76.record(z76.string(), z76.unknown())
     })
   ).mutation(async ({ input }) => {
     const handoff = await endSession(
@@ -78638,16 +77949,16 @@ var sessionRouter = router({
   /**
    * Get a completed session's handoff
    */
-  getHandoff: adminProcedure.input(z77.string().uuid()).query(async ({ input: sessionId }) => {
+  getHandoff: adminProcedure.input(z76.string().uuid()).query(async ({ input: sessionId }) => {
     return await getSessionHandoff(sessionId);
   }),
   /**
    * Get session history for an actor
    */
   getHistory: adminProcedure.input(
-    z77.object({
-      actorType: z77.enum(["tsunam", "luminari"]),
-      limit: z77.number().min(1).max(100).default(10)
+    z76.object({
+      actorType: z76.enum(["tsunam", "luminari"]),
+      limit: z76.number().min(1).max(100).default(10)
     })
   ).query(async ({ input }) => {
     return await getSessionHistory(input.actorType, input.limit);
@@ -78657,7 +77968,7 @@ var sessionRouter = router({
 // server/routers/registry.ts
 init_db();
 init_schema();
-import { z as z78 } from "zod";
+import { z as z77 } from "zod";
 import mysql2 from "mysql2/promise";
 import { eq as eq78, and as and60, like as like15 } from "drizzle-orm";
 console.log("\u{1F525} REGISTRY ROUTER LOADED");
@@ -78666,9 +77977,9 @@ var registryRouter3 = router({
   /**
    * Get all forms for a specific domain and optional jurisdiction
    */
-  getFormsByDomain: publicProcedure.input(z78.object({
-    domain: z78.string(),
-    jurisdiction: z78.string().optional()
+  getFormsByDomain: publicProcedure.input(z77.object({
+    domain: z77.string(),
+    jurisdiction: z77.string().optional()
   })).query(async ({ input }) => {
     const conditions = [
       eq78(formsRegistry.isActive, true)
@@ -78680,9 +77991,9 @@ var registryRouter3 = router({
   /**
    * Search forms by name
    */
-  searchForms: publicProcedure.input(z78.object({
-    query: z78.string(),
-    domain: z78.string().optional()
+  searchForms: publicProcedure.input(z77.object({
+    query: z77.string(),
+    domain: z77.string().optional()
   })).query(async ({ input }) => {
     const conditions = [
       like15(formsRegistry.formName, `%${input.query}%`),
@@ -78694,7 +78005,7 @@ var registryRouter3 = router({
   /**
    * Get a specific form by ID
    */
-  getFormById: publicProcedure.input(z78.object({ formId: z78.string() })).query(async ({ input }) => {
+  getFormById: publicProcedure.input(z77.object({ formId: z77.string() })).query(async ({ input }) => {
     const form = await db.select().from(formsRegistry).where(eq78(formsRegistry.id, input.formId)).limit(1);
     return form[0] || null;
   }),
@@ -78702,9 +78013,9 @@ var registryRouter3 = router({
   /**
    * Get all agencies for a specific domain and optional jurisdiction
    */
-  getAgenciesByDomain: publicProcedure.input(z78.object({
-    domain: z78.string(),
-    jurisdiction: z78.string().optional()
+  getAgenciesByDomain: publicProcedure.input(z77.object({
+    domain: z77.string(),
+    jurisdiction: z77.string().optional()
   })).query(async ({ input }) => {
     const conditions = [
       eq78(agenciesRegistry.officialStatus, "active")
@@ -78716,14 +78027,14 @@ var registryRouter3 = router({
   /**
    * Get a specific agency by ID
    */
-  getAgencyById: publicProcedure.input(z78.object({ agencyId: z78.string() })).query(async ({ input }) => {
+  getAgencyById: publicProcedure.input(z77.object({ agencyId: z77.string() })).query(async ({ input }) => {
     const agency = await db.select().from(agenciesRegistry).where(eq78(agenciesRegistry.id, input.agencyId)).limit(1);
     return agency[0] || null;
   }),
   /**
    * Get all forms for a specific agency
    */
-  getFormsByAgency: publicProcedure.input(z78.object({ agencyId: z78.string() })).query(async ({ input }) => {
+  getFormsByAgency: publicProcedure.input(z77.object({ agencyId: z77.string() })).query(async ({ input }) => {
     return await db.select().from(formsRegistry).where(
       and60(
         eq78(formsRegistry.agencyId, input.agencyId),
@@ -78735,9 +78046,9 @@ var registryRouter3 = router({
   /**
    * Get escalation paths from a specific agency
    */
-  getEscalationsFrom: publicProcedure.input(z78.object({
-    agencyId: z78.string(),
-    domain: z78.string().optional()
+  getEscalationsFrom: publicProcedure.input(z77.object({
+    agencyId: z77.string(),
+    domain: z77.string().optional()
   })).query(async ({ input }) => {
     const conditions = [
       eq78(escalationRegistry.fromAgencyId, input.agencyId)
@@ -78748,9 +78059,9 @@ var registryRouter3 = router({
   /**
    * Get escalation paths to a specific agency
    */
-  getEscalationsTo: publicProcedure.input(z78.object({
-    agencyId: z78.string(),
-    domain: z78.string().optional()
+  getEscalationsTo: publicProcedure.input(z77.object({
+    agencyId: z77.string(),
+    domain: z77.string().optional()
   })).query(async ({ input }) => {
     const conditions = [
       eq78(escalationRegistry.toAgencyId, input.agencyId)
@@ -78761,9 +78072,9 @@ var registryRouter3 = router({
   /**
    * Get full escalation path for a domain
    */
-  getEscalationPath: publicProcedure.input(z78.object({
-    domain: z78.string(),
-    jurisdiction: z78.string().optional()
+  getEscalationPath: publicProcedure.input(z77.object({
+    domain: z77.string(),
+    jurisdiction: z77.string().optional()
   })).query(async ({ input }) => {
     const conditions = [
       eq78(escalationRegistry.domain, input.domain)
@@ -78775,9 +78086,9 @@ var registryRouter3 = router({
   /**
    * Get mental health resources by type and jurisdiction
    */
-  getMentalHealthResources: publicProcedure.input(z78.object({
-    resourceType: z78.string().optional(),
-    jurisdiction: z78.string().optional()
+  getMentalHealthResources: publicProcedure.input(z77.object({
+    resourceType: z77.string().optional(),
+    jurisdiction: z77.string().optional()
   })).query(async ({ input }) => {
     const conditions = [];
     if (input.resourceType) conditions.push(eq78(mentalHealthResources.resourceType, input.resourceType));
@@ -78790,9 +78101,9 @@ var registryRouter3 = router({
   /**
    * Search mental health resources by name
    */
-  searchMentalHealthResources: publicProcedure.input(z78.object({
-    query: z78.string(),
-    jurisdiction: z78.string().optional()
+  searchMentalHealthResources: publicProcedure.input(z77.object({
+    query: z77.string(),
+    jurisdiction: z77.string().optional()
   })).query(async ({ input }) => {
     const conditions = [
       like15(mentalHealthResources.resourceName, `%${input.query}%`)
@@ -78803,7 +78114,7 @@ var registryRouter3 = router({
   /**
    * Get a specific mental health resource by ID
    */
-  getMentalHealthResourceById: publicProcedure.input(z78.object({ resourceId: z78.string() })).query(async ({ input }) => {
+  getMentalHealthResourceById: publicProcedure.input(z77.object({ resourceId: z77.string() })).query(async ({ input }) => {
     const resource = await db.select().from(mentalHealthResources).where(eq78(mentalHealthResources.id, input.resourceId)).limit(1);
     return resource[0] || null;
   }),
@@ -78811,9 +78122,9 @@ var registryRouter3 = router({
   /**
    * Get complete domain profile: agencies, forms, escalation paths
    */
-  getDomainProfile: publicProcedure.input(z78.object({
-    domain: z78.string(),
-    jurisdiction: z78.string().optional()
+  getDomainProfile: publicProcedure.input(z77.object({
+    domain: z77.string(),
+    jurisdiction: z77.string().optional()
   })).query(async ({ input }) => {
     const agencyConditions = [
       eq78(agenciesRegistry.officialStatus, "active"),
@@ -78994,7 +78305,7 @@ var registryRouter3 = router({
 });
 
 // server/routers/action-routing.ts
-import { z as z79 } from "zod";
+import { z as z78 } from "zod";
 var actionRoutingRouter = router({
   /**
    * Route actions based on active lenses
@@ -79002,15 +78313,15 @@ var actionRoutingRouter = router({
    * Idempotent: no duplicate actions
    */
   routeActionsFromLenses: protectedProcedure.input(
-    z79.object({
-      caseId: z79.string(),
-      signalId: z79.string().optional(),
-      activeLenses: z79.object({
-        user: z79.boolean().default(false),
-        professional: z79.boolean().default(false),
-        systemic: z79.boolean().default(false),
-        advocate: z79.boolean().default(false),
-        admin: z79.boolean().default(false)
+    z78.object({
+      caseId: z78.string(),
+      signalId: z78.string().optional(),
+      activeLenses: z78.object({
+        user: z78.boolean().default(false),
+        professional: z78.boolean().default(false),
+        systemic: z78.boolean().default(false),
+        advocate: z78.boolean().default(false),
+        admin: z78.boolean().default(false)
       })
     })
   ).mutation(async ({ input }) => {
@@ -79019,17 +78330,17 @@ var actionRoutingRouter = router({
   /**
    * Get pending actions for a case
    */
-  getPendingActions: protectedProcedure.input(z79.object({ caseId: z79.string() })).query(async ({ input }) => {
+  getPendingActions: protectedProcedure.input(z78.object({ caseId: z78.string() })).query(async ({ input }) => {
     return await runRead(input.caseId);
   }),
   /**
    * Update action status (pending → in_progress → completed/failed)
    */
   updateActionStatus: protectedProcedure.input(
-    z79.object({
-      actionId: z79.string(),
-      status: z79.enum(["pending", "in_progress", "completed", "failed"]),
-      failureReason: z79.string().optional()
+    z78.object({
+      actionId: z78.string(),
+      status: z78.enum(["pending", "in_progress", "completed", "failed"]),
+      failureReason: z78.string().optional()
     })
   ).mutation(async ({ input }) => {
     return await runAction(input.actionId, "updateActionStatus", input);
@@ -79044,20 +78355,20 @@ var actionRoutingRouter = router({
 
 // server/routers/constitutional-tests.ts
 init_db();
-import { z as z80 } from "zod";
+import { z as z79 } from "zod";
 import { sql as sql125 } from "drizzle-orm";
 var constitutionalTestsRouter = router({
   /**
    * Register a constitutional test
    */
   registerTest: adminProcedure.input(
-    z80.object({
-      testName: z80.string(),
-      principleName: z80.string(),
-      targetLayer: z80.string(),
-      testQuery: z80.string(),
-      expectedResult: z80.record(z80.string(), z80.any()).optional(),
-      severity: z80.enum(["critical", "high", "medium", "low"])
+    z79.object({
+      testName: z79.string(),
+      principleName: z79.string(),
+      targetLayer: z79.string(),
+      testQuery: z79.string(),
+      expectedResult: z79.record(z79.string(), z79.any()).optional(),
+      severity: z79.enum(["critical", "high", "medium", "low"])
     })
   ).mutation(async ({ input }) => {
     const timestamp3 = Date.now();
@@ -79074,9 +78385,9 @@ var constitutionalTestsRouter = router({
    * Run a constitutional test
    */
   runTest: adminProcedure.input(
-    z80.object({
-      testId: z80.string(),
-      targetId: z80.string().optional()
+    z79.object({
+      testId: z79.string(),
+      targetId: z79.string().optional()
     })
   ).mutation(async ({ input }) => {
     const timestamp3 = Date.now();
@@ -79187,10 +78498,10 @@ var constitutionalTestsRouter = router({
    * Get constitutional violations
    */
   getViolations: adminProcedure.input(
-    z80.object({
-      severity: z80.enum(["critical", "high", "medium", "low"]).optional(),
-      resolved: z80.boolean().optional(),
-      limit: z80.number().default(100)
+    z79.object({
+      severity: z79.enum(["critical", "high", "medium", "low"]).optional(),
+      resolved: z79.boolean().optional(),
+      limit: z79.number().default(100)
     })
   ).query(async ({ input }) => {
     let query = sql125`SELECT * FROM constitutional_violations WHERE 1=1`;
@@ -79209,7 +78520,7 @@ var constitutionalTestsRouter = router({
   /**
    * Mark violation as resolved
    */
-  resolveViolation: adminProcedure.input(z80.object({ violationId: z80.string() })).mutation(async ({ input }) => {
+  resolveViolation: adminProcedure.input(z79.object({ violationId: z79.string() })).mutation(async ({ input }) => {
     const timestamp3 = Date.now();
     await db.query.raw(
       sql125`UPDATE constitutional_violations 
@@ -79222,9 +78533,9 @@ var constitutionalTestsRouter = router({
    * Get test run history
    */
   getTestRunHistory: adminProcedure.input(
-    z80.object({
-      testId: z80.string().optional(),
-      limit: z80.number().default(50)
+    z79.object({
+      testId: z79.string().optional(),
+      limit: z79.number().default(50)
     })
   ).query(async ({ input }) => {
     let query = sql125`SELECT * FROM constitutional_test_runs WHERE 1=1`;
@@ -79265,7 +78576,7 @@ var constitutionalTestsRouter = router({
 init_matchingService();
 init_registryService();
 init_luminariContextService();
-import { z as z81 } from "zod";
+import { z as z80 } from "zod";
 import { TRPCError as TRPCError16 } from "@trpc/server";
 
 // server/_core/temp-bypass-procedure.ts
@@ -79344,11 +78655,11 @@ var luminariRouter = router({
    * 3. Return composed response
    */
   processIntake: tempProtectedProcedure.input(
-    z81.object({
-      jurisdiction_id: z81.number(),
-      category: z81.string(),
+    z80.object({
+      jurisdiction_id: z80.number(),
+      category: z80.string(),
       // @ts-ignore
-      intake_answers: z81.record(z81.string(), z81.any()).optional()
+      intake_answers: z80.record(z80.string(), z80.any()).optional()
     })
   ).mutation(async ({ ctx, input }) => {
     try {
@@ -79370,7 +78681,7 @@ var luminariRouter = router({
   /**
    * Get case with registry context
    */
-  getCase: tempProtectedProcedure.input(z81.object({ case_id: z81.number() })).query(async ({ input }) => {
+  getCase: tempProtectedProcedure.input(z80.object({ case_id: z80.number() })).query(async ({ input }) => {
     try {
       return await getCaseWithContext(input.case_id);
     } catch (err) {
@@ -79385,10 +78696,10 @@ var luminariRouter = router({
    * Record action on case
    */
   recordAction: protectedProcedure.input(
-    z81.object({
-      case_id: z81.number(),
-      type: z81.string(),
-      description: z81.string()
+    z80.object({
+      case_id: z80.number(),
+      type: z80.string(),
+      description: z80.string()
     })
   ).mutation(async ({ input }) => {
     try {
@@ -79410,9 +78721,9 @@ var luminariRouter = router({
    * Add note to case
    */
   addNote: protectedProcedure.input(
-    z81.object({
-      case_id: z81.number(),
-      note: z81.string()
+    z80.object({
+      case_id: z80.number(),
+      note: z80.string()
     })
   ).mutation(async ({ input }) => {
     try {
@@ -79429,7 +78740,7 @@ var luminariRouter = router({
   /**
    * Request case expungement
    */
-  requestExpungement: protectedProcedure.input(z81.object({ case_id: z81.number() })).mutation(async ({ input }) => {
+  requestExpungement: protectedProcedure.input(z80.object({ case_id: z80.number() })).mutation(async ({ input }) => {
     try {
       await requestExpungement(input.case_id);
       return { success: true };
@@ -79444,7 +78755,7 @@ var luminariRouter = router({
   /**
    * Get programs for jurisdiction
    */
-  getPrograms: publicProcedure.input(z81.object({ jurisdiction_id: z81.number() })).query(async ({ input }) => {
+  getPrograms: publicProcedure.input(z80.object({ jurisdiction_id: z80.number() })).query(async ({ input }) => {
     try {
       return await getPrograms(
         input.jurisdiction_id
@@ -79460,7 +78771,7 @@ var luminariRouter = router({
   /**
    * Get workflows for jurisdiction
    */
-  getWorkflows: publicProcedure.input(z81.object({ jurisdiction_id: z81.number() })).query(async ({ input }) => {
+  getWorkflows: publicProcedure.input(z80.object({ jurisdiction_id: z80.number() })).query(async ({ input }) => {
     try {
       return await getWorkflowSteps(
         input.jurisdiction_id
@@ -79476,7 +78787,7 @@ var luminariRouter = router({
   /**
    * Get entities for jurisdiction
    */
-  getEntities: publicProcedure.input(z81.object({ jurisdiction_id: z81.number() })).query(async ({ input }) => {
+  getEntities: publicProcedure.input(z80.object({ jurisdiction_id: z80.number() })).query(async ({ input }) => {
     try {
       return await getWorkflowSteps(
         input.jurisdiction_id
@@ -79492,7 +78803,7 @@ var luminariRouter = router({
   /**
    * Get signals for jurisdiction
    */
-  getSignals: publicProcedure.input(z81.object({ jurisdiction_id: z81.number() })).query(async ({ input }) => {
+  getSignals: publicProcedure.input(z80.object({ jurisdiction_id: z80.number() })).query(async ({ input }) => {
     try {
       return await getJurisdictions(
         // @ts-ignore
@@ -79510,9 +78821,9 @@ var luminariRouter = router({
    * Search programs
    */
   searchPrograms: publicProcedure.input(
-    z81.object({
-      query: z81.string(),
-      jurisdiction_id: z81.number().optional()
+    z80.object({
+      query: z80.string(),
+      jurisdiction_id: z80.number().optional()
     })
   ).query(async ({ input }) => {
     try {
@@ -79549,7 +78860,7 @@ var luminariRouter = router({
    * - deadlines
    * - diagnostics
    */
-  getContext: protectedProcedure.input(z81.object({ case_id: z81.number() })).query(async ({ input }) => {
+  getContext: protectedProcedure.input(z80.object({ case_id: z80.number() })).query(async ({ input }) => {
     try {
       return await getCaseContext(input.case_id);
     } catch (err) {
@@ -79566,12 +78877,12 @@ var luminariRouter = router({
    * Called by Sunam after validation
    */
   recordValidation: protectedProcedure.input(
-    z81.object({
-      case_id: z81.number(),
-      validation_type: z81.string(),
-      result: z81.string(),
-      confidence_score: z81.number().optional(),
-      notes: z81.string().optional()
+    z80.object({
+      case_id: z80.number(),
+      validation_type: z80.string(),
+      result: z80.string(),
+      confidence_score: z80.number().optional(),
+      notes: z80.string().optional()
     })
   ).mutation(async ({ input }) => {
     try {
@@ -79596,13 +78907,13 @@ var luminariRouter = router({
    * Called by Sunam after reconciliation
    */
   recordReconciliation: protectedProcedure.input(
-    z81.object({
-      case_id: z81.number(),
-      run_id: z81.string(),
-      total_rows: z81.number(),
-      discrepancy_count: z81.number(),
-      status: z81.string(),
-      notes: z81.string().optional()
+    z80.object({
+      case_id: z80.number(),
+      run_id: z80.string(),
+      total_rows: z80.number(),
+      discrepancy_count: z80.number(),
+      status: z80.string(),
+      notes: z80.string().optional()
     })
   ).mutation(async ({ input }) => {
     try {
@@ -79629,17 +78940,17 @@ init_db();
 init_schema();
 init_analysis_pipeline();
 init_forensic_db();
-import { z as z82 } from "zod";
+import { z as z81 } from "zod";
 import { sql as sql126 } from "drizzle-orm";
 var extractionRouter = router({
   /**
    * Get list of all documents with their extraction status
    */
-  listDocuments: publicProcedure.input(z82.object({
-    caseId: z82.number().optional(),
-    status: z82.enum(["uploaded", "extracting", "ready", "error"]).optional(),
-    limit: z82.number().default(50),
-    offset: z82.number().default(0)
+  listDocuments: publicProcedure.input(z81.object({
+    caseId: z81.number().optional(),
+    status: z81.enum(["uploaded", "extracting", "ready", "error"]).optional(),
+    limit: z81.number().default(50),
+    offset: z81.number().default(0)
   })).query(async ({ input }) => {
     try {
       let query = db.select().from(documents);
@@ -79667,8 +78978,8 @@ var extractionRouter = router({
   /**
    * Get extraction status for a specific document
    */
-  getStatus: publicProcedure.input(z82.object({
-    documentId: z82.number()
+  getStatus: publicProcedure.input(z81.object({
+    documentId: z81.number()
   })).query(async ({ input }) => {
     try {
       const doc = await db.select().from(documents).where(sql126`id = ${input.documentId}`);
@@ -79712,8 +79023,8 @@ var extractionRouter = router({
    * Start extraction on a document
    * Runs with INGESTION_ENGINE system context to bypass ownership checks
    */
-  startExtraction: publicProcedure.input(z82.object({
-    documentId: z82.number()
+  startExtraction: publicProcedure.input(z81.object({
+    documentId: z81.number()
   })).mutation(async ({ input }) => {
     try {
       await db.update(documents).set({ status: "extracting" }).where(sql126`id = ${input.documentId}`);
@@ -79735,11 +79046,11 @@ var extractionRouter = router({
   /**
    * Search entities by type and case
    */
-  searchEntities: publicProcedure.input(z82.object({
-    caseId: z82.number(),
-    type: z82.string().optional(),
-    query: z82.string().optional(),
-    limit: z82.number().default(100)
+  searchEntities: publicProcedure.input(z81.object({
+    caseId: z81.number(),
+    type: z81.string().optional(),
+    query: z81.string().optional(),
+    limit: z81.number().default(100)
   })).query(async ({ input }) => {
     try {
       let sql_query = `
@@ -79776,8 +79087,8 @@ var extractionRouter = router({
   /**
    * Get entity details
    */
-  getEntity: publicProcedure.input(z82.object({
-    entityId: z82.number()
+  getEntity: publicProcedure.input(z81.object({
+    entityId: z81.number()
   })).query(async ({ input }) => {
     try {
       const results = await queryForensicMetadata(
@@ -79810,8 +79121,8 @@ var extractionRouter = router({
   /**
    * Get all entity types for a case
    */
-  getEntityTypes: publicProcedure.input(z82.object({
-    caseId: z82.number()
+  getEntityTypes: publicProcedure.input(z81.object({
+    caseId: z81.number()
   })).query(async ({ input }) => {
     try {
       const results = await queryForensicMetadata(
@@ -79833,8 +79144,8 @@ var extractionRouter = router({
   /**
    * Get extraction statistics for a case
    */
-  getStats: publicProcedure.input(z82.object({
-    caseId: z82.number()
+  getStats: publicProcedure.input(z81.object({
+    caseId: z81.number()
   })).query(async ({ input }) => {
     try {
       const entityCount = await queryForensicMetadata(
@@ -80603,14 +79914,14 @@ var worldRouter = router({
 });
 
 // server/routers/canonical-core-router.ts
-import { z as z83 } from "zod";
+import { z as z82 } from "zod";
 
 // server/services/canonical-core.ts
 init_db();
 import { sql as sql127 } from "drizzle-orm";
 async function finalizePipelineRun(payload) {
-  const now3 = Date.now();
-  const tracePath = payload.tracePath || `${payload.pipelineSource}:${now3}`;
+  const now4 = Date.now();
+  const tracePath = payload.tracePath || `${payload.pipelineSource}:${now4}`;
   const errors = payload.errors || [];
   if (!payload.pipelineSource) {
     throw new Error("[CanonicalCore] finalizePipelineRun: pipelineSource is required");
@@ -80623,7 +79934,7 @@ async function finalizePipelineRun(payload) {
   try {
     const [result2] = await db.execute(sql127`
       INSERT INTO pipeline_events (userId, pipelineType, eventType, stateCode, createdAt)
-      VALUES (0, ${payload.pipelineSource}, 'analysis_complete', NULL, ${now3})
+      VALUES (0, ${payload.pipelineSource}, 'analysis_complete', NULL, ${now4})
     `);
     eventId = result2.insertId || null;
   } catch (err) {
@@ -80640,13 +79951,13 @@ async function finalizePipelineRun(payload) {
   ];
   if (enginePipelines.includes(payload.pipelineSource)) {
     try {
-      const runStatus = status === "failed" ? "failed" : "completed";
+      const runStatus = status === "success" ? "completed" : status === "partial" ? "completed" : "failed";
       await db.execute(sql127`
         INSERT INTO engine_runs (caseId, userId, engineRunType, engineRunStatus, currentStage, stageResults, errorMessage, startedAt, completedAt, createdAt)
         VALUES (0, 0, 'full_pipeline', ${runStatus}, ${payload.pipelineSource},
                 ${JSON.stringify({ description: payload.description, canonicalTables: payload.canonicalTables, recordsWritten: payload.recordsWritten })},
                 ${errors.length > 0 ? errors.join("; ") : null},
-                ${now3 - 1e3}, ${now3}, ${now3})
+                ${now4 - 1e3}, ${now4}, ${now4})
       `);
     } catch (err) {
       console.error("[CanonicalCore] Failed to record engine_run:", err.message);
@@ -80659,7 +79970,7 @@ async function finalizePipelineRun(payload) {
     recordsWritten: payload.recordsWritten,
     canonicalTables: payload.canonicalTables,
     errors,
-    timestamp: now3,
+    timestamp: now4,
     tracePath
   };
   console.log(
@@ -80667,60 +79978,75 @@ async function finalizePipelineRun(payload) {
   );
   return result;
 }
-var canonicalTables = [
-  { table: "registry_jurisdictions", category: "registry" },
-  { table: "registry_programs", category: "registry" },
-  { table: "registry_oversight_bodies", category: "registry" },
-  { table: "registry_workflows", category: "registry" },
-  { table: "registry_signals", category: "registry" },
-  { table: "registry_source_traceability", category: "registry" },
-  { table: "live_signals", category: "signals" },
-  { table: "detected_signals", category: "signals" },
-  { table: "cases", category: "cases" },
-  { table: "documents", category: "cases" },
-  { table: "entities", category: "cases" },
-  { table: "claims", category: "cases" },
-  { table: "findings", category: "cases" },
-  { table: "patterns", category: "analysis" },
-  { table: "pattern_occurrences", category: "analysis" },
-  { table: "pattern_outputs", category: "analysis" },
-  { table: "strategy_outputs", category: "analysis" },
-  { table: "procedural_outputs", category: "analysis" },
-  { table: "activation_outputs", category: "analysis" },
-  { table: "legal_statutes", category: "legal" },
-  { table: "legal_case_law", category: "legal" },
-  { table: "legal_enforcement_records", category: "legal" },
-  { table: "legal_weak_joints", category: "legal" },
-  { table: "legal_contradictions", category: "legal" },
-  { table: "doctrine_registry", category: "legal" },
-  { table: "litigation_barriers", category: "legal" },
-  { table: "agency_authority_map", category: "legal" },
-  { table: "knowledge_entries", category: "knowledge" },
-  { table: "knowledge_modules", category: "knowledge" },
-  { table: "proof_frameworks", category: "knowledge" },
-  { table: "foia_requests", category: "foia" },
-  { table: "foia_statutes", category: "foia" },
-  { table: "foia_agencies", category: "foia" },
-  { table: "lighthouse_jobs", category: "lighthouse" },
-  { table: "lighthouse_posts", category: "lighthouse" },
-  { table: "lighthouse_events", category: "lighthouse" },
-  { table: "lighthouse_spotlight", category: "lighthouse" },
-  { table: "governance_log", category: "governance" },
-  { table: "governance_snapshots", category: "governance" },
-  { table: "pipeline_events", category: "pipeline" },
-  { table: "engine_runs", category: "pipeline" },
-  { table: "ingest_runs", category: "pipeline" },
-  { table: "docket_entries", category: "docket" },
-  { table: "agency_performance_metrics", category: "performance" },
-  { table: "lumensend_templates", category: "lumensend" },
-  { table: "lumensend_drafts", category: "lumensend" },
-  { table: "escalation_registry", category: "escalation" },
-  { table: "system_map_nodes", category: "system" },
-  { table: "system_map_edges", category: "system" }
-];
 async function getCanonicalCoreHealth() {
+  const canonicalTables = [
+    // Registry Core
+    { table: "registry_jurisdictions", category: "registry" },
+    { table: "registry_programs", category: "registry" },
+    { table: "registry_oversight_bodies", category: "registry" },
+    { table: "registry_workflows", category: "registry" },
+    { table: "registry_signals", category: "registry" },
+    { table: "registry_source_traceability", category: "registry" },
+    // Signals
+    { table: "live_signals", category: "signals" },
+    { table: "detected_signals", category: "signals" },
+    // Case Data
+    { table: "cases", category: "cases" },
+    { table: "documents", category: "cases" },
+    { table: "entities", category: "cases" },
+    { table: "claims", category: "cases" },
+    { table: "findings", category: "cases" },
+    // Patterns & Analysis
+    { table: "patterns", category: "analysis" },
+    { table: "pattern_occurrences", category: "analysis" },
+    { table: "pattern_outputs", category: "analysis" },
+    { table: "strategy_outputs", category: "analysis" },
+    { table: "procedural_outputs", category: "analysis" },
+    { table: "activation_outputs", category: "analysis" },
+    // Legal
+    { table: "legal_statutes", category: "legal" },
+    { table: "legal_case_law", category: "legal" },
+    { table: "legal_enforcement_records", category: "legal" },
+    { table: "legal_weak_joints", category: "legal" },
+    { table: "legal_contradictions", category: "legal" },
+    { table: "doctrine_registry", category: "legal" },
+    { table: "litigation_barriers", category: "legal" },
+    { table: "agency_authority_map", category: "legal" },
+    // Knowledge Backbone
+    { table: "knowledge_entries", category: "knowledge" },
+    { table: "knowledge_modules", category: "knowledge" },
+    { table: "proof_frameworks", category: "knowledge" },
+    // FOIA
+    { table: "foia_requests", category: "foia" },
+    { table: "foia_statutes", category: "foia" },
+    { table: "foia_agencies", category: "foia" },
+    // Lighthouse
+    { table: "lighthouse_jobs", category: "lighthouse" },
+    { table: "lighthouse_posts", category: "lighthouse" },
+    { table: "lighthouse_events", category: "lighthouse" },
+    { table: "lighthouse_spotlight", category: "lighthouse" },
+    // Governance
+    { table: "governance_log", category: "governance" },
+    { table: "governance_snapshots", category: "governance" },
+    // Pipeline Tracking
+    { table: "pipeline_events", category: "pipeline" },
+    { table: "engine_runs", category: "pipeline" },
+    { table: "ingest_runs", category: "pipeline" },
+    // Docket
+    { table: "docket_entries", category: "docket" },
+    // Agency Performance
+    { table: "agency_performance_metrics", category: "performance" },
+    // LumenSend
+    { table: "lumensend_templates", category: "lumensend" },
+    { table: "lumensend_drafts", category: "lumensend" },
+    // Escalation
+    { table: "escalation_registry", category: "escalation" },
+    // System Map
+    { table: "system_map_nodes", category: "system" },
+    { table: "system_map_edges", category: "system" }
+  ];
   const results = [];
-  let totalRecords = 0;
+  let total_records = 0;
   let populatedTables = 0;
   let emptyTables = 0;
   for (const { table, category } of canonicalTables) {
@@ -80729,7 +80055,7 @@ async function getCanonicalCoreHealth() {
       const rows2 = result.rows ?? result;
       const count18 = Number(rows2?.[0]?.c) || 0;
       results.push({ table, category, count: count18 });
-      totalRecords += count18;
+      total_records += count18;
       if (count18 > 0) populatedTables++;
       else emptyTables++;
     } catch {
@@ -80737,13 +80063,7 @@ async function getCanonicalCoreHealth() {
       emptyTables++;
     }
   }
-  return {
-    tables: results,
-    total_records: totalRecords,
-    totalRecords,
-    populatedTables,
-    emptyTables
-  };
+  return { tables: results, total_records, populatedTables, emptyTables };
 }
 async function getPipelineCompletionState() {
   const [eventRows] = await pool.query(
@@ -80777,41 +80097,19 @@ async function getPipelineCompletionState() {
       payload: r.payload ? typeof r.payload === "string" ? JSON.parse(r.payload) : r.payload : { stateCode: r.stateCode },
       createdAt: Number(r.createdAt)
     })),
-    engineRunSummary: engineRows.map((r) => {
-      const engineName = r.engine_name;
-      const totalRuns = Number(r.total_runs) || 0;
-      const lastRun = r.last_run ? Number(r.last_run) : null;
-      const lastStatus = r.last_status ?? null;
-      return {
-        engine_name: engineName,
-        engineName,
-        total_runs: totalRuns,
-        totalRuns,
-        last_run: lastRun,
-        lastRun,
-        last_status: lastStatus,
-        lastStatus
-      };
-    }),
-    ingestRunSummary: ingestRows.map((r) => {
-      const datasetId = r.dataset_id;
-      const totalRuns = Number(r.total_runs) || 0;
-      const lastRun = r.last_run ? Number(r.last_run) : null;
-      const lastStatus = r.last_status ?? null;
-      const totalRecords = Number(r.total_records) || 0;
-      return {
-        dataset_id: datasetId,
-        datasetId,
-        total_runs: totalRuns,
-        totalRuns,
-        last_run: lastRun,
-        lastRun,
-        last_status: lastStatus,
-        lastStatus,
-        total_records: totalRecords,
-        totalRecords
-      };
-    })
+    engineRunSummary: engineRows.map((r) => ({
+      engine_name: r.engine_name,
+      total_runs: Number(r.total_runs),
+      last_run: r.last_run ? Number(r.last_run) : null,
+      last_status: r.last_status
+    })),
+    ingestRunSummary: ingestRows.map((r) => ({
+      dataset_id: r.dataset_id,
+      total_runs: Number(r.total_runs),
+      last_run: r.last_run ? Number(r.last_run) : null,
+      last_status: r.last_status,
+      total_records: Number(r.total_records) || 0
+    }))
   };
 }
 
@@ -80878,7 +80176,7 @@ async function reconnectProofFrameworks() {
       if (!domainMap.has(domain)) domainMap.set(domain, []);
       domainMap.get(domain).push(p);
     }
-    const now3 = Date.now();
+    const now4 = Date.now();
     for (const [domain, progs] of domainMap) {
       try {
         const elementsOfProof = progs.slice(0, 5).map((p) => p.name || p.programName || "Unknown");
@@ -80890,8 +80188,8 @@ async function reconnectProofFrameworks() {
           standardOfReview: "De novo",
           requiredCausation: "But-for causation",
           typicalEvidence: JSON.stringify(progs.slice(0, 3).map((p) => p.description || p.name || "Documentation")),
-          createdAt: now3,
-          updatedAt: now3
+          createdAt: now4,
+          updatedAt: now4
         });
         result.recordsCreated++;
       } catch (e) {
@@ -80918,7 +80216,7 @@ async function reconnectKnowledgeModules() {
       return result;
     }
     const jurisdictions = await db.select().from(registryJurisdictions);
-    const now3 = Date.now();
+    const now4 = Date.now();
     for (const j of jurisdictions) {
       try {
         await db.insert(knowledgeModules).values({
@@ -80928,7 +80226,7 @@ async function reconnectKnowledgeModules() {
           sourceFile: "canonical-registry",
           totalEntries: 0,
           version: "1.0",
-          loadedAt: now3
+          loadedAt: now4
         });
         result.recordsCreated++;
       } catch (e) {
@@ -80961,7 +80259,7 @@ async function reconnectKnowledgeEntries() {
     }
     const programs = await db.select().from(registryPrograms);
     const workflows = await db.select().from(registryWorkflows);
-    const now3 = Date.now();
+    const now4 = Date.now();
     for (const p of programs.slice(0, 200)) {
       try {
         await db.insert(knowledgeEntries).values({
@@ -80977,7 +80275,7 @@ async function reconnectKnowledgeEntries() {
             description: p.description,
             stateCode: p.stateCode
           }),
-          createdAt: now3
+          createdAt: now4
         });
         result.recordsCreated++;
       } catch (e) {
@@ -80998,7 +80296,7 @@ async function reconnectKnowledgeEntries() {
             sourceId: w.id,
             steps: w.steps
           }),
-          createdAt: now3
+          createdAt: now4
         });
         result.recordsCreated++;
       } catch (e) {
@@ -81025,7 +80323,7 @@ async function reconnectAgencyAuthorityMap() {
       return result;
     }
     const bodies = await db.select().from(registryOversightBodies);
-    const now3 = Date.now();
+    const now4 = Date.now();
     for (const b of bodies) {
       try {
         await db.insert(agencyAuthorityMap).values({
@@ -81039,8 +80337,8 @@ async function reconnectAgencyAuthorityMap() {
             email: b.email,
             website: b.website
           }),
-          createdAt: now3,
-          updatedAt: now3
+          createdAt: now4,
+          updatedAt: now4
         });
         result.recordsCreated++;
       } catch (e) {
@@ -81067,7 +80365,7 @@ async function reconnectAgencyPerformance() {
       return result;
     }
     const bodies = await db.select().from(registryOversightBodies);
-    const now3 = Date.now();
+    const now4 = Date.now();
     for (const b of bodies) {
       try {
         await db.insert(agencyPerformanceMetrics).values({
@@ -81080,8 +80378,8 @@ async function reconnectAgencyPerformance() {
             source: "canonical-registry-derivation",
             oversightBodyId: b.id
           }),
-          createdAt: now3,
-          updatedAt: now3
+          createdAt: now4,
+          updatedAt: now4
         });
         result.recordsCreated++;
       } catch (e) {
@@ -81108,7 +80406,7 @@ async function reconnectEscalationRegistry() {
       return result;
     }
     const bodies = await db.select().from(registryOversightBodies);
-    const now3 = Date.now();
+    const now4 = Date.now();
     for (let i = 0; i < bodies.length; i++) {
       const from = bodies[i];
       for (let j = i + 1; j < Math.min(i + 3, bodies.length); j++) {
@@ -81121,7 +80419,7 @@ async function reconnectEscalationRegistry() {
               escalationType: "regulatory",
               jurisdiction: from.stateCode || "federal",
               conditions: JSON.stringify(["unresolved_complaint", "pattern_detected"]),
-              createdAt: now3
+              createdAt: now4
             });
             result.recordsCreated++;
           } catch (e) {
@@ -81179,12 +80477,12 @@ var canonicalCoreRouter = router({
    * Allows admin to record a pipeline completion event
    */
   finalize: protectedProcedure.input(
-    z83.object({
-      pipelineSource: z83.string(),
-      description: z83.string(),
-      canonicalTables: z83.array(z83.string()),
-      recordsWritten: z83.number(),
-      errors: z83.array(z83.string()).optional()
+    z82.object({
+      pipelineSource: z82.string(),
+      description: z82.string(),
+      canonicalTables: z82.array(z82.string()),
+      recordsWritten: z82.number(),
+      errors: z82.array(z82.string()).optional()
     })
   ).mutation(async ({ input }) => {
     return finalizePipelineRun({
@@ -81205,42 +80503,42 @@ var canonicalCoreRouter = router({
 });
 
 // server/routers/canonical-spine-router.ts
-import { z as z84 } from "zod";
+import { z as z83 } from "zod";
 init_db();
 init_canonical_enforcement();
-var metadataL10Schema = z84.object({
-  access_protocol: z84.string().min(1),
-  capacity_status: z84.enum(["AVAILABLE", "LIMITED", "FULL"]),
-  resource_links: z84.array(z84.string()),
-  valid_for: z84.array(z84.string()).min(1)
+var metadataL10Schema = z83.object({
+  access_protocol: z83.string().min(1),
+  capacity_status: z83.enum(["AVAILABLE", "LIMITED", "FULL"]),
+  resource_links: z83.array(z83.string()),
+  valid_for: z83.array(z83.string()).min(1)
 });
-var worldNodeCreateSchema = z84.object({
-  biomeType: z84.string().min(1),
-  nodeName: z84.string().min(1),
-  latitude: z84.number().optional(),
-  longitude: z84.number().optional(),
+var worldNodeCreateSchema = z83.object({
+  biomeType: z83.string().min(1),
+  nodeName: z83.string().min(1),
+  latitude: z83.number().optional(),
+  longitude: z83.number().optional(),
   metadataL10: metadataL10Schema,
-  activeRemedy: z84.boolean().default(false)
+  activeRemedy: z83.boolean().default(false)
 });
-var worldNodeUpdateSchema = z84.object({
-  id: z84.number(),
-  biomeType: z84.string().min(1).optional(),
-  nodeName: z84.string().min(1).optional(),
-  latitude: z84.number().optional(),
-  longitude: z84.number().optional(),
+var worldNodeUpdateSchema = z83.object({
+  id: z83.number(),
+  biomeType: z83.string().min(1).optional(),
+  nodeName: z83.string().min(1).optional(),
+  latitude: z83.number().optional(),
+  longitude: z83.number().optional(),
   metadataL10: metadataL10Schema.optional(),
-  activeRemedy: z84.boolean().optional()
+  activeRemedy: z83.boolean().optional()
 });
-var remedyPathCreateSchema = z84.object({
-  signalId: z84.string().min(1),
-  caseId: z84.number(),
-  userId: z84.number(),
-  title: z84.string().min(1),
-  description: z84.string().optional(),
-  pathType: z84.string().min(1),
-  routeDirection: z84.enum(["UPWARD", "LATERAL"]).optional(),
-  targetNodeId: z84.number().optional(),
-  blockReason: z84.string().optional()
+var remedyPathCreateSchema = z83.object({
+  signalId: z83.string().min(1),
+  caseId: z83.number(),
+  userId: z83.number(),
+  title: z83.string().min(1),
+  description: z83.string().optional(),
+  pathType: z83.string().min(1),
+  routeDirection: z83.enum(["UPWARD", "LATERAL"]).optional(),
+  targetNodeId: z83.number().optional(),
+  blockReason: z83.string().optional()
 });
 var canonicalSpineRouter = router({
   // ─── Status / Health ───
@@ -81260,44 +80558,44 @@ var canonicalSpineRouter = router({
     };
   }),
   // ─── Ingest ───
-  ingest: protectedProcedure.input(z84.object({
-    datasetId: z84.string(),
-    sourceRecordId: z84.string(),
+  ingest: protectedProcedure.input(z83.object({
+    datasetId: z83.string(),
+    sourceRecordId: z83.string(),
     // @ts-ignore
-    rawJson: z84.record(z84.string(), z84.unknown()),
-    streamId: z84.string().optional(),
+    rawJson: z83.record(z83.string(), z83.unknown()),
+    streamId: z83.string().optional(),
     // @ts-ignore
-    metadataL1L2: z84.record(z84.string(), z84.unknown()).optional()
+    metadataL1L2: z83.record(z83.string(), z83.unknown()).optional()
   })).mutation(async ({ input }) => {
     const sourceHash = computeDeterministicHash({
       datasetId: input.datasetId,
       sourceRecordId: input.sourceRecordId
     });
-    const now3 = Date.now();
+    const now4 = Date.now();
     const metaStr = input.metadataL1L2 ? JSON.stringify(input.metadataL1L2) : null;
     const rawStr = JSON.stringify(input.rawJson);
     const { rows: result } = await pool.query(
       `INSERT INTO ingested_records (datasetId_ir, sourceRecordId, rawJson, source_hash, stream_id_ir, metadata_l1_l2, ingestedAt, updatedAt_ir, processed_for_signals)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false)
          ON DUPLICATE KEY UPDATE updatedAt_ir = VALUES(updatedAt_ir), rawJson = VALUES(rawJson), stream_id_ir = COALESCE(VALUES(stream_id_ir), stream_id_ir), metadata_l1_l2 = COALESCE(VALUES(metadata_l1_l2), metadata_l1_l2)`,
-      [input.datasetId, input.sourceRecordId, rawStr, sourceHash, input.streamId ?? null, metaStr, now3, now3]
+      [input.datasetId, input.sourceRecordId, rawStr, sourceHash, input.streamId ?? null, metaStr, now4, now4]
     );
     return { id: result.insertId, sourceHash };
   }),
   // ─── Detect ───
-  detect: protectedProcedure.input(z84.object({
-    signalId: z84.string(),
-    signalType: z84.string(),
-    datasetId: z84.string(),
-    severityLevel: z84.string(),
-    parentRecordId: z84.number().optional(),
-    sunamStatus: z84.string().optional(),
+  detect: protectedProcedure.input(z83.object({
+    signalId: z83.string(),
+    signalType: z83.string(),
+    datasetId: z83.string(),
+    severityLevel: z83.string(),
+    parentRecordId: z83.number().optional(),
+    sunamStatus: z83.string().optional(),
     // @ts-ignore
-    forensicLogic: z84.record(z84.string(), z84.unknown()).optional(),
-    plainLanguageExplanation: z84.string(),
-    confidenceScore: z84.number()
+    forensicLogic: z83.record(z83.string(), z83.unknown()).optional(),
+    plainLanguageExplanation: z83.string(),
+    confidenceScore: z83.number()
   })).mutation(async ({ input }) => {
-    const now3 = Date.now();
+    const now4 = Date.now();
     await appendSignalFlowLog({
       signalId: input.signalId,
       vectorPath: `ingested_records \u2192 live_signals \u2192 sunam_gate \u2192 detected_signals`,
@@ -81306,30 +80604,30 @@ var canonicalSpineRouter = router({
         sourceTable: "detected_signals",
         sourceId: input.signalId,
         gateDecision: input.sunamStatus ?? "pending",
-        timestamp: now3
+        timestamp: now4
       }
     });
     return { signal_id: input.signalId, flow_logged: true };
   }),
   // ─── Flow Logs ───
-  flowLog: protectedProcedure.input(z84.object({
-    signalId: z84.string(),
-    vectorPath: z84.string(),
-    flowDensity: z84.number(),
-    visibilityMetadata: z84.object({
-      sourceTable: z84.string(),
-      sourceId: z84.string(),
-      gateDecision: z84.string().optional(),
-      engineId: z84.string().optional(),
-      runId: z84.string().optional(),
-      timestamp: z84.number()
+  flowLog: protectedProcedure.input(z83.object({
+    signalId: z83.string(),
+    vectorPath: z83.string(),
+    flowDensity: z83.number(),
+    visibilityMetadata: z83.object({
+      sourceTable: z83.string(),
+      sourceId: z83.string(),
+      gateDecision: z83.string().optional(),
+      engineId: z83.string().optional(),
+      runId: z83.string().optional(),
+      timestamp: z83.number()
     })
   })).mutation(async ({ input }) => {
     return appendSignalFlowLog(input);
   }),
-  flowLogs: publicProcedure.input(z84.object({
-    signalId: z84.string().optional(),
-    limit: z84.number().default(100)
+  flowLogs: publicProcedure.input(z83.object({
+    signalId: z83.string().optional(),
+    limit: z83.number().default(100)
   })).query(async ({ input }) => {
     const safeLimit = Math.min(Math.max(1, input.limit), 1e3);
     if (input.signalId) {
@@ -81346,10 +80644,10 @@ var canonicalSpineRouter = router({
   }),
   // ─── World Nodes ───
   worldNodes: router({
-    list: publicProcedure.input(z84.object({
-      biomeType: z84.string().optional(),
-      activeOnly: z84.boolean().default(false),
-      limit: z84.number().default(100)
+    list: publicProcedure.input(z83.object({
+      biomeType: z83.string().optional(),
+      activeOnly: z83.boolean().default(false),
+      limit: z83.number().default(100)
     })).query(async ({ input }) => {
       let query = `SELECT * FROM world_nodes WHERE 1=1`;
       const params = [];
@@ -81368,7 +80666,7 @@ var canonicalSpineRouter = router({
         metadataL10: typeof r.metadata_l10 === "string" ? JSON.parse(r.metadata_l10) : r.metadata_l10
       }));
     }),
-    get: publicProcedure.input(z84.object({ id: z84.number() })).query(async ({ input }) => {
+    get: publicProcedure.input(z83.object({ id: z83.number() })).query(async ({ input }) => {
       const { rows: rows2 } = await pool.query(
         `SELECT * FROM world_nodes WHERE id = $1 LIMIT 1`,
         [input.id]
@@ -81385,11 +80683,11 @@ var canonicalSpineRouter = router({
       if (!metaCheck.passed) {
         throw new Error(`WORLD_NODE_VALIDATION: ${metaCheck.message}`);
       }
-      const now3 = Date.now();
+      const now4 = Date.now();
       const { rows: result } = await pool.query(
         `INSERT INTO world_nodes (biome_type, node_name_wn, latitude, longitude, metadata_l10, active_remedy, last_verified_at_wn, created_at_wn, updated_at_wn)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [input.biomeType, input.nodeName, input.latitude ?? null, input.longitude ?? null, JSON.stringify(input.metadataL10), input.activeRemedy, now3, now3, now3]
+        [input.biomeType, input.nodeName, input.latitude ?? null, input.longitude ?? null, JSON.stringify(input.metadataL10), input.activeRemedy, now4, now4, now4]
       );
       return { id: result.insertId, validated: true };
     }),
@@ -81452,16 +80750,16 @@ var canonicalSpineRouter = router({
       if (!integrityCheck.passed) {
         throw new Error(`REMEDY_PATH_INTEGRITY: ${integrityCheck.message}`);
       }
-      const now3 = Date.now();
+      const now4 = Date.now();
       const status = input.blockReason ? "blocked" : "pending";
       const { rows: result } = await pool.query(
         `INSERT INTO remedy_paths (caseId, userId, title, description, pathType, viability, generatedBy, remedyStatus, createdAt, updatedAt, signal_id_rp, route_direction, target_node_id, block_reason, canonical_remedy_status)
            VALUES ($1, $2, $3, $4, $5, 'moderate', 'system', 'draft', $6, $7, $8, $9, $10, $11, $12)`,
-        [input.caseId, input.userId, input.title, input.description ?? null, input.pathType, now3, now3, input.signalId, input.routeDirection ?? null, input.targetNodeId ?? null, input.blockReason ?? null, status]
+        [input.caseId, input.userId, input.title, input.description ?? null, input.pathType, now4, now4, input.signalId, input.routeDirection ?? null, input.targetNodeId ?? null, input.blockReason ?? null, status]
       );
       return { id: result.insertId, status, integrity_check: integrityCheck.passed };
     }),
-    bySignal: publicProcedure.input(z84.object({ signalId: z84.string() })).query(async ({ input }) => {
+    bySignal: publicProcedure.input(z83.object({ signalId: z83.string() })).query(async ({ input }) => {
       const { rows: rows2 } = await pool.query(
         `SELECT * FROM remedy_paths WHERE signal_id_rp = $1 ORDER BY createdAt DESC`,
         [input.signalId]
@@ -81470,14 +80768,14 @@ var canonicalSpineRouter = router({
     })
   }),
   // ─── Enforcement ───
-  enforce: publicProcedure.input(z84.object({ signalId: z84.string() })).query(async ({ input }) => {
+  enforce: publicProcedure.input(z83.object({ signalId: z83.string() })).query(async ({ input }) => {
     return enforceAllCanonicalRules(input.signalId);
   }),
   auditDeadEnds: publicProcedure.query(async () => {
     return auditDeadEnds();
   }),
   // ─── Proof Stream ───
-  runProofStream: protectedProcedure.input(z84.object({ liveSignalId: z84.number() })).mutation(async ({ input }) => {
+  runProofStream: protectedProcedure.input(z83.object({ liveSignalId: z83.number() })).mutation(async ({ input }) => {
     const { runProofStream: runProofStream2 } = await Promise.resolve().then(() => (init_proof_stream(), proof_stream_exports));
     return runProofStream2(input.liveSignalId);
   }),
@@ -81653,7 +80951,7 @@ async function matchResources(input) {
 }
 
 // server/routers/case-state.ts
-import { z as z85 } from "zod";
+import { z as z84 } from "zod";
 init_db();
 init_schema();
 init_live_signal_emitter();
@@ -81668,7 +80966,7 @@ async function verify_case_ownership(case_id, user_id) {
 async function get_or_create_case_state(case_id, user_id) {
   const [existing] = await db.select().from(caseState).where(eq80(caseState.caseId, case_id));
   if (existing) return existing;
-  const now3 = Date.now();
+  const now4 = Date.now();
   await db.insert(caseState).values({
     caseId: case_id,
     userId: user_id,
@@ -81680,8 +80978,8 @@ async function get_or_create_case_state(case_id, user_id) {
     committedFoiaIds: [],
     committedFilingIds: [],
     completenessScore: 0,
-    createdAt: now3,
-    updatedAt: now3
+    createdAt: now4,
+    updatedAt: now4
   });
   const [created] = await db.select().from(caseState).where(eq80(caseState.caseId, case_id));
   return created;
@@ -81708,7 +81006,7 @@ async function update_completeness(case_id) {
   await db.delete(caseFlags).where(
     and61(eq80(caseFlags.caseId, case_id), eq80(caseFlags.type, "system"), eq80(caseFlags.status, "open"))
   );
-  const now3 = Date.now();
+  const now4 = Date.now();
   const flags_to_insert = missing.map((label) => ({
     caseId: case_id,
     userId: state.userId,
@@ -81716,7 +81014,7 @@ async function update_completeness(case_id) {
     location: "completeness",
     message: `Missing: ${label}`,
     status: "open",
-    createdAt: now3
+    createdAt: now4
   }));
   if (flags_to_insert.length > 0) {
     await db.insert(caseFlags).values(flags_to_insert);
@@ -81724,17 +81022,17 @@ async function update_completeness(case_id) {
   await db.update(caseState).set({
     completenessScore: score,
     completenessBreakdown: { score, missing, present },
-    updatedAt: now3
+    updatedAt: now4
   }).where(eq80(caseState.caseId, case_id));
 }
 var caseStateRouter = router({
-  get: protectedProcedure.input(z85.object({ case_id: z85.number() })).query(async ({ ctx, input }) => {
+  get: protectedProcedure.input(z84.object({ case_id: z84.number() })).query(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
     const state = await get_or_create_case_state(input.case_id, ctx.user.id);
     const flags = await db.select().from(caseFlags).where(and61(eq80(caseFlags.caseId, input.case_id), eq80(caseFlags.status, "open")));
     return { state, flags };
   }),
-  commit_finding: protectedProcedure.input(z85.object({ case_id: z85.number(), finding_id: z85.number() })).mutation(async ({ ctx, input }) => {
+  commit_finding: protectedProcedure.input(z84.object({ case_id: z84.number(), finding_id: z84.number() })).mutation(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
     const state = await get_or_create_case_state(input.case_id, ctx.user.id);
     const current = state.committedFindingIds || [];
@@ -81744,15 +81042,15 @@ var caseStateRouter = router({
     await update_completeness(input.case_id);
     return { success: true, finding_id: input.finding_id };
   }),
-  commit_procedural_path: protectedProcedure.input(z85.object({
-    case_id: z85.number(),
-    path_id: z85.number().optional(),
-    path_label: z85.string(),
-    deadlines: z85.array(z85.object({
-      label: z85.string(),
-      date: z85.string(),
-      days_remaining: z85.number(),
-      critical: z85.boolean()
+  commit_procedural_path: protectedProcedure.input(z84.object({
+    case_id: z84.number(),
+    path_id: z84.number().optional(),
+    path_label: z84.string(),
+    deadlines: z84.array(z84.object({
+      label: z84.string(),
+      date: z84.string(),
+      days_remaining: z84.number(),
+      critical: z84.boolean()
     })).optional()
   })).mutation(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
@@ -81790,17 +81088,17 @@ var caseStateRouter = router({
     }
     return { success: true, path_label: input.path_label };
   }),
-  commit_remedy_strategy: protectedProcedure.input(z85.object({ case_id: z85.number(), strategy_id: z85.number().optional(), strategy_label: z85.string() })).mutation(async ({ ctx, input }) => {
+  commit_remedy_strategy: protectedProcedure.input(z84.object({ case_id: z84.number(), strategy_id: z84.number().optional(), strategy_label: z84.string() })).mutation(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
     await get_or_create_case_state(input.case_id, ctx.user.id);
     await db.update(caseState).set({ remedyStrategyId: input.strategy_id ?? null, remedyStrategyLabel: input.strategy_label, updatedAt: Date.now() }).where(eq80(caseState.caseId, input.case_id));
     await update_completeness(input.case_id);
     return { success: true, strategy_label: input.strategy_label };
   }),
-  set_claim_type: protectedProcedure.input(z85.object({
-    case_id: z85.number(),
-    claim_type: z85.enum(["wage_theft", "wrongful_termination", "discrimination_employment", "discrimination_housing", "eviction_unlawful", "housing_denial", "benefits_denial", "other"]),
-    jurisdiction: z85.string().optional()
+  set_claim_type: protectedProcedure.input(z84.object({
+    case_id: z84.number(),
+    claim_type: z84.enum(["wage_theft", "wrongful_termination", "discrimination_employment", "discrimination_housing", "eviction_unlawful", "housing_denial", "benefits_denial", "other"]),
+    jurisdiction: z84.string().optional()
   })).mutation(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
     await get_or_create_case_state(input.case_id, ctx.user.id);
@@ -81808,7 +81106,7 @@ var caseStateRouter = router({
     await update_completeness(input.case_id);
     return { success: true, claim_type: input.claim_type, jurisdiction: input.jurisdiction };
   }),
-  commit_barrier: protectedProcedure.input(z85.object({ case_id: z85.number(), barrier_id: z85.number() })).mutation(async ({ ctx, input }) => {
+  commit_barrier: protectedProcedure.input(z84.object({ case_id: z84.number(), barrier_id: z84.number() })).mutation(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
     const state = await get_or_create_case_state(input.case_id, ctx.user.id);
     const current = state.committedBarrierIds || [];
@@ -81818,7 +81116,7 @@ var caseStateRouter = router({
     await update_completeness(input.case_id);
     return { success: true, barrier_id: input.barrier_id };
   }),
-  commit_benefit: protectedProcedure.input(z85.object({ case_id: z85.number(), benefit_id: z85.number() })).mutation(async ({ ctx, input }) => {
+  commit_benefit: protectedProcedure.input(z84.object({ case_id: z84.number(), benefit_id: z84.number() })).mutation(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
     const state = await get_or_create_case_state(input.case_id, ctx.user.id);
     const current = state.committedBenefitIds || [];
@@ -81828,7 +81126,7 @@ var caseStateRouter = router({
     await update_completeness(input.case_id);
     return { success: true, benefit_id: input.benefit_id };
   }),
-  commit_signal: protectedProcedure.input(z85.object({ case_id: z85.number(), signal_id: z85.number(), signal_type: z85.string().optional() })).mutation(async ({ ctx, input }) => {
+  commit_signal: protectedProcedure.input(z84.object({ case_id: z84.number(), signal_id: z84.number(), signal_type: z84.string().optional() })).mutation(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
     const state = await get_or_create_case_state(input.case_id, ctx.user.id);
     const current = state.committedSignalIds || [];
@@ -81838,7 +81136,7 @@ var caseStateRouter = router({
     await update_completeness(input.case_id);
     return { success: true, signal_id: input.signal_id, routed_as: input.signal_type ?? "signal" };
   }),
-  commit_statute: protectedProcedure.input(z85.object({ case_id: z85.number(), statute_id: z85.number() })).mutation(async ({ ctx, input }) => {
+  commit_statute: protectedProcedure.input(z84.object({ case_id: z84.number(), statute_id: z84.number() })).mutation(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
     const state = await get_or_create_case_state(input.case_id, ctx.user.id);
     const current = state.committedStatuteIds || [];
@@ -81848,7 +81146,7 @@ var caseStateRouter = router({
     await update_completeness(input.case_id);
     return { success: true, statute_id: input.statute_id };
   }),
-  commit_foia: protectedProcedure.input(z85.object({ case_id: z85.number(), foia_id: z85.number() })).mutation(async ({ ctx, input }) => {
+  commit_foia: protectedProcedure.input(z84.object({ case_id: z84.number(), foia_id: z84.number() })).mutation(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
     const state = await get_or_create_case_state(input.case_id, ctx.user.id);
     const current = state.committedFoiaIds || [];
@@ -81858,7 +81156,7 @@ var caseStateRouter = router({
     await update_completeness(input.case_id);
     return { success: true, foia_id: input.foia_id };
   }),
-  commit_filing: protectedProcedure.input(z85.object({ case_id: z85.number(), filing_id: z85.number() })).mutation(async ({ ctx, input }) => {
+  commit_filing: protectedProcedure.input(z84.object({ case_id: z84.number(), filing_id: z84.number() })).mutation(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
     const state = await get_or_create_case_state(input.case_id, ctx.user.id);
     const current = state.committedFilingIds || [];
@@ -81868,10 +81166,10 @@ var caseStateRouter = router({
     await update_completeness(input.case_id);
     return { success: true, filing_id: input.filing_id };
   }),
-  remove_commit: protectedProcedure.input(z85.object({
-    case_id: z85.number(),
-    item_type: z85.enum(["finding", "barrier", "benefit", "signal", "statute", "foia", "filing"]),
-    item_id: z85.number()
+  remove_commit: protectedProcedure.input(z84.object({
+    case_id: z84.number(),
+    item_type: z84.enum(["finding", "barrier", "benefit", "signal", "statute", "foia", "filing"]),
+    item_id: z84.number()
   })).mutation(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
     const state = await get_or_create_case_state(input.case_id, ctx.user.id);
@@ -81891,19 +81189,19 @@ var caseStateRouter = router({
     await update_completeness(input.case_id);
     return { success: true };
   }),
-  add_flag: protectedProcedure.input(z85.object({
-    case_id: z85.number(),
-    location: z85.string(),
-    message: z85.string(),
-    target_id: z85.number().optional(),
-    target_type: z85.string().optional(),
-    area_name: z85.string().optional(),
-    state: z85.string().optional(),
-    lat: z85.number().optional(),
-    lng: z85.number().optional()
+  add_flag: protectedProcedure.input(z84.object({
+    case_id: z84.number(),
+    location: z84.string(),
+    message: z84.string(),
+    target_id: z84.number().optional(),
+    target_type: z84.string().optional(),
+    area_name: z84.string().optional(),
+    state: z84.string().optional(),
+    lat: z84.number().optional(),
+    lng: z84.number().optional()
   })).mutation(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
-    const now3 = Date.now();
+    const now4 = Date.now();
     await db.insert(caseFlags).values({
       caseId: input.case_id,
       userId: ctx.user.id,
@@ -81917,16 +81215,16 @@ var caseStateRouter = router({
       lat: input.lat ?? null,
       lng: input.lng ?? null,
       status: "open",
-      createdAt: now3
+      createdAt: now4
     });
     return { success: true };
   }),
-  resolve_flag: protectedProcedure.input(z85.object({ case_id: z85.number(), flag_id: z85.number() })).mutation(async ({ ctx, input }) => {
+  resolve_flag: protectedProcedure.input(z84.object({ case_id: z84.number(), flag_id: z84.number() })).mutation(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
     await db.update(caseFlags).set({ status: "resolved", resolvedAt: Date.now() }).where(and61(eq80(caseFlags.id, input.flag_id), eq80(caseFlags.caseId, input.case_id)));
     return { success: true };
   }),
-  get_procedural_deadlines: protectedProcedure.input(z85.object({ case_id: z85.number() })).query(async ({ ctx, input }) => {
+  get_procedural_deadlines: protectedProcedure.input(z84.object({ case_id: z84.number() })).query(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
     const [state] = await db.select({ claim_type: caseState.claimType, jurisdiction: caseState.jurisdiction }).from(caseState).where(eq80(caseState.caseId, input.case_id));
     if (!state?.claim_type) return [];
@@ -81945,10 +81243,10 @@ var caseStateRouter = router({
     const timelines = rows2;
     if (!timelines.length) return [];
     const deadlines2 = [];
-    const now3 = /* @__PURE__ */ new Date();
+    const now4 = /* @__PURE__ */ new Date();
     for (const timeline of timelines) {
       if (timeline.filing_deadline) {
-        const deadline_date = timeline.filing_deadline_days ? new Date(now3.getTime() + timeline.filing_deadline_days * 24 * 60 * 60 * 1e3).toISOString() : null;
+        const deadline_date = timeline.filing_deadline_days ? new Date(now4.getTime() + timeline.filing_deadline_days * 24 * 60 * 60 * 1e3).toISOString() : null;
         deadlines2.push({
           id: `filing-${timeline.id}`,
           claim_type: timeline.claim_type,
@@ -82003,7 +81301,7 @@ var caseStateRouter = router({
     }
     return deadlines2;
   }),
-  get_remedy_matrix: protectedProcedure.input(z85.object({ case_id: z85.number() })).query(async ({ ctx, input }) => {
+  get_remedy_matrix: protectedProcedure.input(z84.object({ case_id: z84.number() })).query(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
     const [state] = await db.select({ claim_type: caseState.claimType, jurisdiction: caseState.jurisdiction }).from(caseState).where(eq80(caseState.caseId, input.case_id));
     if (!state?.claim_type) return null;
@@ -82019,7 +81317,7 @@ var caseStateRouter = router({
     await connection.end();
     return rows2[0] ?? null;
   }),
-  get_remedy_full: protectedProcedure.input(z85.object({ case_id: z85.number() })).query(async ({ ctx, input }) => {
+  get_remedy_full: protectedProcedure.input(z84.object({ case_id: z84.number() })).query(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
     const [state] = await db.select({ jurisdiction: caseState.jurisdiction }).from(caseState).where(eq80(caseState.caseId, input.case_id));
     const jurisdiction = state?.jurisdiction || null;
@@ -82043,7 +81341,7 @@ var caseStateRouter = router({
       }))
     };
   }),
-  get_flags: protectedProcedure.input(z85.object({ case_id: z85.number(), status: z85.enum(["open", "resolved", "all"]).optional().default("open") })).query(async ({ ctx, input }) => {
+  get_flags: protectedProcedure.input(z84.object({ case_id: z84.number(), status: z84.enum(["open", "resolved", "all"]).optional().default("open") })).query(async ({ ctx, input }) => {
     await verify_case_ownership(input.case_id, ctx.user.id);
     const query = db.select().from(caseFlags).where(eq80(caseFlags.caseId, input.case_id));
     if (input.status !== "all") {
@@ -82087,21 +81385,21 @@ var activationRouter = router({
       return [];
     }
   }),
-  start: publicProcedure.input(z86.object({ clusterId: z86.string() })).mutation(async ({ ctx, input }) => {
-    const now3 = Date.now();
-    await db.execute(sql132`UPDATE activation_outputs SET status = 'in_progress', updated_at = ${now3} WHERE cluster_id = ${input.clusterId}`);
+  start: publicProcedure.input(z85.object({ clusterId: z85.string() })).mutation(async ({ ctx, input }) => {
+    const now4 = Date.now();
+    await db.execute(sql132`UPDATE activation_outputs SET status = 'in_progress', updated_at = ${now4} WHERE cluster_id = ${input.clusterId}`);
     return { success: true };
   }),
-  complete: publicProcedure.input(z86.object({ clusterId: z86.string() })).mutation(async ({ ctx, input }) => {
-    const now3 = Date.now();
-    await db.execute(sql132`UPDATE activation_outputs SET status = 'completed', updated_at = ${now3} WHERE cluster_id = ${input.clusterId}`);
+  complete: publicProcedure.input(z85.object({ clusterId: z85.string() })).mutation(async ({ ctx, input }) => {
+    const now4 = Date.now();
+    await db.execute(sql132`UPDATE activation_outputs SET status = 'completed', updated_at = ${now4} WHERE cluster_id = ${input.clusterId}`);
     return { success: true };
   })
 });
 var intakeRouter = router({
-  converse: protectedProcedure.input(z86.object({
-    situationType: z86.string(),
-    messages: z86.array(z86.object({ role: z86.enum(["assistant", "user"]), content: z86.string() }))
+  converse: protectedProcedure.input(z85.object({
+    situationType: z85.string(),
+    messages: z85.array(z85.object({ role: z85.enum(["assistant", "user"]), content: z85.string() }))
   })).mutation(async ({ ctx, input }) => {
     const { invokeLLM: invokeLLM2 } = await Promise.resolve().then(() => (init_llm(), llm_exports));
     const situationContext = {
@@ -82200,7 +81498,7 @@ Do NOT include the plan until you genuinely understand their situation. Ask at l
     }
     return { reply, plan };
   }),
-  generateActionPath: protectedProcedure.input(z86.object({ caseId: z86.number() })).mutation(async ({ ctx, input }) => {
+  generateActionPath: protectedProcedure.input(z85.object({ caseId: z85.number() })).mutation(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { invokeLLM: invokeLLM2 } = await Promise.resolve().then(() => (init_llm(), llm_exports));
     const caseData = await verifyCaseOwnership(input.caseId, ctx.user.id);
@@ -82282,21 +81580,21 @@ Respond in this exact JSON format:
     }
   }),
   /** Auto-detect pipeline from free-text answers */
-  autoDetect: protectedProcedure.input(z86.object({
-    what_happened: z86.string().optional(),
-    who_involved: z86.string().optional(),
-    documents_available: z86.string().optional(),
-    where: z86.string().optional(),
-    additional_context: z86.string().optional(),
-    combined_text: z86.string().optional()
+  autoDetect: protectedProcedure.input(z85.object({
+    what_happened: z85.string().optional(),
+    who_involved: z85.string().optional(),
+    documents_available: z85.string().optional(),
+    where: z85.string().optional(),
+    additional_context: z85.string().optional(),
+    combined_text: z85.string().optional()
   })).mutation(async ({ input }) => {
     const { autoDetect: autoDetect3 } = await Promise.resolve().then(() => (init_intake_autodetect(), intake_autodetect_exports));
     return autoDetect3(input);
   }),
   /** Get the questionnaire questions (adaptive based on current answers) */
-  getQuestions: publicProcedure.input(z86.object({
-    answered_ids: z86.array(z86.string()).optional(),
-    detected_category: z86.string().optional()
+  getQuestions: publicProcedure.input(z85.object({
+    answered_ids: z85.array(z85.string()).optional(),
+    detected_category: z85.string().optional()
   })).query(async ({ input }) => {
     const { INTAKE_QUESTIONS: INTAKE_QUESTIONS2 } = await Promise.resolve().then(() => (init_intake_autodetect(), intake_autodetect_exports));
     const answered = new Set(input.answered_ids || []);
@@ -82309,8 +81607,8 @@ Respond in this exact JSON format:
     }).sort((a, b) => a.order - b.order);
   }),
   /** LLM-enhanced auto-detect: uses the LLM to extract structured signals from free text, then runs scoring */
-  smartDetect: protectedProcedure.input(z86.object({
-    text: z86.string().min(1)
+  smartDetect: protectedProcedure.input(z85.object({
+    text: z85.string().min(1)
   })).mutation(async ({ input }) => {
     const { invokeLLM: invokeLLM2 } = await Promise.resolve().then(() => (init_llm(), llm_exports));
     const { autoDetect: autoDetect3 } = await Promise.resolve().then(() => (init_intake_autodetect(), intake_autodetect_exports));
@@ -82376,20 +81674,20 @@ Extract the following fields. If a field is not mentioned, use an empty string.
   })
 });
 var benefitsRouter = router({
-  match: publicProcedure.input(z86.object({
-    situation_text: z86.string().optional(),
-    pipeline_category: z86.string().optional(),
-    pipeline_id: z86.string().optional(),
-    life_events: z86.array(z86.string()).optional(),
-    state_code: z86.string().optional(),
-    demographics: z86.object({
-      has_children: z86.boolean().optional(),
-      is_elderly: z86.boolean().optional(),
-      is_veteran: z86.boolean().optional(),
-      is_disabled: z86.boolean().optional(),
-      is_tribal: z86.boolean().optional(),
-      is_immigrant: z86.boolean().optional(),
-      is_pregnant: z86.boolean().optional()
+  match: publicProcedure.input(z85.object({
+    situation_text: z85.string().optional(),
+    pipeline_category: z85.string().optional(),
+    pipeline_id: z85.string().optional(),
+    life_events: z85.array(z85.string()).optional(),
+    state_code: z85.string().optional(),
+    demographics: z85.object({
+      has_children: z85.boolean().optional(),
+      is_elderly: z85.boolean().optional(),
+      is_veteran: z85.boolean().optional(),
+      is_disabled: z85.boolean().optional(),
+      is_tribal: z85.boolean().optional(),
+      is_immigrant: z85.boolean().optional(),
+      is_pregnant: z85.boolean().optional()
     }).optional()
   })).query(async ({ input }) => {
     const { matchBenefits: matchBenefits2 } = await Promise.resolve().then(() => (init_benefits_navigator(), benefits_navigator_exports));
@@ -82399,21 +81697,21 @@ var benefitsRouter = router({
     const { getBenefitCategories: getBenefitCategories2 } = await Promise.resolve().then(() => (init_benefits_navigator(), benefits_navigator_exports));
     return getBenefitCategories2();
   }),
-  byCategory: publicProcedure.input(z86.object({ category: z86.string() })).query(async ({ input }) => {
+  byCategory: publicProcedure.input(z85.object({ category: z85.string() })).query(async ({ input }) => {
     const { getBenefitsByCategory: getBenefitsByCategory2 } = await Promise.resolve().then(() => (init_benefits_navigator(), benefits_navigator_exports));
     return getBenefitsByCategory2(input.category);
   }),
-  byId: publicProcedure.input(z86.object({ id: z86.string() })).query(async ({ input }) => {
+  byId: publicProcedure.input(z85.object({ id: z85.string() })).query(async ({ input }) => {
     const { getBenefitById: getBenefitById2 } = await Promise.resolve().then(() => (init_benefits_navigator(), benefits_navigator_exports));
     const program = getBenefitById2(input.id);
     if (!program) throw new TRPCError17({ code: "NOT_FOUND", message: "Program not found" });
     return program;
   }),
-  documentChecklist: publicProcedure.input(z86.object({ programIds: z86.array(z86.string()) })).query(async ({ input }) => {
+  documentChecklist: publicProcedure.input(z85.object({ programIds: z85.array(z85.string()) })).query(async ({ input }) => {
     const { getDocumentChecklist: getDocumentChecklist2 } = await Promise.resolve().then(() => (init_benefits_navigator(), benefits_navigator_exports));
     return getDocumentChecklist2(input.programIds);
   }),
-  detectLifeEvents: publicProcedure.input(z86.object({ text: z86.string() })).query(async ({ input }) => {
+  detectLifeEvents: publicProcedure.input(z85.object({ text: z85.string() })).query(async ({ input }) => {
     const { detectLifeEvents: detectLifeEvents2, detectDemographics: detectDemographics2 } = await Promise.resolve().then(() => (init_benefits_navigator(), benefits_navigator_exports));
     return {
       life_events: detectLifeEvents2(input.text),
@@ -82421,14 +81719,14 @@ var benefitsRouter = router({
     };
   }),
   // State-specific endpoints
-  detectState: publicProcedure.input(z86.object({ text: z86.string() })).query(async ({ input }) => {
+  detectState: publicProcedure.input(z85.object({ text: z85.string() })).query(async ({ input }) => {
     const { detectState: detectState2 } = await Promise.resolve().then(() => (init_benefits_navigator(), benefits_navigator_exports));
     const stateCode = detectState2(input.text);
     if (!stateCode) return null;
     const { getStateInfo: getStateInfo2 } = await Promise.resolve().then(() => (init_benefits_navigator(), benefits_navigator_exports));
     return getStateInfo2(stateCode);
   }),
-  stateInfo: publicProcedure.input(z86.object({ stateCode: z86.string() })).query(async ({ input }) => {
+  stateInfo: publicProcedure.input(z85.object({ stateCode: z85.string() })).query(async ({ input }) => {
     const { getStateInfo: getStateInfo2 } = await Promise.resolve().then(() => (init_benefits_navigator(), benefits_navigator_exports));
     return getStateInfo2(input.stateCode);
   }),
@@ -82442,66 +81740,66 @@ var benefitsRouter = router({
   })
 });
 var benefitAppsRouter = router({
-  list: protectedProcedure.input(z86.object({ caseId: z86.number().optional() }).optional()).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number().optional() }).optional()).query(async ({ ctx, input }) => {
     return listBenefitApplications(ctx.user.id, input?.caseId);
   }),
-  get: protectedProcedure.input(z86.object({ id: z86.number() })).query(async ({ ctx, input }) => {
+  get: protectedProcedure.input(z85.object({ id: z85.number() })).query(async ({ ctx, input }) => {
     const app = await getBenefitApplication(input.id, ctx.user.id);
     if (!app) throw new TRPCError17({ code: "NOT_FOUND", message: "Application not found" });
     return app;
   }),
-  create: protectedProcedure.input(z86.object({
-    programId: z86.string(),
-    programName: z86.string(),
-    caseId: z86.number().optional(),
-    stateCode: z86.string().optional(),
-    applicationUrl: z86.string().optional(),
-    documentsNeeded: z86.array(z86.string()).optional()
+  create: protectedProcedure.input(z85.object({
+    programId: z85.string(),
+    programName: z85.string(),
+    caseId: z85.number().optional(),
+    stateCode: z85.string().optional(),
+    applicationUrl: z85.string().optional(),
+    documentsNeeded: z85.array(z85.string()).optional()
   })).mutation(async ({ ctx, input }) => {
     return createBenefitApplication({
       userId: ctx.user.id,
       ...input
     });
   }),
-  updateStatus: protectedProcedure.input(z86.object({
-    id: z86.number(),
-    status: z86.enum(["not_started", "gathering_docs", "applied", "waiting", "approved", "denied", "appealing", "expired"]),
-    appliedAt: z86.number().optional(),
-    decisionAt: z86.number().optional(),
-    denialReason: z86.string().optional(),
-    confirmationNumber: z86.string().optional()
+  updateStatus: protectedProcedure.input(z85.object({
+    id: z85.number(),
+    status: z85.enum(["not_started", "gathering_docs", "applied", "waiting", "approved", "denied", "appealing", "expired"]),
+    appliedAt: z85.number().optional(),
+    decisionAt: z85.number().optional(),
+    denialReason: z85.string().optional(),
+    confirmationNumber: z85.string().optional()
   })).mutation(async ({ ctx, input }) => {
     const { id, status, ...extra } = input;
     const app = await updateBenefitApplicationStatus(id, ctx.user.id, status, extra);
     if (!app) throw new TRPCError17({ code: "NOT_FOUND", message: "Application not found" });
     return app;
   }),
-  updateNotes: protectedProcedure.input(z86.object({
-    id: z86.number(),
-    notes: z86.string()
+  updateNotes: protectedProcedure.input(z85.object({
+    id: z85.number(),
+    notes: z85.string()
   })).mutation(async ({ ctx, input }) => {
     const app = await updateBenefitApplicationNotes(input.id, ctx.user.id, input.notes);
     if (!app) throw new TRPCError17({ code: "NOT_FOUND", message: "Application not found" });
     return app;
   }),
-  updateDeadline: protectedProcedure.input(z86.object({
-    id: z86.number(),
-    nextDeadline: z86.number().nullable(),
-    deadlineLabel: z86.string().optional()
+  updateDeadline: protectedProcedure.input(z85.object({
+    id: z85.number(),
+    nextDeadline: z85.number().nullable(),
+    deadlineLabel: z85.string().optional()
   })).mutation(async ({ ctx, input }) => {
     const app = await updateBenefitApplicationDeadline(input.id, ctx.user.id, input.nextDeadline, input.deadlineLabel);
     if (!app) throw new TRPCError17({ code: "NOT_FOUND", message: "Application not found" });
     return app;
   }),
-  markDocumentSubmitted: protectedProcedure.input(z86.object({
-    id: z86.number(),
-    document: z86.string()
+  markDocumentSubmitted: protectedProcedure.input(z85.object({
+    id: z85.number(),
+    document: z85.string()
   })).mutation(async ({ ctx, input }) => {
     const app = await markDocumentSubmitted(input.id, ctx.user.id, input.document);
     if (!app) throw new TRPCError17({ code: "NOT_FOUND", message: "Application not found" });
     return app;
   }),
-  delete: protectedProcedure.input(z86.object({ id: z86.number() })).mutation(async ({ ctx, input }) => {
+  delete: protectedProcedure.input(z85.object({ id: z85.number() })).mutation(async ({ ctx, input }) => {
     const deleted = await deleteBenefitApplication(input.id, ctx.user.id);
     if (!deleted) throw new TRPCError17({ code: "NOT_FOUND", message: "Application not found" });
     return { success: true };
@@ -82514,17 +81812,17 @@ var benefitAppsRouter = router({
   })
 });
 var discoveryRouter = router({
-  daily: publicProcedure.input(z86.object({ date: z86.string().optional() }).optional()).query(({ input }) => {
+  daily: publicProcedure.input(z85.object({ date: z85.string().optional() }).optional()).query(({ input }) => {
     return getDailySpotlight(input?.date);
   }),
-  byCategory: publicProcedure.input(z86.object({ category: z86.string(), date: z86.string().optional() })).query(({ input }) => {
+  byCategory: publicProcedure.input(z85.object({ category: z85.string(), date: z85.string().optional() })).query(({ input }) => {
     return getCategorySpotlight(input.category, input.date);
   }),
-  contextual: publicProcedure.input(z86.object({
-    situation_text: z86.string().optional(),
-    pipeline_id: z86.string().optional(),
-    pipeline_category: z86.string().optional(),
-    limit: z86.number().optional()
+  contextual: publicProcedure.input(z85.object({
+    situation_text: z85.string().optional(),
+    pipeline_id: z85.string().optional(),
+    pipeline_category: z85.string().optional(),
+    limit: z85.number().optional()
   })).query(({ input }) => {
     return getContextualSpotlights(input);
   }),
@@ -82534,7 +81832,7 @@ var discoveryRouter = router({
   all: publicProcedure.query(() => {
     return getAllSpotlights();
   }),
-  share: publicProcedure.input(z86.object({ program_id: z86.string() })).query(({ input }) => {
+  share: publicProcedure.input(z85.object({ program_id: z85.string() })).query(({ input }) => {
     const spotlights = getAllSpotlights();
     const spotlight = spotlights.find((s) => s.program_id === input.program_id);
     if (!spotlight) return { text: "" };
@@ -82546,12 +81844,12 @@ var casesRouter = router({
     console.log("CTX USER ID:", ctx.user?.id);
     return listCases(ctx.user.id);
   }),
-  get: protectedProcedure.input(z86.object({ id: z86.number() })).query(async ({ ctx, input }) => {
+  get: protectedProcedure.input(z85.object({ id: z85.number() })).query(async ({ ctx, input }) => {
     const c = await verifyCaseOwnership(input.id, ctx.user.id);
     const { _accessLevel, ...caseData } = c;
     return caseData;
   }),
-  create: protectedProcedure.input(z86.object({ name: z86.string().min(1), description: z86.string().optional(), domain: z86.string().optional(), container: z86.string().optional(), pipelineType: z86.string().optional() })).mutation(async ({ ctx, input }) => {
+  create: protectedProcedure.input(z85.object({ name: z85.string().min(1), description: z85.string().optional(), domain: z85.string().optional(), container: z85.string().optional(), pipelineType: z85.string().optional() })).mutation(async ({ ctx, input }) => {
     const id = await createCase(ctx.user.id, input.name, input.description, input.domain, input.container, input.pipelineType);
     await logAudit({ caseId: id, userId: ctx.user.id, action: "create_case", targetType: "case", targetId: id, details: { domain: input.domain, container: input.container, pipelineType: input.pipelineType } });
     if (input.pipelineType) {
@@ -82566,14 +81864,14 @@ var casesRouter = router({
     }
     return { id };
   }),
-  update: protectedProcedure.input(z86.object({ id: z86.number(), name: z86.string().optional(), description: z86.string().optional(), status: z86.enum(["active", "archived"]).optional(), domain: z86.string().optional(), container: z86.string().optional() })).mutation(async ({ ctx, input }) => {
+  update: protectedProcedure.input(z85.object({ id: z85.number(), name: z85.string().optional(), description: z85.string().optional(), status: z85.enum(["active", "archived"]).optional(), domain: z85.string().optional(), container: z85.string().optional() })).mutation(async ({ ctx, input }) => {
     const { id, ...data } = input;
     await verifyCaseWriteAccess(id, ctx.user.id);
     await updateCase(id, ctx.user.id, data);
     await logAudit({ caseId: id, userId: ctx.user.id, action: "update_case", targetType: "case", targetId: id });
     return { success: true };
   }),
-  delete: protectedProcedure.input(z86.object({ id: z86.number(), force: z86.boolean().optional() })).mutation(async ({ ctx, input }) => {
+  delete: protectedProcedure.input(z85.object({ id: z85.number(), force: z85.boolean().optional() })).mutation(async ({ ctx, input }) => {
     await verifyCaseWriteAccess(input.id, ctx.user.id);
     const result = await hardDeleteCase(input.id, ctx.user.id, "User-initiated case deletion", {
       force: input.force ?? false,
@@ -82581,21 +81879,21 @@ var casesRouter = router({
     });
     return { success: true, audit_hash: result.auditHash, cascaded_entities: result.cascadedEntities };
   }),
-  stats: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  stats: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return getCaseStats(input.caseId);
   }),
-  getInterpretation: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  getInterpretation: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { getCaseInterpretation: getCaseInterpretation2 } = await Promise.resolve().then(() => (init_interpretation_service(), interpretation_service_exports));
     return getCaseInterpretation2(input.caseId);
   }),
-  extractForms: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  extractForms: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { extractFormsFromCase: extractFormsFromCase2 } = await Promise.resolve().then(() => (init_form_extraction_service(), form_extraction_service_exports));
     return extractFormsFromCase2(input.caseId);
   }),
-  correlate: protectedProcedure.input(z86.object({ caseId: z86.number() })).mutation(async ({ ctx, input }) => {
+  correlate: protectedProcedure.input(z85.object({ caseId: z85.number() })).mutation(async ({ ctx, input }) => {
     await verifyCaseWriteAccess(input.caseId, ctx.user.id);
     const snapshot = await getOpenSnapshot(input.caseId);
     if (snapshot) {
@@ -82612,17 +81910,17 @@ var casesRouter = router({
     return { started: true };
   }),
   /** Case Ingestion Integrity Ledger — deterministic audit of upload/extraction state */
-  ingestionAudit: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  ingestionAudit: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return getIngestionAudit(input.caseId);
   }),
   /** Remediation Overview — deterministic 5-class document state classification */
-  remediationOverview: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  remediationOverview: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return getRemediationOverview(input.caseId);
   }),
   /** Extraction Recovery — identify recoverable documents for a snapshot */
-  recoverableDocuments: protectedProcedure.input(z86.object({ caseId: z86.number(), snapshotId: z86.number() })).query(async ({ ctx, input }) => {
+  recoverableDocuments: protectedProcedure.input(z85.object({ caseId: z85.number(), snapshotId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const docs = await identifyRecoverableDocuments(input.caseId, input.snapshotId);
     return docs.map((d) => ({
@@ -82631,11 +81929,11 @@ var casesRouter = router({
     }));
   }),
   /** Extraction Recovery — execute snapshot-safe retry for failed extractions */
-  extractionRecovery: protectedProcedure.input(z86.object({
-    caseId: z86.number(),
-    snapshotId: z86.number(),
-    documentIds: z86.array(z86.number()).optional(),
-    retryOnly: z86.boolean().default(true)
+  extractionRecovery: protectedProcedure.input(z85.object({
+    caseId: z85.number(),
+    snapshotId: z85.number(),
+    documentIds: z85.array(z85.number()).optional(),
+    retryOnly: z85.boolean().default(true)
   })).mutation(async ({ ctx, input }) => {
     await verifyCaseWriteAccess(input.caseId, ctx.user.id);
     await assertActionAllowed(input.caseId, input.snapshotId, "retryFailedDocuments");
@@ -82648,7 +81946,7 @@ var casesRouter = router({
   })
 });
 var documentsRouter = router({
-  list: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     console.log("[DOCUMENTS.LIST] ctx.user.id:", ctx.user?.id);
     console.log("[DOCUMENTS.LIST] input.caseId:", input.caseId, "(type:", typeof input.caseId + ")");
     try {
@@ -82665,23 +81963,23 @@ var documentsRouter = router({
     }
     return result;
   }),
-  get: protectedProcedure.input(z86.object({ id: z86.number() })).query(async ({ ctx, input }) => {
+  get: protectedProcedure.input(z85.object({ id: z85.number() })).query(async ({ ctx, input }) => {
     const doc = await verifyDocumentOwnership(input.id, ctx.user.id);
     return doc;
   }),
-  quotes: protectedProcedure.input(z86.object({ documentId: z86.number() })).query(async ({ ctx, input }) => {
+  quotes: protectedProcedure.input(z85.object({ documentId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyDocumentOwnership(input.documentId, ctx.user.id);
     return getQuotesForDocument(input.documentId);
   }),
-  claims: protectedProcedure.input(z86.object({ documentId: z86.number() })).query(async ({ ctx, input }) => {
+  claims: protectedProcedure.input(z85.object({ documentId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyDocumentOwnership(input.documentId, ctx.user.id);
     return getClaimsForDocument(input.documentId);
   }),
-  entityRoles: protectedProcedure.input(z86.object({ documentId: z86.number() })).query(async ({ ctx, input }) => {
+  entityRoles: protectedProcedure.input(z85.object({ documentId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyDocumentOwnership(input.documentId, ctx.user.id);
     return getEntityRolesForDocument(input.documentId);
   }),
-  analyze: protectedProcedure.input(z86.object({ documentId: z86.number(), caseId: z86.number() })).mutation(async ({ ctx, input }) => {
+  analyze: protectedProcedure.input(z85.object({ documentId: z85.number(), caseId: z85.number() })).mutation(async ({ ctx, input }) => {
     await verifyCaseWriteAccess(input.caseId, ctx.user.id);
     const snapshot = await getOpenSnapshot(input.caseId);
     if (snapshot) await assertActionAllowed(input.caseId, snapshot.id, "analyzeNewUploads");
@@ -82695,7 +81993,7 @@ var documentsRouter = router({
     });
     return { queued: true };
   }),
-  analyzeAll: protectedProcedure.input(z86.object({ caseId: z86.number() })).mutation(async ({ ctx, input }) => {
+  analyzeAll: protectedProcedure.input(z85.object({ caseId: z85.number() })).mutation(async ({ ctx, input }) => {
     await verifyCaseWriteAccess(input.caseId, ctx.user.id);
     const snapshot = await getOpenSnapshot(input.caseId);
     if (snapshot) await assertActionAllowed(input.caseId, snapshot.id, "analyzeNewUploads");
@@ -82706,7 +82004,7 @@ var documentsRouter = router({
     }
     return { queued: uploadedDocs.length };
   }),
-  reanalyze: protectedProcedure.input(z86.object({ documentId: z86.number() })).mutation(async ({ ctx, input }) => {
+  reanalyze: protectedProcedure.input(z85.object({ documentId: z85.number() })).mutation(async ({ ctx, input }) => {
     const doc = await verifyDocumentOwnership(input.documentId, ctx.user.id);
     await verifyCaseWriteAccess(doc.caseId, ctx.user.id);
     const snapshot = await getOpenSnapshot(doc.caseId);
@@ -82721,7 +82019,7 @@ var documentsRouter = router({
     const { toneReport } = await reanalyzeDocument(input.documentId);
     return { toneReport };
   }),
-  reanalyzeAll: protectedProcedure.input(z86.object({ caseId: z86.number() })).mutation(async ({ ctx, input }) => {
+  reanalyzeAll: protectedProcedure.input(z85.object({ caseId: z85.number() })).mutation(async ({ ctx, input }) => {
     await verifyCaseWriteAccess(input.caseId, ctx.user.id);
     const snapshot = await getOpenSnapshot(input.caseId);
     if (snapshot) await assertActionAllowed(input.caseId, snapshot.id, "analyzeNewUploads");
@@ -82741,7 +82039,7 @@ var documentsRouter = router({
    * Scope: documents with status 'uploaded' (not yet processed)
    * Does NOT touch ready documents, does NOT clear correlations/findings
    */
-  analyzeNewUploads: protectedProcedure.input(z86.object({ caseId: z86.number() })).mutation(async ({ ctx, input }) => {
+  analyzeNewUploads: protectedProcedure.input(z85.object({ caseId: z85.number() })).mutation(async ({ ctx, input }) => {
     await verifyCaseWriteAccess(input.caseId, ctx.user.id);
     const anSnapshot = await getOpenSnapshot(input.caseId);
     if (anSnapshot) await assertActionAllowed(input.caseId, anSnapshot.id, "analyzeNewUploads");
@@ -82773,7 +82071,7 @@ var documentsRouter = router({
    * Scope: auto_recoverable documents (retryable failures only)
    * Uses existing extraction recovery pipeline
    */
-  retryFailedOnly: protectedProcedure.input(z86.object({ caseId: z86.number() })).mutation(async ({ ctx, input }) => {
+  retryFailedOnly: protectedProcedure.input(z85.object({ caseId: z85.number() })).mutation(async ({ ctx, input }) => {
     await verifyCaseWriteAccess(input.caseId, ctx.user.id);
     const rfSnapshot = await getOpenSnapshot(input.caseId);
     if (rfSnapshot) await assertActionAllowed(input.caseId, rfSnapshot.id, "retryFailedDocuments");
@@ -82811,9 +82109,9 @@ var documentsRouter = router({
    * Creates a new open snapshot, re-runs extraction/correlation/findings
    * Requires explicit confirmation (enforced on frontend)
    */
-  fullSnapshotRebuild: protectedProcedure.input(z86.object({
-    caseId: z86.number(),
-    confirmed: z86.literal(true)
+  fullSnapshotRebuild: protectedProcedure.input(z85.object({
+    caseId: z85.number(),
+    confirmed: z85.literal(true)
     // Must explicitly confirm
   })).mutation(async ({ ctx, input }) => {
     await verifyCaseWriteAccess(input.caseId, ctx.user.id);
@@ -82852,7 +82150,7 @@ var documentsRouter = router({
    * Scoped action summary — returns counts for each action scope
    * Used by the UI to show how many docs each action would affect
    */
-  reanalyzeScopeSummary: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  reanalyzeScopeSummary: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const docs = await listDocuments(input.caseId);
     const uploaded = docs.filter((d) => d.status === "uploaded");
@@ -82876,9 +82174,9 @@ var documentsRouter = router({
     };
   }),
   // Hard delete — removes document row from DB, preserves S3 bytes, logs audit entry
-  hardDelete: protectedProcedure.input(z86.object({
-    documentId: z86.number(),
-    reason: z86.string().min(1).max(500)
+  hardDelete: protectedProcedure.input(z85.object({
+    documentId: z85.number(),
+    reason: z85.string().min(1).max(500)
   })).mutation(async ({ ctx, input }) => {
     const hdDoc = await verifyDocumentOwnership(input.documentId, ctx.user.id);
     await verifyCaseWriteAccess(hdDoc.caseId, ctx.user.id);
@@ -82889,10 +82187,10 @@ var documentsRouter = router({
     return { success: true, document_id: input.documentId };
   }),
   // ─── Document Resolution Endpoints ───
-  replaceDocument: protectedProcedure.input(z86.object({
-    originalDocumentId: z86.number(),
-    replacementDocumentId: z86.number(),
-    reason: z86.string().min(10).max(1e3)
+  replaceDocument: protectedProcedure.input(z85.object({
+    originalDocumentId: z85.number(),
+    replacementDocumentId: z85.number(),
+    reason: z85.string().min(10).max(1e3)
   })).mutation(async ({ ctx, input }) => {
     const originalDoc = await verifyDocumentOwnership(input.originalDocumentId, ctx.user.id);
     await verifyCaseWriteAccess(originalDoc.caseId, ctx.user.id);
@@ -82900,9 +82198,9 @@ var documentsRouter = router({
     await replaceDocument(input.originalDocumentId, input.replacementDocumentId, ctx.user.id, input.reason);
     return { success: true, original_document_id: input.originalDocumentId, replacement_document_id: input.replacementDocumentId };
   }),
-  markCorrupted: protectedProcedure.input(z86.object({
-    documentId: z86.number(),
-    reason: z86.string().min(10).max(1e3)
+  markCorrupted: protectedProcedure.input(z85.object({
+    documentId: z85.number(),
+    reason: z85.string().min(10).max(1e3)
   })).mutation(async ({ ctx, input }) => {
     const doc = await verifyDocumentOwnership(input.documentId, ctx.user.id);
     await verifyCaseWriteAccess(doc.caseId, ctx.user.id);
@@ -82910,9 +82208,9 @@ var documentsRouter = router({
     await markDocumentCorrupted(input.documentId, ctx.user.id, input.reason);
     return { success: true, document_id: input.documentId };
   }),
-  markExcluded: protectedProcedure.input(z86.object({
-    documentId: z86.number(),
-    reason: z86.string().min(10).max(1e3)
+  markExcluded: protectedProcedure.input(z85.object({
+    documentId: z85.number(),
+    reason: z85.string().min(10).max(1e3)
   })).mutation(async ({ ctx, input }) => {
     const doc = await verifyDocumentOwnership(input.documentId, ctx.user.id);
     await verifyCaseWriteAccess(doc.caseId, ctx.user.id);
@@ -82920,17 +82218,17 @@ var documentsRouter = router({
     await markDocumentExcluded(input.documentId, ctx.user.id, input.reason);
     return { success: true, document_id: input.documentId };
   }),
-  replacementChain: protectedProcedure.input(z86.object({ documentId: z86.number() })).query(async ({ ctx, input }) => {
+  replacementChain: protectedProcedure.input(z85.object({ documentId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyDocumentOwnership(input.documentId, ctx.user.id);
     return getDocumentReplacementChain(input.documentId);
   }),
-  listResolved: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  listResolved: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return listResolvedDocuments(input.caseId);
   }),
   // Queue visibility: returns current extraction queue status
   // Gate C: accepts optional caseId to scope metrics to a single case
-  queueStatus: protectedProcedure.input(z86.object({ caseId: z86.number().optional() }).optional()).query(async ({ input }) => {
+  queueStatus: protectedProcedure.input(z85.object({ caseId: z85.number().optional() }).optional()).query(async ({ input }) => {
     const caseId2 = input?.caseId;
     const status = getQueueStatus();
     const retryingDocs = await findDocumentsByStatuses(["retrying"], caseId2);
@@ -82960,7 +82258,7 @@ var documentsRouter = router({
     };
   }),
   // Gate C: accepts optional caseId to scope provenance metrics to a single case
-  provenanceDrift: protectedProcedure.input(z86.object({ caseId: z86.number().optional() }).optional()).query(async ({ input }) => {
+  provenanceDrift: protectedProcedure.input(z85.object({ caseId: z85.number().optional() }).optional()).query(async ({ input }) => {
     const caseId2 = input?.caseId;
     const dbMetrics = await getProvenanceDriftMetrics(caseId2);
     const queueStatus = getQueueStatus();
@@ -82981,29 +82279,29 @@ var documentsRouter = router({
   })
 });
 var entitiesRouter = router({
-  list: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return listEntities(input.caseId);
   }),
-  get: protectedProcedure.input(z86.object({ id: z86.number() })).query(async ({ ctx, input }) => {
+  get: protectedProcedure.input(z85.object({ id: z85.number() })).query(async ({ ctx, input }) => {
     const entity = await verifyEntityOwnership(input.id, ctx.user.id);
     return entity;
   }),
-  roles: protectedProcedure.input(z86.object({ entityId: z86.number() })).query(async ({ ctx, input }) => {
+  roles: protectedProcedure.input(z85.object({ entityId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyEntityOwnership(input.entityId, ctx.user.id);
     return getEntityRolesForEntity(input.entityId);
   }),
-  relationships: protectedProcedure.input(z86.object({ entityId: z86.number() })).query(async ({ ctx, input }) => {
+  relationships: protectedProcedure.input(z85.object({ entityId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyEntityOwnership(input.entityId, ctx.user.id);
     return getRelationshipsForEntityEnriched(input.entityId);
   })
 });
 var dedupRouter = router({
-  suggestions: protectedProcedure.input(z86.object({ caseId: z86.number(), status: z86.enum(["pending", "approved", "rejected"]).optional() })).query(async ({ ctx, input }) => {
+  suggestions: protectedProcedure.input(z85.object({ caseId: z85.number(), status: z85.enum(["pending", "approved", "rejected"]).optional() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return listMergeSuggestions(input.caseId, input.status);
   }),
-  scan: protectedProcedure.input(z86.object({ caseId: z86.number() })).mutation(async ({ ctx, input }) => {
+  scan: protectedProcedure.input(z85.object({ caseId: z85.number() })).mutation(async ({ ctx, input }) => {
     await verifyCaseWriteAccess(input.caseId, ctx.user.id);
     const count18 = await runDedupScan(input.caseId);
     await logAudit({
@@ -83016,7 +82314,7 @@ var dedupRouter = router({
     });
     return { suggestions_found: count18 };
   }),
-  review: protectedProcedure.input(z86.object({ id: z86.number(), action: z86.enum(["approve", "reject"]) })).mutation(async ({ ctx, input }) => {
+  review: protectedProcedure.input(z85.object({ id: z85.number(), action: z85.enum(["approve", "reject"]) })).mutation(async ({ ctx, input }) => {
     const suggestion = await getMergeSuggestion(input.id);
     if (!suggestion) throw new TRPCError17({ code: "NOT_FOUND", message: "Suggestion not found" });
     await verifyCaseWriteAccess(suggestion.caseId, ctx.user.id);
@@ -83050,11 +82348,11 @@ var dedupRouter = router({
   })
 });
 var relationshipsRouter = router({
-  list: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return listRelationships(input.caseId);
   }),
-  evidence: protectedProcedure.input(z86.object({ relationshipId: z86.number() })).query(async ({ ctx, input }) => {
+  evidence: protectedProcedure.input(z85.object({ relationshipId: z85.number() })).query(async ({ ctx, input }) => {
     const { relationships: relTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const [rel] = await db.select().from(relTable).where(eq87(relTable.id, input.relationshipId));
     if (!rel) throw new TRPCError17({ code: "NOT_FOUND", message: "Relationship not found" });
@@ -83063,50 +82361,50 @@ var relationshipsRouter = router({
   })
 });
 var findingsRouter = router({
-  list: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return listFindings(input.caseId);
   }),
-  listEnriched: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  listEnriched: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return listFindingsEnriched(input.caseId);
   }),
-  backfillClaims: adminProcedure.input(z86.object({ caseId: z86.number().optional() })).mutation(async ({ input }) => {
+  backfillClaims: adminProcedure.input(z85.object({ caseId: z85.number().optional() })).mutation(async ({ input }) => {
     return runClaimBackfill(input.caseId);
   })
 });
 var eventsRouter2 = router({
-  list: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return listEvents(input.caseId);
   })
 });
 var flagsRouter = router({
-  list: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return listSignalFlags(input.caseId);
   }),
-  listEnriched: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  listEnriched: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return listSignalFlagsEnriched(input.caseId);
   })
 });
 var correlationsRouter = router({
-  list: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return listCorrelations(input.caseId);
   }),
-  listEnriched: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  listEnriched: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return listCorrelationsEnriched(input.caseId);
   })
 });
 var quotesRouter = router({
-  forCase: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  forCase: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return getQuotesForCase(input.caseId);
   }),
-  get: protectedProcedure.input(z86.object({ id: z86.number() })).query(async ({ ctx, input }) => {
+  get: protectedProcedure.input(z85.object({ id: z85.number() })).query(async ({ ctx, input }) => {
     const q = await getQuote(input.id);
     if (!q) throw new TRPCError17({ code: "NOT_FOUND", message: "Quote not found" });
     await verifyCaseOwnership(q.caseId, ctx.user.id);
@@ -83114,12 +82412,12 @@ var quotesRouter = router({
   })
 });
 var chatRouter = router({
-  history: protectedProcedure.input(z86.object({ caseId: z86.number(), limit: z86.number().optional() })).query(async ({ ctx, input }) => {
+  history: protectedProcedure.input(z85.object({ caseId: z85.number(), limit: z85.number().optional() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const messages = await getChatHistory(input.caseId, input.limit);
     return messages.reverse();
   }),
-  send: protectedProcedure.input(z86.object({ caseId: z86.number(), message: z86.string().min(1) })).mutation(async ({ ctx, input }) => {
+  send: protectedProcedure.input(z85.object({ caseId: z85.number(), message: z85.string().min(1) })).mutation(async ({ ctx, input }) => {
     await verifyCaseWriteAccess(input.caseId, ctx.user.id);
     await addChatMessage({
       caseId: input.caseId,
@@ -83166,7 +82464,7 @@ Recent Findings: ${recentFindings.slice(0, 5).map((f) => `[Finding] ${f.title}: 
   })
 });
 var auditRouter = router({
-  list: protectedProcedure.input(z86.object({ caseId: z86.number(), limit: z86.number().optional() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number(), limit: z85.number().optional() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return getAuditTrail(input.caseId, input.limit);
   })
@@ -83184,77 +82482,77 @@ async function verifyPresentationWriteAccess(presentationId, userId) {
   return pres;
 }
 var presentationsRouter = router({
-  list: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return listPresentations(input.caseId);
   }),
-  get: protectedProcedure.input(z86.object({ id: z86.number() })).query(async ({ ctx, input }) => {
+  get: protectedProcedure.input(z85.object({ id: z85.number() })).query(async ({ ctx, input }) => {
     const pres = await verifyPresentationOwnership(input.id, ctx.user.id);
     const slides = await getSlides(input.id);
     return { ...pres, slides };
   }),
-  create: protectedProcedure.input(z86.object({ caseId: z86.number(), title: z86.string().min(1), description: z86.string().optional(), theme: z86.string().optional() })).mutation(async ({ ctx, input }) => {
+  create: protectedProcedure.input(z85.object({ caseId: z85.number(), title: z85.string().min(1), description: z85.string().optional(), theme: z85.string().optional() })).mutation(async ({ ctx, input }) => {
     await verifyCaseWriteAccess(input.caseId, ctx.user.id);
     const id = await createPresentation({ caseId: input.caseId, userId: ctx.user.id, title: input.title, description: input.description, theme: input.theme });
     return { id };
   }),
-  update: protectedProcedure.input(z86.object({ id: z86.number(), title: z86.string().optional(), description: z86.string().optional(), theme: z86.string().optional() })).mutation(async ({ ctx, input }) => {
+  update: protectedProcedure.input(z85.object({ id: z85.number(), title: z85.string().optional(), description: z85.string().optional(), theme: z85.string().optional() })).mutation(async ({ ctx, input }) => {
     await verifyPresentationWriteAccess(input.id, ctx.user.id);
     const { id, ...updates } = input;
     await updatePresentation(id, updates);
     return { success: true };
   }),
-  delete: protectedProcedure.input(z86.object({ id: z86.number() })).mutation(async ({ ctx, input }) => {
+  delete: protectedProcedure.input(z85.object({ id: z85.number() })).mutation(async ({ ctx, input }) => {
     await verifyPresentationWriteAccess(input.id, ctx.user.id);
     await deletePresentation(input.id);
     return { success: true };
   }),
-  slides: protectedProcedure.input(z86.object({ presentationId: z86.number() })).query(async ({ ctx, input }) => {
+  slides: protectedProcedure.input(z85.object({ presentationId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyPresentationOwnership(input.presentationId, ctx.user.id);
     return getSlides(input.presentationId);
   }),
-  addSlide: protectedProcedure.input(z86.object({
-    presentationId: z86.number(),
-    orderIndex: z86.number(),
-    slideType: z86.string(),
-    title: z86.string().optional(),
-    content: z86.string().optional(),
-    sourceCitations: z86.array(z86.any()).optional(),
-    notes: z86.string().optional(),
-    layout: z86.string().optional(),
-    metadata: z86.any().optional()
+  addSlide: protectedProcedure.input(z85.object({
+    presentationId: z85.number(),
+    orderIndex: z85.number(),
+    slideType: z85.string(),
+    title: z85.string().optional(),
+    content: z85.string().optional(),
+    sourceCitations: z85.array(z85.any()).optional(),
+    notes: z85.string().optional(),
+    layout: z85.string().optional(),
+    metadata: z85.any().optional()
   })).mutation(async ({ ctx, input }) => {
     await verifyPresentationWriteAccess(input.presentationId, ctx.user.id);
     const id = await addSlide(input);
     return { id };
   }),
-  updateSlide: protectedProcedure.input(z86.object({
-    id: z86.number(),
-    presentationId: z86.number(),
-    title: z86.string().optional(),
-    content: z86.string().optional(),
-    notes: z86.string().optional(),
-    layout: z86.string().optional(),
-    metadata: z86.any().optional(),
-    sourceCitations: z86.array(z86.any()).optional()
+  updateSlide: protectedProcedure.input(z85.object({
+    id: z85.number(),
+    presentationId: z85.number(),
+    title: z85.string().optional(),
+    content: z85.string().optional(),
+    notes: z85.string().optional(),
+    layout: z85.string().optional(),
+    metadata: z85.any().optional(),
+    sourceCitations: z85.array(z85.any()).optional()
   })).mutation(async ({ ctx, input }) => {
     await verifyPresentationWriteAccess(input.presentationId, ctx.user.id);
     const { id, presentationId, ...updates } = input;
     await updateSlide(id, updates);
     return { success: true };
   }),
-  deleteSlide: protectedProcedure.input(z86.object({ id: z86.number(), presentationId: z86.number() })).mutation(async ({ ctx, input }) => {
+  deleteSlide: protectedProcedure.input(z85.object({ id: z85.number(), presentationId: z85.number() })).mutation(async ({ ctx, input }) => {
     await verifyPresentationWriteAccess(input.presentationId, ctx.user.id);
     await deleteSlide(input.id, input.presentationId);
     return { success: true };
   }),
-  reorderSlides: protectedProcedure.input(z86.object({ presentationId: z86.number(), slideIds: z86.array(z86.number()) })).mutation(async ({ ctx, input }) => {
+  reorderSlides: protectedProcedure.input(z85.object({ presentationId: z85.number(), slideIds: z85.array(z85.number()) })).mutation(async ({ ctx, input }) => {
     await verifyPresentationWriteAccess(input.presentationId, ctx.user.id);
     await reorderSlides(input.presentationId, input.slideIds);
     return { success: true };
   }),
   // LLM-powered auto-generation from case data
-  generateSlides: protectedProcedure.input(z86.object({ caseId: z86.number(), presentationId: z86.number() })).mutation(async ({ ctx, input }) => {
+  generateSlides: protectedProcedure.input(z85.object({ caseId: z85.number(), presentationId: z85.number() })).mutation(async ({ ctx, input }) => {
     await verifyPresentationWriteAccess(input.presentationId, ctx.user.id);
     const { invokeLLM: invokeLLM2 } = await Promise.resolve().then(() => (init_llm(), llm_exports));
     const caseData = await verifyCaseOwnership(input.caseId, ctx.user.id);
@@ -83377,7 +82675,7 @@ Respond in this exact JSON format:
     return { slide_count: insertedIds.length, slide_ids: insertedIds };
   }),
   // Refine a single slide's content with LLM
-  refineSlide: protectedProcedure.input(z86.object({ presentationId: z86.number(), slideId: z86.number(), instruction: z86.string().min(1) })).mutation(async ({ ctx, input }) => {
+  refineSlide: protectedProcedure.input(z85.object({ presentationId: z85.number(), slideId: z85.number(), instruction: z85.string().min(1) })).mutation(async ({ ctx, input }) => {
     const pres = await verifyPresentationWriteAccess(input.presentationId, ctx.user.id);
     const slide = await getSlide(input.slideId);
     if (!slide || slide.presentationId !== input.presentationId) throw new TRPCError17({ code: "NOT_FOUND", message: "Slide not found" });
@@ -83419,7 +82717,7 @@ Apply the user's instruction and return the updated slide. Keep the tone factual
     return { success: true, title: parsed.title, content: parsed.content, notes: parsed.notes };
   }),
   // Export presentation as printable HTML (print to PDF)
-  exportHtml: protectedProcedure.input(z86.object({ presentationId: z86.number() })).query(async ({ ctx, input }) => {
+  exportHtml: protectedProcedure.input(z85.object({ presentationId: z85.number() })).query(async ({ ctx, input }) => {
     const pres = await verifyPresentationOwnership(input.presentationId, ctx.user.id);
     const slides = await getSlides(input.presentationId);
     const caseData = await verifyCaseOwnership(pres.caseId, ctx.user.id);
@@ -83515,17 +82813,17 @@ var uploadSessionsRouter = router({
   getActive: protectedProcedure.query(async ({ ctx }) => {
     return getActiveUploadSessions(ctx.user.id);
   }),
-  get: protectedProcedure.input(z86.object({ sessionId: z86.number() })).query(async ({ ctx, input }) => {
+  get: protectedProcedure.input(z85.object({ sessionId: z85.number() })).query(async ({ ctx, input }) => {
     const session = await getUploadSession(input.sessionId);
     if (!session || session.userId !== ctx.user.id) {
       throw new TRPCError17({ code: "NOT_FOUND", message: "Upload session not found" });
     }
     return session;
   }),
-  list: protectedProcedure.input(z86.object({ caseId: z86.number().optional() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number().optional() })).query(async ({ ctx, input }) => {
     return listUploadSessions(ctx.user.id, input.caseId);
   }),
-  create: protectedProcedure.input(z86.object({ caseId: z86.number(), totalFiles: z86.number().min(1) })).mutation(async ({ ctx, input }) => {
+  create: protectedProcedure.input(z85.object({ caseId: z85.number(), totalFiles: z85.number().min(1) })).mutation(async ({ ctx, input }) => {
     await verifyCaseWriteAccess(input.caseId, ctx.user.id);
     const sessionId = await createUploadSession({
       caseId: input.caseId,
@@ -83534,7 +82832,7 @@ var uploadSessionsRouter = router({
     });
     return { sessionId };
   }),
-  finalize: protectedProcedure.input(z86.object({ sessionId: z86.number() })).mutation(async ({ ctx, input }) => {
+  finalize: protectedProcedure.input(z85.object({ sessionId: z85.number() })).mutation(async ({ ctx, input }) => {
     const session = await getUploadSession(input.sessionId);
     if (!session || session.userId !== ctx.user.id) {
       throw new TRPCError17({ code: "NOT_FOUND", message: "Upload session not found" });
@@ -83545,22 +82843,22 @@ var uploadSessionsRouter = router({
   })
 });
 var provenanceRouter = router({
-  listUnsupported: protectedProcedure.input(z86.object({ caseId: z86.number().optional() })).query(async ({ ctx, input }) => {
+  listUnsupported: protectedProcedure.input(z85.object({ caseId: z85.number().optional() })).query(async ({ ctx, input }) => {
     if (input.caseId) await verifyCaseOwnership(input.caseId, ctx.user.id);
     return listUnsupportedFindings(input.caseId);
   }),
-  getDetail: protectedProcedure.input(z86.object({ findingId: z86.number() })).query(async ({ ctx, input }) => {
+  getDetail: protectedProcedure.input(z85.object({ findingId: z85.number() })).query(async ({ ctx, input }) => {
     const detail = await getFindingMatchDetail(input.findingId);
     if (!detail) throw new TRPCError17({ code: "NOT_FOUND", message: "Finding not found" });
     await verifyCaseOwnership(detail.finding.caseId, ctx.user.id);
     return detail;
   }),
-  metrics: protectedProcedure.input(z86.object({ caseId: z86.number().optional() })).query(async ({ ctx, input }) => {
+  metrics: protectedProcedure.input(z85.object({ caseId: z85.number().optional() })).query(async ({ ctx, input }) => {
     if (input.caseId) await verifyCaseOwnership(input.caseId, ctx.user.id);
     return getProvenanceDrilldownMetrics(input.caseId);
   }),
   // Action A: Re-run document-scoped matching (no cross-document widening)
-  reRunMatching: protectedProcedure.input(z86.object({ findingId: z86.number() })).mutation(async ({ ctx, input }) => {
+  reRunMatching: protectedProcedure.input(z85.object({ findingId: z85.number() })).mutation(async ({ ctx, input }) => {
     const [finding] = await db.select().from((await Promise.resolve().then(() => (init_schema(), schema_exports))).findings).where(eq87((await Promise.resolve().then(() => (init_schema(), schema_exports))).findings.id, input.findingId));
     if (!finding) throw new TRPCError17({ code: "NOT_FOUND", message: "Finding not found" });
     await verifyCaseWriteAccess(finding.caseId, ctx.user.id);
@@ -83623,7 +82921,7 @@ var provenanceRouter = router({
     return { success: true, matched_claim_ids: result.matchedIds, candidate_count: caseClaims.length };
   }),
   // Action B: Mark as valid synthesis (mandatory reason)
-  markSynthesis: protectedProcedure.input(z86.object({ findingId: z86.number(), reason: z86.string().min(1, "Reason is mandatory") })).mutation(async ({ ctx, input }) => {
+  markSynthesis: protectedProcedure.input(z85.object({ findingId: z85.number(), reason: z85.string().min(1, "Reason is mandatory") })).mutation(async ({ ctx, input }) => {
     const [finding] = await db.select().from((await Promise.resolve().then(() => (init_schema(), schema_exports))).findings).where(eq87((await Promise.resolve().then(() => (init_schema(), schema_exports))).findings.id, input.findingId));
     if (!finding) throw new TRPCError17({ code: "NOT_FOUND", message: "Finding not found" });
     await verifyCaseWriteAccess(finding.caseId, ctx.user.id);
@@ -83641,7 +82939,7 @@ var provenanceRouter = router({
     return { success: true };
   }),
   // Action C: Flag for claim extraction review (does NOT modify finding state)
-  flagForReview: protectedProcedure.input(z86.object({ findingId: z86.number(), reason: z86.string().optional() })).mutation(async ({ ctx, input }) => {
+  flagForReview: protectedProcedure.input(z85.object({ findingId: z85.number(), reason: z85.string().optional() })).mutation(async ({ ctx, input }) => {
     const [finding] = await db.select().from((await Promise.resolve().then(() => (init_schema(), schema_exports))).findings).where(eq87((await Promise.resolve().then(() => (init_schema(), schema_exports))).findings.id, input.findingId));
     if (!finding) throw new TRPCError17({ code: "NOT_FOUND", message: "Finding not found" });
     await verifyCaseWriteAccess(finding.caseId, ctx.user.id);
@@ -83656,7 +82954,7 @@ var provenanceRouter = router({
     });
     return { success: true };
   }),
-  auditLog: protectedProcedure.input(z86.object({ findingId: z86.number() })).query(async ({ ctx, input }) => {
+  auditLog: protectedProcedure.input(z85.object({ findingId: z85.number() })).query(async ({ ctx, input }) => {
     const { findings: findingsTable, provenanceAuditLogs: provenanceAuditLogs2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const [finding] = await db.select().from(findingsTable).where(eq87(findingsTable.id, input.findingId));
     if (!finding) throw new TRPCError17({ code: "NOT_FOUND", message: "Finding not found" });
@@ -83675,14 +82973,14 @@ var provenanceRouter = router({
       });
     }
   }),
-  abortBatchRerun: protectedProcedure.input(z86.object({ batchId: z86.number() })).mutation(async ({ input }) => {
+  abortBatchRerun: protectedProcedure.input(z85.object({ batchId: z85.number() })).mutation(async ({ input }) => {
     const run = await getBatchRunById(input.batchId);
     if (!run) throw new TRPCError17({ code: "NOT_FOUND", message: "Batch run not found" });
     if (run.status !== "running") throw new TRPCError17({ code: "BAD_REQUEST", message: "Batch is not running" });
     requestAbort(input.batchId);
     return { success: true };
   }),
-  resumeBatchRerun: protectedProcedure.input(z86.object({ batchId: z86.number() })).mutation(async ({ ctx, input }) => {
+  resumeBatchRerun: protectedProcedure.input(z85.object({ batchId: z85.number() })).mutation(async ({ ctx, input }) => {
     try {
       const result = await resumeBatchRerun(input.batchId, ctx.user.id);
       return { success: true, total_remaining: result.totalRemaining };
@@ -83700,25 +82998,25 @@ var provenanceRouter = router({
     if (latest) return { ...latest, is_active: false };
     return null;
   }),
-  getBatchRunById: protectedProcedure.input(z86.object({ batchId: z86.number() })).query(async ({ input }) => {
+  getBatchRunById: protectedProcedure.input(z85.object({ batchId: z85.number() })).query(async ({ input }) => {
     const run = await getBatchRunById(input.batchId);
     if (!run) throw new TRPCError17({ code: "NOT_FOUND", message: "Batch run not found" });
     return run;
   }),
-  listBatchRuns: protectedProcedure.input(z86.object({ limit: z86.number().optional() })).query(async ({ input }) => {
+  listBatchRuns: protectedProcedure.input(z85.object({ limit: z85.number().optional() })).query(async ({ input }) => {
     return listBatchRuns(input.limit ?? 10);
   }),
   // ─── Provenance Alerting ───
-  alertHistory: protectedProcedure.input(z86.object({ limit: z86.number().optional() })).query(async ({ input }) => {
+  alertHistory: protectedProcedure.input(z85.object({ limit: z85.number().optional() })).query(async ({ input }) => {
     const { listAlertEvents: listAlertEvents2 } = await Promise.resolve().then(() => (init_provenance_alerting(), provenance_alerting_exports));
     return listAlertEvents2(input.limit ?? 20);
   }),
-  checkThresholds: protectedProcedure.input(z86.object({ caseId: z86.number().optional() })).mutation(async ({ input }) => {
+  checkThresholds: protectedProcedure.input(z85.object({ caseId: z85.number().optional() })).mutation(async ({ input }) => {
     const { checkProvenanceThresholds: checkProvenanceThresholds2 } = await Promise.resolve().then(() => (init_provenance_alerting(), provenance_alerting_exports));
     return checkProvenanceThresholds2(input.caseId);
   }),
   // ─── Audit Export (CSV) ───
-  exportAuditTrail: protectedProcedure.input(z86.object({ caseId: z86.number().optional(), limit: z86.number().optional() })).query(async ({ ctx, input }) => {
+  exportAuditTrail: protectedProcedure.input(z85.object({ caseId: z85.number().optional(), limit: z85.number().optional() })).query(async ({ ctx, input }) => {
     if (input.caseId) await verifyCaseOwnership(input.caseId, ctx.user.id);
     const logs = await listProvenanceAuditLogs(input.caseId, input.limit ?? 1e3);
     const headers = ["target_id", "target_type", "action_type", "user_id", "details", "timestamp"];
@@ -83739,7 +83037,7 @@ var provenanceRouter = router({
 });
 var collaborationRouter = router({
   /** Add a collaborator to a case (owner-only) */
-  add: protectedProcedure.input(z86.object({ caseId: z86.number(), targetUserId: z86.number(), accessLevel: z86.enum(["READ_ONLY", "WRITE"]).default("READ_ONLY") })).mutation(async ({ ctx, input }) => {
+  add: protectedProcedure.input(z85.object({ caseId: z85.number(), targetUserId: z85.number(), accessLevel: z85.enum(["READ_ONLY", "WRITE"]).default("READ_ONLY") })).mutation(async ({ ctx, input }) => {
     if (!ENV.collaborationEnabled) throw new TRPCError17({ code: "FORBIDDEN", message: "Collaboration is disabled" });
     const caseRow = await getCase(input.caseId, ctx.user.id);
     if (!caseRow) throw new TRPCError17({ code: "FORBIDDEN", message: "Only the case owner can manage collaborators" });
@@ -83756,7 +83054,7 @@ var collaborationRouter = router({
     return { success: true };
   }),
   /** Remove a collaborator from a case (owner-only) */
-  remove: protectedProcedure.input(z86.object({ caseId: z86.number(), targetUserId: z86.number() })).mutation(async ({ ctx, input }) => {
+  remove: protectedProcedure.input(z85.object({ caseId: z85.number(), targetUserId: z85.number() })).mutation(async ({ ctx, input }) => {
     if (!ENV.collaborationEnabled) throw new TRPCError17({ code: "FORBIDDEN", message: "Collaboration is disabled" });
     const caseRow = await getCase(input.caseId, ctx.user.id);
     if (!caseRow) throw new TRPCError17({ code: "FORBIDDEN", message: "Only the case owner can manage collaborators" });
@@ -83771,7 +83069,7 @@ var collaborationRouter = router({
     return { success: true };
   }),
   /** List collaborators for a case (owner or collaborator can view) */
-  list: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     if (!ENV.collaborationEnabled) throw new TRPCError17({ code: "FORBIDDEN", message: "Collaboration is disabled" });
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return listCollaborators(input.caseId);
@@ -83784,18 +83082,18 @@ var collaborationRouter = router({
 });
 var snapshotsRouter = router({
   /** List all snapshots for a case */
-  list: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return listSnapshots(input.caseId);
   }),
   /** Get a single snapshot by ID */
-  get: protectedProcedure.input(z86.object({ id: z86.number() })).query(async ({ input }) => {
+  get: protectedProcedure.input(z85.object({ id: z85.number() })).query(async ({ input }) => {
     const snapshot = await getSnapshot(input.id);
     if (!snapshot) throw new TRPCError17({ code: "NOT_FOUND", message: `Snapshot ${input.id} not found` });
     return snapshot;
   }),
   /** Verify the cryptographic signature of a sealed snapshot */
-  verify: protectedProcedure.input(z86.object({ snapshotId: z86.number() })).query(async ({ input }) => {
+  verify: protectedProcedure.input(z85.object({ snapshotId: z85.number() })).query(async ({ input }) => {
     const snapshot = await getSnapshot(input.snapshotId);
     if (!snapshot) {
       throw new TRPCError17({ code: "NOT_FOUND", message: `Snapshot ${input.snapshotId} not found` });
@@ -83849,7 +83147,7 @@ var snapshotsRouter = router({
     };
   }),
   /** Snapshot lifecycle status — banner data + reanalyze stage breakdown */
-  lifecycle: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  lifecycle: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const snapshot = await getLatestSnapshot(input.caseId);
     if (!snapshot) {
@@ -83977,7 +83275,7 @@ var snapshotsRouter = router({
     };
   }),
   /** Explicit seal action — seals the active open snapshot */
-  seal: protectedProcedure.input(z86.object({ caseId: z86.number() })).mutation(async ({ ctx, input }) => {
+  seal: protectedProcedure.input(z85.object({ caseId: z85.number() })).mutation(async ({ ctx, input }) => {
     await verifyCaseWriteAccess(input.caseId, ctx.user.id);
     const snapshot = await getOpenSnapshot(input.caseId);
     if (!snapshot) {
@@ -83994,7 +83292,7 @@ var snapshotsRouter = router({
     return { sealed: true, snapshot_id: snapshot.id, version: snapshot.version };
   }),
   /** Spine Viewer — read-only aggregated view of a sealed snapshot */
-  spineView: protectedProcedure.input(z86.object({ caseId: z86.number(), snapshotId: z86.number() })).query(async ({ ctx, input }) => {
+  spineView: protectedProcedure.input(z85.object({ caseId: z85.number(), snapshotId: z85.number() })).query(async ({ ctx, input }) => {
     const caseRow = await verifyCaseOwnership(input.caseId, ctx.user.id);
     const snapshot = await getSnapshot(input.snapshotId);
     if (!snapshot) {
@@ -84222,7 +83520,7 @@ var snapshotsRouter = router({
 });
 var phase2Router = router({
   /** Create a Phase-2 run against a sealed snapshot */
-  createRun: protectedProcedure.input(z86.object({ caseId: z86.number(), snapshotId: z86.number() })).mutation(async ({ ctx, input }) => {
+  createRun: protectedProcedure.input(z85.object({ caseId: z85.number(), snapshotId: z85.number() })).mutation(async ({ ctx, input }) => {
     await assertActionAllowed(input.caseId, input.snapshotId, "runPhase2Analysis");
     const run = await createPhase2Run(input.caseId, input.snapshotId, ctx.user.id);
     await logAudit({
@@ -84236,19 +83534,19 @@ var phase2Router = router({
     return run;
   }),
   /** Get a Phase-2 run by ID */
-  getRun: protectedProcedure.input(z86.object({ runId: z86.number() })).query(async ({ ctx, input }) => {
+  getRun: protectedProcedure.input(z85.object({ runId: z85.number() })).query(async ({ ctx, input }) => {
     const run = await getPhase2Run(input.runId);
     if (!run) throw new TRPCError17({ code: "NOT_FOUND", message: `Phase-2 run ${input.runId} not found.` });
     await verifyTenantAccess(run.caseId, ctx.user.id);
     return run;
   }),
   /** List Phase-2 runs for a case */
-  listRuns: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  listRuns: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyTenantAccess(input.caseId, ctx.user.id);
     return listPhase2Runs(input.caseId);
   }),
   /** Complete a Phase-2 run (mark as done) */
-  completeRun: protectedProcedure.input(z86.object({ runId: z86.number() })).mutation(async ({ ctx, input }) => {
+  completeRun: protectedProcedure.input(z85.object({ runId: z85.number() })).mutation(async ({ ctx, input }) => {
     const run = await getPhase2Run(input.runId);
     if (!run) throw new TRPCError17({ code: "NOT_FOUND", message: `Phase-2 run ${input.runId} not found.` });
     await verifyTenantAccess(run.caseId, ctx.user.id);
@@ -84264,7 +83562,7 @@ var phase2Router = router({
     return { success: true };
   }),
   /** Add an evidence requirement artifact to an open run */
-  addEvidenceRequirement: protectedProcedure.input(z86.object({ runId: z86.number(), payload: z86.record(z86.string(), z86.unknown()) })).mutation(async ({ ctx, input }) => {
+  addEvidenceRequirement: protectedProcedure.input(z85.object({ runId: z85.number(), payload: z85.record(z85.string(), z85.unknown()) })).mutation(async ({ ctx, input }) => {
     const run = await getPhase2Run(input.runId);
     if (!run) throw new TRPCError17({ code: "NOT_FOUND", message: `Phase-2 run ${input.runId} not found.` });
     await verifyTenantAccess(run.caseId, ctx.user.id);
@@ -84272,7 +83570,7 @@ var phase2Router = router({
     return createEvidenceRequirement(input.runId, input.payload);
   }),
   /** Add a structured note artifact to an open run */
-  addStructuredNote: protectedProcedure.input(z86.object({ runId: z86.number(), payload: z86.record(z86.string(), z86.unknown()) })).mutation(async ({ ctx, input }) => {
+  addStructuredNote: protectedProcedure.input(z85.object({ runId: z85.number(), payload: z85.record(z85.string(), z85.unknown()) })).mutation(async ({ ctx, input }) => {
     const run = await getPhase2Run(input.runId);
     if (!run) throw new TRPCError17({ code: "NOT_FOUND", message: `Phase-2 run ${input.runId} not found.` });
     await verifyTenantAccess(run.caseId, ctx.user.id);
@@ -84280,7 +83578,7 @@ var phase2Router = router({
     return createStructuredNote(input.runId, input.payload);
   }),
   /** List artifacts for a run */
-  listArtifacts: protectedProcedure.input(z86.object({ runId: z86.number() })).query(async ({ ctx, input }) => {
+  listArtifacts: protectedProcedure.input(z85.object({ runId: z85.number() })).query(async ({ ctx, input }) => {
     const run = await getPhase2Run(input.runId);
     if (!run) throw new TRPCError17({ code: "NOT_FOUND", message: `Phase-2 run ${input.runId} not found.` });
     await verifyTenantAccess(run.caseId, ctx.user.id);
@@ -84295,7 +83593,7 @@ var phase2Router = router({
     return { evidenceRequirements, structured_notes: enrichedNotes };
   }),
   /** Run evidence requirement detection against a sealed snapshot (Domain Logic v1) */
-  runEvidenceDetection: protectedProcedure.input(z86.object({ caseId: z86.number(), snapshotId: z86.number() })).mutation(async ({ ctx, input }) => {
+  runEvidenceDetection: protectedProcedure.input(z85.object({ caseId: z85.number(), snapshotId: z85.number() })).mutation(async ({ ctx, input }) => {
     await assertActionAllowed(input.caseId, input.snapshotId, "runPhase2Analysis");
     const result = await runEvidenceDetection(input.caseId, input.snapshotId, ctx.user.id);
     await logAudit({
@@ -84325,7 +83623,7 @@ var phase2Router = router({
     };
   }),
   /** Run structured notes detection against a sealed snapshot (Domain Logic v2) */
-  runStructuredNotesDetection: protectedProcedure.input(z86.object({ caseId: z86.number(), snapshotId: z86.number() })).mutation(async ({ ctx, input }) => {
+  runStructuredNotesDetection: protectedProcedure.input(z85.object({ caseId: z85.number(), snapshotId: z85.number() })).mutation(async ({ ctx, input }) => {
     await assertActionAllowed(input.caseId, input.snapshotId, "runPhase2Analysis");
     const result = await runStructuredNotesDetection(input.caseId, input.snapshotId, ctx.user.id);
     await logAudit({
@@ -84351,7 +83649,7 @@ var phase2Router = router({
     };
   }),
   /** Run full Phase-2 analysis (v1 evidence detection + v2 structured notes) in deterministic order */
-  runFullAnalysis: protectedProcedure.input(z86.object({ caseId: z86.number(), snapshotId: z86.number() })).mutation(async ({ ctx, input }) => {
+  runFullAnalysis: protectedProcedure.input(z85.object({ caseId: z85.number(), snapshotId: z85.number() })).mutation(async ({ ctx, input }) => {
     await assertActionAllowed(input.caseId, input.snapshotId, "runPhase2Analysis");
     const result = await runFullAnalysis(input.caseId, input.snapshotId, ctx.user.id);
     await logAudit({
@@ -84371,7 +83669,7 @@ var phase2Router = router({
     return result;
   }),
   /** Read-only snapshot extraction summary */
-  snapshotSummary: protectedProcedure.input(z86.object({ caseId: z86.number(), snapshotId: z86.number() })).query(async ({ ctx, input }) => {
+  snapshotSummary: protectedProcedure.input(z85.object({ caseId: z85.number(), snapshotId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyTenantAccess(input.caseId, ctx.user.id);
     await verifySealedSnapshot(input.snapshotId, input.caseId);
     const summary = await getSnapshotExtractionSummary(input.snapshotId);
@@ -84380,17 +83678,17 @@ var phase2Router = router({
   })
 });
 var checklistRouter = router({
-  list: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     const c = await getCase(input.caseId, ctx.user.id);
     if (!c) throw new TRPCError17({ code: "NOT_FOUND" });
     return getChecklistItems(input.caseId);
   }),
-  toggle: protectedProcedure.input(z86.object({ itemId: z86.number(), checked: z86.boolean(), caseId: z86.number() })).mutation(async ({ ctx, input }) => {
+  toggle: protectedProcedure.input(z85.object({ itemId: z85.number(), checked: z85.boolean(), caseId: z85.number() })).mutation(async ({ ctx, input }) => {
     const c = await getCase(input.caseId, ctx.user.id);
     if (!c) throw new TRPCError17({ code: "NOT_FOUND" });
     return toggleChecklistItem(input.itemId, input.checked);
   }),
-  generate: protectedProcedure.input(z86.object({ caseId: z86.number(), pipelineType: z86.string() })).mutation(async ({ ctx, input }) => {
+  generate: protectedProcedure.input(z85.object({ caseId: z85.number(), pipelineType: z85.string() })).mutation(async ({ ctx, input }) => {
     const c = await getCase(input.caseId, ctx.user.id);
     if (!c) throw new TRPCError17({ code: "NOT_FOUND" });
     const existing = await getChecklistItems(input.caseId);
@@ -84402,12 +83700,12 @@ var checklistRouter = router({
   })
 });
 var feedbackRouter = router({
-  submit: protectedProcedure.input(z86.object({
-    feedbackType: z86.enum(["suggestion", "question", "bug_report", "praise", "other"]),
-    message: z86.string().min(1).max(5e3),
-    currentPage: z86.string().optional(),
-    caseId: z86.number().optional(),
-    pipelineType: z86.string().optional()
+  submit: protectedProcedure.input(z85.object({
+    feedbackType: z85.enum(["suggestion", "question", "bug_report", "praise", "other"]),
+    message: z85.string().min(1).max(5e3),
+    currentPage: z85.string().optional(),
+    caseId: z85.number().optional(),
+    pipelineType: z85.string().optional()
   })).mutation(async ({ ctx, input }) => {
     const result = await createFeedback(ctx.user.id, input);
     try {
@@ -84424,10 +83722,10 @@ ${input.message}`
     }
     return { id: result.id, success: true };
   }),
-  list: adminProcedure.input(z86.object({ limit: z86.number().optional() })).query(async ({ input }) => {
+  list: adminProcedure.input(z85.object({ limit: z85.number().optional() })).query(async ({ input }) => {
     return listFeedback(input.limit ?? 50);
   }),
-  updateStatus: adminProcedure.input(z86.object({ feedbackId: z86.number(), status: z86.enum(["new", "reviewed", "resolved"]) })).mutation(async ({ input }) => {
+  updateStatus: adminProcedure.input(z85.object({ feedbackId: z85.number(), status: z85.enum(["new", "reviewed", "resolved"]) })).mutation(async ({ input }) => {
     const result = await updateFeedbackStatus(input.feedbackId, input.status);
     if (input.status === "reviewed" || input.status === "resolved") {
       try {
@@ -84447,21 +83745,21 @@ var analyticsRouter = router({
   pipelineStats: adminProcedure.query(async () => {
     return getPipelineAnalytics();
   }),
-  funnelStats: adminProcedure.input(z86.object({ timeRangeDays: z86.number().optional() }).optional()).query(async ({ input }) => {
+  funnelStats: adminProcedure.input(z85.object({ timeRangeDays: z85.number().optional() }).optional()).query(async ({ input }) => {
     const timeRangeMs = input?.timeRangeDays ? input.timeRangeDays * 24 * 60 * 60 * 1e3 : void 0;
     return getFunnelAnalytics(timeRangeMs);
   }),
-  logEvent: protectedProcedure.input(z86.object({ pipelineType: z86.string(), eventType: z86.enum(["intake_start", "intake_complete", "direct_create", "document_uploaded", "extraction_complete", "analysis_started", "analysis_complete", "findings_generated", "export_created", "case_completed", "guided_intake_complete", "guided_to_conversation"]) })).mutation(async ({ ctx, input }) => {
+  logEvent: protectedProcedure.input(z85.object({ pipelineType: z85.string(), eventType: z85.enum(["intake_start", "intake_complete", "direct_create", "document_uploaded", "extraction_complete", "analysis_started", "analysis_complete", "findings_generated", "export_created", "case_completed", "guided_intake_complete", "guided_to_conversation"]) })).mutation(async ({ ctx, input }) => {
     await logPipelineEvent(ctx.user.id, input.pipelineType, input.eventType);
     return { success: true };
   })
 });
 var shareRouter = router({
-  create: protectedProcedure.input(z86.object({
-    caseId: z86.number(),
-    label: z86.string().optional(),
-    permissions: z86.enum(["read_only", "read_export"]).optional(),
-    expiresInDays: z86.number().min(1).max(90).default(7)
+  create: protectedProcedure.input(z85.object({
+    caseId: z85.number(),
+    label: z85.string().optional(),
+    permissions: z85.enum(["read_only", "read_export"]).optional(),
+    expiresInDays: z85.number().min(1).max(90).default(7)
   })).mutation(async ({ ctx, input }) => {
     const caseData = await getCase(input.caseId, ctx.user.id);
     if (!caseData) throw new TRPCError17({ code: "NOT_FOUND", message: "Case not found" });
@@ -84477,17 +83775,17 @@ var shareRouter = router({
     });
     return { id: result.id, token: result.token, expiresAt };
   }),
-  list: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     const caseData = await getCase(input.caseId, ctx.user.id);
     if (!caseData) throw new TRPCError17({ code: "NOT_FOUND", message: "Case not found" });
     return listShareLinksForCase(input.caseId);
   }),
-  revoke: protectedProcedure.input(z86.object({ id: z86.number() })).mutation(async ({ ctx, input }) => {
+  revoke: protectedProcedure.input(z85.object({ id: z85.number() })).mutation(async ({ ctx, input }) => {
     await revokeShareLink(input.id, ctx.user.id);
     return { success: true };
   }),
   // Public endpoint — no auth required, token-based access
-  access: publicProcedure.input(z86.object({ token: z86.string() })).query(async ({ input }) => {
+  access: publicProcedure.input(z85.object({ token: z85.string() })).query(async ({ input }) => {
     const link = await getShareLinkByToken(input.token);
     if (!link) throw new TRPCError17({ code: "NOT_FOUND", message: "Share link not found or invalid" });
     if (link.revokedAt) throw new TRPCError17({ code: "FORBIDDEN", message: "This share link has been revoked" });
@@ -84509,13 +83807,13 @@ var shareRouter = router({
   })
 });
 var notificationsRouter = router({
-  list: protectedProcedure.input(z86.object({ unreadOnly: z86.boolean().optional() }).optional()).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ unreadOnly: z85.boolean().optional() }).optional()).query(async ({ ctx, input }) => {
     return listNotifications(ctx.user.id, { unreadOnly: input?.unreadOnly });
   }),
   unreadCount: protectedProcedure.query(async ({ ctx }) => {
     return getUnreadNotificationCount(ctx.user.id);
   }),
-  markRead: protectedProcedure.input(z86.object({ notificationId: z86.number() })).mutation(async ({ ctx, input }) => {
+  markRead: protectedProcedure.input(z85.object({ notificationId: z85.number() })).mutation(async ({ ctx, input }) => {
     await markNotificationRead(input.notificationId, ctx.user.id);
     return { success: true };
   }),
@@ -84525,12 +83823,12 @@ var notificationsRouter = router({
   })
 });
 var invitesRouter = router({
-  create: adminProcedure.input(z86.object({
-    target_role: z86.enum(["user", "admin"]).default("admin"),
-    target_plan: z86.enum(["free", "advocacy", "family_advocacy", "analyst", "professional", "enterprise"]).default("advocacy"),
-    label: z86.string().optional(),
-    max_uses: z86.number().min(1).max(1e3).default(1),
-    expires_in_days: z86.number().min(1).max(365).default(7)
+  create: adminProcedure.input(z85.object({
+    target_role: z85.enum(["user", "admin"]).default("admin"),
+    target_plan: z85.enum(["free", "advocacy", "family_advocacy", "analyst", "professional", "enterprise"]).default("advocacy"),
+    label: z85.string().optional(),
+    max_uses: z85.number().min(1).max(1e3).default(1),
+    expires_in_days: z85.number().min(1).max(365).default(7)
   })).mutation(async ({ ctx, input }) => {
     const token = crypto_random_bytes(32).toString("hex");
     const expires_at = Date.now() + input.expires_in_days * 24 * 60 * 60 * 1e3;
@@ -84548,11 +83846,11 @@ var invitesRouter = router({
   list: adminProcedure.query(async () => {
     return listAdminInvites();
   }),
-  revoke: adminProcedure.input(z86.object({ id: z86.number() })).mutation(async ({ input }) => {
+  revoke: adminProcedure.input(z85.object({ id: z85.number() })).mutation(async ({ input }) => {
     await revokeAdminInvite(input.id);
     return { success: true };
   }),
-  validate: publicProcedure.input(z86.object({ token: z86.string() })).query(async ({ input }) => {
+  validate: publicProcedure.input(z85.object({ token: z85.string() })).query(async ({ input }) => {
     const invite = await getInviteByToken(input.token);
     if (!invite) return { valid: false, reason: "Invite not found" };
     if (invite.invite_status === "revoked") return { valid: false, reason: "This invite has been revoked" };
@@ -84561,7 +83859,7 @@ var invitesRouter = router({
     if (invite.use_count >= invite.max_uses) return { valid: false, reason: "This invite has reached its usage limit" };
     return { valid: true, invite: { target_role: invite.target_role, target_plan: invite.target_plan, label: invite.label } };
   }),
-  redeem: protectedProcedure.input(z86.object({ token: z86.string() })).mutation(async ({ ctx, input }) => {
+  redeem: protectedProcedure.input(z85.object({ token: z85.string() })).mutation(async ({ ctx, input }) => {
     const invite = await getInviteByToken(input.token);
     if (!invite) throw new TRPCError17({ code: "NOT_FOUND", message: "Invite not found" });
     if (invite.invite_status === "revoked") throw new TRPCError17({ code: "BAD_REQUEST", message: "This invite has been revoked" });
@@ -84571,27 +83869,27 @@ var invitesRouter = router({
     await redeemInvite(invite.id, ctx.user.id, invite.target_role, invite.target_plan);
     return { success: true, target_role: invite.target_role, target_plan: invite.target_plan };
   }),
-  redemptions: adminProcedure.input(z86.object({ invite_id: z86.number() })).query(async ({ input }) => {
+  redemptions: adminProcedure.input(z85.object({ invite_id: z85.number() })).query(async ({ input }) => {
     return listInviteRedemptions(input.invite_id);
   })
 });
 var missingRecordsRouter = router({
-  list: protectedProcedure.input(z86.object({ caseId: z86.number(), statusFilter: z86.array(z86.enum(["detected", "acknowledged", "requested", "received", "not_applicable"])).optional() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number(), statusFilter: z85.array(z85.enum(["detected", "acknowledged", "requested", "received", "not_applicable"])).optional() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { getMissingRecordsForCase: getMissingRecordsForCase2 } = await Promise.resolve().then(() => (init_gap_detection(), gap_detection_exports));
     return getMissingRecordsForCase2(input.caseId, input.statusFilter);
   }),
-  summary: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  summary: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { getMissingRecordsSummary: getMissingRecordsSummary2 } = await Promise.resolve().then(() => (init_gap_detection(), gap_detection_exports));
     return getMissingRecordsSummary2(input.caseId);
   }),
-  updateStatus: protectedProcedure.input(z86.object({ id: z86.number(), status: z86.enum(["detected", "acknowledged", "requested", "received", "not_applicable"]) })).mutation(async ({ input }) => {
+  updateStatus: protectedProcedure.input(z85.object({ id: z85.number(), status: z85.enum(["detected", "acknowledged", "requested", "received", "not_applicable"]) })).mutation(async ({ input }) => {
     const { updateMissingRecordStatus: updateMissingRecordStatus2 } = await Promise.resolve().then(() => (init_gap_detection(), gap_detection_exports));
     await updateMissingRecordStatus2(input.id, input.status);
     return { success: true };
   }),
-  runDetection: protectedProcedure.input(z86.object({ caseId: z86.number() })).mutation(async ({ ctx, input }) => {
+  runDetection: protectedProcedure.input(z85.object({ caseId: z85.number() })).mutation(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { detectAndPersistGaps: detectAndPersistGaps2 } = await Promise.resolve().then(() => (init_gap_detection(), gap_detection_exports));
     const caseRow = await getCaseInternal(input.caseId);
@@ -84607,7 +83905,7 @@ var missingRecordsRouter = router({
     });
   }),
   // ─── AKB Lookups ───
-  agenciesForCase: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  agenciesForCase: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { getMissingRecordsForCase: getMissingRecordsForCase2 } = await Promise.resolve().then(() => (init_gap_detection(), gap_detection_exports));
     const { resolveAgenciesForMissingRecords: resolveAgenciesForMissingRecords2, hasAKBCoverage: hasAKBCoverage2 } = await Promise.resolve().then(() => (init_akb_lookup(), akb_lookup_exports));
@@ -84622,15 +83920,15 @@ var missingRecordsRouter = router({
     );
     return { has_coverage: true, records: withAgencies };
   }),
-  akbStatutes: protectedProcedure.input(z86.object({ stateCode: z86.string().default("WA") })).query(async ({ input }) => {
+  akbStatutes: protectedProcedure.input(z85.object({ stateCode: z85.string().default("WA") })).query(async ({ input }) => {
     const { getStatutesForState: getStatutesForState2 } = await Promise.resolve().then(() => (init_akb_lookup(), akb_lookup_exports));
     return getStatutesForState2(input.stateCode);
   }),
-  akbAgencies: protectedProcedure.input(z86.object({ stateCode: z86.string().default("WA") })).query(async ({ input }) => {
+  akbAgencies: protectedProcedure.input(z85.object({ stateCode: z85.string().default("WA") })).query(async ({ input }) => {
     const { getAgenciesForState: getAgenciesForState2 } = await Promise.resolve().then(() => (init_akb_lookup(), akb_lookup_exports));
     return getAgenciesForState2(input.stateCode);
   }),
-  akbRecordTypes: protectedProcedure.input(z86.object({ domain: z86.string() })).query(async ({ input }) => {
+  akbRecordTypes: protectedProcedure.input(z85.object({ domain: z85.string() })).query(async ({ input }) => {
     const { getRecordTypesForDomain: getRecordTypesForDomain2 } = await Promise.resolve().then(() => (init_akb_lookup(), akb_lookup_exports));
     return getRecordTypesForDomain2(input.domain);
   })
@@ -84651,7 +83949,7 @@ var caseTemplatesRouter = router({
   list: protectedProcedure.query(async () => {
     return CASE_TEMPLATES;
   }),
-  createFromTemplate: protectedProcedure.input(z86.object({ templateId: z86.string(), customName: z86.string().optional() })).mutation(async ({ ctx, input }) => {
+  createFromTemplate: protectedProcedure.input(z85.object({ templateId: z85.string(), customName: z85.string().optional() })).mutation(async ({ ctx, input }) => {
     const template = CASE_TEMPLATES.find((t2) => t2.id === input.templateId);
     if (!template) throw new TRPCError17({ code: "NOT_FOUND", message: "Template not found" });
     const caseName = input.customName || template.name;
@@ -84679,7 +83977,7 @@ var usersAdminRouter = router({
       lastSignedIn: u.lastSignedIn
     }));
   }),
-  updateRole: adminProcedure.input(z86.object({ userId: z86.number(), role: z86.enum(["user", "admin"]) })).mutation(async ({ ctx, input }) => {
+  updateRole: adminProcedure.input(z85.object({ userId: z85.number(), role: z85.enum(["user", "admin"]) })).mutation(async ({ ctx, input }) => {
     if (input.userId === ctx.user.id) {
       throw new TRPCError17({ code: "BAD_REQUEST", message: "You cannot change your own role" });
     }
@@ -84687,7 +83985,7 @@ var usersAdminRouter = router({
     await db.update(users3).set({ role: input.role, updatedAt: Date.now() }).where(eq87(users3.id, input.userId));
     return { success: true };
   }),
-  updatePlan: adminProcedure.input(z86.object({ userId: z86.number(), plan: z86.enum(["free", "advocacy", "family_advocacy", "analyst", "professional", "enterprise"]) })).mutation(async ({ ctx, input }) => {
+  updatePlan: adminProcedure.input(z85.object({ userId: z85.number(), plan: z85.enum(["free", "advocacy", "family_advocacy", "analyst", "professional", "enterprise"]) })).mutation(async ({ ctx, input }) => {
     const { users: users3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     await db.update(users3).set({ plan: input.plan, updatedAt: Date.now() }).where(eq87(users3.id, input.userId));
     return { success: true };
@@ -84705,12 +84003,12 @@ var testScenariosRouter = router({
       expectedFindings: b.expectedFindings.length
     }));
   }),
-  getBundleDetails: adminProcedure.input(z86.object({ bundleId: z86.string() })).query(async ({ input }) => {
+  getBundleDetails: adminProcedure.input(z85.object({ bundleId: z85.string() })).query(async ({ input }) => {
     const bundle = test_bundles_data_default.find((b) => b.bundleId === input.bundleId);
     if (!bundle) throw new TRPCError17({ code: "NOT_FOUND", message: "Test bundle not found" });
     return bundle;
   }),
-  loadBundle: adminProcedure.input(z86.object({ bundleId: z86.string(), customCaseName: z86.string().optional() })).mutation(async ({ ctx, input }) => {
+  loadBundle: adminProcedure.input(z85.object({ bundleId: z85.string(), customCaseName: z85.string().optional() })).mutation(async ({ ctx, input }) => {
     const bundle = test_bundles_data_default.find((b) => b.bundleId === input.bundleId);
     if (!bundle) throw new TRPCError17({ code: "NOT_FOUND", message: "Test bundle not found" });
     const caseName = input.customCaseName || `[TEST] ${bundle.scenarioName}`;
@@ -84820,20 +84118,20 @@ Please replace this with actual documents to test the full pipeline.`;
 });
 var foiaRequestsRouter = router({
   // Evaluate case readiness for FOIA generation
-  evaluate: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  evaluate: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { evaluateCaseReadiness: evaluateCaseReadiness2 } = await Promise.resolve().then(() => (init_foia_generator(), foia_generator_exports));
     return evaluateCaseReadiness2(input.caseId);
   }),
   // Generate a FOIA request for a specific missing record
-  generate: protectedProcedure.input(z86.object({
-    caseId: z86.number(),
-    missingRecordId: z86.number(),
-    requesterInfo: z86.object({
-      name: z86.string().optional(),
-      email: z86.string().optional(),
-      address: z86.string().optional(),
-      phone: z86.string().optional()
+  generate: protectedProcedure.input(z85.object({
+    caseId: z85.number(),
+    missingRecordId: z85.number(),
+    requesterInfo: z85.object({
+      name: z85.string().optional(),
+      email: z85.string().optional(),
+      address: z85.string().optional(),
+      phone: z85.string().optional()
     }).optional()
   })).mutation(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
@@ -84846,13 +84144,13 @@ var foiaRequestsRouter = router({
     );
   }),
   // Generate FOIA requests for all eligible missing records in a case
-  generateAll: protectedProcedure.input(z86.object({
-    caseId: z86.number(),
-    requesterInfo: z86.object({
-      name: z86.string().optional(),
-      email: z86.string().optional(),
-      address: z86.string().optional(),
-      phone: z86.string().optional()
+  generateAll: protectedProcedure.input(z85.object({
+    caseId: z85.number(),
+    requesterInfo: z85.object({
+      name: z85.string().optional(),
+      email: z85.string().optional(),
+      address: z85.string().optional(),
+      phone: z85.string().optional()
     }).optional()
   })).mutation(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
@@ -84864,13 +84162,13 @@ var foiaRequestsRouter = router({
     );
   }),
   // List all FOIA requests for a case
-  list: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { foiaRequests: foiaRequests2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     return db.select().from(foiaRequests2).where(eq87(foiaRequests2.caseId, input.caseId)).orderBy(desc58(foiaRequests2.createdAt));
   }),
   // Get a single FOIA request by ID
-  get: protectedProcedure.input(z86.object({ caseId: z86.number(), requestId: z86.number() })).query(async ({ ctx, input }) => {
+  get: protectedProcedure.input(z85.object({ caseId: z85.number(), requestId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { foiaRequests: foiaRequests2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const [request] = await db.select().from(foiaRequests2).where(and66(
@@ -84880,10 +84178,10 @@ var foiaRequestsRouter = router({
     return request ?? null;
   }),
   // Update FOIA request status
-  updateStatus: protectedProcedure.input(z86.object({
-    caseId: z86.number(),
-    requestId: z86.number(),
-    status: z86.enum([
+  updateStatus: protectedProcedure.input(z85.object({
+    caseId: z85.number(),
+    requestId: z85.number(),
+    status: z85.enum([
       "draft",
       "ready",
       "submitted",
@@ -84899,16 +84197,16 @@ var foiaRequestsRouter = router({
   })).mutation(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { foiaRequests: foiaRequests2, missingRecords: missingRecords2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const now3 = Date.now();
+    const now4 = Date.now();
     const updateData = {
       status: input.status,
-      updatedAt: now3
+      updatedAt: now4
     };
     if (input.status === "submitted") {
-      updateData.submittedAt = now3;
+      updateData.submittedAt = now4;
     }
     if (["records_produced", "partial_denial", "denied"].includes(input.status)) {
-      updateData.responseReceivedAt = now3;
+      updateData.responseReceivedAt = now4;
     }
     await db.update(foiaRequests2).set(updateData).where(and66(
       eq87(foiaRequests2.id, input.requestId),
@@ -84921,7 +84219,7 @@ var foiaRequestsRouter = router({
       if (input.status === "closed" && ["denied", "partial_denial"].includes(request.status)) {
         missingRecordStatus = "acknowledged";
       }
-      await db.update(missingRecords2).set({ status: missingRecordStatus, updatedAt: now3 }).where(eq87(missingRecords2.id, request.missingRecordId));
+      await db.update(missingRecords2).set({ status: missingRecordStatus, updatedAt: now4 }).where(eq87(missingRecords2.id, request.missingRecordId));
       notifyFoiaStatusUpdate(
         ctx.user.id,
         request.id,
@@ -84936,10 +84234,10 @@ var foiaRequestsRouter = router({
     return { success: true };
   }),
   // Update letter content (user edits before sending)
-  updateLetter: protectedProcedure.input(z86.object({
-    caseId: z86.number(),
-    requestId: z86.number(),
-    letterContent: z86.string()
+  updateLetter: protectedProcedure.input(z85.object({
+    caseId: z85.number(),
+    requestId: z85.number(),
+    letterContent: z85.string()
   })).mutation(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { foiaRequests: foiaRequests2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
@@ -84950,9 +84248,9 @@ var foiaRequestsRouter = router({
     return { success: true };
   }),
   // List all FOIA requests across all cases for the current user
-  listAll: protectedProcedure.input(z86.object({
-    statusFilter: z86.string().optional(),
-    limit: z86.number().min(1).max(500).optional()
+  listAll: protectedProcedure.input(z85.object({
+    statusFilter: z85.string().optional(),
+    limit: z85.number().min(1).max(500).optional()
   }).optional()).query(async ({ ctx, input }) => {
     const rows2 = await listAllUserFoiaRequests(ctx.user.id, {
       statusFilter: input?.statusFilter,
@@ -84964,7 +84262,7 @@ var foiaRequestsRouter = router({
     }));
   }),
   // Get a single FOIA request with full details (statute, agency, missing record)
-  getWithDetails: protectedProcedure.input(z86.object({ caseId: z86.number(), requestId: z86.number() })).query(async ({ ctx, input }) => {
+  getWithDetails: protectedProcedure.input(z85.object({ caseId: z85.number(), requestId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const result = await getFoiaRequestWithDetails(input.requestId, input.caseId);
     if (!result) return null;
@@ -84974,7 +84272,7 @@ var foiaRequestsRouter = router({
     };
   }),
   // Get FOIA summary stats for a case
-  caseSummary: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  caseSummary: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return getFoiaCaseSummary(input.caseId);
   }),
@@ -85014,12 +84312,12 @@ var foiaRequestsRouter = router({
 });
 var caseNarrativeRouter = router({
   // Get existing narrative for a case
-  get: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  get: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     return getCaseNarrative(input.caseId);
   }),
   // Get timeline data for preview (before generation)
-  timeline: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  timeline: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const items = await getCaseTimelineData(input.caseId);
     const { groupByDateRange: groupByDateRange2 } = await Promise.resolve().then(() => (init_narrative_generator(), narrative_generator_exports));
@@ -85027,13 +84325,13 @@ var caseNarrativeRouter = router({
     return { items, groups, total_count: items.length };
   }),
   // Check staleness (has evidence changed since last generation?)
-  staleness: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  staleness: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { checkNarrativeStaleness: checkNarrativeStaleness2 } = await Promise.resolve().then(() => (init_narrative_generator(), narrative_generator_exports));
     return checkNarrativeStaleness2(input.caseId);
   }),
   // Generate (or regenerate) the Statement of Facts
-  generate: protectedProcedure.input(z86.object({ caseId: z86.number() })).mutation(async ({ ctx, input }) => {
+  generate: protectedProcedure.input(z85.object({ caseId: z85.number() })).mutation(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { generateNarrative: generateNarrative2 } = await Promise.resolve().then(() => (init_narrative_generator(), narrative_generator_exports));
     return generateNarrative2(input.caseId, ctx.user.id);
@@ -85048,7 +84346,7 @@ var lensesRouter = router({
    * T4. Run activation engine with pipeline resolution
    * T5. Return LensContext
    */
-  getActiveForCase: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  getActiveForCase: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { activateLensesWithResolution: activateLensesWithResolution2, mapSignalFlags: mapSignalFlags2, getCachedRegistry: getCachedRegistry2 } = await Promise.resolve().then(() => (init_lens_engine(), lens_engine_exports));
     const { resolveCanonical: resolveCanonical2 } = await Promise.resolve().then(() => (init_pipeline_resolver(), pipeline_resolver_exports));
@@ -85082,9 +84380,9 @@ var lensesRouter = router({
    * Toggle manual lens overrides for a case.
    * Stores the user's selected lens IDs in the cases table.
    */
-  toggleManual: protectedProcedure.input(z86.object({
-    caseId: z86.number(),
-    lensIds: z86.array(z86.string())
+  toggleManual: protectedProcedure.input(z85.object({
+    caseId: z85.number(),
+    lensIds: z85.array(z85.string())
   })).mutation(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { getCachedRegistry: getCachedRegistry2 } = await Promise.resolve().then(() => (init_lens_engine(), lens_engine_exports));
@@ -85137,7 +84435,7 @@ var lensesRouter = router({
    * Returns the complete audit trail of how lenses were activated,
    * including intermediate stages, conflict resolution events, and stage counts.
    */
-  getActivationTrace: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  getActivationTrace: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { activateLensesWithResolutionAndTrace: activateLensesWithResolutionAndTrace2, mapSignalFlags: mapSignalFlags2, getCachedRegistry: getCachedRegistry2 } = await Promise.resolve().then(() => (init_lens_engine(), lens_engine_exports));
     const { resolveCanonical: resolveCanonical2 } = await Promise.resolve().then(() => (init_pipeline_resolver(), pipeline_resolver_exports));
@@ -85194,13 +84492,13 @@ var lensesRouter = router({
 });
 var patternsRouter = router({
   // Get all patterns detected for a specific case
-  forCase: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  forCase: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { getPatternsForCase: getPatternsForCase2 } = await Promise.resolve().then(() => (init_pattern_detection(), pattern_detection_exports));
     return getPatternsForCase2(input.caseId);
   }),
   // Get all cases that share a specific pattern
-  casesForPattern: protectedProcedure.input(z86.object({ patternId: z86.number() })).query(async ({ ctx, input }) => {
+  casesForPattern: protectedProcedure.input(z85.object({ patternId: z85.number() })).query(async ({ ctx, input }) => {
     const { getCasesForPattern: getCasesForPattern2 } = await Promise.resolve().then(() => (init_pattern_detection(), pattern_detection_exports));
     return getCasesForPattern2(input.patternId);
   }),
@@ -85210,7 +84508,7 @@ var patternsRouter = router({
     return getPatternSummary2(ctx.user.id);
   }),
   // Get pattern count for a case (lightweight for Case Overview)
-  countForCase: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  countForCase: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { getPatternCountForCase: getPatternCountForCase2 } = await Promise.resolve().then(() => (init_pattern_detection(), pattern_detection_exports));
     return getPatternCountForCase2(input.caseId);
@@ -85221,12 +84519,12 @@ var patternsRouter = router({
     return getPatternTrendData2(ctx.user.id);
   }),
   // Run pattern detection for a case (manual trigger)
-  detect: protectedProcedure.input(z86.object({
-    caseId: z86.number(),
-    entityIds: z86.array(z86.number()).optional(),
-    foiaRequestIds: z86.array(z86.number()).optional(),
-    missingRecordIds: z86.array(z86.number()).optional(),
-    cdaRunId: z86.number().optional()
+  detect: protectedProcedure.input(z85.object({
+    caseId: z85.number(),
+    entityIds: z85.array(z85.number()).optional(),
+    foiaRequestIds: z85.array(z85.number()).optional(),
+    missingRecordIds: z85.array(z85.number()).optional(),
+    cdaRunId: z85.number().optional()
   })).mutation(async ({ ctx, input }) => {
     await verifyCaseOwnership(input.caseId, ctx.user.id);
     const { runPatternDetection: runPatternDetection2 } = await Promise.resolve().then(() => (init_pattern_detection(), pattern_detection_exports));
@@ -85255,33 +84553,33 @@ var categoryRouter = router({
   list: publicProcedure.query(() => {
     return getAllCategories();
   }),
-  detail: publicProcedure.input(z86.object({ categoryId: z86.string() })).query(({ input }) => {
+  detail: publicProcedure.input(z85.object({ categoryId: z85.string() })).query(({ input }) => {
     return getCategoryDetail(input.categoryId);
   }),
-  pipeline: publicProcedure.input(z86.object({ pipelineId: z86.string() })).query(({ input }) => {
+  pipeline: publicProcedure.input(z85.object({ pipelineId: z85.string() })).query(({ input }) => {
     return getPipelineDetail(input.pipelineId);
   }),
-  pipelineLabel: publicProcedure.input(z86.object({ pipelineId: z86.string() })).query(({ input }) => {
+  pipelineLabel: publicProcedure.input(z85.object({ pipelineId: z85.string() })).query(({ input }) => {
     return { label: getPipelineLabel(input.pipelineId) };
   })
 });
 var actionPathsRouter = router({
   /** Get structured filing paths for a pipeline type (immediate, no documents needed) */
-  getByPipeline: publicProcedure.input(z86.object({
-    pipelineType: z86.string(),
-    jurisdiction: z86.string().optional()
+  getByPipeline: publicProcedure.input(z85.object({
+    pipelineType: z85.string(),
+    jurisdiction: z85.string().optional()
   })).query(async ({ input }) => {
     return getActionPathsByPipeline(input.pipelineType, input.jurisdiction);
   }),
   /** Get structured filing paths for multiple pipeline types */
-  getByPipelines: publicProcedure.input(z86.object({
-    pipelineTypes: z86.array(z86.string()),
-    jurisdiction: z86.string().optional()
+  getByPipelines: publicProcedure.input(z85.object({
+    pipelineTypes: z85.array(z85.string()),
+    jurisdiction: z85.string().optional()
   })).query(async ({ input }) => {
     return getActionPathsByPipelines(input.pipelineTypes, input.jurisdiction);
   }),
   /** Get a single action path by ID */
-  getById: publicProcedure.input(z86.object({ id: z86.number() })).query(async ({ input }) => {
+  getById: publicProcedure.input(z85.object({ id: z85.number() })).query(async ({ input }) => {
     return getActionPathById(input.id);
   }),
   /** List all active action paths (admin/registry) */
@@ -85289,7 +84587,7 @@ var actionPathsRouter = router({
     return listAllActionPaths();
   }),
   /** Get action paths for a case (resolves pipelineType from case, includes related pipelines) */
-  getForCase: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ ctx, input }) => {
+  getForCase: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ ctx, input }) => {
     const caseData = await verifyCaseOwnership(input.caseId, ctx.user.id);
     const pipelineType = caseData?.pipelineType;
     if (!pipelineType) return [];
@@ -85307,17 +84605,17 @@ var actionPathsRouter = router({
 });
 var resourceVerificationRouter = router({
   // List resources with filters for admin panel
-  list: protectedProcedure.input(z86.object({
-    page: z86.number().min(1).default(1),
-    pageSize: z86.number().min(1).max(100).default(25),
-    verificationStatus: z86.enum(["all", "verified", "unverified", "flagged"]).default("all"),
-    domain: z86.string().optional(),
-    resourceType: z86.string().optional(),
-    staleOnly: z86.boolean().default(false),
+  list: protectedProcedure.input(z85.object({
+    page: z85.number().min(1).default(1),
+    pageSize: z85.number().min(1).max(100).default(25),
+    verificationStatus: z85.enum(["all", "verified", "unverified", "flagged"]).default("all"),
+    domain: z85.string().optional(),
+    resourceType: z85.string().optional(),
+    staleOnly: z85.boolean().default(false),
     // only show resources not verified in 90+ days
-    search: z86.string().optional(),
-    sortBy: z86.enum(["name", "lastVerifiedAt", "updatedAt", "domain", "verificationStatus"]).default("lastVerifiedAt"),
-    sortDir: z86.enum(["asc", "desc"]).default("asc")
+    search: z85.string().optional(),
+    sortBy: z85.enum(["name", "lastVerifiedAt", "updatedAt", "domain", "verificationStatus"]).default("lastVerifiedAt"),
+    sortDir: z85.enum(["asc", "desc"]).default("asc")
   })).query(async ({ input }) => {
     const { pool: rawPool } = await Promise.resolve().then(() => (init_db(), db_exports));
     const offset = (input.page - 1) * input.pageSize;
@@ -85375,39 +84673,39 @@ var resourceVerificationRouter = router({
     };
   }),
   // Verify a resource (mark as verified, update timestamp)
-  verify: protectedProcedure.input(z86.object({ resourceId: z86.number() })).mutation(async ({ input, ctx }) => {
+  verify: protectedProcedure.input(z85.object({ resourceId: z85.number() })).mutation(async ({ input, ctx }) => {
     const { pool: rawPool } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const now3 = Date.now();
+    const now4 = Date.now();
     const verifiedBy = ctx.user?.name || ctx.user?.open_id || "admin";
     await rawPool.query(
       `UPDATE unified_resources SET verificationStatus = 'verified', lastVerifiedAt = ?, verifiedBy = ?, flaggedReason = NULL, updatedAt = ? WHERE id = ?`,
-      [now3, verifiedBy, now3, input.resourceId]
+      [now4, verifiedBy, now4, input.resourceId]
     );
-    return { success: true, resource_id: input.resourceId, verified_at: now3, verifiedBy };
+    return { success: true, resource_id: input.resourceId, verified_at: now4, verifiedBy };
   }),
   // Bulk verify multiple resources
-  bulkVerify: protectedProcedure.input(z86.object({ resourceIds: z86.array(z86.number()).min(1).max(100) })).mutation(async ({ input, ctx }) => {
+  bulkVerify: protectedProcedure.input(z85.object({ resourceIds: z85.array(z85.number()).min(1).max(100) })).mutation(async ({ input, ctx }) => {
     const { pool: rawPool } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const now3 = Date.now();
+    const now4 = Date.now();
     const verifiedBy = ctx.user?.name || ctx.user?.open_id || "admin";
     const placeholders = input.resourceIds.map(() => "?").join(",");
     await rawPool.query(
       `UPDATE unified_resources SET verificationStatus = 'verified', lastVerifiedAt = ?, verifiedBy = ?, flaggedReason = NULL, updatedAt = ? WHERE id IN (${placeholders})`,
-      [now3, verifiedBy, now3, ...input.resourceIds]
+      [now4, verifiedBy, now4, ...input.resourceIds]
     );
-    return { success: true, count: input.resourceIds.length, verified_at: now3 };
+    return { success: true, count: input.resourceIds.length, verified_at: now4 };
   }),
   // Flag a resource with a reason
-  flag: protectedProcedure.input(z86.object({
-    resourceId: z86.number(),
-    reason: z86.string().min(1).max(1e3)
+  flag: protectedProcedure.input(z85.object({
+    resourceId: z85.number(),
+    reason: z85.string().min(1).max(1e3)
   })).mutation(async ({ input, ctx }) => {
     const { pool: rawPool } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const now3 = Date.now();
+    const now4 = Date.now();
     const flaggedBy = ctx.user?.name || ctx.user?.open_id || "admin";
     await rawPool.query(
       `UPDATE unified_resources SET verificationStatus = 'flagged', flaggedReason = ?, verifiedBy = ?, updatedAt = ? WHERE id = ?`,
-      [input.reason, flaggedBy, now3, input.resourceId]
+      [input.reason, flaggedBy, now4, input.resourceId]
     );
     try {
       const [resRow] = await rawPool.query(`SELECT name, domain, stateCode FROM unified_resources WHERE id = ? LIMIT 1`, [input.resourceId]);
@@ -85422,19 +84720,19 @@ var resourceVerificationRouter = router({
         severity: "medium",
         jurisdiction: res?.stateCode ?? "federal",
         domain: res?.domain ?? "general",
-        sourceTimestamp: now3
+        sourceTimestamp: now4
       });
     } catch {
     }
     return { success: true, resource_id: input.resourceId, reason: input.reason };
   }),
   // Deactivate a resource
-  deactivate: protectedProcedure.input(z86.object({ resourceId: z86.number() })).mutation(async ({ input }) => {
+  deactivate: protectedProcedure.input(z85.object({ resourceId: z85.number() })).mutation(async ({ input }) => {
     const { pool: rawPool } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const now3 = Date.now();
+    const now4 = Date.now();
     await rawPool.query(
       `UPDATE unified_resources SET isActive = false, updatedAt = ? WHERE id = ?`,
-      [now3, input.resourceId]
+      [now4, input.resourceId]
     );
     try {
       const [resRow] = await rawPool.query(`SELECT name, domain, stateCode FROM unified_resources WHERE id = ? LIMIT 1`, [input.resourceId]);
@@ -85449,19 +84747,19 @@ var resourceVerificationRouter = router({
         severity: "high",
         jurisdiction: res?.stateCode ?? "federal",
         domain: res?.domain ?? "general",
-        sourceTimestamp: now3
+        sourceTimestamp: now4
       });
     } catch {
     }
     return { success: true, resource_id: input.resourceId };
   }),
   // Reactivate a resource
-  reactivate: protectedProcedure.input(z86.object({ resourceId: z86.number() })).mutation(async ({ input }) => {
+  reactivate: protectedProcedure.input(z85.object({ resourceId: z85.number() })).mutation(async ({ input }) => {
     const { pool: rawPool } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const now3 = Date.now();
+    const now4 = Date.now();
     await rawPool.query(
       `UPDATE unified_resources SET isActive = true, updatedAt = ? WHERE id = ?`,
-      [now3, input.resourceId]
+      [now4, input.resourceId]
     );
     try {
       await resolveSignalsForTarget("unified_resources", input.resourceId, "RESOURCE_STALE");
@@ -85544,7 +84842,7 @@ var resourceVerificationRouter = router({
     };
   }),
   // Get a single resource by ID with full details
-  getById: protectedProcedure.input(z86.object({ id: z86.number() })).query(async ({ input }) => {
+  getById: protectedProcedure.input(z85.object({ id: z85.number() })).query(async ({ input }) => {
     const { pool: rawPool } = await Promise.resolve().then(() => (init_db(), db_exports));
     const [rows2] = await rawPool.query(
       `SELECT * FROM unified_resources WHERE id = ?`,
@@ -85566,13 +84864,13 @@ var resourceVerificationRouter = router({
   })
 });
 var supportMatcherRouter = router({
-  match: publicProcedure.input(z86.object({
-    pipeline_type: z86.string(),
-    jurisdiction: z86.string().optional(),
-    urgency: z86.enum(["crisis", "urgent", "standard", "informational"]).optional(),
-    need_keywords: z86.array(z86.string()).optional(),
-    domain: z86.string().optional(),
-    limit: z86.number().min(1).max(20).optional()
+  match: publicProcedure.input(z85.object({
+    pipeline_type: z85.string(),
+    jurisdiction: z85.string().optional(),
+    urgency: z85.enum(["crisis", "urgent", "standard", "informational"]).optional(),
+    need_keywords: z85.array(z85.string()).optional(),
+    domain: z85.string().optional(),
+    limit: z85.number().min(1).max(20).optional()
   })).query(async ({ input }) => {
     const results = await matchResources({
       pipeline_type: input.pipeline_type,
@@ -85584,7 +84882,7 @@ var supportMatcherRouter = router({
     });
     return results;
   }),
-  matchForCase: protectedProcedure.input(z86.object({ caseId: z86.number() })).query(async ({ input, ctx }) => {
+  matchForCase: protectedProcedure.input(z85.object({ caseId: z85.number() })).query(async ({ input, ctx }) => {
     const { cases: cases5 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const [caseData] = await db.select().from(cases5).where(eq87(cases5.id, input.caseId)).limit(1);
     if (!caseData) throw new TRPCError17({ code: "NOT_FOUND", message: "Case not found" });
@@ -85827,7 +85125,6 @@ var appRouter = router({
   docket: docketRouter,
   lumensend: lumensendRouter,
   legalLibrary: legalLibraryRouter,
-  civicGenome: civicGenomeRouter,
   civilGideon: civilGideonRouter,
   extraction: extractionRouter,
   categories: categoryRouter,
@@ -85961,9 +85258,6 @@ var appRouter = router({
   })
 });
 
-// server/_core/context.ts
-import { TRPCError as TRPCError18 } from "@trpc/server";
-
 // server/_core/user-resolver.ts
 init_db();
 
@@ -85971,8 +85265,74 @@ init_db();
 var FRESH_TTL_MS = Number(process.env.AUTH_USER_CACHE_FRESH_TTL_MS || 6e4);
 var STALE_TTL_MS = Number(process.env.AUTH_USER_CACHE_STALE_TTL_MS || 10 * 6e4);
 var NEGATIVE_TTL_MS = Number(process.env.AUTH_USER_NEGATIVE_CACHE_TTL_MS || 15e3);
+var cache2 = /* @__PURE__ */ new Map();
+var in_flight = /* @__PURE__ */ new Map();
+function now() {
+  return Date.now();
+}
+function normalize_key(key2) {
+  return key2.trim().toLowerCase();
+}
+function get_cached_user(key2, allow_stale = false) {
+  const normalized = normalize_key(key2);
+  const entry = cache2.get(normalized);
+  if (!entry) return null;
+  const age = now() - entry.cached_at;
+  if (entry.user === null) {
+    if (age <= NEGATIVE_TTL_MS) return null;
+    cache2.delete(normalized);
+    return null;
+  }
+  if (age <= FRESH_TTL_MS) return entry.user;
+  if (allow_stale && age <= STALE_TTL_MS) return entry.user;
+  cache2.delete(normalized);
+  return null;
+}
+function set_cached_user(keys, user) {
+  const entry = { user, cached_at: now() };
+  for (const key2 of keys) {
+    if (!key2?.trim()) continue;
+    cache2.set(normalize_key(key2), entry);
+  }
+}
+async function dedupe_user_lookup(key2, lookup) {
+  const normalized = normalize_key(key2);
+  const existing = in_flight.get(normalized);
+  if (existing) {
+    console.warn("[CONTEXT] profile_lookup_in_flight_dedupe_hit", {
+      cache_key: normalized,
+      duplicate_lookup_suppressed: true,
+      in_flight_count: in_flight.size
+    });
+    return existing;
+  }
+  const promise = Promise.resolve().then(lookup).finally(() => in_flight.delete(normalized));
+  in_flight.set(normalized, promise);
+  console.warn("[CONTEXT] profile_lookup_in_flight_registered", {
+    cache_key: normalized,
+    duplicate_lookup_suppressed: false,
+    in_flight_count: in_flight.size
+  });
+  return promise;
+}
 
 // server/_core/user-resolver.ts
+function map_user(row) {
+  if (!row) return null;
+  return {
+    id: Number(row.id),
+    open_id: row.open_id ?? null,
+    name: row.name ?? null,
+    email: row.email ?? null,
+    login_method: row.login_method ?? null,
+    role: row.role ?? "user",
+    plan: row.plan ?? "free",
+    created_at: Number(row.created_at ?? 0),
+    updated_at: Number(row.updated_at ?? 0),
+    last_signed_in: Number(row.last_signed_in ?? 0)
+  };
+}
+var USER_SELECT = `select id, open_id, name, email, login_method, role, plan, created_at, updated_at, last_signed_in from public.users`;
 function read_positive_integer_env(name, fallback, minimum = 1) {
   const raw = process.env[name];
   const parsed = raw ? Number(raw) : fallback;
@@ -85989,16 +85349,159 @@ var PROFILE_QUERY_TIMEOUT_MS = read_positive_integer_env(
   2500,
   500
 );
+async function query_user_profile(label, text3, values) {
+  return query_with_diagnostics(text3, values, {
+    label,
+    pool_acquire_timeout_ms: PROFILE_POOL_ACQUIRE_TIMEOUT_MS,
+    query_timeout_ms: PROFILE_QUERY_TIMEOUT_MS
+  });
+}
+function cache_user(user) {
+  set_cached_user([user?.email, user?.open_id], user);
+}
+async function get_user_by_email_snake(email) {
+  const normalized = email.trim().toLowerCase();
+  const cached = get_cached_user(normalized);
+  if (cached) return cached;
+  try {
+    return await dedupe_user_lookup(normalized, async () => {
+      const result = await query_user_profile(
+        "profile_email_lookup",
+        `${USER_SELECT} where lower(email) = $1 limit 1`,
+        [normalized]
+      );
+      const user = map_user(result.rows[0]);
+      set_cached_user([normalized, user?.open_id], user);
+      return user;
+    });
+  } catch (error) {
+    const stale = get_cached_user(normalized, true);
+    if (stale) {
+      console.warn(
+        "[CONTEXT] Using stale cached user after DB lookup failure",
+        error instanceof Error ? error.message : String(error)
+      );
+      return stale;
+    }
+    throw error;
+  }
+}
+async function get_user_by_open_id_snake(open_id) {
+  const cached = get_cached_user(open_id);
+  if (cached) return cached;
+  try {
+    return await dedupe_user_lookup(open_id, async () => {
+      const result = await query_user_profile(
+        "profile_open_id_lookup",
+        `${USER_SELECT} where open_id = $1 limit 1`,
+        [open_id]
+      );
+      const user = map_user(result.rows[0]);
+      cache_user(user);
+      return user;
+    });
+  } catch (error) {
+    const stale = get_cached_user(open_id, true);
+    if (stale) {
+      console.warn(
+        "[CONTEXT] Using stale cached user after DB lookup failure",
+        error instanceof Error ? error.message : String(error)
+      );
+      return stale;
+    }
+    throw error;
+  }
+}
 
 // server/_core/context.ts
+init_db();
+var REQUEST_PROFILE_LOOKUP_STATE = Symbol.for(
+  "luminari.request_profile_lookup_state"
+);
+function getRequestProfileLookupState(req) {
+  const carrier = req ?? {};
+  if (!carrier[REQUEST_PROFILE_LOOKUP_STATE]) {
+    carrier[REQUEST_PROFILE_LOOKUP_STATE] = {
+      lookups: /* @__PURE__ */ new Map()
+    };
+  }
+  return carrier[REQUEST_PROFILE_LOOKUP_STATE];
+}
+function profileLookupCacheKey(kind, value) {
+  return `${kind}:${value.trim().toLowerCase()}`;
+}
+async function resolveProfileOncePerRequest(req, key2, lookup) {
+  const state = getRequestProfileLookupState(req);
+  const existing = state.lookups.get(key2);
+  if (existing?.result) {
+    logContextAuthEvent("profile_lookup_request_cache_hit", {
+      cache_key: key2,
+      duplicate_lookup_suppressed: true,
+      profile_resolution_status: existing.result.status
+    });
+    return existing.result;
+  }
+  if (existing?.promise) {
+    logContextAuthEvent("profile_lookup_duplicate_suppressed", {
+      cache_key: key2,
+      duplicate_lookup_suppressed: true
+    });
+    return existing.promise;
+  }
+  logContextAuthEvent("profile_lookup_request_cache_miss", {
+    cache_key: key2,
+    duplicate_lookup_suppressed: false,
+    pool_runtime_configuration: get_pool_runtime_configuration(),
+    profile_pool_acquire_timeout_ms: PROFILE_POOL_ACQUIRE_TIMEOUT_MS,
+    profile_query_timeout_ms: PROFILE_QUERY_TIMEOUT_MS
+  });
+  const record = {};
+  record.promise = lookup().then((result) => {
+    record.result = result;
+    return result;
+  });
+  state.lookups.set(key2, record);
+  return record.promise;
+}
 function readPositiveIntegerEnv(name, fallback) {
   const raw = process.env[name];
   if (!raw) return fallback;
   const parsed = Number(raw);
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
 }
-var CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS = readPositiveIntegerEnv("CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS", 2500);
-var CONTEXT_SLOW_USER_LOOKUP_LOG_MS = readPositiveIntegerEnv("CONTEXT_SLOW_USER_LOOKUP_LOG_MS", 250);
+var USER_LOOKUP_TIMEOUT_MS = readPositiveIntegerEnv(
+  "CONTEXT_USER_LOOKUP_TIMEOUT_MS",
+  5e3
+);
+var USER_DB_LOOKUP_TIMEOUT_MS = Math.max(
+  readPositiveIntegerEnv("CONTEXT_USER_DB_LOOKUP_TIMEOUT_MS", 5e3),
+  PROFILE_POOL_ACQUIRE_TIMEOUT_MS + 250
+);
+var CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS = readPositiveIntegerEnv(
+  "CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS",
+  Math.min(2500, USER_LOOKUP_TIMEOUT_MS)
+);
+var CONTEXT_SLOW_USER_LOOKUP_LOG_MS = readPositiveIntegerEnv(
+  "CONTEXT_SLOW_USER_LOOKUP_LOG_MS",
+  250
+);
+var CONTEXT_ERROR_LOG_THROTTLE_MS = 6e4;
+var lastContextUserLookupErrorLogAt = 0;
+var suppressedContextUserLookupErrors = 0;
+async function withTimeout(promise, ms, label) {
+  let timeout;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeout = setTimeout(
+      () => reject(new Error(`${label} timed out after ${ms}ms`)),
+      ms
+    );
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
 async function withAbortableTimeout(task, ms, label) {
   const controller = new AbortController();
   let timeout;
@@ -86017,18 +85520,30 @@ async function withAbortableTimeout(task, ms, label) {
 function errorDetail(error) {
   return error instanceof Error ? error.message : String(error);
 }
+function isTimeoutError(error) {
+  return errorDetail(error).toLowerCase().includes("timed out") || classify_db_error(error) !== "db_error";
+}
+function profile_lookup_error_code(error) {
+  const db_code = classify_db_error(error);
+  if (db_code === "pool_acquire_timeout" || db_code === "query_timeout")
+    return db_code;
+  return isTimeoutError(error) ? "profile_lookup_timeout" : "profile_lookup_error";
+}
 function createUnauthenticatedAuth() {
-  return { auth_status: "unauthenticated", supabase_user_id: null, supabase_email: null, profile_resolution_status: "not_attempted", profile_resolution_error: null };
+  return {
+    auth_status: "unauthenticated",
+    supabase_user_id: null,
+    supabase_email: null,
+    profile_resolution_status: "not_attempted",
+    profile_resolution_error: null
+  };
 }
 function createInspectionAuth() {
-  return { auth_status: "inspection_mode", supabase_user_id: null, supabase_email: null, profile_resolution_status: "resolved", profile_resolution_error: null };
-}
-function createAuthenticatedUnresolvedAuth(authUser) {
   return {
-    auth_status: "authenticated_profile_unresolved",
-    supabase_user_id: authUser.id?.trim() || null,
-    supabase_email: authUser.email?.trim().toLowerCase() || null,
-    profile_resolution_status: "not_attempted",
+    auth_status: "inspection_mode",
+    supabase_user_id: null,
+    supabase_email: null,
+    profile_resolution_status: "resolved",
     profile_resolution_error: null
   };
 }
@@ -86037,7 +85552,12 @@ function logContextAuthEvent(event, details) {
 }
 async function timeContextPhase(phase, phases, task) {
   const startedAt = Date.now();
-  const entry = { phase, status: "started", elapsed_ms: 0, started_at: startedAt };
+  const entry = {
+    phase,
+    status: "started",
+    elapsed_ms: 0,
+    started_at: startedAt
+  };
   phases.push(entry);
   try {
     const result = await task();
@@ -86051,13 +85571,60 @@ async function timeContextPhase(phase, phases, task) {
     entry.elapsed_ms = Date.now() - startedAt;
   }
 }
-function serializeContextLookupPhases(phases) {
-  const now3 = Date.now();
-  return phases.map(({ phase, status, elapsed_ms, started_at, detail }) => ({ phase, status, elapsed_ms: status === "started" ? now3 - started_at : elapsed_ms, ...detail ? { detail } : {} }));
+async function timeRequiredDbUserPhase(phase, phases, task) {
+  return withTimeout(
+    timeContextPhase(phase, phases, task),
+    USER_DB_LOOKUP_TIMEOUT_MS,
+    `tRPC context ${phase}`
+  );
 }
-function logSlowContextUserLookup(phases, total_ms) {
+async function timeOptionalDbUserPhase(phase, phases, task) {
+  try {
+    return await timeRequiredDbUserPhase(phase, phases, task);
+  } catch (error) {
+    console.warn("[CONTEXT] User DB lookup phase settled as null after error", {
+      phase,
+      timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
+      error: errorDetail(error)
+    });
+    return null;
+  }
+}
+function serializeContextLookupPhases(phases) {
+  const now4 = Date.now();
+  return phases.map(({ phase, status, elapsed_ms, started_at, detail }) => ({
+    phase,
+    status,
+    elapsed_ms: status === "started" ? now4 - started_at : elapsed_ms,
+    ...detail ? { detail } : {}
+  }));
+}
+function logContextUserLookupError(error) {
+  const now4 = Date.now();
+  const detail = errorDetail(error);
+  if (now4 - lastContextUserLookupErrorLogAt >= CONTEXT_ERROR_LOG_THROTTLE_MS) {
+    const suppressedSuffix = suppressedContextUserLookupErrors > 0 ? ` (${suppressedContextUserLookupErrors} similar user lookup errors suppressed in the last ${CONTEXT_ERROR_LOG_THROTTLE_MS / 1e3}s)` : "";
+    console.error(
+      `[CONTEXT] Error during user lookup:${suppressedSuffix}`,
+      detail
+    );
+    lastContextUserLookupErrorLogAt = now4;
+    suppressedContextUserLookupErrors = 0;
+    return;
+  }
+  suppressedContextUserLookupErrors += 1;
+}
+function logSlowContextUserLookup(phases, total_ms, user_found) {
   if (!phases.length || total_ms < CONTEXT_SLOW_USER_LOOKUP_LOG_MS) return;
-  console.warn("[CONTEXT] Slow context auth lookup", { total_ms, supabase_auth_fetch_timeout_ms: CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS, slow_log_threshold_ms: CONTEXT_SLOW_USER_LOOKUP_LOG_MS, phases: serializeContextLookupPhases(phases) });
+  console.warn("[CONTEXT] Slow user lookup", {
+    total_ms,
+    timeout_ms: USER_LOOKUP_TIMEOUT_MS,
+    db_phase_timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
+    supabase_auth_fetch_timeout_ms: CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS,
+    slow_log_threshold_ms: CONTEXT_SLOW_USER_LOOKUP_LOG_MS,
+    user_found,
+    phases: serializeContextLookupPhases(phases)
+  });
 }
 function getSupabaseConfig() {
   const url = process.env.LIGHTHOUSE_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -86070,8 +85637,19 @@ function isLighthouseInspectionMode(req) {
   return process.env.LIGHTHOUSE_INSPECTION_MODE === "true" || process.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true" || headerFlag === "true" || headerFlag === "1";
 }
 function createInspectionUser() {
-  const now3 = Date.now();
-  return { id: 0, open_id: "inspection_user", name: "Inspection User", email: "inspection@lighthouse.local", login_method: "temporary_lighthouse_inspection_mode", role: "admin", plan: "enterprise", created_at: now3, updated_at: now3, last_signed_in: now3 };
+  const now4 = Date.now();
+  return {
+    id: 0,
+    open_id: "inspection_user",
+    name: "Inspection User",
+    email: "inspection@lighthouse.local",
+    login_method: "temporary_lighthouse_inspection_mode",
+    role: "admin",
+    plan: "enterprise",
+    created_at: now4,
+    updated_at: now4,
+    last_signed_in: now4
+  };
 }
 function readHeader(req, name) {
   const value = req?.headers?.[name.toLowerCase()];
@@ -86088,15 +85666,24 @@ function getForwardedSupabaseSession(req) {
 async function fetchSupabaseAuthUser(sessionValue, signal) {
   const config = getSupabaseConfig();
   if (!config) {
-    console.warn("[CONTEXT] Supabase auth REST unavailable; missing URL or key env vars");
+    console.warn(
+      "[CONTEXT] Supabase auth REST unavailable; missing URL or key env vars"
+    );
     return null;
   }
   const headers = new Headers();
   headers.set("apikey", config.key);
-  headers.set("Authorization", `Bearer ${sessionValue}`);
-  const response = await fetch(`${config.url}/auth/v1/user`, { headers, signal });
+  headers.set("Authorization", "Bearer " + sessionValue);
+  const response = await fetch(`${config.url}/auth/v1/user`, {
+    headers,
+    signal
+  });
   if (!response.ok) {
-    console.warn("[CONTEXT] Supabase session rejected", response.status, response.statusText);
+    console.warn(
+      "[CONTEXT] Supabase session rejected",
+      response.status,
+      response.statusText
+    );
     return null;
   }
   return await response.json();
@@ -86105,28 +85692,163 @@ async function resolveSupabaseAuthUser(req, phases) {
   const sessionValue = getForwardedSupabaseSession(req);
   if (!sessionValue) return null;
   try {
-    const authUser = await withAbortableTimeout((signal) => timeContextPhase("supabase_auth_user_fetch", phases, () => fetchSupabaseAuthUser(sessionValue, signal)), CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS, "tRPC context supabase auth user fetch");
+    const authUser = await withAbortableTimeout(
+      (signal) => timeContextPhase(
+        "supabase_auth_user_fetch",
+        phases,
+        () => fetchSupabaseAuthUser(sessionValue, signal)
+      ),
+      CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS,
+      "tRPC context supabase auth user fetch"
+    );
     if (authUser) {
-      logContextAuthEvent("supabase_auth_fetch_succeeded", { supabase_user_id: authUser.id ?? null, supabase_email: authUser.email?.trim().toLowerCase() ?? null, profile_resolution_status: "not_attempted" });
+      logContextAuthEvent("supabase_auth_fetch_succeeded", {
+        supabase_user_id: authUser.id ?? null,
+        supabase_email: authUser.email?.trim().toLowerCase() ?? null
+      });
     }
     return authUser;
   } catch (error) {
-    logContextAuthEvent("supabase_auth_fetch_failed", { timeout_ms: CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS, error: errorDetail(error) });
+    logContextAuthEvent("supabase_auth_fetch_failed", {
+      timeout_ms: CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS,
+      error: errorDetail(error)
+    });
     return null;
   }
 }
-async function resolveUserFromLegacySessionWithoutDb(session) {
-  if (!session?.user && !session?.openId) return { user: null, auth: null };
-  return {
-    user: null,
-    auth: {
-      auth_status: "authenticated_profile_unresolved",
-      supabase_user_id: session?.openId ? String(session.openId) : null,
-      supabase_email: session?.user?.email ? String(session.user.email).trim().toLowerCase() : null,
-      profile_resolution_status: "not_attempted",
-      profile_resolution_error: null
-    }
-  };
+async function resolveProfileFromSupabaseAuthUser(authUser, phases, req) {
+  const authEmail = authUser.email?.trim().toLowerCase() || null;
+  const authOpenId = authUser.id?.trim() || null;
+  let first_error = null;
+  let timed_out = false;
+  if (authOpenId) {
+    return resolveProfileOncePerRequest(
+      req,
+      profileLookupCacheKey("open_id", authOpenId),
+      async () => {
+        try {
+          const user = await timeRequiredDbUserPhase(
+            "supabase_open_id_lookup",
+            phases,
+            () => get_user_by_open_id_snake(authOpenId)
+          );
+          if (user) {
+            logContextAuthEvent("profile_lookup_succeeded", {
+              lookup_key: "open_id",
+              supabase_user_id: authOpenId
+            });
+            return { user, status: "resolved", error: null };
+          }
+          logContextAuthEvent("profile_lookup_missed", {
+            lookup_key: "open_id",
+            supabase_user_id: authOpenId
+          });
+        } catch (error) {
+          first_error = errorDetail(error);
+          timed_out = isTimeoutError(error);
+          logContextAuthEvent(
+            timed_out ? "profile_lookup_timed_out" : "profile_lookup_threw",
+            {
+              lookup_key: "open_id",
+              supabase_user_id: authOpenId,
+              timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
+              error: first_error,
+              diagnostic_code: profile_lookup_error_code(error)
+            }
+          );
+          logContextAuthEvent("profile_lookup_fallback_activated", {
+            lookup_key: "open_id",
+            supabase_user_id: authOpenId,
+            fallback_activation: true,
+            profile_state: "unavailable"
+          });
+          return {
+            user: null,
+            status: timed_out ? "timed_out" : "threw",
+            error: first_error
+          };
+        }
+        return { user: null, status: "missed", error: null };
+      }
+    );
+  }
+  if (authEmail) {
+    return resolveProfileOncePerRequest(
+      req,
+      profileLookupCacheKey("email", authEmail),
+      async () => {
+        try {
+          const user = await timeRequiredDbUserPhase(
+            "supabase_email_lookup",
+            phases,
+            () => get_user_by_email_snake(authEmail)
+          );
+          if (user) {
+            logContextAuthEvent("profile_lookup_succeeded", {
+              lookup_key: "email",
+              supabase_email: authEmail
+            });
+            return { user, status: "resolved", error: null };
+          }
+          logContextAuthEvent("profile_lookup_missed", {
+            lookup_key: "email",
+            supabase_email: authEmail
+          });
+        } catch (error) {
+          const detail = errorDetail(error);
+          timed_out = timed_out || isTimeoutError(error);
+          logContextAuthEvent(
+            isTimeoutError(error) ? "profile_lookup_timed_out" : "profile_lookup_threw",
+            {
+              lookup_key: "email",
+              supabase_email: authEmail,
+              timeout_ms: USER_DB_LOOKUP_TIMEOUT_MS,
+              error: detail,
+              diagnostic_code: profile_lookup_error_code(error)
+            }
+          );
+          logContextAuthEvent("profile_lookup_fallback_activated", {
+            lookup_key: "email",
+            supabase_email: authEmail,
+            fallback_activation: true,
+            profile_state: "unavailable"
+          });
+          return {
+            user: null,
+            status: isTimeoutError(error) ? "timed_out" : "threw",
+            error: detail
+          };
+        }
+        return { user: null, status: "missed", error: null };
+      }
+    );
+  }
+  if (first_error) {
+    return {
+      user: null,
+      status: timed_out ? "timed_out" : "threw",
+      error: first_error
+    };
+  }
+  return { user: null, status: "missed", error: null };
+}
+async function resolveUserFromLegacySession(session, phases) {
+  let dbUser = null;
+  if (session?.openId) {
+    dbUser = await timeOptionalDbUserPhase(
+      "session_open_id_lookup",
+      phases,
+      () => get_user_by_open_id_snake(String(session.openId))
+    );
+  }
+  if (!dbUser && session?.user?.email) {
+    dbUser = await timeOptionalDbUserPhase(
+      "session_email_lookup",
+      phases,
+      () => get_user_by_email_snake(String(session.user.email))
+    );
+  }
+  return dbUser;
 }
 async function createContext(opts) {
   let user = null;
@@ -86135,24 +85857,82 @@ async function createContext(opts) {
   const started = Date.now();
   const isInspectionMode = isLighthouseInspectionMode(opts.req);
   if (isInspectionMode) {
-    return { req: opts.req, res: opts.res, user: createInspectionUser(), auth: createInspectionAuth(), isSystem: false, isInspectionMode: true };
+    return {
+      req: opts.req,
+      res: opts.res,
+      user: createInspectionUser(),
+      auth: createInspectionAuth(),
+      isSystem: false,
+      isInspectionMode: true
+    };
   }
+  const session = opts.req.session;
   try {
     const authUser = await resolveSupabaseAuthUser(opts.req, phases);
     if (authUser) {
-      auth = createAuthenticatedUnresolvedAuth(authUser);
+      const supabase_user_id = authUser.id?.trim() || null;
+      const supabase_email = authUser.email?.trim().toLowerCase() || null;
+      const profileResult = await withTimeout(
+        resolveProfileFromSupabaseAuthUser(authUser, phases, opts.req),
+        USER_LOOKUP_TIMEOUT_MS,
+        "tRPC context supabase profile resolution"
+      ).catch((error) => {
+        const detail = errorDetail(error);
+        logContextAuthEvent(
+          isTimeoutError(error) ? "profile_lookup_timed_out" : "profile_lookup_threw",
+          {
+            lookup_key: "supabase_profile_resolution",
+            supabase_user_id,
+            supabase_email,
+            timeout_ms: USER_LOOKUP_TIMEOUT_MS,
+            error: detail,
+            diagnostic_code: profile_lookup_error_code(error)
+          }
+        );
+        return {
+          user: null,
+          status: isTimeoutError(error) ? "timed_out" : "threw",
+          error: detail
+        };
+      });
+      user = profileResult.user;
+      auth = {
+        auth_status: user ? "authenticated_profile_resolved" : "authenticated_profile_unresolved",
+        supabase_user_id,
+        supabase_email,
+        profile_resolution_status: profileResult.status,
+        profile_resolution_error: profileResult.error
+      };
     } else {
-      const legacy = await resolveUserFromLegacySessionWithoutDb(opts.req.session);
-      if (legacy.auth) auth = legacy.auth;
-      user = legacy.user;
+      user = await withTimeout(
+        resolveUserFromLegacySession(session, phases),
+        USER_LOOKUP_TIMEOUT_MS,
+        "tRPC context legacy user lookup"
+      );
+      if (user) {
+        auth = {
+          auth_status: "authenticated_profile_resolved",
+          supabase_user_id: user.open_id,
+          supabase_email: user.email?.trim().toLowerCase() || null,
+          profile_resolution_status: "resolved",
+          profile_resolution_error: null
+        };
+      }
     }
   } catch (error) {
-    logContextAuthEvent("context_auth_resolution_failed", { error: errorDetail(error) });
+    logContextUserLookupError(error);
     user = null;
   } finally {
-    logSlowContextUserLookup(phases, Date.now() - started);
+    logSlowContextUserLookup(phases, Date.now() - started, Boolean(user));
   }
-  return { req: opts.req, res: opts.res, user, auth, isSystem: false, isInspectionMode: false };
+  return {
+    req: opts.req,
+    res: opts.res,
+    user,
+    auth,
+    isSystem: false,
+    isInspectionMode: false
+  };
 }
 
 // server/_core/session-middleware.ts
@@ -86446,7 +86226,7 @@ function parseCookies(cookieHeader) {
 init_db();
 import express from "express";
 import { sql as sql133 } from "drizzle-orm";
-function now() {
+function now2() {
   return (/* @__PURE__ */ new Date()).toISOString();
 }
 async function countTable2(tableName) {
@@ -86701,7 +86481,7 @@ router2.get("/health", (_req, res) => {
   res.json({
     status: "ok",
     service: "luminari-ai-inspect",
-    last_checked: now(),
+    last_checked: now2(),
     mount: "/api/ai",
     schema_version: "2026-06-16"
   });
@@ -86734,7 +86514,7 @@ router2.get("/site-map", async (_req, res) => {
   res.json({
     platform: "Luminari / Lighthouse",
     description: "Universal civic-forensic operating system. Receives a real human problem and returns verified next action, fallback, escalation, or logged gap.",
-    last_checked: now(),
+    last_checked: now2(),
     deploy: {
       domain: "lighthouse.columbiacitycustomllc.com",
       stack: "React 19 / Express / tRPC 11 / Drizzle / Supabase (Postgres)",
@@ -86788,7 +86568,7 @@ router2.get("/site-map", async (_req, res) => {
 router2.get("/routes", (_req, res) => {
   setCache(res, "static");
   res.json({
-    last_checked: now(),
+    last_checked: now2(),
     count: ROUTE_TABLE.length,
     source: "client/src/App.tsx",
     routes: ROUTE_TABLE
@@ -86797,7 +86577,7 @@ router2.get("/routes", (_req, res) => {
 router2.get("/namespaces", (_req, res) => {
   setCache(res, "static");
   res.json({
-    last_checked: now(),
+    last_checked: now2(),
     pageCount: Object.keys(PAGE_TO_NAMESPACE).length,
     source: "all_pages_calls.tsv plus App.tsx route manifest reconciliation",
     mapping: PAGE_TO_NAMESPACE
@@ -86820,7 +86600,7 @@ router2.get("/page/mission-control", async (_req, res) => {
     component_slug: "mission_control",
     primary_namespace: PAGE_TO_NAMESPACE.mission_control,
     status: "live",
-    last_checked: now(),
+    last_checked: now2(),
     data_source: "live \u2014 cases, documents, findings, pipeline_runs, engine_runs, engine_registry, system_health_logs",
     sections: [
       { name: "Platform Counts", counts: { cases: cases_count, documents: documentsCount, findings: findingsCount } },
@@ -86846,7 +86626,7 @@ router2.get("/page/sovereign-control", async (_req, res) => {
     component_slug: "sovereign_control",
     primary_namespace: PAGE_TO_NAMESPACE.sovereign_control,
     status: "live",
-    last_checked: now(),
+    last_checked: now2(),
     data_source: "live \u2014 engine_registry, claim_validation_rules, sunam_gate_log, governance_log, constitutional_violation_log, audit_trail",
     sections: [
       { name: "Engine Registry", counts: { registered: engine_registry_count } },
@@ -86870,7 +86650,7 @@ router2.get("/page/docket", async (_req, res) => {
     component_slug: "docket_room",
     primary_namespace: PAGE_TO_NAMESPACE.docket_room,
     status: "live",
-    last_checked: now(),
+    last_checked: now2(),
     data_source: "live \u2014 cases, docket_entries, deadlines",
     sections: [
       { name: "Cases", counts: { total: cases_count } },
@@ -86893,7 +86673,7 @@ router2.get("/page/signal-registry", async (_req, res) => {
     component_slug: "signal_registry",
     primary_namespace: PAGE_TO_NAMESPACE.signal_registry,
     status: "live",
-    last_checked: now(),
+    last_checked: now2(),
     data_source: "live \u2014 signal_registry, signals, pattern_registry, signal_events",
     sections: [
       { name: "Signal Registry", counts: { total: signal_registry_count } },
@@ -86917,7 +86697,7 @@ router2.get("/page/benefits", async (_req, res) => {
     component_slug: "benefits_navigator",
     primary_namespace: PAGE_TO_NAMESPACE.benefits_navigator,
     status: "live",
-    last_checked: now(),
+    last_checked: now2(),
     data_source: "live \u2014 registry_programs, government_benefits_registry, benefit_applications, eligibility_hints",
     sections: [
       { name: "Eligibility Screener", counts: { eligibilityHints: eligibilityHintsCount } },
@@ -86940,7 +86720,7 @@ router2.get("/page/guided-intake", async (_req, res) => {
     component_slug: "guided_intake_new",
     primary_namespace: PAGE_TO_NAMESPACE.guided_intake_new,
     status: "live",
-    last_checked: now(),
+    last_checked: now2(),
     data_source: "live \u2014 intake_records, entry_runs, map_intake_sessions",
     sections: [
       { name: "Problem Framing", counts: { intakeRecords: intakeRecordsCount } },
@@ -86959,7 +86739,7 @@ router2.get("/compare/main-vs-manus", async (_req, res) => {
     route: "/compare/main-vs-manus",
     title: "Main (Render) vs Manus Reference",
     purpose: "Semantic comparison between the live Render deployment and the Manus reference build.",
-    last_checked: now(),
+    last_checked: now2(),
     main: {
       url: "https://lighthouse.columbiacitycustomllc.com",
       branch: "main",
@@ -86988,7 +86768,7 @@ var aiInspectRouter = router2;
 init_db();
 import express2 from "express";
 var router3 = express2.Router();
-function now2() {
+function now3() {
   return (/* @__PURE__ */ new Date()).toISOString();
 }
 function cacheStatic(res) {
@@ -87033,7 +86813,7 @@ router3.get("/health", async (_req, res) => {
     public_tables: table_count,
     runtime: "active",
     build_version: process.env.RENDER_GIT_COMMIT?.slice(0, 8) ?? "dev",
-    timestamp: now2()
+    timestamp: now3()
   });
 });
 router3.get("/routes", async (_req, res) => {
@@ -87140,7 +86920,7 @@ router3.get("/routes", async (_req, res) => {
     { method: "USE", path: "/api/healer/*", source: "healer-routes" }
   ];
   res.json({
-    timestamp: now2(),
+    timestamp: now3(),
     frontend: { total: frontend_routes.length, routes: frontend_routes },
     backend: { total: backend_mounts.length, mounts: backend_mounts }
   });
@@ -87173,7 +86953,7 @@ router3.get("/schema", async (_req, res) => {
     ORDER BY tc.table_name
   `);
   res.json({
-    timestamp: now2(),
+    timestamp: now3(),
     tables: { total: Array.isArray(tables) ? tables.length : 0, items: tables },
     views: { total: Array.isArray(views) ? views.length : 0, items: views },
     foreign_keys: { total: Array.isArray(foreign_keys) ? foreign_keys.length : 0, items: foreign_keys }
@@ -87190,7 +86970,7 @@ router3.get("/schema/:table_name_param", async (req, res) => {
   `);
   const row_count = await safeQuery(`SELECT COUNT(*)::int AS count FROM "${table_name_param}"`);
   res.json({
-    timestamp: now2(),
+    timestamp: now3(),
     table: table_name_param,
     columns,
     row_count: row_count[0]?.count ?? row_count[0]?.error ?? "unknown"
@@ -87245,7 +87025,7 @@ router3.get("/table-contracts", async (_req, res) => {
     }
   }
   res.json({
-    timestamp: now2(),
+    timestamp: now3(),
     canonical_pattern: { good: ["phone", "email", "website", "address"], bad: ["contact", "contacts", "domains", "metadata", "related_entities", "_rp"] },
     contact_tables: canonicalContactTables,
     blob_columns: blobDetection,
@@ -87272,7 +87052,7 @@ router3.get("/view-contracts", async (_req, res) => {
     };
   }) : [];
   res.json({
-    timestamp: now2(),
+    timestamp: now3(),
     views: { total: view_contracts.length, items: view_contracts },
     raw_definitions: view_definitions
   });
@@ -87301,7 +87081,7 @@ router3.get("/ui-bindings", async (_req, res) => {
     { page: "/spine-viewer", component_slug: "spine_viewer", queries: ["spine.export"], tables: ["corpus_snapshots"] }
   ];
   res.json({
-    timestamp: now2(),
+    timestamp: now3(),
     bindings: { total: bindings.length, items: bindings },
     note: "Each binding declares the expected tRPC queries and backing tables for a frontend page. If a table is empty or missing, the page renders zero data."
   });
@@ -87370,7 +87150,7 @@ router3.get("/runtime-map", async (_req, res) => {
     }
   };
   res.json({
-    timestamp: now2(),
+    timestamp: now3(),
     table_counts: Array.isArray(table_counts) ? table_counts : [],
     hydration_chain,
     known_issues: [
@@ -87442,7 +87222,7 @@ router3.get("/drift", async (_req, res) => {
     ORDER BY relname
   `);
   res.json({
-    timestamp: now2(),
+    timestamp: now3(),
     summary: {
       total_drift_issues: drift_checks.length,
       suffix_contamination: drift_checks.filter((d) => d.category === "suffix_contamination").length,
@@ -88280,12 +88060,14 @@ atlasProxyRouter.post("/bridge-drain", (_req, res) => {
   sendAtlas(res, "/scheduler/bridge-drain", { method: "POST" });
 });
 
-// server/routes/ingestion_control_read_cache_router.ts
+// server/routes/ingestion_control_router.ts
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { Router as Router2 } from "express";
 
 // server/engines/ingestion_control.ts
 init_db();
-import { createHash as createHash18, randomUUID as randomUUID15 } from "node:crypto";
+import { createHash as createHash17, randomUUID as randomUUID15 } from "node:crypto";
 var allowed_target_hints = [
   "state_enriched_registry_docx_review",
   "registry_entity_extraction_v4",
@@ -88470,8 +88252,8 @@ async function get_corpus_import_queue_row(input) {
   };
 }
 var CANDIDATE_EXTRACTOR_VERSION = "candidate_field_binding_v3_fragment_classification";
-function sha2563(value) {
-  return createHash18("sha256").update(value).digest("hex");
+function sha2562(value) {
+  return createHash17("sha256").update(value).digest("hex");
 }
 var STATE_NEEDLES = {
   Alabama: ["alabama", "_al_", "-al-"],
@@ -88761,7 +88543,7 @@ function review_fragment_name(row, record, content_hash) {
   return `review_fragment:${row.id}:${record.start_line}:${content_hash.slice(0, 12)}`;
 }
 function build_candidates(row) {
-  const source_hash = row.sha256 ?? sha2563(row.normalized_text);
+  const source_hash = row.sha256 ?? sha2562(row.normalized_text);
   const candidates = [];
   const benefit_records = assemble_benefit_programs(row.normalized_text).slice(0, 400);
   benefit_records.forEach((record, index3) => {
@@ -88772,7 +88554,7 @@ function build_candidates(row) {
     const inferred_name = infer_candidate_name(record, row);
     const promotion_ready = classification.outcome === "promotable_candidate";
     const candidate_type = promotion_ready ? "benefit_program" : classification.outcome === "context_fragment" ? "context_fragment" : "review_fragment";
-    const content_hash = sha2563(`${row.id}:${candidate_type}:${source_hash}:${inferred_name ?? record.section_context ?? "fragment"}:${source_excerpt}`);
+    const content_hash = sha2562(`${row.id}:${candidate_type}:${source_hash}:${inferred_name ?? record.section_context ?? "fragment"}:${source_excerpt}`);
     const name = promotion_ready ? inferred_name : review_fragment_name(row, record, content_hash);
     const extracted = extract_obvious_values(source_excerpt);
     const confidence = promotion_ready ? benefit_confidence({ ...record, name }, jurisdiction_info.final_jurisdiction) : 0.25;
@@ -88855,7 +88637,7 @@ async function insert_candidate(client, columns, row, candidate) {
     geocoding_hints: { jurisdiction: candidate.jurisdiction, source_queue_id: row.id },
     content_hash: candidate.content_hash
   };
-  for (const [key2, value] of Object.entries({ source_queue_id: row.id, corpus_import_queue_id: row.id, storage_path: row.storage_path, source_path: row.storage_path, source_name: row.source_name, source_text_hash: row.sha256 ?? sha2563(row.normalized_text), raw_candidate_payload: candidate.payload, candidate_payload: candidate.payload, payload: candidate.payload, normalized_excerpt: candidate.excerpt, extraction_status: candidate.payload.extraction_status })) {
+  for (const [key2, value] of Object.entries({ source_queue_id: row.id, corpus_import_queue_id: row.id, storage_path: row.storage_path, source_path: row.storage_path, source_name: row.source_name, source_text_hash: row.sha256 ?? sha2562(row.normalized_text), raw_candidate_payload: candidate.payload, candidate_payload: candidate.payload, payload: candidate.payload, normalized_excerpt: candidate.excerpt, extraction_status: candidate.payload.extraction_status })) {
     if (columns.has(key2)) insertable[key2] = value;
   }
   for (const key2 of ["candidate_type", "document_family", "promotion_lane", "intended_target_table", "target_table", "source_citation", "review_reason", "raw_fragment_text", "agency", "phone", "email", "website", "url", "address", "eligibility", "application_method", "apply_notes", "benefit_summary", "service_type", "source_excerpt"]) {
@@ -89088,7 +88870,6 @@ function dry_run_lane_for_candidate(candidate) {
 var CANDIDATE_PROMOTION_CONFIDENCE_THRESHOLD = 0.6;
 var PROMOTION_SOURCE_PREVIEW_CHAR_LIMIT = 750;
 var SAFE_PROMOTION_WRITE_TARGETS = /* @__PURE__ */ new Set(["luminari_resource_entities", "registry_programs"]);
-var RESOURCE_DIRECTORY_SOURCE_TABLE = "resource_directory_docx_import";
 function has_useful_bound_value(candidate) {
   const payload = candidate_payload_from_row(candidate);
   return ["phone", "email", "website", "url", "address", "eligibility", "application_method", "apply_notes", "benefit_summary", "agency", "service_type"].some((key2) => first_text_value(candidate[key2], payload?.[key2], payload?.fields?.[key2], payload?.extracted?.[key2]));
@@ -89101,7 +88882,7 @@ function verify_registry_candidate(candidate) {
   const candidate_type = resolved_candidate_type(candidate);
   const name = first_text_value(candidate.name, payload?.name);
   if (payload?.jurisdiction_mismatch_reason || payload?.classification_outcome === "provenance_mismatch") blocked_reasons.push("provenance_mismatch");
-  if (!candidate_is_resource_like({ ...candidate, candidate_type })) blocked_reasons.push("resource_like_candidate_type_required");
+  if (candidate_type !== "benefit_program") blocked_reasons.push("benefit_program_candidate_type_required");
   if (!name) blocked_reasons.push("name_required");
   else if (is_generic_header_text(name) || name.startsWith("review_fragment:")) blocked_reasons.push("non_generic_real_name_required");
   if (!first_text_value(candidate.source_file, payload?.source_file, payload?.source_name)) blocked_reasons.push("source_file_required");
@@ -89204,16 +88985,8 @@ function required_columns_present(columns, required_columns) {
 function promotion_feature_flag_enabled() {
   return process.env[CANONICAL_PROMOTION_FLAG] === "true";
 }
-function merge_plain_objects(...values) {
-  return Object.assign({}, ...values.filter((value) => value && typeof value === "object" && !Array.isArray(value)));
-}
 function candidate_payload_from_row(row) {
-  const forensic = row.forensic_provenance && typeof row.forensic_provenance === "object" ? row.forensic_provenance : {};
-  const promotion = row.promotion_ready && typeof row.promotion_ready === "object" ? row.promotion_ready : {};
-  const payload = row.payload && typeof row.payload === "object" ? row.payload : {};
-  const raw = row.raw_candidate_payload && typeof row.raw_candidate_payload === "object" ? row.raw_candidate_payload : {};
-  const candidate = row.candidate_payload && typeof row.candidate_payload === "object" ? row.candidate_payload : {};
-  return merge_plain_objects(forensic.field_metadata, forensic, promotion, payload, raw, candidate);
+  return row.candidate_payload ?? row.raw_candidate_payload ?? row.payload ?? row.promotion_ready ?? {};
 }
 function first_text_value(...values) {
   for (const value of values) {
@@ -89243,25 +89016,6 @@ function first_array_text(source, paths) {
 function promotion_ready_value(row, field) {
   return row.promotion_ready && typeof row.promotion_ready === "object" ? row.promotion_ready[field] ?? null : null;
 }
-function normalize_target_surface(value) {
-  return String(value ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
-}
-function parse_target_surfaces(value) {
-  if (Array.isArray(value)) return value.map(normalize_target_surface).filter(Boolean);
-  if (typeof value !== "string" || !value.trim()) return [];
-  try {
-    const parsed = JSON.parse(value);
-    if (Array.isArray(parsed)) return parsed.map(normalize_target_surface).filter(Boolean);
-  } catch {
-  }
-  return value.split(",").map(normalize_target_surface).filter(Boolean);
-}
-function candidate_targets_resource_directory(row) {
-  return parse_target_surfaces(row.target_surfaces).includes("resource_directory");
-}
-function candidate_source_table(row) {
-  return candidate_targets_resource_directory(row) ? RESOURCE_DIRECTORY_SOURCE_TABLE : "registry_entity_extraction_v4";
-}
 function resolved_candidate_type(row) {
   return first_text_value(promotion_ready_value(row, "candidate_type"), row.candidate_type) ?? "unknown";
 }
@@ -89288,20 +89042,9 @@ function truncate_preview(value, limit = PROMOTION_SOURCE_PREVIEW_CHAR_LIMIT) {
 function candidate_payload_text(row, keys) {
   const payload = candidate_payload_from_row(row);
   const extracted = payload?.extracted ?? {};
-  const forensic = row.forensic_provenance ?? {};
-  const metadata = forensic?.field_metadata ?? {};
-  return first_text_value(
-    ...keys.map((key2) => row?.[key2]),
-    ...keys.map((key2) => payload?.[key2]),
-    ...keys.map((key2) => extracted?.[key2]),
-    ...keys.map((key2) => forensic?.[key2]),
-    ...keys.map((key2) => metadata?.[key2])
-  );
+  return first_text_value(...keys.map((key2) => payload?.[key2]), ...keys.map((key2) => extracted?.[key2]));
 }
 function promotion_write_adapter_status(row) {
-  if (candidate_targets_resource_directory(row)) {
-    return { write_target_table: "luminari_resource_entities", write_adapter_status: "safe_resource_directory_backbone_adapter" };
-  }
   const intended_target_table = resolved_intended_target_table(row);
   if (intended_target_table === "registry_programs") {
     return resolved_candidate_type(row) === "benefit_program" ? { write_target_table: "registry_programs", write_adapter_status: "safe_registry_programs_benefit_program_adapter" } : { write_target_table: null, write_adapter_status: "no_safe_registry_programs_adapter_for_candidate_type" };
@@ -89395,19 +89138,14 @@ function candidate_source_queue_id(row) {
 function candidate_contact_values(row) {
   const payload = candidate_payload_from_row(row);
   const extracted = payload?.extracted ?? {};
-  const phone = candidate_payload_text(row, ["phone", "telephone"]);
-  const email = candidate_payload_text(row, ["email"]);
-  const website = candidate_payload_text(row, ["website", "site", "homepage", "url", "source_url", "link"]);
-  const normalize2 = (value) => value.trim();
-  const unique = (values) => [...new Set(values.map((value) => normalize2(String(value))).filter(Boolean))];
   return {
-    phones: unique([...Array.isArray(extracted.phones) ? extracted.phones : [], ...phone ? [phone] : []]),
-    emails: unique([...Array.isArray(extracted.emails) ? extracted.emails : [], ...email ? [email] : []]),
-    urls: unique([...Array.isArray(extracted.urls) ? extracted.urls : [], ...website ? [website] : []])
+    phones: Array.isArray(extracted.phones) ? extracted.phones.filter(Boolean) : [],
+    emails: Array.isArray(extracted.emails) ? extracted.emails.filter(Boolean) : [],
+    urls: Array.isArray(extracted.urls) ? extracted.urls.filter(Boolean) : []
   };
 }
 function canonical_dedupe_key(row) {
-  return sha2563([row.candidate_type ?? "unknown", row.jurisdiction ?? "", row.name ?? "", row.content_hash ?? ""].join("|"));
+  return sha2562([row.candidate_type ?? "unknown", row.jurisdiction ?? "", row.name ?? "", row.content_hash ?? ""].join("|"));
 }
 function text_or_null(value) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -89455,21 +89193,19 @@ function hold_reason_for_material_scope(material_scope) {
 }
 function candidate_is_resource_like(candidate) {
   const candidate_type = String(candidate.candidate_type || "unknown").toLowerCase();
-  return ["benefit_program", "agency", "legal_aid", "court", "contact", "resource", "resource_block", "resource_context", "label_value", "contact_phone", "contact_website", "address"].includes(candidate_type);
+  return ["benefit_program", "agency", "legal_aid", "court", "contact", "resource"].includes(candidate_type);
 }
-async function existing_resource_entity(client, row, source_table_override) {
+async function existing_resource_entity(client, row) {
   const source_pk = row.content_hash ?? row.program_id ?? null;
   if (!source_pk) return null;
-  const source_table = source_table_override ?? candidate_source_table(row);
-  const canonical_id = `${source_table}:${source_pk}`;
   const result = await client.query(
     `select *
-      from public.luminari_resource_entities
-      where (source_table = $2 and source_pk = $1)
-         or canonical_id = $3
+       from public.luminari_resource_entities
+      where (source_table = 'registry_entity_extraction_v4' and source_pk = $1)
+         or canonical_id = $2
       order by resource_entity_id
       limit 1`,
-    [source_pk, source_table, canonical_id]
+    [source_pk, `registry_entity_extraction_v4:${source_pk}`]
   );
   return result.rows[0] ?? null;
 }
@@ -89513,7 +89249,7 @@ function source_identity(row) {
 }
 function registry_program_id(row) {
   const identity = source_identity(row);
-  return identity ? `reev4_${sha2563(identity).slice(0, 24)}` : null;
+  return identity ? `reev4_${sha2562(identity).slice(0, 24)}` : null;
 }
 function normal_email(row) {
   return candidate_payload_text(row, ["email"])?.toLowerCase() ?? first_array_text(candidate_payload_from_row(row), [["emails"], ["extracted", "emails"]])?.toLowerCase() ?? null;
@@ -89541,7 +89277,7 @@ function registry_program_values(row, columns) {
     contact: candidate_payload_text(row, ["contact", "contact_name", "contact_summary"]),
     website: normal_website(row),
     apply_notes: candidate_payload_text(row, ["apply_notes", "application_notes", "how_to_apply", "portal", "application_portal"]),
-    fingerprint: identity ? sha2563(identity) : null,
+    fingerprint: identity ? sha2562(identity) : null,
     contact_raw_text: candidate_payload_text(row, ["contact", "contact_raw_text", "contact_summary"]),
     contact_email_norm: normal_email(row),
     contact_phone_norm: normal_phone(row),
@@ -89552,7 +89288,7 @@ function registry_program_values(row, columns) {
 async function existing_registry_program(client, row, program_columns) {
   const map = registry_program_column_map(program_columns);
   const id = registry_program_id(row);
-  const fingerprint2 = source_identity(row) ? sha2563(source_identity(row)) : null;
+  const fingerprint2 = source_identity(row) ? sha2562(source_identity(row)) : null;
   const clauses = [];
   const params = [];
   if (id && map.id) {
@@ -89631,9 +89367,8 @@ async function update_conveyor_run_row(client, input) {
   );
 }
 async function write_canonical_candidate(client, row, entity_columns, location_columns, contact_columns) {
+  const existing_row = await existing_resource_entity(client, row);
   const source_pk = row.content_hash ?? row.program_id;
-  const source_table = candidate_source_table(row);
-  const existing_row = await existing_resource_entity(client, row, source_table);
   const candidate_payload = candidate_payload_from_row(row);
   if (existing_row) {
     const updates = blank_update_fields(existing_row, row, entity_columns);
@@ -89646,9 +89381,9 @@ async function write_canonical_candidate(client, row, entity_columns, location_c
     return { action_type: "would_update_blank_fields", canonical_record_id: String(existing_row.resource_entity_id ?? existing_row.canonical_id ?? source_pk), bridge_record_id: null };
   }
   const insertable = {
-    canonical_id: `${source_table}:${source_pk}`,
+    canonical_id: `registry_entity_extraction_v4:${source_pk}`,
     source_family_key: "state_enriched_registry_docx_review",
-    source_table,
+    source_table: "registry_entity_extraction_v4",
     source_pk,
     source_hash: row.content_hash,
     resource_name: row.name,
@@ -89657,10 +89392,10 @@ async function write_canonical_candidate(client, row, entity_columns, location_c
     layer: "registry_resource",
     jurisdiction: row.jurisdiction,
     jurisdiction_scope: "state",
-    description: text_or_null(candidate_payload.description) ?? text_or_null(candidate_payload.purpose) ?? text_or_null(candidate_payload.normalized_excerpt) ?? text_or_null(candidate_payload.source_excerpt) ?? text_or_null(row.normalized_excerpt),
-    eligibility_summary: text_or_null(candidate_payload.eligibility_summary) ?? text_or_null(candidate_payload.eligibility),
+    description: text_or_null(candidate_payload.normalized_excerpt) ?? text_or_null(row.normalized_excerpt),
+    eligibility_summary: text_or_null(candidate_payload.eligibility_summary),
     domains: [],
-    metadata: { source: source_table, candidate_payload, forensic_provenance: row.forensic_provenance ?? {}, content_hash: row.content_hash, dedupe_behavior: "enrich_blank_fields_only" },
+    metadata: { source: "registry_entity_extraction_v4", candidate_payload, forensic_provenance: row.forensic_provenance ?? {}, content_hash: row.content_hash, dedupe_behavior: "enrich_blank_fields_only" },
     verification_status: "source_attached",
     promotion_status: "review_ready",
     provenance_status: "candidate_provenance_attached"
@@ -89669,28 +89404,14 @@ async function write_canonical_candidate(client, row, entity_columns, location_c
   const placeholders = names.map((name, index3) => Array.isArray(insertable[name]) || typeof insertable[name] === "object" && insertable[name] !== null ? `$${index3 + 1}::jsonb` : `$${index3 + 1}`);
   const inserted = await client.query(`insert into public.luminari_resource_entities (${names.join(", ")}) values (${placeholders.join(", ")}) returning resource_entity_id, canonical_id`, names.map((name) => Array.isArray(insertable[name]) || typeof insertable[name] === "object" && insertable[name] !== null ? JSON.stringify(insertable[name]) : insertable[name]));
   const canonical_record_id = String(inserted.rows[0]?.resource_entity_id ?? inserted.rows[0]?.canonical_id ?? source_pk);
-  const address = candidate_payload_text(row, ["address", "mailing_address", "physical_address"]);
-  const city = candidate_payload_text(row, ["city"]);
-  const state = candidate_payload_text(row, ["state", "addr_state"]) ?? row.jurisdiction ?? null;
-  const postal_code = candidate_payload_text(row, ["postal_code", "zip", "zip_code"]);
-  if (address && required_columns_present(location_columns, ["resource_entity_id", "address_line1", "city", "state", "postal_code", "country", "coordinate_quality", "source_table", "source_pk", "source_hash", "metadata"])) {
-    await client.query(
-      `insert into public.luminari_resource_locations
-         (resource_entity_id, address_line1, city, state, postal_code, country, coordinate_quality, source_table, source_pk, source_hash, metadata)
-       select $1,$2,$3,$4,$5,'US','ungeocoded',$6,$7,$8,$9::jsonb
-       where not exists (
-         select 1 from public.luminari_resource_locations l where l.source_table = $6 and l.source_pk = $7
-       )`,
-      [inserted.rows[0]?.resource_entity_id, address, city, state, postal_code, source_table, source_pk, row.content_hash, JSON.stringify({ source: source_table, content_hash: row.content_hash })]
-    );
-  }
   const contacts = candidate_contact_values(row);
   const contact_values = [...contacts.phones.map((value) => ["phone", value]), ...contacts.emails.map((value) => ["email", value]), ...contacts.urls.map((value) => ["url", value])];
   if (contact_values.length && required_columns_present(contact_columns, ["resource_entity_id", "canonical_id", "contact_type", "contact_value", "label", "is_primary", "contact_quality", "source_table", "source_pk", "source_hash", "metadata"])) {
     for (const [contact_type, contact_value] of contact_values.slice(0, 10)) {
-      await client.query(`insert into public.luminari_resource_contact_points (resource_entity_id, canonical_id, contact_type, contact_value, label, is_primary, contact_quality, source_table, source_pk, source_hash, metadata) values ($1,$2,$3,$4,$3,false,'candidate_extracted',$5,$6,$7,$8::jsonb) on conflict do nothing`, [inserted.rows[0]?.resource_entity_id, inserted.rows[0]?.canonical_id, contact_type, contact_value, source_table, source_pk, row.content_hash, JSON.stringify({ source: source_table, content_hash: row.content_hash })]);
+      await client.query(`insert into public.luminari_resource_contact_points (resource_entity_id, canonical_id, contact_type, contact_value, label, is_primary, contact_quality, source_table, source_pk, source_hash, metadata) values ($1,$2,$3,$4,$3,false,'candidate_extracted','registry_entity_extraction_v4',$5,$6,$7::jsonb) on conflict do nothing`, [inserted.rows[0]?.resource_entity_id, inserted.rows[0]?.canonical_id, contact_type, contact_value, source_pk, row.content_hash, JSON.stringify({ source: "registry_entity_extraction_v4", content_hash: row.content_hash })]);
     }
   }
+  void location_columns;
   return { action_type: "would_insert", canonical_record_id, bridge_record_id: null };
 }
 async function promote_registry_entity_candidates_apply(input = {}) {
@@ -89746,7 +89467,7 @@ async function promote_registry_entity_candidates_apply(input = {}) {
                 ${source_queue_sql} as resolved_source_queue_id
            from public.registry_entity_extraction_v4 c
        )
-       select candidates.*, q.id as source_queue_id, q.source_name as queue_source_name, q.storage_path as queue_storage_path, q.target_hint, q.target_surfaces
+       select candidates.*, q.id as source_queue_id, q.source_name as queue_source_name, q.storage_path as queue_storage_path, q.target_hint
          from candidates
          join public.corpus_import_queue q on q.id = candidates.resolved_source_queue_id
         where q.target_hint = $1
@@ -89908,7 +89629,7 @@ async function set_corpus_import_queue_target_hint(input) {
   return { success: true, row: map_queue_row(row) };
 }
 
-// server/routes/ingestion_control_read_cache_router.ts
+// server/routes/ingestion_control_router.ts
 init_db();
 
 // shared/runtime-envelope.ts
@@ -89917,24 +89638,24 @@ function compactNumberRecord(value) {
   return entries.length ? Object.fromEntries(entries) : void 0;
 }
 function createRuntimeEnvelope(options) {
-  const diagnostics = {
-    errors: options.errors ?? [],
-    warnings: options.warnings ?? [],
-    ...options.backend === void 0 ? {} : { backend: options.backend }
-  };
-  const blockers = options.blockers ?? diagnostics.errors.map((error) => error.code).filter(Boolean);
+  const errors = options.errors ?? [];
+  const blockers = options.blockers ?? errors.map((error) => error.code).filter(Boolean);
   return {
-    success: diagnostics.errors.length === 0,
+    success: errors.length === 0,
     source: options.source,
     ...options.action ? { action: options.action } : {},
     data: options.data ?? null,
     state: {
-      availability: options.availability ?? (diagnostics.errors.length ? "unavailable" : "available"),
+      availability: options.availability ?? (errors.length ? "unavailable" : "available"),
       ...options.dry_run === void 0 ? {} : { dry_run: options.dry_run },
       ...options.can_apply === void 0 ? {} : { can_apply: options.can_apply },
       blockers
     },
-    diagnostics,
+    diagnostics: {
+      errors,
+      warnings: options.warnings ?? [],
+      ...options.backend === void 0 ? {} : { backend: options.backend }
+    },
     ...options.counts ? { counts: options.counts } : {},
     ...options.flags ? { flags: options.flags } : {},
     ...options.meta ? { meta: options.meta } : {}
@@ -89958,126 +89679,13 @@ function inferRuntimeCounts(payload, keys) {
   return compactNumberRecord(Object.fromEntries(keys.map((key2) => [key2, payload[key2]])));
 }
 
-// server/routes/ingestion_control_read_cache_router.ts
-var INGESTION_CONTROL_SOURCE = "ingestion-control.read-cache";
-var CACHE_TTL_MS2 = 15e3;
-var ERROR_STALE_TTL_MS = 12e4;
-var ingestion_control_read_cache_router = Router2();
-var cache2 = /* @__PURE__ */ new Map();
-var in_flight = /* @__PURE__ */ new Map();
+// server/routes/ingestion_control_router.ts
+var execFileAsync = promisify(execFile);
+var ingestion_control_rest_router = Router2();
+var INGESTION_CONTROL_SOURCE = "ingestion-control.rest";
 function runtime_response(payload, options = {}) {
   return withRuntimeEnvelope(payload, {
     source: INGESTION_CONTROL_SOURCE,
-    action: options.action,
-    data: options.data ?? payload,
-    availability: options.availability,
-    counts: options.counts,
-    meta: options.meta
-  });
-}
-function runtime_error(error, message, options = {}) {
-  return withRuntimeEnvelope(
-    {
-      success: false,
-      error,
-      ...message ? { message } : {},
-      ...options.diagnostic_code ? { diagnostic_code: options.diagnostic_code } : {},
-      ...options.extra ?? {}
-    },
-    {
-      source: INGESTION_CONTROL_SOURCE,
-      data: options.extra ?? null,
-      availability: "unavailable",
-      errors: [{ code: error, message }],
-      backend: options.backend
-    }
-  );
-}
-function clamp_integer(value, fallback, min, max) {
-  const parsed = typeof value === "string" || typeof value === "number" ? Number(value) : fallback;
-  if (!Number.isInteger(parsed)) return fallback;
-  return Math.min(Math.max(parsed, min), max);
-}
-function cached_key(name, params) {
-  return `${name}:${JSON.stringify(params)}`;
-}
-async function read_through_cache(key2, loader) {
-  const now3 = Date.now();
-  const cached = cache2.get(key2);
-  if (cached && cached.expires_at > now3) return { payload: cached.payload, cache_status: "hit" };
-  const existing = in_flight.get(key2);
-  if (existing) return { payload: await existing, cache_status: "coalesced" };
-  const promise = loader();
-  in_flight.set(key2, promise);
-  try {
-    const payload = await promise;
-    cache2.set(key2, { payload, expires_at: now3 + CACHE_TTL_MS2, stale_until: now3 + ERROR_STALE_TTL_MS });
-    return { payload, cache_status: "miss" };
-  } catch (error) {
-    if (cached && cached.stale_until > now3) return { payload: cached.payload, cache_status: "stale" };
-    throw error;
-  } finally {
-    in_flight.delete(key2);
-  }
-}
-ingestion_control_read_cache_router.get("/registry-entity-candidates", async (req, res) => {
-  const limit = clamp_integer(req.query.limit, 25, 1, 100);
-  const key2 = cached_key("registry-entity-candidates", { limit });
-  try {
-    const { payload: result, cache_status } = await read_through_cache(key2, () => list_registry_entity_candidates({ limit }));
-    return res.json(runtime_response(result, {
-      data: result,
-      counts: inferRuntimeCounts(result, ["total_candidate_count", "processed_count", "candidate_count", "inserted_count", "skipped_count", "verified_count", "blocked_count", "error_count"]),
-      meta: { cache_status, cache_ttl_ms: CACHE_TTL_MS2 }
-    }));
-  } catch (error) {
-    return res.status(500).json(runtime_error("registry_entity_candidates_read_failed", error?.message ?? String(error), { backend: error }));
-  }
-});
-ingestion_control_read_cache_router.get("/registry-entity-candidates/summary", async (_req, res) => {
-  const key2 = cached_key("registry-entity-candidates-summary", {});
-  try {
-    const { payload: result, cache_status } = await read_through_cache(key2, () => get_registry_entity_candidates_summary());
-    return res.json(runtime_response(result, {
-      data: result,
-      counts: inferRuntimeCounts(result, ["total_candidate_count", "processed_count", "candidate_count", "inserted_count", "skipped_count", "verified_count", "blocked_count", "error_count"]),
-      meta: { cache_status, cache_ttl_ms: CACHE_TTL_MS2 }
-    }));
-  } catch (error) {
-    return res.status(500).json(runtime_error("registry_entity_candidates_summary_failed", error?.message ?? String(error), { backend: error }));
-  }
-});
-ingestion_control_read_cache_router.get("/corpus-import-queue", async (req, res) => {
-  const status_filter = typeof req.query.status_filter === "string" ? req.query.status_filter : "all";
-  const limit = clamp_integer(req.query.limit, 100, 1, 250);
-  const allowed_status_filters = /* @__PURE__ */ new Set(["all", "blocked", "review_required", "pending_bucket_content_scan", "pending_docx_normalization", "ready_for_review", "docx_extraction_failed", "candidates_created"]);
-  const normalized_status_filter = allowed_status_filters.has(status_filter) ? status_filter : "all";
-  const key2 = cached_key("corpus-import-queue", { status_filter: normalized_status_filter, limit });
-  try {
-    const { payload: result, cache_status } = await read_through_cache(key2, () => list_corpus_import_queue({ status_filter: normalized_status_filter, limit }));
-    const payload = { ...result, allowed_target_hints };
-    return res.json(runtime_response(payload, {
-      data: payload,
-      counts: inferRuntimeCounts(result, ["row_count"]),
-      meta: { cache_status, cache_ttl_ms: CACHE_TTL_MS2 }
-    }));
-  } catch (error) {
-    const diagnostic_code = classify_db_error(error);
-    return res.status(500).json(runtime_error(diagnostic_code === "db_error" ? "ingestion_control_queue_read_failed" : diagnostic_code, error?.message ?? String(error), { diagnostic_code, backend: error }));
-  }
-});
-
-// server/routes/ingestion_control_router.ts
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import { Router as Router3 } from "express";
-init_db();
-var execFileAsync = promisify(execFile);
-var ingestion_control_rest_router = Router3();
-var INGESTION_CONTROL_SOURCE2 = "ingestion-control.rest";
-function runtime_response2(payload, options = {}) {
-  return withRuntimeEnvelope(payload, {
-    source: INGESTION_CONTROL_SOURCE2,
     action: options.action,
     data: options.data ?? payload,
     availability: options.availability,
@@ -90088,9 +89696,9 @@ function runtime_response2(payload, options = {}) {
     meta: options.meta
   });
 }
-function runtime_error2(error, message, options = {}) {
+function runtime_error(error, message, options = {}) {
   return withRuntimeEnvelope({ success: false, error, ...message ? { message } : {}, ...options.diagnostic_code ? { diagnostic_code: options.diagnostic_code } : {}, ...options.extra ?? {} }, {
-    source: INGESTION_CONTROL_SOURCE2,
+    source: INGESTION_CONTROL_SOURCE,
     action: options.action,
     data: options.extra ?? null,
     availability: "unavailable",
@@ -90098,7 +89706,7 @@ function runtime_error2(error, message, options = {}) {
     backend: options.backend
   });
 }
-function clamp_integer2(value, fallback, min, max) {
+function clamp_integer(value, fallback, min, max) {
   const parsed = typeof value === "string" || typeof value === "number" ? Number(value) : fallback;
   if (!Number.isInteger(parsed)) return fallback;
   return Math.min(Math.max(parsed, min), max);
@@ -90134,38 +89742,38 @@ async function persist_extract_command_diagnostic(id, diagnostic) {
 }
 ingestion_control_rest_router.get("/registry-entity-candidates", async (req, res) => {
   try {
-    const limit = clamp_integer2(req.query.limit, 25, 1, 100);
+    const limit = clamp_integer(req.query.limit, 25, 1, 100);
     const result = await list_registry_entity_candidates({ limit });
-    return res.json(runtime_response2(result, { data: result, counts: inferRuntimeCounts(result, ["total_candidate_count", "processed_count", "candidate_count", "inserted_count", "skipped_count", "verified_count", "blocked_count", "error_count"]) }));
+    return res.json(runtime_response(result, { data: result, counts: inferRuntimeCounts(result, ["total_candidate_count", "processed_count", "candidate_count", "inserted_count", "skipped_count", "verified_count", "blocked_count", "error_count"]) }));
   } catch (error) {
-    return res.status(500).json(runtime_error2("registry_entity_candidates_read_failed", error?.message ?? String(error), { backend: error }));
+    return res.status(500).json(runtime_error("registry_entity_candidates_read_failed", error?.message ?? String(error), { backend: error }));
   }
 });
 ingestion_control_rest_router.get("/registry-entity-candidates/summary", async (_req, res) => {
   try {
     const result = await get_registry_entity_candidates_summary();
-    return res.json(runtime_response2(result, { data: result, counts: inferRuntimeCounts(result, ["total_candidate_count", "processed_count", "candidate_count", "inserted_count", "skipped_count", "verified_count", "blocked_count", "error_count"]) }));
+    return res.json(runtime_response(result, { data: result, counts: inferRuntimeCounts(result, ["total_candidate_count", "processed_count", "candidate_count", "inserted_count", "skipped_count", "verified_count", "blocked_count", "error_count"]) }));
   } catch (error) {
-    return res.status(500).json(runtime_error2("registry_entity_candidates_summary_failed", error?.message ?? String(error), { backend: error }));
+    return res.status(500).json(runtime_error("registry_entity_candidates_summary_failed", error?.message ?? String(error), { backend: error }));
   }
 });
 ingestion_control_rest_router.post("/registry-entity-candidates/verify-dry-run", async (req, res) => {
   try {
-    const limit = clamp_integer2(req.body?.limit, 100, 1, 500);
+    const limit = clamp_integer(req.body?.limit, 100, 1, 500);
     const result = await verify_registry_entity_candidates_dry_run({
       limit,
       candidate_type: typeof req.body?.candidate_type === "string" ? req.body.candidate_type : null,
       document_family: typeof req.body?.document_family === "string" ? req.body.document_family : null,
       promotion_lane: typeof req.body?.promotion_lane === "string" ? req.body.promotion_lane : null
     });
-    return res.json(runtime_response2(result, { data: result, counts: inferRuntimeCounts(result, ["total_candidate_count", "processed_count", "candidate_count", "inserted_count", "skipped_count", "verified_count", "blocked_count", "error_count"]) }));
+    return res.json(runtime_response(result, { data: result, counts: inferRuntimeCounts(result, ["total_candidate_count", "processed_count", "candidate_count", "inserted_count", "skipped_count", "verified_count", "blocked_count", "error_count"]) }));
   } catch (error) {
-    return res.status(500).json(runtime_error2("registry_entity_candidates_verify_dry_run_failed", error?.message ?? String(error), { backend: error }));
+    return res.status(500).json(runtime_error("registry_entity_candidates_verify_dry_run_failed", error?.message ?? String(error), { backend: error }));
   }
 });
 ingestion_control_rest_router.post("/registry-entity-candidates/promote-apply", async (req, res) => {
   try {
-    const limit = clamp_integer2(req.body?.limit, 10, 1, 25);
+    const limit = clamp_integer(req.body?.limit, 10, 1, 25);
     const result = await promote_registry_entity_candidates_apply({
       limit,
       dry_run: req.body?.dry_run !== false,
@@ -90173,45 +89781,45 @@ ingestion_control_rest_router.post("/registry-entity-candidates/promote-apply", 
       candidate_type: typeof req.body?.candidate_type === "string" ? req.body.candidate_type : "benefit_program",
       promotion_lane: typeof req.body?.promotion_lane === "string" ? req.body.promotion_lane : "state_enriched_registry_docx_review"
     });
-    return res.status(result.success ? 200 : 409).json(runtime_response2(result, { data: result, counts: inferRuntimeCounts(result, ["processed_count", "would_insert_count", "would_update_blank_fields_count", "skipped_count", "blocked_count", "error_count"]), flags: { canonical_promotion_enabled: Boolean(result.canonical_promotion_enabled), feature_flag_enabled: Boolean(result.feature_flag_enabled) }, can_apply: Boolean(result.canonical_promotion_enabled) && Boolean(result.feature_flag_enabled) && !result.dry_run }));
+    return res.status(result.success ? 200 : 409).json(runtime_response(result, { data: result, counts: inferRuntimeCounts(result, ["processed_count", "would_insert_count", "would_update_blank_fields_count", "skipped_count", "blocked_count", "error_count"]), flags: { canonical_promotion_enabled: Boolean(result.canonical_promotion_enabled), feature_flag_enabled: Boolean(result.feature_flag_enabled) }, can_apply: Boolean(result.canonical_promotion_enabled) && Boolean(result.feature_flag_enabled) && !result.dry_run }));
   } catch (error) {
-    return res.status(500).json(runtime_error2("registry_entity_candidates_promote_apply_failed", error?.message ?? String(error), { backend: error }));
+    return res.status(500).json(runtime_error("registry_entity_candidates_promote_apply_failed", error?.message ?? String(error), { backend: error }));
   }
 });
 ingestion_control_rest_router.get("/corpus-import-queue", async (req, res) => {
   try {
     const status_filter = typeof req.query.status_filter === "string" ? req.query.status_filter : "all";
-    const limit = clamp_integer2(req.query.limit, 100, 1, 250);
+    const limit = clamp_integer(req.query.limit, 100, 1, 250);
     const allowed_status_filters = /* @__PURE__ */ new Set(["all", "blocked", "review_required", "pending_bucket_content_scan", "pending_docx_normalization", "ready_for_review", "docx_extraction_failed", "candidates_created"]);
     const result = await list_corpus_import_queue({ status_filter: allowed_status_filters.has(status_filter) ? status_filter : "all", limit });
-    res.json(runtime_response2({ ...result, allowed_target_hints }, { data: { ...result, allowed_target_hints }, counts: inferRuntimeCounts(result, ["row_count"]) }));
+    res.json(runtime_response({ ...result, allowed_target_hints }, { data: { ...result, allowed_target_hints }, counts: inferRuntimeCounts(result, ["row_count"]) }));
   } catch (error) {
     const diagnostic_code = classify_db_error(error);
-    res.status(500).json(runtime_error2(diagnostic_code === "db_error" ? "ingestion_control_queue_read_failed" : diagnostic_code, error?.message ?? String(error), { diagnostic_code, backend: error }));
+    res.status(500).json(runtime_error(diagnostic_code === "db_error" ? "ingestion_control_queue_read_failed" : diagnostic_code, error?.message ?? String(error), { diagnostic_code, backend: error }));
   }
 });
 ingestion_control_rest_router.get("/corpus-import-queue/:id", async (req, res) => {
   try {
     const id = read_queue_row_id(req.params.id);
-    if (!id) return res.status(400).json(runtime_error2("invalid_queue_row_id", void 0));
+    if (!id) return res.status(400).json(runtime_error("invalid_queue_row_id", void 0));
     const result = await get_corpus_import_queue_row({ id });
-    if (!result.success) return res.status(404).json(runtime_response2(result, { data: result, availability: "unavailable" }));
-    return res.json(runtime_response2({ ...result, allowed_target_hints }, { data: { ...result, allowed_target_hints }, counts: inferRuntimeCounts(result, ["row_count"]) }));
+    if (!result.success) return res.status(404).json(runtime_response(result, { data: result, availability: "unavailable" }));
+    return res.json(runtime_response({ ...result, allowed_target_hints }, { data: { ...result, allowed_target_hints }, counts: inferRuntimeCounts(result, ["row_count"]) }));
   } catch (error) {
-    return res.status(500).json(runtime_error2("ingestion_control_row_read_failed", error?.message ?? String(error), { backend: error }));
+    return res.status(500).json(runtime_error("ingestion_control_row_read_failed", error?.message ?? String(error), { backend: error }));
   }
 });
 ingestion_control_rest_router.post("/corpus-import-queue/:id/set-target-hint", async (req, res) => {
   try {
     const id = read_queue_row_id(req.params.id);
     const target_hint = typeof req.body?.target_hint === "string" ? req.body.target_hint : "";
-    if (!id) return res.status(400).json(runtime_error2("invalid_queue_row_id", void 0));
-    if (!allowed_target_hints.includes(target_hint)) return res.status(400).json(runtime_error2("target_hint_not_allowed", void 0, { extra: { allowed_target_hints } }));
+    if (!id) return res.status(400).json(runtime_error("invalid_queue_row_id", void 0));
+    if (!allowed_target_hints.includes(target_hint)) return res.status(400).json(runtime_error("target_hint_not_allowed", void 0, { extra: { allowed_target_hints } }));
     const result = await set_corpus_import_queue_target_hint({ id, target_hint });
-    if (!result.success) return res.status(404).json(runtime_response2(result, { data: result, availability: "unavailable" }));
-    return res.json(runtime_response2(result, { data: result, counts: inferRuntimeCounts(result, ["total_candidate_count", "processed_count", "candidate_count", "inserted_count", "skipped_count", "verified_count", "blocked_count", "error_count"]) }));
+    if (!result.success) return res.status(404).json(runtime_response(result, { data: result, availability: "unavailable" }));
+    return res.json(runtime_response(result, { data: result, counts: inferRuntimeCounts(result, ["total_candidate_count", "processed_count", "candidate_count", "inserted_count", "skipped_count", "verified_count", "blocked_count", "error_count"]) }));
   } catch (error) {
-    return res.status(500).json(runtime_error2("set_target_hint_failed", error?.message ?? String(error), { backend: error }));
+    return res.status(500).json(runtime_error("set_target_hint_failed", error?.message ?? String(error), { backend: error }));
   }
 });
 ingestion_control_rest_router.post("/corpus-import-queue/extract-docx-drain", async (req, res) => {
@@ -90248,20 +89856,20 @@ ingestion_control_rest_router.post("/corpus-import-queue/extract-docx-drain", as
       stderr_preview: stderr.slice(0, 4e3),
       parsed_rows: Array.isArray(parsed_stdout?.rows) ? parsed_stdout.rows : []
     };
-    if (command_no_output) return res.status(409).json(runtime_response2({ success: false, error: "extract_docx_no_command_output", message: "extract_docx_drain exited without JSON stdout.", ...command_result }, { data: command_result, availability: "unavailable", blockers: ["extract_docx_no_command_output"] }));
-    if (partial_success) return res.json(runtime_response2({ success: true, warning: "extract_docx_partial_success", message: `DOCX drain advanced ${command_summary.docxRowsExtracted} rows; ${extraction_failures} rows still need operator review.`, ...command_result }, { data: command_result, availability: "partial" }));
-    if (command_failed) return res.status(dry_run ? 200 : 409).json(runtime_response2({ success: false, error: "extract_docx_command_reported_failure", message: "extract_docx_drain reported failures and advanced no rows.", ...command_result }, { data: command_result, availability: "unavailable", blockers: ["extract_docx_command_reported_failure"] }));
-    return res.json(runtime_response2({ success: true, ...command_result }, { data: command_result }));
+    if (command_no_output) return res.status(409).json(runtime_response({ success: false, error: "extract_docx_no_command_output", message: "extract_docx_drain exited without JSON stdout.", ...command_result }, { data: command_result, availability: "unavailable", blockers: ["extract_docx_no_command_output"] }));
+    if (partial_success) return res.json(runtime_response({ success: true, warning: "extract_docx_partial_success", message: `DOCX drain advanced ${command_summary.docxRowsExtracted} rows; ${extraction_failures} rows still need operator review.`, ...command_result }, { data: command_result, availability: "partial" }));
+    if (command_failed) return res.status(dry_run ? 200 : 409).json(runtime_response({ success: false, error: "extract_docx_command_reported_failure", message: "extract_docx_drain reported failures and advanced no rows.", ...command_result }, { data: command_result, availability: "unavailable", blockers: ["extract_docx_command_reported_failure"] }));
+    return res.json(runtime_response({ success: true, ...command_result }, { data: command_result }));
   } catch (error) {
-    return res.status(500).json(runtime_error2("extract_docx_drain_failed", error?.message ?? String(error), { action: "extract_all_docx_queue_rows", backend: error, extra: { runtime_ms: Date.now() - started_at, stdout_preview: error?.stdout ?? "", stderr_preview: error?.stderr ?? "" } }));
+    return res.status(500).json(runtime_error("extract_docx_drain_failed", error?.message ?? String(error), { action: "extract_all_docx_queue_rows", backend: error, extra: { runtime_ms: Date.now() - started_at, stdout_preview: error?.stdout ?? "", stderr_preview: error?.stderr ?? "" } }));
   }
 });
 ingestion_control_rest_router.post("/corpus-import-queue/create-candidates-from-ready", async (_req, res) => {
   try {
     const result = await create_candidates_from_ready_queue();
-    return res.json(runtime_response2(result, { data: result, counts: inferRuntimeCounts(result, ["total_candidate_count", "processed_count", "candidate_count", "inserted_count", "skipped_count", "verified_count", "blocked_count", "error_count"]) }));
+    return res.json(runtime_response(result, { data: result, counts: inferRuntimeCounts(result, ["total_candidate_count", "processed_count", "candidate_count", "inserted_count", "skipped_count", "verified_count", "blocked_count", "error_count"]) }));
   } catch (error) {
-    return res.status(500).json(runtime_error2("create_candidates_from_ready_failed", error?.message ?? String(error), { action: "create_candidates_from_ready", backend: error }));
+    return res.status(500).json(runtime_error("create_candidates_from_ready_failed", error?.message ?? String(error), { action: "create_candidates_from_ready", backend: error }));
   }
 });
 ingestion_control_rest_router.post("/promote-staged-resources-to-readable", async (req, res) => {
@@ -90273,10 +89881,10 @@ ingestion_control_rest_router.post("/promote-staged-resources-to-readable", asyn
     if (Number.isInteger(limit_raw) && limit_raw > 0) args.push(`--limit=${limit_raw}`);
     const { stdout, stderr } = await execFileAsync(process.execPath, args, { cwd: process.cwd(), timeout: 3e5, maxBuffer: 1024 * 1024 * 20, env: process.env });
     const parsed_stdout = parse_command_json(stdout);
-    if (!parsed_stdout) return res.status(409).json(runtime_error2("promotion_command_no_json_output", void 0, { action: "promote_staged_resources_to_readable", extra: { runtime_ms: Date.now() - started_at, stdout_preview: stdout.slice(0, 4e3), stderr_preview: stderr.slice(0, 4e3) } }));
-    return res.json(runtime_response2({ ...parsed_stdout, action: "promote_staged_resources_to_readable", runtime_ms: Date.now() - started_at, stderr_preview: stderr.slice(0, 4e3) }, { action: "promote_staged_resources_to_readable", data: parsed_stdout }));
+    if (!parsed_stdout) return res.status(409).json(runtime_error("promotion_command_no_json_output", void 0, { action: "promote_staged_resources_to_readable", extra: { runtime_ms: Date.now() - started_at, stdout_preview: stdout.slice(0, 4e3), stderr_preview: stderr.slice(0, 4e3) } }));
+    return res.json(runtime_response({ ...parsed_stdout, action: "promote_staged_resources_to_readable", runtime_ms: Date.now() - started_at, stderr_preview: stderr.slice(0, 4e3) }, { action: "promote_staged_resources_to_readable", data: parsed_stdout }));
   } catch (error) {
-    return res.status(500).json(runtime_error2("promote_staged_resources_failed", error?.message ?? String(error), { action: "promote_staged_resources_to_readable", backend: error, extra: { runtime_ms: Date.now() - started_at, stdout_preview: error?.stdout ?? "", stderr_preview: error?.stderr ?? "" } }));
+    return res.status(500).json(runtime_error("promote_staged_resources_failed", error?.message ?? String(error), { action: "promote_staged_resources_to_readable", backend: error, extra: { runtime_ms: Date.now() - started_at, stdout_preview: error?.stdout ?? "", stderr_preview: error?.stderr ?? "" } }));
   }
 });
 ingestion_control_rest_router.post("/corpus-import-queue/normalize-docx-drain", async (_req, res) => {
@@ -90315,20 +89923,20 @@ ingestion_control_rest_router.post("/corpus-import-queue/normalize-docx-drain", 
          and coalesce(char_length(raw_text), 0) > 0
        returning id, normalized_text_chars
     ) select count(*)::int as normalized_rows, coalesce(sum(normalized_text_chars), 0)::bigint as normalized_characters from normalized`);
-    return res.json(runtime_response2({ success: true, action: "normalize_all_docx_queue_rows", runtime_ms: Date.now() - started_at, summary: result.rows[0] }, { action: "normalize_all_docx_queue_rows", data: { summary: result.rows[0] }, counts: { normalized_rows: Number(result.rows[0]?.normalized_rows ?? 0), normalized_characters: Number(result.rows[0]?.normalized_characters ?? 0) } }));
+    return res.json(runtime_response({ success: true, action: "normalize_all_docx_queue_rows", runtime_ms: Date.now() - started_at, summary: result.rows[0] }, { action: "normalize_all_docx_queue_rows", data: { summary: result.rows[0] }, counts: { normalized_rows: Number(result.rows[0]?.normalized_rows ?? 0), normalized_characters: Number(result.rows[0]?.normalized_characters ?? 0) } }));
   } catch (error) {
-    return res.status(500).json(runtime_error2("normalize_docx_drain_failed", error?.message ?? String(error), { action: "normalize_all_docx_queue_rows", backend: error, extra: { runtime_ms: Date.now() - started_at } }));
+    return res.status(500).json(runtime_error("normalize_docx_drain_failed", error?.message ?? String(error), { action: "normalize_all_docx_queue_rows", backend: error, extra: { runtime_ms: Date.now() - started_at } }));
   }
 });
 ingestion_control_rest_router.post("/corpus-import-queue/:id/extract-docx", async (req, res) => {
   const started_at = Date.now();
   try {
     const id = read_queue_row_id(req.params.id);
-    if (!id) return res.status(400).json(runtime_error2("invalid_queue_row_id", void 0));
+    if (!id) return res.status(400).json(runtime_error("invalid_queue_row_id", void 0));
     const dry_run = Boolean(req.body?.dry_run);
     const before = await get_corpus_import_queue_row({ id });
-    if (!before.success || !before.row) return res.status(404).json(runtime_response2(before, { action: "extract_docx_queue_row", data: before, availability: "unavailable" }));
-    if (before.row.source_ext !== ".docx" && before.row.next_action !== "extract_docx_queue_row") return res.status(400).json(runtime_error2("row_not_eligible_for_docx_extraction", void 0, { action: "extract_docx_queue_row", extra: { row: before.row } }));
+    if (!before.success || !before.row) return res.status(404).json(runtime_response(before, { action: "extract_docx_queue_row", data: before, availability: "unavailable" }));
+    if (before.row.source_ext !== ".docx" && before.row.next_action !== "extract_docx_queue_row") return res.status(400).json(runtime_error("row_not_eligible_for_docx_extraction", void 0, { action: "extract_docx_queue_row", extra: { row: before.row } }));
     const args = ["scripts/extract-docx-corpus-queue.mjs", `--id=${id}`, dry_run ? "--dry-run" : "--apply"];
     const { stdout, stderr } = await execFileAsync(process.execPath, args, { cwd: process.cwd(), timeout: 3e5, maxBuffer: 1024 * 1024 * 20, env: process.env });
     const parsed_stdout = parse_command_json(stdout);
@@ -90346,18 +89954,18 @@ ingestion_control_rest_router.post("/corpus-import-queue/:id/extract-docx", asyn
     await persist_extract_command_diagnostic(id, { ...command_result, error_code, recorded_at: (/* @__PURE__ */ new Date()).toISOString() });
     const refreshed = await get_corpus_import_queue_row({ id });
     const response_result = { ...command_result, before_row: before.row, row: refreshed.row ?? after.row ?? before.row };
-    if (command_no_output) return res.status(409).json(runtime_response2({ success: false, error: "extract_docx_no_command_output", message: "extract_docx_queue_row exited without JSON stdout; extractor did not actually report a result.", ...response_result }, { action: "extract_docx_queue_row", data: response_result, availability: "unavailable", blockers: ["extract_docx_no_command_output"] }));
-    if (command_zero_extracted) return res.status(dry_run ? 200 : 409).json(runtime_response2({ success: false, error: "extract_docx_zero_rows_extracted", message: "extract_docx_queue_row returned JSON but extracted zero rows for the requested id.", ...response_result }, { action: "extract_docx_queue_row", data: response_result, availability: "empty", blockers: ["extract_docx_zero_rows_extracted"] }));
-    if (command_failed) return res.status(dry_run ? 200 : 409).json(runtime_response2({ success: false, error: "extract_docx_command_reported_failure", message: "extract_docx_queue_row reported one or more DOCX extraction failures.", ...response_result }, { action: "extract_docx_queue_row", data: response_result, availability: "unavailable", blockers: ["extract_docx_command_reported_failure"] }));
-    if (!dry_run && !state_changed) return res.status(409).json(runtime_response2({ success: false, error: "extract_docx_no_state_change", message: "extract_docx_queue_row finished but raw_text_chars, import_status, and blocked_reason did not change.", ...response_result }, { action: "extract_docx_queue_row", data: response_result, availability: "partial", blockers: ["extract_docx_no_state_change"] }));
-    return res.json(runtime_response2({ success: true, ...response_result }, { action: "extract_docx_queue_row", data: response_result }));
+    if (command_no_output) return res.status(409).json(runtime_response({ success: false, error: "extract_docx_no_command_output", message: "extract_docx_queue_row exited without JSON stdout; extractor did not actually report a result.", ...response_result }, { action: "extract_docx_queue_row", data: response_result, availability: "unavailable", blockers: ["extract_docx_no_command_output"] }));
+    if (command_zero_extracted) return res.status(dry_run ? 200 : 409).json(runtime_response({ success: false, error: "extract_docx_zero_rows_extracted", message: "extract_docx_queue_row returned JSON but extracted zero rows for the requested id.", ...response_result }, { action: "extract_docx_queue_row", data: response_result, availability: "empty", blockers: ["extract_docx_zero_rows_extracted"] }));
+    if (command_failed) return res.status(dry_run ? 200 : 409).json(runtime_response({ success: false, error: "extract_docx_command_reported_failure", message: "extract_docx_queue_row reported one or more DOCX extraction failures.", ...response_result }, { action: "extract_docx_queue_row", data: response_result, availability: "unavailable", blockers: ["extract_docx_command_reported_failure"] }));
+    if (!dry_run && !state_changed) return res.status(409).json(runtime_response({ success: false, error: "extract_docx_no_state_change", message: "extract_docx_queue_row finished but raw_text_chars, import_status, and blocked_reason did not change.", ...response_result }, { action: "extract_docx_queue_row", data: response_result, availability: "partial", blockers: ["extract_docx_no_state_change"] }));
+    return res.json(runtime_response({ success: true, ...response_result }, { action: "extract_docx_queue_row", data: response_result }));
   } catch (error) {
-    return res.status(500).json(runtime_error2("extract_docx_queue_row_failed", error?.message ?? String(error), { action: "extract_docx_queue_row", backend: error, extra: { runtime_ms: Date.now() - started_at, stdout_preview: error?.stdout ?? "", stderr_preview: error?.stderr ?? "" } }));
+    return res.status(500).json(runtime_error("extract_docx_queue_row_failed", error?.message ?? String(error), { action: "extract_docx_queue_row", backend: error, extra: { runtime_ms: Date.now() - started_at, stdout_preview: error?.stdout ?? "", stderr_preview: error?.stderr ?? "" } }));
   }
 });
 
 // server/routes/docket.ts
-import { Router as Router4 } from "express";
+import { Router as Router3 } from "express";
 
 // server/services/legiscan.ts
 var legiscan_base_url = "https://api.legiscan.com/";
@@ -90421,7 +90029,7 @@ var required_env = (name) => {
   }
   return value;
 };
-var normalize_state_code2 = (state) => {
+var normalize_state_code = (state) => {
   const normalized = state.trim().toUpperCase();
   if (!LEGISCAN_ROLLOUT_STATES.includes(normalized)) {
     throw new Error(`invalid_legiscan_state_code: ${state}`);
@@ -90452,7 +90060,7 @@ var legiscan_request = async (op, params) => {
 };
 var get_session_list = async (state) => {
   const data = await legiscan_request("get_session_list", {
-    state: normalize_state_code2(state)
+    state: normalize_state_code(state)
   });
   return data.sessions;
 };
@@ -90481,9 +90089,8 @@ var bill_detail_cache_ttl_ms = 24 * 60 * 60 * 1e3;
 var warm_state_delay_ms = 750;
 var warm_next_batch_default_limit = 5;
 var warm_next_batch_max_limit = 10;
-var civic_genome_auto_projection_bill_limit = 10;
-var docket_router = Router4();
-var normalize_state_code3 = (state) => {
+var docket_router = Router3();
+var normalize_state_code2 = (state) => {
   if (typeof state !== "string") {
     throw new Error("Missing required query parameter: state");
   }
@@ -90657,44 +90264,12 @@ var format_cache_status = (state, cached) => ({
   age_minutes: age_minutes(cached?.fetched_at ?? null),
   is_fresh: cached ? is_fresh(cached.fetched_at) : false
 });
-var summarize_civic_genome_projection = (projection) => ({
-  ok: true,
-  projected: true,
-  source: projection.source,
-  states_scanned: projection.states_scanned,
-  bills_seen: projection.bills_seen,
-  inserted_count: projection.inserted_count,
-  updated_count: projection.updated_count,
-  unchanged_count: projection.unchanged_count,
-  event_count: projection.event_count,
-  family_count: projection.family_count
-});
-var project_refreshed_state_to_civic_genome = async (state) => {
-  try {
-    const projection = await project_docket_cache_to_civic_genome({
-      state_code: state,
-      limit: civic_genome_auto_projection_bill_limit
-    });
-    return summarize_civic_genome_projection(projection);
-  } catch (error) {
-    return {
-      ok: false,
-      projected: false,
-      error: serialize_error(error)
-    };
-  }
-};
 var refresh_state_cache = async (state) => {
   const cached = await read_state_cache(state);
   if (cached && is_fresh(cached.fetched_at)) {
     return {
       source: "cache",
-      row: cached,
-      civic_genome_projection: {
-        ok: true,
-        projected: false,
-        reason: "cache_fresh_no_projection"
-      }
+      row: cached
     };
   }
   const session = await pick_active_session(state);
@@ -90712,11 +90287,9 @@ var refresh_state_cache = async (state) => {
     source: "legiscan_get_master_list"
   };
   await upsert_state_cache(row);
-  const civic_genome_projection = await project_refreshed_state_to_civic_genome(state);
   return {
     source: cached ? "legiscan_refresh_stale_cache" : "legiscan_refresh_empty_cache",
-    row,
-    civic_genome_projection
+    row
   };
 };
 var serialize_error = (error) => {
@@ -90749,7 +90322,7 @@ docket_router.get("/cache-status", async (_req, res) => {
 });
 docket_router.post("/warm-state", async (req, res) => {
   try {
-    const state = normalize_state_code3(req.body?.state);
+    const state = normalize_state_code2(req.body?.state);
     const refreshed = await refresh_state_cache(state);
     return res.json({
       ok: true,
@@ -90758,8 +90331,7 @@ docket_router.post("/warm-state", async (req, res) => {
       bill_count: refreshed.row.bill_count,
       session_id: refreshed.row.session_id,
       session_title: refreshed.row.session_title,
-      fetched_at: refreshed.row.fetched_at,
-      civic_genome_projection: refreshed.civic_genome_projection
+      fetched_at: refreshed.row.fetched_at
     });
   } catch (error) {
     return res.status(500).json({
@@ -90788,8 +90360,7 @@ docket_router.post("/warm-next-batch", async (req, res) => {
           ok: true,
           bill_count: refreshed.row.bill_count,
           source: refreshed.source,
-          fetched_at: refreshed.row.fetched_at,
-          civic_genome_projection: refreshed.civic_genome_projection
+          fetched_at: refreshed.row.fetched_at
         });
       } catch (error) {
         results.push({
@@ -90820,7 +90391,7 @@ docket_router.post("/warm-next-batch", async (req, res) => {
 });
 docket_router.get("/state", async (req, res) => {
   try {
-    const state = normalize_state_code3(req.query.state);
+    const state = normalize_state_code2(req.query.state);
     const refreshed = await refresh_state_cache(state);
     return res.json({
       ok: true,
@@ -90830,7 +90401,6 @@ docket_router.get("/state", async (req, res) => {
       session_title: refreshed.row.session_title,
       bill_count: refreshed.row.bill_count,
       fetched_at: refreshed.row.fetched_at,
-      civic_genome_projection: refreshed.civic_genome_projection,
       bills: refreshed.row.bills
     });
   } catch (error) {
@@ -91241,7 +90811,6 @@ async function startServer() {
   app.use("/api/conveyor", conveyorRouter);
   app.use("/api/civic-map", civicMapRouter);
   app.use("/api/atlas", atlasProxyRouter);
-  app.use("/api/ingestion-control", ingestion_control_read_cache_router);
   app.use("/api/ingestion-control", ingestion_control_rest_router);
   app.use("/api/docket", docket_router);
   registerExecutorRoutes(app);
