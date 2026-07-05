@@ -10,7 +10,8 @@ const toMillis = (value: Date | string | number | null | undefined): number | nu
 };
 
 const oneDayAgoIso = () => new Date(Date.now() - 86_400_000).toISOString();
-const oneWeekAgoIso = () => new Date(Date.now() - 604_800_000).toISOString();
+const oneDayAgoMillis = () => Date.now() - 86_400_000;
+const oneWeekAgoMillis = () => Date.now() - 604_800_000;
 
 const getCount = async (query: string, params: unknown[] = []): Promise<number> => {
   const { rows } = await getPool().query(query, params);
@@ -70,8 +71,8 @@ export const adminDashboardRouter = router({
 
   /* ── Panel 3: Case Activity ── */
   caseActivity: publicProcedure.query(async () => {
-    const oneDayAgo = oneDayAgoIso();
-    const oneWeekAgo = oneWeekAgoIso();
+    const oneDayAgo = oneDayAgoMillis();
+    const oneWeekAgo = oneWeekAgoMillis();
 
     const [totalCases, casesToday, casesThisWeek, totalDocs, docsToday, totalFindings, findingsToday, totalUsers, usersToday, recentCasesRows] = await Promise.all([
       getCount(`SELECT COUNT(*)::int AS cnt FROM cases`),
@@ -82,9 +83,9 @@ export const adminDashboardRouter = router({
       getCount(`SELECT COUNT(*)::int AS cnt FROM findings`),
       getCount(`SELECT COUNT(*)::int AS cnt FROM findings WHERE created_at >= $1`, [oneDayAgo]),
       getCount(`SELECT COUNT(*)::int AS cnt FROM users`),
-      getCount(`SELECT COUNT(*)::int AS cnt FROM users WHERE "createdAt" >= $1`, [Date.now() - 86_400_000]),
+      getCount(`SELECT COUNT(*)::int AS cnt FROM users WHERE created_at >= $1`, [oneDayAgo]),
       getPool().query(
-        `SELECT id::text, COALESCE(title, case_number, description, id::text) AS name, created_at
+        `SELECT id::text, COALESCE(name, description, id::text) AS name, created_at
          FROM cases
          ORDER BY created_at DESC
          LIMIT 10`
