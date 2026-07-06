@@ -36,6 +36,12 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Guards against the esbuild-bundle false-positive: when this module is inlined
+// into dist/index.js, import.meta.url and process.argv[1] both resolve to
+// dist/index.js, so a bare `import.meta.url === \`file://${process.argv[1]}\``
+// check would return true and start the worker loop inside the server bundle.
+// The basename check ensures the loop only starts when the file is invoked
+// directly as a standalone worker script named corpus-import-queue-worker*.
 function is_direct_worker_entry() {
   const entry_path = process.argv[1];
   if (!entry_path) return false;
