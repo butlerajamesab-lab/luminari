@@ -1,4 +1,6 @@
 import { execFile } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { getPool } from "../db";
 import { create_candidates_from_ready_queue, promote_registry_entity_candidates_apply } from "../engines/ingestion_control";
@@ -32,6 +34,15 @@ type claimed_queue_row = {
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function is_direct_worker_entry() {
+  const entry_path = process.argv[1];
+  if (!entry_path) return false;
+  const resolved_entry_path = path.resolve(entry_path);
+  const resolved_module_path = path.resolve(fileURLToPath(import.meta.url));
+  return resolved_entry_path === resolved_module_path
+    && path.basename(resolved_entry_path).startsWith("corpus-import-queue-worker");
 }
 
 function normalize_text(input: string) {
@@ -74,7 +85,9 @@ async function claim_next_row(action: corpus_import_worker_action): Promise<clai
 
 async function mark_failure(row: claimed_queue_row, error: any, operation_result_json: Record<string, unknown> = {}) {
   const pool = getPool();
-  const retryable = Number(row.attempt_count ?? 0) < max_attempts;
+  const storage_failure = error?.code === "storage_materialization_failed";
+  const effective_max = storage_failure ? max_attempts * 3 : max_attempts;
+  const retryable = Number(row.attempt_count ?? 0) < effective_max;
   await pool.query(
     `select * from public.mark_corpus_import_queue_failure($1, $2, $3, $4, $5, $6::jsonb)`,
     [row.id, worker_id, error?.code ?? "worker_error", error?.message ?? String(error), retryable, JSON.stringify(operation_result_json)],
@@ -278,7 +291,7 @@ export async function corpus_import_queue_worker_loop() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (is_direct_worker_entry()) {
   corpus_import_queue_worker_loop().catch((error) => {
     console.error(JSON.stringify({ success: false, error: "corpus_import_queue_worker_crashed", message: error?.message ?? String(error) }));
     process.exit(1);
