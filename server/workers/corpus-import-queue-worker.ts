@@ -278,7 +278,10 @@ export async function corpus_import_queue_worker_loop() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const worker_cli_path = (process.argv[1] ?? "").replace(/\\/g, "/");
+const is_worker_cli_entrypoint = /\/corpus-import-queue-worker\.(ts|js)$/.test(worker_cli_path);
+
+if (is_worker_cli_entrypoint && import.meta.url === `file://${process.argv[1]}`) {
   corpus_import_queue_worker_loop().catch((error) => {
     console.error(JSON.stringify({ success: false, error: "corpus_import_queue_worker_crashed", message: error?.message ?? String(error) }));
     process.exit(1);
