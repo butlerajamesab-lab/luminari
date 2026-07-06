@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Activity, AlertTriangle, Database, ExternalLink, Loader2, Radio, RefreshCw, Shield } from "lucide-react";
+import { Activity, AlertTriangle, Database, ExternalLink, Loader2, Radio, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,17 +44,17 @@ export default function MissionControlLive() {
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold tracking-tight">Live Stream Mission Control</h1>
-              {stateBadge("ok", "stream surface")}
+              <h1 className="text-2xl font-bold tracking-tight">Mission Control Live</h1>
+              {stateBadge("ok", "admin_monitor")}
             </div>
             <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-              Live/runtime surface only. This intentionally excludes guided case/intake panels so stream health can be checked without case-context noise.
+              Admin health monitor for live incoming data and API-style runtime surfaces: streams, queues, ingestion, external signals, schedulers, and runtime status.
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
             <Button variant="outline" size="sm" asChild><Link href="/mission-control">Mission Control Home</Link></Button>
-            <Button variant="outline" size="sm" asChild><Link href="/mission-control/intake">Guided Intake Control</Link></Button>
-            <Button variant="outline" size="sm" asChild><Link href="/mission-control/full"><ExternalLink className="h-3.5 w-3.5 mr-1" /> Full Dashboard</Link></Button>
+            <Button variant="outline" size="sm" asChild><Link href="/mission-control/infinite">Infinite Monitor</Link></Button>
+            <Button variant="outline" size="sm" asChild><Link href="/mission-control/full"><ExternalLink className="h-3.5 w-3.5 mr-1" /> Correlation / Legacy</Link></Button>
           </div>
         </div>
 
@@ -101,11 +101,11 @@ export default function MissionControlLive() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><Shield className="h-4 w-4" /> Live stream notes</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2"><Shield className="h-4 w-4" /> Live monitor notes</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-2">
-            <p>This page is intentionally small: it should not pull guided intake, evidence, remedy, coalition, or campaign panels.</p>
-            <p>If this page loads and the full dashboard does not, the remaining defect is in heavy convergence mounting, not the live stream tables themselves.</p>
+            <p>This page is intentionally small: it monitors live/API runtime health and should not pull Infinite/internal backbone panels.</p>
+            <p>If this page loads and the legacy correlation dashboard does not, the remaining defect is in heavy convergence mounting, not the live stream tables themselves.</p>
           </CardContent>
         </Card>
 
