@@ -35,12 +35,9 @@ import GlobalUploadIndicator from "./components/GlobalUploadIndicator";
 import { LuminariHelper } from "./components/LuminariHelper";
 import { ValidationRouteWrapper } from "./components/ValidationRouteWrapper";
 import { SovereignHeader } from "./components/Navigation/SovereignHeader";
-
-// Guided Advocacy Shell pages
 import Welcome from "./pages/Welcome";
 import Intake from "./pages/Intake";
 import Case from "./pages/Case";
-import GuidedIntake from "./pages/GuidedIntake";
 import GuidedIntakeNew from "./pages/GuidedIntakeNew";
 import BenefitsNavigator from "./pages/BenefitsNavigator";
 import GuidedDashboard from "./pages/GuidedDashboard";
@@ -63,7 +60,7 @@ import DiscoverBenefits from "./pages/DiscoverBenefits";
 import MissionControl from "./pages/MissionControl";
 import MissionControlShell from "./pages/MissionControlShell";
 import MissionControlLive from "./pages/MissionControlLive";
-import MissionControlIntake from "./pages/MissionControlIntake";
+import MissionControlInfinite from "./pages/MissionControlInfinite";
 import Lighthouse from "./pages/Lighthouse";
 import CivicMap from "./pages/CivicMap";
 import AnomalyViewfinder from "./pages/AnomalyViewfinder";
@@ -113,46 +110,28 @@ import Verify from "./pages/Verify";
 import ExtractionDashboard from "./pages/ExtractionDashboard";
 import BusinessAnalytics from "./pages/BusinessAnalytics";
 
-/**
- * Role-based entry routing:
- *   - Unauthenticated → /mudroom (calm entry, orientation)
- *   - Authenticated admin → /mission-control
- *   - Authenticated professional/analyst/enterprise plan → dashboard (DashboardRouter)
- *   - Authenticated free/advocacy with cases → /resolve (Repair Bench)
- *   - Authenticated free/advocacy without cases → /mudroom
- *
- * The Mudroom is a front porch, not a gate. All users can still visit any area.
- * Modes change the default entry point, not access.
- */
 function HomeOrWelcome() {
   const { cases, isLoading } = useCase();
-  const { isAuthenticated, user, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [, navigate] = useLocation();
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     if (authLoading || isLoading) return;
-
-    // For validation routes (/intake, /case/:id), bypass auth and allow access
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const pathname = window.location.pathname;
-      if (pathname.startsWith('/intake') || pathname.startsWith('/case/')) {
+      if (pathname.startsWith("/intake") || pathname.startsWith("/case/")) {
         setChecked(true);
         return;
       }
     }
-
     if (!isAuthenticated) {
-      // Not logged in → Mudroom (calm entry)
       navigate("/login", { replace: true });
       setChecked(true);
       return;
     }
-
-    // Allow all authenticated users to access dashboard (including admins)
-    // Admins can still navigate to /mission-control if needed
     setChecked(true);
-  }, [cases, isLoading, authLoading, isAuthenticated, user, navigate]);
+  }, [cases, isLoading, authLoading, isAuthenticated, navigate]);
 
   if (!checked) {
     return (
@@ -161,11 +140,9 @@ function HomeOrWelcome() {
       </div>
     );
   }
-
   return <Home />;
 }
 
-/** Full workspace — the existing power-user dashboard */
 function DashboardRouter() {
   return (
     <DashboardLayout>
@@ -216,18 +193,9 @@ function App() {
           <PlainLanguageProvider>
             <CaseProvider>
               <Switch>
-                {/* Guided Advocacy Shell — standalone pages (no sidebar) */}
                 <Route path="/welcome" component={Welcome} />
-                <Route path="/intake">
-                  <ValidationRouteWrapper>
-                    <Intake />
-                  </ValidationRouteWrapper>
-                </Route>
-                <Route path="/case/:id">
-                  <ValidationRouteWrapper>
-                    <Case />
-                  </ValidationRouteWrapper>
-                </Route>
+                <Route path="/intake"><ValidationRouteWrapper><Intake /></ValidationRouteWrapper></Route>
+                <Route path="/case/:id"><ValidationRouteWrapper><Case /></ValidationRouteWrapper></Route>
                 <Route path="/luminari-intake" component={GuidedIntakeNew} />
                 <Route path="/guided-intake" component={GuidedIntakeNew} />
                 <Route path="/benefits" component={BenefitsNavigator} />
@@ -244,7 +212,7 @@ function App() {
                 <Route path="/templates" component={CaseTemplates} />
                 <Route path="/import-bundle" component={ImportBundle} />
                 <Route path="/mission-control/live" component={MissionControlLive} />
-                <Route path="/mission-control/intake" component={MissionControlIntake} />
+                <Route path="/mission-control/infinite" component={MissionControlInfinite} />
                 <Route path="/mission-control/full" component={MissionControl} />
                 <Route path="/mission-control" component={MissionControlShell} />
                 <Route path="/sovereign-control" component={SovereignControl} />
@@ -298,11 +266,7 @@ function App() {
                 <Route path="/mission-control/governance" component={GovernanceDashboard} />
                 <Route path="/verify" component={Verify} />
                 <Route path="/business-analytics" component={BusinessAnalytics} />
-
-                {/* Full workspace — all existing dashboard routes */}
-                <Route>
-                  <DashboardRouter />
-                </Route>
+                <Route><DashboardRouter /></Route>
               </Switch>
               <GlobalUploadIndicator />
               <LuminariHelper />
