@@ -1,4 +1,6 @@
 import { execFile } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { getPool } from "../db";
 import { create_candidates_from_ready_queue, promote_registry_entity_candidates_apply } from "../engines/ingestion_control";
@@ -32,6 +34,15 @@ type claimed_queue_row = {
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function is_direct_worker_entry() {
+  const entry_path = process.argv[1];
+  if (!entry_path) return false;
+  const resolved_entry_path = path.resolve(entry_path);
+  const resolved_module_path = path.resolve(fileURLToPath(import.meta.url));
+  return resolved_entry_path === resolved_module_path
+    && path.basename(resolved_entry_path).startsWith("corpus-import-queue-worker");
 }
 
 function normalize_text(input: string) {
@@ -280,7 +291,7 @@ export async function corpus_import_queue_worker_loop() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (is_direct_worker_entry()) {
   corpus_import_queue_worker_loop().catch((error) => {
     console.error(JSON.stringify({ success: false, error: "corpus_import_queue_worker_crashed", message: error?.message ?? String(error) }));
     process.exit(1);
