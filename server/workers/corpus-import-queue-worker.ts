@@ -74,7 +74,9 @@ async function claim_next_row(action: corpus_import_worker_action): Promise<clai
 
 async function mark_failure(row: claimed_queue_row, error: any, operation_result_json: Record<string, unknown> = {}) {
   const pool = getPool();
-  const retryable = Number(row.attempt_count ?? 0) < max_attempts;
+  const storage_failure = error?.code === "storage_materialization_failed";
+  const effective_max = storage_failure ? max_attempts * 3 : max_attempts;
+  const retryable = Number(row.attempt_count ?? 0) < effective_max;
   await pool.query(
     `select * from public.mark_corpus_import_queue_failure($1, $2, $3, $4, $5, $6::jsonb)`,
     [row.id, worker_id, error?.code ?? "worker_error", error?.message ?? String(error), retryable, JSON.stringify(operation_result_json)],

@@ -70,7 +70,11 @@ function buffer_from_row(row) {
 }
 
 function encode_storage_path(storage_path) {
-  return String(storage_path ?? "")[`split`]("/")[`map`]((segment) => encode_uri_component(segment))[`join`]("/");
+  return String(storage_path ?? "")
+    [`split`]("/")
+    [`filter`]((segment) => segment.length > 0)
+    [`map`]((segment) => encode_uri_component(segment))
+    [`join`]("/");
 }
 
 function build_authenticated_storage_url(row) {
