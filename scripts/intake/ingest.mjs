@@ -114,13 +114,15 @@ async function extract_docx_text(file_path) {
 async function parse_docx_file(file_path) {
   const text = await extract_docx_text(file_path);
   const state = state_from_docx_file(file_path);
-  return parse_docx_blocks(text).map((lines, index) => {
+  const source_file = path.basename(file_path);
+  const all_lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const rows = parse_docx_blocks(text).map((lines, index) => {
     const heading = lines[0];
     const acronym = clean_value(heading.match(/\[([^\]]+)\]/)?.[1]);
     const name = clean_value(heading.replace(/\[[^\]]+\]/g, '').replace(/\b(UNVERIFIED|VERIFIED).*$/i, ''));
     const raw_payload = { verified: /\bVERIFIED\b/i.test(heading) && !/\bUNVERIFIED\b/i.test(heading), raw_block: lines.join('\n').slice(0, 500) };
     return staging_row({
-      source_file: path.basename(file_path), source_type: 'docx', source_record_id: String(index + 1), name, acronym,
+      source_file, source_type: 'docx', source_record_id: String(index + 1), name, acronym,
       record_type: 'resource', phone: table_value(lines, ['Phone']), email: table_value(lines, ['Email']),
       website: table_value(lines, ['Website']), complaint_url: table_value(lines, ['Filing / Complaint Portal']),
       address: table_value(lines, ['Address']), state, service_type: table_value(lines, ['Service Type']),
@@ -128,6 +130,52 @@ async function parse_docx_file(file_path) {
       raw_payload,
     });
   });
+
+  // Parse statutory quick-reference table at bottom of each state doc
+  const statute_rows = parse_docx_statutes(all_lines, state, source_file);
+  rows.push(...statute_rows);
+
+  return rows;
+}
+
+function parse_docx_statutes(lines, state_name, source_file) {
+  const table_start = lines.findIndex((line) => line === 'Statute / Law');
+  if (table_start === -1) return [];
+
+  const data_start = table_start + 4; // skip 4-line header row
+  const statutes = [];
+
+  for (let i = data_start; i < lines.length - 2; i += 4) {
+    const statute_name = lines[i];
+    const citation = lines[i + 1];
+    const key_language = lines[i + 2];
+
+    // Stop at footer
+    if (!citation || citation.startsWith('Every contact verified')) break;
+    // Must look like a real citation
+    if (!/§|U\.S\.C\.|Del\. Code|INA/.test(citation)) break;
+
+    const raw_payload = { statute_name, citation, key_language };
+
+    statutes.push({
+      source_file,
+      source_type: 'docx_statute',
+      source_record_id: citation,
+      name: statute_name,
+      record_type: 'statutory_reference',
+      state: state_name,
+      jurisdiction: `State (${state_name})`,
+      description: key_language,
+      statutory_authority: citation,
+      domains: [],
+      raw_payload,
+      content_hash: content_hash(raw_payload),
+      ingested_by: 'script',
+      intake_status: 'staged',
+    });
+  }
+
+  return statutes;
 }
 
 function parse_json_record(record, file_path, index) {
