@@ -207,6 +207,52 @@ async function insert_log_entries(supabase, log_entries) {
   if (fallback_error) throw new Error(fallback_error.message);
 }
 
+async function coalesce_upsert(supabase, dest_table, batch) {
+  const { error: insert_error } = await supabase
+    .from(dest_table)
+    .upsert(batch, { onConflict: 'id', ignoreDuplicates: true });
+
+  if (insert_error) return insert_error;
+
+  for (const row of batch) {
+    const update_fields = {};
+    for (const [key, value] of Object.entries(row)) {
+      if (key === 'id' || key === 'created_at' || value === null || value === undefined) continue;
+      update_fields[key] = value;
+    }
+
+    if (Object.keys(update_fields).length === 0) continue;
+
+    const { data: existing, error: fetch_error } = await supabase
+      .from(dest_table)
+      .select('*')
+      .eq('id', row.id)
+      .single();
+
+    if (fetch_error || !existing) continue;
+
+    const coalesced = {};
+    for (const [key, value] of Object.entries(update_fields)) {
+      if (existing[key] === null || existing[key] === undefined) {
+        coalesced[key] = value;
+      }
+    }
+
+    if (Object.keys(coalesced).length === 0) continue;
+
+    coalesced.updated_at = new Date().toISOString();
+
+    const { error: update_error } = await supabase
+      .from(dest_table)
+      .update(coalesced)
+      .eq('id', row.id);
+
+    if (update_error) return update_error;
+  }
+
+  return null;
+}
+
 async function fetch_ready_rows(supabase, args) {
   let query = supabase.from('intake_staging').select('*').eq('intake_status', 'ready');
   if (args.state) query = query.ilike('state', args.state);
@@ -251,9 +297,7 @@ async function main() {
         continue;
       }
 
-      const { error: upsert_error } = await supabase
-        .from(dest_table)
-        .upsert(batch, { onConflict: 'id', ignoreDuplicates: false });
+      const upsert_error = await coalesce_upsert(supabase, dest_table, batch);
 
       if (upsert_error) {
         console.error(`    Batch error (${dest_table}):`, upsert_error.message);
