@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS public.intake_staging (
   id                    bigserial PRIMARY KEY,
   source_file           text NOT NULL,
   source_type           text NOT NULL,
+  destination_table     text,           -- routing key: which live table this row promotes to
   source_record_id      text,
   name                  text,
   acronym               text,
@@ -32,6 +33,8 @@ CREATE TABLE IF NOT EXISTS public.intake_staging (
 
 ALTER TABLE public.intake_staging ADD COLUMN IF NOT EXISTS content_hash text;
 ALTER TABLE public.intake_staging ADD COLUMN IF NOT EXISTS ingested_by text DEFAULT 'script';
+ALTER TABLE public.intake_staging
+  ADD COLUMN IF NOT EXISTS destination_table TEXT;
 
 CREATE TABLE IF NOT EXISTS public.intake_promotion_log (
   id                 bigserial PRIMARY KEY,
