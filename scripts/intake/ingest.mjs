@@ -84,7 +84,7 @@ function parse_docx_blocks(text) {
   const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   const heading_indexes = [];
   lines.forEach((line, index) => {
-    if (/\b(VERIFIED|UNVERIFIED)\b/i.test(line)) heading_indexes.push(index);
+    if (/\[[^\]]{2,30}\]/.test(line) && /\b(VERIFIED|UNVERIFIED)\b/i.test(line) && line.length > 20) heading_indexes.push(index);
   });
   return heading_indexes.map((start, block_index) => {
     const end = heading_indexes[block_index + 1] ?? lines.length;
