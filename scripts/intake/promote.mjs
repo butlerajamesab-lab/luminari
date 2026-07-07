@@ -253,20 +253,59 @@ async function coalesce_upsert(supabase, dest_table, batch) {
   return null;
 }
 
-async function fetch_ready_rows(supabase, args) {
-  let query = supabase.from('intake_staging').select('*').eq('intake_status', 'ready');
-  if (args.state) query = query.ilike('state', args.state);
-  if (args.limit) query = query.limit(args.limit);
-  const { data, error } = await query;
-  if (error) throw new Error(error.message);
-  return data ?? [];
+async function fetch_ready_rows(args) {
+  const base_url = process.env.SUPABASE_URL;
+  const service_key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const headers = {
+    apikey: service_key,
+    Authorization: `Bearer ${service_key}`,
+  };
+  const all = [];
+  let offset = 0;
+  const page = 500;
+  while (true) {
+    let url = `${base_url}/rest/v1/intake_staging?intake_status=eq.ready&select=*&limit=${page}&offset=${offset}`;
+    if (args.state) url += `&state=ilike.*${encodeURIComponent(args.state)}*`;
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error(`fetch_ready_rows failed: ${res.status} ${await res.text()}`);
+    const rows = await res.json();
+    if (!Array.isArray(rows) || rows.length === 0) break;
+    all.push(...rows);
+    if (rows.length < page) break;
+    offset += page;
+  }
+  return args.limit ? all.slice(0, args.limit) : all;
+}
+
+async function mark_promoted(base_url, service_key, ids, dest_table) {
+  const headers = {
+    apikey: service_key,
+    Authorization: `Bearer ${service_key}`,
+    'Content-Type': 'application/json',
+    Prefer: 'return=minimal',
+  };
+  const id_list = ids.join(',');
+  const res = await fetch(
+    `${base_url}/rest/v1/intake_staging?id=in.(${id_list})`,
+    {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({
+        intake_status: 'promoted',
+        destination_table: dest_table,
+        promoted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }),
+    }
+  );
+  if (!res.ok) throw new Error(`mark_promoted failed: ${res.status} ${await res.text()}`);
 }
 
 async function main() {
   const args = parse_args();
   const promotion_run_id = randomUUID();
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-  const rows = await fetch_ready_rows(supabase, args);
+  const rows = await fetch_ready_rows(args);
 
   const groups = {};
   for (const row of rows) {
@@ -311,20 +350,8 @@ async function main() {
         continue;
       }
 
-      const staging_updates = batch_rows.map((row, index) => supabase
-        .from('intake_staging')
-        .update({
-          intake_status: 'promoted',
-          destination_table: dest_table,
-          promoted_at: new Date().toISOString(),
-          promoted_record_id: batch[index].id,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', row.id));
-      const staging_results = await Promise.all(staging_updates);
-      const staging_error = staging_results.find((result) => result.error)?.error;
-
-      if (staging_error) throw new Error(staging_error.message);
+      const staging_ids = batch_rows.map((row) => row.id);
+      await mark_promoted(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, staging_ids, dest_table);
 
       for (let j = 0; j < batch_rows.length; j += 1) {
         log_entries.push(build_log_entry(batch_rows[j], batch[j].id, promotion_run_id, false, {

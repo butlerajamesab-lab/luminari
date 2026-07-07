@@ -1,5 +1,43 @@
 #!/usr/bin/env node
-import { createClient } from '@supabase/supabase-js';
+async function fetch_staged_rows(base_url, service_key) {
+  const headers = {
+    apikey: service_key,
+    Authorization: `Bearer ${service_key}`,
+  };
+  const all = [];
+  let offset = 0;
+  const page = 500;
+  while (true) {
+    const res = await fetch(
+      `${base_url}/rest/v1/intake_staging?intake_status=eq.staged&select=*&limit=${page}&offset=${offset}`,
+      { headers }
+    );
+    if (!res.ok) throw new Error(`fetch_staged_rows failed: ${res.status} ${await res.text()}`);
+    const rows = await res.json();
+    if (!Array.isArray(rows) || rows.length === 0) break;
+    all.push(...rows);
+    if (rows.length < page) break;
+    offset += page;
+  }
+  return all;
+}
+
+async function patch_staging_row(base_url, service_key, id, patch) {
+  const headers = {
+    apikey: service_key,
+    Authorization: `Bearer ${service_key}`,
+    'Content-Type': 'application/json',
+    Prefer: 'return=minimal',
+  };
+  const res = await fetch(
+    `${base_url}/rest/v1/intake_staging?id=eq.${id}`,
+    { method: 'PATCH', headers, body: JSON.stringify(patch) }
+  );
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`patch_staging_row failed for id=${id}: ${txt}`);
+  }
+}
 
 function parse_args() {
   return { dry_run: process.argv.slice(2).includes('--dry-run') };
@@ -68,9 +106,7 @@ function assign_destination(row) {
 
 async function main() {
   const args = parse_args();
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-  const { data, error } = await supabase.from('intake_staging').select('*').eq('intake_status', 'staged');
-  if (error) throw new Error(error.message);
+  const data = await fetch_staged_rows(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
   let ready_count = 0;
   let flagged_count = 0;
@@ -83,13 +119,13 @@ async function main() {
     const has_blocker = issues.includes('name_too_short');
     if (has_blocker) {
       blocked_count += 1;
-      if (!args.dry_run) await supabase.from('intake_staging').update({ destination_table, notes: 'blocked: name_too_short', updated_at: new Date().toISOString() }).eq('id', row.id);
+      if (!args.dry_run) await patch_staging_row(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, row.id, { destination_table, notes: 'blocked: name_too_short', updated_at: new Date().toISOString() });
     } else if (issues.length === 0) {
       ready_count += 1;
-      if (!args.dry_run) await supabase.from('intake_staging').update({ intake_status: 'ready', destination_table, updated_at: new Date().toISOString() }).eq('id', row.id);
+      if (!args.dry_run) await patch_staging_row(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, row.id, { intake_status: 'ready', destination_table, updated_at: new Date().toISOString() });
     } else {
       flagged_count += 1;
-      if (!args.dry_run) await supabase.from('intake_staging').update({ intake_status: 'ready', destination_table, notes: append_notes(row.notes, issues), updated_at: new Date().toISOString() }).eq('id', row.id);
+      if (!args.dry_run) await patch_staging_row(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, row.id, { intake_status: 'ready', destination_table, notes: append_notes(row.notes, issues), updated_at: new Date().toISOString() });
     }
   }
 
