@@ -304,7 +304,11 @@ async function mark_promoted(base_url, service_key, ids, dest_table) {
 async function main() {
   const args = parse_args();
   const promotion_run_id = randomUUID();
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+    global: { fetch },
+    realtime: { transport: typeof WebSocket !== 'undefined' ? WebSocket : undefined },
+  });
   const rows = await fetch_ready_rows(args);
 
   const groups = {};
