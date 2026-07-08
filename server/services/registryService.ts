@@ -1,28 +1,33 @@
 /**
  * Registry Service
- * 
+ *
  * Read-only queries against the immutable Luminari Registry DB
- * 
+ *
  * All operations are:
  * - read-only
  * - structured
  * - never mutate registry truth
- * 
+ *
  * Aligned with Kernel Truth:
  * - Source-grounded data only
  * - No fabrication
  * - Full auditability
  */
 
-import { sql } from "drizzle-orm";
-import { db as canonicalDb, query_with_diagnostics } from "../db";
+import { query_with_diagnostics } from "../db";
 
-/**
- * Shared read-only database connection for the registry service.
- * Uses the canonical pool from server/db.ts — see DATABASE_ACCESS_CONSTITUTION.md.
- */
-function getLuminariDb() {
-  return canonicalDb;
+// All registry reads share the same timeout budget.
+// Pool acquire: fail fast so a saturated pool doesn't queue indefinitely.
+// Query timeout: generous enough for real reads, tight enough to shed load.
+const REGISTRY_POOL_ACQUIRE_MS = 1000;
+const REGISTRY_QUERY_TIMEOUT_MS = 4000;
+
+function registry_query<T = unknown>(label: string, text: string, values: unknown[] = []) {
+  return query_with_diagnostics<T>(text, values, {
+    label,
+    pool_acquire_timeout_ms: REGISTRY_POOL_ACQUIRE_MS,
+    query_timeout_ms: REGISTRY_QUERY_TIMEOUT_MS,
+  });
 }
 
 type JurisdictionRow = {
@@ -52,14 +57,9 @@ export async function getJurisdictions() {
   }
 
   try {
-    const result = await query_with_diagnostics<JurisdictionRow>(
+    const result = await registry_query<JurisdictionRow>(
+      "registry_get_jurisdictions",
       "SELECT id, name, code FROM jurisdictions ORDER BY name",
-      [],
-      {
-        label: "registry_get_jurisdictions",
-        pool_acquire_timeout_ms: 1000,
-        query_timeout_ms: 4000,
-      },
     );
     const rows = map_jurisdiction_rows(result.rows);
     jurisdictions_cache = { expires_at: now + JURISDICTIONS_CACHE_TTL_MS, rows };
@@ -80,27 +80,25 @@ export async function getJurisdictions() {
  * Get a single jurisdiction by ID
  */
 export async function getJurisdictionById(jurisdictionId: number) {
-  const db = await getLuminariDb();
-  const result = await db.execute(
-    sql`SELECT id, name, code FROM jurisdictions WHERE id = ${jurisdictionId}`
+  const result = await registry_query(
+    "registry_get_jurisdiction_by_id",
+    "SELECT id, name, code FROM jurisdictions WHERE id = $1",
+    [jurisdictionId],
   );
-  return result.rows[0] as {
-    id: number;
-    name: string;
-    code: string;
-  } | undefined;
+  return result.rows[0] as { id: number; name: string; code: string } | undefined;
 }
 
 /**
  * Get programs for a jurisdiction
  */
 export async function getPrograms(jurisdictionId: number) {
-  const db = await getLuminariDb();
-  const result = await db.execute(
-    sql`SELECT id, program_name, eligibility, benefits, administering_agency 
-        FROM layer1_programs 
-        WHERE jurisdiction_id = ${jurisdictionId}
-        ORDER BY program_name`
+  const result = await registry_query(
+    "registry_get_programs",
+    `SELECT id, program_name, eligibility, benefits, administering_agency
+     FROM layer1_programs
+     WHERE jurisdiction_id = $1
+     ORDER BY program_name`,
+    [jurisdictionId],
   );
   return result.rows as Array<{
     id: number;
@@ -115,11 +113,12 @@ export async function getPrograms(jurisdictionId: number) {
  * Get a single program by ID
  */
 export async function getProgramById(programId: number) {
-  const db = await getLuminariDb();
-  const result = await db.execute(
-    sql`SELECT id, program_name, eligibility, benefits, administering_agency 
-        FROM layer1_programs 
-        WHERE id = ${programId}`
+  const result = await registry_query(
+    "registry_get_program_by_id",
+    `SELECT id, program_name, eligibility, benefits, administering_agency
+     FROM layer1_programs
+     WHERE id = $1`,
+    [programId],
   );
   return result.rows[0] as {
     id: number;
@@ -134,12 +133,13 @@ export async function getProgramById(programId: number) {
  * Get workflows for a jurisdiction
  */
 export async function getWorkflows(jurisdictionId: number) {
-  const db = await getLuminariDb();
-  const result = await db.execute(
-    sql`SELECT id, workflow_name, trigger_condition 
-        FROM layer2_workflows 
-        WHERE jurisdiction_id = ${jurisdictionId}
-        ORDER BY workflow_name`
+  const result = await registry_query(
+    "registry_get_workflows",
+    `SELECT id, workflow_name, trigger_condition
+     FROM layer2_workflows
+     WHERE jurisdiction_id = $1
+     ORDER BY workflow_name`,
+    [jurisdictionId],
   );
   return result.rows as Array<{
     id: number;
@@ -152,11 +152,12 @@ export async function getWorkflows(jurisdictionId: number) {
  * Get a single workflow by ID
  */
 export async function getWorkflowById(workflowId: number) {
-  const db = await getLuminariDb();
-  const result = await db.execute(
-    sql`SELECT id, workflow_name, trigger_condition 
-        FROM layer2_workflows 
-        WHERE id = ${workflowId}`
+  const result = await registry_query(
+    "registry_get_workflow_by_id",
+    `SELECT id, workflow_name, trigger_condition
+     FROM layer2_workflows
+     WHERE id = $1`,
+    [workflowId],
   );
   return result.rows[0] as {
     id: number;
@@ -169,12 +170,13 @@ export async function getWorkflowById(workflowId: number) {
  * Get workflow steps for a workflow
  */
 export async function getWorkflowSteps(workflowId: number) {
-  const db = await getLuminariDb();
-  const result = await db.execute(
-    sql`SELECT id, step_number, action, deadline 
-        FROM workflow_steps 
-        WHERE workflow_id = ${workflowId}
-        ORDER BY step_number`
+  const result = await registry_query(
+    "registry_get_workflow_steps",
+    `SELECT id, step_number, action, deadline
+     FROM workflow_steps
+     WHERE workflow_id = $1
+     ORDER BY step_number`,
+    [workflowId],
   );
   return result.rows as Array<{
     id: number;
@@ -188,12 +190,13 @@ export async function getWorkflowSteps(workflowId: number) {
  * Get accountability entities for a jurisdiction
  */
 export async function getEntities(jurisdictionId: number) {
-  const db = await getLuminariDb();
-  const result = await db.execute(
-    sql`SELECT id, entity_name, entity_type 
-        FROM layer3_accountability_entities 
-        WHERE jurisdiction_id = ${jurisdictionId}
-        ORDER BY entity_name`
+  const result = await registry_query(
+    "registry_get_entities",
+    `SELECT id, entity_name, entity_type
+     FROM layer3_accountability_entities
+     WHERE jurisdiction_id = $1
+     ORDER BY entity_name`,
+    [jurisdictionId],
   );
   return result.rows as Array<{
     id: number;
@@ -206,11 +209,12 @@ export async function getEntities(jurisdictionId: number) {
  * Get a single entity by ID
  */
 export async function getEntityById(entityId: number) {
-  const db = await getLuminariDb();
-  const result = await db.execute(
-    sql`SELECT id, entity_name, entity_type 
-        FROM layer3_accountability_entities 
-        WHERE id = ${entityId}`
+  const result = await registry_query(
+    "registry_get_entity_by_id",
+    `SELECT id, entity_name, entity_type
+     FROM layer3_accountability_entities
+     WHERE id = $1`,
+    [entityId],
   );
   return result.rows[0] as {
     id: number;
@@ -223,12 +227,13 @@ export async function getEntityById(entityId: number) {
  * Get enforcement signals for a jurisdiction
  */
 export async function getSignals(jurisdictionId: number) {
-  const db = await getLuminariDb();
-  const result = await db.execute(
-    sql`SELECT id, signal_type, priority, action_description 
-        FROM enforcement_signals 
-        WHERE jurisdiction_id = ${jurisdictionId}
-        ORDER BY priority DESC, signal_type`
+  const result = await registry_query(
+    "registry_get_signals",
+    `SELECT id, signal_type, priority, action_description
+     FROM enforcement_signals
+     WHERE jurisdiction_id = $1
+     ORDER BY priority DESC, signal_type`,
+    [jurisdictionId],
   );
   return result.rows as Array<{
     id: number;
@@ -242,11 +247,12 @@ export async function getSignals(jurisdictionId: number) {
  * Get a single signal by ID
  */
 export async function getSignalById(signalId: number) {
-  const db = await getLuminariDb();
-  const result = await db.execute(
-    sql`SELECT id, signal_type, priority, action_description 
-        FROM enforcement_signals 
-        WHERE id = ${signalId}`
+  const result = await registry_query(
+    "registry_get_signal_by_id",
+    `SELECT id, signal_type, priority, action_description
+     FROM enforcement_signals
+     WHERE id = $1`,
+    [signalId],
   );
   return result.rows[0] as {
     id: number;
@@ -260,23 +266,32 @@ export async function getSignalById(signalId: number) {
  * Search programs across all jurisdictions
  */
 export async function searchPrograms(query: string, jurisdictionId?: number) {
-  const db = await getLuminariDb();
-
-  let sqlQuery;
-  if (jurisdictionId) {
-    sqlQuery = sql`SELECT id, program_name, eligibility, jurisdiction_id 
-                    FROM layer1_programs 
-                    WHERE jurisdiction_id = ${jurisdictionId}
-                    AND program_name ILIKE ${'%' + query + '%'}
-                    ORDER BY program_name`;
-  } else {
-    sqlQuery = sql`SELECT id, program_name, eligibility, jurisdiction_id 
-                    FROM layer1_programs 
-                    WHERE program_name ILIKE ${'%' + query + '%'}
-                    ORDER BY program_name`;
+  if (jurisdictionId !== undefined) {
+    const result = await registry_query(
+      "registry_search_programs_scoped",
+      `SELECT id, program_name, eligibility, jurisdiction_id
+       FROM layer1_programs
+       WHERE jurisdiction_id = $1
+         AND program_name ILIKE $2
+       ORDER BY program_name`,
+      [jurisdictionId, `%${query}%`],
+    );
+    return result.rows as Array<{
+      id: number;
+      program_name: string;
+      eligibility: string;
+      jurisdiction_id: number;
+    }>;
   }
 
-  const result = await db.execute(sqlQuery);
+  const result = await registry_query(
+    "registry_search_programs_global",
+    `SELECT id, program_name, eligibility, jurisdiction_id
+     FROM layer1_programs
+     WHERE program_name ILIKE $1
+     ORDER BY program_name`,
+    [`%${query}%`],
+  );
   return result.rows as Array<{
     id: number;
     program_name: string;
@@ -290,12 +305,13 @@ export async function searchPrograms(query: string, jurisdictionId?: number) {
  * (Used for intake matching)
  */
 export async function getFirstWorkflow(jurisdictionId: number) {
-  const db = await getLuminariDb();
-  const result = await db.execute(
-    sql`SELECT id, workflow_name, trigger_condition 
-        FROM layer2_workflows 
-        WHERE jurisdiction_id = ${jurisdictionId}
-        LIMIT 1`
+  const result = await registry_query(
+    "registry_get_first_workflow",
+    `SELECT id, workflow_name, trigger_condition
+     FROM layer2_workflows
+     WHERE jurisdiction_id = $1
+     LIMIT 1`,
+    [jurisdictionId],
   );
   return result.rows[0] as {
     id: number;
