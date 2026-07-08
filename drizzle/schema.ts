@@ -10441,3 +10441,114 @@ export const foiaTrackerRequests = pgTable("foia_tracker_requests", {
 
 export type FoiaTrackerRequest = typeof foiaTrackerRequests.$inferSelect;
 export type InsertFoiaTrackerRequest = typeof foiaTrackerRequests.$inferInsert;
+
+// ─── Intake Spine: Chronology Events ───────────────────────────────────────────
+// L3: chronology_reconstruction — evidence-grounded event records in date order.
+// Extends the base event structure with source_date and event_confidence_level
+// required by the intake spine chronology-first ordering rule.
+
+export const chronologyEvents = pgTable("chronology_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  case_id: uuid("case_id").notNull(),
+  chronology_event_id: text("chronology_event_id").notNull().unique(),
+  event_date: timestamp("event_date", { withTimezone: true }),
+  source_date: text("source_date"),
+  observed_event: text("observed_event").notNull(),
+  people_involved: jsonb("people_involved").$type<string[]>(),
+  evidence_source: text("evidence_source"),
+  immediate_consequence: text("immediate_consequence"),
+  outstanding_follow_up: text("outstanding_follow_up"),
+  source_references: jsonb("source_references").$type<string[]>(),
+  event_confidence_level: text("event_confidence_level").default("unverified"),
+  created_from_path: text("created_from_path"),
+  normalization_version: text("normalization_version"),
+  status: text("status").default("active"),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("idx_chronology_events_case_id").on(t.case_id),
+  index("idx_chronology_events_event_date").on(t.event_date),
+  index("idx_chronology_events_status").on(t.status),
+]);
+
+export type ChronologyEvent = typeof chronologyEvents.$inferSelect;
+export type InsertChronologyEvent = typeof chronologyEvents.$inferInsert;
+
+// ─── Intake Spine: Power Dynamics Registry ─────────────────────────────────────
+// L6: power_dynamics_registry — captures authority and control structure as
+// neutral case data, not accusation. Linked to chronology events, entities,
+// and evidence artifacts.
+
+export const powerDynamicsRegistry = pgTable("power_dynamics_registry", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  power_dynamics_id: text("power_dynamics_id").notNull().unique(),
+  case_id: uuid("case_id").notNull(),
+  authority_holder: text("authority_holder"),
+  resident_representative: text("resident_representative"),
+  alternate_representative: text("alternate_representative"),
+  decision_maker: text("decision_maker"),
+  access_controller: text("access_controller"),
+  gatekeeper: text("gatekeeper"),
+  dependency_path: text("dependency_path"),
+  procedural_barrier: text("procedural_barrier"),
+  exclusion_event: text("exclusion_event"),
+  retaliation_concern: text("retaliation_concern"),
+  documentation_holder: text("documentation_holder"),
+  communication_bottleneck: text("communication_bottleneck"),
+  burden_shift: text("burden_shift"),
+  user_capacity_limit: text("user_capacity_limit"),
+  disputed_authority: text("disputed_authority"),
+  informal_power_actor: text("informal_power_actor"),
+  power_imbalance_summary: text("power_imbalance_summary"),
+  source_event_ids: jsonb("source_event_ids").$type<string[]>(),
+  evidence_source_ids: jsonb("evidence_source_ids").$type<string[]>(),
+  confidence_level: text("confidence_level").default("low"),
+  created_from_path: text("created_from_path"),
+  normalization_version: text("normalization_version"),
+  status: text("status").default("active"),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("idx_power_dynamics_case_id").on(t.case_id),
+  index("idx_power_dynamics_status").on(t.status),
+  index("idx_power_dynamics_confidence").on(t.confidence_level),
+]);
+
+export type PowerDynamicsRegistryRow = typeof powerDynamicsRegistry.$inferSelect;
+export type InsertPowerDynamicsRegistry = typeof powerDynamicsRegistry.$inferInsert;
+
+// ─── Intake Spine: Cascade Registry ───────────────────────────────────────────
+// L9: cascade_registry — captures evidence-based causal sequences describing
+// trajectory supported by the record. Linked to chronology events, patterns,
+// power dynamics, rights/duties, and evidence artifacts.
+
+export const cascadeRegistry = pgTable("cascade_registry", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  cascade_id: text("cascade_id").notNull().unique(),
+  case_id: uuid("case_id").notNull(),
+  trigger_event_id: text("trigger_event_id"),
+  trigger_summary: text("trigger_summary"),
+  immediate_effect: text("immediate_effect"),
+  secondary_effect: text("secondary_effect"),
+  affected_people: jsonb("affected_people").$type<string[]>(),
+  affected_entities: jsonb("affected_entities").$type<string[]>(),
+  related_chronology_ids: jsonb("related_chronology_ids").$type<string[]>(),
+  related_pattern_ids: jsonb("related_pattern_ids").$type<string[]>(),
+  related_power_dynamics_ids: jsonb("related_power_dynamics_ids").$type<string[]>(),
+  related_rights_duties_ids: jsonb("related_rights_duties_ids").$type<string[]>(),
+  evidence_source_ids: jsonb("evidence_source_ids").$type<string[]>(),
+  confidence_level: text("confidence_level").default("low"),
+  open_questions: text("open_questions"),
+  created_from_path: text("created_from_path"),
+  normalization_version: text("normalization_version"),
+  status: text("status").default("active"),
+  created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("idx_cascade_registry_case_id").on(t.case_id),
+  index("idx_cascade_registry_trigger_event").on(t.trigger_event_id),
+  index("idx_cascade_registry_status").on(t.status),
+]);
+
+export type CascadeRegistryRow = typeof cascadeRegistry.$inferSelect;
+export type InsertCascadeRegistry = typeof cascadeRegistry.$inferInsert;
