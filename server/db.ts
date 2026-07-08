@@ -62,7 +62,7 @@ let pgPool: Pool | null = null;
 let dbInstance: ReturnType<typeof drizzle> | null = null;
 function initializePool(): Pool {
   if (pgPool) return pgPool;
-  pgPool = create_database_pool({ label: "DB", connection_timeout_millis: 10000, max: 5 });
+  pgPool = create_database_pool({ label: "DB", connection_timeout_millis: 10000, max: 10 });
   console.log("[DB] runtime pool configuration", get_pool_runtime_configuration());
   return pgPool;
 }
