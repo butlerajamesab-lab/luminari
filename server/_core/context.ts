@@ -57,6 +57,7 @@ function readPositiveIntegerEnv(name: string, fallback: number): number {
 }
 
 const CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS = readPositiveIntegerEnv("CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS", 2500);
+const CONTEXT_PROFILE_LOOKUP_TIMEOUT_MS = readPositiveIntegerEnv("CONTEXT_PROFILE_LOOKUP_TIMEOUT_MS", 2000);
 const CONTEXT_SLOW_USER_LOOKUP_LOG_MS = readPositiveIntegerEnv("CONTEXT_SLOW_USER_LOOKUP_LOG_MS", 250);
 
 export async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -227,6 +228,54 @@ async function resolveUserFromLegacySessionWithoutDb(session: any): Promise<{ us
   };
 }
 
+async function resolveProfileFromSupabaseAuthUser(
+  authUser: SupabaseAuthUser,
+  phases: ContextLookupPhase[]
+): Promise<{ user: RuntimeUser | null; auth: ContextAuth }> {
+  const openId = authUser.id?.trim() || null;
+  const email = authUser.email?.trim().toLowerCase() || null;
+  try {
+    const user = await withTimeout(
+      timeContextPhase("profile_lookup", phases, async () => {
+        if (openId) return get_user_by_open_id_snake(openId);
+        if (email) return get_user_by_email_snake(email);
+        return null;
+      }),
+      CONTEXT_PROFILE_LOOKUP_TIMEOUT_MS,
+      "tRPC context profile lookup"
+    );
+    if (user) {
+      logContextAuthEvent("profile_lookup_succeeded", { supabase_user_id: openId, profile_resolution_status: "resolved" });
+      return { user, auth: createResolvedAuth(user) };
+    }
+    logContextAuthEvent("profile_lookup_missed", { supabase_user_id: openId, supabase_email: email, profile_resolution_status: "missed" });
+    return {
+      user: null,
+      auth: {
+        auth_status: "authenticated_profile_unresolved",
+        supabase_user_id: openId,
+        supabase_email: email,
+        profile_resolution_status: "missed",
+        profile_resolution_error: null,
+      },
+    };
+  } catch (error) {
+    const detail = errorDetail(error);
+    const status: ProfileResolutionStatus = detail.includes("timed out") ? "timed_out" : "threw";
+    logContextAuthEvent("profile_lookup_failed", { supabase_user_id: openId, supabase_email: email, profile_resolution_status: status, error: detail });
+    return {
+      user: null,
+      auth: {
+        auth_status: "authenticated_profile_unresolved",
+        supabase_user_id: openId,
+        supabase_email: email,
+        profile_resolution_status: status,
+        profile_resolution_error: detail,
+      },
+    };
+  }
+}
+
 export async function resolve_user_for_procedure(ctx: TrpcContext): Promise<RuntimeUser | null> {
   if (ctx.user) return ctx.user;
   const openId = ctx.auth.supabase_user_id?.trim() || null;
@@ -259,7 +308,9 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
   try {
     const authUser = await resolveSupabaseAuthUser(opts.req, phases);
     if (authUser) {
-      auth = createAuthenticatedUnresolvedAuth(authUser);
+      const resolved = await resolveProfileFromSupabaseAuthUser(authUser, phases);
+      user = resolved.user;
+      auth = resolved.auth;
     } else {
       const legacy = await resolveUserFromLegacySessionWithoutDb((opts.req as any).session);
       if (legacy.auth) auth = legacy.auth;
