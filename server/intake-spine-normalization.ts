@@ -127,7 +127,6 @@ export function normalizeSystemIngestedToPowerDynamics(input: {
   extracted_fields: Partial<Omit<PowerDynamicsRecord, "power_dynamics_id" | "case_id" | "created_from_path" | "normalization_version" | "status">>;
   evidence_source_ids?: string[];
 }): PowerDynamicsRecord {
-  const extraction_targets = SYSTEM_INGESTION_EXTRACTION_MAP[input.source_type];
   const ef = input.extracted_fields;
 
   return {

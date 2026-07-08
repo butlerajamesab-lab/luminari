@@ -18,6 +18,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { randomUUID } from "crypto";
 import {
   normalizeChronologyEvent,
   normalizeGuidedIntakeToPowerDynamics,
@@ -349,7 +350,7 @@ describe("intake spine fixture — Cheryl/Rick elder-care case", () => {
 
       // Rights/duties entry references the built factual grounding
       const rights_entry: RightsAndDutiesEntry = {
-        rights_duties_id: `rd_${Date.now()}`,
+        rights_duties_id: `rd_${randomUUID()}`,
         case_id: CHERYL_RICK_CASE_ID,
         obligation_type: "procedural_protection",
         description: "Resident representative rights under long-term care regulations",
@@ -371,7 +372,7 @@ describe("intake spine fixture — Cheryl/Rick elder-care case", () => {
 
     it("rights and duties without factual grounding remain pending_activation", () => {
       const rights_entry: RightsAndDutiesEntry = {
-        rights_duties_id: `rd_pending_${Date.now()}`,
+        rights_duties_id: `rd_pending_${randomUUID()}`,
         case_id: CHERYL_RICK_CASE_ID,
         obligation_type: "right",
         description: "Potential remedy pathway — pending evidence review",
