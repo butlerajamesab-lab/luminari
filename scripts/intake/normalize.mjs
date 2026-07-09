@@ -74,6 +74,27 @@ function assign_destination(row) {
   if (/UNRECOGNIZED-TRIBES/i.test(source_file)) return 'registry_programs';
   if (/ENRICHED-PASS3/i.test(source_file)) return 'registry_programs';
 
+  // Intake spine source types (SYSTEM_INGESTION_EXTRACTION_MAP) route to
+  // chronology_events as the primary L3 destination. These represent
+  // case-level evidence documents that feed into the chronology-first spine.
+  // Power dynamics and cascade entries are derived downstream once chronology
+  // is established via the guided intake submit path or manual enrichment.
+  switch (row.source_type) {
+    case 'sms':
+    case 'email':
+    case 'pdf':
+    case 'care_plan':
+    case 'medical_record':
+    case 'contract':
+    case 'notice':
+    case 'agency_correspondence':
+    case 'inspection_record':
+    case 'grievance_response':
+      return 'chronology_events';
+    default:
+      break;
+  }
+
   switch (row.record_type) {
     case 'agency':
       return 'contacts';

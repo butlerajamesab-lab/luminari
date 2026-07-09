@@ -188,6 +188,7 @@ export default function GuidedIntake() {
   const smartDetect = trpc.intake.smartDetect.useMutation();
   const createCase = trpc.cases.create.useMutation();
   const logEvent = trpc.analytics.logEvent.useMutation();
+  const submitSpineData = trpc.guidedIntake.submitSpineData.useMutation();
 
   // Pre-populate from map session context
   useEffect(() => {
@@ -261,6 +262,58 @@ export default function GuidedIntake() {
       text: "Is there anything else you'd like me to know? Any deadlines, court dates, or urgent concerns?",
       always: false,
       order: 5,
+    },
+    // ─── Power dynamics and cascade questions (spine enrichment) ───────────
+    // These are neutral, structural questions that collect authority, access,
+    // and cascade data. Answers normalize into power_dynamics_registry and
+    // cascade_registry via the guided intake submit path.
+    {
+      id: "pd_decision_maker",
+      text: "Who makes decisions about care, housing, or services in this situation?",
+      always: false,
+      order: 6,
+    },
+    {
+      id: "pd_access_controller",
+      text: "Who controls access to the place, person, or services involved?",
+      always: false,
+      order: 7,
+    },
+    {
+      id: "pd_documentation_holder",
+      text: "Who has or controls the documents related to this situation?",
+      always: false,
+      order: 8,
+    },
+    {
+      id: "pd_gatekeeper",
+      text: "Who has the ability to delay, deny, or limit help or access?",
+      always: false,
+      order: 9,
+    },
+    {
+      id: "pd_dependency_path",
+      text: "Who depends on whom in this situation — financially, for care, or for information?",
+      always: false,
+      order: 10,
+    },
+    {
+      id: "pd_exclusion_event",
+      text: "Has anyone been left out of conversations, meetings, or communications about this situation?",
+      always: false,
+      order: 11,
+    },
+    {
+      id: "pd_bypass_concern",
+      text: "Has anyone tried to go around the person who is supposed to be in charge or represent this person?",
+      always: false,
+      order: 12,
+    },
+    {
+      id: "cascade_trigger",
+      text: "What changed after this event happened — in care, finances, housing, health, or daily life?",
+      always: false,
+      order: 13,
     },
   ], []);
 
@@ -383,6 +436,15 @@ export default function GuidedIntake() {
         description,
         domain: CATEGORY_LABELS[suggestion.category]?.label || suggestion.category,
         pipelineType: suggestion.pipeline_id,
+      });
+
+      // Persist spine enrichment data (chronology → power_dynamics → cascade)
+      // after case creation. Runs in background; does not block case navigation.
+      // Answers include both core questions and any pd_* / cascade_trigger answers
+      // the user provided during the intake flow.
+      submitSpineData.mutate({
+        case_id: result.id,
+        answers: { ...answers },
       });
 
       logEvent.mutate({ pipelineType: suggestion.pipeline_id, eventType: "guided_intake_complete" });

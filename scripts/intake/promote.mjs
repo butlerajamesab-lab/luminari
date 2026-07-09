@@ -165,6 +165,111 @@ const DESTINATION_MAPPERS = {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }),
+
+  // ─── Intake spine L3: chronology_events ────────────────────────────────
+  // Maps system-ingested evidence rows (sms, email, pdf, care_plan, etc.) into
+  // chronology_events. The observed_event is sourced from raw_payload.description
+  // or row.description. The chronology_event_id is derived from the staging row id.
+  // Power dynamics and cascade entries are populated downstream via guided intake
+  // or manual enrichment once chronology is established.
+  chronology_events: (row) => {
+    const payload = row.raw_payload ?? {};
+    const chronology_event_id = `chron_intake_${row.id}`;
+    return {
+      id: randomUUID(),
+      case_id: payload.case_id ?? null,
+      chronology_event_id,
+      event_date: payload.event_date ?? null,
+      source_date: payload.source_date ?? row.created_at ?? null,
+      observed_event: payload.observed_event ?? payload.description ?? row.description ?? row.name ?? '(no description)',
+      people_involved: payload.people_involved ?? [],
+      evidence_source: row.source_file ?? null,
+      immediate_consequence: payload.immediate_consequence ?? null,
+      outstanding_follow_up: payload.outstanding_follow_up ?? null,
+      source_references: payload.source_references ?? [row.source_file].filter(Boolean),
+      event_confidence_level: payload.event_confidence_level ?? 'unverified',
+      created_from_path: 'system_ingested',
+      normalization_version: '1.0.0',
+      status: 'active',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  },
+
+  // ─── Intake spine L6: power_dynamics_registry ──────────────────────────
+  // Maps pre-extracted power dynamics data from raw_payload into the registry.
+  // Requires raw_payload to contain extracted fields matching the extraction map
+  // (e.g., authority_holder, gatekeeper, burden_shift, etc.).
+  // These rows are created only when the ingestion pipeline has already
+  // performed extraction against the source document.
+  power_dynamics_registry: (row) => {
+    const payload = row.raw_payload ?? {};
+    return {
+      id: randomUUID(),
+      power_dynamics_id: `pd_intake_${row.id}`,
+      case_id: payload.case_id ?? null,
+      authority_holder: payload.authority_holder ?? null,
+      resident_representative: payload.resident_representative ?? null,
+      alternate_representative: payload.alternate_representative ?? null,
+      decision_maker: payload.decision_maker ?? null,
+      access_controller: payload.access_controller ?? null,
+      gatekeeper: payload.gatekeeper ?? null,
+      dependency_path: payload.dependency_path ?? null,
+      procedural_barrier: payload.procedural_barrier ?? null,
+      exclusion_event: payload.exclusion_event ?? null,
+      retaliation_concern: payload.retaliation_concern ?? null,
+      documentation_holder: payload.documentation_holder ?? null,
+      communication_bottleneck: payload.communication_bottleneck ?? null,
+      burden_shift: payload.burden_shift ?? null,
+      user_capacity_limit: payload.user_capacity_limit ?? null,
+      disputed_authority: payload.disputed_authority ?? null,
+      informal_power_actor: payload.informal_power_actor ?? null,
+      power_imbalance_summary: payload.power_imbalance_summary ?? null,
+      source_event_ids: payload.source_event_ids ?? [],
+      evidence_source_ids: payload.evidence_source_ids ?? [row.source_file].filter(Boolean),
+      confidence_level: payload.confidence_level ?? 'low',
+      created_from_path: 'system_ingested',
+      normalization_version: '1.0.0',
+      status: 'active',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  },
+
+  // ─── Intake spine L9: cascade_registry ─────────────────────────────────
+  // Maps pre-extracted cascade data from raw_payload into the registry.
+  // Requires raw_payload.related_chronology_ids to be a non-empty array —
+  // the DB CHECK constraint will reject rows that violate this invariant.
+  // These rows are created only when chronology events already exist for
+  // the case and the ingestion pipeline has performed cascade extraction.
+  cascade_registry: (row) => {
+    const payload = row.raw_payload ?? {};
+    return {
+      id: randomUUID(),
+      cascade_id: `casc_intake_${row.id}`,
+      case_id: payload.case_id ?? null,
+      trigger_event_id: payload.trigger_event_id ?? null,
+      trigger_summary: payload.trigger_summary ?? null,
+      immediate_effect: payload.immediate_effect ?? null,
+      secondary_effect: payload.secondary_effect ?? null,
+      affected_people: payload.affected_people ?? [],
+      affected_entities: payload.affected_entities ?? [],
+      // related_chronology_ids must be non-empty (enforced by DB CHECK constraint).
+      // If empty, the DB insert will fail and the row will be logged as an error.
+      related_chronology_ids: payload.related_chronology_ids ?? [],
+      related_pattern_ids: payload.related_pattern_ids ?? [],
+      related_power_dynamics_ids: payload.related_power_dynamics_ids ?? [],
+      related_rights_duties_ids: payload.related_rights_duties_ids ?? [],
+      evidence_source_ids: payload.evidence_source_ids ?? [row.source_file].filter(Boolean),
+      confidence_level: payload.confidence_level ?? 'low',
+      open_questions: payload.open_questions ?? null,
+      created_from_path: 'system_ingested',
+      normalization_version: '1.0.0',
+      status: 'active',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  },
 };
 
 function default_mapper(row) {

@@ -4236,7 +4236,7 @@ import { architectureMapRouter } from "./routers/architecture-map";
 // import { architectureMapCompatRouter } from "./routers/architecture-map-compat-router";
 // import { resourceDirectoryCompatRouter } from "./routers/resource-directory-compat-router";
 // import { legalLibraryCompatRouter } from "./routers/legal-library-compat-router";
-// import { guidedIntakeCompatRouter } from "./routers/guided-intake-compat-router";
+import { guidedIntakeCompatRouter } from "./routers/guided-intake-compat-router";
 // import { missionControlCompatRouter } from "./routers/mission-control-compat-router";
 import { proceduralEngineRouter } from "./routers/procedural-engine";
 import { viabilityEngineRouter } from "./routers/viability-engine";
@@ -5057,6 +5057,7 @@ export const appRouter = router({
   canonicalCore: canonicalCoreRouter,
   canonicalSpine: canonicalSpineRouter,
   conduit: conduitRouter,
+  guidedIntake: guidedIntakeCompatRouter,
   actionPaths: actionPathsRouter,
   supportMatcher: supportMatcherRouter,
   resourceVerification: resourceVerificationRouter,

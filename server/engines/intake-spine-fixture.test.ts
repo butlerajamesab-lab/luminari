@@ -36,7 +36,9 @@ import type {
   RightsAndDutiesEntry,
 } from "../../server/intake-spine-types";
 
-const CHERYL_RICK_CASE_ID = "fixture-cheryl-rick-2024";
+// UUID-format case_id consistent with the cases.id uuid column in Drizzle schema.
+// Using a fixed deterministic UUID for reproducible fixture assertions.
+const CHERYL_RICK_CASE_ID = "b4e2c1d0-1234-4abc-8def-000000000001";
 
 // ─── Fixture: Chronology Events ───────────────────────────────────────────────
 
