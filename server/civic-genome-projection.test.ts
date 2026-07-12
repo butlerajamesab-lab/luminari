@@ -148,7 +148,7 @@ describe.skipIf(!has_db)("acceleration_score persistence (requires DATABASE_URL)
 
     expect(rollup_result.acceleration_score).toBeCloseTo(0.7, 5);
 
-    const { rows } = await pool.query<{ acceleration_score: string; }>(
+    const { rows } = await pool.query<{ acceleration_score: string }>(
       `select acceleration_score from public.civic_genome_family where family_id = $1`,
       [family_id],
     );

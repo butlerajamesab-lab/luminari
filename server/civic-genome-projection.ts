@@ -265,7 +265,7 @@ const refresh_family_rollups = async (family_id: string): Promise<{ acceleration
     [family_id],
   );
 
-  return { acceleration_score: parseFloat(rollup_rows[0]?.acceleration_score ?? "0") };
+  return { acceleration_score: parseFloat(rollup_rows[0]?.acceleration_score || "0") };
 };
 
 const project_bill = async (
