@@ -2,8 +2,8 @@
  * civic-genome-projection — acceleration_score producer tests
  *
  * Unit tests for the `compute_acceleration_score` formula (always run) and
- * persistence-style integration tests that exercise the full SQL path when a
- * DATABASE_URL is available (skipped otherwise).
+ * mocked DB integration tests that verify the JS/SQL bridge. Persistence-style
+ * tests that need a real Postgres connection are gated by DATABASE_URL.
  */
 
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
@@ -44,8 +44,8 @@ describe("compute_acceleration_score formula", () => {
 });
 
 // ─── DB-mocked integration tests ─────────────────────────────────────────────
-// These tests use vi.mock to simulate Postgres responses and verify that
-// refresh_family_rollups reads back the computed acceleration_score correctly.
+// These tests verify that refresh_family_rollups correctly reads back the
+// acceleration_score from the DB UPDATE result and returns it to the caller.
 
 vi.mock("./db", () => ({
   getPool: vi.fn(),
@@ -53,11 +53,9 @@ vi.mock("./db", () => ({
 
 import { getPool } from "./db";
 
-const FAMILY_ID = "00000000-0000-4000-8000-000000000001";
-
 type MockPool = { query: ReturnType<typeof vi.fn> };
 
-describe("refresh_family_rollups — acceleration_score DB integration (mocked)", () => {
+describe("refresh_family_rollups — acceleration_score round-trip (mocked pool)", () => {
   let mockPool: MockPool;
 
   beforeEach(() => {
@@ -69,156 +67,127 @@ describe("refresh_family_rollups — acceleration_score DB integration (mocked)"
     vi.clearAllMocks();
   });
 
-  it("reads back acceleration_score=0.7 when Postgres computes the delta (current=12, prior=5)", async () => {
-    // Mock: UPDATE civic_genome_family returns computed acceleration_score
+  it("returns acceleration_score=0.7 when Postgres RETURNING yields '0.70000'", async () => {
     mockPool.query
-      .mockResolvedValueOnce({ rows: [{ acceleration_score: "0.70000" }] }) // UPDATE … RETURNING acceleration_score
+      .mockResolvedValueOnce({ rows: [{ acceleration_score: "0.70000" }] }) // UPDATE … RETURNING
       .mockResolvedValueOnce({ rows: [] }); // INSERT INTO family_momentum_snapshot
 
-    // We import refresh_family_rollups indirectly — use project_bill path is
-    // complex; instead verify __testing alignment with the parse logic.
-    // Direct test: ensure parseFloat on "0.70000" yields 0.7
-    const parsed = parseFloat("0.70000");
-    expect(parsed).toBeCloseTo(0.7, 5);
+    const result = await __testing.refresh_family_rollups("test-family-id");
+    expect(result.acceleration_score).toBeCloseTo(0.7, 5);
   });
 
-  it("returns acceleration_score=0 when Postgres returns 0 (no prior snapshot case)", async () => {
+  it("returns acceleration_score=0 when Postgres RETURNING yields '0.00000' (no prior snapshot)", async () => {
     mockPool.query
       .mockResolvedValueOnce({ rows: [{ acceleration_score: "0.00000" }] })
       .mockResolvedValueOnce({ rows: [] });
 
-    const parsed = parseFloat("0.00000");
-    expect(parsed).toBe(0);
+    const result = await __testing.refresh_family_rollups("test-family-id");
+    expect(result.acceleration_score).toBe(0);
   });
 
-  it("returns acceleration_score=0 when UPDATE returns no rows (family not yet in table)", async () => {
+  it("returns acceleration_score=0 when UPDATE matches no rows (family absent from table)", async () => {
     mockPool.query
-      .mockResolvedValueOnce({ rows: [] }) // UPDATE matches no family row
+      .mockResolvedValueOnce({ rows: [] }) // UPDATE returns empty — family row not found
       .mockResolvedValueOnce({ rows: [] });
 
-    const parsed = parseFloat(undefined as unknown as string);
-    // parseFloat(undefined) returns NaN — the production code guards with ?? "0"
-    const guarded = parseFloat((undefined as unknown as string) ?? "0");
-    expect(guarded).toBe(0);
+    const result = await __testing.refresh_family_rollups("test-family-id");
+    expect(result.acceleration_score).toBe(0);
   });
 });
 
 // ─── Persistence tests (skip when DATABASE_URL is not set) ───────────────────
 // These run the full SQL path against a real Supabase/Postgres DB.
-// In this CI environment they are skipped; they pass in a DB-connected env.
+// In the sandboxed CI environment they are skipped; they pass with a real DB.
 
 const has_db = Boolean(process.env.DATABASE_URL);
 
 describe.skipIf(!has_db)("acceleration_score persistence (requires DATABASE_URL)", () => {
-  // Dynamic import so the DB pool is only created when DATABASE_URL is present
-  let refresh_family_rollups_impl: (family_id: string) => Promise<{ acceleration_score: number }>;
   let pool: import("pg").Pool;
 
   beforeEach(async () => {
     const db_module = await import("./db");
     pool = db_module.getPool();
-
-    // Lazy-import the projection module's internal via __testing
-    const proj = await import("./civic-genome-projection");
-    // We exercise the SQL through project_bill by seeding docket_bill_state_cache,
-    // or directly through the helper exported for testing.
-    refresh_family_rollups_impl = (proj as any).__refresh_family_rollups_for_test;
   });
 
-  it("scenario 1: snapshots at t-14d, t-7d, t-0 with counts 2, 5, 12 → acceleration=0.7", async () => {
+  it("scenario 1: snapshots at t-14d (2), t-7d (5), t-0 (12) → acceleration_score = 0.7", async () => {
     const family_id = await pool
       .query<{ family_id: string }>(
-        `insert into public.civic_genome_family (family_key, family_label, policy_domain, family_status, signature_json)
+        `insert into public.civic_genome_family
+           (family_key, family_label, policy_domain, family_status, signature_json)
          values ('test:accel_family_1', 'Accel Test Family 1', 'health', 'active', '{}')
          on conflict (family_key) do update set updated_at = now()
          returning family_id`,
       )
       .then(r => r.rows[0].family_id);
 
+    // Seed snapshots at three horizons; t-0 represents the in-progress day
+    // (already inserted before rollup so the prior is t-7d with count=5)
     await pool.query(
-      `insert into public.family_momentum_snapshot (family_id, snapshot_date, active_state_count)
+      `insert into public.family_momentum_snapshot
+         (family_id, snapshot_date, active_state_count)
        values
          ($1, current_date - interval '14 days', 2),
-         ($1, current_date - interval '7 days', 5),
-         ($1, current_date,                     12)
-       on conflict (family_id, snapshot_date) do update set active_state_count = excluded.active_state_count`,
+         ($1, current_date - interval '7 days',  5)
+       on conflict (family_id, snapshot_date)
+         do update set active_state_count = excluded.active_state_count`,
       [family_id],
     );
 
-    // Seed a dummy bill so the rollup CTE has something to count
-    const bill_id = "00000000-0000-4000-a000-000000000011";
+    // Seed 12 bills in WA so the rollup computes active_state_count = 1
+    // (bills are per-state distinct; 12 bills in one state → 1 active state)
+    // We seed the bill and let rollup compute — the key is prior snapshot = 5.
+    // For the formula to yield 0.7 we need current=12; inject via UPDATE instead.
     await pool.query(
-      `insert into public.civic_genome_bill (
-         family_id, bill_id, state_code, session_key, source_bill_number,
-         structural_dna_hash, current_state_position
-       ) values ($1, $2, 'WA', 'test-session', 'HB0001', 'testhash1', 'introduced')
-       on conflict (bill_id) do update set updated_at = now()`,
-      [family_id, bill_id],
+      `update public.civic_genome_family
+       set active_state_count = 12
+       where family_id = $1`,
+      [family_id],
     );
 
-    if (!refresh_family_rollups_impl) {
-      // fallback: update family's active_state_count to 12 manually then call rollup
-      await pool.query(
-        `update public.civic_genome_family set active_state_count = 12 where family_id = $1`,
-        [family_id],
-      );
-    }
+    const rollup_result = await __testing.refresh_family_rollups(family_id);
 
-    // Trigger rollup if the helper is exposed; otherwise trust the SQL path
-    if (refresh_family_rollups_impl) {
-      await refresh_family_rollups_impl(family_id);
-    }
+    expect(rollup_result.acceleration_score).toBeCloseTo(0.7, 5);
 
-    const { rows } = await pool.query<{ acceleration_score: string }>(
+    const { rows } = await pool.query<{ acceleration_score: string; }>(
       `select acceleration_score from public.civic_genome_family where family_id = $1`,
       [family_id],
     );
+    expect(parseFloat(rows[0].acceleration_score)).toBeCloseTo(0.7, 5);
 
-    // The prior snapshot older than 7 days is the t-7d row (active_state_count=5).
-    // current (from bill count) may differ, but the snapshot t-0 seeded above
-    // is inserted before the rollup runs, so the prior is t-7d (5).
-    // We assert the DB value is 0.7 only if active_state_count was correctly 12.
-    const score = parseFloat(rows[0]?.acceleration_score ?? "0");
-    expect(score).toBeGreaterThanOrEqual(0);
-    expect(score).toBeLessThanOrEqual(1);
+    const snap = await pool.query<{ acceleration_score: string }>(
+      `select acceleration_score from public.family_momentum_snapshot
+       where family_id = $1 and snapshot_date = current_date`,
+      [family_id],
+    );
+    expect(parseFloat(snap.rows[0].acceleration_score)).toBeCloseTo(0.7, 5);
 
-    // Cleanup
     await pool.query(`delete from public.civic_genome_family where family_id = $1`, [family_id]);
   });
 
   it("scenario 2: family with no prior snapshot → acceleration_score = 0", async () => {
     const family_id = await pool
       .query<{ family_id: string }>(
-        `insert into public.civic_genome_family (family_key, family_label, policy_domain, family_status, signature_json)
+        `insert into public.civic_genome_family
+           (family_key, family_label, policy_domain, family_status, signature_json)
          values ('test:accel_family_2', 'Accel Test Family 2', 'health', 'active', '{}')
          on conflict (family_key) do update set updated_at = now()
          returning family_id`,
       )
       .then(r => r.rows[0].family_id);
 
-    // No snapshots seeded — DELETE any that might exist
-    await pool.query(`delete from public.family_momentum_snapshot where family_id = $1`, [family_id]);
-
-    const bill_id = "00000000-0000-4000-a000-000000000012";
     await pool.query(
-      `insert into public.civic_genome_bill (
-         family_id, bill_id, state_code, session_key, source_bill_number,
-         structural_dna_hash, current_state_position
-       ) values ($1, $2, 'WA', 'test-session', 'HB0002', 'testhash2', 'introduced')
-       on conflict (bill_id) do update set updated_at = now()`,
-      [family_id, bill_id],
+      `delete from public.family_momentum_snapshot where family_id = $1`,
+      [family_id],
     );
 
-    if (refresh_family_rollups_impl) {
-      await refresh_family_rollups_impl(family_id);
-    }
+    const rollup_result = await __testing.refresh_family_rollups(family_id);
+    expect(rollup_result.acceleration_score).toBe(0);
 
     const { rows } = await pool.query<{ acceleration_score: string }>(
       `select acceleration_score from public.civic_genome_family where family_id = $1`,
       [family_id],
     );
-
-    expect(parseFloat(rows[0]?.acceleration_score ?? "0")).toBe(0);
+    expect(parseFloat(rows[0].acceleration_score)).toBe(0);
 
     await pool.query(`delete from public.civic_genome_family where family_id = $1`, [family_id]);
   });
@@ -226,7 +195,8 @@ describe.skipIf(!has_db)("acceleration_score persistence (requires DATABASE_URL)
   it("scenario 3: snapshot only 3 days old (within 7-day window) → acceleration_score = 0", async () => {
     const family_id = await pool
       .query<{ family_id: string }>(
-        `insert into public.civic_genome_family (family_key, family_label, policy_domain, family_status, signature_json)
+        `insert into public.civic_genome_family
+           (family_key, family_label, policy_domain, family_status, signature_json)
          values ('test:accel_family_3', 'Accel Test Family 3', 'health', 'active', '{}')
          on conflict (family_key) do update set updated_at = now()
          returning family_id`,
@@ -235,32 +205,22 @@ describe.skipIf(!has_db)("acceleration_score persistence (requires DATABASE_URL)
 
     // Only a recent snapshot (3 days ago) — no snapshot older than 7 days
     await pool.query(
-      `insert into public.family_momentum_snapshot (family_id, snapshot_date, active_state_count)
+      `insert into public.family_momentum_snapshot
+         (family_id, snapshot_date, active_state_count)
        values ($1, current_date - interval '3 days', 8)
-       on conflict (family_id, snapshot_date) do update set active_state_count = excluded.active_state_count`,
+       on conflict (family_id, snapshot_date)
+         do update set active_state_count = excluded.active_state_count`,
       [family_id],
     );
 
-    const bill_id = "00000000-0000-4000-a000-000000000013";
-    await pool.query(
-      `insert into public.civic_genome_bill (
-         family_id, bill_id, state_code, session_key, source_bill_number,
-         structural_dna_hash, current_state_position
-       ) values ($1, $2, 'WA', 'test-session', 'HB0003', 'testhash3', 'introduced')
-       on conflict (bill_id) do update set updated_at = now()`,
-      [family_id, bill_id],
-    );
-
-    if (refresh_family_rollups_impl) {
-      await refresh_family_rollups_impl(family_id);
-    }
+    const rollup_result = await __testing.refresh_family_rollups(family_id);
+    expect(rollup_result.acceleration_score).toBe(0);
 
     const { rows } = await pool.query<{ acceleration_score: string }>(
       `select acceleration_score from public.civic_genome_family where family_id = $1`,
       [family_id],
     );
-
-    expect(parseFloat(rows[0]?.acceleration_score ?? "0")).toBe(0);
+    expect(parseFloat(rows[0].acceleration_score)).toBe(0);
 
     await pool.query(`delete from public.civic_genome_family where family_id = $1`, [family_id]);
   });

@@ -524,4 +524,5 @@ export const __testing = {
     if (prior === null) return 0;
     return Math.min(1, Math.max(0, (current - prior) / 10));
   },
+  refresh_family_rollups,
 };
