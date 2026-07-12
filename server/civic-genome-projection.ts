@@ -23,6 +23,7 @@ type projected_bill_result = {
   genome_bill_id: string;
   event_type: string;
   action: "inserted" | "updated" | "unchanged";
+  family_acceleration_score: number;
 };
 
 export type civic_genome_projection_result = {
@@ -41,6 +42,7 @@ export type civic_genome_projection_result = {
   unchanged_count: number;
   event_count: number;
   family_count: number;
+  families_accelerating: number;
   results: projected_bill_result[];
 };
 
@@ -183,10 +185,10 @@ const upsert_family = async (family_key: string, bill: legiscan_master_bill): Pr
   return rows[0].family_id;
 };
 
-const refresh_family_rollups = async (family_id: string): Promise<void> => {
+const refresh_family_rollups = async (family_id: string): Promise<{ acceleration_score: number }> => {
   const pool = getPool();
 
-  await pool.query(
+  const { rows: rollup_rows } = await pool.query<{ acceleration_score: string }>(
     `with rollup as (
        select
          count(distinct state_code) filter (where current_state_position not in ('failed'))::int as active_state_count,
@@ -196,6 +198,14 @@ const refresh_family_rollups = async (family_id: string): Promise<void> => {
          max(coalesce(last_action_at, introduced_at, updated_at)) as last_event_at
        from public.civic_genome_bill
        where family_id = $1
+     ),
+     prior_snapshot as (
+       select active_state_count
+       from public.family_momentum_snapshot
+       where family_id = $1
+         and snapshot_date < current_date - interval '7 days'
+       order by snapshot_date desc
+       limit 1
      )
      update public.civic_genome_family family
      set
@@ -205,11 +215,16 @@ const refresh_family_rollups = async (family_id: string): Promise<void> => {
        failed_state_count = coalesce(rollup.failed_state_count, 0),
        last_event_at = rollup.last_event_at,
        momentum_score = least(1, coalesce(rollup.active_state_count, 0)::numeric / 50),
-       acceleration_score = 0,
+       acceleration_score = case
+         when prior_snapshot.active_state_count is null then 0
+         else least(1, greatest(0, (coalesce(rollup.active_state_count, 0) - prior_snapshot.active_state_count)::numeric / 10))
+       end,
        collapse_score = least(1, coalesce(rollup.failed_state_count, 0)::numeric / greatest(coalesce(rollup.active_state_count, 0) + coalesce(rollup.failed_state_count, 0), 1)),
        updated_at = now()
      from rollup
-     where family.family_id = $1`,
+     left join prior_snapshot on true
+     where family.family_id = $1
+     returning family.acceleration_score`,
     [family_id],
   );
 
@@ -249,6 +264,8 @@ const refresh_family_rollups = async (family_id: string): Promise<void> => {
        collapse_score = excluded.collapse_score`,
     [family_id],
   );
+
+  return { acceleration_score: parseFloat(rollup_rows[0]?.acceleration_score ?? "0") };
 };
 
 const project_bill = async (
@@ -404,7 +421,7 @@ const project_bill = async (
     );
   }
 
-  await refresh_family_rollups(family_id);
+  const { acceleration_score: family_acceleration_score } = await refresh_family_rollups(family_id);
 
   return {
     state_code,
@@ -416,6 +433,7 @@ const project_bill = async (
     genome_bill_id,
     event_type,
     action: existing ? (should_append_event ? "updated" : "unchanged") : "inserted",
+    family_acceleration_score,
   };
 };
 
@@ -476,6 +494,9 @@ export async function project_docket_cache_to_civic_genome(opts?: {
   const next_offset = batch_end !== null && batch_end < total_candidate_count ? batch_end : null;
   const remaining_count = next_offset === null ? 0 : total_candidate_count - next_offset;
   const family_ids = new Set(results.map(result => result.family_id));
+  const families_accelerating = new Set(
+    results.filter(result => result.family_acceleration_score > 0).map(result => result.family_id),
+  ).size;
 
   return {
     ok: true,
@@ -493,6 +514,14 @@ export async function project_docket_cache_to_civic_genome(opts?: {
     unchanged_count: results.filter(result => result.action === "unchanged").length,
     event_count: results.filter(result => result.action !== "unchanged").length,
     family_count: family_ids.size,
+    families_accelerating,
     results,
   };
 }
+
+export const __testing = {
+  compute_acceleration_score: (current: number, prior: number | null): number => {
+    if (prior === null) return 0;
+    return Math.min(1, Math.max(0, (current - prior) / 10));
+  },
+};
