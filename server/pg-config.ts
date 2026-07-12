@@ -88,6 +88,15 @@ export function create_database_pool(options: database_pool_options = {}): Pool 
   pool.on("error", (err) => {
     console.error(`[${label}] Unexpected PostgreSQL pool error:`, err);
   });
+  // Per-connection statement_timeout — runaway queries (like the civic_genome
+  // projection that regularly hits 10s+) release their pool slot at 8s instead
+  // of holding it hostage for the full connection_timeout_millis window. This
+  // is what unblocks concurrent requests waiting behind a stuck query.
+  pool.on("connect", (client) => {
+    client.query("SET statement_timeout = '8000ms'").catch((err) => {
+      console.warn(`[${label}] Failed to set statement_timeout on new connection:`, err);
+    });
+  });
   console.log(`[${label}] PostgreSQL pool initialized via sanitized DATABASE_URL with SSL. Host: ${get_database_host_label(connection_string)}`);
   return pool;
 }

@@ -62,7 +62,18 @@ let pgPool: Pool | null = null;
 let dbInstance: ReturnType<typeof drizzle> | null = null;
 function initializePool(): Pool {
   if (pgPool) return pgPool;
-  pgPool = create_database_pool({ label: "DB", connection_timeout_millis: 10000, max: 10 });
+  // Pool sizing tuned for Supabase Starter (60 max_connections) + Render Starter
+  // dyno. max=25 gives real headroom for the 5-15 parallel queries a single
+  // page load fires (civic-map bounds/preview/docket/auth). connection_timeout
+  // dropped from 10s→5s so a stuck pool fails fast instead of holding the
+  // request open. idle_timeout dropped from 30s→10s so idle sockets recycle
+  // faster and stop hogging pooler slots.
+  pgPool = create_database_pool({
+    label: "DB",
+    connection_timeout_millis: 5000,
+    max: 25,
+    idle_timeout_millis: 10000,
+  });
   console.log("[DB] runtime pool configuration", get_pool_runtime_configuration());
   return pgPool;
 }
