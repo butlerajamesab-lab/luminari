@@ -6,12 +6,8 @@ insert into public.substrate_source_artifact (
 ) values (
     'luminari-DISABILITY-SERVICES-RESOURCE-DIRECTORY-2026 (2).docx',
     'f208b77fa1f7a3f0696eecd34f06f2325994f0c6bdf467231515ac97b5165c33',
-    'verified_docx_resource_directory',
-    174034,
-    56,
-    1,
-    'staged',
-    'Authoritative Disability Services directory verified 2026-07-13. Tier 3 and Tier 4 cover 50 states, DC, and five territories. Each jurisdiction row preserves the three canonical agency identifiers for P&A, DD Council, and VR routing; full contacts and legal detail remain anchored to the source DOCX for agency-level reconciliation.'
+    'verified_docx_resource_directory',174034,56,1,'staged',
+    'Authoritative Disability Services directory verified 2026-07-13. Tier 3 and Tier 4 cover 50 states, DC, and five territories. Each jurisdiction row preserves the three source agency identifiers for P&A, DD Council, and VR routing; full contacts and legal detail remain anchored to the source DOCX for agency-level reconciliation.'
 )
 on conflict (source_sha256) do update set
     source_file=excluded.source_file,
@@ -22,6 +18,12 @@ on conflict (source_sha256) do update set
     deployment_status=excluded.deployment_status,
     notes=excluded.notes,
     updated_at=now();
+
+delete from public.substrate_candidate_disposition
+where source_sha256='f208b77fa1f7a3f0696eecd34f06f2325994f0c6bdf467231515ac97b5165c33';
+
+delete from public.domain_deep_dive_v3_13_stage
+where source_file='luminari-DISABILITY-SERVICES-RESOURCE-DIRECTORY-2026 (2).docx';
 
 with jurisdiction_manifest(state_code,jurisdiction,jurisdiction_key,jurisdiction_level,agency_ids) as (
 values
@@ -83,131 +85,75 @@ values
 ('PR','Puerto Rico','puerto_rico','territory',array['DIS-PR-PA','DIS-PR-DDC','DIS-PR-VR']::text[])
 ), staged as (
 insert into public.domain_deep_dive_v3_13_stage (
-    source_file, source_hash_raw, source_hash_kind, source_kind, source_key,
-    table_idx, row_idx, source_row_key, row_shape, promotion_status, payload
+    source_file,source_hash_raw,source_hash_kind,source_kind,source_key,
+    table_idx,row_idx,row_shape,promotion_status,payload
 )
 select
     'luminari-DISABILITY-SERVICES-RESOURCE-DIRECTORY-2026 (2).docx',
     'f208b77fa1f7a3f0696eecd34f06f2325994f0c6bdf467231515ac97b5165c33',
-    'sha256',
-    'domain_resource_directory',
-    'disability-services-jurisdiction',
-    1,
-    row_number() over(order by state_code)::integer,
-    'f208b77fa1f7a3f0696eecd34f06f2325994f0c6bdf467231515ac97b5165c33:jurisdiction:' || lower(state_code),
-    'state_directory_entry',
-    'candidate',
+    'sha256','domain_resource_directory','disability-services-jurisdiction',1,
+    row_number() over(order by state_code)::integer,'state_directory_entry','candidate',
     jsonb_build_object(
-        'resource_category','disability_services',
-        'subcategory','STATE_TERRITORY_INFRASTRUCTURE',
-        'jurisdiction_level',jurisdiction_level,
-        'state_code',state_code,
-        'jurisdiction',jurisdiction,
-        'jurisdiction_key',jurisdiction_key,
-        'agency_count',cardinality(agency_ids),
-        'agency_ids',to_jsonb(agency_ids),
-        'verification_status','VERIFIED',
-        'last_verified','2026-07-13',
+        'resource_category','disability_services','subcategory','STATE_TERRITORY_INFRASTRUCTURE',
+        'jurisdiction_level',jurisdiction_level,'state_code',state_code,
+        'jurisdiction',jurisdiction,'jurisdiction_key',jurisdiction_key,
+        'agency_count',cardinality(agency_ids),'agency_ids',to_jsonb(agency_ids),
+        'verification_status','VERIFIED','last_verified','2026-07-13',
         'source_doc','luminari-DISABILITY-SERVICES-RESOURCE-DIRECTORY-2026 (2).docx',
         'source_anchor','TIER 3/4 — ' || state_code || ' — ' || jurisdiction
     )
 from jurisdiction_manifest
-on conflict (source_row_key) do update set
-    payload=excluded.payload,
-    row_shape=excluded.row_shape,
-    promotion_status=excluded.promotion_status,
-    source_hash_raw=excluded.source_hash_raw,
-    source_hash_kind=excluded.source_hash_kind,
-    updated_at=now()
 returning *
 )
 insert into public.substrate_candidate_disposition (
-    artifact_id, source_file, source_sha256, source_table_idx, source_row_idx,
-    source_row_key, candidate_kind, target_table, target_identity, disposition, reason
+    artifact_id,source_file,source_sha256,source_table_idx,source_row_idx,
+    source_row_key,candidate_kind,target_table,target_identity,disposition,reason
 )
-select
-    a.artifact_id,
-    s.source_file,
-    s.source_hash_raw,
-    s.table_idx,
-    s.row_idx,
-    s.source_row_key,
-    'state_directory_entry',
-    'luminari_resource_entities',
-    jsonb_build_object(
-        'state_code',s.payload->>'state_code',
-        'jurisdiction_key',s.payload->>'jurisdiction_key',
-        'agency_ids',s.payload->'agency_ids'
-    ),
-    'unresolved',
-    case
-      when s.payload->>'state_code'='MP' then 'Held for source-ID correction: CNMI agency IDs are encoded with DIS-CO-* and collide with Colorado identifiers.'
-      when s.payload->>'state_code'='NJ' then 'Held for source-ID normalization: New Jersey source labels are human-readable placeholders rather than DIS-NJ-* identifiers.'
-      else 'Verified jurisdiction manifest staged; requires agency-by-agency canonical entity/contact/location reconciliation.'
-    end
-from staged s
-join public.substrate_source_artifact a on a.source_sha256=s.source_hash_raw
-on conflict (source_sha256, source_row_key) do update set
-    target_table=excluded.target_table,
-    target_identity=excluded.target_identity,
-    disposition=excluded.disposition,
-    reason=excluded.reason,
-    updated_at=now();
+select a.artifact_id,s.source_file,s.source_hash_raw,s.table_idx,s.row_idx,s.source_row_key,
+       'state_directory_entry','luminari_resource_entities',
+       jsonb_build_object('state_code',s.payload->>'state_code','jurisdiction_key',s.payload->>'jurisdiction_key','agency_ids',s.payload->'agency_ids'),
+       'unresolved',
+       case when s.payload->>'state_code'='MP' then 'Source-ID correction required: CNMI agency IDs are encoded with DIS-CO-* and collide with Colorado identifiers.'
+            when s.payload->>'state_code'='NJ' then 'Source-ID normalization required: New Jersey labels are placeholders rather than DIS-NJ-* identifiers.'
+            else 'Verified jurisdiction manifest staged; requires agency-by-agency canonical entity/contact/location reconciliation.' end
+from staged s join public.substrate_source_artifact a on a.source_sha256=s.source_hash_raw;
 
 create or replace view public.v_substrate_promotion_readiness as
 with bundle as (
-    select a.bundle_sha256,a.tuple_row_count,a.distinct_row_source_count,
-           a.manifest_source_count,a.manifest_generated_row_count,
-           a.source_count_delta,a.row_count_delta,a.audit_status,s.deployment_status
-    from public.generated_sql_bundle_audit a
-    left join public.substrate_source_artifact s on s.source_sha256=a.bundle_sha256
+ select a.bundle_sha256,a.tuple_row_count,a.distinct_row_source_count,a.manifest_source_count,
+        a.manifest_generated_row_count,a.source_count_delta,a.row_count_delta,a.audit_status,s.deployment_status
+ from public.generated_sql_bundle_audit a left join public.substrate_source_artifact s on s.source_sha256=a.bundle_sha256
 ), disability as (
-    select
-        count(*) filter (where d.candidate_kind='normalized_statute')::bigint as statute_candidates,
-        count(*) filter (where d.candidate_kind='normalized_resource')::bigint as resource_candidates,
-        count(*) filter (where d.candidate_kind='state_directory_entry')::bigint as jurisdiction_candidates,
-        count(*) filter (where d.disposition='unresolved')::bigint as unresolved_candidates,
-        count(*) filter (where d.disposition='insert')::bigint as insert_candidates,
-        count(*) filter (where d.disposition='enrich')::bigint as enrich_candidates,
-        count(*) filter (where d.disposition='duplicate')::bigint as duplicate_candidates,
-        count(*) filter (where d.disposition='hold')::bigint as held_candidates,
-        count(*) filter (where d.disposition='provenance_only')::bigint as provenance_only_candidates
-    from public.substrate_candidate_disposition d
-    where d.source_file in (
-        'luminari-DISABILITY-SERVICES-DEEP-DIVE-2026.docx',
-        'luminari-DISABILITY-SERVICES-RESOURCE-DIRECTORY-2026 (2).docx'
-    )
+ select count(*) filter(where candidate_kind='normalized_statute')::bigint statute_candidates,
+        count(*) filter(where candidate_kind='normalized_resource')::bigint resource_candidates,
+        count(*) filter(where candidate_kind='state_directory_entry')::bigint jurisdiction_candidates,
+        count(*) filter(where disposition='unresolved')::bigint unresolved_candidates,
+        count(*) filter(where disposition='insert')::bigint insert_candidates,
+        count(*) filter(where disposition='enrich')::bigint enrich_candidates,
+        count(*) filter(where disposition='duplicate')::bigint duplicate_candidates,
+        count(*) filter(where disposition='hold')::bigint held_candidates,
+        count(*) filter(where disposition='provenance_only')::bigint provenance_only_candidates
+ from public.substrate_candidate_disposition
+ where source_file in ('luminari-DISABILITY-SERVICES-DEEP-DIVE-2026.docx','luminari-DISABILITY-SERVICES-RESOURCE-DIRECTORY-2026 (2).docx')
 ), stage as (
-    select count(*)::bigint as staged_rows,
-           count(*) filter (where row_shape='statute_summary')::bigint as staged_statutes,
-           count(*) filter (where row_shape='normalized_resource')::bigint as staged_resources,
-           count(*) filter (where row_shape='state_directory_entry')::bigint as staged_state_directory_entries
-    from public.domain_deep_dive_v3_13_stage
-    where source_file in (
-        'luminari-DISABILITY-SERVICES-DEEP-DIVE-2026.docx',
-        'luminari-DISABILITY-SERVICES-RESOURCE-DIRECTORY-2026 (2).docx'
-    )
+ select count(*)::bigint staged_rows,count(*) filter(where row_shape='statute_summary')::bigint staged_statutes,
+        count(*) filter(where row_shape='normalized_resource')::bigint staged_resources,
+        count(*) filter(where row_shape='state_directory_entry')::bigint staged_state_directory_entries
+ from public.domain_deep_dive_v3_13_stage
+ where source_file in ('luminari-DISABILITY-SERVICES-DEEP-DIVE-2026.docx','luminari-DISABILITY-SERVICES-RESOURCE-DIRECTORY-2026 (2).docx')
 )
-select b.bundle_sha256,b.audit_status,b.deployment_status,b.distinct_row_source_count,
-       b.manifest_source_count,b.tuple_row_count,b.manifest_generated_row_count,
-       b.source_count_delta,b.row_count_delta,s.staged_rows,s.staged_statutes,
-       s.staged_resources,s.staged_state_directory_entries,d.statute_candidates,
-       d.resource_candidates,d.jurisdiction_candidates,d.unresolved_candidates,
-       d.insert_candidates,d.enrich_candidates,d.duplicate_candidates,
-       d.held_candidates,d.provenance_only_candidates,
-       (b.audit_status='verified' and b.deployment_status='staged'
-        and b.source_count_delta=0 and b.row_count_delta=0
-        and s.staged_state_directory_entries=56 and d.jurisdiction_candidates=56
-        and d.unresolved_candidates=0) as ready_for_canonical_promotion,
-       case
-         when b.audit_status<>'verified' then 'bundle_manifest_not_verified'
-         when b.deployment_status<>'staged' then 'bundle_not_staged'
-         when b.source_count_delta<>0 or b.row_count_delta<>0 then 'bundle_manifest_count_mismatch'
-         when s.staged_state_directory_entries<>56 then 'disability_state_territory_entries_incomplete'
-         when d.jurisdiction_candidates<>56 then 'disability_jurisdiction_dispositions_incomplete'
-         when d.unresolved_candidates>0 then 'candidate_dispositions_unresolved'
-         else 'ready'
-       end as blocking_reason
+select b.*,s.staged_rows,s.staged_statutes,s.staged_resources,s.staged_state_directory_entries,
+       d.statute_candidates,d.resource_candidates,d.jurisdiction_candidates,d.unresolved_candidates,
+       d.insert_candidates,d.enrich_candidates,d.duplicate_candidates,d.held_candidates,d.provenance_only_candidates,
+       (b.audit_status='verified' and b.deployment_status='staged' and b.source_count_delta=0 and b.row_count_delta=0
+        and s.staged_state_directory_entries=56 and d.jurisdiction_candidates=56 and d.unresolved_candidates=0) ready_for_canonical_promotion,
+       case when b.audit_status<>'verified' then 'bundle_manifest_not_verified'
+            when b.deployment_status<>'staged' then 'bundle_not_staged'
+            when b.source_count_delta<>0 or b.row_count_delta<>0 then 'bundle_manifest_count_mismatch'
+            when s.staged_state_directory_entries<>56 then 'disability_state_territory_entries_incomplete'
+            when d.jurisdiction_candidates<>56 then 'disability_jurisdiction_dispositions_incomplete'
+            when d.unresolved_candidates>0 then 'candidate_dispositions_unresolved'
+            else 'ready' end blocking_reason
 from bundle b cross join disability d cross join stage s;
 
 commit;
