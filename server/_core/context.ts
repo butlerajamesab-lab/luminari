@@ -1,5 +1,6 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import { TRPCError } from "@trpc/server";
+import { classify_db_error } from "../db";
 import {
   get_user_by_email_snake,
   get_user_by_open_id_snake,
@@ -57,7 +58,6 @@ function readPositiveIntegerEnv(name: string, fallback: number): number {
 }
 
 const CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS = readPositiveIntegerEnv("CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS", 2500);
-const CONTEXT_PROFILE_LOOKUP_TIMEOUT_MS = readPositiveIntegerEnv("CONTEXT_PROFILE_LOOKUP_TIMEOUT_MS", 2000);
 const CONTEXT_SLOW_USER_LOOKUP_LOG_MS = readPositiveIntegerEnv("CONTEXT_SLOW_USER_LOOKUP_LOG_MS", 250);
 
 export async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -235,15 +235,11 @@ async function resolveProfileFromSupabaseAuthUser(
   const openId = authUser.id?.trim() || null;
   const email = authUser.email?.trim().toLowerCase() || null;
   try {
-    const user = await withTimeout(
-      timeContextPhase("profile_lookup", phases, async () => {
-        if (openId) return get_user_by_open_id_snake(openId);
-        if (email) return get_user_by_email_snake(email);
-        return null;
-      }),
-      CONTEXT_PROFILE_LOOKUP_TIMEOUT_MS,
-      "tRPC context profile lookup"
-    );
+    const user = await timeContextPhase("profile_lookup", phases, async () => {
+      if (openId) return get_user_by_open_id_snake(openId);
+      if (email) return get_user_by_email_snake(email);
+      return null;
+    });
     if (user) {
       logContextAuthEvent("profile_lookup_succeeded", { supabase_user_id: openId, profile_resolution_status: "resolved" });
       return { user, auth: createResolvedAuth(user) };
@@ -261,7 +257,8 @@ async function resolveProfileFromSupabaseAuthUser(
     };
   } catch (error) {
     const detail = errorDetail(error);
-    const status: ProfileResolutionStatus = detail.includes("timed out") ? "timed_out" : "threw";
+    const db_class = classify_db_error(error);
+    const status: ProfileResolutionStatus = db_class === "pool_acquire_timeout" || db_class === "query_timeout" ? "timed_out" : "threw";
     logContextAuthEvent("profile_lookup_failed", { supabase_user_id: openId, supabase_email: email, profile_resolution_status: status, error: detail });
     return {
       user: null,
@@ -324,3 +321,7 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
   }
   return { req: opts.req, res: opts.res, user, auth, isSystem: false, isInspectionMode: false };
 }
+
+export const __testing = {
+  resolveProfileFromSupabaseAuthUser,
+};
