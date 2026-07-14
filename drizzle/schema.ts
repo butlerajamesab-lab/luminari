@@ -1317,22 +1317,17 @@ export type CaseExitGuarantees = typeof caseExitGuarantees.$inferSelect;
 export type InsertCaseExitGuarantees = typeof caseExitGuarantees.$inferInsert;
 
 export const cases = pgTable("cases", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  caseNumber: text("case_number"),
+  id: serial("id").primaryKey(),
+  userId: integer("user_id"),
   name: text("name"),
-  title: text("title"),
   description: text("description"),
-  caseType: text("case_type"),
-  jurisdiction: text("jurisdiction"),
+  status: text("status"),
+  createdAt: bigint("created_at", { mode: "number" }),
+  updatedAt: bigint("updated_at", { mode: "number" }),
   domain: text("domain"),
-  userId: uuid("user_id"),
+  container: text("container"),
   pipelineType: text("pipeline_type"),
-  container: jsonb("container"),
-  status: text("status").default(sql`'active'::text`).notNull(),
-  priorityLevel: text("priority_level"),
-  ownerRef: text("owner_ref"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  manualLensOverrides: text("manual_lens_overrides"),
 });
 
 export type Case = typeof cases.$inferSelect;

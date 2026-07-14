@@ -31,7 +31,7 @@ export const strategyEngineRouter = router({
     .input(z.object({ caseId: z.number() }))
     .mutation(async ({ input }) => {
       const now = Date.now();
-      const [caseRow] = await db.select().from(cases).where(eq(cases.id, String(input.caseId)));
+      const [caseRow] = await db.select().from(cases).where(eq(cases.id, input.caseId));
       if (!caseRow) throw new Error("Case not found");
 
       const caseEntities = await db.select().from(entities).where(eq(entities.caseId, String(input.caseId)));
@@ -600,7 +600,7 @@ Be conservative. Maximum 8 candidates.`
         },
       }, async () => {
         // Write to canonical_workflows — NO legacy table writes
-        const [caseRow] = await db.select().from(cases).where(eq(cases.id, String(input.caseId)));
+        const [caseRow] = await db.select().from(cases).where(eq(cases.id, input.caseId));
         if (!caseRow) throw new Error('Case not found');
         const canonicalEntity = await writeStrategyWorkflow({
           name: `Strategy: ${caseRow.name}`,

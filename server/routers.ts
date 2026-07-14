@@ -4002,7 +4002,7 @@ const lensesRouter = router({
       const { eq } = await import("drizzle-orm");
       await db_helpers.db.update(cases)
         .set({ manualLensOverrides: input.lensIds, updatedAt: Date.now() })
-        .where(eq(cases.id, String(input.caseId)));
+        .where(eq(cases.id, input.caseId));
 
       return { success: true, lens_ids: input.lensIds };
     }),

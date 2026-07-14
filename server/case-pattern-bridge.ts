@@ -73,7 +73,7 @@ export async function loadCaseData(caseId: number, userId: number): Promise<Case
     domain: cases.domain,
     container: cases.container,
     pipelineType: cases.pipelineType,
-  }).from(cases).where(and(eq(cases.id, String(caseId)), eq(cases.userId, String(userId))));
+  }).from(cases).where(and(eq(cases.id, caseId), eq(cases.userId, userId)));
 
   if (!caseRow) throw new Error("Case not found or access denied");
 

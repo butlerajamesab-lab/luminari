@@ -13,7 +13,7 @@ import { emitSignal } from "../live-signal-emitter";
 
 async function verify_case_ownership(case_id: number, user_id: number) {
   const [case_row] = await db.select({ id: cases.id, user_id: cases.userId })
-    .from(cases).where(eq(cases.id, String(case_id)));
+    .from(cases).where(eq(cases.id, case_id));
   if (!case_row || case_row.user_id !== user_id) {
     throw new Error("Case not found or access denied");
   }
