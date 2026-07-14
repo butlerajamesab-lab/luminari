@@ -177,6 +177,11 @@ function create_database_pool(options = {}) {
   pool3.on("error", (err) => {
     console.error(`[${label}] Unexpected PostgreSQL pool error:`, err);
   });
+  pool3.on("connect", (client) => {
+    client.query("SET statement_timeout = '8000ms'").catch((err) => {
+      console.warn(`[${label}] Failed to set statement_timeout on new connection:`, err);
+    });
+  });
   console.log(`[${label}] PostgreSQL pool initialized via sanitized DATABASE_URL with SSL. Host: ${get_database_host_label(connection_string)}`);
   return pool3;
 }
@@ -1026,22 +1031,17 @@ var init_schema = __esm({
       createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
     });
     cases = pgTable("cases", {
-      id: uuid("id").defaultRandom().primaryKey(),
-      caseNumber: text("case_number"),
+      id: serial("id").primaryKey(),
+      userId: integer("user_id"),
       name: text("name"),
-      title: text("title"),
       description: text("description"),
-      caseType: text("case_type"),
-      jurisdiction: text("jurisdiction"),
+      status: text("status"),
+      createdAt: bigint("created_at", { mode: "number" }),
+      updatedAt: bigint("updated_at", { mode: "number" }),
       domain: text("domain"),
-      userId: uuid("user_id"),
+      container: text("container"),
       pipelineType: text("pipeline_type"),
-      container: jsonb("container"),
-      status: text("status").default(sql`'active'::text`).notNull(),
-      priorityLevel: text("priority_level"),
-      ownerRef: text("owner_ref"),
-      createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-      updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
+      manualLensOverrides: text("manual_lens_overrides")
     });
     cdaAnalysisRuns = pgTable("cda_analysis_runs", {
       id: uuid("id").defaultRandom().primaryKey(),
@@ -9331,7 +9331,12 @@ import { createHash as createHash3 } from "crypto";
 import { TRPCError as TRPCError2 } from "@trpc/server";
 function initializePool() {
   if (pgPool) return pgPool;
-  pgPool = create_database_pool({ label: "DB", connection_timeout_millis: 1e4, max: 5 });
+  pgPool = create_database_pool({
+    label: "DB",
+    connection_timeout_millis: 5e3,
+    max: 25,
+    idle_timeout_millis: 1e4
+  });
   console.log("[DB] runtime pool configuration", get_pool_runtime_configuration());
   return pgPool;
 }
@@ -28716,9 +28721,12 @@ var init_system_copilot_sunam = __esm({
 });
 
 // server/services/registryService.ts
-import { sql as sql122 } from "drizzle-orm";
-function getLuminariDb() {
-  return db;
+function registry_query(label, text3, values = []) {
+  return query_with_diagnostics(text3, values, {
+    label,
+    pool_acquire_timeout_ms: REGISTRY_POOL_ACQUIRE_MS,
+    query_timeout_ms: REGISTRY_QUERY_TIMEOUT_MS
+  });
 }
 function map_jurisdiction_rows(rows2) {
   return rows2.map((row) => ({
@@ -28733,14 +28741,9 @@ async function getJurisdictions() {
     return jurisdictions_cache.rows;
   }
   try {
-    const result = await query_with_diagnostics(
-      "SELECT id, name, code FROM jurisdictions ORDER BY name",
-      [],
-      {
-        label: "registry_get_jurisdictions",
-        pool_acquire_timeout_ms: 1e3,
-        query_timeout_ms: 4e3
-      }
+    const result = await registry_query(
+      "registry_get_jurisdictions",
+      "SELECT id, name, code FROM jurisdictions ORDER BY name"
     );
     const rows2 = map_jurisdiction_rows(result.rows);
     jurisdictions_cache = { expires_at: now3 + JURISDICTIONS_CACHE_TTL_MS, rows: rows2 };
@@ -28757,96 +28760,109 @@ async function getJurisdictions() {
   }
 }
 async function getJurisdictionById(jurisdictionId) {
-  const db2 = await getLuminariDb();
-  const result = await db2.execute(
-    sql122`SELECT id, name, code FROM jurisdictions WHERE id = ${jurisdictionId}`
+  const result = await registry_query(
+    "registry_get_jurisdiction_by_id",
+    "SELECT id, name, code FROM jurisdictions WHERE id = $1",
+    [jurisdictionId]
   );
   return result.rows[0];
 }
 async function getPrograms(jurisdictionId) {
-  const db2 = await getLuminariDb();
-  const result = await db2.execute(
-    sql122`SELECT id, program_name, eligibility, benefits, administering_agency 
-        FROM layer1_programs 
-        WHERE jurisdiction_id = ${jurisdictionId}
-        ORDER BY program_name`
+  const result = await registry_query(
+    "registry_get_programs",
+    `SELECT id, program_name, eligibility, benefits, administering_agency
+     FROM layer1_programs
+     WHERE jurisdiction_id = $1
+     ORDER BY program_name`,
+    [jurisdictionId]
   );
   return result.rows;
 }
 async function getWorkflows(jurisdictionId) {
-  const db2 = await getLuminariDb();
-  const result = await db2.execute(
-    sql122`SELECT id, workflow_name, trigger_condition 
-        FROM layer2_workflows 
-        WHERE jurisdiction_id = ${jurisdictionId}
-        ORDER BY workflow_name`
+  const result = await registry_query(
+    "registry_get_workflows",
+    `SELECT id, workflow_name, trigger_condition
+     FROM layer2_workflows
+     WHERE jurisdiction_id = $1
+     ORDER BY workflow_name`,
+    [jurisdictionId]
   );
   return result.rows;
 }
 async function getWorkflowById(workflowId) {
-  const db2 = await getLuminariDb();
-  const result = await db2.execute(
-    sql122`SELECT id, workflow_name, trigger_condition 
-        FROM layer2_workflows 
-        WHERE id = ${workflowId}`
+  const result = await registry_query(
+    "registry_get_workflow_by_id",
+    `SELECT id, workflow_name, trigger_condition
+     FROM layer2_workflows
+     WHERE id = $1`,
+    [workflowId]
   );
   return result.rows[0];
 }
 async function getWorkflowSteps(workflowId) {
-  const db2 = await getLuminariDb();
-  const result = await db2.execute(
-    sql122`SELECT id, step_number, action, deadline 
-        FROM workflow_steps 
-        WHERE workflow_id = ${workflowId}
-        ORDER BY step_number`
+  const result = await registry_query(
+    "registry_get_workflow_steps",
+    `SELECT id, step_number, action, deadline
+     FROM workflow_steps
+     WHERE workflow_id = $1
+     ORDER BY step_number`,
+    [workflowId]
   );
   return result.rows;
 }
 async function getEntities(jurisdictionId) {
-  const db2 = await getLuminariDb();
-  const result = await db2.execute(
-    sql122`SELECT id, entity_name, entity_type 
-        FROM layer3_accountability_entities 
-        WHERE jurisdiction_id = ${jurisdictionId}
-        ORDER BY entity_name`
+  const result = await registry_query(
+    "registry_get_entities",
+    `SELECT id, entity_name, entity_type
+     FROM layer3_accountability_entities
+     WHERE jurisdiction_id = $1
+     ORDER BY entity_name`,
+    [jurisdictionId]
   );
   return result.rows;
 }
 async function getSignals2(jurisdictionId) {
-  const db2 = await getLuminariDb();
-  const result = await db2.execute(
-    sql122`SELECT id, signal_type, priority, action_description 
-        FROM enforcement_signals 
-        WHERE jurisdiction_id = ${jurisdictionId}
-        ORDER BY priority DESC, signal_type`
+  const result = await registry_query(
+    "registry_get_signals",
+    `SELECT id, signal_type, priority, action_description
+     FROM enforcement_signals
+     WHERE jurisdiction_id = $1
+     ORDER BY priority DESC, signal_type`,
+    [jurisdictionId]
   );
   return result.rows;
 }
 async function searchPrograms(query, jurisdictionId) {
-  const db2 = await getLuminariDb();
-  let sqlQuery;
-  if (jurisdictionId) {
-    sqlQuery = sql122`SELECT id, program_name, eligibility, jurisdiction_id 
-                    FROM layer1_programs 
-                    WHERE jurisdiction_id = ${jurisdictionId}
-                    AND program_name ILIKE ${"%" + query + "%"}
-                    ORDER BY program_name`;
-  } else {
-    sqlQuery = sql122`SELECT id, program_name, eligibility, jurisdiction_id 
-                    FROM layer1_programs 
-                    WHERE program_name ILIKE ${"%" + query + "%"}
-                    ORDER BY program_name`;
+  if (jurisdictionId !== void 0) {
+    const result2 = await registry_query(
+      "registry_search_programs_scoped",
+      `SELECT id, program_name, eligibility, jurisdiction_id
+       FROM layer1_programs
+       WHERE jurisdiction_id = $1
+         AND program_name ILIKE $2
+       ORDER BY program_name`,
+      [jurisdictionId, `%${query}%`]
+    );
+    return result2.rows;
   }
-  const result = await db2.execute(sqlQuery);
+  const result = await registry_query(
+    "registry_search_programs_global",
+    `SELECT id, program_name, eligibility, jurisdiction_id
+     FROM layer1_programs
+     WHERE program_name ILIKE $1
+     ORDER BY program_name`,
+    [`%${query}%`]
+  );
   return result.rows;
 }
 async function getFirstWorkflow(jurisdictionId) {
-  const db2 = await getLuminariDb();
-  const result = await db2.execute(
-    sql122`SELECT id, workflow_name, trigger_condition 
-        FROM layer2_workflows 
-        WHERE jurisdiction_id = ${jurisdictionId}
-        LIMIT 1`
+  const result = await registry_query(
+    "registry_get_first_workflow",
+    `SELECT id, workflow_name, trigger_condition
+     FROM layer2_workflows
+     WHERE jurisdiction_id = $1
+     LIMIT 1`,
+    [jurisdictionId]
   );
   return result.rows[0];
 }
@@ -28865,11 +28881,13 @@ async function getIntakeMatch(jurisdictionId) {
     signals
   };
 }
-var JURISDICTIONS_CACHE_TTL_MS, jurisdictions_cache;
+var REGISTRY_POOL_ACQUIRE_MS, REGISTRY_QUERY_TIMEOUT_MS, JURISDICTIONS_CACHE_TTL_MS, jurisdictions_cache;
 var init_registryService = __esm({
   "server/services/registryService.ts"() {
     "use strict";
     init_db();
+    REGISTRY_POOL_ACQUIRE_MS = 1e3;
+    REGISTRY_QUERY_TIMEOUT_MS = 4e3;
     JURISDICTIONS_CACHE_TTL_MS = 5 * 60 * 1e3;
     jurisdictions_cache = null;
   }
@@ -29642,10 +29660,10 @@ var process_signals_batch_exports = {};
 __export(process_signals_batch_exports, {
   processSignalsBatch: () => processSignalsBatch2
 });
-import { sql as sql123 } from "drizzle-orm";
+import { sql as sql122 } from "drizzle-orm";
 async function processSignalsBatch2(input) {
   const batchSize = input.batch_size ?? 500;
-  const unprocessedRows = await db.execute(sql123`
+  const unprocessedRows = await db.execute(sql122`
     SELECT ls.id,
            ls.signalType_ls   AS signalType,
            ls.datasetId_ls    AS datasetId,
@@ -29674,7 +29692,7 @@ async function processSignalsBatch2(input) {
   const total = rows2.length;
   if (total === 0) {
     const countRows2 = await db.execute(
-      sql123`SELECT COUNT(*) AS cnt FROM detected_signals`
+      sql122`SELECT COUNT(*) AS cnt FROM detected_signals`
     );
     const finalCount2 = Number(countRows2[0][0].cnt);
     return {
@@ -29711,13 +29729,13 @@ async function processSignalsBatch2(input) {
     };
     try {
       if (signal.signalFingerprint) {
-        const existing = await db.execute(sql123`
+        const existing = await db.execute(sql122`
           SELECT signal_id FROM detected_signals
           WHERE signal_type = ${signal.signalType}
             AND dataset_id = ${signal.datasetId}
           LIMIT 1
         `);
-        const existingByFp = await db.execute(sql123`
+        const existingByFp = await db.execute(sql122`
           SELECT id FROM sunam_gate_log
           WHERE signal_fingerprint = ${signal.signalFingerprint}
             AND decision IN ('approve', 'manual_promote')
@@ -29725,7 +29743,7 @@ async function processSignalsBatch2(input) {
         `);
         if (existingByFp[0].length > 0) {
           const now3 = Date.now();
-          await db.execute(sql123`
+          await db.execute(sql122`
             INSERT INTO sunam_gate_log
               (live_signal_id, signal_fingerprint, signal_type, dataset_id,
                sunam_score, threshold_used, score_breakdown,
@@ -29780,7 +29798,7 @@ async function processSignalsBatch2(input) {
     }
   }
   const countRows = await db.execute(
-    sql123`SELECT COUNT(*) AS cnt FROM detected_signals`
+    sql122`SELECT COUNT(*) AS cnt FROM detected_signals`
   );
   const finalCount = Number(countRows[0][0].cnt);
   const processed = inserted + skipped + failed;
@@ -29812,7 +29830,7 @@ __export(sunam_executor_exports, {
   dispatchTool: () => dispatchTool,
   sunamExecute: () => sunamExecute
 });
-import { eq as eq76, sql as sql124 } from "drizzle-orm";
+import { eq as eq76, sql as sql123 } from "drizzle-orm";
 async function dispatchTool(toolName, args, executedBy) {
   const base = { tool: toolName, args };
   const { isSunamToolAllowed: isSunamToolAllowed2 } = await Promise.resolve().then(() => (init_sunam_service_only_tools(), sunam_service_only_tools_exports));
@@ -29875,7 +29893,7 @@ async function dispatchTool(toolName, args, executedBy) {
         const { triggerManualIngestion: triggerManualIngestion2 } = await Promise.resolve().then(() => (init_scheduler(), scheduler_exports));
         const hoursBack = args.hours_back ?? 24;
         const cutoff = Date.now() - hoursBack * 3600 * 1e3;
-        const failedRuns = await db.select({ datasetId: ingestRuns.datasetId }).from(ingestRuns).where(sql124`${ingestRuns.status} = 'failed' AND ${ingestRuns.startTime} > ${cutoff}`);
+        const failedRuns = await db.select({ datasetId: ingestRuns.datasetId }).from(ingestRuns).where(sql123`${ingestRuns.status} = 'failed' AND ${ingestRuns.startTime} > ${cutoff}`);
         const unique = [...new Set(failedRuns.map((r) => r.datasetId))];
         const results = [];
         for (const sid of unique) {
@@ -30154,11 +30172,11 @@ async function dispatchTool(toolName, args, executedBy) {
       // ── Diagnostics ──
       case "inspect_table": {
         const limit = args.limit ?? 5;
-        const colResult = await db.execute(sql124.raw(`SHOW COLUMNS FROM \`${args.table_name}\``));
+        const colResult = await db.execute(sql123.raw(`SHOW COLUMNS FROM \`${args.table_name}\``));
         const columns = (colResult[0] ?? []).map((c) => ({ field: c.Field, type: c.Type, null: c.Null, key: c.Key, default: c.Default }));
-        const countResult = await db.execute(sql124.raw(`SELECT COUNT(*) as cnt FROM \`${args.table_name}\``));
+        const countResult = await db.execute(sql123.raw(`SELECT COUNT(*) as cnt FROM \`${args.table_name}\``));
         const rowCount = countResult[0]?.[0]?.cnt ?? 0;
-        const sampleResult = await db.execute(sql124.raw(`SELECT * FROM \`${args.table_name}\` LIMIT ${limit}`));
+        const sampleResult = await db.execute(sql123.raw(`SELECT * FROM \`${args.table_name}\` LIMIT ${limit}`));
         const rows2 = sampleResult[0] ?? [];
         return { ...base, success: true, result: { table: args.table_name, columns, row_count: rowCount, sample_rows: rows2 } };
       }
@@ -33125,7 +33143,7 @@ __export(foia_generator_exports, {
   generateFoiaRequest: () => generateFoiaRequest
 });
 import { createHash as createHash15 } from "crypto";
-import { eq as eq84, and as and64, inArray as inArray13, sql as sql130 } from "drizzle-orm";
+import { eq as eq84, and as and64, inArray as inArray13, sql as sql129 } from "drizzle-orm";
 async function evaluateCaseReadiness(caseId2) {
   const [caseRow] = await db.select().from(cases).where(eq84(cases.id, caseId2));
   if (!caseRow) {
@@ -33147,8 +33165,8 @@ async function evaluateCaseReadiness(caseId2) {
     };
   }
   const docCounts = await db.select({
-    total: sql130`count(*)`,
-    analyzed: sql130`sum(case when status = 'ready' then 1 else 0 end)`
+    total: sql129`count(*)`,
+    analyzed: sql129`sum(case when status = 'ready' then 1 else 0 end)`
   }).from(documents).where(eq84(documents.caseId, caseId2));
   const documentCount = docCounts[0]?.total ?? 0;
   const analyzedDocumentCount = docCounts[0]?.analyzed ?? 0;
@@ -33505,10 +33523,10 @@ __export(deadline_scheduler_exports, {
   startDeadlineScheduler: () => startDeadlineScheduler,
   stopDeadlineScheduler: () => stopDeadlineScheduler
 });
-import { eq as eq85, and as and65, sql as sql131, isNull as isNull3, isNotNull as isNotNull3 } from "drizzle-orm";
+import { eq as eq85, and as and65, sql as sql130, isNull as isNull3, isNotNull as isNotNull3 } from "drizzle-orm";
 async function findUsersWithActiveRequests() {
   const rows2 = await db.selectDistinct({ userId: foiaRequests.userId }).from(foiaRequests).where(and65(
-    sql131`${foiaRequests.status} IN ('submitted', 'acknowledged', 'in_processing')`,
+    sql130`${foiaRequests.status} IN ('submitted', 'acknowledged', 'in_processing')`,
     isNotNull3(foiaRequests.responseDueAt),
     isNull3(foiaRequests.responseReceivedAt)
   ));
@@ -33565,8 +33583,8 @@ async function hasRecentNotification(userId, type, requestId, sinceTimestamp) {
   const [row] = await db.select({ id: notifications.id }).from(notifications).where(and65(
     eq85(notifications.userId, userId),
     eq85(notifications.type, type),
-    sql131`${notifications.createdAt} > ${sinceTimestamp}`,
-    sql131`JSON_EXTRACT(${notifications.metadata}, '$.requestId') = ${requestId}`
+    sql130`${notifications.createdAt} > ${sinceTimestamp}`,
+    sql130`JSON_EXTRACT(${notifications.metadata}, '$.requestId') = ${requestId}`
   )).limit(1);
   return !!row;
 }
@@ -35734,7 +35752,7 @@ init_db();
 init_db();
 init_analysis_pipeline();
 import { TRPCError as TRPCError17 } from "@trpc/server";
-import { eq as eq87, desc as desc58, and as and66, sql as sql132 } from "drizzle-orm";
+import { eq as eq87, desc as desc58, and as and66, sql as sql131 } from "drizzle-orm";
 
 // server/extraction-recovery.ts
 init_db();
@@ -45046,7 +45064,7 @@ async function countDependents(txOrDb, caseId2, entityIds) {
   };
 }
 var findOrphans = adminProcedure.query(async ({ ctx }) => {
-  const userCases = await db.select({ id: cases.id, name: cases.name }).from(cases).where(eq13(cases.userId, String(ctx.user.id)));
+  const userCases = await db.select({ id: cases.id, name: cases.name }).from(cases).where(eq13(cases.userId, ctx.user.id));
   const orphanDetails = [];
   for (const c of userCases) {
     const [docCount] = await db.select({ c: sql27`COUNT(*)` }).from(documents).where(eq13(documents.caseId, c.id));
@@ -45078,9 +45096,9 @@ var moveEntities = adminProcedure.input(z16.object({
   dryRun: z16.boolean().default(true)
 })).mutation(async ({ ctx, input }) => {
   const { sourceCaseId, targetCaseId, dryRun } = input;
-  const [sourceCase] = await db.select({ id: cases.id, name: cases.name }).from(cases).where(and11(eq13(cases.id, String(sourceCaseId)), eq13(cases.userId, String(ctx.user.id))));
+  const [sourceCase] = await db.select({ id: cases.id, name: cases.name }).from(cases).where(and11(eq13(cases.id, sourceCaseId), eq13(cases.userId, ctx.user.id)));
   if (!sourceCase) throw new Error("Source case not found or not owned by you");
-  const [targetCase] = await db.select({ id: cases.id, name: cases.name }).from(cases).where(and11(eq13(cases.id, String(targetCaseId)), eq13(cases.userId, String(ctx.user.id))));
+  const [targetCase] = await db.select({ id: cases.id, name: cases.name }).from(cases).where(and11(eq13(cases.id, targetCaseId), eq13(cases.userId, ctx.user.id)));
   if (!targetCase) throw new Error("Target case not found or not owned by you");
   if (sourceCaseId === targetCaseId) throw new Error("Source and target case must be different");
   const entitiesToMove = await selectEntities(db, sourceCaseId, input.entityIds);
@@ -45155,7 +45173,7 @@ var purgeEntities = adminProcedure.input(z16.object({
   dryRun: z16.boolean().default(true)
 })).mutation(async ({ ctx, input }) => {
   const { caseId: caseId2, dryRun } = input;
-  const [caseRow] = await db.select({ id: cases.id, name: cases.name }).from(cases).where(and11(eq13(cases.id, String(caseId2)), eq13(cases.userId, String(ctx.user.id))));
+  const [caseRow] = await db.select({ id: cases.id, name: cases.name }).from(cases).where(and11(eq13(cases.id, caseId2), eq13(cases.userId, ctx.user.id)));
   if (!caseRow) throw new Error("Case not found or not owned by you");
   const [docCount] = await db.select({ c: sql27`COUNT(*)` }).from(documents).where(eq13(documents.caseId, String(caseId2)));
   if (docCount.c > 0) {
@@ -53063,6 +53081,13 @@ function jsonDomains(row) {
     return { ...row, domains: [] };
   }
 }
+function normalizeStatuteRow(rawRow) {
+  const row = jsonDomains(rawRow ?? {});
+  return {
+    ...row,
+    keyProvisions: row.keyProvisions ?? row.key_provisions ?? row.verbatim_key_text ?? null
+  };
+}
 async function searchRuntimeStatutes(opts) {
   const { limit, offset } = page(opts);
   const params = [];
@@ -53088,7 +53113,7 @@ async function searchRuntimeStatutes(opts) {
   return fallbackList([
     { sql: `select * from public.v_paginated_statutes ${where} order by created_at desc limit $${params.length - 1} offset $${params.length}`, params },
     { sql: `select id, citation, short_title, jurisdiction, domains, effective_date, last_amended, summary, verbatim_key_text, source_url, enforcement_agency, statute_of_limitations, verification_status, title, statute_text, metadata, created_at from public.legal_statutes ${where} order by created_at desc limit $${params.length - 1} offset $${params.length}`, params }
-  ]).then((items) => items.map(jsonDomains));
+  ]).then((items) => items.map(normalizeStatuteRow));
 }
 async function searchRuntimeCaseLaw(opts) {
   const { limit, offset } = page(opts);
@@ -57198,7 +57223,7 @@ var viabilityEngineRouter = router({
       if (caseClaims.length === 0) {
         return { extracted: 0, message: "No claims found in case. Upload and analyze documents first." };
       }
-      const [caseRow] = await db.select().from(cases).where(eq25(cases.id, String(input.caseId)));
+      const [caseRow] = await db.select().from(cases).where(eq25(cases.id, input.caseId));
       const claimTexts = caseClaims.slice(0, 50).map(
         (c, i) => `[${i + 1}] (${c.claimType}, origin: ${c.statementOrigin}) ${c.claimText}`
       ).join("\n");
@@ -57889,7 +57914,7 @@ var strategyEngineRouter = router({
   // ─── S1: Build Matter Profile ───────────────────────────────────────
   buildMatterProfile: protectedProcedure.input(z35.object({ caseId: z35.number() })).mutation(async ({ input }) => {
     const now3 = Date.now();
-    const [caseRow] = await db.select().from(cases).where(eq28(cases.id, String(input.caseId)));
+    const [caseRow] = await db.select().from(cases).where(eq28(cases.id, input.caseId));
     if (!caseRow) throw new Error("Case not found");
     const caseEntities = await db.select().from(entities).where(eq28(entities.caseId, String(input.caseId)));
     const caseClaims = await db.select().from(claims).where(eq28(claims.caseId, String(input.caseId)));
@@ -58397,7 +58422,7 @@ ${forumSummary}`
         });
       }
     }, async () => {
-      const [caseRow] = await db.select().from(cases).where(eq28(cases.id, String(input.caseId)));
+      const [caseRow] = await db.select().from(cases).where(eq28(cases.id, input.caseId));
       if (!caseRow) throw new Error("Case not found");
       const canonicalEntity = await writeStrategyWorkflow({
         name: `Strategy: ${caseRow.name}`,
@@ -58493,7 +58518,7 @@ var assemblyEngineRouter = router({
   })).mutation(async ({ input }) => {
     return withEngineTracking({ engineId: ENGINE_IDS.ASSEMBLY, caseId: input.caseId, runType: "assembly_only" }, async () => {
       const now3 = Date.now();
-      const [caseRow] = await db.select().from(cases).where(eq29(cases.id, String(input.caseId)));
+      const [caseRow] = await db.select().from(cases).where(eq29(cases.id, input.caseId));
       if (!caseRow) throw new Error("Case not found");
       let pathRow = null;
       if (input.strategyPathId) {
@@ -72708,7 +72733,7 @@ async function loadCaseData(caseId2, userId) {
     domain: cases.domain,
     container: cases.container,
     pipelineType: cases.pipelineType
-  }).from(cases).where(and34(eq46(cases.id, String(caseId2)), eq46(cases.userId, String(userId))));
+  }).from(cases).where(and34(eq46(cases.id, caseId2), eq46(cases.userId, userId)));
   if (!caseRow) throw new Error("Case not found or access denied");
   const [caseEntities, caseClaims, caseFindings, caseFlags2, caseEvents, caseRoles] = await Promise.all([
     db.select({ id: entities.id, name: entities.name, type: entities.type, description: entities.description }).from(entities).where(eq46(entities.caseId, String(caseId2))),
@@ -73308,7 +73333,7 @@ var casePatternBridgeRouter = router({
   // Bulk run bridge on all cases for a user
   bulkRunBridge: protectedProcedure.mutation(async ({ ctx }) => {
     const { cases: cases5 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-    const userCases = await db.select({ id: cases5.id }).from(cases5).where(eq47(cases5.userId, String(ctx.user.id)));
+    const userCases = await db.select({ id: cases5.id }).from(cases5).where(eq47(cases5.userId, ctx.user.id));
     let totalSignals = 0;
     let totalCandidates = 0;
     let totalPromoted = 0;
@@ -78171,14 +78196,14 @@ var executionBridgeRouter = router({
   retryFailedRuns: adminProcedure.input(z76.object({ hoursBack: z76.number().default(24) }).optional()).mutation(async ({ input }) => {
     const { ingestRuns: ingestRuns2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const { eq: eq88, sql: sql135 } = await import("drizzle-orm");
+    const { eq: eq88, sql: sql134 } = await import("drizzle-orm");
     const { triggerManualIngestion: triggerManualIngestion2 } = await Promise.resolve().then(() => (init_scheduler(), scheduler_exports));
     const hoursBack = input?.hoursBack ?? 24;
     const cutoff = Date.now() - hoursBack * 60 * 60 * 1e3;
     const failedRuns = await db2.select({
       datasetId: ingestRuns2.datasetId,
       id: ingestRuns2.id
-    }).from(ingestRuns2).where(sql135`${ingestRuns2.status} = 'failed' AND ${ingestRuns2.startTime} > ${cutoff}`).groupBy(ingestRuns2.datasetId, ingestRuns2.id);
+    }).from(ingestRuns2).where(sql134`${ingestRuns2.status} = 'failed' AND ${ingestRuns2.startTime} > ${cutoff}`).groupBy(ingestRuns2.datasetId, ingestRuns2.id);
     const uniqueStreams = Array.from(new Set(failedRuns.map((r) => r.datasetId).filter((id) => typeof id === "string" && id.length > 0)));
     const results = [];
     for (const stream_id of uniqueStreams) {
@@ -78212,17 +78237,17 @@ var executionBridgeRouter = router({
   getStreamStatus: adminProcedure.input(z76.object({ stream_id: z76.string() })).query(async ({ input }) => {
     const { ingestRuns: ingestRuns2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const { eq: eq88, sql: sql135, desc: desc59 } = await import("drizzle-orm");
+    const { eq: eq88, sql: sql134, desc: desc59 } = await import("drizzle-orm");
     const { isDatasetRunning: isDatasetRunning2, isDatasetQueued: isDatasetQueued2 } = await Promise.resolve().then(() => (init_scheduler(), scheduler_exports));
     const { get_unified_ingestion_metrics: get_unified_ingestion_metrics2 } = await Promise.resolve().then(() => (init_unified_queries(), unified_queries_exports));
     const [stream] = await get_unified_ingestion_metrics2({ stream_id: input.stream_id });
     const recent_runs = await db2.select().from(ingestRuns2).where(eq88(ingestRuns2.datasetId, input.stream_id)).orderBy(desc59(ingestRuns2.startTime)).limit(10);
     const [stats] = await db2.select({
-      total_runs: sql135`COUNT(*)`,
-      successful_runs: sql135`SUM(CASE WHEN ${ingestRuns2.status} = 'completed' THEN 1 ELSE 0 END)`,
-      failed_runs: sql135`SUM(CASE WHEN ${ingestRuns2.status} = 'failed' THEN 1 ELSE 0 END)`,
-      total_records: sql135`SUM(${ingestRuns2.recordsProcessed})`,
-      total_signals: sql135`SUM(${ingestRuns2.signalsGenerated})`
+      total_runs: sql134`COUNT(*)`,
+      successful_runs: sql134`SUM(CASE WHEN ${ingestRuns2.status} = 'completed' THEN 1 ELSE 0 END)`,
+      failed_runs: sql134`SUM(CASE WHEN ${ingestRuns2.status} = 'failed' THEN 1 ELSE 0 END)`,
+      total_records: sql134`SUM(${ingestRuns2.recordsProcessed})`,
+      total_signals: sql134`SUM(${ingestRuns2.signalsGenerated})`
     }).from(ingestRuns2).where(eq88(ingestRuns2.datasetId, input.stream_id));
     return {
       stream: stream ?? null,
@@ -78448,7 +78473,7 @@ var executionBridgeRouter = router({
   }).optional()).query(async ({ input }) => {
     const { ingestRuns: ingestRuns2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
-    const { eq: eq88, sql: sql135, desc: desc59, and: and67 } = await import("drizzle-orm");
+    const { eq: eq88, sql: sql134, desc: desc59, and: and67 } = await import("drizzle-orm");
     const conditions = [];
     if (input?.stream_id) conditions.push(eq88(ingestRuns2.datasetId, input.stream_id));
     if (input?.status) conditions.push(eq88(ingestRuns2.status, input.status));
@@ -79084,7 +79109,7 @@ var actionRoutingRouter = router({
 // server/routers/constitutional-tests.ts
 init_db();
 import { z as z80 } from "zod";
-import { sql as sql125 } from "drizzle-orm";
+import { sql as sql124 } from "drizzle-orm";
 var constitutionalTestsRouter = router({
   /**
    * Register a constitutional test
@@ -79102,7 +79127,7 @@ var constitutionalTestsRouter = router({
     const timestamp3 = Date.now();
     const testId = `test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     await db.query.raw(
-      sql125`INSERT INTO constitutional_tests (test_id, test_name, principle_name, target_layer, test_query, expected_result, severity, is_enabled, created_at, updated_at)
+      sql124`INSERT INTO constitutional_tests (test_id, test_name, principle_name, target_layer, test_query, expected_result, severity, is_enabled, created_at, updated_at)
         VALUES (${testId}, ${input.testName}, ${input.principleName}, ${input.targetLayer}, ${input.testQuery},
         ${input.expectedResult ? JSON.stringify(input.expectedResult) : null},
         ${input.severity}, TRUE, ${timestamp3}, ${timestamp3})`
@@ -79121,7 +79146,7 @@ var constitutionalTestsRouter = router({
     const timestamp3 = Date.now();
     const runId = `run_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const test = await db.query.raw(
-      sql125`SELECT * FROM constitutional_tests WHERE test_id = ${input.testId} LIMIT 1`
+      sql124`SELECT * FROM constitutional_tests WHERE test_id = ${input.testId} LIMIT 1`
     );
     if (!test || test.length === 0) {
       throw new Error(`Test ${input.testId} not found`);
@@ -79131,7 +79156,7 @@ var constitutionalTestsRouter = router({
     let runStatus = "passed";
     let failureReason = null;
     try {
-      const result = await db.query.raw(sql125.raw(testDef.test_query));
+      const result = await db.query.raw(sql124.raw(testDef.test_query));
       actualResult = result;
       if (testDef.expected_result) {
         const expected = JSON.parse(testDef.expected_result);
@@ -79145,7 +79170,7 @@ var constitutionalTestsRouter = router({
       failureReason = error.message;
     }
     await db.query.raw(
-      sql125`INSERT INTO constitutional_test_runs (run_id, test_id, target_id, run_status, actual_result, expected_result, failure_reason, created_at)
+      sql124`INSERT INTO constitutional_test_runs (run_id, test_id, target_id, run_status, actual_result, expected_result, failure_reason, created_at)
         VALUES (${runId}, ${input.testId}, ${input.targetId || null}, ${runStatus},
         ${JSON.stringify(actualResult)},
         ${testDef.expected_result},
@@ -79155,7 +79180,7 @@ var constitutionalTestsRouter = router({
     if (runStatus === "failed" && testDef.severity === "critical") {
       const violationId = `viol_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       await db.query.raw(
-        sql125`INSERT INTO constitutional_violations (violation_id, run_id, principle_name, target_layer, target_id, severity, violation_type, violation_payload, created_at)
+        sql124`INSERT INTO constitutional_violations (violation_id, run_id, principle_name, target_layer, target_id, severity, violation_type, violation_payload, created_at)
           VALUES (${violationId}, ${runId}, ${testDef.principle_name}, ${testDef.target_layer}, ${input.targetId || null},
           ${testDef.severity}, 'test_failure', ${JSON.stringify({ failureReason, test_name: testDef.test_name })}, ${timestamp3})`
       );
@@ -79174,13 +79199,13 @@ var constitutionalTestsRouter = router({
   runAllTests: adminProcedure.mutation(async () => {
     const timestamp3 = Date.now();
     const tests = await db.query.raw(
-      sql125`SELECT test_id FROM constitutional_tests WHERE is_enabled = TRUE`
+      sql124`SELECT test_id FROM constitutional_tests WHERE is_enabled = TRUE`
     );
     const results = [];
     for (const test of tests || []) {
       const runId = `run_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const testDef = await db.query.raw(
-        sql125`SELECT * FROM constitutional_tests WHERE test_id = ${test.test_id} LIMIT 1`
+        sql124`SELECT * FROM constitutional_tests WHERE test_id = ${test.test_id} LIMIT 1`
       );
       if (testDef && testDef.length > 0) {
         const t2 = testDef[0];
@@ -79188,7 +79213,7 @@ var constitutionalTestsRouter = router({
         let failureReason = null;
         let actualResult;
         try {
-          const result = await db.query.raw(sql125.raw(t2.test_query));
+          const result = await db.query.raw(sql124.raw(t2.test_query));
           actualResult = result;
           if (t2.expected_result) {
             const expected = JSON.parse(t2.expected_result);
@@ -79202,7 +79227,7 @@ var constitutionalTestsRouter = router({
           failureReason = error.message;
         }
         await db.query.raw(
-          sql125`INSERT INTO constitutional_test_runs (run_id, test_id, run_status, actual_result, expected_result, failure_reason, created_at)
+          sql124`INSERT INTO constitutional_test_runs (run_id, test_id, run_status, actual_result, expected_result, failure_reason, created_at)
           VALUES (${runId}, ${t2.test_id}, ${runStatus},
           ${JSON.stringify(actualResult)},
           ${t2.expected_result},
@@ -79212,7 +79237,7 @@ var constitutionalTestsRouter = router({
         if (runStatus === "failed" && t2.severity === "critical") {
           const violationId = `viol_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
           await db.query.raw(
-            sql125`INSERT INTO constitutional_violations (violation_id, run_id, principle_name, target_layer, severity, violation_type, violation_payload, created_at)
+            sql124`INSERT INTO constitutional_violations (violation_id, run_id, principle_name, target_layer, severity, violation_type, violation_payload, created_at)
             VALUES (${violationId}, ${runId}, ${t2.principle_name}, ${t2.target_layer}, ${t2.severity}, 'test_failure',
             ${JSON.stringify({ failureReason, test_name: t2.test_name })}, ${timestamp3})`
           );
@@ -79232,16 +79257,16 @@ var constitutionalTestsRouter = router({
       limit: z80.number().default(100)
     })
   ).query(async ({ input }) => {
-    let query = sql125`SELECT * FROM constitutional_violations WHERE 1=1`;
+    let query = sql124`SELECT * FROM constitutional_violations WHERE 1=1`;
     if (input.severity) {
-      query = sql125`${query} AND severity = ${input.severity}`;
+      query = sql124`${query} AND severity = ${input.severity}`;
     }
     if (input.resolved === true) {
-      query = sql125`${query} AND resolved_at IS NOT NULL`;
+      query = sql124`${query} AND resolved_at IS NOT NULL`;
     } else if (input.resolved === false) {
-      query = sql125`${query} AND resolved_at IS NULL`;
+      query = sql124`${query} AND resolved_at IS NULL`;
     }
-    query = sql125`${query} ORDER BY created_at DESC LIMIT ${input.limit}`;
+    query = sql124`${query} ORDER BY created_at DESC LIMIT ${input.limit}`;
     const violations = await db.query.raw(query);
     return violations || [];
   }),
@@ -79251,7 +79276,7 @@ var constitutionalTestsRouter = router({
   resolveViolation: adminProcedure.input(z80.object({ violationId: z80.string() })).mutation(async ({ input }) => {
     const timestamp3 = Date.now();
     await db.query.raw(
-      sql125`UPDATE constitutional_violations 
+      sql124`UPDATE constitutional_violations 
         SET resolved_at = ${timestamp3}
         WHERE violation_id = ${input.violationId}`
     );
@@ -79266,11 +79291,11 @@ var constitutionalTestsRouter = router({
       limit: z80.number().default(50)
     })
   ).query(async ({ input }) => {
-    let query = sql125`SELECT * FROM constitutional_test_runs WHERE 1=1`;
+    let query = sql124`SELECT * FROM constitutional_test_runs WHERE 1=1`;
     if (input.testId) {
-      query = sql125`${query} AND test_id = ${input.testId}`;
+      query = sql124`${query} AND test_id = ${input.testId}`;
     }
-    query = sql125`${query} ORDER BY created_at DESC LIMIT ${input.limit}`;
+    query = sql124`${query} ORDER BY created_at DESC LIMIT ${input.limit}`;
     const runs = await db.query.raw(query);
     return runs || [];
   }),
@@ -79279,7 +79304,7 @@ var constitutionalTestsRouter = router({
    */
   getTestSummary: adminProcedure.query(async () => {
     const summary = await db.query.raw(
-      sql125`SELECT 
+      sql124`SELECT 
         principle_name,
         COUNT(*) as total_tests,
         SUM(CASE WHEN is_enabled = TRUE THEN 1 ELSE 0 END) as enabled_tests,
@@ -79289,7 +79314,7 @@ var constitutionalTestsRouter = router({
       ORDER BY principle_name, severity`
     );
     const violations = await db.query.raw(
-      sql125`SELECT 
+      sql124`SELECT 
         severity,
         COUNT(*) as count,
         SUM(CASE WHEN resolved_at IS NULL THEN 1 ELSE 0 END) as unresolved
@@ -79669,7 +79694,7 @@ init_schema();
 init_analysis_pipeline();
 init_forensic_db();
 import { z as z82 } from "zod";
-import { sql as sql126 } from "drizzle-orm";
+import { sql as sql125 } from "drizzle-orm";
 var extractionRouter = router({
   /**
    * Get list of all documents with their extraction status
@@ -79683,10 +79708,10 @@ var extractionRouter = router({
     try {
       let query = db.select().from(documents);
       if (input.caseId) {
-        query = query.where(sql126`caseId = ${input.caseId}`);
+        query = query.where(sql125`caseId = ${input.caseId}`);
       }
       if (input.status) {
-        query = query.where(sql126`status = ${input.status}`);
+        query = query.where(sql125`status = ${input.status}`);
       }
       const docs = await query.limit(input.limit).offset(input.offset);
       return {
@@ -79710,7 +79735,7 @@ var extractionRouter = router({
     documentId: z82.number()
   })).query(async ({ input }) => {
     try {
-      const doc = await db.select().from(documents).where(sql126`id = ${input.documentId}`);
+      const doc = await db.select().from(documents).where(sql125`id = ${input.documentId}`);
       if (doc.length === 0) {
         return {
           success: false,
@@ -79755,7 +79780,7 @@ var extractionRouter = router({
     documentId: z82.number()
   })).mutation(async ({ input }) => {
     try {
-      await db.update(documents).set({ status: "extracting" }).where(sql126`id = ${input.documentId}`);
+      await db.update(documents).set({ status: "extracting" }).where(sql125`id = ${input.documentId}`);
       processDocument(input.documentId).catch((err) => {
         console.error("[Extraction] Background error:", err);
       });
@@ -79888,7 +79913,7 @@ var extractionRouter = router({
         "SELECT type, COUNT(*) as count FROM entities WHERE caseId = ? GROUP BY type ORDER BY count DESC",
         [input.caseId]
       );
-      const documentCount = await db.select().from(documents).where(sql126`caseId = ${input.caseId}`);
+      const documentCount = await db.select().from(documents).where(sql125`caseId = ${input.caseId}`);
       return {
         success: true,
         stats: {
@@ -80646,7 +80671,7 @@ import { z as z83 } from "zod";
 
 // server/services/canonical-core.ts
 init_db();
-import { sql as sql127 } from "drizzle-orm";
+import { sql as sql126 } from "drizzle-orm";
 async function finalizePipelineRun(payload) {
   const now3 = Date.now();
   const tracePath = payload.tracePath || `${payload.pipelineSource}:${now3}`;
@@ -80660,7 +80685,7 @@ async function finalizePipelineRun(payload) {
   const status = errors.length > 0 ? payload.recordsWritten > 0 ? "partial" : "failed" : "success";
   let eventId = null;
   try {
-    const [result2] = await db.execute(sql127`
+    const [result2] = await db.execute(sql126`
       INSERT INTO pipeline_events (userId, pipelineType, eventType, stateCode, createdAt)
       VALUES (0, ${payload.pipelineSource}, 'analysis_complete', NULL, ${now3})
     `);
@@ -80680,7 +80705,7 @@ async function finalizePipelineRun(payload) {
   if (enginePipelines.includes(payload.pipelineSource)) {
     try {
       const runStatus = status === "failed" ? "failed" : "completed";
-      await db.execute(sql127`
+      await db.execute(sql126`
         INSERT INTO engine_runs (caseId, userId, engineRunType, engineRunStatus, currentStage, stageResults, errorMessage, startedAt, completedAt, createdAt)
         VALUES (0, 0, 'full_pipeline', ${runStatus}, ${payload.pipelineSource},
                 ${JSON.stringify({ description: payload.description, canonicalTables: payload.canonicalTables, recordsWritten: payload.recordsWritten })},
@@ -80764,7 +80789,7 @@ async function getCanonicalCoreHealth() {
   let emptyTables = 0;
   for (const { table, category } of canonicalTables) {
     try {
-      const result = await db.execute(sql127.raw(`SELECT COUNT(*) as c FROM "${table}"`));
+      const result = await db.execute(sql126.raw(`SELECT COUNT(*) as c FROM "${table}"`));
       const rows2 = result.rows ?? result;
       const count18 = Number(rows2?.[0]?.c) || 0;
       results.push({ table, category, count: count18 });
@@ -80856,7 +80881,7 @@ async function getPipelineCompletionState() {
 
 // server/services/unified-access.ts
 init_db();
-import { sql as sql128 } from "drizzle-orm";
+import { sql as sql127 } from "drizzle-orm";
 async function getSystemSummary() {
   const counts = {};
   const tables = [
@@ -80883,7 +80908,7 @@ async function getSystemSummary() {
   ];
   for (const [key2, table] of tables) {
     try {
-      const [rows2] = await db.execute(sql128.raw(`SELECT COUNT(*) as c FROM \`${table}\``));
+      const [rows2] = await db.execute(sql127.raw(`SELECT COUNT(*) as c FROM \`${table}\``));
       counts[key2] = Number(rows2[0]?.c) || 0;
     } catch {
       counts[key2] = 0;
@@ -80895,7 +80920,7 @@ async function getSystemSummary() {
 // server/services/knowledge-reconnect.ts
 init_db();
 init_schema();
-import { sql as sql129 } from "drizzle-orm";
+import { sql as sql128 } from "drizzle-orm";
 async function reconnectProofFrameworks() {
   const result = {
     sector: "legal",
@@ -80905,7 +80930,7 @@ async function reconnectProofFrameworks() {
     errors: []
   };
   try {
-    const [existing] = await db.select({ count: sql129`COUNT(*)` }).from(proofFrameworks);
+    const [existing] = await db.select({ count: sql128`COUNT(*)` }).from(proofFrameworks);
     if (existing.count > 0) {
       result.skipped = existing.count;
       return result;
@@ -80951,7 +80976,7 @@ async function reconnectKnowledgeModules() {
     errors: []
   };
   try {
-    const [existing] = await db.select({ count: sql129`COUNT(*)` }).from(knowledgeModules);
+    const [existing] = await db.select({ count: sql128`COUNT(*)` }).from(knowledgeModules);
     if (existing.count > 0) {
       result.skipped = existing.count;
       return result;
@@ -80988,7 +81013,7 @@ async function reconnectKnowledgeEntries() {
     errors: []
   };
   try {
-    const [existing] = await db.select({ count: sql129`COUNT(*)` }).from(knowledgeEntries);
+    const [existing] = await db.select({ count: sql128`COUNT(*)` }).from(knowledgeEntries);
     if (existing.count > 0) {
       result.skipped = existing.count;
       return result;
@@ -81058,7 +81083,7 @@ async function reconnectAgencyAuthorityMap() {
     errors: []
   };
   try {
-    const [existing] = await db.select({ count: sql129`COUNT(*)` }).from(agencyAuthorityMap);
+    const [existing] = await db.select({ count: sql128`COUNT(*)` }).from(agencyAuthorityMap);
     if (existing.count > 0) {
       result.skipped = existing.count;
       return result;
@@ -81100,7 +81125,7 @@ async function reconnectAgencyPerformance() {
     errors: []
   };
   try {
-    const [existing] = await db.select({ count: sql129`COUNT(*)` }).from(agencyPerformanceMetrics);
+    const [existing] = await db.select({ count: sql128`COUNT(*)` }).from(agencyPerformanceMetrics);
     if (existing.count > 0) {
       result.skipped = existing.count;
       return result;
@@ -81141,7 +81166,7 @@ async function reconnectEscalationRegistry() {
     errors: []
   };
   try {
-    const [existing] = await db.select({ count: sql129`COUNT(*)` }).from(escalationRegistry);
+    const [existing] = await db.select({ count: sql128`COUNT(*)` }).from(escalationRegistry);
     if (existing.count > 0) {
       result.skipped = existing.count;
       return result;
@@ -81698,7 +81723,7 @@ init_schema();
 init_live_signal_emitter();
 import { eq as eq80, and as and61 } from "drizzle-orm";
 async function verify_case_ownership(case_id, user_id) {
-  const [case_row] = await db.select({ id: cases.id, user_id: cases.userId }).from(cases).where(eq80(cases.id, String(case_id)));
+  const [case_row] = await db.select({ id: cases.id, user_id: cases.userId }).from(cases).where(eq80(cases.id, case_id));
   if (!case_row || case_row.user_id !== user_id) {
     throw new Error("Case not found or access denied");
   }
@@ -82128,12 +82153,12 @@ var activationRouter = router({
   }),
   start: publicProcedure.input(z86.object({ clusterId: z86.string() })).mutation(async ({ ctx, input }) => {
     const now3 = Date.now();
-    await db.execute(sql132`UPDATE activation_outputs SET status = 'in_progress', updated_at = ${now3} WHERE cluster_id = ${input.clusterId}`);
+    await db.execute(sql131`UPDATE activation_outputs SET status = 'in_progress', updated_at = ${now3} WHERE cluster_id = ${input.clusterId}`);
     return { success: true };
   }),
   complete: publicProcedure.input(z86.object({ clusterId: z86.string() })).mutation(async ({ ctx, input }) => {
     const now3 = Date.now();
-    await db.execute(sql132`UPDATE activation_outputs SET status = 'completed', updated_at = ${now3} WHERE cluster_id = ${input.clusterId}`);
+    await db.execute(sql131`UPDATE activation_outputs SET status = 'completed', updated_at = ${now3} WHERE cluster_id = ${input.clusterId}`);
     return { success: true };
   })
 });
@@ -85142,7 +85167,7 @@ var lensesRouter = router({
     }
     const { cases: cases5 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
     const { eq: eq88 } = await import("drizzle-orm");
-    await db.update(cases5).set({ manualLensOverrides: input.lensIds, updatedAt: Date.now() }).where(eq88(cases5.id, String(input.caseId)));
+    await db.update(cases5).set({ manualLensOverrides: input.lensIds, updatedAt: Date.now() }).where(eq88(cases5.id, input.caseId));
     return { success: true, lens_ids: input.lensIds };
   }),
   /**
@@ -86484,14 +86509,14 @@ function parseCookies(cookieHeader) {
 // server/routes/ai-inspect-router.ts
 init_db();
 import express from "express";
-import { sql as sql133 } from "drizzle-orm";
+import { sql as sql132 } from "drizzle-orm";
 function now() {
   return (/* @__PURE__ */ new Date()).toISOString();
 }
 async function countTable2(tableName) {
   try {
     const result = await db.execute(
-      sql133.raw(`SELECT COUNT(*) AS count FROM "${tableName}"`)
+      sql132.raw(`SELECT COUNT(*) AS count FROM "${tableName}"`)
     );
     const rows2 = result?.rows ?? result;
     const raw = Array.isArray(rows2) ? rows2[0]?.count : void 0;
@@ -87036,9 +87061,9 @@ function cacheStatic(res) {
 function cacheLive(res) {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
 }
-async function safeQuery(sql135) {
+async function safeQuery(sql134) {
   try {
-    const { rows: rows2 } = await getPool().query(sql135);
+    const { rows: rows2 } = await getPool().query(sql134);
     return rows2;
   } catch (e) {
     return [{ error: String(e?.message ?? e).slice(0, 300) }];
@@ -91224,7 +91249,7 @@ docket_router.get("/bill/:bill_id", async (req, res) => {
 init_scheduler();
 init_executor_service();
 init_db();
-import { sql as sql134 } from "drizzle-orm";
+import { sql as sql133 } from "drizzle-orm";
 function camelToSnake(key2) {
   return key2.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 }
@@ -91275,7 +91300,7 @@ function registerExecutorRoutes(app) {
   app.post("/api/executor/run_all_streams", async (_req, res) => {
     try {
       console.log("[Executor] run_all_streams");
-      const rows2 = await db.execute(sql134`
+      const rows2 = await db.execute(sql133`
         SELECT stream_id_dsr AS stream_id FROM data_stream_registry
         WHERE enabled_dsr = 1 AND (auto_disabled_dsr = 0 OR auto_disabled_dsr IS NULL)
         ORDER BY signal_weight_dsr DESC
