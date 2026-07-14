@@ -45,7 +45,7 @@ export const assemblyEngineRouter = router({
     .mutation(async ({ input }) => {
       return withEngineTracking({ engineId: ENGINE_IDS.ASSEMBLY, caseId: input.caseId, runType: "assembly_only" }, async () => {
       const now = Date.now();
-      const [caseRow] = await db.select().from(cases).where(eq(cases.id, String(input.caseId)));
+      const [caseRow] = await db.select().from(cases).where(eq(cases.id, input.caseId));
       if (!caseRow) throw new Error("Case not found");
 
       // Get strategy path if provided

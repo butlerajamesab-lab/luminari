@@ -54,7 +54,7 @@ export const viabilityEngineRouter = router({
 
       // Get case metadata for context
       const [caseRow] = await db.select().from(cases)
-        .where(eq(cases.id, String(input.caseId)));
+        .where(eq(cases.id, input.caseId));
 
       // Build claim text for LLM extraction
       const claimTexts = caseClaims.slice(0, 50).map((c: any, i: any) =>

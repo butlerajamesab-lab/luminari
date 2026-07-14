@@ -100,7 +100,7 @@ async function countDependents(txOrDb: typeof db, caseId: number, entityIds: num
 const findOrphans = adminProcedure.query(async ({ ctx }) => {
   const userCases = await db.select({ id: cases.id, name: cases.name })
     .from(cases)
-    .where(eq(cases.userId, String(ctx.user.id)));
+    .where(eq(cases.userId, ctx.user.id));
 
   const orphanDetails: {
     caseId: number;
@@ -153,11 +153,11 @@ const moveEntities = adminProcedure
 
     // Validate both cases exist and are owned by this user
     const [sourceCase] = await db.select({ id: cases.id, name: cases.name })
-      .from(cases).where(and(eq(cases.id, String(sourceCaseId)), eq(cases.userId, String(ctx.user.id))));
+      .from(cases).where(and(eq(cases.id, sourceCaseId), eq(cases.userId, ctx.user.id)));
     if (!sourceCase) throw new Error("Source case not found or not owned by you");
 
     const [targetCase] = await db.select({ id: cases.id, name: cases.name })
-      .from(cases).where(and(eq(cases.id, String(targetCaseId)), eq(cases.userId, String(ctx.user.id))));
+      .from(cases).where(and(eq(cases.id, targetCaseId), eq(cases.userId, ctx.user.id)));
     if (!targetCase) throw new Error("Target case not found or not owned by you");
 
     if (sourceCaseId === targetCaseId) throw new Error("Source and target case must be different");
@@ -263,7 +263,7 @@ const purgeEntities = adminProcedure
 
     // Validate case exists and is owned by user
     const [caseRow] = await db.select({ id: cases.id, name: cases.name })
-      .from(cases).where(and(eq(cases.id, String(caseId)), eq(cases.userId, String(ctx.user.id))));
+      .from(cases).where(and(eq(cases.id, caseId), eq(cases.userId, ctx.user.id)));
     if (!caseRow) throw new Error("Case not found or not owned by you");
 
     // Purge guardrail: doc_count must be 0
