@@ -1,5 +1,6 @@
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,22 @@ type RedeemResponse = {
   error?: string;
 };
 
+async function getInviteSessionToken(): Promise<string | null> {
+  const { data } = await supabase.auth.getSession();
+  const session = data.session;
+  if (!session) return null;
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  if (session.expires_at && session.expires_at - nowSeconds < 60) {
+    const { data: refreshed, error } = await supabase.auth.refreshSession();
+    if (!error && refreshed.session?.access_token) {
+      return refreshed.session.access_token;
+    }
+  }
+
+  return session.access_token;
+}
+
 export default function InviteLanding() {
   const { token } = useParams<{ token: string }>();
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -45,10 +62,18 @@ export default function InviteLanding() {
     setRedeemError(null);
     setRedeemAttempted(true);
     try {
+      const sessionToken = await getInviteSessionToken();
+      if (!sessionToken) {
+        throw new Error("Sign in before redeeming this invite.");
+      }
+
       const response = await fetch("/api/invites/redeem", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-lighthouse-supabase-session": sessionToken,
+        },
         body: JSON.stringify({ token }),
       });
       const result = (await response.json()) as RedeemResponse;
@@ -67,7 +92,6 @@ export default function InviteLanding() {
     }
   };
 
-  // Auto-redeem once when the authenticated user reaches a valid invite.
   useEffect(() => {
     if (isAuthenticated && validation?.valid && !redeemed && !redeemAttempted) {
       void redeemInvite();
