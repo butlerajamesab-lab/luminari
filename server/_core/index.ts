@@ -20,6 +20,14 @@ import { loadLensRegistry } from "../lens-engine";
 import { serveStatic, setupVite } from "./vite";
 import { livenessPayload, sendDatabaseDiagnostic, SUPABASE_PROJECT } from "./health-diagnostics";
 
+const runtime_fingerprint = Object.freeze({
+  render_git_commit: process.env.RENDER_GIT_COMMIT || null,
+  render_service_id: process.env.RENDER_SERVICE_ID || null,
+  render_service_name: process.env.RENDER_SERVICE_NAME || null,
+  node_env: process.env.NODE_ENV || null,
+  auth_context_profile_resolution: "eager_profile_lookup_v1",
+});
+
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
     const server = net.createServer();
@@ -109,6 +117,11 @@ async function startServer() {
     res.json(livenessPayload());
   });
 
+  app.get("/api/runtime-build", (_req, res) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.json({ ok: true, ...runtime_fingerprint });
+  });
+
   app.get("/api/db-diagnostic", async (_req, res) => {
     await sendDatabaseDiagnostic(res);
   });
@@ -152,6 +165,7 @@ async function startServer() {
   server.listen(port, () => {
     console.log(`Luminari server running on http://localhost:${port}/`);
     console.log(`[Startup] Supabase project: ${SUPABASE_PROJECT}`);
+    console.log("[Startup] Runtime fingerprint", runtime_fingerprint);
     // Load pipeline and lens registries (non-blocking)
     try { loadPipelineRegistry(); console.log("[Startup] Pipeline registry loaded"); } catch (e) { console.error("[Startup] Pipeline registry error:", e); }
     try { loadLensRegistry(); console.log("[Startup] Lens registry loaded"); } catch (e) { console.error("[Startup] Lens registry error:", e); }
