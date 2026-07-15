@@ -18,38 +18,63 @@ const PLAN_LABELS: Record<string, string> = {
   enterprise: "Enterprise",
 };
 
+type RedeemResponse = {
+  ok: boolean;
+  target_role?: string;
+  target_plan?: string;
+  error?: string;
+};
+
 export default function InviteLanding() {
   const { token } = useParams<{ token: string }>();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [redeemed, setRedeemed] = useState(false);
+  const [redeemPending, setRedeemPending] = useState(false);
+  const [redeemAttempted, setRedeemAttempted] = useState(false);
+  const [redeemError, setRedeemError] = useState<string | null>(null);
 
   const { data: validation, isLoading } = trpc.invites.validate.useQuery(
     { token: token || "" },
     { enabled: !!token }
   );
 
-  const redeemMutation = trpc.invites.redeem.useMutation({
-    onSuccess: (result) => {
+  const redeemInvite = async () => {
+    if (!token || redeemPending) return;
+    setRedeemPending(true);
+    setRedeemError(null);
+    setRedeemAttempted(true);
+    try {
+      const response = await fetch("/api/invites/redeem", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      const result = (await response.json()) as RedeemResponse;
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error || "Invite redemption failed.");
+      }
       setRedeemed(true);
-      const r = result as any;
-      const planKey = r.target_plan ?? 'advocacy';
+      const planKey = result.target_plan ?? "advocacy";
       toast.success(`Welcome! You've been upgraded to ${PLAN_LABELS[planKey] || planKey} plan.`);
-    },
-    onError: (err) => {
-      toast.error(err.message);
-    },
-  });
-
-  // Auto-redeem if user is authenticated and invite is valid
-  useEffect(() => {
-    if (isAuthenticated && validation?.valid && !redeemed && !redeemMutation.isPending) {
-      redeemMutation.mutate({ token: token || "" });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invite redemption failed.";
+      setRedeemError(message);
+      toast.error(message);
+    } finally {
+      setRedeemPending(false);
     }
-  }, [isAuthenticated, validation?.valid, token, redeemed]);
+  };
+
+  // Auto-redeem once when the authenticated user reaches a valid invite.
+  useEffect(() => {
+    if (isAuthenticated && validation?.valid && !redeemed && !redeemAttempted) {
+      void redeemInvite();
+    }
+  }, [isAuthenticated, validation?.valid, token, redeemed, redeemAttempted]);
 
   const handleLogin = () => {
-    // Store the invite path so we return here after login
     sessionStorage.setItem("luminari-invite-return", `/invite/${token}`);
     window.location.href = getLoginUrl();
   };
@@ -73,9 +98,7 @@ export default function InviteLanding() {
             <Shield className="h-8 w-8 text-primary" />
           </div>
           <CardTitle className="text-2xl">Luminari Invite</CardTitle>
-          <CardDescription>
-            You've been invited to join Luminari
-          </CardDescription>
+          <CardDescription>You've been invited to join Luminari</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {!validation?.valid ? (
@@ -84,9 +107,7 @@ export default function InviteLanding() {
                 <XCircle className="h-6 w-6 text-destructive" />
               </div>
               <p className="text-muted-foreground">{validation?.reason || "This invite link is not valid."}</p>
-              <Button variant="outline" onClick={() => setLocation("/welcome")}>
-                Go to Luminari
-              </Button>
+              <Button variant="outline" onClick={() => setLocation("/welcome")}>Go to Luminari</Button>
             </div>
           ) : redeemed ? (
             <div className="text-center space-y-4">
@@ -106,9 +127,7 @@ export default function InviteLanding() {
             <div className="space-y-4">
               {validation.invite && (
                 <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                  {validation.invite.label && (
-                    <p className="text-sm text-muted-foreground">{validation.invite.label}</p>
-                  )}
+                  {validation.invite.label && <p className="text-sm text-muted-foreground">{validation.invite.label}</p>}
                   {(() => {
                     const inv = validation.invite as any;
                     const role = inv.target_role;
@@ -117,15 +136,11 @@ export default function InviteLanding() {
                       <>
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-muted-foreground">Role:</span>
-                          <Badge variant={role === "admin" ? "default" : "secondary"}>
-                            {role}
-                          </Badge>
+                          <Badge variant={role === "admin" ? "default" : "secondary"}>{role}</Badge>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-muted-foreground">Plan:</span>
-                          <Badge variant="outline">
-                            {PLAN_LABELS[plan] || plan}
-                          </Badge>
+                          <Badge variant="outline">{PLAN_LABELS[plan] || plan}</Badge>
                         </div>
                       </>
                     );
@@ -134,10 +149,20 @@ export default function InviteLanding() {
               )}
 
               {isAuthenticated ? (
-                <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground">Applying invite...</p>
-                </div>
+                redeemError ? (
+                  <div className="space-y-3 text-center">
+                    <p className="text-sm text-destructive">{redeemError}</p>
+                    <Button onClick={() => void redeemInvite()} disabled={redeemPending} className="w-full">
+                      {redeemPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Retry Invite
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground">Applying invite...</p>
+                  </div>
+                )
               ) : (
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground text-center">
