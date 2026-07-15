@@ -1,0 +1,48 @@
+name: One-off Mission Control population contract repair
+
+on:
+  push:
+    branches:
+      - fix-mission-control-population-contract
+    paths:
+      - .github/workflows/oneoff-fix-mission-control-population-contract.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix-mission-control-population-contract
+          fetch-depth: 0
+      - name: Add backward-compatible response aliases
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('server/routers/knowledge-ingestion.ts')
+          text = path.read_text()
+          old = '''        overall_coverage: totalTarget ? Math.round((totalPopulated / totalTarget) * 100) : 0,
+          critically_low: criticallyLow.map((r) => r.label),
+          under_populated: underPopulated.map((r) => r.label),'''
+          new = '''        overall_coverage: totalTarget ? Math.round((totalPopulated / totalTarget) * 100) : 0,
+          overallCoverage: totalTarget ? Math.round((totalPopulated / totalTarget) * 100) : 0,
+          critically_low: criticallyLow.map((r) => r.label),
+          criticallyLow: criticallyLow.map((r) => r.label),
+          under_populated: underPopulated.map((r) => r.label),
+          underPopulated: underPopulated.map((r) => r.label),'''
+          if old not in text:
+              raise SystemExit('expected population summary block not found')
+          path.write_text(text.replace(old, new, 1))
+          Path('.github/workflows/oneoff-fix-mission-control-population-contract.yml').unlink()
+          PY
+      - name: Commit repaired contract
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/routers/knowledge-ingestion.ts .github/workflows/oneoff-fix-mission-control-population-contract.yml
+          git commit -m "fix(mission-control): restore population summary compatibility fields"
+          git push origin HEAD:fix-mission-control-population-contract
