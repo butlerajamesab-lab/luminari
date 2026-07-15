@@ -1,0 +1,98 @@
+name: One-off bound knowledge population fanout
+
+on:
+  push:
+    branches:
+      - fix-knowledge-population-pool-fanout
+    paths:
+      - .github/workflows/oneoff-bound-knowledge-population.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix-knowledge-population-pool-fanout
+          fetch-depth: 0
+      - name: Replace unbounded Promise.all with bounded workers
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('server/routers/knowledge-ingestion.ts')
+          text = path.read_text()
+          old = '''    const results = await Promise.all(
+      tables.map(async (t) => {
+        try {
+          const { rows } = await getPool().query(`SELECT COUNT(*)::int AS cnt FROM ${quoteSafeIdentifier(t.name)}`);
+          const cnt = Number(rows[0]?.cnt ?? 0);
+          return {
+            name: t.name,
+            label: t.label,
+            count: cnt,
+            target: t.target,
+            coverage: Math.min(100, Math.round((cnt / t.target) * 100)),
+          };
+        } catch {
+          return { name: t.name, label: t.label, count: 0, target: t.target, coverage: 0 };
+        }
+      })
+    );'''
+          new = '''    const results: Array<{
+      name: string;
+      label: string;
+      count: number;
+      target: number;
+      coverage: number;
+    }> = new Array(tables.length);
+
+    const worker_count = Math.min(4, tables.length);
+    let next_index = 0;
+
+    const workers = Array.from({ length: worker_count }, async () => {
+      while (next_index < tables.length) {
+        const index = next_index++;
+        const table = tables[index];
+
+        try {
+          const { rows } = await getPool().query(
+            `SELECT COUNT(*)::int AS cnt FROM ${quoteSafeIdentifier(table.name)}`,
+          );
+          const count = Number(rows[0]?.cnt ?? 0);
+          results[index] = {
+            name: table.name,
+            label: table.label,
+            count,
+            target: table.target,
+            coverage: Math.min(100, Math.round((count / table.target) * 100)),
+          };
+        } catch {
+          results[index] = {
+            name: table.name,
+            label: table.label,
+            count: 0,
+            target: table.target,
+            coverage: 0,
+          };
+        }
+      }
+    });
+
+    await Promise.all(workers);'''
+          if old not in text:
+              raise SystemExit('expected unbounded population fanout block not found')
+          text = text.replace(old, new, 1)
+          path.write_text(text)
+          Path('.github/workflows/oneoff-bound-knowledge-population.yml').unlink()
+          PY
+      - name: Commit bounded query fanout
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/routers/knowledge-ingestion.ts .github/workflows/oneoff-bound-knowledge-population.yml
+          git commit -m "fix(knowledge): bound population count query concurrency"
+          git push origin HEAD:fix-knowledge-population-pool-fanout
