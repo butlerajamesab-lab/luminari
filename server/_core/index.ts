@@ -14,6 +14,7 @@ import { atlasProxyRouter } from "../routes/atlas-proxy-router";
 import { ingestion_control_read_cache_router } from "../routes/ingestion_control_read_cache_router";
 import { ingestion_control_rest_router } from "../routes/ingestion_control_router";
 import { docket_router } from "../routes/docket";
+import { invite_redemption_router } from "../routes/invite-redemption-router";
 import { registerExecutorRoutes } from "../executor-routes";
 import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";
@@ -100,8 +101,11 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-  // Session middleware for auth — MUST run before tRPC
+  // Session middleware for auth — MUST run before tRPC and invite redemption.
   app.use(sessionMiddleware);
+
+  // Transactional invite redemption — mounted before tRPC/static fallback.
+  app.use("/api/invites", invite_redemption_router);
 
   // tRPC API — full appRouter with all real endpoints
   app.use(
