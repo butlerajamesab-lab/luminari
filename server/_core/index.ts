@@ -126,12 +126,16 @@ async function startServer() {
     res.json({ ok: true, ...runtime_fingerprint });
   });
 
-  app.get("/api/db-diagnostic", async (_req, res) => {
-    await sendDatabaseDiagnostic(res);
+  app.get("/api/db-diagnostic", async (req, res) => {
+    const force_refresh = req.query.force === "1" || req.query.refresh === "1";
+    if (force_refresh) await sendDatabaseDiagnostic(res, true);
+    else await sendDatabaseDiagnostic(res);
   });
 
-  app.get("/api/system/health", async (_req, res) => {
-    await sendDatabaseDiagnostic(res);
+  app.get("/api/system/health", async (req, res) => {
+    const force_refresh = req.query.force === "1" || req.query.refresh === "1";
+    if (force_refresh) await sendDatabaseDiagnostic(res, true);
+    else await sendDatabaseDiagnostic(res);
   });
 
   // AI inspection routes — MUST be mounted before Vite/static serving
