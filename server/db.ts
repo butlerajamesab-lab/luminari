@@ -168,6 +168,16 @@ export async function connect_with_pool_timeout(timeout_ms: number, label = "db"
       return Promise.reject(new DbTimeoutDiagnosticError("pool_acquire_timeout", `${label} pool acquire timed out after ${timeout_ms}ms`, timeout_ms));
     }
     const pool_wait_ms = Date.now() - wait_started_at;
+    const acquired_at = Date.now();
+    const original_release = client.release.bind(client);
+    let released = false;
+    client.release = ((err?: Error | boolean) => {
+      if (!released) {
+        released = true;
+        console.warn("[DB] pool_client_released", { label, hold_duration_ms: Date.now() - acquired_at, pool_total_count: pool.totalCount, pool_idle_count: pool.idleCount, pool_waiting_count: pool.waitingCount });
+      }
+      return original_release(err as any);
+    }) as any;
     console.warn("[DB] pool_acquire_succeeded", { label, pool_wait_ms, acquisition_time_ms: pool_wait_ms, acquire_timeout_ms: timeout_ms, pool_total_count: pool.totalCount, pool_idle_count: pool.idleCount, pool_waiting_count: pool.waitingCount });
     return client;
   });

@@ -177,7 +177,7 @@ const advocacyOrgImportSchema = z.object({
 });
 
 
-const knowledgeBackboneTableList = [
+export const knowledgeBackboneTableList = [
   { name: "legal_statutes", label: "Statutes", target: 900 },
   { name: "legal_case_law", label: "Case Law", target: 400 },
   { name: "agency_authority_map", label: "Agency Authorities", target: 200 },
@@ -225,6 +225,56 @@ const knowledgeBackboneTableList = [
   { name: "registry_signals", label: "Registry Signals", target: 200 },
 ] as const;
 
+export async function boundedMapPreserveOrder<T, R>(items: readonly T[], concurrency: number, mapper: (item: T, index: number) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+  const workerCount = Math.min(Math.max(1, concurrency), items.length);
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const index = nextIndex++;
+      results[index] = await mapper(items[index], index);
+    }
+  }
+
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
+}
+
+export async function buildKnowledgePopulationStats(query: (tableName: string) => Promise<number>) {
+  const tables = knowledgeBackboneTableList;
+  const results = await boundedMapPreserveOrder(tables, 4, async (t) => {
+    try {
+      const cnt = await query(t.name);
+      return { name: t.name, label: t.label, count: cnt, target: t.target, coverage: Math.min(100, Math.round((cnt / t.target) * 100)) };
+    } catch {
+      return { name: t.name, label: t.label, count: 0, target: t.target, coverage: 0 };
+    }
+  });
+
+  const totalPopulated = results.reduce((sum, row) => sum + row.count, 0);
+  const totalTarget = results.reduce((sum, row) => sum + row.target, 0);
+  const criticallyLow = results.filter((row) => row.count === 0);
+  const underPopulated = results.filter((row) => row.count > 0 && row.coverage < 25);
+  const overallCoverage = totalTarget ? Math.round((totalPopulated / totalTarget) * 100) : 0;
+  const criticallyLowLabels = criticallyLow.map((row) => row.label);
+  const underPopulatedLabels = underPopulated.map((row) => row.label);
+
+  return {
+    tables: results,
+    summary: {
+      totalPopulated,
+      totalTarget,
+      overall_coverage: overallCoverage,
+      critically_low: criticallyLowLabels,
+      under_populated: underPopulatedLabels,
+      overallCoverage,
+      criticallyLow: criticallyLowLabels,
+      underPopulated: underPopulatedLabels,
+    },
+  };
+}
+
 const allowedKnowledgeBackboneTables = new Set(knowledgeBackboneTableList.map((table) => table.name));
 const safeIdentifierPattern = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
@@ -239,41 +289,10 @@ function quoteSafeIdentifier(identifier: string): string {
 export const knowledgeIngestionRouter = router({
   /* ── Population Stats (all knowledge tables) ── */
   populationStats: publicProcedure.query(async () => {
-    const tables = knowledgeBackboneTableList;
-
-    const results = await Promise.all(
-      tables.map(async (t) => {
-        try {
-          const { rows } = await getPool().query(`SELECT COUNT(*)::int AS cnt FROM ${quoteSafeIdentifier(t.name)}`);
-          const cnt = Number(rows[0]?.cnt ?? 0);
-          return {
-            name: t.name,
-            label: t.label,
-            count: cnt,
-            target: t.target,
-            coverage: Math.min(100, Math.round((cnt / t.target) * 100)),
-          };
-        } catch {
-          return { name: t.name, label: t.label, count: 0, target: t.target, coverage: 0 };
-        }
-      })
-    );
-
-    const totalPopulated = results.reduce((s, r) => s + r.count, 0);
-    const totalTarget = results.reduce((s, r) => s + r.target, 0);
-    const criticallyLow = results.filter((r) => r.count === 0);
-    const underPopulated = results.filter((r) => r.count > 0 && r.coverage < 25);
-
-    return {
-      tables: results,
-      summary: {
-        totalPopulated,
-        totalTarget,
-        overall_coverage: totalTarget ? Math.round((totalPopulated / totalTarget) * 100) : 0,
-        critically_low: criticallyLow.map((r) => r.label),
-        under_populated: underPopulated.map((r) => r.label),
-      },
-    };
+    return buildKnowledgePopulationStats(async (tableName) => {
+      const { rows } = await getPool().query(`SELECT COUNT(*)::int AS cnt FROM ${quoteSafeIdentifier(tableName)}`);
+      return Number(rows[0]?.cnt ?? 0);
+    });
   }),
 
   /* ── Bulk Import: Statutes ── */

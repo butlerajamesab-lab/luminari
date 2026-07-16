@@ -1810,4 +1810,6 @@ export const __testing = {
   candidate_payload_from_row,
   candidate_payload_text,
   candidate_is_resource_like,
+  candidate_targets_resource_directory,
+  candidate_source_table,
 };
