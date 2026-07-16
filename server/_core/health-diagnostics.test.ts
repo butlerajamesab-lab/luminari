@@ -16,11 +16,16 @@ describe("health diagnostics cache and semantics", () => {
     vi.clearAllMocks();
     __health_diagnostics_test.reset();
     dbMock.classify_db_error.mockReturnValue("db_error");
+    const mock_query_result = <T>(rows: T[]) => {
+      const result = { rows } as { rows: T[]; rowCount: number };
+      result.rowCount = rows.length;
+      return result;
+    };
     dbMock.query_with_diagnostics.mockImplementation(async (text: string) => {
-      if (text.includes("version()")) return { rows: [{ version: "PostgreSQL test" }], rowCount: 1 };
-      if (text.includes("information_schema.columns")) return { rows: [{ table_name: "alpha", column_count: 2 }], rowCount: 1 };
-      if (text.includes("information_schema.views")) return { rows: [{ view_name: "alpha_view" }], rowCount: 1 };
-      return { rows: [{ table_name: "alpha", column_name: "beta", foreign_table_name: "gamma", foreign_column_name: "id" }], rowCount: 1 };
+      if (text.includes("version()")) return mock_query_result([{ version: "PostgreSQL test" }]);
+      if (text.includes("information_schema.columns")) return mock_query_result([{ table_name: "alpha", column_count: 2 }]);
+      if (text.includes("information_schema.views")) return mock_query_result([{ view_name: "alpha_view" }]);
+      return mock_query_result([{ table_name: "alpha", column_name: "beta", foreign_table_name: "gamma", foreign_column_name: "id" }]);
     });
   });
 
@@ -34,7 +39,11 @@ describe("health diagnostics cache and semantics", () => {
   it("falls back to a stale snapshot after a refresh failure", async () => {
     const first = await getDatabaseDiagnostic({ force: true });
     dbMock.query_with_diagnostics.mockImplementation(async (text: string) => {
-      if (text.includes("version()")) return { rows: [{ version: "PostgreSQL test" }], rowCount: 1 };
+      if (text.includes("version()")) {
+        const result = { rows: [{ version: "PostgreSQL test" }] } as { rows: { version: string }[]; rowCount: number };
+        result.rowCount = 1;
+        return result;
+      }
       throw new Error("refresh failed");
     });
     const second = await getDatabaseDiagnostic({ force: true });
