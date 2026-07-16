@@ -95,7 +95,19 @@ async function discoverRouteInventory() {
 
 async function buildDeepSnapshot(): Promise<DeepSnapshot> {
   const [tables, views, foreign_keys, routes] = await Promise.all([
-    query_with_diagnostics<InventoryRow>(`select table_name, count(column_name)::int as column_count from information_schema.columns where table_schema = 'public' group by table_name order by table_name`, [], { label: "db_diagnostic_tables", pool_acquire_timeout_ms: DIAGNOSTIC_POOL_ACQUIRE_TIMEOUT_MS, query_timeout_ms: DIAGNOSTIC_QUERY_TIMEOUT_MS }).then((r) => r.rows),
+    query_with_diagnostics<InventoryRow>(`
+      select
+        t.table_name,
+        count(c.column_name)::int as column_count
+      from information_schema.tables t
+      left join information_schema.columns c
+        on c.table_schema = t.table_schema
+       and c.table_name = t.table_name
+      where t.table_schema = 'public'
+        and t.table_type = 'BASE TABLE'
+      group by t.table_name
+      order by t.table_name
+    `, [], { label: "db_diagnostic_tables", pool_acquire_timeout_ms: DIAGNOSTIC_POOL_ACQUIRE_TIMEOUT_MS, query_timeout_ms: DIAGNOSTIC_QUERY_TIMEOUT_MS }).then((r) => r.rows),
     query_with_diagnostics<InventoryRow>(`select table_name as view_name from information_schema.views where table_schema = 'public' order by table_name`, [], { label: "db_diagnostic_views", pool_acquire_timeout_ms: DIAGNOSTIC_POOL_ACQUIRE_TIMEOUT_MS, query_timeout_ms: DIAGNOSTIC_QUERY_TIMEOUT_MS }).then((r) => r.rows),
     query_with_diagnostics<InventoryRow>(`select tc.table_name, kcu.column_name, ccu.table_name as foreign_table_name, ccu.column_name as foreign_column_name from information_schema.table_constraints tc join information_schema.key_column_usage kcu on tc.constraint_name = kcu.constraint_name and tc.table_schema = kcu.table_schema join information_schema.constraint_column_usage ccu on ccu.constraint_name = tc.constraint_name and ccu.table_schema = tc.table_schema where tc.table_schema = 'public' and tc.constraint_type = 'FOREIGN KEY' order by tc.table_name, kcu.column_name`, [], { label: "db_diagnostic_foreign_keys", pool_acquire_timeout_ms: DIAGNOSTIC_POOL_ACQUIRE_TIMEOUT_MS, query_timeout_ms: DIAGNOSTIC_QUERY_TIMEOUT_MS }).then((r) => r.rows),
     discoverRouteInventory(),
