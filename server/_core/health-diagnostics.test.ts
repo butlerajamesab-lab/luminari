@@ -23,7 +23,10 @@ describe("health diagnostics cache and semantics", () => {
     };
     dbMock.query_with_diagnostics.mockImplementation(async (text: string) => {
       if (text.includes("version()")) return mock_query_result([{ version: "PostgreSQL test" }]);
-      if (text.includes("information_schema.columns")) return mock_query_result([{ table_name: "alpha", column_count: 2 }]);
+      if (text.includes("information_schema.tables")) {
+        expect(text).toContain("table_type = 'BASE TABLE'");
+        return mock_query_result([{ table_name: "alpha", column_count: 2 }]);
+      }
       if (text.includes("information_schema.views")) return mock_query_result([{ view_name: "alpha_view" }]);
       return mock_query_result([{ table_name: "alpha", column_name: "beta", foreign_table_name: "gamma", foreign_column_name: "id" }]);
     });
@@ -33,7 +36,21 @@ describe("health diagnostics cache and semantics", () => {
     const [a, b] = await Promise.all([getDatabaseDiagnostic({ force: true }), getDatabaseDiagnostic({ force: true })]);
     expect(a.db_diagnostic.generated_at).toBeTruthy();
     expect(b.db_diagnostic.generated_at).toBe(a.db_diagnostic.generated_at);
-    expect(dbMock.query_with_diagnostics.mock.calls.filter(([text]) => String(text).includes("information_schema.columns"))).toHaveLength(1);
+    expect(dbMock.query_with_diagnostics.mock.calls.filter(([text]) => String(text).includes("information_schema.tables"))).toHaveLength(1);
+  });
+
+  it("keeps base-table and view totals separate", async () => {
+    const response = await getDatabaseDiagnostic({ force: true });
+
+    expect(response.public_tables).toBe(1);
+    expect(response.db_diagnostic.tables.total).toBe(1);
+    expect(response.db_diagnostic.views.total).toBe(1);
+    expect(response.db_diagnostic.tables.inventory).toEqual([
+      { table_name: "alpha", column_count: 2 },
+    ]);
+    expect(response.db_diagnostic.views.inventory).toEqual([
+      { view_name: "alpha_view" },
+    ]);
   });
 
   it("falls back to a stale snapshot after a refresh failure", async () => {
