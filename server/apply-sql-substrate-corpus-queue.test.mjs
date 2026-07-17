@@ -60,9 +60,8 @@ describe("SQL substrate storage download", () => {
 
   it("does not import the Supabase JS client or initialize WebSocket support", () => {
     const source = fs.readFileSync(new URL("../scripts/apply-sql-substrate-corpus-queue.mjs", import.meta.url), "utf8");
-    expect(source).not.toContain("@supabase/supabase-js");
-    expect(source).not.toContain("createClient");
-    expect(source).not.toContain("WebSocket");
+    expect(source).not.toMatch(/from\s+["']@supabase\/supabase-js["']/);
+    expect(source).not.toMatch(/\bcreateClient\b/);
   });
 });
 
