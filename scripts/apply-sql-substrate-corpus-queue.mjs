@@ -79,7 +79,7 @@ export async function download_sql_text(row, options = {}) {
   const service_role_key = options.service_role_key ?? get_service_role_key();
   const fetch_impl = options.fetch_impl ?? globalThis.fetch;
   if (!supabase_url || !service_role_key || typeof fetch_impl !== "function") {
-    throw Object.assign(new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required to download storage object"), { code: "missing_supabase_storage_credentials" });
+    throw Object.assign(new Error("SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and a fetch implementation are required to download the storage object"), { code: "missing_supabase_storage_credentials" });
   }
   const url = build_storage_object_url(supabase_url, row.storage_bucket, row.storage_path);
   const response = await fetch_impl(url, {
