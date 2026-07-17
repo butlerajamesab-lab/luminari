@@ -59,6 +59,7 @@ export function build_storage_object_url(supabase_url, bucket, object_path) {
   const encoded_bucket = encode_storage_segment(bucket);
   const encoded_path = String(object_path ?? "")
     .split("/")
+    .filter((segment) => segment.length > 0)
     .map(encode_storage_segment)
     .join("/");
   return `${base}/storage/v1/object/authenticated/${encoded_bucket}/${encoded_path}`;
