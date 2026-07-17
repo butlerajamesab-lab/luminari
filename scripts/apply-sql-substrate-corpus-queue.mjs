@@ -120,7 +120,7 @@ export function extract_full_substrate_targets(sql_text) {
 export async function validate_full_substrate_targets(pool, sql_text = "") {
   const declared_targets = extract_full_substrate_targets(sql_text);
   const expected_tables = Object.keys(FULL_SUBSTRATE_TARGET_COUNTS);
-  const missing_from_sql = declared_targets.length ? expected_tables.filter((table) => !declared_targets.includes(table)) : [];
+  const missing_from_sql = expected_tables.filter((table) => !declared_targets.includes(table));
   const validation = [];
   const failures = [];
   for (const [table_name, expected_count] of Object.entries(FULL_SUBSTRATE_TARGET_COUNTS)) {
