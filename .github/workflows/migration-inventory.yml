@@ -29,11 +29,9 @@ jobs:
           ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndlcHhsaW53Ympya3FkemtxcGFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzM0OTUsImV4cCI6MjA5MDc0OTQ5NX0.TDEswS4JskimfZjpN-Rrph2Y6WiDUEwEcJXWKhlEWZk"
 
           curl --fail-with-body --silent --show-error \
-            "${SUPABASE_URL}/rest/v1/rpc/export_missing_migration_ledger_reconciliation" \
+            "${SUPABASE_URL}/rest/v1/missing_migration_ledger_export_tmp?select=version,migration_name,content_b64&order=version.asc" \
             -H "Authorization: Bearer ${ANON_KEY}" \
             -H "apikey: ${ANON_KEY}" \
-            -H "Content-Type: application/json" \
-            --data '{}' \
             > migrations.json 2> restore-error.log
 
           row_count=$(jq 'length' migrations.json)
