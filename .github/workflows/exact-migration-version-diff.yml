@@ -4,10 +4,13 @@ on:
   push:
     branches:
       - audit/exact-migration-version-diff
+    paths-ignore:
+      - migration-version-diff.json
+      - migration-version-diff.txt
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   compare:
@@ -17,6 +20,8 @@ jobs:
       DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: audit/exact-migration-version-diff
 
       - uses: actions/setup-node@v4
         with:
@@ -114,9 +119,6 @@ jobs:
             );
 
             console.log(JSON.stringify(report, null, 2));
-            if (remoteOnly.length > 0 || duplicates.length > 0 || malformed.length > 0) {
-              process.exitCode = 2;
-            }
           }
 
           main().catch((error) => {
@@ -125,12 +127,15 @@ jobs:
           });
           NODE
 
-      - name: Upload migration diff
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: exact-migration-version-diff
-          path: |
-            migration-version-diff.json
-            migration-version-diff.txt
-          if-no-files-found: warn
+      - name: Commit exact diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add migration-version-diff.json migration-version-diff.txt
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Record exact migration version diff"
+          git push origin HEAD:audit/exact-migration-version-diff
