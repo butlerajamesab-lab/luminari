@@ -1,8 +1,9 @@
 name: Exact Migration Version Diff
 
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches:
+      - audit/exact-migration-version-diff
   workflow_dispatch:
 
 permissions:
@@ -43,10 +44,7 @@ jobs:
 
             const localRows = files.map((file) => {
               const match = file.match(/^(\d+)_/);
-              return {
-                file,
-                version: match ? match[1] : null,
-              };
+              return { file, version: match ? match[1] : null };
             });
 
             const malformed = localRows.filter((row) => !row.version);
@@ -74,11 +72,9 @@ jobs:
 
             const remote = result.rows;
             const remoteByVersion = new Map(remote.map((row) => [row.version, row]));
-
             const remoteOnly = remote
               .filter((row) => !localByVersion.has(row.version))
               .map((row) => ({ version: row.version, name: row.name }));
-
             const localOnly = [...localByVersion.entries()]
               .filter(([version]) => !remoteByVersion.has(version))
               .map(([version, versionFiles]) => ({ version, files: versionFiles }));
