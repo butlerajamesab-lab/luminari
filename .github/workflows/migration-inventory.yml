@@ -36,6 +36,7 @@ jobs:
             exit 2
           fi
           DATABASE_URL="${DATABASE_URL/aws-0-<region>.pooler.supabase.com/aws-1-us-west-2.pooler.supabase.com}"
+          DATABASE_URL="${DATABASE_URL/postgres.<project-ref>/postgres.wepxlinwbjrkqdzkqpar}"
 
           versions=(
             20260529061843 20260605224132 20260605225538 20260605231514
