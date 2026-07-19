@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 import "dotenv/config";
+import { createHash } from "node:crypto";
 import { create_pool } from "./lib/corpus-audit-utils.mjs";
+
+export const FULL_SUBSTRATE_BUNDLE_SHA256 = "9b48507e60a963387a0d79aebd43ecd1e9764ee99ec221aa1c28a06693b2c8be";
+export const FULL_SUBSTRATE_VERIFIED_TUPLE_ROWS = 35954;
 
 export const FULL_SUBSTRATE_TARGET_COUNTS = Object.freeze({
   state_enriched_directory_v3_13: 30250,
@@ -25,6 +29,9 @@ export const FULL_SUBSTRATE_TARGET_COUNTS = Object.freeze({
 });
 
 export const FULL_SUBSTRATE_EXPECTED_TOTAL = Object.values(FULL_SUBSTRATE_TARGET_COUNTS).reduce((sum, count) => sum + count, 0);
+
+const FORBIDDEN_FULL_SUBSTRATE_SQL = /\b(?:delete\s+from|drop\s+(?:table|schema|database)|truncate(?:\s+table)?|alter\s+table\s+[^;]+\s+drop\s+(?:column|constraint|table)|create\s+or\s+replace\s+function)\b/i;
+const CANONICAL_WRITE_TARGETS = new Set(["registry_programs", "legal_statutes", "coalition_advocacy_orgs", "legislator_contacts", "programs"]);
 
 export function parse_args(argv = process.argv.slice(2)) {
   const args = { id: null };
@@ -106,6 +113,10 @@ export function handoff_kind_for_row(row) {
   throw Object.assign(new Error(`unsupported SQL substrate handoff target_hint: ${target_hint || "null"}`), { code: "unsupported_target_hint" });
 }
 
+export function sha256_text(text) {
+  return createHash("sha256").update(String(text), "utf8").digest("hex");
+}
+
 export function extract_full_substrate_targets(sql_text) {
   const expected = new Set(Object.keys(FULL_SUBSTRATE_TARGET_COUNTS));
   const regex = /\b(?:insert\s+into|merge\s+into|copy)\s+(?:public\.)?([a-zA-Z_][a-zA-Z0-9_]*)\b/gi;
@@ -115,6 +126,44 @@ export function extract_full_substrate_targets(sql_text) {
     if (expected.has(match[1])) found.add(match[1]);
   }
   return [...found].sort();
+}
+
+export function extract_sql_write_targets(sql_text) {
+  const regex = /\b(?:insert\s+into|merge\s+into|copy|update)\s+(?:public\.)?([a-zA-Z_][a-zA-Z0-9_]*)\b/gi;
+  const found = new Set();
+  let match;
+  while ((match = regex.exec(sql_text))) found.add(match[1]);
+  return [...found].sort();
+}
+
+export function assert_full_substrate_sql_safe(sql_text, options = {}) {
+  const expected_sha256 = options.expected_sha256 ?? FULL_SUBSTRATE_BUNDLE_SHA256;
+  const actual_sha256 = sha256_text(sql_text);
+  if (actual_sha256 !== expected_sha256) {
+    throw Object.assign(new Error(`full substrate SHA-256 mismatch: ${actual_sha256}`), {
+      code: "full_substrate_sha256_mismatch",
+      expected_sha256,
+      actual_sha256,
+    });
+  }
+  if (FORBIDDEN_FULL_SUBSTRATE_SQL.test(sql_text)) {
+    throw Object.assign(new Error("full substrate contains a forbidden destructive or replacement statement"), { code: "forbidden_full_substrate_sql" });
+  }
+  const expected_targets = new Set(Object.keys(FULL_SUBSTRATE_TARGET_COUNTS));
+  const write_targets = extract_sql_write_targets(sql_text);
+  const canonical_targets = write_targets.filter((target) => CANONICAL_WRITE_TARGETS.has(target));
+  const unexpected_targets = write_targets.filter((target) => !expected_targets.has(target));
+  const missing_targets = [...expected_targets].filter((target) => !write_targets.includes(target));
+  if (canonical_targets.length || unexpected_targets.length || missing_targets.length) {
+    throw Object.assign(new Error(`full substrate write-target preflight failed: canonical=${canonical_targets.join(",") || "none"}; unexpected=${unexpected_targets.join(",") || "none"}; missing=${missing_targets.join(",") || "none"}`), {
+      code: "full_substrate_write_target_rejected",
+      canonical_targets,
+      unexpected_targets,
+      missing_targets,
+      write_targets,
+    });
+  }
+  return { sha256: actual_sha256, write_targets };
 }
 
 export async function validate_full_substrate_targets(pool, sql_text = "") {
@@ -160,16 +209,15 @@ export async function validate_cream_substrate(pool) {
 }
 
 export function success_record_count(row, validation) {
-  if (handoff_kind_for_row(row) === "full_substrate_sql_handoff") {
-    const estimate = Number(row.record_count_estimate ?? 0);
-    return estimate > validation.expected_total ? estimate : validation.expected_total;
-  }
+  if (handoff_kind_for_row(row) === "full_substrate_sql_handoff") return FULL_SUBSTRATE_VERIFIED_TUPLE_ROWS;
   return validation.cream_rows;
 }
 
-export async function run_sql_substrate_handoff(pool, row, sql_text, started_at = Date.now()) {
-  await pool.query(sql_text);
+export async function run_sql_substrate_handoff(pool, row, sql_text, started_at = Date.now(), options = {}) {
   const handoff_kind = handoff_kind_for_row(row);
+  let preflight = null;
+  if (handoff_kind === "full_substrate_sql_handoff") preflight = assert_full_substrate_sql_safe(sql_text, options);
+  await pool.query(sql_text);
   let operation_result_json;
   let accounting_count;
   if (handoff_kind === "full_substrate_sql_handoff") {
@@ -182,10 +230,12 @@ export async function run_sql_substrate_handoff(pool, row, sql_text, started_at 
       storage_bucket: row.storage_bucket,
       storage_path: row.storage_path,
       sql_chars: sql_text.length,
-      expected_total: validation.expected_total,
+      verified_sha256: preflight.sha256,
+      verified_tuple_rows: FULL_SUBSTRATE_VERIFIED_TUPLE_ROWS,
+      reconciliation_target_total: validation.expected_total,
       observed_total: validation.observed_total,
       target_validation: validation.target_validation,
-      canonical_policy: row.canonical_policy ?? "upsert_merge_no_delete",
+      canonical_policy: "staging_only_no_canonical_writes_no_delete",
     };
   } else {
     const validation = await validate_cream_substrate(pool);
