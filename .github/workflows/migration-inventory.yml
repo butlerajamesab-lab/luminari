@@ -21,16 +21,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
-          fetch-depth: 0
+          fetch-depth: 1
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Restore exact missing migration files
+        id: restore
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          : > restore-error.log
           DATABASE_URL="${DATABASE_URL_SECRET:-${SUPABASE_DATABASE_URL_SECRET:-${LIGHTHOUSE_DATABASE_URL_SECRET:-}}}"
           if [ -z "$DATABASE_URL" ]; then
-            echo "No supported database URL secret is configured." >&2
+            echo "No supported database URL secret is configured." | tee restore-error.log >&2
             exit 2
           fi
 
@@ -48,14 +50,17 @@ jobs:
           quoted=$(printf "'%s'," "${versions[@]}")
           quoted="${quoted%,}"
 
-          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -At -F $'\t' -c "
+          if ! psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -At -F $'\t' -c "
             select version,
                    regexp_replace(name, '[^a-zA-Z0-9_]+', '_', 'g'),
                    replace(encode(convert_to(statements[1], 'UTF8'), 'base64'), E'\\n', '')
               from supabase_migrations.schema_migrations
              where version in ($quoted)
              order by version
-          " > /tmp/migrations.tsv
+          " > /tmp/migrations.tsv 2> restore-error.log; then
+            sed -E 's#(postgres(?:ql)?://)[^@]+@#\1***@#g' restore-error.log >&2
+            exit 4
+          fi
 
           restored=0
           while IFS=$'\t' read -r version name content_b64; do
@@ -65,7 +70,7 @@ jobs:
           done < /tmp/migrations.tsv
 
           if [ "$restored" -ne 34 ]; then
-            echo "Expected 34 migrations, restored $restored" >&2
+            echo "Expected 34 migrations, restored $restored" | tee restore-error.log >&2
             exit 3
           fi
 
@@ -78,3 +83,10 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Restore 34 missing Supabase migration files"
           git push origin HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
+      - name: Upload restore diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-restore-diagnostics
+          path: restore-error.log
+          if-no-files-found: warn
