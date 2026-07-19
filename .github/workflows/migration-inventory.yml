@@ -28,8 +28,9 @@ jobs:
         id: restore
         shell: bash
         run: |
-          set -uo pipefail
+          set -eEuo pipefail
           : > restore-error.log
+          trap 'status=$?; echo "failure_line=${LINENO} status=${status}" >> restore-error.log; exit ${status}' ERR
           DATABASE_URL="${DATABASE_URL_SECRET:-${SUPABASE_DATABASE_URL_SECRET:-${LIGHTHOUSE_DATABASE_URL_SECRET:-}}}"
           if [ -z "$DATABASE_URL" ]; then
             echo "No supported database URL secret is configured." | tee restore-error.log >&2
@@ -54,27 +55,27 @@ jobs:
           quoted=$(printf "'%s'," "${versions[@]}")
           quoted="${quoted%,}"
 
-          if ! psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -At -F $'\t' -c "
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -At -F $'\t' -c "
             select version,
                    regexp_replace(name, '[^a-zA-Z0-9_]+', '_', 'g'),
-                   replace(encode(convert_to(statements[1], 'UTF8'), 'base64'), E'\\n', '')
+                   replace(replace(encode(convert_to(statements[1], 'UTF8'), 'base64'), E'\\n', ''), E'\\r', '')
               from supabase_migrations.schema_migrations
              where version in ($quoted)
              order by version
-          " > /tmp/migrations.tsv 2> restore-error.log; then
-            sed -E 's#(postgres(?:ql)?://)[^@]+@#\1***@#g' restore-error.log >&2
-            exit 4
-          fi
+          " > migrations.tsv 2> restore-error.log
+
+          cut -f1,2 migrations.tsv > migration-row-manifest.txt
+          echo "row_count=$(wc -l < migrations.tsv)" >> restore-error.log
 
           restored=0
           while IFS=$'\t' read -r version name content_b64; do
             path="supabase/migrations/${version}_${name}.sql"
             printf '%s' "$content_b64" | base64 --decode > "$path"
             restored=$((restored + 1))
-          done < /tmp/migrations.tsv
+          done < migrations.tsv
 
           if [ "$restored" -ne 34 ]; then
-            echo "Expected 34 migrations, restored $restored" | tee restore-error.log >&2
+            echo "Expected 34 migrations, restored $restored" | tee -a restore-error.log >&2
             exit 3
           fi
 
@@ -92,5 +93,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: migration-restore-diagnostics
-          path: restore-error.log
+          path: |
+            restore-error.log
+            migration-row-manifest.txt
+            migrations.tsv
           if-no-files-found: warn
