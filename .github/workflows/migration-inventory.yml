@@ -35,6 +35,7 @@ jobs:
             echo "No supported database URL secret is configured." | tee restore-error.log >&2
             exit 2
           fi
+          DATABASE_URL="${DATABASE_URL/aws-0-<region>.pooler.supabase.com/aws-1-us-west-2.pooler.supabase.com}"
 
           versions=(
             20260529061843 20260605224132 20260605225538 20260605231514
