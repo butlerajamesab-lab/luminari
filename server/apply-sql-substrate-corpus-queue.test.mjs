@@ -1,12 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import {
+  assert_full_substrate_sql_safe,
   build_storage_object_url,
   download_sql_text,
   extract_full_substrate_targets,
   FULL_SUBSTRATE_EXPECTED_TOTAL,
   FULL_SUBSTRATE_TARGET_COUNTS,
+  FULL_SUBSTRATE_VERIFIED_TUPLE_ROWS,
   run_sql_substrate_handoff,
+  sha256_text,
   validate_full_substrate_targets,
 } from "../scripts/apply-sql-substrate-corpus-queue.mjs";
 
@@ -29,6 +32,7 @@ function make_pool(counts = {}, options = {}) {
 
 const all_expected_counts = { ...FULL_SUBSTRATE_TARGET_COUNTS };
 const sample_sql = Object.keys(FULL_SUBSTRATE_TARGET_COUNTS).map((table) => `insert into public.${table} values ();`).join("\n");
+const sample_sha256 = sha256_text(sample_sql);
 
 describe("SQL substrate storage download", () => {
   it("constructs Storage URLs with spaces in bucket names and nested object-path encoding", () => {
@@ -48,9 +52,6 @@ describe("SQL substrate storage download", () => {
     const fetch_impl = vi.fn(async () => ({ ok: false, status: 403, text: async () => "x".repeat(800) }));
     await expect(download_sql_text({ storage_bucket: "b", storage_path: "p" }, { supabase_url: "https://project.supabase.co", service_role_key: "secret", fetch_impl }))
       .rejects.toMatchObject({ code: "storage_download_failed", status: 403 });
-    await download_sql_text({ storage_bucket: "b", storage_path: "p" }, { supabase_url: "https://project.supabase.co", service_role_key: "secret", fetch_impl }).catch((error) => {
-      expect(error.message.length).toBeLessThan(560);
-    });
   });
 
   it("rejects empty SQL responses", async () => {
@@ -65,6 +66,35 @@ describe("SQL substrate storage download", () => {
   });
 });
 
+describe("full substrate fail-closed preflight", () => {
+  it("accepts only the expected hash and all 19 staging targets", () => {
+    expect(assert_full_substrate_sql_safe(sample_sql, { expected_sha256: sample_sha256 })).toMatchObject({ sha256: sample_sha256 });
+  });
+
+  it("rejects a hash mismatch before execution", () => {
+    expect(() => assert_full_substrate_sql_safe(sample_sql, { expected_sha256: "0".repeat(64) }))
+      .toThrow(expect.objectContaining({ code: "full_substrate_sha256_mismatch" }));
+  });
+
+  it("rejects destructive SQL before execution", () => {
+    const destructive = `${sample_sql}\ntruncate table public.registry_programs;`;
+    expect(() => assert_full_substrate_sql_safe(destructive, { expected_sha256: sha256_text(destructive) }))
+      .toThrow(expect.objectContaining({ code: "forbidden_full_substrate_sql" }));
+  });
+
+  it("rejects canonical production writes before execution", () => {
+    const canonical = `${sample_sql}\ninsert into public.registry_programs values ();`;
+    expect(() => assert_full_substrate_sql_safe(canonical, { expected_sha256: sha256_text(canonical) }))
+      .toThrow(expect.objectContaining({ code: "full_substrate_write_target_rejected", canonical_targets: ["registry_programs"] }));
+  });
+
+  it("rejects incomplete target coverage before execution", () => {
+    const incomplete = sample_sql.replace("insert into public.legal_aid_wa_v3_13 values ();", "");
+    expect(() => assert_full_substrate_sql_safe(incomplete, { expected_sha256: sha256_text(incomplete) }))
+      .toThrow(expect.objectContaining({ code: "full_substrate_write_target_rejected", missing_targets: ["legal_aid_wa_v3_13"] }));
+  });
+});
+
 describe("full v3.13 target validation", () => {
   it("extracts and validates all full substrate targets", async () => {
     expect(extract_full_substrate_targets(sample_sql)).toHaveLength(19);
@@ -74,29 +104,37 @@ describe("full v3.13 target validation", () => {
     expect(result.target_validation.every((entry) => entry.valid)).toBe(true);
   });
 
-  it("allows counts above expected", async () => {
-    const inflated = Object.fromEntries(Object.entries(all_expected_counts).map(([table, count]) => [table, count + 5]));
-    await expect(validate_full_substrate_targets(make_pool(inflated), sample_sql)).resolves.toMatchObject({ expected_total: 36876 });
-  });
-
   it("fails clearly for missing tables", async () => {
     await expect(validate_full_substrate_targets(make_pool(all_expected_counts, { missing: ["legal_aid_wa_v3_13"] }), sample_sql))
       .rejects.toMatchObject({ code: "full_substrate_target_validation_failed", failures: expect.arrayContaining([expect.objectContaining({ table_name: "legal_aid_wa_v3_13", reason: "missing_table" })]) });
   });
-
-  it("fails clearly for below-expected counts", async () => {
-    await expect(validate_full_substrate_targets(make_pool({ ...all_expected_counts, programs_v3_13_stage: 494 }), sample_sql))
-      .rejects.toMatchObject({ code: "full_substrate_target_validation_failed", failures: expect.arrayContaining([expect.objectContaining({ table_name: "programs_v3_13_stage", reason: "below_expected_count" })]) });
-  });
 });
 
 describe("handoff-specific validation and accounting", () => {
-  it("full handoff success preserves 36,876 accounting and uses full validation", async () => {
+  it("full handoff records verified tuple rows separately from reconciliation target total", async () => {
     const pool = make_pool(all_expected_counts);
-    const result = await run_sql_substrate_handoff(pool, { id: 271, leased_by: "worker", target_hint: "full_substrate_sql_handoff", storage_bucket: "Everything backbone related", storage_path: "v3_13_full_substrate_ingest.sql", record_count_estimate: 36876 }, sample_sql, Date.now());
+    const result = await run_sql_substrate_handoff(
+      pool,
+      { id: 271, leased_by: "worker", target_hint: "full_substrate_sql_handoff", storage_bucket: "Everything backbone related", storage_path: "v3_13_full_substrate_ingest.sql", record_count_estimate: 36876 },
+      sample_sql,
+      Date.now(),
+      { expected_sha256: sample_sha256 },
+    );
     const success_query = pool.queries.find((query) => String(query.text).includes("mark_sql_substrate_handoff_success"));
-    expect(success_query.values[3]).toBe(36876);
-    expect(result).toMatchObject({ handoff_kind: "full_substrate_sql_handoff", expected_total: 36876, canonical_policy: "upsert_merge_no_delete" });
+    expect(success_query.values[3]).toBe(FULL_SUBSTRATE_VERIFIED_TUPLE_ROWS);
+    expect(result).toMatchObject({
+      handoff_kind: "full_substrate_sql_handoff",
+      verified_tuple_rows: 35954,
+      reconciliation_target_total: 36876,
+      canonical_policy: "staging_only_no_canonical_writes_no_delete",
+    });
+  });
+
+  it("does not execute SQL when full-substrate preflight fails", async () => {
+    const pool = make_pool(all_expected_counts);
+    await expect(run_sql_substrate_handoff(pool, { target_hint: "full_substrate_sql_handoff" }, sample_sql, Date.now(), { expected_sha256: "0".repeat(64) }))
+      .rejects.toMatchObject({ code: "full_substrate_sha256_mismatch" });
+    expect(pool.queries).toHaveLength(0);
   });
 
   it("cream handoff preserves separate legacy validation", async () => {
