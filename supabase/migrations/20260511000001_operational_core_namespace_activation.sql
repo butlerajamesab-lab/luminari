@@ -33,7 +33,19 @@ on conflict (namespace_key) do nothing;
 
 alter table namespace_activation_registry enable row level security;
 
-create policy namespace_activation_registry_public_read
-on namespace_activation_registry
-for select
-using (true);
+do $policy$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'namespace_activation_registry'
+      and policyname = 'namespace_activation_registry_public_read'
+  ) then
+    create policy namespace_activation_registry_public_read
+      on namespace_activation_registry
+      for select
+      using (true);
+  end if;
+end
+$policy$;
