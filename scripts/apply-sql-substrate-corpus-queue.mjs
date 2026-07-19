@@ -117,12 +117,19 @@ export function sha256_text(text) {
   return createHash("sha256").update(String(text), "utf8").digest("hex");
 }
 
+export function strip_sql_comments(sql_text) {
+  return String(sql_text)
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/--[^\r\n]*/g, " ");
+}
+
 export function extract_full_substrate_targets(sql_text) {
   const expected = new Set(Object.keys(FULL_SUBSTRATE_TARGET_COUNTS));
   const regex = /\b(?:insert\s+into|merge\s+into|copy)\s+(?:public\.)?([a-zA-Z_][a-zA-Z0-9_]*)\b/gi;
   const found = new Set();
   let match;
-  while ((match = regex.exec(sql_text))) {
+  const executable_sql = strip_sql_comments(sql_text);
+  while ((match = regex.exec(executable_sql))) {
     if (expected.has(match[1])) found.add(match[1]);
   }
   return [...found].sort();
@@ -132,7 +139,8 @@ export function extract_sql_write_targets(sql_text) {
   const regex = /\b(?:insert\s+into|merge\s+into|copy|update)\s+(?:public\.)?([a-zA-Z_][a-zA-Z0-9_]*)\b/gi;
   const found = new Set();
   let match;
-  while ((match = regex.exec(sql_text))) found.add(match[1]);
+  const executable_sql = strip_sql_comments(sql_text);
+  while ((match = regex.exec(executable_sql))) found.add(match[1]);
   return [...found].sort();
 }
 
@@ -146,7 +154,7 @@ export function assert_full_substrate_sql_safe(sql_text, options = {}) {
       actual_sha256,
     });
   }
-  if (FORBIDDEN_FULL_SUBSTRATE_SQL.test(sql_text)) {
+  if (FORBIDDEN_FULL_SUBSTRATE_SQL.test(strip_sql_comments(sql_text))) {
     throw Object.assign(new Error("full substrate contains a forbidden destructive or replacement statement"), { code: "forbidden_full_substrate_sql" });
   }
   const expected_targets = new Set(Object.keys(FULL_SUBSTRATE_TARGET_COUNTS));
