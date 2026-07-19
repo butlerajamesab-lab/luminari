@@ -35,10 +35,10 @@ jobs:
             echo "No supported database URL secret is configured." | tee restore-error.log >&2
             exit 2
           fi
-          DATABASE_URL="${DATABASE_URL/aws-0-<region>.pooler.supabase.com/aws-1-us-west-2.pooler.supabase.com}"
-          DATABASE_URL="${DATABASE_URL/postgres.<project-ref>/postgres.wepxlinwbjrkqdzkqpar}"
-          DATABASE_URL="${DATABASE_URL/postgresql:\/\/postgres:/postgresql:\/\/postgres.wepxlinwbjrkqdzkqpar:}"
-          DATABASE_URL="${DATABASE_URL/postgres:\/\/postgres:/postgres:\/\/postgres.wepxlinwbjrkqdzkqpar:}"
+          DATABASE_URL=$(printf '%s' "$DATABASE_URL" \
+            | sed 's#aws-0-<region>.pooler.supabase.com#aws-1-us-west-2.pooler.supabase.com#g' \
+            | sed 's#postgres\.<project-ref>#postgres.wepxlinwbjrkqdzkqpar#g' \
+            | sed -E 's#^(postgres(?:ql)?://)postgres:#\1postgres.wepxlinwbjrkqdzkqpar:#')
 
           versions=(
             20260529061843 20260605224132 20260605225538 20260605231514
