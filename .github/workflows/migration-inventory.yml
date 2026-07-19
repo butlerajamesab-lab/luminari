@@ -14,33 +14,30 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      DATABASE_URL_SECRET: ${{ secrets.DATABASE_URL }}
-      SUPABASE_DATABASE_URL_SECRET: ${{ secrets.SUPABASE_DATABASE_URL }}
-      LIGHTHOUSE_DATABASE_URL_SECRET: ${{ secrets.LIGHTHOUSE_DATABASE_URL }}
+      SUPABASE_URL_SECRET: ${{ secrets.SUPABASE_URL }}
+      VITE_SUPABASE_URL_SECRET: ${{ secrets.VITE_SUPABASE_URL }}
+      LIGHTHOUSE_SUPABASE_URL_SECRET: ${{ secrets.LIGHTHOUSE_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY_SECRET: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      LIGHTHOUSE_SERVICE_ROLE_KEY_SECRET: ${{ secrets.LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_SERVICE_KEY_SECRET: ${{ secrets.SUPABASE_SERVICE_KEY }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
           fetch-depth: 1
-      - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Restore exact missing migration files
-        id: restore
         shell: bash
         run: |
           set -eEuo pipefail
           : > restore-error.log
           trap 'status=$?; echo "failure_line=${LINENO} status=${status}" >> restore-error.log; exit ${status}' ERR
-          DATABASE_URL="${DATABASE_URL_SECRET:-${SUPABASE_DATABASE_URL_SECRET:-${LIGHTHOUSE_DATABASE_URL_SECRET:-}}}"
-          if [ -z "$DATABASE_URL" ]; then
-            echo "No supported database URL secret is configured." | tee restore-error.log >&2
+
+          SUPABASE_URL="${SUPABASE_URL_SECRET:-${VITE_SUPABASE_URL_SECRET:-${LIGHTHOUSE_SUPABASE_URL_SECRET:-https://wepxlinwbjrkqdzkqpar.supabase.co}}}"
+          SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY_SECRET:-${LIGHTHOUSE_SERVICE_ROLE_KEY_SECRET:-${SUPABASE_SERVICE_KEY_SECRET:-}}}"
+          if [ -z "$SERVICE_ROLE_KEY" ]; then
+            echo "No supported service-role secret is configured." | tee restore-error.log >&2
             exit 2
           fi
-          DATABASE_URL=$(printf '%s' "$DATABASE_URL" \
-            | sed 's#aws-0-<region>.pooler.supabase.com#aws-1-us-west-2.pooler.supabase.com#g' \
-            | sed 's#postgres\.<project-ref>#postgres.wepxlinwbjrkqdzkqpar#g' \
-            | sed 's#^postgresql://postgres:#postgresql://postgres.wepxlinwbjrkqdzkqpar:#' \
-            | sed 's#^postgres://postgres:#postgres://postgres.wepxlinwbjrkqdzkqpar:#')
 
           versions=(
             20260529061843 20260605224132 20260605225538 20260605231514
@@ -53,31 +50,37 @@ jobs:
             20260713095140 20260713102826 20260713105316 20260713172413
             20260713172504 20260714091011
           )
-          quoted=$(printf "'%s'," "${versions[@]}")
-          quoted="${quoted%,}"
 
-          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -At -F $'\t' -c "
-            select version,
-                   regexp_replace(name, '[^a-zA-Z0-9_]+', '_', 'g'),
-                   replace(replace(encode(convert_to(statements[1], 'UTF8'), 'base64'), E'\\n', ''), E'\\r', '')
-              from supabase_migrations.schema_migrations
-             where version in ($quoted)
-             order by version
-          " > migrations.tsv 2> restore-error.log
+          printf '%s\n' "${versions[@]}" | jq -R . | jq -s '{p_versions: .}' > request.json
+          curl --fail-with-body --silent --show-error \
+            "${SUPABASE_URL%/}/rest/v1/rpc/export_migration_ledger_for_reconciliation" \
+            -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+            -H "apikey: ${SERVICE_ROLE_KEY}" \
+            -H "Content-Type: application/json" \
+            --data-binary @request.json \
+            > migrations.json 2> restore-error.log
 
+          row_count=$(jq 'length' migrations.json)
+          echo "row_count=${row_count}" >> restore-error.log
+          if [ "$row_count" -ne 34 ]; then
+            echo "Expected 34 migrations, received $row_count" | tee -a restore-error.log >&2
+            exit 3
+          fi
+
+          jq -r '.[] | [.version, .migration_name, .content_b64] | @tsv' migrations.json > migrations.tsv
           cut -f1,2 migrations.tsv > migration-row-manifest.txt
-          echo "row_count=$(wc -l < migrations.tsv)" >> restore-error.log
 
           restored=0
           while IFS=$'\t' read -r version name content_b64; do
-            path="supabase/migrations/${version}_${name}.sql"
+            safe_name=$(printf '%s' "$name" | sed -E 's/[^a-zA-Z0-9_]+/_/g')
+            path="supabase/migrations/${version}_${safe_name}.sql"
             printf '%s' "$content_b64" | base64 --decode > "$path"
             restored=$((restored + 1))
           done < migrations.tsv
 
           if [ "$restored" -ne 34 ]; then
             echo "Expected 34 migrations, restored $restored" | tee -a restore-error.log >&2
-            exit 3
+            exit 4
           fi
 
           git add supabase/migrations
@@ -97,5 +100,5 @@ jobs:
           path: |
             restore-error.log
             migration-row-manifest.txt
-            migrations.tsv
+            migrations.json
           if-no-files-found: warn
