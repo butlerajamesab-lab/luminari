@@ -11,10 +11,10 @@
 -- keys against columns that are not part of the live schemas, causing protected
 -- branch migration application to fail at idx_bridge_run.
 --
--- This file intentionally remains at version 20260501 so repository migration
--- history stays ordered, but it performs no DDL or data mutation. The existing
+-- This file intentionally performs no DDL or data mutation. The existing
 -- production objects are authoritative for this historical checkpoint.
 --
--- No tables, columns, indexes, policies, views, or canonical data are changed.
+-- Version normalized from legacy 20260501 to 20260501000000 so Supabase's
+-- migration-history comparison recognizes it consistently.
 
 select 1;
