@@ -5,73 +5,31 @@ on:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   restore:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
-          fetch-depth: 1
-      - name: Restore exact missing migration files
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Export exact missing migration files
         shell: bash
         run: |
-          set -eEuo pipefail
-          : > restore-error.log
-          trap 'status=$?; echo "failure_line=${LINENO} status=${status}" >> restore-error.log; exit ${status}' ERR
-
-          SUPABASE_URL="https://wepxlinwbjrkqdzkqpar.supabase.co"
-          PUBLISHABLE_KEY="sb_publishable_bb9EhDU-5Vj84trH2QUYvw_-7wFvuBC"
-
-          curl --fail-with-body --silent --show-error \
-            "${SUPABASE_URL}/rest/v1/missing_migration_ledger_export_tmp?select=version,migration_name,content_b64&order=version.asc" \
-            -H "apikey: ${PUBLISHABLE_KEY}" \
-            > migrations.json 2> restore-error.log
-
-          row_count=$(jq 'length' migrations.json)
-          echo "row_count=${row_count}" >> restore-error.log
-          if [ "$row_count" -ne 34 ]; then
-            echo "Expected 34 migrations, received $row_count" | tee -a restore-error.log >&2
-            exit 3
-          fi
-
-          jq -r '.[] | [.version, .migration_name, .content_b64] | @tsv' migrations.json > migrations.tsv
-          cut -f1,2 migrations.tsv > migration-row-manifest.txt
-
-          restored=0
+          set -euo pipefail
+          mkdir -p restored-migrations
+          versions="'20260529061843','20260605224132','20260605225538','20260605231514','20260609093826','20260609122541','20260612180131','20260612180225','20260613083723','20260613094359','20260613100249','20260614205300','20260614213814','20260614213931','20260622063640','20260705144336','20260713055919','20260713074738','20260713075935','20260713081607','20260713081625','20260713082050','20260713083902','20260713084033','20260713084401','20260713084626','20260713091637','20260713093123','20260713095140','20260713102826','20260713105316','20260713172413','20260713172504','20260714091011'"
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -At -F $'\t' -c "select version, regexp_replace(name, '[^a-zA-Z0-9_]+', '_', 'g'), replace(replace(encode(convert_to(statements[1], 'UTF8'), 'base64'), E'\\n', ''), E'\\r', '') from supabase_migrations.schema_migrations where version in ($versions) order by version" > migrations.tsv
+          test "$(wc -l < migrations.tsv)" -eq 34
           while IFS=$'\t' read -r version name content_b64; do
-            safe_name=$(printf '%s' "$name" | sed -E 's/[^a-zA-Z0-9_]+/_/g')
-            path="supabase/migrations/${version}_${safe_name}.sql"
-            printf '%s' "$content_b64" | base64 --decode > "$path"
-            restored=$((restored + 1))
+            printf '%s' "$content_b64" | base64 --decode > "restored-migrations/${version}_${name}.sql"
           done < migrations.tsv
-
-          if [ "$restored" -ne 34 ]; then
-            echo "Expected 34 migrations, restored $restored" | tee -a restore-error.log >&2
-            exit 4
-          fi
-
-          git add supabase/migrations
-          if git diff --cached --quiet; then
-            echo "All migration files already restored."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Restore 34 missing Supabase migration files"
-          git push origin HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
-      - name: Upload restore diagnostics
-        if: always()
+          test "$(find restored-migrations -type f -name '*.sql' | wc -l)" -eq 34
+      - name: Upload restored migrations
         uses: actions/upload-artifact@v4
         with:
-          name: migration-restore-diagnostics
-          path: |
-            restore-error.log
-            migration-row-manifest.txt
-            migrations.json
-          if-no-files-found: warn
+          name: restored-migrations
+          path: restored-migrations
+          if-no-files-found: error
