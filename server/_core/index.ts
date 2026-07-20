@@ -21,6 +21,7 @@ import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";
 import { serveStatic, setupVite } from "./vite";
 import { livenessPayload, sendDatabaseDiagnostic, SUPABASE_PROJECT } from "./health-diagnostics";
+import { initializeScheduler } from "../ingestion/scheduler";
 
 const runtime_fingerprint = Object.freeze({
   render_git_commit: process.env.RENDER_GIT_COMMIT || null,
@@ -124,6 +125,13 @@ async function startServer() {
   const preferredPort = parseInt(process.env.PORT || "3000", 10);
   const port = await findAvailablePort(preferredPort);
   if (port !== preferredPort) console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+
+  try {
+    await initializeScheduler();
+    console.log("[Startup] Ingestion scheduler initialized");
+  } catch (error) {
+    console.error("[Startup] Ingestion scheduler initialization failed:", error);
+  }
 
   server.listen(port, () => {
     console.log(`Luminari server running on http://localhost:${port}/`);
