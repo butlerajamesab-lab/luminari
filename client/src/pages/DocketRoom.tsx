@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { VoiceReadout } from "@/components/VoiceReadout";
+import { DocketBillDetailWorkspace } from "@/components/DocketBillDetailWorkspace";
 
 /* ═══════════════════════════════════════════════════════════════════════
    THE DOCKET ROOM — Structural Legislative Analysis
@@ -840,7 +841,7 @@ function DocketBillFeed() {
           {selected_bill_id && (
             <div style={{ marginTop: "1rem", background: dk.slate, border: `1px solid ${dk.rule}`, borderRadius: "8px", padding: "0.85rem" }}>
               <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.steelBright, marginBottom: "0.5rem" }}>bill_detail_click_through bill_id {selected_bill_id}</div>
-              {bill_detail_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>loading_bill_detail</div> : bill_detail_error ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.red }}>error {bill_detail_error}</div> : bill_detail ? <pre style={{ whiteSpace: "pre-wrap", margin: 0, color: dk.cream, fontFamily: fontMono, fontSize: "0.68rem", maxHeight: 320, overflow: "auto" }}>{JSON.stringify({ source: bill_detail.source, fetched_at: bill_detail.fetched_at, bill: bill_detail.bill }, null, 2)}</pre> : null}
+              {bill_detail_loading ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.muted }}>loading_bill_detail</div> : bill_detail_error ? <div style={{ fontFamily: fontMono, fontSize: "0.72rem", color: dk.red }}>error {bill_detail_error}</div> : bill_detail ? <DocketBillDetailWorkspace payload={bill_detail} /> : null}
             </div>
           )}
         </>
