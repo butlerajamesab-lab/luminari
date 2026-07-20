@@ -4,6 +4,7 @@ on:
   push:
     branches: [fix/docket-detail-cache-404-fallback]
     paths: [.github/workflows/apply-civic-genome-explorer.yml]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -27,173 +28,48 @@ import { Link, useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Activity, ArrowLeft, BookOpen, GitBranch, Network, Search, ShieldCheck } from "lucide-react";
 
-const palette = {
-  bg: "#08110f",
-  panel: "rgba(13, 30, 25, 0.88)",
-  panel_soft: "rgba(20, 48, 39, 0.72)",
-  border: "rgba(82, 193, 145, 0.22)",
-  green: "#59d89c",
-  green_soft: "rgba(89, 216, 156, 0.12)",
-  paper: "#edf7f2",
-  muted: "#91a9a0",
-  amber: "#e2b85b",
-  red: "#ff7770",
-};
-
+const palette = { bg: "#08110f", panel: "rgba(13,30,25,.88)", panel_soft: "rgba(20,48,39,.72)", border: "rgba(82,193,145,.22)", green: "#59d89c", green_soft: "rgba(89,216,156,.12)", paper: "#edf7f2", muted: "#91a9a0" };
 const mono = "'IBM Plex Mono', monospace";
 const sans = "'Inter', system-ui, sans-serif";
 const serif = "'Cormorant Garamond', serif";
-
 const format_date = (value?: string | null) => value ? new Date(value).toLocaleDateString() : "Not observed";
 const format_score = (value?: number | null) => Number(value ?? 0).toFixed(2);
 
-function Metric({ label, value }: { label: string; value: string | number }) {
-  return <div style={{ background: palette.panel_soft, border: `1px solid ${palette.border}`, borderRadius: 10, padding: "0.9rem" }}>
-    <div style={{ fontFamily: mono, fontSize: "0.66rem", color: palette.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
-    <div style={{ fontFamily: serif, fontSize: "1.45rem", color: palette.paper, marginTop: "0.2rem" }}>{value}</div>
-  </div>;
-}
-
-function EmptyState({ text }: { text: string }) {
-  return <div style={{ border: `1px dashed ${palette.border}`, borderRadius: 10, padding: "1rem", color: palette.muted, fontFamily: sans, fontSize: "0.84rem" }}>{text}</div>;
-}
+function Metric({ label, value }: { label: string; value: string | number }) { return <div style={{ background: palette.panel_soft, border: `1px solid ${palette.border}`, borderRadius: 10, padding: "0.9rem" }}><div style={{ fontFamily: mono, fontSize: "0.66rem", color: palette.muted, textTransform: "uppercase" }}>{label}</div><div style={{ fontFamily: serif, fontSize: "1.45rem", color: palette.paper, marginTop: "0.2rem" }}>{value}</div></div>; }
+function EmptyState({ text }: { text: string }) { return <div style={{ border: `1px dashed ${palette.border}`, borderRadius: 10, padding: "1rem", color: palette.muted, fontFamily: sans, fontSize: "0.84rem" }}>{text}</div>; }
 
 export default function CivicGenomePage() {
   const [, bill_params] = useRoute("/civic-genome/bill/:bill_id");
   const source_bill_id = bill_params?.bill_id ?? null;
   const [search_value, set_search_value] = useState(source_bill_id ?? "");
-
   const stats = trpc.civicGenome.stats.useQuery();
   const families = trpc.civicGenome.list_families.useQuery({ limit: 30 });
-  const source_bill = trpc.civicGenome.find_bill_by_source_id.useQuery(
-    { bill_id: source_bill_id ?? "" },
-    { enabled: Boolean(source_bill_id) },
-  );
-
+  const source_bill = trpc.civicGenome.find_bill_by_source_id.useQuery({ bill_id: source_bill_id ?? "" }, { enabled: Boolean(source_bill_id) });
   const selected_bill = source_bill.data ?? null;
   const selected_family_id = selected_bill?.family_id ?? null;
-  const family = trpc.civicGenome.get_family.useQuery(
-    { family_id: selected_family_id ?? "00000000-0000-0000-0000-000000000000" },
-    { enabled: Boolean(selected_family_id) },
-  );
-  const family_bills = trpc.civicGenome.list_bills.useQuery(
-    { family_id: selected_family_id ?? undefined, limit: 100 },
-    { enabled: Boolean(selected_family_id) },
-  );
-  const events = trpc.civicGenome.list_events.useQuery(
-    { family_id: selected_family_id ?? undefined, limit: 100 },
-    { enabled: Boolean(selected_family_id) },
-  );
-  const lineage = trpc.civicGenome.list_lineage_edges.useQuery(
-    { family_id: selected_family_id ?? undefined, limit: 100 },
-    { enabled: Boolean(selected_family_id) },
-  );
-  const momentum = trpc.civicGenome.list_momentum_snapshots.useQuery(
-    { family_id: selected_family_id ?? "00000000-0000-0000-0000-000000000000", limit: 30 },
-    { enabled: Boolean(selected_family_id) },
-  );
-
+  const family = trpc.civicGenome.get_family.useQuery({ family_id: selected_family_id ?? "00000000-0000-0000-0000-000000000000" }, { enabled: Boolean(selected_family_id) });
+  const family_bills = trpc.civicGenome.list_bills.useQuery({ family_id: selected_family_id ?? undefined, limit: 100 }, { enabled: Boolean(selected_family_id) });
+  const events = trpc.civicGenome.list_events.useQuery({ family_id: selected_family_id ?? undefined, limit: 100 }, { enabled: Boolean(selected_family_id) });
+  const lineage = trpc.civicGenome.list_lineage_edges.useQuery({ family_id: selected_family_id ?? undefined, limit: 100 }, { enabled: Boolean(selected_family_id) });
+  const momentum = trpc.civicGenome.list_momentum_snapshots.useQuery({ family_id: selected_family_id ?? "00000000-0000-0000-0000-000000000000", limit: 30 }, { enabled: Boolean(selected_family_id) });
   const newest_events = useMemo(() => (events.data ?? []).slice(0, 12), [events.data]);
+  const submit_search = (event: React.FormEvent) => { event.preventDefault(); const normalized = search_value.trim(); if (normalized) window.location.assign(`/civic-genome/bill/${encodeURIComponent(normalized)}`); };
 
-  const submit_search = (event: React.FormEvent) => {
-    event.preventDefault();
-    const normalized = search_value.trim();
-    if (normalized) window.location.assign(`/civic-genome/bill/${encodeURIComponent(normalized)}`);
-  };
-
-  return <div style={{ minHeight: "100vh", background: `radial-gradient(circle at 50% 0%, rgba(89,216,156,0.09), transparent 38%), ${palette.bg}`, color: palette.paper, padding: "clamp(1rem, 3vw, 2rem)" }}>
-    <div style={{ maxWidth: 1500, margin: "0 auto" }}>
-      <header style={{ borderBottom: `1px solid ${palette.border}`, paddingBottom: "1.25rem", marginBottom: "1.25rem" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
-          <div>
-            <div style={{ fontFamily: mono, fontSize: "0.7rem", color: palette.green, letterSpacing: "0.12em", textTransform: "uppercase" }}>Lighthouse analytical environment</div>
-            <h1 style={{ fontFamily: serif, fontSize: "clamp(2rem, 5vw, 4rem)", fontWeight: 500, margin: "0.2rem 0", lineHeight: 1 }}>Living Civic Genome</h1>
-            <p style={{ fontFamily: sans, color: palette.muted, margin: 0, maxWidth: 820 }}>Explore legislative families, lineage, events, momentum, and provenance without modifying the official Docket Room record.</p>
-          </div>
-          <Link href="/docket"><a style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", color: palette.green, border: `1px solid ${palette.border}`, borderRadius: 8, padding: "0.55rem 0.75rem", textDecoration: "none", fontFamily: mono, fontSize: "0.7rem" }}><ArrowLeft size={14}/> Docket Room</a></Link>
-        </div>
-      </header>
-
-      <form onSubmit={submit_search} style={{ display: "flex", gap: "0.6rem", marginBottom: "1.25rem", flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 280px", display: "flex", alignItems: "center", gap: "0.55rem", background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 10, padding: "0.65rem 0.8rem" }}>
-          <Search size={16} color={palette.green}/>
-          <input value={search_value} onChange={event => set_search_value(event.target.value)} placeholder="Enter a source bill ID from the Docket Room" style={{ flex: 1, background: "transparent", border: 0, outline: 0, color: palette.paper, fontFamily: mono, fontSize: "0.78rem" }}/>
-        </div>
-        <button type="submit" style={{ background: palette.green_soft, border: `1px solid ${palette.green}`, color: palette.green, borderRadius: 10, padding: "0.65rem 1rem", fontFamily: mono, fontSize: "0.72rem", cursor: "pointer" }}>Open genome record</button>
-      </form>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "0.75rem", marginBottom: "1.25rem" }}>
-        <Metric label="Families" value={stats.data?.total_families ?? "—"}/>
-        <Metric label="Active families" value={stats.data?.active_families ?? "—"}/>
-        <Metric label="Bills" value={stats.data?.total_bills ?? "—"}/>
-        <Metric label="Events" value={stats.data?.total_events ?? "—"}/>
-      </div>
-
-      {!source_bill_id ? <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 0.8fr) minmax(0, 2fr)", gap: "1rem" }}>
-        <aside style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "1rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: mono, color: palette.green, fontSize: "0.72rem", marginBottom: "0.8rem" }}><Network size={15}/> Highest-momentum families</div>
-          <div style={{ display: "grid", gap: "0.55rem" }}>
-            {(families.data ?? []).map(item => <div key={item.family_id} style={{ background: palette.panel_soft, border: `1px solid ${palette.border}`, borderRadius: 8, padding: "0.7rem" }}>
-              <div style={{ fontFamily: sans, fontWeight: 650 }}>{item.family_label}</div>
-              <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", fontFamily: mono, fontSize: "0.63rem", color: palette.muted, marginTop: "0.35rem" }}><span>{item.policy_domain}</span><span>{item.family_status}</span><span>momentum {format_score(item.momentum_score)}</span></div>
-            </div>)}
-          </div>
-        </aside>
-        <main style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "clamp(1rem, 3vw, 2rem)", display: "grid", alignContent: "center", minHeight: 420 }}>
-          <div style={{ maxWidth: 720 }}><GitBranch size={36} color={palette.green}/><h2 style={{ fontFamily: serif, fontSize: "2.2rem", margin: "0.7rem 0" }}>Choose an entry point</h2><p style={{ color: palette.muted, fontFamily: sans, lineHeight: 1.7 }}>Open a bill from the Docket Room or enter its source bill ID above. The Genome will then resolve its family, sibling bills, recorded events, lineage edges, momentum history, and source provenance.</p></div>
-        </main>
-      </div> : source_bill.isLoading ? <EmptyState text="Resolving the selected bill against the Civic Genome substrate…"/> : source_bill.error ? <EmptyState text={`Genome lookup failed: ${source_bill.error.message}`}/> : !selected_bill ? <EmptyState text="No Civic Genome record currently exists for this Docket bill. The official record remains available in the Docket Room; no analytical relationship has been invented."/> : <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 0.8fr) minmax(0, 2fr) minmax(260px, 0.9fr)", gap: "1rem", alignItems: "start" }}>
-        <aside style={{ display: "grid", gap: "0.8rem" }}>
-          <section style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "1rem" }}>
-            <div style={{ fontFamily: mono, fontSize: "0.68rem", color: palette.green }}>SELECTED BILL</div>
-            <h2 style={{ fontFamily: serif, margin: "0.45rem 0", fontSize: "1.45rem" }}>{selected_bill.source_bill_number}</h2>
-            <div style={{ fontFamily: sans, lineHeight: 1.5 }}>{selected_bill.source_bill_title || "Untitled bill"}</div>
-            <div style={{ display: "grid", gap: "0.35rem", fontFamily: mono, color: palette.muted, fontSize: "0.66rem", marginTop: "0.75rem" }}><span>{selected_bill.state_code} · {selected_bill.session_key}</span><span>status {selected_bill.bill_status || "unknown"}</span><span>position {selected_bill.current_state_position}</span><span>last action {format_date(selected_bill.last_action_at)}</span></div>
-            {selected_bill.source_bill_url && <a href={selected_bill.source_bill_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginTop: "0.75rem", color: palette.green, fontFamily: mono, fontSize: "0.66rem" }}>Official source</a>}
-          </section>
-          <section style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "1rem" }}>
-            <div style={{ fontFamily: mono, fontSize: "0.68rem", color: palette.green, marginBottom: "0.6rem" }}>FAMILY</div>
-            <div style={{ fontFamily: serif, fontSize: "1.25rem" }}>{family.data?.family_label || "Resolving family…"}</div>
-            <div style={{ fontFamily: mono, fontSize: "0.64rem", color: palette.muted, marginTop: "0.5rem" }}>{family.data?.policy_domain} · {family.data?.family_status}</div>
-          </section>
-        </aside>
-
-        <main style={{ display: "grid", gap: "0.8rem" }}>
-          <section style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "1rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: mono, color: palette.green, fontSize: "0.7rem", marginBottom: "0.75rem" }}><BookOpen size={15}/> Family bills</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.6rem" }}>
-              {(family_bills.data ?? []).map(item => <Link key={item.genome_bill_id} href={`/civic-genome/bill/${item.bill_id}`}><a style={{ display: "block", background: item.genome_bill_id === selected_bill.genome_bill_id ? palette.green_soft : palette.panel_soft, border: `1px solid ${palette.border}`, borderRadius: 8, padding: "0.75rem", color: palette.paper, textDecoration: "none" }}><div style={{ fontFamily: mono, color: palette.green, fontSize: "0.66rem" }}>{item.state_code} · {item.source_bill_number}</div><div style={{ fontFamily: sans, fontSize: "0.82rem", marginTop: "0.35rem", lineHeight: 1.4 }}>{item.source_bill_title || "Untitled bill"}</div></a></Link>)}
-            </div>
-          </section>
-          <section style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "1rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: mono, color: palette.green, fontSize: "0.7rem", marginBottom: "0.75rem" }}><Activity size={15}/> Recorded events</div>
-            {newest_events.length ? <div style={{ display: "grid", gap: "0.55rem" }}>{newest_events.map(item => <div key={item.event_id} style={{ borderLeft: `2px solid ${palette.green}`, padding: "0.2rem 0 0.2rem 0.75rem" }}><div style={{ fontFamily: mono, color: palette.green, fontSize: "0.66rem" }}>{item.event_type} · {item.state_code}</div><div style={{ fontFamily: sans, fontSize: "0.8rem", marginTop: "0.2rem" }}>{item.prior_status || "unknown"} → {item.next_status || "unknown"}</div><div style={{ fontFamily: mono, color: palette.muted, fontSize: "0.62rem", marginTop: "0.2rem" }}>{new Date(item.event_timestamp).toLocaleString()}</div></div>)}</div> : <EmptyState text="No events have been recorded for this family."/>}
-          </section>
-        </main>
-
-        <aside style={{ display: "grid", gap: "0.8rem" }}>
-          <section style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "1rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: mono, color: palette.green, fontSize: "0.7rem", marginBottom: "0.7rem" }}><GitBranch size={15}/> Lineage</div>
-            {(lineage.data ?? []).length ? (lineage.data ?? []).map(item => <div key={item.lineage_edge_id} style={{ background: palette.panel_soft, borderRadius: 8, padding: "0.65rem", marginBottom: "0.5rem" }}><div style={{ fontFamily: sans, fontSize: "0.8rem" }}>{item.relationship_type}</div><div style={{ fontFamily: mono, color: palette.muted, fontSize: "0.62rem", marginTop: "0.25rem" }}>confidence {format_score(item.confidence_score)}</div></div>) : <EmptyState text="No verified lineage edges currently exist."/>}
-          </section>
-          <section style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "1rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: mono, color: palette.green, fontSize: "0.7rem", marginBottom: "0.7rem" }}><Network size={15}/> Momentum</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.5rem" }}><Metric label="Score" value={format_score(family.data?.momentum_score)}/><Metric label="Acceleration" value={format_score(family.data?.acceleration_score)}/><Metric label="Active states" value={family.data?.active_state_count ?? 0}/><Metric label="Snapshots" value={momentum.data?.length ?? 0}/></div>
-          </section>
-          <section style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "1rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: mono, color: palette.green, fontSize: "0.7rem", marginBottom: "0.7rem" }}><ShieldCheck size={15}/> Provenance boundary</div>
-            <p style={{ fontFamily: sans, fontSize: "0.78rem", lineHeight: 1.55, color: palette.muted, margin: 0 }}>This page reads the Civic Genome substrate. Empty relationship sections remain empty. Rosetta, Atlas, Prism, and Esquire overlays are not asserted until verified source contracts are connected.</p>
-          </section>
-        </aside>
-      </div>}
-    </div>
-  </div>;
+  return <div style={{ minHeight: "100vh", background: `radial-gradient(circle at 50% 0%, rgba(89,216,156,.09), transparent 38%), ${palette.bg}`, color: palette.paper, padding: "clamp(1rem,3vw,2rem)" }}><div style={{ maxWidth: 1500, margin: "0 auto" }}>
+    <header style={{ borderBottom: `1px solid ${palette.border}`, paddingBottom: "1.25rem", marginBottom: "1.25rem" }}><div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}><div><div style={{ fontFamily: mono, fontSize: "0.7rem", color: palette.green, letterSpacing: "0.12em", textTransform: "uppercase" }}>Lighthouse analytical environment</div><h1 style={{ fontFamily: serif, fontSize: "clamp(2rem,5vw,4rem)", fontWeight: 500, margin: "0.2rem 0", lineHeight: 1 }}>Living Civic Genome</h1><p style={{ fontFamily: sans, color: palette.muted, margin: 0, maxWidth: 820 }}>Explore legislative families, lineage, events, momentum, and provenance without modifying the official Docket Room record.</p></div><Link href="/docket"><a style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", color: palette.green, border: `1px solid ${palette.border}`, borderRadius: 8, padding: "0.55rem 0.75rem", textDecoration: "none", fontFamily: mono, fontSize: "0.7rem" }}><ArrowLeft size={14}/> Docket Room</a></Link></div></header>
+    <form onSubmit={submit_search} style={{ display: "flex", gap: "0.6rem", marginBottom: "1.25rem", flexWrap: "wrap" }}><div style={{ flex: "1 1 280px", display: "flex", alignItems: "center", gap: "0.55rem", background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 10, padding: "0.65rem 0.8rem" }}><Search size={16} color={palette.green}/><input value={search_value} onChange={event => set_search_value(event.target.value)} placeholder="Enter a source bill ID from the Docket Room" style={{ flex: 1, background: "transparent", border: 0, outline: 0, color: palette.paper, fontFamily: mono, fontSize: "0.78rem" }}/></div><button type="submit" style={{ background: palette.green_soft, border: `1px solid ${palette.green}`, color: palette.green, borderRadius: 10, padding: "0.65rem 1rem", fontFamily: mono, fontSize: "0.72rem", cursor: "pointer" }}>Open genome record</button></form>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "0.75rem", marginBottom: "1.25rem" }}><Metric label="Families" value={stats.data?.total_families ?? "—"}/><Metric label="Active families" value={stats.data?.active_families ?? "—"}/><Metric label="Bills" value={stats.data?.total_bills ?? "—"}/><Metric label="Events" value={stats.data?.total_events ?? "—"}/></div>
+    {!source_bill_id ? <div style={{ display: "grid", gridTemplateColumns: "minmax(260px,.8fr) minmax(0,2fr)", gap: "1rem" }}><aside style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "1rem" }}><div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: mono, color: palette.green, fontSize: "0.72rem", marginBottom: "0.8rem" }}><Network size={15}/> Highest-momentum families</div><div style={{ display: "grid", gap: "0.55rem" }}>{(families.data ?? []).map(item => <div key={item.family_id} style={{ background: palette.panel_soft, border: `1px solid ${palette.border}`, borderRadius: 8, padding: "0.7rem" }}><div style={{ fontFamily: sans, fontWeight: 650 }}>{item.family_label}</div><div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", fontFamily: mono, fontSize: "0.63rem", color: palette.muted, marginTop: "0.35rem" }}><span>{item.policy_domain}</span><span>{item.family_status}</span><span>momentum {format_score(item.momentum_score)}</span></div></div>)}</div></aside><main style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "clamp(1rem,3vw,2rem)", display: "grid", alignContent: "center", minHeight: 420 }}><div style={{ maxWidth: 720 }}><GitBranch size={36} color={palette.green}/><h2 style={{ fontFamily: serif, fontSize: "2.2rem", margin: "0.7rem 0" }}>Choose an entry point</h2><p style={{ color: palette.muted, fontFamily: sans, lineHeight: 1.7 }}>Open a bill from the Docket Room or enter its source bill ID above. The Genome resolves its family, sibling bills, recorded events, lineage edges, momentum history, and source provenance.</p></div></main></div> : source_bill.isLoading ? <EmptyState text="Resolving the selected bill against the Civic Genome substrate…"/> : source_bill.error ? <EmptyState text={`Genome lookup failed: ${source_bill.error.message}`}/> : !selected_bill ? <EmptyState text="No Civic Genome record currently exists for this Docket bill. The official record remains available in the Docket Room; no analytical relationship has been invented."/> : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "1rem", alignItems: "start" }}>
+      <aside style={{ display: "grid", gap: "0.8rem" }}><section style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "1rem" }}><div style={{ fontFamily: mono, fontSize: "0.68rem", color: palette.green }}>SELECTED BILL</div><h2 style={{ fontFamily: serif, margin: "0.45rem 0", fontSize: "1.45rem" }}>{selected_bill.source_bill_number}</h2><div style={{ fontFamily: sans, lineHeight: 1.5 }}>{selected_bill.source_bill_title || "Untitled bill"}</div><div style={{ display: "grid", gap: "0.35rem", fontFamily: mono, color: palette.muted, fontSize: "0.66rem", marginTop: "0.75rem" }}><span>{selected_bill.state_code} · {selected_bill.session_key}</span><span>status {selected_bill.bill_status || "unknown"}</span><span>position {selected_bill.current_state_position}</span><span>last action {format_date(selected_bill.last_action_at)}</span></div>{selected_bill.source_bill_url && <a href={selected_bill.source_bill_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginTop: "0.75rem", color: palette.green, fontFamily: mono, fontSize: "0.66rem" }}>Official source</a>}</section><section style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "1rem" }}><div style={{ fontFamily: mono, fontSize: "0.68rem", color: palette.green, marginBottom: "0.6rem" }}>FAMILY</div><div style={{ fontFamily: serif, fontSize: "1.25rem" }}>{family.data?.family_label || "Resolving family…"}</div><div style={{ fontFamily: mono, fontSize: "0.64rem", color: palette.muted, marginTop: "0.5rem" }}>{family.data?.policy_domain} · {family.data?.family_status}</div></section></aside>
+      <main style={{ display: "grid", gap: "0.8rem" }}><section style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "1rem" }}><div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: mono, color: palette.green, fontSize: "0.7rem", marginBottom: "0.75rem" }}><BookOpen size={15}/> Family bills</div><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: "0.6rem" }}>{(family_bills.data ?? []).map(item => <Link key={item.genome_bill_id} href={`/civic-genome/bill/${item.bill_id}`}><a style={{ display: "block", background: item.genome_bill_id === selected_bill.genome_bill_id ? palette.green_soft : palette.panel_soft, border: `1px solid ${palette.border}`, borderRadius: 8, padding: "0.75rem", color: palette.paper, textDecoration: "none" }}><div style={{ fontFamily: mono, color: palette.green, fontSize: "0.66rem" }}>{item.state_code} · {item.source_bill_number}</div><div style={{ fontFamily: sans, fontSize: "0.82rem", marginTop: "0.35rem", lineHeight: 1.4 }}>{item.source_bill_title || "Untitled bill"}</div></a></Link>)}</div></section><section style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "1rem" }}><div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: mono, color: palette.green, fontSize: "0.7rem", marginBottom: "0.75rem" }}><Activity size={15}/> Recorded events</div>{newest_events.length ? <div style={{ display: "grid", gap: "0.55rem" }}>{newest_events.map(item => <div key={item.event_id} style={{ borderLeft: `2px solid ${palette.green}`, padding: "0.2rem 0 0.2rem 0.75rem" }}><div style={{ fontFamily: mono, color: palette.green, fontSize: "0.66rem" }}>{item.event_type} · {item.state_code}</div><div style={{ fontFamily: sans, fontSize: "0.8rem", marginTop: "0.2rem" }}>{item.prior_status || "unknown"} → {item.next_status || "unknown"}</div><div style={{ fontFamily: mono, color: palette.muted, fontSize: "0.62rem", marginTop: "0.2rem" }}>{new Date(item.event_timestamp).toLocaleString()}</div></div>)}</div> : <EmptyState text="No events have been recorded for this family."/>}</section></main>
+      <aside style={{ display: "grid", gap: "0.8rem" }}><section style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "1rem" }}><div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: mono, color: palette.green, fontSize: "0.7rem", marginBottom: "0.7rem" }}><GitBranch size={15}/> Lineage</div>{(lineage.data ?? []).length ? (lineage.data ?? []).map(item => <div key={item.lineage_edge_id} style={{ background: palette.panel_soft, borderRadius: 8, padding: "0.65rem", marginBottom: "0.5rem" }}><div style={{ fontFamily: sans, fontSize: "0.8rem" }}>{item.relationship_type}</div><div style={{ fontFamily: mono, color: palette.muted, fontSize: "0.62rem", marginTop: "0.25rem" }}>confidence {format_score(item.confidence_score)}</div></div>) : <EmptyState text="No verified lineage edges currently exist."/>}</section><section style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "1rem" }}><div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: mono, color: palette.green, fontSize: "0.7rem", marginBottom: "0.7rem" }}><Network size={15}/> Momentum</div><div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "0.5rem" }}><Metric label="Score" value={format_score(family.data?.momentum_score)}/><Metric label="Acceleration" value={format_score(family.data?.acceleration_score)}/><Metric label="Active states" value={family.data?.active_state_count ?? 0}/><Metric label="Snapshots" value={momentum.data?.length ?? 0}/></div></section><section style={{ background: palette.panel, border: `1px solid ${palette.border}`, borderRadius: 12, padding: "1rem" }}><div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: mono, color: palette.green, fontSize: "0.7rem", marginBottom: "0.7rem" }}><ShieldCheck size={15}/> Provenance boundary</div><p style={{ fontFamily: sans, fontSize: "0.78rem", lineHeight: 1.55, color: palette.muted, margin: 0 }}>This page reads the Civic Genome substrate. Empty relationship sections remain empty. Rosetta, Atlas, Prism, and Esquire overlays are not asserted until verified source contracts are connected.</p></section></aside>
+    </div>}
+  </div></div>;
 }
 '''
           Path('client/src/pages/CivicGenome.tsx').write_text(page)
 
-          db = Path('server/civic-genome-db.ts')
-          text = db.read_text()
+          db = Path('server/civic-genome-db.ts'); text = db.read_text()
           anchor = '''export async function get_genome_bill(genome_bill_id: string): Promise<GenomeBill | null> {
   const pool = getPool();
   const { rows } = await pool.query<GenomeBill>(
@@ -213,12 +89,10 @@ export async function get_genome_bill_by_source_bill_id(bill_id: string): Promis
   return rows[0] ?? null;
 }
 '''
-          if anchor not in text:
-              raise SystemExit('genome db anchor not found')
+          if anchor not in text: raise SystemExit('genome db anchor not found')
           db.write_text(text.replace(anchor, addition, 1))
 
-          router = Path('server/routers/civic-genome-router.ts')
-          text = router.read_text()
+          router = Path('server/routers/civic-genome-router.ts'); text = router.read_text()
           text = text.replace('''  get_genome_bill,
   list_genome_events,''','''  get_genome_bill,
   get_genome_bill_by_source_bill_id,
@@ -236,28 +110,21 @@ export async function get_genome_bill_by_source_bill_id(bill_id: string): Promis
       return get_genome_bill_by_source_bill_id(input.bill_id);
     }),
 '''
-          if anchor not in text:
-              raise SystemExit('genome router anchor not found')
+          if anchor not in text: raise SystemExit('genome router anchor not found')
           router.write_text(text.replace(anchor, addition, 1))
 
-          app = Path('client/src/App.tsx')
-          text = app.read_text()
-          import_anchor = 'import docket_room_page from "./pages/DocketRoom";\n'
-          import_line = 'import CivicGenome from "./pages/CivicGenome";\n'
-          if import_line not in text:
-              text = text.replace(import_anchor, import_anchor + import_line, 1)
+          app = Path('client/src/App.tsx'); text = app.read_text()
+          import_anchor = 'import docket_room_page from "./pages/DocketRoom";\n'; import_line = 'import CivicGenome from "./pages/CivicGenome";\n'
+          if import_line not in text: text = text.replace(import_anchor, import_anchor + import_line, 1)
           route_anchor = '                <Route path="/docket/:slug" component={docket_room_page} />\n'
           routes = route_anchor + '                <Route path="/civic-genome" component={CivicGenome} />\n                <Route path="/civic-genome/bill/:bill_id" component={CivicGenome} />\n'
-          if route_anchor not in text:
-              raise SystemExit('App route anchor not found')
+          if route_anchor not in text: raise SystemExit('App route anchor not found')
           app.write_text(text.replace(route_anchor, routes, 1))
 
-          detail = Path('client/src/components/DocketBillDetailWorkspace.tsx')
-          text = detail.read_text()
+          detail = Path('client/src/components/DocketBillDetailWorkspace.tsx'); text = detail.read_text()
           target = '''{official_url && <a href={official_url} target="_blank" rel="noopener noreferrer" style={{ background: p.steel_soft, border: `1px solid ${p.steel}`, borderRadius: 6, padding: "0.45rem 0.65rem", color: p.steel, fontFamily: mono, fontSize: "0.68rem", textDecoration: "none" }}>Open official bill</a>}'''
           replacement = '''<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>{n.bill_id && <a href={`/civic-genome/bill/${encodeURIComponent(String(n.bill_id))}`} style={{ background: p.steel_soft, border: `1px solid ${p.steel}`, borderRadius: 6, padding: "0.45rem 0.65rem", color: p.steel, fontFamily: mono, fontSize: "0.68rem", textDecoration: "none" }}>Open in Living Civic Genome</a>}{official_url && <a href={official_url} target="_blank" rel="noopener noreferrer" style={{ background: p.steel_soft, border: `1px solid ${p.steel}`, borderRadius: 6, padding: "0.45rem 0.65rem", color: p.steel, fontFamily: mono, fontSize: "0.68rem", textDecoration: "none" }}>Open official bill</a>}</div>'''
-          if target not in text:
-              raise SystemExit('Docket detail link anchor not found')
+          if target not in text: raise SystemExit('Docket detail link anchor not found')
           detail.write_text(text.replace(target, replacement, 1))
           PY
           git config user.name "github-actions[bot]"
