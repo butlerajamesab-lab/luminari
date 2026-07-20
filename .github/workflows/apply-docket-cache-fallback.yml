@@ -2,7 +2,7 @@ name: Apply Docket detail cache fallback
 
 on:
   push:
-    branches: [main]
+    branches: [fix/docket-detail-cache-404-fallback]
     paths: [.github/workflows/apply-docket-cache-fallback.yml]
 
 permissions:
@@ -14,11 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: fix/docket-detail-cache-404-fallback
           fetch-depth: 0
       - name: Patch Docket detail cache fallback
         shell: bash
         run: |
-          git checkout -b fix/docket-detail-cache-404-fallback
           python - <<'PY'
           from pathlib import Path
           path = Path('server/routes/docket.ts')
@@ -130,4 +130,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add server/routes/docket.ts
           git commit -m "Allow Docket bill detail without cache table"
-          git push origin fix/docket-detail-cache-404-fallback
+          git push origin HEAD:fix/docket-detail-cache-404-fallback
