@@ -68,6 +68,7 @@ import Lighthouse from "./pages/Lighthouse";
 import CivicMap from "./pages/CivicMap";
 import AnomalyViewfinder from "./pages/AnomalyViewfinder";
 import docket_room_page from "./pages/DocketRoom";
+import CivicGenome from "./pages/CivicGenome";
 import LumenSend from "./pages/LumenSend";
 import LegalLibrary from "./pages/LegalLibrary";
 import AgencyMetrics from "./pages/AgencyMetrics";
@@ -133,7 +134,6 @@ function HomeOrWelcome() {
   useEffect(() => {
     if (authLoading || isLoading) return;
 
-    // For validation routes (/intake, /case/:id), bypass auth and allow access
     if (typeof window !== 'undefined') {
       const pathname = window.location.pathname;
       if (pathname.startsWith('/intake') || pathname.startsWith('/case/')) {
@@ -143,14 +143,11 @@ function HomeOrWelcome() {
     }
 
     if (!isAuthenticated) {
-      // Not logged in → Mudroom (calm entry)
       navigate("/login", { replace: true });
       setChecked(true);
       return;
     }
 
-    // Allow all authenticated users to access dashboard (including admins)
-    // Admins can still navigate to /mission-control if needed
     setChecked(true);
   }, [cases, isLoading, authLoading, isAuthenticated, user, navigate]);
 
@@ -165,7 +162,6 @@ function HomeOrWelcome() {
   return <Home />;
 }
 
-/** Full workspace — the existing power-user dashboard */
 function DashboardRouter() {
   return (
     <DashboardLayout>
@@ -216,18 +212,9 @@ function App() {
           <PlainLanguageProvider>
             <CaseProvider>
               <Switch>
-                {/* Guided Advocacy Shell — standalone pages (no sidebar) */}
                 <Route path="/welcome" component={Welcome} />
-                <Route path="/intake">
-                  <ValidationRouteWrapper>
-                    <Intake />
-                  </ValidationRouteWrapper>
-                </Route>
-                <Route path="/case/:id">
-                  <ValidationRouteWrapper>
-                    <Case />
-                  </ValidationRouteWrapper>
-                </Route>
+                <Route path="/intake"><ValidationRouteWrapper><Intake /></ValidationRouteWrapper></Route>
+                <Route path="/case/:id"><ValidationRouteWrapper><Case /></ValidationRouteWrapper></Route>
                 <Route path="/luminari-intake" component={GuidedIntakeNew} />
                 <Route path="/guided-intake" component={GuidedIntakeNew} />
                 <Route path="/benefits" component={BenefitsNavigator} />
@@ -255,6 +242,8 @@ function App() {
                 <Route path="/viewfinder" component={AnomalyViewfinder} />
                 <Route path="/docket" component={docket_room_page} />
                 <Route path="/docket/:slug" component={docket_room_page} />
+                <Route path="/civic-genome" component={CivicGenome} />
+                <Route path="/civic-genome/bill/:bill_id" component={CivicGenome} />
                 <Route path="/lumensend" component={LumenSend} />
                 <Route path="/legal-library" component={LegalLibrary} />
                 <Route path="/agency-metrics" component={AgencyMetrics} />
@@ -298,11 +287,7 @@ function App() {
                 <Route path="/mission-control/governance" component={GovernanceDashboard} />
                 <Route path="/verify" component={Verify} />
                 <Route path="/business-analytics" component={BusinessAnalytics} />
-
-                {/* Full workspace — all existing dashboard routes */}
-                <Route>
-                  <DashboardRouter />
-                </Route>
+                <Route><DashboardRouter /></Route>
               </Switch>
               <GlobalUploadIndicator />
               <LuminariHelper />

@@ -143,7 +143,10 @@ export function DocketBillDetailWorkspace({ payload }: { payload: bill_detail_pa
           <h3 style={{ fontFamily: font_serif, fontSize: "1.35rem", color: palette.paper, lineHeight: 1.25, margin: 0 }}>{display_value(normalized.title)}</h3>
           {normalized.description && normalized.description !== normalized.title && <p style={{ fontFamily: font_sans, fontSize: "0.86rem", color: palette.cream, lineHeight: 1.55, margin: "0.55rem 0 0" }}>{display_value(normalized.description)}</p>}
         </div>
-        {official_url && <a href={official_url} target="_blank" rel="noopener noreferrer" style={{ background: palette.steel_soft, border: `1px solid ${palette.steel}`, borderRadius: 6, padding: "0.45rem 0.65rem", color: palette.steel, fontFamily: font_mono, fontSize: "0.68rem", textDecoration: "none" }}>Open official bill</a>}
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          {normalized.bill_id && <a href={`/civic-genome/bill/${encodeURIComponent(String(normalized.bill_id))}`} style={{ background: palette.steel_soft, border: `1px solid ${palette.steel}`, borderRadius: 6, padding: "0.45rem 0.65rem", color: palette.steel, fontFamily: font_mono, fontSize: "0.68rem", textDecoration: "none" }}>Open in Living Civic Genome</a>}
+          {official_url && <a href={official_url} target="_blank" rel="noopener noreferrer" style={{ background: palette.steel_soft, border: `1px solid ${palette.steel}`, borderRadius: 6, padding: "0.45rem 0.65rem", color: palette.steel, fontFamily: font_mono, fontSize: "0.68rem", textDecoration: "none" }}>Open official bill</a>}
+        </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(155px, 1fr))", gap: "0.75rem", background: palette.bg, border: `1px solid ${palette.rule}`, borderRadius: 8, padding: "0.85rem" }}>
