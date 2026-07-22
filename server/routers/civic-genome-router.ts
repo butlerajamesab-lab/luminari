@@ -20,9 +20,11 @@ import {
   list_momentum_snapshots,
   get_genome_stats,
 } from "../civic-genome-db";
+import { get_genome_bill_by_source_id } from "../civic-genome-source-id";
 import { project_docket_cache_to_civic_genome } from "../civic-genome-projection";
 
 const uuid_param = z.string().uuid();
+const source_bill_id_param = z.string().trim().min(1).max(255);
 
 export const civicGenomeRouter = router({
   // ─── Stats ──────────────────────────────────────────────────────────────
@@ -82,6 +84,12 @@ export const civicGenomeRouter = router({
     .input(z.object({ genome_bill_id: uuid_param }))
     .query(async ({ input }) => {
       return get_genome_bill(input.genome_bill_id);
+    }),
+
+  get_bill_by_source_id: publicProcedure
+    .input(z.object({ bill_id: source_bill_id_param }))
+    .query(async ({ input }) => {
+      return get_genome_bill_by_source_id(input.bill_id);
     }),
 
   // ─── Events ─────────────────────────────────────────────────────────────
