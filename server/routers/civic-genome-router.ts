@@ -1,12 +1,10 @@
 /**
  * Civic Genome — tRPC Router
  *
- * Lighthouse read-only surface for the living civic genome substrate.
- * Exposes families, bills, events, lineage edges, and momentum snapshots.
+ * Lighthouse read surface for the living civic genome substrate plus bounded,
+ * admin-only projection commands from the persisted Docket Room cache.
  *
- * Principle: Observe. Do not assert. Read procedures stay read-only.
- * The projection command is admin-only and projects from Docket Room cache;
- * it never calls LegiScan directly.
+ * Principle: Observe. Do not assert. Projection never calls LegiScan directly.
  */
 import { z } from "zod";
 import { router, publicProcedure, adminProcedure } from "../_core/trpc";
@@ -22,9 +20,10 @@ import {
 } from "../civic-genome-db";
 import { get_genome_bill_by_source_id } from "../civic-genome-source-id";
 import { project_docket_cache_to_civic_genome } from "../civic-genome-projection";
+import { resolve_or_assemble_docket_bill } from "../civic-genome-single-bill-assembly";
 
 const uuid_param = z.string().uuid();
-const source_bill_id_param = z.string().trim().min(1).max(255);
+const source_bill_id_param = z.coerce.number().int().positive();
 
 export const civicGenomeRouter = router({
   // ─── Stats ──────────────────────────────────────────────────────────────
@@ -42,6 +41,12 @@ export const civicGenomeRouter = router({
     )
     .mutation(async ({ input }) => {
       return project_docket_cache_to_civic_genome(input ?? {});
+    }),
+
+  resolve_or_assemble_docket_bill: adminProcedure
+    .input(z.object({ source_bill_id: source_bill_id_param }))
+    .mutation(async ({ input }) => {
+      return resolve_or_assemble_docket_bill(input.source_bill_id);
     }),
 
   // ─── Families ───────────────────────────────────────────────────────────
@@ -87,9 +92,9 @@ export const civicGenomeRouter = router({
     }),
 
   get_bill_by_source_id: publicProcedure
-    .input(z.object({ bill_id: source_bill_id_param }))
+    .input(z.object({ source_bill_id: source_bill_id_param }))
     .query(async ({ input }) => {
-      return get_genome_bill_by_source_id(input.bill_id);
+      return get_genome_bill_by_source_id(input.source_bill_id);
     }),
 
   // ─── Events ─────────────────────────────────────────────────────────────
