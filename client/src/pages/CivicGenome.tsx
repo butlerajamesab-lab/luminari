@@ -24,12 +24,13 @@ export default function CivicGenomePage() {
   const [query, set_query] = useState(source_bill_id ?? "");
   const stats = trpc.civicGenome.stats.useQuery();
   const families = trpc.civicGenome.list_families.useQuery({ limit: 30 });
-  const page_1 = trpc.civicGenome.list_bills.useQuery({ limit: 200, offset: 0 }, { enabled: Boolean(source_bill_id) });
-  const page_2 = trpc.civicGenome.list_bills.useQuery({ limit: 200, offset: 200 }, { enabled: Boolean(source_bill_id) });
-  const page_3 = trpc.civicGenome.list_bills.useQuery({ limit: 200, offset: 400 }, { enabled: Boolean(source_bill_id) });
-  const selected = useMemo(() => source_bill_id ? [...(page_1.data ?? []), ...(page_2.data ?? []), ...(page_3.data ?? [])].find(item => String(item.bill_id) === source_bill_id) ?? null : null, [source_bill_id, page_1.data, page_2.data, page_3.data]);
-  const loading = page_1.isLoading || page_2.isLoading || page_3.isLoading;
-  const lookup_error = page_1.error || page_2.error || page_3.error;
+  const bill_lookup = trpc.civicGenome.get_bill_by_source_id.useQuery(
+    { bill_id: source_bill_id ?? "" },
+    { enabled: Boolean(source_bill_id) }
+  );
+  const selected = bill_lookup.data ?? null;
+  const loading = bill_lookup.isLoading;
+  const lookup_error = bill_lookup.error;
   const family_id = selected?.family_id ?? null;
   const family = trpc.civicGenome.get_family.useQuery({ family_id: family_id ?? "00000000-0000-0000-0000-000000000000" }, { enabled: Boolean(family_id) });
   const family_bills = trpc.civicGenome.list_bills.useQuery({ family_id: family_id ?? undefined, limit: 100 }, { enabled: Boolean(family_id) });
