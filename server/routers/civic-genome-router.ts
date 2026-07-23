@@ -21,9 +21,14 @@ import {
 import { get_genome_bill_by_source_id } from "../civic-genome-source-id";
 import { project_docket_cache_to_civic_genome } from "../civic-genome-projection";
 import { resolve_or_assemble_docket_bill } from "../civic-genome-single-bill-assembly";
+import {
+  get_latest_rosetta_law_view_by_source_document,
+  get_rosetta_law_view_by_extraction_run,
+} from "../civic-genome-rosetta-contract";
 
 const uuid_param = z.string().uuid();
 const source_bill_id_param = z.coerce.number().int().positive();
+const positive_integer_param = z.coerce.number().int().positive();
 
 export const civicGenomeRouter = router({
   // ─── Stats ──────────────────────────────────────────────────────────────
@@ -47,6 +52,19 @@ export const civicGenomeRouter = router({
     .input(z.object({ source_bill_id: source_bill_id_param }))
     .mutation(async ({ input }) => {
       return resolve_or_assemble_docket_bill(input.source_bill_id);
+    }),
+
+  // ─── Rosetta contract ───────────────────────────────────────────────────
+  get_rosetta_law_view_by_extraction_run: adminProcedure
+    .input(z.object({ extraction_run_id: positive_integer_param }))
+    .query(async ({ input }) => {
+      return get_rosetta_law_view_by_extraction_run(input.extraction_run_id);
+    }),
+
+  get_latest_rosetta_law_view_by_source_document: adminProcedure
+    .input(z.object({ source_document_id: positive_integer_param }))
+    .query(async ({ input }) => {
+      return get_latest_rosetta_law_view_by_source_document(input.source_document_id);
     }),
 
   // ─── Families ───────────────────────────────────────────────────────────
