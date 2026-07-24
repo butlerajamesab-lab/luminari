@@ -2,7 +2,7 @@
  * Civic Genome — tRPC Router
  *
  * Lighthouse read surface for the living civic genome substrate plus bounded,
- * admin-only projection and Rosetta assembly commands.
+ * admin-only projection, Rosetta assembly, and family resolution commands.
  *
  * Principle: Observe. Do not assert. Projection never calls LegiScan directly.
  */
@@ -27,6 +27,7 @@ import {
 } from "../civic-genome-rosetta-contract";
 import { assemble_rosetta_structural_dna } from "../civic-genome-rosetta-assembly";
 import { get_civic_genome_bill_detail } from "../civic-genome-bill-detail";
+import { resolve_civic_genome_family } from "../civic-genome-family-resolution";
 
 const uuid_param = z.string().uuid();
 const source_bill_id_param = z.coerce.number().int().positive();
@@ -61,6 +62,10 @@ export const civicGenomeRouter = router({
       extraction_run_id: positive_integer_param.optional(),
     }))
     .mutation(async ({ input }) => assemble_rosetta_structural_dna(input)),
+
+  resolve_family: adminProcedure
+    .input(z.object({ genome_bill_id: uuid_param }))
+    .mutation(async ({ input }) => resolve_civic_genome_family(input.genome_bill_id)),
 
   list_families: publicProcedure
     .input(z.object({
