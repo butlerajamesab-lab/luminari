@@ -25,7 +25,7 @@ import {
   get_latest_rosetta_law_view_by_source_document,
   get_rosetta_law_view_by_extraction_run,
 } from "../civic-genome-rosetta-contract";
-import { assemble_rosetta_structural_dna } from "../civic-genome-rosetta-assembly";
+import { assemble_rosetta_and_resolve_family } from "../civic-genome-rosetta-family-orchestration";
 import { get_civic_genome_bill_detail } from "../civic-genome-bill-detail";
 import { resolve_civic_genome_family } from "../civic-genome-family-resolution";
 
@@ -61,7 +61,7 @@ export const civicGenomeRouter = router({
       source_document_id: positive_integer_param,
       extraction_run_id: positive_integer_param.optional(),
     }))
-    .mutation(async ({ input }) => assemble_rosetta_structural_dna(input)),
+    .mutation(async ({ input }) => assemble_rosetta_and_resolve_family(input)),
 
   resolve_family: adminProcedure
     .input(z.object({ genome_bill_id: uuid_param }))
