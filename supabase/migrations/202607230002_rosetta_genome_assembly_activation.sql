@@ -4,6 +4,9 @@
 alter table public.civic_genome_trait
   alter column extraction_run_id type text using extraction_run_id::text;
 
+alter table public.civic_genome_bill
+  alter column rosetta_extraction_run_id type text using rosetta_extraction_run_id::text;
+
 alter table public.civic_genome_trait
   add column if not exists source_document_id bigint,
   add column if not exists verification_state text,
