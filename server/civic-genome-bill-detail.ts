@@ -43,12 +43,33 @@ export type persisted_genome_assembly_run = {
   completed_at: string | null;
 };
 
+export type persisted_family_resolution = {
+  unresolved_candidate_id: string;
+  resolution_reason: string;
+  best_candidate_family_id: string | null;
+  best_candidate_score: number;
+  similarity_breakdown_json: Record<string, unknown>;
+  competing_family_ids: string[];
+  methodology_version: string;
+  observed_at: string;
+  resolved_at: string | null;
+  resolution_family_id: string | null;
+};
+
+export type family_assignment_status = {
+  status: "provisional" | "unresolved" | "structurally_assigned";
+  current_family_id: string;
+  current_family_signature: Record<string, unknown>;
+  latest_resolution: persisted_family_resolution | null;
+};
+
 export type civic_genome_bill_detail = {
   bill: GenomeBill;
   structural_dna: {
     traits: persisted_genome_trait[];
     assembly_runs: persisted_genome_assembly_run[];
   };
+  family_assignment: family_assignment_status;
 };
 
 export async function get_civic_genome_bill_detail(
@@ -62,7 +83,7 @@ export async function get_civic_genome_bill_detail(
   const bill = bill_result.rows[0];
   if (!bill) return null;
 
-  const [traits_result, runs_result] = await Promise.all([
+  const [traits_result, runs_result, family_result, resolution_result] = await Promise.all([
     pool.query<persisted_genome_trait>(
       `select *
          from public.civic_genome_trait
@@ -78,13 +99,44 @@ export async function get_civic_genome_bill_detail(
         limit 25`,
       [genome_bill_id],
     ),
+    pool.query<{ signature_json: Record<string, unknown> }>(
+      `select signature_json
+         from public.civic_genome_family
+        where family_id = $1
+        limit 1`,
+      [bill.family_id],
+    ),
+    pool.query<persisted_family_resolution>(
+      `select unresolved_candidate_id, resolution_reason, best_candidate_family_id,
+              best_candidate_score, similarity_breakdown_json, competing_family_ids,
+              methodology_version, observed_at, resolved_at, resolution_family_id
+         from public.civic_genome_unresolved_family_candidate
+        where genome_bill_id = $1
+        order by observed_at desc, created_at desc
+        limit 1`,
+      [genome_bill_id],
+    ),
   ]);
+
+  const latest_resolution = resolution_result.rows[0] ?? null;
+  const assignment_status = latest_resolution?.resolved_at
+    && latest_resolution.resolution_family_id === bill.family_id
+    ? "structurally_assigned"
+    : latest_resolution && !latest_resolution.resolved_at
+      ? "unresolved"
+      : "provisional";
 
   return {
     bill,
     structural_dna: {
       traits: traits_result.rows,
       assembly_runs: runs_result.rows,
+    },
+    family_assignment: {
+      status: assignment_status,
+      current_family_id: bill.family_id,
+      current_family_signature: family_result.rows[0]?.signature_json ?? {},
+      latest_resolution,
     },
   };
 }
