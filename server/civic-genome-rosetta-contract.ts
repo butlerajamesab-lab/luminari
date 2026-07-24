@@ -108,7 +108,7 @@ function normalize_coverage(value: unknown): Partial<Record<RosettaLayer, number
     if (!is_record(entry)) {
       continue;
     }
-    coverage[layer] = entry.status === "populated" ? 1 : 0;
+    coverage[layer] = entry.status === "populated" || entry.status === "not_applicable" ? 1 : 0;
   }
   return coverage;
 }
