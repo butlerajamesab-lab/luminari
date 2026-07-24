@@ -26,6 +26,7 @@ import {
   get_rosetta_law_view_by_extraction_run,
 } from "../civic-genome-rosetta-contract";
 import { assemble_rosetta_and_resolve_family } from "../civic-genome-rosetta-family-orchestration";
+import { backfill_explicit_rosetta_bindings } from "../civic-genome-rosetta-backfill";
 import { get_civic_genome_bill_detail } from "../civic-genome-bill-detail";
 import { resolve_civic_genome_family } from "../civic-genome-family-resolution";
 
@@ -62,6 +63,16 @@ export const civicGenomeRouter = router({
       extraction_run_id: positive_integer_param.optional(),
     }))
     .mutation(async ({ input }) => assemble_rosetta_and_resolve_family(input)),
+
+  backfill_explicit_rosetta_bindings: adminProcedure
+    .input(z.object({
+      bindings: z.array(z.object({
+        genome_bill_id: uuid_param,
+        source_document_id: positive_integer_param,
+        extraction_run_id: positive_integer_param.optional(),
+      })).min(1).max(50),
+    }))
+    .mutation(async ({ input }) => backfill_explicit_rosetta_bindings(input.bindings)),
 
   resolve_family: adminProcedure
     .input(z.object({ genome_bill_id: uuid_param }))
