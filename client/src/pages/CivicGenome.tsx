@@ -92,6 +92,7 @@ export default function CivicGenomePage() {
   const recent_events = useMemo(() => (events.data ?? []).slice(0, 12), [events.data]);
   const traits = bill_detail.data?.structural_dna.traits ?? [];
   const assembly_runs = bill_detail.data?.structural_dna.assembly_runs ?? [];
+  const family_assignment = bill_detail.data?.family_assignment ?? null;
   const grouped_traits = useMemo(() => {
     const groups = new Map<string, typeof traits>();
     for (const trait of traits) groups.set(trait.trait_class, [...(groups.get(trait.trait_class) ?? []), trait]);
@@ -142,7 +143,22 @@ export default function CivicGenomePage() {
       </div> : <div style={{ display: "grid", gridTemplateColumns: "minmax(240px,.75fr) minmax(0,1.7fr) minmax(240px,.75fr)", gap: "1rem", alignItems: "start" }}>
         <aside style={{ display: "grid", gap: ".8rem" }}>
           <section style={panel}><div style={{ fontFamily: mono, fontSize: ".68rem", color: p.green }}>SELECTED BILL</div><h2 style={{ fontFamily: serif, margin: ".45rem 0", fontSize: "1.45rem" }}>{selected.source_bill_number}</h2><div style={{ fontFamily: sans, lineHeight: 1.5 }}>{selected.source_bill_title || "Untitled bill"}</div><div style={{ display: "grid", gap: ".35rem", fontFamily: mono, color: p.muted, fontSize: ".66rem", marginTop: ".75rem" }}><span>{selected.state_code} · {selected.session_key}</span><span>status {selected.bill_status || "unknown"}</span><span>position {selected.current_state_position}</span><span>last action {date(selected.last_action_at)}</span></div>{selected.source_bill_url && <a href={selected.source_bill_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", marginTop: ".75rem", color: p.green, fontFamily: mono, fontSize: ".66rem" }}>Official source</a>}</section>
-          <section style={panel}><div style={{ fontFamily: mono, fontSize: ".68rem", color: p.green, marginBottom: ".6rem" }}>FAMILY</div><div style={{ fontFamily: serif, fontSize: "1.25rem" }}>{family.data?.family_label || "Unassigned"}</div><div style={{ fontFamily: mono, fontSize: ".64rem", color: p.muted, marginTop: ".5rem" }}>{family.data ? `${family.data.policy_domain} · ${family.data.family_status}` : "No verified family assignment"}</div></section>
+          <section style={panel}>
+            <div style={{ fontFamily: mono, fontSize: ".68rem", color: p.green, marginBottom: ".6rem" }}>FAMILY</div>
+            <div style={{ fontFamily: serif, fontSize: "1.25rem" }}>{family.data?.family_label || "Unassigned"}</div>
+            <div style={{ fontFamily: mono, fontSize: ".64rem", color: p.muted, marginTop: ".5rem" }}>{family.data ? `${family.data.policy_domain} · ${family.data.family_status}` : "No family record"}</div>
+            <div style={{ marginTop: ".75rem", padding: ".65rem", borderRadius: 8, background: p.soft, border: `1px solid ${p.border}` }}>
+              <div style={{ fontFamily: mono, fontSize: ".63rem", color: p.green, textTransform: "uppercase" }}>{family_assignment?.status ?? "loading"}</div>
+              <div style={{ fontFamily: sans, fontSize: ".75rem", color: p.muted, lineHeight: 1.45, marginTop: ".35rem" }}>
+                {family_assignment?.status === "structurally_assigned"
+                  ? "Assigned by an exact, unambiguous structural DNA match."
+                  : family_assignment?.status === "unresolved"
+                    ? `No forced assignment. ${family_assignment.latest_resolution?.resolution_reason ?? "Resolution remains open."}`
+                    : "Current family is the provisional Docket ingestion grouping until structural resolution runs."}
+              </div>
+              {family_assignment?.latest_resolution && <div style={{ fontFamily: mono, fontSize: ".58rem", color: p.muted, marginTop: ".45rem", overflowWrap: "anywhere" }}>method {family_assignment.latest_resolution.methodology_version}<br/>observed {new Date(family_assignment.latest_resolution.observed_at).toLocaleString()}</div>}
+            </div>
+          </section>
         </aside>
 
         <main style={{ display: "grid", gap: ".8rem" }}>
@@ -161,7 +177,7 @@ export default function CivicGenomePage() {
         <aside style={{ display: "grid", gap: ".8rem" }}>
           <section style={panel}><div style={{ display: "flex", alignItems: "center", gap: ".5rem", fontFamily: mono, color: p.green, fontSize: ".7rem", marginBottom: ".7rem" }}><GitBranch size={15}/> Lineage</div>{(lineage.data ?? []).length ? (lineage.data ?? []).map(item => <div key={item.lineage_edge_id} style={{ background: p.soft, borderRadius: 8, padding: ".65rem", marginBottom: ".5rem" }}><div style={{ fontFamily: sans, fontSize: ".8rem" }}>{item.relationship_type}</div><div style={{ fontFamily: mono, color: p.muted, fontSize: ".62rem" }}>confidence {score(item.confidence_score)}</div></div>) : <Empty>No verified lineage edges currently exist.</Empty>}</section>
           <section style={panel}><div style={{ display: "flex", alignItems: "center", gap: ".5rem", fontFamily: mono, color: p.green, fontSize: ".7rem", marginBottom: ".7rem" }}><Network size={15}/> Momentum</div><div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: ".5rem" }}><Metric label="Score" value={score(family.data?.momentum_score)}/><Metric label="Acceleration" value={score(family.data?.acceleration_score)}/><Metric label="Active states" value={family.data?.active_state_count ?? 0}/><Metric label="Snapshots" value={momentum.data?.length ?? 0}/></div></section>
-          <section style={panel}><div style={{ display: "flex", alignItems: "center", gap: ".5rem", fontFamily: mono, color: p.green, fontSize: ".7rem", marginBottom: ".7rem" }}><ShieldCheck size={15}/> Provenance boundary</div><p style={{ fontFamily: sans, fontSize: ".78rem", lineHeight: 1.55, color: p.muted, margin: 0 }}>Structural traits shown here are persisted Rosetta outputs with source object, source block, extraction run, engine version, rule version, and content hash. Empty relationships remain empty.</p></section>
+          <section style={panel}><div style={{ display: "flex", alignItems: "center", gap: ".5rem", fontFamily: mono, color: p.green, fontSize: ".7rem", marginBottom: ".7rem" }}><ShieldCheck size={15}/> Provenance boundary</div><p style={{ fontFamily: sans, fontSize: ".78rem", lineHeight: 1.55, color: p.muted, margin: 0 }}>Structural traits shown here are persisted Rosetta outputs with source object, source block, extraction run, engine version, rule version, and content hash. Family resolution remains explicit: provisional and unresolved outcomes are displayed rather than hidden.</p></section>
         </aside>
       </div>}
     </div>
