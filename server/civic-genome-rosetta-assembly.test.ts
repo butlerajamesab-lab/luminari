@@ -36,7 +36,7 @@ function law_view() {
     created_at: "2026-07-23T00:00:00.000Z",
     completed_at: "2026-07-23T00:01:00.000Z",
     law_view: {
-      provenanceState: "complete" as const,
+      provenanceState: "complete" as "complete" | "partial" | "failed",
       coverage: { help: 1, workflow: 1, accountability: 1, override: 1, definition: 1 },
       objects: [{
         layer: "help" as const,
