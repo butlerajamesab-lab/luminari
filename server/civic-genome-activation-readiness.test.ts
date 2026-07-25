@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   classify_activation_candidate,
@@ -13,7 +13,7 @@ const bills = [
     session_key: "119",
     source_bill_number: "H.R. 1",
     source_bill_title: "Example",
-    source_bill_id: "1",
+    source_bill_id: "1979531",
   },
 ];
 
@@ -23,14 +23,18 @@ const base_row = {
   document_name: "HR1",
   document_type: "bill",
   document_identifier: "HR1",
-  jurisdiction_code: "US",
-  session_key: "119",
-  source_bill_id: null,
   run_version: 1,
   run_status: "completed",
   provenance_state: "complete",
   objects: [{ layer: "help" }],
 };
+
+function response(rows: unknown[], content_range: string): Response {
+  return new Response(JSON.stringify(rows), {
+    status: 200,
+    headers: { "content-type": "application/json", "content-range": content_range },
+  });
+}
 
 describe("Civic Genome activation readiness", () => {
   it("normalizes legislative identifiers without fuzzy title matching", () => {
@@ -39,51 +43,38 @@ describe("Civic Genome activation readiness", () => {
     expect(normalize_legislative_identifier(null)).toBeNull();
   });
 
-  it("requires compatible jurisdiction and session for identifier matching", () => {
+  it("keeps bill-number-only matches unresolved even when only one bill is loaded", () => {
     expect(classify_activation_candidate(base_row, bills)).toMatchObject({
-      candidate_status: "exact_unique",
+      candidate_status: "exact_ambiguous",
       genome_bill_ids: ["11111111-1111-4111-8111-111111111111"],
-      match_basis: "jurisdiction_session_identifier",
+      match_basis: "identifier_only_unresolved",
       object_count: 1,
     });
   });
 
-  it("keeps identifier-only matches unresolved", () => {
-    expect(
-      classify_activation_candidate(
-        { ...base_row, jurisdiction_code: null, session_key: null },
-        bills,
-      ),
-    ).toMatchObject({
+  it("does not confuse identical bill numbers across jurisdictions", () => {
+    const duplicate = {
+      ...bills[0],
+      genome_bill_id: "22222222-2222-4222-8222-222222222222",
+      state_code: "WA",
+      session_key: "2025",
+      source_bill_id: "2000000",
+    };
+    expect(classify_activation_candidate(base_row, [...bills, duplicate])).toMatchObject({
       candidate_status: "exact_ambiguous",
-      genome_bill_ids: ["11111111-1111-4111-8111-111111111111"],
+      genome_bill_ids: [
+        "11111111-1111-4111-8111-111111111111",
+        "22222222-2222-4222-8222-222222222222",
+      ],
       match_basis: "identifier_only_unresolved",
     });
   });
 
-  it("does not cross-bind the same bill number across jurisdictions", () => {
-    expect(
-      classify_activation_candidate(
-        { ...base_row, jurisdiction_code: "WA" },
-        bills,
-      ),
-    ).toMatchObject({
-      candidate_status: "no_exact_match",
-      genome_bill_ids: [],
-      match_basis: "none",
-    });
-  });
-
-  it("uses an authoritative source bill id when present", () => {
-    expect(
-      classify_activation_candidate(
-        { ...base_row, jurisdiction_code: null, session_key: null, source_bill_id: "1" },
-        bills,
-      ),
-    ).toMatchObject({
+  it("allows an authoritative numeric source bill ID to produce a unique candidate", () => {
+    expect(classify_activation_candidate({ ...base_row, document_identifier: "1979531" }, bills)).toMatchObject({
       candidate_status: "exact_unique",
       genome_bill_ids: ["11111111-1111-4111-8111-111111111111"],
-      match_basis: "authoritative_source_id",
+      match_basis: "authoritative_source_bill_id",
     });
   });
 
@@ -103,38 +94,39 @@ describe("Civic Genome activation readiness", () => {
     });
   });
 
-  it("loads every Rosetta page before certifying the audit set", async () => {
-    const rows = Array.from({ length: 501 }, (_, index) => ({
-      ...base_row,
-      source_document_id: index + 1,
-      extraction_run_id: index + 1,
-    }));
-    let calls = 0;
-    const fetch_impl: typeof fetch = async (_input, init) => {
-      calls += 1;
-      const range = String((init?.headers as Record<string, string>).range);
-      const [start, requested_end] = range.split("-").map(Number);
-      const end = Math.min(requested_end, rows.length - 1);
-      return new Response(JSON.stringify(rows.slice(start, end + 1)), {
-        status: 200,
-        headers: { "content-range": `${start}-${end}/${rows.length}` },
-      });
-    };
+  it("loads every Rosetta page before deduplication", async () => {
+    const row1 = { ...base_row, source_document_id: 1, extraction_run_id: 9, run_version: 2 };
+    const row1Older = { ...base_row, source_document_id: 1, extraction_run_id: 8, run_version: 1 };
+    const row2 = { ...base_row, source_document_id: 2, extraction_run_id: 10, document_identifier: "HB2" };
+    const fetch_impl = vi
+      .fn()
+      .mockResolvedValueOnce(response([row1, row1Older], "0-1/3"))
+      .mockResolvedValueOnce(response([row2], "2-2/3"));
 
-    const result = await load_rosetta_exports_with_fetch("https://example.supabase.co", "key", fetch_impl);
-    expect(result).toHaveLength(501);
-    expect(calls).toBe(2);
+    const rows = await load_rosetta_exports_with_fetch("https://example.supabase.co", "secret", fetch_impl, 2);
+
+    expect(fetch_impl).toHaveBeenCalledTimes(2);
+    expect(rows).toEqual([row1, row2]);
+    expect(fetch_impl.mock.calls[0][1]?.headers).toMatchObject({ range: "0-1", prefer: "count=exact" });
+    expect(fetch_impl.mock.calls[1][1]?.headers).toMatchObject({ range: "2-3", prefer: "count=exact" });
   });
 
-  it("fails closed when a paginated response is truncated", async () => {
-    const fetch_impl: typeof fetch = async () =>
-      new Response(JSON.stringify([]), {
-        status: 200,
-        headers: { "content-range": "0-0/2" },
-      });
+  it("fails closed when a short page claims more rows remain", async () => {
+    const fetch_impl = vi.fn().mockResolvedValue(response([base_row], "0-0/3"));
 
     await expect(
-      load_rosetta_exports_with_fetch("https://example.supabase.co", "key", fetch_impl),
+      load_rosetta_exports_with_fetch("https://example.supabase.co", "secret", fetch_impl, 2),
     ).rejects.toThrow("rosetta_activation_audit_truncated_response");
+  });
+
+  it("fails closed when the total changes between pages", async () => {
+    const fetch_impl = vi
+      .fn()
+      .mockResolvedValueOnce(response([base_row, { ...base_row, source_document_id: 2 }], "0-1/3"))
+      .mockResolvedValueOnce(response([{ ...base_row, source_document_id: 3 }], "2-2/4"));
+
+    await expect(
+      load_rosetta_exports_with_fetch("https://example.supabase.co", "secret", fetch_impl, 2),
+    ).rejects.toThrow("rosetta_activation_audit_count_changed_during_read");
   });
 });
