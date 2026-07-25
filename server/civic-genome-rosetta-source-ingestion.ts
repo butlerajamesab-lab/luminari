@@ -5,6 +5,7 @@ import { resolve_or_assemble_docket_bill } from "./civic-genome-single-bill-asse
 
 const ROSETTA_CORPUS_NAME = "Lighthouse Docket";
 const ROSETTA_CORPUS_TYPE = "legislative";
+const reusable_run_statuses = new Set(["in_progress", "pending", "queued"]);
 
 export type rosetta_source_ingestion_result = {
   source_bill_id: number;
@@ -134,24 +135,36 @@ async function ensure_pending_extraction_run(
   source_document_id: number,
 ): Promise<{ id: number; status: "existing" | "created"; run_status: string }> {
   const query = new URLSearchParams({
-    select: "id,run_status",
+    select: "id,run_status,run_version",
     source_document_id: `eq.${source_document_id}`,
     order: "run_version.desc,id.desc",
     limit: "1",
   });
   const existing = await rosetta_request(`extraction_run?${query.toString()}`, { method: "GET" });
-  if (existing[0]?.id !== undefined) {
+  const latest = existing[0];
+  const latest_status = String(latest?.run_status ?? "").toLowerCase();
+
+  if (latest?.id !== undefined && reusable_run_statuses.has(latest_status)) {
     return {
-      id: Number(existing[0].id),
+      id: Number(latest.id),
       status: "existing",
-      run_status: String(existing[0].run_status ?? "unknown"),
+      run_status: latest_status,
     };
+  }
+
+  const latest_version = Number(latest?.run_version ?? 0);
+  if (!Number.isInteger(latest_version) || latest_version < 0) {
+    throw new Error("invalid_rosetta_extraction_run_version");
   }
 
   const created = await rosetta_request("extraction_run", {
     method: "POST",
     headers: { prefer: "return=representation" },
-    body: JSON.stringify({ source_document_id, run_version: 1, run_status: "in_progress" }),
+    body: JSON.stringify({
+      source_document_id,
+      run_version: latest_version + 1,
+      run_status: "in_progress",
+    }),
   });
   if (created[0]?.id === undefined) throw new Error("rosetta_extraction_run_create_missing_id");
   return {
