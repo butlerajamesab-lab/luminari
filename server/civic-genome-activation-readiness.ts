@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { getPool } from "./db";
 
 export const CIVIC_GENOME_ACTIVATION_AUDIT_VERSION = "civic-genome-activation-readiness-v2";
-const ROSETTA_PAGE_SIZE = 500;
+export const ROSETTA_AUDIT_PAGE_SIZE = 500;
 
 type rosetta_export_row = {
   extraction_run_id: number;
@@ -11,9 +11,6 @@ type rosetta_export_row = {
   document_name: string;
   document_type: string | null;
   document_identifier: string | null;
-  jurisdiction_code?: string | null;
-  session_key?: string | null;
-  source_bill_id?: string | number | null;
   run_version: number;
   run_status: string | null;
   provenance_state: string;
@@ -37,7 +34,7 @@ export type civic_genome_activation_candidate = {
   object_count: number;
   candidate_status: "exact_unique" | "exact_ambiguous" | "no_exact_match" | "not_bill_material";
   genome_bill_ids: string[];
-  match_basis: "authoritative_source_id" | "jurisdiction_session_identifier" | "identifier_only_unresolved" | "none";
+  match_basis: "authoritative_source_bill_id" | "identifier_only_unresolved" | "none";
 };
 
 export type civic_genome_activation_readiness_report = {
@@ -59,41 +56,46 @@ function required_environment(name: string): string {
 }
 
 export function normalize_legislative_identifier(value: string | null | undefined): string | null {
-  const normalized = String(value ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").trim();
+  const normalized = String(value ?? "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .trim();
   return normalized || null;
 }
 
-function normalize_identity_part(value: string | number | null | undefined): string | null {
-  const normalized = String(value ?? "").trim().toUpperCase();
-  return normalized || null;
+function normalize_source_bill_id(value: string | number | null | undefined): string | null {
+  const normalized = String(value ?? "").trim();
+  return /^\d+$/.test(normalized) ? normalized : null;
 }
 
 function stable_hash(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
 
-function parse_content_range(value: string | null): { end: number; total: number } {
+function parse_content_range(value: string | null): { start: number; end: number; total: number } {
   const match = value?.match(/^(\d+)-(\d+)\/(\d+)$/);
   if (!match) throw new Error("rosetta_activation_audit_invalid_content_range");
-  return { end: Number(match[2]), total: Number(match[3]) };
+  return { start: Number(match[1]), end: Number(match[2]), total: Number(match[3]) };
 }
 
 export async function load_rosetta_exports_with_fetch(
   base_url: string,
   service_role_key: string,
   fetch_impl: typeof fetch = fetch,
+  page_size = ROSETTA_AUDIT_PAGE_SIZE,
 ): Promise<rosetta_export_row[]> {
+  if (!Number.isInteger(page_size) || page_size < 1) throw new Error("invalid_rosetta_activation_audit_page_size");
+
+  const query = new URLSearchParams({
+    select: "extraction_run_id,source_document_id,document_name,document_type,document_identifier,run_version,run_status,provenance_state,objects",
+    run_status: "eq.completed",
+    order: "source_document_id.asc,run_version.desc,extraction_run_id.desc",
+  });
   const rows: rosetta_export_row[] = [];
-  let offset = 0;
   let expected_total: number | null = null;
 
-  while (expected_total === null || offset < expected_total) {
-    const query = new URLSearchParams({
-      select: "extraction_run_id,source_document_id,document_name,document_type,document_identifier,jurisdiction_code,session_key,source_bill_id,run_version,run_status,provenance_state,objects",
-      run_status: "eq.completed",
-      order: "source_document_id.asc,run_version.desc,extraction_run_id.desc",
-    });
-    const end = offset + ROSETTA_PAGE_SIZE - 1;
+  for (let start = 0; ; start += page_size) {
+    const requested_end = start + page_size - 1;
     const response = await fetch_impl(`${base_url}/rest/v1/v_civic_genome_law_view_v1?${query.toString()}`, {
       method: "GET",
       headers: {
@@ -101,7 +103,7 @@ export async function load_rosetta_exports_with_fetch(
         authorization: `Bearer ${service_role_key}`,
         accept: "application/json",
         prefer: "count=exact",
-        range: `${offset}-${end}`,
+        range: `${start}-${requested_end}`,
       },
     });
 
@@ -112,16 +114,27 @@ export async function load_rosetta_exports_with_fetch(
 
     const payload: unknown = await response.json();
     if (!Array.isArray(payload)) throw new Error("invalid_rosetta_activation_audit_response");
+
     const range = parse_content_range(response.headers.get("content-range"));
+    if (range.start !== start) throw new Error("rosetta_activation_audit_range_start_mismatch");
+    if (payload.length > 0 && range.end !== start + payload.length - 1) {
+      throw new Error("rosetta_activation_audit_range_end_mismatch");
+    }
     if (expected_total === null) expected_total = range.total;
     if (range.total !== expected_total) throw new Error("rosetta_activation_audit_count_changed_during_read");
-    if (payload.length === 0 && offset < expected_total) throw new Error("rosetta_activation_audit_truncated_response");
 
     rows.push(...(payload as rosetta_export_row[]));
-    offset = range.end + 1;
+    if (rows.length > expected_total) throw new Error("rosetta_activation_audit_row_overflow");
+    if (rows.length === expected_total) break;
+    if (payload.length === 0 || payload.length < page_size) {
+      throw new Error("rosetta_activation_audit_truncated_response");
+    }
   }
 
-  if (rows.length !== expected_total) throw new Error("rosetta_activation_audit_incomplete_result_set");
+  if (expected_total === null || rows.length !== expected_total) {
+    throw new Error("rosetta_activation_audit_incomplete_response");
+  }
+
   const latest_by_document = new Map<number, rosetta_export_row>();
   for (const row of rows) {
     if (!latest_by_document.has(row.source_document_id)) latest_by_document.set(row.source_document_id, row);
@@ -156,6 +169,7 @@ export function classify_activation_candidate(
 ): civic_genome_activation_candidate {
   const document_type = String(row.document_type ?? "").toLowerCase();
   const identifier = normalize_legislative_identifier(row.document_identifier);
+  const possible_source_bill_id = normalize_source_bill_id(row.document_identifier);
   const object_count = Array.isArray(row.objects) ? row.objects.length : 0;
   const base = {
     source_document_id: row.source_document_id,
@@ -172,54 +186,44 @@ export function classify_activation_candidate(
     return { ...base, candidate_status: "no_exact_match", genome_bill_ids: [], match_basis: "none" };
   }
 
-  const source_bill_id = normalize_identity_part(row.source_bill_id);
-  if (source_bill_id) {
-    const matches = bills
-      .filter(bill => normalize_identity_part(bill.source_bill_id) === source_bill_id)
+  if (possible_source_bill_id) {
+    const source_id_matches = bills
+      .filter(bill => normalize_source_bill_id(bill.source_bill_id) === possible_source_bill_id)
       .map(bill => bill.genome_bill_id)
       .sort();
-    if (matches.length > 0) {
+    if (source_id_matches.length > 0) {
       return {
         ...base,
-        candidate_status: matches.length === 1 ? "exact_unique" : "exact_ambiguous",
-        genome_bill_ids: matches,
-        match_basis: "authoritative_source_id",
+        candidate_status: source_id_matches.length === 1 ? "exact_unique" : "exact_ambiguous",
+        genome_bill_ids: source_id_matches,
+        match_basis: "authoritative_source_bill_id",
       };
     }
   }
 
-  const identifier_matches = bills.filter(
-    bill => normalize_legislative_identifier(bill.source_bill_number) === identifier,
-  );
-  const jurisdiction = normalize_identity_part(row.jurisdiction_code);
-  const session = normalize_identity_part(row.session_key);
-  if (jurisdiction && session) {
-    const matches = identifier_matches
-      .filter(
-        bill =>
-          normalize_identity_part(bill.state_code) === jurisdiction &&
-          normalize_identity_part(bill.session_key) === session,
-      )
-      .map(bill => bill.genome_bill_id)
-      .sort();
-    return {
-      ...base,
-      candidate_status: matches.length === 1 ? "exact_unique" : matches.length > 1 ? "exact_ambiguous" : "no_exact_match",
-      genome_bill_ids: matches,
-      match_basis: matches.length > 0 ? "jurisdiction_session_identifier" : "none",
-    };
+  const identifier_matches = bills
+    .filter(bill => normalize_legislative_identifier(bill.source_bill_number) === identifier)
+    .map(bill => bill.genome_bill_id)
+    .sort();
+
+  if (identifier_matches.length === 0) {
+    return { ...base, candidate_status: "no_exact_match", genome_bill_ids: [], match_basis: "none" };
   }
 
-  const unresolved = identifier_matches.map(bill => bill.genome_bill_id).sort();
   return {
     ...base,
-    candidate_status: unresolved.length > 0 ? "exact_ambiguous" : "no_exact_match",
-    genome_bill_ids: unresolved,
-    match_basis: unresolved.length > 0 ? "identifier_only_unresolved" : "none",
+    candidate_status: "exact_ambiguous",
+    genome_bill_ids: identifier_matches,
+    match_basis: "identifier_only_unresolved",
   };
 }
 
-/** Read-only readiness audit. It never creates a binding or invokes assembly. */
+/**
+ * Read-only readiness audit. It never creates a binding or invokes assembly.
+ * The current Rosetta view does not expose jurisdiction or session identity,
+ * so bill-number matches remain unresolved unless the document identifier is
+ * an authoritative numeric source bill ID.
+ */
 export async function audit_civic_genome_activation_readiness(): Promise<civic_genome_activation_readiness_report> {
   const [rosetta_rows, bills] = await Promise.all([load_rosetta_exports(), load_genome_bills()]);
   const candidates = rosetta_rows.map(row => classify_activation_candidate(row, bills));
