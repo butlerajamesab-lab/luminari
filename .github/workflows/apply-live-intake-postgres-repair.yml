@@ -1,0 +1,201 @@
+name: Apply live-intake PostgreSQL repair
+
+on:
+  push:
+    branches:
+      - fix/live-intake-postgres-returning
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: ${{ !contains(github.event.head_commit.message, '[live-intake-repair-applied]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/live-intake-postgres-returning
+          fetch-depth: 0
+
+      - name: Repair PostgreSQL insert and upsert contracts
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          returning_old = '''const [run] = await db.insert(ingestRuns).values({
+              datasetId: datasetId,
+              startTime: Date.now(),
+              status: "running",
+              endpointAttempted: datasetApiUrl,
+              adapterUsed: "socrata",
+            }).$returningId();
+
+            const runId = run.id;'''
+          returning_new = '''const [run] = await db
+              .insert(ingestRuns)
+              .values({
+                datasetId: datasetId,
+                startTime: Date.now(),
+                status: "running",
+                endpointAttempted: datasetApiUrl,
+                adapterUsed: "socrata",
+              })
+              .returning({ id: ingestRuns.id });
+
+            if (!run?.id) {
+              throw new Error(`Failed to create ingest run for ${datasetId}`);
+            }
+            const runId = run.id;'''
+
+          socrata_path = Path('server/ingestion/socrata-adapter.ts')
+          socrata = socrata_path.read_text()
+          if returning_old not in socrata:
+              raise SystemExit('Socrata returningId block did not match current main')
+          socrata = socrata.replace(returning_old, returning_new, 1)
+
+          function_start = socrata.index('export async function upsertRecords(')
+          function_end = socrata.index('\n// ─── T4. Full Ingestion Pipeline (Hardened) ───', function_start)
+          postgres_upsert = r'''export async function upsertRecords(
+            datasetId: string,
+            records: NormalizedRecord[]
+          ): Promise<{ inserted: number; updated: number; errors: string[] }> {
+            let inserted = 0;
+            let updated = 0;
+            const errors: string[] = [];
+            const now = Date.now();
+
+            // The production database is PostgreSQL. The prior implementation used
+            // MySQL-only onDuplicateKeyUpdate/VALUES syntax and could never execute
+            // after the project moved to node-postgres. The live table does not yet
+            // have a safe composite uniqueness constraint because historical duplicate
+            // source identities are retained, so update matching identities first and
+            // insert only when no persisted identity exists.
+            const BATCH_SIZE = 200;
+            for (let i = 0; i < records.length; i += BATCH_SIZE) {
+              const batch = records.slice(i, i + BATCH_SIZE);
+
+              for (const record of batch) {
+                const values = {
+                  datasetId: datasetId,
+                  sourceRecordId: record.sourceRecordId,
+                  ingestedAt: now,
+                  updatedAt: now,
+                  rawJson: record.rawJson,
+                  normalizedDate: record.normalizedDate,
+                  normalizedCategory: record.normalizedCategory,
+                  normalizedEntity: record.normalizedEntity,
+                  normalizedJurisdiction: record.normalizedJurisdiction,
+                  normalizedCity: record.normalizedCity,
+                  normalizedState: record.normalizedState,
+                  normalizedZip: record.normalizedZip,
+                  normalizedStatus: record.normalizedStatus,
+                  normalizedAmount: record.normalizedAmount,
+                  normalizedDescription: record.normalizedDescription,
+                  processedForSignals: false,
+                };
+
+                try {
+                  const matchingRows = await db
+                    .update(ingestedRecords)
+                    .set({
+                      updatedAt: now,
+                      rawJson: record.rawJson,
+                      normalizedDate: record.normalizedDate,
+                      normalizedCategory: record.normalizedCategory,
+                      normalizedEntity: record.normalizedEntity,
+                      normalizedJurisdiction: record.normalizedJurisdiction,
+                      normalizedCity: record.normalizedCity,
+                      normalizedState: record.normalizedState,
+                      normalizedZip: record.normalizedZip,
+                      normalizedStatus: record.normalizedStatus,
+                      normalizedAmount: record.normalizedAmount,
+                      normalizedDescription: record.normalizedDescription,
+                      processedForSignals: false,
+                    })
+                    .where(and(
+                      eq(ingestedRecords.datasetId, datasetId),
+                      eq(ingestedRecords.sourceRecordId, record.sourceRecordId),
+                    ))
+                    .returning({ id: ingestedRecords.id });
+
+                  if (matchingRows.length > 0) {
+                    updated += 1;
+                    continue;
+                  }
+
+                  await db.insert(ingestedRecords).values(values);
+                  inserted += 1;
+                } catch (individualErr) {
+                  errors.push(
+                    `Record ${record.sourceRecordId}: ${individualErr instanceof Error ? individualErr.message : String(individualErr)}`,
+                  );
+                }
+              }
+            }
+
+            return { inserted, updated, errors };
+          }
+'''
+          socrata = socrata[:function_start] + postgres_upsert + socrata[function_end:]
+          socrata_path.write_text(socrata)
+
+          cfpb_path = Path('server/ingestion/cfpb-adapter.ts')
+          cfpb = cfpb_path.read_text()
+          cfpb_old = '''const [run] = await db.insert(ingestRuns).values({
+              datasetId,
+              startTime: Date.now(),
+              status: 'running',
+              endpointAttempted: dataset.apiUrl ?? CFPB_API_BASE,
+              adapterUsed: 'cfpb_native',
+            }).$returningId();
+
+            const runId = run.id;'''
+          cfpb_new = '''const [run] = await db
+              .insert(ingestRuns)
+              .values({
+                datasetId,
+                startTime: Date.now(),
+                status: 'running',
+                endpointAttempted: dataset.apiUrl ?? CFPB_API_BASE,
+                adapterUsed: 'cfpb_native',
+              })
+              .returning({ id: ingestRuns.id });
+
+            if (!run?.id) {
+              throw new Error(`Failed to create CFPB ingest run for ${datasetId}`);
+            }
+            const runId = run.id;'''
+          if cfpb_old not in cfpb:
+              raise SystemExit('CFPB returningId block did not match current main')
+          cfpb_path.write_text(cfpb.replace(cfpb_old, cfpb_new, 1))
+
+          test_path = Path('server/ingestion/__tests__/postgres-dialect-contract.test.ts')
+          test_path.parent.mkdir(parents=True, exist_ok=True)
+          test_path.write_text('''import { readFileSync } from "node:fs";\nimport { fileURLToPath } from "node:url";\nimport { describe, expect, it } from "vitest";\n\nfunction readSibling(relativePath: string): string {\n  return readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf8");\n}\n\ndescribe("live-intake PostgreSQL dialect contract", () => {\n  const socrataSource = readSibling("../socrata-adapter.ts");\n  const cfpbSource = readSibling("../cfpb-adapter.ts");\n\n  it("uses PostgreSQL RETURNING for ingest-run identities", () => {\n    expect(socrataSource).toContain(".returning({ id: ingestRuns.id })");\n    expect(cfpbSource).toContain(".returning({ id: ingestRuns.id })");\n    expect(socrataSource).not.toContain("$returningId");\n    expect(cfpbSource).not.toContain("$returningId");\n  });\n\n  it("does not use MySQL-only upsert syntax in the Socrata path", () => {\n    expect(socrataSource).not.toContain(".onDuplicateKeyUpdate");\n    expect(socrataSource).not.toContain("VALUES(rawJson)");\n    expect(socrataSource).toContain(".returning({ id: ingestedRecords.id })");\n  });\n});\n''')
+          PY
+
+      - name: Verify bounded repair
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const socrata = fs.readFileSync('server/ingestion/socrata-adapter.ts', 'utf8');
+          const cfpb = fs.readFileSync('server/ingestion/cfpb-adapter.ts', 'utf8');
+          for (const [name, source] of [['socrata', socrata], ['cfpb', cfpb]]) {
+            if (source.includes('$returningId')) throw new Error(`${name} still contains $returningId`);
+            if (!source.includes('.returning({ id: ingestRuns.id })')) throw new Error(`${name} is missing PostgreSQL RETURNING`);
+          }
+          if (socrata.includes('.onDuplicateKeyUpdate')) throw new Error('Socrata still contains MySQL upsert API');
+          if (socrata.includes('VALUES(rawJson)')) throw new Error('Socrata still contains MySQL VALUES syntax');
+          NODE
+
+      - name: Commit repair
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/ingestion/socrata-adapter.ts server/ingestion/cfpb-adapter.ts server/ingestion/__tests__/postgres-dialect-contract.test.ts
+          git commit -m "Repair live-intake PostgreSQL persistence [live-intake-repair-applied]"
+          git push origin HEAD:fix/live-intake-postgres-returning
