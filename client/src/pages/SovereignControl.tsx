@@ -1605,7 +1605,7 @@ function CopilotPanel() {
           <div className="text-center py-12 text-muted-foreground">
             <Bot className="h-10 w-10 mx-auto mb-3 opacity-30" />
             <p className="text-sm">No executions yet. Give Sunam an instruction above.</p>
-            <p className="text-xs mt-1">Sunam has full authority over streams, engines, SQL, migrations, config, and UI.</p>
+            <p className="text-xs mt-1">Sunam has governed authority over streams, engines, scheduler, diagnostics, configuration, and UI. Schema changes remain in Admin Control.</p>
           </div>
         )}
         {[...execLog].reverse().map(entry => (

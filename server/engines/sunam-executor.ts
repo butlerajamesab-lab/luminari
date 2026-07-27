@@ -20,7 +20,7 @@
  *   - Diagnostics: inspect tables, streams, engines
  */
 
-import { db } from "../db";
+import { db, query_with_diagnostics } from "../db";
 import { eq, desc, sql } from "drizzle-orm";
 import {
   engineRegistry,
@@ -39,12 +39,13 @@ import {
 } from "./executor-service";
 import { uiReadFile, uiWriteFile, uiPatchFile, uiListFiles } from "../ui-editor/index";
 import { dispatchServiceTool } from "./sunam-service-dispatcher";
-import { SUNAM_SERVICE_ONLY_TOOLS, getSunamVisibleToolNames } from "./sunam-service-only-tools";
+import { SUNAM_SERVICE_ONLY_TOOLS } from "./sunam-service-only-tools";
+import { assert_safe_public_table_name, launch_sunam_background_ingestion, resolve_direct_sunam_instruction } from "./sunam-runtime-contract";
 import { get_unified_ingestion_metrics, get_unified_ingestion_summary, get_unified_signal_summary, get_unified_signals } from "../unified-queries";
 
 // ─── Tool Definitions ───
 
-export const SUNAM_TOOLS = [
+export const SUNAM_OPERATOR_TOOLS = [
   // ── Direct Backfill ──
   {
     type: "function" as const,
@@ -82,7 +83,7 @@ export const SUNAM_TOOLS = [
     type: "function" as const,
     function: {
       name: "run_all_streams",
-      description: "Run ingestion for ALL enabled data streams. Returns per-stream results.",
+      description: "Start ingestion for all enabled data streams in the background. Returns the accepted stream list immediately; ingest_runs records completion.",
       parameters: { type: "object", properties: {}, additionalProperties: false },
     },
   },
@@ -90,7 +91,7 @@ export const SUNAM_TOOLS = [
     type: "function" as const,
     function: {
       name: "retry_failed_streams",
-      description: "Find all streams with recent failures and retry them.",
+      description: "Find streams with recent failed runs and start their retries in the background. Returns the accepted stream list immediately.",
       parameters: {
         type: "object",
         properties: {
@@ -458,13 +459,12 @@ export const SUNAM_TOOLS = [
     type: "function" as const,
     function: {
       name: "get_stream_diagnostics",
-      description: "Get detailed diagnostics for a specific stream: last run details, error classification, suggested remediation.",
+      description: "Get diagnostics for one stream, or all failing/disabled streams when stream_id is omitted.",
       parameters: {
         type: "object",
         properties: {
           stream_id: { type: "string" },
         },
-        required: ["stream_id"],
         additionalProperties: false,
       },
     },
@@ -485,6 +485,34 @@ export const SUNAM_TOOLS = [
   },
 ];
 
+const SUNAM_OPERATOR_TOOL_NAMES = new Set(
+  SUNAM_OPERATOR_TOOLS.map((tool) => tool.function.name),
+);
+
+/**
+ * One canonical, additive tool registry. Operational control tools remain
+ * available alongside Lighthouse's case-service tools. Duplicate names (the
+ * shared system-state surface) resolve to the operational contract.
+ */
+export const SUNAM_TOOLS = [
+  ...SUNAM_OPERATOR_TOOLS,
+  ...SUNAM_SERVICE_ONLY_TOOLS.filter(
+    (tool) => !SUNAM_OPERATOR_TOOL_NAMES.has(tool.function.name),
+  ),
+];
+
+const SUNAM_TOOL_NAMES = new Set(
+  SUNAM_TOOLS.map((tool) => tool.function.name),
+);
+
+export function getSunamVisibleToolNames(): string[] {
+  return SUNAM_TOOLS.map((tool) => tool.function.name);
+}
+
+export function isSunamToolAllowed(toolName: string): boolean {
+  return SUNAM_TOOL_NAMES.has(toolName);
+}
+
 // ─── Tool Dispatch ───
 
 export interface ToolCallResult {
@@ -502,15 +530,13 @@ export async function dispatchTool(
 ): Promise<ToolCallResult> {
   const base = { tool: toolName, args };
 
-  // SCOPED: Validate that only service tools can be called
-  // This ensures Sunam cannot bypass the LLM tool list restriction
-  const { isSunamToolAllowed } = await import("./sunam-service-only-tools");
+  // One canonical registry governs UI display, planning, LLM tool calls, and dispatch.
   if (!isSunamToolAllowed(toolName)) {
     return {
       ...base,
       success: false,
       result: null,
-      error: `Tool '${toolName}' is not available to Sunam. Available tools: get_case_context, get_case, get_case_timeline, get_case_notes, get_jurisdiction, get_workflows, get_programs, get_entities, get_signals, record_validation, record_reconciliation, record_case_action, add_case_note, update_case_status, get_system_state`,
+      error: `Tool '${toolName}' is not available to Sunam. Available tools: ${getSunamVisibleToolNames().join(", ")}`,
     };
   }
 
@@ -547,43 +573,73 @@ export async function dispatchTool(
 
       case "run_all_streams": {
         const { triggerManualIngestion } = await import("../ingestion/scheduler");
-        const streams = await db.select({ streamId: dataStreamRegistry.streamId, streamName: dataStreamRegistry.streamName })
-          .from(dataStreamRegistry).where(eq(dataStreamRegistry.enabled, true));
-        const results = [];
-        for (const s of streams) {
-          try {
-            const r = await Promise.race([
-              triggerManualIngestion(s.streamId),
-              new Promise<null>((res) => setTimeout(() => res(null), 120_000)),
-            ]);
-            results.push({ stream_id: s.streamId, success: r?.success ?? true, records: r?.recordsProcessed ?? 0, signals: r?.signalsGenerated ?? 0 });
-          } catch (e: any) {
-            results.push({ stream_id: s.streamId, success: false, error: e.message });
-          }
-        }
-        return { ...base, success: true, result: { total: streams.length, succeeded: results.filter(r => r.success).length, results } };
+        const streams = await db
+          .select({
+            stream_id: dataStreamRegistry.streamId,
+            stream_name: dataStreamRegistry.streamName,
+          })
+          .from(dataStreamRegistry)
+          .where(eq(dataStreamRegistry.enabled, true));
+
+        const launches = streams.map((stream) => ({
+          ...launch_sunam_background_ingestion(
+            stream.stream_id,
+            () => triggerManualIngestion(stream.stream_id),
+          ),
+          stream_name: stream.stream_name,
+        }));
+
+        return {
+          ...base,
+          success: true,
+          result: {
+            status: "started",
+            total: launches.length,
+            streams: launches,
+            completion_source: "ingest_runs",
+          },
+        };
       }
 
       case "retry_failed_streams": {
         const { triggerManualIngestion } = await import("../ingestion/scheduler");
-        const hoursBack = args.hours_back ?? 24;
-        const cutoff = Date.now() - hoursBack * 3600 * 1000;
-        const failedRuns = await db.select({ datasetId: ingestRuns.datasetId })
-          .from(ingestRuns).where(sql`${ingestRuns.status} = 'failed' AND ${ingestRuns.startTime} > ${cutoff}`);
-        const unique = [...new Set(failedRuns.map((r: any) => r.datasetId))];
-        const results = [];
-        for (const sid of unique) {
-          try {
-            const r = await Promise.race([
-              triggerManualIngestion(sid as string),
-              new Promise<null>((res) => setTimeout(() => res(null), 120_000)),
-            ]);
-            results.push({ stream_id: sid, success: r?.success ?? true, records: r?.recordsProcessed ?? 0 });
-          } catch (e: any) {
-            results.push({ stream_id: sid, success: false, error: e.message });
-          }
-        }
-        return { ...base, success: true, result: { streams_retried: unique.length, succeeded: results.filter(r => r.success).length, results } };
+        const hours_back = Math.min(24 * 30, Math.max(1, Number(args.hours_back ?? 24)));
+        const cutoff = Date.now() - hours_back * 3_600_000;
+        const failed_runs = await db
+          .select({ stream_id: ingestRuns.datasetId })
+          .from(ingestRuns)
+          .where(
+            sql`${ingestRuns.status} = 'failed' AND ${ingestRuns.startTime} > ${cutoff}`,
+          );
+        const stream_ids = [
+          ...new Set(
+            failed_runs
+              .map((run) => run.stream_id)
+              .filter(
+                (stream_id): stream_id is string =>
+                  typeof stream_id === "string" && stream_id.trim().length > 0,
+              ),
+          ),
+        ].sort();
+
+        const launches = stream_ids.map((stream_id) =>
+          launch_sunam_background_ingestion(
+            stream_id,
+            () => triggerManualIngestion(stream_id),
+          ),
+        );
+
+        return {
+          ...base,
+          success: true,
+          result: {
+            status: "started",
+            hours_back,
+            streams_retried: launches.length,
+            streams: launches,
+            completion_source: "ingest_runs",
+          },
+        };
       }
 
       case "backfill_stream": {
@@ -756,20 +812,64 @@ export async function dispatchTool(
       }
 
       case "get_system_state": {
-        const [ingestion_summary, signal_summary] = await Promise.all([
+        const [ingestion_summary, signal_summary, streams, engine_rows] = await Promise.all([
           get_unified_ingestion_summary(),
           get_unified_signal_summary(),
+          get_unified_ingestion_metrics(),
+          db.select({
+            engine_id: engineRegistry.engineId,
+            engine_name: engineRegistry.engineName,
+            enabled: engineRegistry.enabled,
+            category: engineRegistry.category,
+            version: engineRegistry.version,
+            sort_order: engineRegistry.sortOrder,
+          }).from(engineRegistry),
         ]);
+
+        let scheduler_status: Record<string, unknown> = {};
+        try {
+          const { getSchedulerStatus } = await import("../ingestion/scheduler");
+          scheduler_status = getSchedulerStatus() as Record<string, unknown>;
+        } catch (error) {
+          scheduler_status = {
+            available: false,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
+
+        const engines = engine_rows
+          .map((engine) => ({
+            ...engine,
+            sort_order: Number(engine.sort_order ?? 0),
+          }))
+          .sort((left, right) =>
+            left.sort_order - right.sort_order ||
+            String(left.engine_name).localeCompare(String(right.engine_name)),
+          );
+        const failures = streams.filter(
+          (stream) =>
+            stream.consecutive_failures > 0 ||
+            stream.auto_disabled ||
+            stream.health_status === "failing",
+        );
+
         return {
           ...base,
           success: true,
           result: {
             timestamp: Date.now(),
             sunam_connected: true,
-            service_layer_active: true,
-            sql_access_disabled: true,
+            governed_operator_tools: true,
+            direct_sql_access: false,
             ingestion_summary,
             signal_summary,
+            engine_count: engines.length,
+            engines,
+            stream_count: streams.length,
+            streams,
+            failure_count: failures.length,
+            failures,
+            scheduler_status,
           },
         };
       }
@@ -849,14 +949,48 @@ export async function dispatchTool(
 
       // ── Diagnostics ──
       case "inspect_table": {
-        const limit = args.limit ?? 5;
-        const colResult = await db.execute(sql.raw(`SHOW COLUMNS FROM \`${args.table_name}\``));
-        const columns = ((colResult as unknown as any[][])[0] ?? []).map((c: any) => ({ field: c.Field, type: c.Type, null: c.Null, key: c.Key, default: c.Default }));
-        const countResult = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM \`${args.table_name}\``));
-        const rowCount = ((countResult as unknown as any[][])[0]?.[0])?.cnt ?? 0;
-        const sampleResult = await db.execute(sql.raw(`SELECT * FROM \`${args.table_name}\` LIMIT ${limit}`));
-        const rows = ((sampleResult as unknown as any[][])[0] ?? []);
-        return { ...base, success: true, result: { table: args.table_name, columns, row_count: rowCount, sample_rows: rows } };
+        const table_name = assert_safe_public_table_name(args.table_name);
+        const limit = Math.min(100, Math.max(1, Math.floor(Number(args.limit ?? 5))));
+        const quoted_table_name = `"${table_name}"`;
+
+        const column_result = await query_with_diagnostics<{
+          column_name: string;
+          data_type: string;
+          is_nullable: string;
+          column_default: string | null;
+        }>(
+          `select column_name, data_type, is_nullable, column_default
+           from information_schema.columns
+           where table_schema = 'public' and table_name = $1
+           order by ordinal_position`,
+          [table_name],
+          { label: "sunam_inspect_columns", query_timeout_ms: 5_000 },
+        );
+        if (column_result.rows.length === 0) {
+          return { ...base, success: false, result: null, error: `public.${table_name} does not exist or has no visible columns` };
+        }
+
+        const count_result = await query_with_diagnostics<{ cnt: string }>(
+          `select count(*)::text as cnt from public.${quoted_table_name}`,
+          [],
+          { label: "sunam_inspect_count", query_timeout_ms: 5_000 },
+        );
+        const sample_result = await query_with_diagnostics<Record<string, unknown>>(
+          `select * from public.${quoted_table_name} limit ${limit}`,
+          [],
+          { label: "sunam_inspect_sample", query_timeout_ms: 5_000 },
+        );
+
+        return {
+          ...base,
+          success: true,
+          result: {
+            table: table_name,
+            columns: column_result.rows,
+            row_count: Number(count_result.rows[0]?.cnt ?? 0),
+            sample_rows: sample_result.rows,
+          },
+        };
       }
 
 
@@ -929,7 +1063,7 @@ async function parseNaturalLanguage(
   systemContext: string,
 ): Promise<{ parsedInstruction: string; isDirectToolCall: boolean }> {
   // Check if instruction already names a tool directly (backward compatible)
-  // SCOPED: Only service tools visible to Sunam
+  // Use the canonical operational tool registry
   const visibleToolNames = getSunamVisibleToolNames();
   const lowerInstruction = instruction.toLowerCase().trim();
   
@@ -941,8 +1075,8 @@ async function parseNaturalLanguage(
   }
 
   // Build a tool summary for the NL parser
-  // SCOPED: Only service tools visible to Sunam
-  const toolSummary = SUNAM_SERVICE_ONLY_TOOLS.map(t => 
+  // Use the canonical operational tool registry
+  const toolSummary = SUNAM_TOOLS.map(t => 
     `- ${t.function.name}: ${t.function.description}`
   ).join("\n");
 
@@ -964,10 +1098,10 @@ RULES:
 2. Reference specific tool names when the mapping is clear
 3. For multi-step tasks, number the steps in order
 4. If the instruction is ambiguous, make the most reasonable interpretation and proceed
-5. If the instruction mentions "tests" or "vitest", map to execute_sql for checking test-related tables, or ui_read_file/ui_write_file/ui_patch_file for modifying test files
-6. If the instruction mentions checking data counts, map to execute_sql with SELECT COUNT(*)
-7. If the instruction mentions "backfill", map to backfill_stream or execute_sql depending on context
-8. Always end with a verification step (get_system_state, execute_sql SELECT, or inspect_table)
+5. If the instruction mentions tests or source files, use ui_read_file before ui_patch_file or ui_write_file
+6. If the instruction mentions data counts, use inspect_table or get_system_state
+7. If the instruction mentions backfill, use backfill_stream
+8. Always end with a verification step using get_system_state, get_stream_diagnostics, or inspect_table
 9. Keep the plan concise — no explanations, just steps
 10. For file modifications, always use ui_read_file first to check current content, then ui_patch_file to make changes`,
       },
@@ -1084,6 +1218,53 @@ export async function sunamExecute(
     };
   }
 
+  // Sovereign Control's standard buttons are deterministic operator commands.
+  // They bypass LLM interpretation and dispatch directly through the same governed tools.
+  const direct_instruction = resolve_direct_sunam_instruction(instruction);
+  if (direct_instruction) {
+    const direct_result = await dispatchTool(
+      direct_instruction.tool_name,
+      direct_instruction.args,
+      executedBy,
+    );
+    const direct_step = {
+      step: 1,
+      tool: direct_instruction.tool_name,
+      args: direct_instruction.args,
+      result: direct_result.result,
+      success: direct_result.success,
+      error: direct_result.error,
+    };
+
+    await db.insert(adminChangeLog).values({
+      adminId: executedBy,
+      adminName: executedByName ?? "Sunam",
+      actionType: "config_change",
+      targetSystem: "sunam",
+      targetId: direct_instruction.tool_name,
+      description: `[SUNAM DIRECT] ${instruction.substring(0, 200)} — ${direct_result.success ? "completed" : "failed"}`,
+      newState: {
+        instruction,
+        tool: direct_instruction.tool_name,
+        success: direct_result.success,
+      },
+      rollbackAvailable: false,
+      timestamp: new Date(executedAt),
+    });
+
+    return {
+      instruction,
+      steps: [direct_step],
+      final_response: direct_result.success
+        ? `Executed ${direct_instruction.tool_name}.\n${JSON.stringify(direct_result.result, null, 2)}`
+        : `Execution failed: ${direct_result.error ?? "unknown error"}`,
+      actions_taken: 1,
+      success: direct_result.success,
+      executed_by: executedByName ?? executedBy,
+      executed_at: executedAt,
+    };
+  }
+
   // Build system context
   const { buildSystemContext } = await import("./system-copilot-sunam");
   const systemContext = await buildSystemContext();
@@ -1134,9 +1315,9 @@ Timestamp: ${new Date(executedAt).toISOString()}`,
     try {
       llmResponse = await invokeLLM({
         messages: messages as any,
-        tools: SUNAM_SERVICE_ONLY_TOOLS,
+        tools: SUNAM_TOOLS,
         // Use "auto" always — let the LLM decide when to call tools
-        // SCOPED: Sunam can only see and use service layer tools
+        // The LLM sees the same governed tools shown in Sovereign Control
         tool_choice: "auto",
       });
     } catch (llmError: any) {
@@ -1145,7 +1326,7 @@ Timestamp: ${new Date(executedAt).toISOString()}`,
         const trimmedMessages = messages.slice(0, 2).concat(messages.slice(-4));
         llmResponse = await invokeLLM({
           messages: trimmedMessages as any,
-          tools: SUNAM_SERVICE_ONLY_TOOLS,
+          tools: SUNAM_TOOLS,
           tool_choice: "auto",
         });
       } catch {

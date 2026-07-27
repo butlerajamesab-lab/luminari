@@ -1,0 +1,45 @@
+name: Sunam Operator Contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "server/engines/sunam-executor.ts"
+      - "server/engines/system-copilot-sunam.ts"
+      - "server/engines/sunam-runtime-contract.ts"
+      - "server/engines/sunam-runtime-contract.test.ts"
+      - "server/engines/sunam-operator-source-contract.test.ts"
+      - "server/routers/session76-router.ts"
+      - "client/src/pages/SovereignControl.tsx"
+      - ".github/workflows/sunam-operator-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sunam-operator-contract-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: Deterministic operator contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Run Sunam operator contract tests
+        run: >-
+          npx vitest run
+          server/engines/sunam-runtime-contract.test.ts
+          server/engines/sunam-operator-source-contract.test.ts
