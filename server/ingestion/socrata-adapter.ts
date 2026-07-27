@@ -9,9 +9,9 @@
  * T4. Return ingestion statistics + structured diagnostics for the run log.
  */
 
-import { db } from "../db";
-import { ingestedRecords, dataStreamRegistry, ingestRuns } from "../../drizzle/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { db, pool } from "../db";
+import { dataStreamRegistry, ingestRuns } from "../../drizzle/schema";
+import { eq, sql } from "drizzle-orm";
 import crypto from "crypto";
 
 // ─── Types ───
@@ -438,85 +438,116 @@ export async function upsertRecords(
   const errors: string[] = [];
   const now = Date.now();
 
+  // The live Lighthouse table intentionally has no uniqueness constraint on the
+  // historical dataset/source identity. Preserve that history, update all matching
+  // rows in place, and insert only when no match exists. Session advisory locks
+  // serialize the same logical identity across workers without deleting or merging.
   const BATCH_SIZE = 200;
   for (let i = 0; i < records.length; i += BATCH_SIZE) {
     const batch = records.slice(i, i + BATCH_SIZE);
+    const client = await pool.connect();
 
     try {
-      const values = batch.map((record) => ({
-        datasetId: datasetId,
-        sourceRecordId: record.sourceRecordId,
-        ingestedAt: now,
-        updatedAt: now,
-        rawJson: record.rawJson,
-        normalizedDate: record.normalizedDate,
-        normalizedCategory: record.normalizedCategory,
-        normalizedEntity: record.normalizedEntity,
-        normalizedJurisdiction: record.normalizedJurisdiction,
-        normalizedCity: record.normalizedCity,
-        normalizedState: record.normalizedState,
-        normalizedZip: record.normalizedZip,
-        normalizedStatus: record.normalizedStatus,
-        normalizedAmount: record.normalizedAmount,
-        normalizedDescription: record.normalizedDescription,
-        processedForSignals: false,
-      }));
-
-      await db.insert(ingestedRecords)
-        .values(values)
-        .onDuplicateKeyUpdate({
-          set: {
-            rawJson: sql`VALUES(rawJson)`,
-            updatedAt: sql`VALUES(updatedAt_ir)`,
-            normalizedDate: sql`VALUES(normalizedDate)`,
-            normalizedCategory: sql`VALUES(normalizedCategory)`,
-            normalizedEntity: sql`VALUES(normalizedEntity)`,
-            normalizedJurisdiction: sql`VALUES(normalizedJurisdiction)`,
-            normalizedCity: sql`VALUES(normalizedCity)`,
-            normalizedState: sql`VALUES(normalizedState)`,
-            normalizedZip: sql`VALUES(normalizedZip)`,
-            normalizedStatus: sql`VALUES(normalizedStatus)`,
-            normalizedAmount: sql`VALUES(normalizedAmount)`,
-            normalizedDescription: sql`VALUES(normalizedDescription)`,
-            processedForSignals: sql`0`,
-          },
-        });
-
-      inserted += batch.length;
-    } catch (err) {
-      // Fallback to individual inserts
       for (const record of batch) {
+        const identity = `${datasetId}\u001f${record.sourceRecordId}`;
+        let lockAcquired = false;
+
         try {
-          await db.insert(ingestedRecords)
-            .values({
-              datasetId: datasetId,
-              sourceRecordId: record.sourceRecordId,
-              ingestedAt: now,
-              updatedAt: now,
-              rawJson: record.rawJson,
-              normalizedDate: record.normalizedDate,
-              normalizedCategory: record.normalizedCategory,
-              normalizedEntity: record.normalizedEntity,
-              normalizedJurisdiction: record.normalizedJurisdiction,
-              normalizedCity: record.normalizedCity,
-              normalizedState: record.normalizedState,
-              normalizedZip: record.normalizedZip,
-              normalizedStatus: record.normalizedStatus,
-              normalizedAmount: record.normalizedAmount,
-              normalizedDescription: record.normalizedDescription,
-              processedForSignals: false,
-            })
-            .onDuplicateKeyUpdate({
-              set: {
-                rawJson: sql`VALUES(rawJson)`,
-                updatedAt: sql`VALUES(updatedAt_ir)`,
-              },
-            });
-          inserted++;
+          await client.query(
+            "SELECT pg_advisory_lock(hashtextextended($1, 0))",
+            [identity],
+          );
+          lockAcquired = true;
+
+          const values = [
+            datasetId,
+            record.sourceRecordId,
+            now,
+            JSON.stringify(record.rawJson),
+            record.normalizedDate === null ? null : String(record.normalizedDate),
+            record.normalizedCategory,
+            record.normalizedEntity,
+            record.normalizedJurisdiction,
+            record.normalizedCity,
+            record.normalizedState,
+            record.normalizedZip,
+            record.normalizedStatus,
+            record.normalizedAmount,
+            record.normalizedDescription,
+          ];
+
+          const updateResult = await client.query(
+            `UPDATE public.ingested_records
+             SET updated_at_ir = $3,
+                 raw_json = $4,
+                 normalized_date = $5,
+                 normalized_category = $6,
+                 normalized_entity = $7,
+                 normalized_jurisdiction = $8,
+                 normalized_city = $9,
+                 normalized_state = $10,
+                 normalized_zip = $11,
+                 normalized_status = $12,
+                 normalized_amount = $13,
+                 normalized_description = $14,
+                 processed_for_signals = 0
+             WHERE dataset_id_ir = $1
+               AND source_record_id = $2
+             RETURNING id`,
+            values,
+          );
+
+          if ((updateResult.rowCount ?? 0) > 0) {
+            updated += 1;
+          } else {
+            await client.query(
+              `INSERT INTO public.ingested_records (
+                 dataset_id_ir,
+                 source_record_id,
+                 stream_id_ir,
+                 ingested_at,
+                 updated_at_ir,
+                 raw_json,
+                 normalized_date,
+                 normalized_category,
+                 normalized_entity,
+                 normalized_jurisdiction,
+                 normalized_city,
+                 normalized_state,
+                 normalized_zip,
+                 normalized_status,
+                 normalized_amount,
+                 normalized_description,
+                 processed_for_signals
+               ) VALUES (
+                 $1, $2, $1, $3, $3, $4, $5, $6, $7, $8, $9,
+                 $10, $11, $12, $13, $14, 0
+               )`,
+              values,
+            );
+            inserted += 1;
+          }
         } catch (individualErr) {
-          errors.push(`Record ${record.sourceRecordId}: ${individualErr instanceof Error ? individualErr.message : String(individualErr)}`);
+          errors.push(
+            `Record ${record.sourceRecordId}: ${individualErr instanceof Error ? individualErr.message : String(individualErr)}`,
+          );
+        } finally {
+          if (lockAcquired) {
+            try {
+              await client.query(
+                "SELECT pg_advisory_unlock(hashtextextended($1, 0))",
+                [identity],
+              );
+            } catch (unlockErr) {
+              errors.push(
+                `Record ${record.sourceRecordId} lock release: ${unlockErr instanceof Error ? unlockErr.message : String(unlockErr)}`,
+              );
+            }
+          }
         }
       }
+    } finally {
+      client.release();
     }
   }
 
@@ -574,14 +605,20 @@ export async function ingestDataset(
 
   // 2. Create ingest run
   const datasetApiUrl = dataset.apiUrl ?? dataset.sourceUrl ?? '';
-  const [run] = await db.insert(ingestRuns).values({
-    datasetId: datasetId,
-    startTime: Date.now(),
-    status: "running",
-    endpointAttempted: datasetApiUrl,
-    adapterUsed: "socrata",
-  }).$returningId();
+  const [run] = await db
+    .insert(ingestRuns)
+    .values({
+      datasetId: datasetId,
+      startTime: Date.now(),
+      status: "running",
+      endpointAttempted: datasetApiUrl,
+      adapterUsed: "socrata",
+    })
+    .returning({ id: ingestRuns.id });
 
+  if (!run?.id) {
+    throw new Error(`Failed to create ingest run for ${datasetId}`);
+  }
   const runId = run.id;
 
   try {
