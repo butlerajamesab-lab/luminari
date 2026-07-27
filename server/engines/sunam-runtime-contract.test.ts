@@ -63,6 +63,21 @@ describe("resolve_direct_sunam_instruction", () => {
     ).toEqual({ tool_name: "get_execution_log", args: { limit: 100 } });
   });
 
+  it("does not directly execute negated, explanatory, or interrogative language", () => {
+    const non_actions = [
+      "Do not retry failed streams",
+      "Explain how to retry failed streams",
+      "Should I retry failed streams from the last 24 hours?",
+      "Do not run ingestion for all enabled data streams",
+      "Explain the current system state: all engines, streams, failures, and scheduler status",
+      "Please refresh all stream schedules from the registry after you explain what that does",
+    ];
+
+    for (const instruction of non_actions) {
+      expect(resolve_direct_sunam_instruction(instruction)).toBeNull();
+    }
+  });
+
   it("leaves nonstandard instructions for the governed tool-calling loop", () => {
     expect(
       resolve_direct_sunam_instruction(
