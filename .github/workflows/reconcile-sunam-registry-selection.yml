@@ -1,0 +1,64 @@
+name: Reconcile Sunam registry selection
+
+on:
+  push:
+    branches:
+      - fix/sunam-registry-truth
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reconcile-sunam-registry-selection
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/sunam-registry-truth
+          fetch-depth: 0
+
+      - name: Apply registry-truth reconciliation
+        run: python3 scripts/reconcile-sunam-registry-selection.py
+
+      - name: Validate durable selector contract
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          executor = Path('server/engines/sunam-executor.ts').read_text()
+          required = [
+              'get_sunam_run_all_selection',
+              'get_sunam_retry_selection',
+              'summarize_sunam_exclusions',
+              'registry_truth_source: "data_stream_registry"',
+              'completion_source: "ingest_runs"',
+          ]
+          forbidden = [
+              'ingestRuns.datasetId',
+              'where(eq(dataStreamRegistry.enabled, true))',
+          ]
+          failures = [item for item in required if item not in executor]
+          failures += [item for item in forbidden if item in executor]
+          if failures:
+              raise SystemExit('registry selector contract failed: ' + ', '.join(failures))
+          print('Sunam registry selector contract validated')
+          PY
+
+      - name: Remove bounded staging machinery
+        run: |
+          git rm scripts/reconcile-sunam-registry-selection.py
+          git rm .github/workflows/reconcile-sunam-registry-selection.yml
+
+      - name: Commit durable selector repair
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'Align Sunam bulk actions with registry truth [sunam-registry-truth-reconciled]'
+          git push origin HEAD:fix/sunam-registry-truth
