@@ -25,7 +25,6 @@ import { eq, desc, sql } from "drizzle-orm";
 import {
   engineRegistry,
   dataStreamRegistry,
-  adminChangeLog,
 } from "../../drizzle/schema";
 import { invokeLLM } from "../_core/llm";
 import {
@@ -46,6 +45,7 @@ import {
   summarize_sunam_exclusions,
 } from "./sunam-stream-selection";
 import { get_unified_ingestion_metrics, get_unified_ingestion_summary, get_unified_signal_summary, get_unified_signals } from "../unified-queries";
+import { write_admin_change_log } from "./admin-change-log-store";
 
 // ─── Tool Definitions ───
 
@@ -676,7 +676,7 @@ export async function dispatchTool(
           consecutiveFailures: 0, retryAfterAt: null,
           enabled: true, updatedAt: Date.now(),
         }).where(eq(dataStreamRegistry.streamId, args.stream_id));
-        await db.insert(adminChangeLog).values({
+        await write_admin_change_log({
           adminId: executedBy, adminName: "Sunam",
           actionType: "stream_edit", targetSystem: "data_stream_registry",
           targetId: args.stream_id,
@@ -691,7 +691,7 @@ export async function dispatchTool(
           enabled: false, disabledReason: args.reason ?? "Disabled by Sunam",
           updatedAt: Date.now(),
         }).where(eq(dataStreamRegistry.streamId, args.stream_id));
-        await db.insert(adminChangeLog).values({
+        await write_admin_change_log({
           adminId: executedBy, adminName: "Sunam",
           actionType: "stream_disable", targetSystem: "data_stream_registry",
           targetId: args.stream_id,
@@ -715,7 +715,7 @@ export async function dispatchTool(
           createdAt: Date.now(),
           updatedAt: Date.now(),
         });
-        await db.insert(adminChangeLog).values({
+        await write_admin_change_log({
           adminId: executedBy, adminName: "Sunam",
           actionType: "stream_add", targetSystem: "data_stream_registry",
           targetId: args.stream_id,
@@ -881,7 +881,7 @@ export async function dispatchTool(
         if (args.signal_weight !== undefined) setValues.signalWeight = args.signal_weight;
         if (args.confidence_multiplier !== undefined) setValues.confidenceMultiplier = args.confidence_multiplier;
         await db.update(dataStreamRegistry).set(setValues).where(eq(dataStreamRegistry.streamId, args.stream_id));
-        await db.insert(adminChangeLog).values({
+        await write_admin_change_log({
           adminId: executedBy, adminName: "Sunam",
           actionType: "signal_weight_change", targetSystem: "data_stream_registry",
           targetId: args.stream_id,
@@ -1225,7 +1225,7 @@ export async function sunamExecute(
       error: direct_result.error,
     };
 
-    await db.insert(adminChangeLog).values({
+    await write_admin_change_log({
       adminId: executedBy,
       adminName: executedByName ?? "Sunam",
       actionType: "config_change",
@@ -1401,7 +1401,7 @@ Timestamp: ${new Date(executedAt).toISOString()}`,
   }
 
   // Log the overall execution
-  await db.insert(adminChangeLog).values({
+  await write_admin_change_log({
     adminId: executedBy,
     adminName: executedByName ?? "Sunam",
     actionType: "config_change",

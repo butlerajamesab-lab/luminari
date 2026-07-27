@@ -14,10 +14,16 @@ import { db, pool } from "../db";
 import { get_unified_ingestion_metrics } from "../unified-queries";
 import { eq, desc, sql, and, asc } from "drizzle-orm";
 import {
-  adminChangeLog,
   engineRegistry,
   dataStreamRegistry,
 } from "../../drizzle/schema";
+import {
+  get_admin_change_log_entry,
+  list_admin_change_log,
+  mark_admin_change_rolled_back,
+  write_admin_change_log,
+} from "./admin-change-log-store";
+import { inspect_sovereign_table, list_sovereign_tables } from "./sovereign-schema-inspector";
 
 // ─── Types ───
 export type AdminActionType =
@@ -42,7 +48,7 @@ interface LogEntry {
 // ─── Change Logging ───
 
 async function logChange(entry: LogEntry) {
-  await db.insert(adminChangeLog).values({
+  return write_admin_change_log({
     adminId: entry.adminId,
     adminName: entry.adminName,
     actionType: entry.actionType,
@@ -58,11 +64,11 @@ async function logChange(entry: LogEntry) {
 }
 
 export async function getChangeLog(limit = 50) {
-  return db.select().from(adminChangeLog).orderBy(desc(adminChangeLog.timestamp)).limit(limit);
+  return list_admin_change_log(limit);
 }
 
 export async function rollbackChange(changeId: number, adminId: string, adminName?: string) {
-  const [change] = await db.select().from(adminChangeLog).where(eq(adminChangeLog.id, changeId));
+  const change = await get_admin_change_log_entry(changeId);
   if (!change) throw new Error("Change not found");
   if (change.rolledBack) throw new Error("Change already rolled back");
   if (!change.rollbackAvailable) throw new Error("Rollback not available for this change");
@@ -106,9 +112,7 @@ export async function rollbackChange(changeId: number, adminId: string, adminNam
     }
   }
 
-  await db.update(adminChangeLog)
-    .set({ rolledBack: true })
-    .where(eq(adminChangeLog.id, changeId));
+  await mark_admin_change_rolled_back(changeId);
 
   // Log the rollback itself
   await logChange({
@@ -365,55 +369,11 @@ export async function disableStream(stream_id: string, adminId: string, adminNam
 // ─── Schema Manager ───
 
 export async function listTables() {
-  const result = await db.execute(sql`SELECT tablename FROM pg_tables WHERE schemaname = 'public'`);
-  const rows = result[0] as unknown as any[];
-  const tableNames = rows.map((r: any) => Object.values(r)[0] as string).sort();
-
-  const tables = [];
-  for (const name of tableNames) {
-    try {
-      const countResult = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM \`${name}\``));
-      const rowCount = ((countResult[0] as unknown as any[])[0] as any)?.cnt || 0;
-      tables.push({ tableName: name, rowCount });
-    } catch {
-      tables.push({ tableName: name, rowCount: 0 });
-    }
-  }
-
-  return tables;
+  return list_sovereign_tables();
 }
 
 export async function inspectTable(tableName: string) {
-  // Get CREATE TABLE
-  let createStatement = "";
-  try {
-    const result = await db.execute(sql.raw(`SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = \'public\' AND table_name = \'${tableName}\'`));
-    const rows = result[0] as unknown as any[];
-    createStatement = (rows[0] as any)?.["Create Table"] || "";
-  } catch { /* */ }
-
-  // Get columns
-  let columns: any[] = [];
-  try {
-    const result = await db.execute(sql.raw(`DESCRIBE \`${tableName}\``));
-    columns = result[0] as unknown as any[];
-  } catch { /* */ }
-
-  // Get row count
-  let rowCount = 0;
-  try {
-    const result = await db.execute(sql.raw(`SELECT COUNT(*) as cnt FROM \`${tableName}\``));
-    rowCount = ((result[0] as unknown as any[])[0] as any)?.cnt || 0;
-  } catch { /* */ }
-
-  // Get sample rows
-  let sampleRows: any[] = [];
-  try {
-    const result = await db.execute(sql.raw(`SELECT * FROM \`${tableName}\` LIMIT 5`));
-    sampleRows = result[0] as unknown as any[];
-  } catch { /* */ }
-
-  return { tableName, createStatement, columns, rowCount, sampleRows };
+  return inspect_sovereign_table(tableName);
 }
 
 // ─── Migration Runner ───

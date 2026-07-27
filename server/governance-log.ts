@@ -414,10 +414,14 @@ export async function createGovernanceSnapshot(
     signedBy: fingerprint,
     signatureAlgorithm: "Ed25519",
     createdAt: now,
-  });
+  }).returning({ id: governanceSnapshots.id });
+
+  if (!result?.id) {
+    throw new Error("Governance snapshot insert did not return an id");
+  }
   
   return {
-    snapshotId: result.insertId,
+    snapshotId: Number(result.id),
     hashChainRoot,
     entryCount: entries.length,
   };
