@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const migration = readFileSync(
   fileURLToPath(
     new URL(
-      "../supabase/migrations/202607270001_civic_genome_momentum_producer_v1.sql",
+      "../supabase/migrations/20260727012911_civic_genome_momentum_producer_v1.sql",
       import.meta.url,
     ),
   ),
