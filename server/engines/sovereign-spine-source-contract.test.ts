@@ -42,17 +42,19 @@ describe("Sovereign Spine source contract", () => {
     expect(restorer).toContain("verify_spine_bundle");
     expect(restorer).toContain("preview.validation.executable");
     expect(restorer).toContain('"completed_with_errors"');
-    expect(restorer).toContain("table_not_empty");
     expect(restorer).not.toContain("ON DUPLICATE KEY");
     expect(restorer).not.toContain("insertId");
     expect(restorer).not.toContain("result[0]");
     expect(restorer).not.toContain("`INSERT INTO `");
-    expect(restorer).not.toContain("status = errors.length > 0 ? \"completed\" : \"completed\"");
+    expect(restorer).not.toContain(
+      'status = errors.length > 0 ? "completed" : "completed"',
+    );
   });
 
   it("uses parameterized PostgreSQL data writes and an explicit civic allowlist", () => {
     expect(postgres).toContain("on conflict do nothing");
     expect(postgres).toContain("SPINE_CONFIG_TABLE_SET.has(tableName)");
+    expect(postgres).toContain("table_not_empty");
     expect(postgres).toContain("create type public");
     expect(postgres).not.toContain("FROM `");
     expect(postgres).not.toContain("INSERT INTO `");
@@ -62,8 +64,14 @@ describe("Sovereign Spine source contract", () => {
     expect(runs).toContain("returning id");
     expect(runs).toContain("public.restore_spine_runs");
     expect(runs).not.toContain("insertId");
-    expect(migration).toContain("pg_get_serial_sequence('public.export_spine_runs', 'id')");
-    expect(migration).toContain("create table if not exists public.restore_spine_runs");
-    expect(migration).toContain("perform setval(sequence_name::regclass, maximum_id, true)");
+    expect(migration).toContain(
+      "pg_get_serial_sequence('public.export_spine_runs', 'id')",
+    );
+    expect(migration).toContain(
+      "create table if not exists public.restore_spine_runs",
+    );
+    expect(migration).toContain(
+      "perform setval(sequence_name::regclass, maximum_id, true)",
+    );
   });
 });
