@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - fix/sunam-operator-runtime
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
   workflow_dispatch:
 
 permissions:
