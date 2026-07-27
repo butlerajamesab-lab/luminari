@@ -3,6 +3,18 @@ export type sunam_direct_instruction = {
   args: Record<string, unknown>;
 };
 
+export type sunam_background_launch = {
+  stream_id: string;
+  status: "started";
+  started_at: number;
+};
+
+type sunam_ingestion_result = {
+  success?: boolean;
+  recordsProcessed?: number;
+  signalsGenerated?: number;
+};
+
 function normalize_instruction(value: string): string {
   return value.toLowerCase().replace(/\s+/g, " ").trim();
 }
@@ -11,6 +23,39 @@ function bounded_integer(value: string | undefined, fallback: number, minimum: n
   const parsed = value ? Number(value) : fallback;
   if (!Number.isFinite(parsed)) return fallback;
   return Math.min(maximum, Math.max(minimum, Math.floor(parsed)));
+}
+
+/**
+ * Starts one canonical ingestion promise without tying its lifetime to the
+ * Sovereign Control HTTP request. Completion remains observable through
+ * ingest_runs and the structured runtime log emitted here.
+ */
+export function launch_sunam_background_ingestion(
+  stream_id: string,
+  task: () => Promise<sunam_ingestion_result>,
+): sunam_background_launch {
+  const started_at = Date.now();
+
+  void Promise.resolve()
+    .then(task)
+    .then((result) => {
+      console.warn("[SUNAM] background_ingestion_completed", {
+        stream_id,
+        success: result.success ?? true,
+        records_processed: result.recordsProcessed ?? 0,
+        signals_generated: result.signalsGenerated ?? 0,
+        duration_ms: Date.now() - started_at,
+      });
+    })
+    .catch((error) => {
+      console.error("[SUNAM] background_ingestion_failed", {
+        stream_id,
+        error: error instanceof Error ? error.message : String(error),
+        duration_ms: Date.now() - started_at,
+      });
+    });
+
+  return { stream_id, status: "started", started_at };
 }
 
 /**
