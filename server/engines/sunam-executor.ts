@@ -26,7 +26,6 @@ import {
   engineRegistry,
   dataStreamRegistry,
   adminChangeLog,
-  ingestRuns,
 } from "../../drizzle/schema";
 import { invokeLLM } from "../_core/llm";
 import {
@@ -41,6 +40,11 @@ import { uiReadFile, uiWriteFile, uiPatchFile, uiListFiles } from "../ui-editor/
 import { dispatchServiceTool } from "./sunam-service-dispatcher";
 import { SUNAM_SERVICE_ONLY_TOOLS } from "./sunam-service-only-tools";
 import { assert_safe_public_table_name, launch_sunam_background_ingestion, resolve_direct_sunam_instruction } from "./sunam-runtime-contract";
+import {
+  get_sunam_retry_selection,
+  get_sunam_run_all_selection,
+  summarize_sunam_exclusions,
+} from "./sunam-stream-selection";
 import { get_unified_ingestion_metrics, get_unified_ingestion_summary, get_unified_signal_summary, get_unified_signals } from "../unified-queries";
 
 // ─── Tool Definitions ───
@@ -573,15 +577,8 @@ export async function dispatchTool(
 
       case "run_all_streams": {
         const { triggerManualIngestion } = await import("../ingestion/scheduler");
-        const streams = await db
-          .select({
-            stream_id: dataStreamRegistry.streamId,
-            stream_name: dataStreamRegistry.streamName,
-          })
-          .from(dataStreamRegistry)
-          .where(eq(dataStreamRegistry.enabled, true));
-
-        const launches = streams.map((stream) => ({
+        const selection = await get_sunam_run_all_selection();
+        const launches = selection.eligible.map((stream) => ({
           ...launch_sunam_background_ingestion(
             stream.stream_id,
             () => triggerManualIngestion(stream.stream_id),
@@ -593,9 +590,11 @@ export async function dispatchTool(
           ...base,
           success: true,
           result: {
-            status: "started",
-            total: launches.length,
+            status: launches.length > 0 ? "started" : "no_eligible_streams",
+            eligible_count: selection.eligible.length,
             streams: launches,
+            excluded: summarize_sunam_exclusions(selection),
+            registry_truth_source: "data_stream_registry",
             completion_source: "ingest_runs",
           },
         };
@@ -603,40 +602,30 @@ export async function dispatchTool(
 
       case "retry_failed_streams": {
         const { triggerManualIngestion } = await import("../ingestion/scheduler");
-        const hours_back = Math.min(24 * 30, Math.max(1, Number(args.hours_back ?? 24)));
-        const cutoff = Date.now() - hours_back * 3_600_000;
-        const failed_runs = await db
-          .select({ stream_id: ingestRuns.datasetId })
-          .from(ingestRuns)
-          .where(
-            sql`${ingestRuns.status} = 'failed' AND ${ingestRuns.startTime} > ${cutoff}`,
-          );
-        const stream_ids = [
-          ...new Set(
-            failed_runs
-              .map((run) => run.stream_id)
-              .filter(
-                (stream_id): stream_id is string =>
-                  typeof stream_id === "string" && stream_id.trim().length > 0,
-              ),
-          ),
-        ].sort();
-
-        const launches = stream_ids.map((stream_id) =>
-          launch_sunam_background_ingestion(
-            stream_id,
-            () => triggerManualIngestion(stream_id),
-          ),
+        const selection = await get_sunam_retry_selection(
+          Number(args.hours_back ?? 24),
         );
+        const launches = selection.eligible.map((stream) => ({
+          ...launch_sunam_background_ingestion(
+            stream.stream_id,
+            () => triggerManualIngestion(stream.stream_id),
+          ),
+          stream_name: stream.stream_name,
+          consecutive_failures: stream.consecutive_failures,
+          last_failure_at: stream.last_failure_at,
+        }));
 
         return {
           ...base,
           success: true,
           result: {
-            status: "started",
-            hours_back,
+            status: launches.length > 0 ? "started" : "no_eligible_recent_failures",
+            hours_back: selection.hours_back,
+            cutoff_ms: selection.cutoff_ms,
             streams_retried: launches.length,
             streams: launches,
+            excluded: summarize_sunam_exclusions(selection),
+            registry_truth_source: "data_stream_registry",
             completion_source: "ingest_runs",
           },
         };
