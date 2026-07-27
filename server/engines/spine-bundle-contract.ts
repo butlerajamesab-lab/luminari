@@ -131,9 +131,13 @@ export function sign_spine_manifest(
   manifest: spine_unsigned_manifest,
   key = get_spine_signing_key(),
 ): string {
+  const normalized = normalize_unsigned_manifest(manifest);
+  if (!normalized) {
+    throw new Error("Cannot sign invalid Sovereign Spine manifest metadata");
+  }
   return crypto
     .createHmac("sha256", key)
-    .update(stringify_spine_json(manifest, 0))
+    .update(stringify_spine_json(normalized, 0))
     .digest("hex");
 }
 
