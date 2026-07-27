@@ -1,0 +1,298 @@
+name: Apply current Civic Genome acceleration repair
+
+on:
+  push:
+    branches:
+      - fix/civic-genome-acceleration-current
+
+permissions:
+  contents: write
+
+concurrency:
+  group: civic-genome-acceleration-current
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, '[civic-genome-acceleration-applied]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/civic-genome-acceleration-current
+          fetch-depth: 0
+
+      - name: Apply deterministic family acceleration producer
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('server/civic-genome-projection.ts')
+          source = path.read_text()
+
+          source = source.replace(
+              '  action: "inserted" | "updated" | "unchanged";\n};',
+              '  action: "inserted" | "updated" | "unchanged";\n  family_acceleration_score: number;\n};',
+              1,
+          )
+          source = source.replace(
+              '  family_count: number;\n  results: projected_bill_result[];',
+              '  family_count: number;\n  families_accelerating: number;\n  results: projected_bill_result[];',
+              1,
+          )
+
+          batch_size_marker = '''const normalize_projection_batch_size = (batch_size: number | undefined): number | null => {
+            if (batch_size === undefined) {
+              return null;
+            }
+
+            if (!Number.isSafeInteger(batch_size) || batch_size <= 0) {
+              throw new Error("invalid_civic_genome_projection_batch_size");
+            }
+
+            return batch_size;
+          };'''
+          batch_size_replacement = batch_size_marker + '''
+
+          const compute_acceleration_score = (
+            current_active_state_count: number,
+            prior_active_state_count: number | null,
+          ): number => {
+            if (prior_active_state_count === null) {
+              return 0;
+            }
+
+            return Math.min(
+              1,
+              Math.max(0, (current_active_state_count - prior_active_state_count) / 10),
+            );
+          };'''
+          if batch_size_marker not in source:
+              raise SystemExit('projection batch-size marker did not match current main')
+          source = source.replace(batch_size_marker, batch_size_replacement, 1)
+
+          function_start = source.index('const refresh_family_rollups = async (family_id: string): Promise<void> => {')
+          function_end = source.index('\nconst project_bill = async (', function_start)
+          replacement = r'''const refresh_family_rollups = async (
+            family_id: string,
+          ): Promise<{ acceleration_score: number; new_state_count: number }> => {
+            const pool = getPool();
+
+            const { rows: rollup_rows } = await pool.query<{
+              acceleration_score: string;
+              new_state_count: number;
+            }>(
+              `with rollup as (
+                 select
+                   count(distinct state_code) filter (where current_state_position not in ('failed'))::int as active_state_count,
+                   count(distinct state_code) filter (where current_state_position in ('introduced', 'active_in_committee', 'advanced_one_chamber', 'advanced_two_chambers'))::int as introduced_state_count,
+                   count(distinct state_code) filter (where current_state_position = 'enacted')::int as enacted_state_count,
+                   count(distinct state_code) filter (where current_state_position = 'failed')::int as failed_state_count,
+                   max(coalesce(last_action_at, introduced_at, updated_at)) as last_event_at
+                 from public.civic_genome_bill
+                 where family_id = $1
+               ),
+               prior_snapshot as (
+                 select active_state_count
+                 from public.family_momentum_snapshot
+                 where family_id = $1
+                   and snapshot_date <= current_date - interval '7 days'
+                 order by snapshot_date desc
+                 limit 1
+               )
+               update public.civic_genome_family family
+               set
+                 active_state_count = coalesce(rollup.active_state_count, 0),
+                 introduced_state_count = coalesce(rollup.introduced_state_count, 0),
+                 enacted_state_count = coalesce(rollup.enacted_state_count, 0),
+                 failed_state_count = coalesce(rollup.failed_state_count, 0),
+                 last_event_at = rollup.last_event_at,
+                 momentum_score = least(1, coalesce(rollup.active_state_count, 0)::numeric / 50),
+                 acceleration_score = case
+                   when prior_snapshot.active_state_count is null then 0
+                   else least(
+                     1,
+                     greatest(
+                       0,
+                       (coalesce(rollup.active_state_count, 0) - prior_snapshot.active_state_count)::numeric / 10
+                     )
+                   )
+                 end,
+                 collapse_score = least(
+                   1,
+                   coalesce(rollup.failed_state_count, 0)::numeric /
+                     greatest(
+                       coalesce(rollup.active_state_count, 0) + coalesce(rollup.failed_state_count, 0),
+                       1
+                     )
+                 ),
+                 updated_at = now()
+               from rollup
+               left join prior_snapshot on true
+               where family.family_id = $1
+               returning
+                 family.acceleration_score,
+                 greatest(
+                   family.active_state_count - coalesce(prior_snapshot.active_state_count, family.active_state_count),
+                   0
+                 )::int as new_state_count`,
+              [family_id],
+            );
+
+            const acceleration_score = Number(rollup_rows[0]?.acceleration_score ?? 0);
+            const new_state_count = Number(rollup_rows[0]?.new_state_count ?? 0);
+
+            await pool.query(
+              `insert into public.family_momentum_snapshot (
+                 family_id,
+                 snapshot_date,
+                 active_state_count,
+                 introduced_state_count,
+                 enacted_state_count,
+                 failed_state_count,
+                 new_state_count,
+                 velocity_score,
+                 acceleration_score,
+                 collapse_score
+               )
+               select
+                 family_id,
+                 current_date,
+                 active_state_count,
+                 introduced_state_count,
+                 enacted_state_count,
+                 failed_state_count,
+                 $2,
+                 momentum_score,
+                 acceleration_score,
+                 collapse_score
+               from public.civic_genome_family
+               where family_id = $1
+               on conflict (family_id, snapshot_date) do update set
+                 active_state_count = excluded.active_state_count,
+                 introduced_state_count = excluded.introduced_state_count,
+                 enacted_state_count = excluded.enacted_state_count,
+                 failed_state_count = excluded.failed_state_count,
+                 new_state_count = excluded.new_state_count,
+                 velocity_score = excluded.velocity_score,
+                 acceleration_score = excluded.acceleration_score,
+                 collapse_score = excluded.collapse_score`,
+              [family_id, new_state_count],
+            );
+
+            return { acceleration_score, new_state_count };
+          };
+'''
+          source = source[:function_start] + replacement + source[function_end:]
+
+          old_rollup_call = '  await refresh_family_rollups(family_id);\n\n  return {'
+          if old_rollup_call not in source:
+              raise SystemExit('per-bill family rollup call did not match current main')
+          source = source.replace(old_rollup_call, '  return {', 1)
+
+          action_marker = '    action: existing ? (should_append_event ? "updated" : "unchanged") : "inserted",\n  };'
+          action_replacement = '    action: existing ? (should_append_event ? "updated" : "unchanged") : "inserted",\n    family_acceleration_score: 0,\n  };'
+          if action_marker not in source:
+              raise SystemExit('projected result marker did not match current main')
+          source = source.replace(action_marker, action_replacement, 1)
+
+          old_finalize = '''  const next_offset = batch_end !== null && batch_end < total_candidate_count ? batch_end : null;
+            const remaining_count = next_offset === null ? 0 : total_candidate_count - next_offset;
+            const family_ids = new Set(results.map(result => result.family_id));
+
+            return {'''
+          new_finalize = '''  const next_offset = batch_end !== null && batch_end < total_candidate_count ? batch_end : null;
+            const remaining_count = next_offset === null ? 0 : total_candidate_count - next_offset;
+            const family_ids = [...new Set(results.map(result => result.family_id))].sort();
+            const acceleration_by_family = new Map<string, number>();
+
+            // Roll up each affected family exactly once, after every bill in the batch has
+            // reached its final persisted state. Sorting makes the write order reproducible.
+            for (const family_id of family_ids) {
+              const rollup = await refresh_family_rollups(family_id);
+              acceleration_by_family.set(family_id, rollup.acceleration_score);
+            }
+
+            const finalized_results = results.map(result => ({
+              ...result,
+              family_acceleration_score: acceleration_by_family.get(result.family_id) ?? 0,
+            }));
+            const families_accelerating = [...acceleration_by_family.values()]
+              .filter(acceleration_score => acceleration_score > 0)
+              .length;
+
+            return {'''
+          if old_finalize not in source:
+              raise SystemExit('projection finalization marker did not match current main')
+          source = source.replace(old_finalize, new_finalize, 1)
+          source = source.replace('    family_count: family_ids.size,\n    results,', '    family_count: family_ids.length,\n    families_accelerating,\n    results: finalized_results,', 1)
+
+          source = source.rstrip() + '''
+
+          export const __testing = {
+            compute_acceleration_score,
+            refresh_family_rollups,
+          };
+          '''
+
+          path.write_text(source)
+
+          test_path = Path('server/civic-genome-acceleration.test.ts')
+          test_path.write_text('''import { readFileSync } from "node:fs";
+          import { fileURLToPath } from "node:url";
+          import { describe, expect, it } from "vitest";
+          import { __testing } from "./civic-genome-projection";
+
+          describe("Civic Genome acceleration", () => {
+            it("computes bounded week-over-week state acceleration", () => {
+              expect(__testing.compute_acceleration_score(12, 5)).toBeCloseTo(0.7, 10);
+              expect(__testing.compute_acceleration_score(5, 5)).toBe(0);
+              expect(__testing.compute_acceleration_score(2, 5)).toBe(0);
+              expect(__testing.compute_acceleration_score(20, 5)).toBe(1);
+              expect(__testing.compute_acceleration_score(12, null)).toBe(0);
+            });
+
+            it("uses the nearest snapshot at least seven days old", () => {
+              const source = readFileSync(
+                fileURLToPath(new URL("./civic-genome-projection.ts", import.meta.url)),
+                "utf8",
+              );
+
+              expect(source).toContain("snapshot_date <= current_date - interval '7 days'");
+            });
+
+            it("rolls each affected family once after bill projection", () => {
+              const source = readFileSync(
+                fileURLToPath(new URL("./civic-genome-projection.ts", import.meta.url)),
+                "utf8",
+              );
+              const rollup_calls = source.match(/await refresh_family_rollups\(/g) ?? [];
+
+              expect(rollup_calls).toHaveLength(1);
+              expect(source).toContain("const family_ids = [...new Set(results.map(result => result.family_id))].sort()");
+              expect(source).toContain("results: finalized_results");
+            });
+          });
+          ''')
+          PY
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify acceleration implementation
+        run: |
+          pnpm exec vitest run server/civic-genome-acceleration.test.ts
+          pnpm check
+          pnpm check:contracts
+          pnpm check:snake-case
+
+      - name: Commit direct implementation and remove staging workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/apply-civic-genome-acceleration.yml
+          git add server/civic-genome-projection.ts server/civic-genome-acceleration.test.ts
+          git commit -m "Produce deterministic Civic Genome acceleration [civic-genome-acceleration-applied]"
+          git push origin HEAD:fix/civic-genome-acceleration-current
