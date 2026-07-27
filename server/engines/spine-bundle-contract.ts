@@ -227,9 +227,15 @@ export function verify_spine_bundle(bundle_json: string): {
   const databaseValid = manifest.databaseType === "postgresql";
   if (!databaseValid) warnings.push(`Unsupported bundle database: ${String(manifest.databaseType ?? "unknown")}`);
 
+  // Break-glass legacy mode waives only signature authentication. A legacy
+  // bundle must still be internally consistent, identity-aligned, and explicitly
+  // PostgreSQL-compatible before it can reach any restore mutation.
   const executable =
     checksumValid &&
-    ((signatureValid && metadataValid && formatValid && databaseValid) || legacyOverride);
+    metadataValid &&
+    formatValid &&
+    databaseValid &&
+    (signatureValid || legacyOverride);
 
   return {
     bundle,
