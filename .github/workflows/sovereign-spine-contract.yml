@@ -1,0 +1,113 @@
+name: Sovereign Spine Contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "server/engines/export-spine-engine.ts"
+      - "server/engines/restore-spine-engine.ts"
+      - "server/engines/sovereign-export-spine-engine.ts"
+      - "server/engines/sovereign-restore-spine-engine.ts"
+      - "server/engines/spine-bundle-contract.ts"
+      - "server/engines/spine-bundle-contract.test.ts"
+      - "server/engines/spine-postgres.ts"
+      - "server/engines/spine-postgres.test.ts"
+      - "server/engines/spine-schema-export.ts"
+      - "server/engines/spine-run-store.ts"
+      - "server/engines/sovereign-spine-source-contract.test.ts"
+      - "supabase/migrations/20260727163000_sovereign_spine_run_substrate.sql"
+      - ".github/workflows/sovereign-spine-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sovereign-spine-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: Portable export and restore contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: spine
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d spine"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/spine
+      SPINE_EXPORT_SIGNING_KEY: ci-sovereign-spine-signing-key
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Create historical export ledger fixture
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          create table public.export_spine_runs (
+            id serial primary key,
+            export_type_esr text,
+            bundle_name_esr text,
+            status_esr text,
+            created_at_esr bigint,
+            completed_at_esr bigint,
+            created_by_esr text,
+            file_path_esr text,
+            file_url_esr text,
+            bundle_size_esr text,
+            bundle_manifest_json_esr text,
+            error_message_esr text
+          );
+          insert into public.export_spine_runs (id,export_type_esr,bundle_name_esr,status_esr)
+          values (76,'full','historical-bundle','completed');
+          select setval('public.export_spine_runs_id_seq',1,true);
+          SQL
+
+      - name: Apply Spine run substrate
+        run: >-
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1
+          -f supabase/migrations/20260727163000_sovereign_spine_run_substrate.sql
+
+      - name: Verify run ledgers
+        run: |
+          test "$(psql "$DATABASE_URL" -Atc "select last_value from public.export_spine_runs_id_seq")" = "76"
+          test "$(psql "$DATABASE_URL" -Atc "select to_regclass('public.restore_spine_runs') is not null")" = "t"
+
+      - name: Run Spine contract tests
+        shell: bash
+        run: |
+          set -o pipefail
+          npx vitest run \
+            server/engines/spine-bundle-contract.test.ts \
+            server/engines/spine-postgres.test.ts \
+            server/engines/sovereign-spine-source-contract.test.ts \
+            2>&1 | tee sovereign-spine-test.log
+
+      - name: Upload Spine diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sovereign-spine-test-diagnostics
+          path: sovereign-spine-test.log
