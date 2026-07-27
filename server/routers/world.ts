@@ -4,10 +4,10 @@
  * No filtering logic here — consumers filter client-side.
  */
 import { router, publicProcedure } from "../_core/trpc";
-import { getWorldIndex } from "../services/world-index";
+import { get_cached_world_index } from "../services/world-index-cache";
 
 export const worldRouter = router({
   getIndex: publicProcedure.query(async () => {
-    return await getWorldIndex();
+    return get_cached_world_index();
   }),
 });
