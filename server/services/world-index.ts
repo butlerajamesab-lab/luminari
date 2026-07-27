@@ -7,7 +7,7 @@
  * FieldAtlas is not canonical here.
  */
 
-import { pool } from "../db";
+import { pool } from "./world-index-db";
 
 export interface WorldObject {
   id: string;
