@@ -33,11 +33,15 @@ describe("Sunam operator source contract", () => {
     expect(executor).toContain("direct_instruction.args");
   });
 
-  it("launches bulk stream work without holding the operator request open", () => {
+  it("launches only registry-eligible bulk stream work without holding the operator request open", () => {
     expect(executor).toContain("launch_sunam_background_ingestion");
+    expect(executor).toContain("get_sunam_run_all_selection");
+    expect(executor).toContain("get_sunam_retry_selection");
+    expect(executor).toContain('registry_truth_source: "data_stream_registry"');
     expect(executor).toContain('completion_source: "ingest_runs"');
-    expect(executor).toContain('status: "started"');
-    expect(executor).not.toContain("streams_retried: unique.length");
+    expect(executor).toContain("summarize_sunam_exclusions");
+    expect(executor).not.toContain("ingestRuns.datasetId");
+    expect(executor).not.toContain("where(eq(dataStreamRegistry.enabled, true))");
   });
 
   it("uses PostgreSQL result.rows for system context", () => {
