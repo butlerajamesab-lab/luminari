@@ -99,14 +99,20 @@ export async function ingestCfpbDataset(
     return disabledResult(datasetId);
   }
 
-  const [run] = await db.insert(ingestRuns).values({
-    datasetId,
-    startTime: Date.now(),
-    status: 'running',
-    endpointAttempted: dataset.apiUrl ?? CFPB_API_BASE,
-    adapterUsed: 'cfpb_native',
-  }).$returningId();
+  const [run] = await db
+    .insert(ingestRuns)
+    .values({
+      datasetId,
+      startTime: Date.now(),
+      status: 'running',
+      endpointAttempted: dataset.apiUrl ?? CFPB_API_BASE,
+      adapterUsed: 'cfpb_native',
+    })
+    .returning({ id: ingestRuns.id });
 
+  if (!run?.id) {
+    throw new Error(`Failed to create CFPB ingest run for ${datasetId}`);
+  }
   const runId = run.id;
 
   try {
