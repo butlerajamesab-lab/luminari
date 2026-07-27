@@ -1,0 +1,53 @@
+name: Apply Sovereign Spine Final Contract
+
+on:
+  pull_request:
+    branches: [main]
+    types: [synchronize]
+    paths:
+      - "scripts/apply-sovereign-spine-final-contract.py"
+      - "scripts/.sovereign-spine-final-contract-trigger"
+      - ".github/workflows/apply-sovereign-spine-final-contract.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-sovereign-spine-final-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Apply bounded contract wiring
+        run: python scripts/apply-sovereign-spine-final-contract.py
+
+      - name: Validate durable result
+        run: |
+          grep -q 'export_spine_table_data_consistent' server/engines/sovereign-export-spine-engine.ts
+          grep -q 'preflight_spine_restore_request(bundle, restoreType);' server/engines/sovereign-restore-spine-engine.ts
+          ! grep -q 'export_spine_table_data,' server/engines/sovereign-export-spine-engine.ts
+
+      - name: Remove staging machinery
+        run: |
+          rm -f scripts/apply-sovereign-spine-final-contract.py
+          rm -f scripts/.sovereign-spine-final-contract-trigger
+          rm -f .github/workflows/apply-sovereign-spine-final-contract.yml
+
+      - name: Commit durable wiring
+        run: |
+          git config user.name "chatgpt-codex-connector[bot]"
+          git config user.email "chatgpt-codex-connector[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "Wire final Sovereign Spine safety contracts"
+          git push origin HEAD:${{ github.head_ref }}
