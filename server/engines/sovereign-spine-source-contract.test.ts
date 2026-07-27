@@ -11,6 +11,8 @@ const restoreFacade = read("./restore-spine-engine.ts");
 const exporter = read("./sovereign-export-spine-engine.ts");
 const restorer = read("./sovereign-restore-spine-engine.ts");
 const bundleContract = read("./spine-bundle-contract.ts");
+const consistentExport = read("./spine-consistent-data-export.ts");
+const restorePreflight = read("./spine-restore-preflight.ts");
 const postgres = read("./spine-postgres.ts");
 const runs = read("./spine-run-store.ts");
 const migration = read(
@@ -35,6 +37,7 @@ describe("Sovereign Spine source contract", () => {
     expect(exporter).toContain("rowLimitPerTable: 100_000");
     expect(bundleContract).toContain("sign_spine_manifest");
     expect(bundleContract).toContain("metadataValid");
+    expect(bundleContract).toContain("(signatureValid || legacyOverride)");
     expect(exporter).not.toContain('databaseType: "mysql"');
     expect(exporter).not.toContain("insertId");
     expect(exporter).not.toContain("result[0]");
@@ -46,6 +49,25 @@ describe("Sovereign Spine source contract", () => {
     expect(exporter).toContain('url.password = ""');
     expect(exporter).toContain('url.searchParams.set(key, "ENV_PLACEHOLDER")');
     expect(exporter).toContain("sanitize_spine_export_value");
+  });
+
+  it("exports rows and truncation through one consistent query", () => {
+    expect(exporter).toContain("export_spine_table_data_consistent");
+    expect(exporter).not.toContain("export_spine_table_data,");
+    expect(consistentExport).toContain("bounded_limit + 1");
+    expect(consistentExport).toContain("result.rows.length > bounded_limit");
+    expect(consistentExport).not.toContain("count(*)");
+  });
+
+  it("preflights the complete requested restore before target mutation", () => {
+    expect(restorer).toContain("preflight_spine_restore_request(bundle, restoreType);");
+    expect(restorer.indexOf("preflight_spine_restore_request(bundle, restoreType);")).toBeLessThan(
+      restorer.indexOf('set_restore_spine_run_status(runId, "restoring")'),
+    );
+    expect(restorePreflight).toContain("RESTORE_CAPABILITIES");
+    expect(restorePreflight).toContain("complete schema.tables section");
+    expect(restorePreflight).toContain("complete config.registryTables section");
+    expect(restorePreflight).toContain("complete data section");
   });
 
   it("requires authenticated bundles and reports partial restore truthfully", () => {
@@ -77,9 +99,10 @@ describe("Sovereign Spine source contract", () => {
     expect(postgres).not.toContain("INSERT INTO `");
   });
 
-  it("uses PostgreSQL RETURNING ledgers and upgrades preserved legacy restore receipts", () => {
+  it("uses PostgreSQL RETURNING ledgers and preserves text or decoded JSON receipts", () => {
     expect(runs).toContain("returning id");
     expect(runs).toContain("public.restore_spine_runs");
+    expect(runs).toContain('if (typeof value !== "string") return value as T;');
     expect(runs).not.toContain("insertId");
     expect(migration).toContain(
       "pg_get_serial_sequence('public.export_spine_runs', 'id')",
