@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   classify_sunam_retry_failed_streams,
   classify_sunam_run_all_streams,
+  normalize_sunam_stream_registry_row,
   type sunam_stream_registry_row,
 } from "./sunam-stream-selection";
 
@@ -19,6 +20,38 @@ function stream(
     ...overrides,
   };
 }
+
+describe("normalize_sunam_stream_registry_row", () => {
+  it("normalizes PostgreSQL bigint timestamps to finite numbers", () => {
+    expect(
+      normalize_sunam_stream_registry_row({
+        stream_id: "sample",
+        stream_name: "Sample",
+        enabled: true,
+        auto_disabled: false,
+        consecutive_failures: 1,
+        last_failure_at: "1784568599853",
+        last_run_status: "failed",
+        disabled_reason: null,
+      }).last_failure_at,
+    ).toBe(1_784_568_599_853);
+  });
+
+  it("converts invalid timestamp values to unresolved null", () => {
+    expect(
+      normalize_sunam_stream_registry_row({
+        stream_id: "sample",
+        stream_name: "Sample",
+        enabled: true,
+        auto_disabled: false,
+        consecutive_failures: 1,
+        last_failure_at: "not-a-timestamp",
+        last_run_status: "failed",
+        disabled_reason: null,
+      }).last_failure_at,
+    ).toBeNull();
+  });
+});
 
 describe("classify_sunam_run_all_streams", () => {
   it("runs only enabled, non-auto-disabled, non-retired streams", () => {
