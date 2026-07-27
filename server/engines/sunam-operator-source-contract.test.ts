@@ -16,8 +16,15 @@ describe("Sunam operator source contract", () => {
     expect(executor).toContain("tools: SUNAM_TOOLS");
     expect(executor).toContain("SUNAM_TOOLS.map");
     expect(executor).toContain("SUNAM_TOOL_NAMES.has(toolName)");
-    expect(executor).not.toContain("SUNAM_SERVICE_ONLY_TOOLS");
-    expect(executor).not.toContain("sunam-service-only-tools");
+    expect(executor).toContain("SUNAM_OPERATOR_TOOLS");
+    expect(executor).toContain("SUNAM_SERVICE_ONLY_TOOLS.filter");
+    expect(executor).toContain("!SUNAM_OPERATOR_TOOL_NAMES.has(tool.function.name)");
+  });
+
+  it("preserves operational and case-service capabilities in one deduplicated registry", () => {
+    expect(executor).toContain("...SUNAM_OPERATOR_TOOLS");
+    expect(executor).toContain("...SUNAM_SERVICE_ONLY_TOOLS.filter");
+    expect(executor).toContain("Duplicate names (the");
   });
 
   it("routes standard operator actions deterministically", () => {

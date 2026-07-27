@@ -39,12 +39,13 @@ import {
 } from "./executor-service";
 import { uiReadFile, uiWriteFile, uiPatchFile, uiListFiles } from "../ui-editor/index";
 import { dispatchServiceTool } from "./sunam-service-dispatcher";
+import { SUNAM_SERVICE_ONLY_TOOLS } from "./sunam-service-only-tools";
 import { assert_safe_public_table_name, resolve_direct_sunam_instruction } from "./sunam-runtime-contract";
 import { get_unified_ingestion_metrics, get_unified_ingestion_summary, get_unified_signal_summary, get_unified_signals } from "../unified-queries";
 
 // ─── Tool Definitions ───
 
-export const SUNAM_TOOLS = [
+export const SUNAM_OPERATOR_TOOLS = [
   // ── Direct Backfill ──
   {
     type: "function" as const,
@@ -482,6 +483,22 @@ export const SUNAM_TOOLS = [
       },
     },
   },
+];
+
+const SUNAM_OPERATOR_TOOL_NAMES = new Set(
+  SUNAM_OPERATOR_TOOLS.map((tool) => tool.function.name),
+);
+
+/**
+ * One canonical, additive tool registry. Operational control tools remain
+ * available alongside Lighthouse's case-service tools. Duplicate names (the
+ * shared system-state surface) resolve to the operational contract.
+ */
+export const SUNAM_TOOLS = [
+  ...SUNAM_OPERATOR_TOOLS,
+  ...SUNAM_SERVICE_ONLY_TOOLS.filter(
+    (tool) => !SUNAM_OPERATOR_TOOL_NAMES.has(tool.function.name),
+  ),
 ];
 
 const SUNAM_TOOL_NAMES = new Set(
