@@ -1,0 +1,52 @@
+name: Sovereign Continuity Contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "server/engines/admin-change-log-store.ts"
+      - "server/engines/admin-change-log-store.test.ts"
+      - "server/engines/sovereign-schema-inspector.ts"
+      - "server/engines/sovereign-schema-inspector.test.ts"
+      - "server/engines/sovereign-continuity-source-contract.test.ts"
+      - "server/engines/admin-sovereign-control.ts"
+      - "server/engines/executor-service.ts"
+      - "server/engines/sunam-executor.ts"
+      - "server/governance-log.ts"
+      - "server/routers.ts"
+      - "client/src/pages/GovernanceDashboard.tsx"
+      - "client/src/pages/Verify.tsx"
+      - "supabase/migrations/20260727120500_governance_snapshots.sql"
+      - ".github/workflows/sovereign-continuity-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sovereign-continuity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: Escape pod continuity contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Run continuity contract tests
+        run: >-
+          npx vitest run
+          server/engines/admin-change-log-store.test.ts
+          server/engines/sovereign-schema-inspector.test.ts
+          server/engines/sovereign-continuity-source-contract.test.ts
