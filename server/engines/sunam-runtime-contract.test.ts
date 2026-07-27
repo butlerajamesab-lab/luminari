@@ -1,8 +1,57 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   assert_safe_public_table_name,
+  launch_sunam_background_ingestion,
   resolve_direct_sunam_instruction,
 } from "./sunam-runtime-contract";
+
+describe("launch_sunam_background_ingestion", () => {
+  it("returns immediately while observing asynchronous completion", async () => {
+    let resolve_task: ((value: { success: boolean; recordsProcessed: number }) => void) | null = null;
+    const task = vi.fn(
+      () =>
+        new Promise<{ success: boolean; recordsProcessed: number }>((resolve) => {
+          resolve_task = resolve;
+        }),
+    );
+
+    const launch = launch_sunam_background_ingestion("cfpb-complaints", task);
+
+    expect(launch).toMatchObject({
+      stream_id: "cfpb-complaints",
+      status: "started",
+    });
+    expect(Number.isFinite(launch.started_at)).toBe(true);
+
+    await vi.waitFor(() => expect(task).toHaveBeenCalledTimes(1));
+    resolve_task?.({ success: true, recordsProcessed: 12 });
+    await Promise.resolve();
+  });
+
+  it("captures background rejection without creating an unhandled promise", async () => {
+    const error_spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const launch = launch_sunam_background_ingestion(
+      "broken-stream",
+      async () => {
+        throw new Error("expected failure");
+      },
+    );
+
+    expect(launch.status).toBe("started");
+    await vi.waitFor(() => {
+      expect(error_spy).toHaveBeenCalledWith(
+        "[SUNAM] background_ingestion_failed",
+        expect.objectContaining({
+          stream_id: "broken-stream",
+          error: "expected failure",
+        }),
+      );
+    });
+
+    error_spy.mockRestore();
+  });
+});
 
 describe("resolve_direct_sunam_instruction", () => {
   it("routes every Sovereign Control quick action without LLM interpretation", () => {
