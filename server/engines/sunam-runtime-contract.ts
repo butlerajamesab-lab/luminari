@@ -19,60 +19,61 @@ function bounded_integer(value: string | undefined, fallback: number, minimum: n
  * These instructions must not depend on LLM interpretation. They map directly
  * to the same governed tools exposed in Sunam's additive canonical registry,
  * which preserves both operational-control and Lighthouse case-service tools.
- * The phrases below intentionally match the six quick-action instructions
- * rendered by Sovereign Control; changing either side requires updating the
- * contract tests.
+ * Only exact affirmative quick-action forms are eligible for direct execution;
+ * questions, explanations, negations, and other free-form instructions must
+ * continue through the governed interpretation loop.
  */
 export function resolve_direct_sunam_instruction(
   instruction: string,
 ): sunam_direct_instruction | null {
   const normalized = normalize_instruction(instruction);
 
-  if (normalized.includes("failed streams") && normalized.includes("retry")) {
-    const hours_match = normalized.match(/last\s+(\d+)\s+hours?/);
+  const retry_match = normalized.match(
+    /^find all failed streams from the last (\d+) hours? and retry them$/,
+  );
+  if (retry_match) {
     return {
       tool_name: "retry_failed_streams",
       args: {
-        hours_back: bounded_integer(hours_match?.[1], 24, 1, 24 * 30),
+        hours_back: bounded_integer(retry_match[1], 24, 1, 24 * 30),
       },
     };
   }
 
   if (
-    normalized.includes("run ingestion for all enabled data streams") ||
-    normalized.includes("run all enabled data streams") ||
+    normalized === "run ingestion for all enabled data streams" ||
+    normalized === "run all enabled data streams" ||
     normalized === "run all streams"
   ) {
     return { tool_name: "run_all_streams", args: {} };
   }
 
-  if (normalized.includes("execution log")) {
-    const limit_match = normalized.match(/last\s+(\d+)\s+(?:entries|items|records)/);
+  const execution_log_match = normalized.match(
+    /^get the last (\d+) entries from the execution log$/,
+  );
+  if (execution_log_match) {
     return {
       tool_name: "get_execution_log",
       args: {
-        limit: bounded_integer(limit_match?.[1], 20, 1, 100),
+        limit: bounded_integer(execution_log_match[1], 20, 1, 100),
       },
     };
   }
 
-  if (normalized.includes("diagnostic") && normalized.includes("stream")) {
+  if (
+    normalized ===
+    "get diagnostics for all streams that have consecutive failures"
+  ) {
     return { tool_name: "get_stream_diagnostics", args: {} };
   }
 
-  if (
-    normalized.includes("refresh") &&
-    normalized.includes("stream") &&
-    normalized.includes("schedule")
-  ) {
+  if (normalized === "refresh all stream schedules from the registry") {
     return { tool_name: "refresh_scheduler", args: {} };
   }
 
   if (
-    normalized.includes("system state") ||
-    (normalized.includes("engines") &&
-      normalized.includes("streams") &&
-      normalized.includes("scheduler"))
+    normalized ===
+    "get the current system state: all engines, streams, failures, and scheduler status"
   ) {
     return { tool_name: "get_system_state", args: {} };
   }
