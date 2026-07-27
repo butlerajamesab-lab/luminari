@@ -88,6 +88,10 @@ jobs:
           print(f"Verified {len(secret_keys)} externally managed deployment secrets")
           PY
 
+      - name: Report hard-coded JWT credentials
+        continue-on-error: true
+        run: python3 scripts/audit-hardcoded-jwts.py
+
       - name: Setup Node 20
         uses: actions/setup-node@v4
         with:
