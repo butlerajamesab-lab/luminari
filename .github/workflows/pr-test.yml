@@ -39,6 +39,55 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Audit Render secret configuration
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          lines = Path("render.yaml").read_text().splitlines()
+          secret_keys = {
+              "DATABASE_URL",
+              "SUPABASE_SERVICE_ROLE_KEY",
+              "JWT_SECRET",
+              "GITHUB_OAUTH_CLIENT_SECRET",
+              "LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY",
+          }
+
+          blocks = {}
+          current_key = None
+          for line in lines:
+              match = re.match(r"\s*- key: ([A-Z0-9_]+)\s*$", line)
+              if match:
+                  current_key = match.group(1)
+                  blocks[current_key] = []
+              elif current_key is not None:
+                  blocks[current_key].append(line.strip())
+
+          failures = []
+          for key in sorted(secret_keys):
+              block = blocks.get(key)
+              if block is None:
+                  failures.append(f"missing deployment secret declaration: {key}")
+                  continue
+              if any(item.startswith("value:") for item in block):
+                  failures.append(f"hard-coded deployment secret value: {key}")
+              if "sync: false" not in block:
+                  failures.append(f"deployment secret is not externally managed: {key}")
+
+          text = "\n".join(lines)
+          if re.search(r"eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}", text):
+              failures.append("JWT-shaped credential found in render.yaml")
+
+          if failures:
+              for failure in failures:
+                  print(failure)
+              raise SystemExit(1)
+
+          print(f"Verified {len(secret_keys)} externally managed deployment secrets")
+          PY
+
       - name: Setup Node 20
         uses: actions/setup-node@v4
         with:
