@@ -5,8 +5,8 @@ export type sunam_direct_instruction = {
 
 export type sunam_background_launch = {
   stream_id: string;
-  status: "started";
-  started_at: number;
+  status: "started" | "queued";
+  accepted_at: number;
 };
 
 type sunam_ingestion_result = {
@@ -14,6 +14,31 @@ type sunam_ingestion_result = {
   recordsProcessed?: number;
   signalsGenerated?: number;
 };
+
+type sunam_background_job = {
+  stream_id: string;
+  accepted_at: number;
+  task: () => Promise<sunam_ingestion_result>;
+};
+
+function read_bounded_positive_integer_env(
+  name: string,
+  fallback: number,
+  maximum: number,
+): number {
+  const raw = process.env[name];
+  const parsed = raw ? Number(raw) : fallback;
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.min(maximum, Math.max(1, Math.floor(parsed)));
+}
+
+const background_ingestion_concurrency = read_bounded_positive_integer_env(
+  "SUNAM_BACKGROUND_INGESTION_CONCURRENCY",
+  2,
+  5,
+);
+const background_ingestion_queue: sunam_background_job[] = [];
+let active_background_ingestions = 0;
 
 function normalize_instruction(value: string): string {
   return value.toLowerCase().replace(/\s+/g, " ").trim();
@@ -25,38 +50,89 @@ function bounded_integer(value: string | undefined, fallback: number, minimum: n
   return Math.min(maximum, Math.max(minimum, Math.floor(parsed)));
 }
 
+function drain_background_ingestion_queue(): void {
+  while (
+    active_background_ingestions < background_ingestion_concurrency &&
+    background_ingestion_queue.length > 0
+  ) {
+    const job = background_ingestion_queue.shift();
+    if (!job) return;
+
+    active_background_ingestions += 1;
+    const started_at = Date.now();
+    console.warn("[SUNAM] background_ingestion_started", {
+      stream_id: job.stream_id,
+      queue_wait_ms: started_at - job.accepted_at,
+      active_background_ingestions,
+      queued_background_ingestions: background_ingestion_queue.length,
+      concurrency: background_ingestion_concurrency,
+    });
+
+    void Promise.resolve()
+      .then(job.task)
+      .then((result) => {
+        console.warn("[SUNAM] background_ingestion_completed", {
+          stream_id: job.stream_id,
+          success: result.success ?? true,
+          records_processed: result.recordsProcessed ?? 0,
+          signals_generated: result.signalsGenerated ?? 0,
+          duration_ms: Date.now() - started_at,
+        });
+      })
+      .catch((error) => {
+        console.error("[SUNAM] background_ingestion_failed", {
+          stream_id: job.stream_id,
+          error: error instanceof Error ? error.message : String(error),
+          duration_ms: Date.now() - started_at,
+        });
+      })
+      .finally(() => {
+        active_background_ingestions = Math.max(
+          0,
+          active_background_ingestions - 1,
+        );
+        drain_background_ingestion_queue();
+      });
+  }
+}
+
 /**
- * Starts one canonical ingestion promise without tying its lifetime to the
+ * Enqueues one canonical ingestion promise without tying its lifetime to the
  * Sovereign Control HTTP request. Completion remains observable through
- * ingest_runs and the structured runtime log emitted here.
+ * ingest_runs and the structured runtime logs emitted here. Queue concurrency
+ * is bounded so bulk actions cannot create a database/API stampede.
  */
 export function launch_sunam_background_ingestion(
   stream_id: string,
   task: () => Promise<sunam_ingestion_result>,
 ): sunam_background_launch {
-  const started_at = Date.now();
+  const accepted_at = Date.now();
+  const status =
+    active_background_ingestions < background_ingestion_concurrency
+      ? "started"
+      : "queued";
 
-  void Promise.resolve()
-    .then(task)
-    .then((result) => {
-      console.warn("[SUNAM] background_ingestion_completed", {
-        stream_id,
-        success: result.success ?? true,
-        records_processed: result.recordsProcessed ?? 0,
-        signals_generated: result.signalsGenerated ?? 0,
-        duration_ms: Date.now() - started_at,
-      });
-    })
-    .catch((error) => {
-      console.error("[SUNAM] background_ingestion_failed", {
-        stream_id,
-        error: error instanceof Error ? error.message : String(error),
-        duration_ms: Date.now() - started_at,
-      });
-    });
+  background_ingestion_queue.push({ stream_id, accepted_at, task });
+  drain_background_ingestion_queue();
 
-  return { stream_id, status: "started", started_at };
+  return { stream_id, status, accepted_at };
 }
+
+export const sunam_background_queue_testing = {
+  get_state() {
+    return {
+      active: active_background_ingestions,
+      queued: background_ingestion_queue.length,
+      concurrency: background_ingestion_concurrency,
+    };
+  },
+  reset(): void {
+    if (active_background_ingestions !== 0) {
+      throw new Error("cannot reset the Sunam background queue while jobs are active");
+    }
+    background_ingestion_queue.splice(0, background_ingestion_queue.length);
+  },
+};
 
 /**
  * Deterministic routing for Sovereign Control's standard operator commands.
