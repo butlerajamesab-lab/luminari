@@ -11,12 +11,34 @@ export type sunam_stream_registry_row = {
   disabled_reason: string | null;
 };
 
+type raw_sunam_stream_registry_row = Omit<
+  sunam_stream_registry_row,
+  "last_failure_at"
+> & {
+  last_failure_at: number | string | null;
+};
+
 export type sunam_stream_selection = {
   eligible: sunam_stream_registry_row[];
   excluded_auto_disabled: sunam_stream_registry_row[];
   excluded_disabled: sunam_stream_registry_row[];
   excluded_retired: sunam_stream_registry_row[];
 };
+
+export function normalize_sunam_stream_registry_row(
+  row: raw_sunam_stream_registry_row,
+): sunam_stream_registry_row {
+  const parsed_last_failure_at =
+    row.last_failure_at === null ? null : Number(row.last_failure_at);
+
+  return {
+    ...row,
+    last_failure_at:
+      parsed_last_failure_at !== null && Number.isFinite(parsed_last_failure_at)
+        ? parsed_last_failure_at
+        : null,
+  };
+}
 
 function is_retired_stream(row: sunam_stream_registry_row): boolean {
   return row.last_run_status === "retired_superseded_by_atlas";
@@ -87,7 +109,7 @@ export function classify_sunam_retry_failed_streams(
 export async function load_sunam_stream_registry(): Promise<
   sunam_stream_registry_row[]
 > {
-  const result = await query_with_diagnostics<sunam_stream_registry_row>(
+  const result = await query_with_diagnostics<raw_sunam_stream_registry_row>(
     `select
        stream_id_dsr as stream_id,
        stream_name_dsr as stream_name,
@@ -107,7 +129,7 @@ export async function load_sunam_stream_registry(): Promise<
     },
   );
 
-  return result.rows;
+  return result.rows.map(normalize_sunam_stream_registry_row);
 }
 
 export async function get_sunam_run_all_selection(): Promise<
