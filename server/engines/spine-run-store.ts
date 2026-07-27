@@ -1,8 +1,11 @@
 import { query_with_diagnostics } from "../db";
 import { stringify_spine_json } from "./spine-bundle-contract";
 
-function parse_json_text<T>(value: string | null, fallback: T): T {
-  if (!value) return fallback;
+export function parse_spine_ledger_value<T>(value: unknown, fallback: T): T {
+  if (value === null || value === undefined || value === "") return fallback;
+  // PostgreSQL json/jsonb columns are already decoded by pg. Preserve the
+  // object/array exactly and parse only text-backed compatibility columns.
+  if (typeof value !== "string") return value as T;
   try {
     return JSON.parse(value) as T;
   } catch {
@@ -100,7 +103,7 @@ function map_export_run(row: any): export_spine_run_record {
     filePath: row.file_path,
     fileUrl: row.file_url,
     bundleSize: row.bundle_size,
-    bundleManifestJson: parse_json_text(row.bundle_manifest_json, null),
+    bundleManifestJson: parse_spine_ledger_value(row.bundle_manifest_json, null),
     errorMessage: row.error_message,
   };
 }
@@ -290,15 +293,15 @@ function map_restore_run(row: any): restore_spine_run_record {
     executedBy: row.executed_by,
     riskLevel: row.risk_level,
     manifestChecksum: row.manifest_checksum,
-    validationResult: parse_json_text(row.validation_result, null),
+    validationResult: parse_spine_ledger_value(row.validation_result, null),
     startedAt: Number(row.started_at),
     completedAt: row.completed_at === null ? null : Number(row.completed_at),
-    restoredTables: parse_json_text(row.restored_tables, []),
-    restoredEngines: parse_json_text(row.restored_engines, []),
-    restoredStreams: parse_json_text(row.restored_streams, []),
+    restoredTables: parse_spine_ledger_value(row.restored_tables, []),
+    restoredEngines: parse_spine_ledger_value(row.restored_engines, []),
+    restoredStreams: parse_spine_ledger_value(row.restored_streams, []),
     restoredRows: Number(row.restored_rows ?? 0),
-    skippedTables: parse_json_text(row.skipped_tables, []),
-    errors: parse_json_text(row.errors, []),
+    skippedTables: parse_spine_ledger_value(row.skipped_tables, []),
+    errors: parse_spine_ledger_value(row.errors, []),
     summary: row.summary,
   };
 }
