@@ -7,7 +7,9 @@ on:
       - "server/engines/export-spine-engine.ts"
       - "server/engines/restore-spine-engine.ts"
       - "server/engines/sovereign-export-spine-engine.ts"
+      - "server/engines/sovereign-export-spine-engine.test.ts"
       - "server/engines/sovereign-restore-spine-engine.ts"
+      - "server/engines/sovereign-restore-spine-engine.test.ts"
       - "server/engines/spine-bundle-contract.ts"
       - "server/engines/spine-bundle-contract.test.ts"
       - "server/engines/spine-postgres.ts"
@@ -63,7 +65,7 @@ jobs:
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-      - name: Create historical export ledger fixture
+      - name: Create historical Spine ledger fixtures
         run: |
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
           create table public.export_spine_runs (
@@ -83,6 +85,38 @@ jobs:
           insert into public.export_spine_runs (id,export_type_esr,bundle_name_esr,status_esr)
           values (76,'full','historical-bundle','completed');
           select setval('public.export_spine_runs_id_seq',1,true);
+
+          create type public.restore_spine_runs_restore_type_rsr_enum
+            as enum ('full','schema','config','deployment');
+          create type public.restore_spine_runs_status_rsr_enum
+            as enum ('pending','validating','restoring','completed','failed','rolled_back');
+          create type public.restore_spine_runs_risk_level_rsr_enum
+            as enum ('low','medium','high','critical');
+
+          create table public.restore_spine_runs (
+            id serial primary key,
+            bundle_name_rsr varchar(256) not null,
+            restore_type_rsr public.restore_spine_runs_restore_type_rsr_enum not null,
+            status_rsr public.restore_spine_runs_status_rsr_enum not null default 'pending',
+            started_at_rsr bigint not null,
+            completed_at_rsr bigint,
+            restored_tables_rsr jsonb,
+            restored_engines_rsr jsonb,
+            restored_streams_rsr jsonb,
+            errors_rsr jsonb,
+            executed_by_rsr varchar(256),
+            risk_level_rsr public.restore_spine_runs_risk_level_rsr_enum default 'medium',
+            manifest_checksum_rsr varchar(128),
+            validation_result_rsr jsonb
+          );
+          insert into public.restore_spine_runs (
+            id,bundle_name_rsr,restore_type_rsr,status_rsr,started_at_rsr,
+            restored_tables_rsr,executed_by_rsr,risk_level_rsr,validation_result_rsr
+          ) values (
+            9,'legacy-restore','config','completed',1,
+            '["engine_registry"]'::jsonb,'legacy-operator','medium','{"checksumValid":true}'::jsonb
+          );
+          select setval('public.restore_spine_runs_id_seq',1,true);
           SQL
 
       - name: Apply Spine run substrate
@@ -90,10 +124,16 @@ jobs:
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1
           -f supabase/migrations/20260727163000_sovereign_spine_run_substrate.sql
 
-      - name: Verify run ledgers
+      - name: Verify run ledgers and legacy upgrade
         run: |
           test "$(psql "$DATABASE_URL" -Atc "select last_value from public.export_spine_runs_id_seq")" = "76"
-          test "$(psql "$DATABASE_URL" -Atc "select to_regclass('public.restore_spine_runs') is not null")" = "t"
+          test "$(psql "$DATABASE_URL" -Atc "select last_value from public.restore_spine_runs_id_seq")" = "9"
+          test "$(psql "$DATABASE_URL" -Atc "select data_type from information_schema.columns where table_schema='public' and table_name='restore_spine_runs' and column_name='status_rsr'")" = "text"
+          test "$(psql "$DATABASE_URL" -Atc "select data_type from information_schema.columns where table_schema='public' and table_name='restore_spine_runs' and column_name='restored_tables_rsr'")" = "text"
+          test "$(psql "$DATABASE_URL" -Atc "select count(*) from information_schema.columns where table_schema='public' and table_name='restore_spine_runs' and column_name in ('restored_rows_rsr','skipped_tables_rsr','summary_rsr')")" = "3"
+          test "$(psql "$DATABASE_URL" -Atc "select status_rsr from public.restore_spine_runs where id=9")" = "completed"
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "update public.restore_spine_runs set status_rsr='completed_with_errors', restored_rows_rsr=4, skipped_tables_rsr='[]', summary_rsr='legacy upgraded' where id=9"
+          test "$(psql "$DATABASE_URL" -Atc "select status_rsr || ':' || restored_rows_rsr from public.restore_spine_runs where id=9")" = "completed_with_errors:4"
 
       - name: Run Spine contract tests
         shell: bash
@@ -102,6 +142,8 @@ jobs:
           npx vitest run \
             server/engines/spine-bundle-contract.test.ts \
             server/engines/spine-postgres.test.ts \
+            server/engines/sovereign-export-spine-engine.test.ts \
+            server/engines/sovereign-restore-spine-engine.test.ts \
             server/engines/sovereign-spine-source-contract.test.ts \
             2>&1 | tee sovereign-spine-test.log
 
