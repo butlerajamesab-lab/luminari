@@ -19,8 +19,9 @@ import {
   list_spine_public_tables,
   type spine_table_data,
   type spine_table_schema,
+  type spine_enum_definition,
 } from "./spine-postgres";
-import { export_spine_database_schema } from "./spine-schema-export";
+import { export_spine_database_enums, export_spine_database_schema } from "./spine-schema-export";
 import {
   complete_export_spine_run,
   create_export_spine_run,
@@ -48,6 +49,7 @@ export interface ExportManifest {
 }
 
 export interface SchemaExport {
+  enums: spine_enum_definition[];
   tables: spine_table_schema[];
   exportedAt: number;
 }
@@ -58,6 +60,7 @@ export interface ConfigExport {
   datasets: any[];
   signals: any[];
   patterns: any[];
+  registryTables: DataExport[];
   exportedAt: number;
 }
 
@@ -65,18 +68,46 @@ export type DataExport = spine_table_data;
 
 const APP_VERSION = "5.0.0-sovereign-spine";
 
+const SENSITIVE_EXPORT_KEYS = [
+  "password", "secret", "token", "apikey", "api_key", "credential",
+  "privatekey", "private_key", "jwt", "authorization", "cookie",
+];
+
+function sanitizeExportString(value: string): string {
+  const trimmed = value.trim();
+  if ((trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+      (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+    try {
+      return stringify_spine_json(sanitizeForExport(JSON.parse(trimmed)), 0);
+    } catch {
+      // Preserve ordinary text that only resembles JSON.
+    }
+  }
+  try {
+    const url = new URL(value);
+    for (const key of [...url.searchParams.keys()]) {
+      const normalized = key.toLowerCase().replace(/[^a-z0-9_]/g, "");
+      if (SENSITIVE_EXPORT_KEYS.some((candidate) => normalized.includes(candidate))) {
+        url.searchParams.set(key, "ENV_PLACEHOLDER");
+      }
+    }
+    return url.toString();
+  } catch {
+    return value.replace(
+      /eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,
+      "ENV_PLACEHOLDER",
+    );
+  }
+}
+
 function sanitizeForExport(value: any): any {
-  const sensitiveKeys = [
-    "password", "secret", "token", "apikey", "api_key", "credential",
-    "privatekey", "private_key", "jwt", "authorization", "cookie",
-  ];
-  if (typeof value === "string") return value;
+  if (typeof value === "string") return sanitizeExportString(value);
   if (Array.isArray(value)) return value.map(sanitizeForExport);
   if (value && typeof value === "object") {
     const sanitized: Record<string, any> = {};
     for (const [key, item] of Object.entries(value)) {
       const normalized = key.toLowerCase().replace(/[^a-z0-9_]/g, "");
-      sanitized[key] = sensitiveKeys.some((candidate) => normalized.includes(candidate))
+      sanitized[key] = SENSITIVE_EXPORT_KEYS.some((candidate) => normalized.includes(candidate))
         ? "ENV_PLACEHOLDER"
         : sanitizeForExport(item);
     }
@@ -105,10 +136,11 @@ async function mapWithConcurrency<T, R>(
 }
 
 export async function exportSchema(): Promise<SchemaExport> {
-  return {
-    tables: await export_spine_database_schema(),
-    exportedAt: Date.now(),
-  };
+  const [enums, tables] = await Promise.all([
+    export_spine_database_enums(),
+    export_spine_database_schema(),
+  ]);
+  return { enums, tables, exportedAt: Date.now() };
 }
 
 export async function exportConfig(): Promise<ConfigExport> {
@@ -127,6 +159,12 @@ export async function exportConfig(): Promise<ConfigExport> {
       error instanceof Error ? error.message.slice(0, 200) : String(error),
     );
   }
+
+  const registryTables = await mapWithConcurrency(
+    ["engine_registry", "data_stream_registry", "signal_registry", "pattern_registry"],
+    2,
+    (table) => exportTableData(table, 100_000),
+  );
 
   return sanitizeForExport({
     engines: engines.map((engine: any) => ({
@@ -187,13 +225,14 @@ export async function exportConfig(): Promise<ConfigExport> {
       confidenceThreshold: pattern.confidenceThreshold,
       jurisdictionScope: pattern.jurisdictionScope,
     })),
+    registryTables,
     exportedAt: Date.now(),
   });
 }
 
 export async function exportTableData(
   tableName: string,
-  limit = 10_000,
+  limit = 100_000,
 ): Promise<DataExport> {
   return sanitizeForExport(await export_spine_table_data(tableName, limit));
 }
@@ -254,17 +293,27 @@ export async function runExport(
       const existingConfigTables = SPINE_CONFIG_TABLES.filter((table) =>
         inventory.has(table),
       );
-      bundle.data = await mapWithConcurrency(
+      const dataExports = await mapWithConcurrency(
         existingConfigTables,
         2,
-        (table) => exportTableData(table),
+        (table) => exportTableData(table, 100_000),
       );
+      const truncatedTables = dataExports
+        .filter((table) => table.truncated)
+        .map((table) => table.tableName);
+      if (truncatedTables.length > 0) {
+        throw new Error(
+          `Full Spine export refused an incomplete bundle; row limit exceeded for: ${truncatedTables.join(", ")}`,
+        );
+      }
+      bundle.data = dataExports;
       bundle.dataPolicy = {
         allowlistedTables: existingConfigTables,
         absentAllowlistedTables: SPINE_CONFIG_TABLES.filter(
           (table) => !inventory.has(table),
         ),
-        rowLimitPerTable: 10_000,
+        rowLimitPerTable: 100_000,
+        truncatedTables: [],
       };
       includedDirectories.push("data");
     }

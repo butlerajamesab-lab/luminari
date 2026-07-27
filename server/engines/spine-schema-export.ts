@@ -5,6 +5,7 @@ import {
   type spine_schema_column,
   type spine_schema_constraint,
   type spine_schema_index,
+  type spine_enum_definition,
   type spine_table_schema,
 } from "./spine-postgres";
 
@@ -160,4 +161,34 @@ export async function export_spine_database_schema(): Promise<spine_table_schema
     schema.postCreateStatements = build_spine_post_create_statements(schema);
     return schema;
   });
+}
+
+
+export async function export_spine_database_enums(): Promise<spine_enum_definition[]> {
+  const result = await query_with_diagnostics<{
+    enum_name: string;
+    labels: unknown;
+  }>(
+    `select
+       t.typname as enum_name,
+       jsonb_agg(e.enumlabel order by e.enumsortorder) as labels
+     from pg_type t
+     join pg_enum e on e.enumtypid=t.oid
+     join pg_namespace n on n.oid=t.typnamespace
+     where n.nspname='public'
+     group by t.typname
+     order by t.typname`,
+    [],
+    {
+      label: "spine_schema_enums_all",
+      pool_acquire_timeout_ms: 3_000,
+      query_timeout_ms: 10_000,
+    },
+  );
+  return result.rows.map((row) => ({
+    enumName: row.enum_name,
+    labels: Array.isArray(row.labels)
+      ? row.labels.map((label) => String(label))
+      : [],
+  }));
 }

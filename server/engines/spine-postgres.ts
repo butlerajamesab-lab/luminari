@@ -67,6 +67,11 @@ export type spine_schema_index = {
   definition: string;
 };
 
+export type spine_enum_definition = {
+  enumName: string;
+  labels: string[];
+};
+
 export type spine_table_schema = {
   tableName: string;
   rowCount: number;
@@ -326,10 +331,10 @@ export async function export_spine_table_schema(
 
 export async function export_spine_table_data(
   tableName: string,
-  limit = 10_000,
+  limit = 100_000,
 ): Promise<spine_table_data> {
   const table_name = assert_spine_identifier(tableName, "table name");
-  const bounded_limit = Math.min(50_000, Math.max(1, Math.floor(limit)));
+  const bounded_limit = Math.min(250_000, Math.max(1, Math.floor(limit)));
   const table = quote_spine_identifier(table_name);
   const [countResult, rowsResult] = await Promise.all([
     query_with_diagnostics<{ row_count: string | number }>(
@@ -388,11 +393,42 @@ function adapt_restore_value(
 
 export async function create_spine_missing_tables(
   schemas: spine_table_schema[],
+  enums: spine_enum_definition[] = [],
 ): Promise<string[]> {
   const client = await getPool().connect();
   const created: string[] = [];
   try {
     await client.query("begin");
+
+    const existingEnumsResult = await client.query(
+      `select t.typname as enum_name
+       from pg_type t
+       join pg_namespace n on n.oid=t.typnamespace
+       where n.nspname='public' and t.typtype='e'`,
+    );
+    const existingEnums = new Set<string>(
+      existingEnumsResult.rows.map((row) => row.enum_name),
+    );
+    for (const definition of [...enums].sort((a, b) =>
+      a.enumName.localeCompare(b.enumName),
+    )) {
+      const enumName = assert_spine_identifier(definition.enumName, "enum name");
+      if (existingEnums.has(enumName)) continue;
+      if (!Array.isArray(definition.labels) || definition.labels.length === 0) {
+        throw new Error(`Enum ${enumName} has no labels`);
+      }
+      const labels = definition.labels.map((label) => {
+        if (typeof label !== "string" || label.includes("\u0000")) {
+          throw new Error(`Enum ${enumName} contains an invalid label`);
+        }
+        return `'${label.replace(/'/g, "''")}'`;
+      });
+      await client.query(
+        `create type public.${quote_spine_identifier(enumName)} as enum (${labels.join(", ")})`,
+      );
+      existingEnums.add(enumName);
+    }
+
     const existingResult = await client.query(
       `select table_name from information_schema.tables where table_schema = 'public'`,
     );

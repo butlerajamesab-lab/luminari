@@ -275,7 +275,11 @@ async function restoreConfig(config: any): Promise<{
 
 async function restoreSchema(schema: any): Promise<string[]> {
   if (!Array.isArray(schema?.tables)) return [];
-  return create_spine_missing_tables(schema.tables as spine_table_schema[]);
+  const enums = Array.isArray(schema?.enums) ? schema.enums : [];
+  return create_spine_missing_tables(
+    schema.tables as spine_table_schema[],
+    enums,
+  );
 }
 
 export async function executeRestore(
