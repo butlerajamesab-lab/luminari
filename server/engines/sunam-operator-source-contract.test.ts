@@ -33,6 +33,13 @@ describe("Sunam operator source contract", () => {
     expect(executor).toContain("direct_instruction.args");
   });
 
+  it("launches bulk stream work without holding the operator request open", () => {
+    expect(executor).toContain("launch_sunam_background_ingestion");
+    expect(executor).toContain('completion_source: "ingest_runs"');
+    expect(executor).toContain('status: "started"');
+    expect(executor).not.toContain("streams_retried: unique.length");
+  });
+
   it("uses PostgreSQL result.rows for system context", () => {
     expect(context_builder).toContain("query_with_diagnostics<{ tablename: string }>");
     expect(context_builder).toContain("table_result.rows");

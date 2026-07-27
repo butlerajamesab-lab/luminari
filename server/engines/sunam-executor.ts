@@ -40,7 +40,7 @@ import {
 import { uiReadFile, uiWriteFile, uiPatchFile, uiListFiles } from "../ui-editor/index";
 import { dispatchServiceTool } from "./sunam-service-dispatcher";
 import { SUNAM_SERVICE_ONLY_TOOLS } from "./sunam-service-only-tools";
-import { assert_safe_public_table_name, resolve_direct_sunam_instruction } from "./sunam-runtime-contract";
+import { assert_safe_public_table_name, launch_sunam_background_ingestion, resolve_direct_sunam_instruction } from "./sunam-runtime-contract";
 import { get_unified_ingestion_metrics, get_unified_ingestion_summary, get_unified_signal_summary, get_unified_signals } from "../unified-queries";
 
 // ─── Tool Definitions ───
@@ -83,7 +83,7 @@ export const SUNAM_OPERATOR_TOOLS = [
     type: "function" as const,
     function: {
       name: "run_all_streams",
-      description: "Run ingestion for ALL enabled data streams. Returns per-stream results.",
+      description: "Start ingestion for all enabled data streams in the background. Returns the accepted stream list immediately; ingest_runs records completion.",
       parameters: { type: "object", properties: {}, additionalProperties: false },
     },
   },
@@ -91,7 +91,7 @@ export const SUNAM_OPERATOR_TOOLS = [
     type: "function" as const,
     function: {
       name: "retry_failed_streams",
-      description: "Find all streams with recent failures and retry them.",
+      description: "Find streams with recent failed runs and start their retries in the background. Returns the accepted stream list immediately.",
       parameters: {
         type: "object",
         properties: {
@@ -573,43 +573,73 @@ export async function dispatchTool(
 
       case "run_all_streams": {
         const { triggerManualIngestion } = await import("../ingestion/scheduler");
-        const streams = await db.select({ streamId: dataStreamRegistry.streamId, streamName: dataStreamRegistry.streamName })
-          .from(dataStreamRegistry).where(eq(dataStreamRegistry.enabled, true));
-        const results = [];
-        for (const s of streams) {
-          try {
-            const r = await Promise.race([
-              triggerManualIngestion(s.streamId),
-              new Promise<null>((res) => setTimeout(() => res(null), 120_000)),
-            ]);
-            results.push({ stream_id: s.streamId, success: r?.success ?? true, records: r?.recordsProcessed ?? 0, signals: r?.signalsGenerated ?? 0 });
-          } catch (e: any) {
-            results.push({ stream_id: s.streamId, success: false, error: e.message });
-          }
-        }
-        return { ...base, success: true, result: { total: streams.length, succeeded: results.filter(r => r.success).length, results } };
+        const streams = await db
+          .select({
+            stream_id: dataStreamRegistry.streamId,
+            stream_name: dataStreamRegistry.streamName,
+          })
+          .from(dataStreamRegistry)
+          .where(eq(dataStreamRegistry.enabled, true));
+
+        const launches = streams.map((stream) => ({
+          ...launch_sunam_background_ingestion(
+            stream.stream_id,
+            () => triggerManualIngestion(stream.stream_id),
+          ),
+          stream_name: stream.stream_name,
+        }));
+
+        return {
+          ...base,
+          success: true,
+          result: {
+            status: "started",
+            total: launches.length,
+            streams: launches,
+            completion_source: "ingest_runs",
+          },
+        };
       }
 
       case "retry_failed_streams": {
         const { triggerManualIngestion } = await import("../ingestion/scheduler");
-        const hoursBack = args.hours_back ?? 24;
-        const cutoff = Date.now() - hoursBack * 3600 * 1000;
-        const failedRuns = await db.select({ datasetId: ingestRuns.datasetId })
-          .from(ingestRuns).where(sql`${ingestRuns.status} = 'failed' AND ${ingestRuns.startTime} > ${cutoff}`);
-        const unique = [...new Set(failedRuns.map((r: any) => r.datasetId))];
-        const results = [];
-        for (const sid of unique) {
-          try {
-            const r = await Promise.race([
-              triggerManualIngestion(sid as string),
-              new Promise<null>((res) => setTimeout(() => res(null), 120_000)),
-            ]);
-            results.push({ stream_id: sid, success: r?.success ?? true, records: r?.recordsProcessed ?? 0 });
-          } catch (e: any) {
-            results.push({ stream_id: sid, success: false, error: e.message });
-          }
-        }
-        return { ...base, success: true, result: { streams_retried: unique.length, succeeded: results.filter(r => r.success).length, results } };
+        const hours_back = Math.min(24 * 30, Math.max(1, Number(args.hours_back ?? 24)));
+        const cutoff = Date.now() - hours_back * 3_600_000;
+        const failed_runs = await db
+          .select({ stream_id: ingestRuns.datasetId })
+          .from(ingestRuns)
+          .where(
+            sql`${ingestRuns.status} = 'failed' AND ${ingestRuns.startTime} > ${cutoff}`,
+          );
+        const stream_ids = [
+          ...new Set(
+            failed_runs
+              .map((run) => run.stream_id)
+              .filter(
+                (stream_id): stream_id is string =>
+                  typeof stream_id === "string" && stream_id.trim().length > 0,
+              ),
+          ),
+        ].sort();
+
+        const launches = stream_ids.map((stream_id) =>
+          launch_sunam_background_ingestion(
+            stream_id,
+            () => triggerManualIngestion(stream_id),
+          ),
+        );
+
+        return {
+          ...base,
+          success: true,
+          result: {
+            status: "started",
+            hours_back,
+            streams_retried: launches.length,
+            streams: launches,
+            completion_source: "ingest_runs",
+          },
+        };
       }
 
       case "backfill_stream": {
