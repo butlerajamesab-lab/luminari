@@ -312,11 +312,16 @@ export const governanceRouter = router({
       .orderBy(desc(governanceLog.seqNo))
       .limit(1);
 
+    const lastSeqNo = latestEntry?.seqNo ?? verification.lastValidSeqNo ?? 0;
+    const lastEntryAt = latestEntry?.createdAt ?? null;
+
     return {
       ...verification,
+      lastSeqNo,
+      lastEntryAt,
       total_entries: countResult.count,
-      last_entry_at: latestEntry?.createdAt ?? null,
-      last_seq_no: latestEntry?.seqNo ?? 0,
+      last_entry_at: lastEntryAt,
+      last_seq_no: lastSeqNo,
     };
   }),
 

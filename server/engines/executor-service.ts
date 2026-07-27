@@ -15,11 +15,16 @@ import { eq, desc, sql } from "drizzle-orm";
 import {
   engineRegistry,
   dataStreamRegistry,
-  adminChangeLog,
   copilotArtifacts,
   copilotExecutions,
   copilotImpactAnalyses,
 } from "../../drizzle/schema";
+import {
+  get_admin_change_log_entry,
+  list_admin_change_log,
+  mark_admin_change_rolled_back,
+  write_admin_change_log,
+} from "./admin-change-log-store";
 
 // ─── Types ───
 
@@ -191,7 +196,7 @@ export async function applyEnginePatch(
     await db.update(engineRegistry).set(setValues).where(eq(engineRegistry.engineId, engineId));
 
     // 6. Log the change with rollback data
-    const [logEntry] = await db.insert(adminChangeLog).values({
+    const logEntry = await write_admin_change_log({
       adminId: executedBy,
       adminName: executedByName,
       actionType: "engine_patch",
@@ -205,7 +210,7 @@ export async function applyEnginePatch(
       timestamp: new Date(),
     });
 
-    const patchId = (logEntry as any).insertId;
+    const patchId = logEntry.id;
 
     return {
       success: true,
@@ -267,7 +272,7 @@ export async function applyStreamPatch(
 
     await db.update(dataStreamRegistry).set(setValues).where(eq(dataStreamRegistry.streamId, streamId));
 
-    const [logEntry] = await db.insert(adminChangeLog).values({
+    const logEntry = await write_admin_change_log({
       adminId: executedBy,
       adminName: executedByName,
       actionType: "stream_patch",
@@ -281,7 +286,7 @@ export async function applyStreamPatch(
       timestamp: new Date(),
     });
 
-    const patchId = (logEntry as any).insertId;
+    const patchId = logEntry.id;
 
     return {
       success: true,
@@ -317,9 +322,9 @@ export async function applySchemaPatch(
 
   try {
     const result = await db.execute(sql.raw(sqlStatement));
-    const affectedRows = (result[0] as any)?.affectedRows ?? 0;
+    const affectedRows = Number((result as any).rowCount ?? 0);
 
-    const [logEntry] = await db.insert(adminChangeLog).values({
+    const logEntry = await write_admin_change_log({
       adminId: executedBy,
       adminName: executedByName,
       actionType: "migration_run",
@@ -332,7 +337,7 @@ export async function applySchemaPatch(
       timestamp: new Date(),
     });
 
-    const patchId = (logEntry as any).insertId;
+    const patchId = logEntry.id;
 
     return {
       success: true,
@@ -349,8 +354,7 @@ export async function applySchemaPatch(
 // ─── Rollback Engine/Stream Patch ───
 
 export async function rollbackPatch(changeId: number, executedBy: string, executedByName?: string): Promise<{ success: boolean; summary: string }> {
-  const [change] = await db.select().from(adminChangeLog)
-    .where(eq(adminChangeLog.id, changeId)).limit(1);
+  const change = await get_admin_change_log_entry(changeId);
 
   if (!change) return { success: false, summary: "Change not found" };
   if (!change.rollbackAvailable || change.rolledBack) return { success: false, summary: "Rollback not available" };
@@ -371,13 +375,11 @@ export async function rollbackPatch(changeId: number, executedBy: string, execut
       return { success: false, summary: `Unknown rollback type: ${rollbackData.type}` };
     }
 
-    await db.update(adminChangeLog)
-      .set({ rolledBack: true })
-      .where(eq(adminChangeLog.id, changeId));
+    await mark_admin_change_rolled_back(changeId);
 
     // Log the rollback itself
     // @ts-ignore pre-existing type mismatch
-    await db.insert(adminChangeLog).values({
+    await write_admin_change_log({
       adminId: executedBy,
       adminName: executedByName,
       actionType: "rollback",
@@ -399,9 +401,7 @@ export async function rollbackPatch(changeId: number, executedBy: string, execut
 // ─── Execution Log ───
 
 export async function getExecutionLog(limit = 50): Promise<ExecutionLogEntry[]> {
-  const changes = await db.select().from(adminChangeLog)
-    .orderBy(desc(adminChangeLog.timestamp))
-    .limit(limit);
+  const changes = await list_admin_change_log(limit);
 
   // @ts-ignore pre-existing type mismatch
   return changes.map(c => ({
@@ -434,7 +434,7 @@ export async function resetStreamCheckpoint(streamId: string, executedBy: string
     })
     .where(eq(dataStreamRegistry.streamId, streamId));
 
-  await db.insert(adminChangeLog).values({
+  await write_admin_change_log({
     adminId: executedBy,
     adminName: executedByName,
     actionType: "checkpoint_reset",

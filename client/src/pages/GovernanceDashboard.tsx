@@ -94,11 +94,11 @@ function formatEventType(eventType: string): string {
    ═══════════════════════════════════════════════════════════════════ */
 
 function ChainStatusPanel() {
-  const { data: status, isLoading, refetch, isFetching } = trpc.governance.dashboardChainStatus.useQuery(
+  const { data: status, isLoading, refetch, isFetching } = trpc.constitutionalGovernance.dashboardChainStatus.useQuery(
     undefined,
     { refetchInterval: 60000 }
   );
-  const verifyMutation = trpc.governance.dashboardVerifyChain.useMutation({
+  const verifyMutation = trpc.constitutionalGovernance.dashboardVerifyChain.useMutation({
     onSuccess: () => {
       refetch();
       toast.success("Chain verification complete");
@@ -217,7 +217,7 @@ function EntryDetailPanel({
   seqNo: number;
   onClose: () => void;
 }) {
-  const { data: entry, isLoading } = trpc.governance.dashboardEntry.useQuery(
+  const { data: entry, isLoading } = trpc.constitutionalGovernance.dashboardEntry.useQuery(
     { seqNo },
     { enabled: seqNo > 0 }
   );
@@ -417,14 +417,14 @@ function FeedPanel({
 
   const currentCursor = cursorStack[cursorStack.length - 1];
 
-  const { data: eventTypes } = trpc.governance.dashboardEventTypes.useQuery();
-  const { data: components } = trpc.governance.dashboardComponents.useQuery();
+  const { data: eventTypes } = trpc.constitutionalGovernance.dashboardEventTypes.useQuery();
+  const { data: components } = trpc.constitutionalGovernance.dashboardComponents.useQuery();
 
   const [queryInput] = useState(() => ({
     limit: 50 as const,
   }));
 
-  const { data: feed, isLoading, isFetching } = trpc.governance.dashboardFeed.useQuery(
+  const { data: feed, isLoading, isFetching } = trpc.constitutionalGovernance.dashboardFeed.useQuery(
     {
       limit: queryInput.limit,
       cursor: currentCursor,
@@ -601,8 +601,8 @@ function FeedPanel({
    ═══════════════════════════════════════════════════════════════════ */
 
 function SnapshotHistoryPanel() {
-  const { data: snapshots, isLoading, refetch } = trpc.governance.dashboardSnapshots.useQuery();
-  const createSnapshot = trpc.governance.createSnapshot.useMutation({
+  const { data: snapshots, isLoading, refetch } = trpc.constitutionalGovernance.dashboardSnapshots.useQuery();
+  const createSnapshot = trpc.constitutionalGovernance.createSnapshot.useMutation({
     onSuccess: () => {
       refetch();
       toast.success("Cryptographic snapshot created");
@@ -697,7 +697,7 @@ function SnapshotHistoryPanel() {
    ═══════════════════════════════════════════════════════════════════ */
 
 function ExportPanel() {
-  const { data: exportData, isLoading, refetch } = trpc.governance.exportLog.useQuery(undefined, {
+  const { data: exportData, isLoading, refetch } = trpc.constitutionalGovernance.exportLog.useQuery(undefined, {
     enabled: false,
   });
   const [isExporting, setIsExporting] = useState(false);

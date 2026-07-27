@@ -61,7 +61,7 @@ function parseScopeField(scope: string | null): { type: string; id: string } {
    ═══════════════════════════════════════════════════════════════════ */
 
 function ChainStatusSection() {
-  const chainQuery = trpc.governance.verifyChain.useQuery(undefined, {
+  const chainQuery = trpc.constitutionalGovernance.verifyChain.useQuery(undefined, {
     refetchOnWindowFocus: false,
   });
   const [verifying, setVerifying] = useState(false);
@@ -177,7 +177,7 @@ function ChainStatusSection() {
    ═══════════════════════════════════════════════════════════════════ */
 
 function EntryDetailPanel({ seqNo, onClose }: { seqNo: number; onClose: () => void }) {
-  const { data: entry, isLoading } = trpc.governance.publicEntryDetail.useQuery({ seqNo });
+  const { data: entry, isLoading } = trpc.constitutionalGovernance.publicEntryDetail.useQuery({ seqNo });
 
   const handleCopyPayload = useCallback(() => {
     if (!entry) return;
@@ -305,7 +305,7 @@ function MetadataField({ label, value, mono }: { label: string; value: string; m
 
 function RecentEntriesSection({ onSelectEntry }: { onSelectEntry: (seqNo: number) => void }) {
   const [cursor, setCursor] = useState<number | undefined>(undefined);
-  const { data, isLoading } = trpc.governance.publicRecentEntries.useQuery(
+  const { data, isLoading } = trpc.constitutionalGovernance.publicRecentEntries.useQuery(
     { limit: 25, cursor },
     { refetchOnWindowFocus: false }
   );
@@ -412,7 +412,7 @@ function RecentEntriesSection({ onSelectEntry }: { onSelectEntry: (seqNo: number
 
 function ExportSection() {
   const [exporting, setExporting] = useState(false);
-  const exportQuery = trpc.governance.publicExportLog.useQuery(undefined, {
+  const exportQuery = trpc.constitutionalGovernance.publicExportLog.useQuery(undefined, {
     enabled: false, // only fetch on demand
   });
 
