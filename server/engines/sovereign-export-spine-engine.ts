@@ -78,13 +78,17 @@ function sanitizeExportString(value: string): string {
   if ((trimmed.startsWith("{") && trimmed.endsWith("}")) ||
       (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
     try {
-      return stringify_spine_json(sanitizeForExport(JSON.parse(trimmed)), 0);
+      return stringify_spine_json(sanitize_spine_export_value(JSON.parse(trimmed)), 0);
     } catch {
       // Preserve ordinary text that only resembles JSON.
     }
   }
   try {
     const url = new URL(value);
+    // URL authority is a credential-bearing field just like query parameters.
+    // Clearing it preserves the destination without exporting a username/password.
+    url.username = "";
+    url.password = "";
     for (const key of [...url.searchParams.keys()]) {
       const normalized = key.toLowerCase().replace(/[^a-z0-9_]/g, "");
       if (SENSITIVE_EXPORT_KEYS.some((candidate) => normalized.includes(candidate))) {
@@ -100,16 +104,16 @@ function sanitizeExportString(value: string): string {
   }
 }
 
-function sanitizeForExport(value: any): any {
+export function sanitize_spine_export_value(value: any): any {
   if (typeof value === "string") return sanitizeExportString(value);
-  if (Array.isArray(value)) return value.map(sanitizeForExport);
+  if (Array.isArray(value)) return value.map(sanitize_spine_export_value);
   if (value && typeof value === "object") {
     const sanitized: Record<string, any> = {};
     for (const [key, item] of Object.entries(value)) {
       const normalized = key.toLowerCase().replace(/[^a-z0-9_]/g, "");
       sanitized[key] = SENSITIVE_EXPORT_KEYS.some((candidate) => normalized.includes(candidate))
         ? "ENV_PLACEHOLDER"
-        : sanitizeForExport(item);
+        : sanitize_spine_export_value(item);
     }
     return sanitized;
   }
@@ -166,7 +170,7 @@ export async function exportConfig(): Promise<ConfigExport> {
     (table) => exportTableData(table, 100_000),
   );
 
-  return sanitizeForExport({
+  return sanitize_spine_export_value({
     engines: engines.map((engine: any) => ({
       engineId: engine.engineId,
       engineName: engine.engineName,
@@ -234,7 +238,7 @@ export async function exportTableData(
   tableName: string,
   limit = 100_000,
 ): Promise<DataExport> {
-  return sanitizeForExport(await export_spine_table_data(tableName, limit));
+  return sanitize_spine_export_value(await export_spine_table_data(tableName, limit));
 }
 
 export async function runExport(
