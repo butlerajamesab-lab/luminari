@@ -1,31 +1,77 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   assert_safe_public_table_name,
   launch_sunam_background_ingestion,
   resolve_direct_sunam_instruction,
+  sunam_background_queue_testing,
 } from "./sunam-runtime-contract";
 
 describe("launch_sunam_background_ingestion", () => {
-  it("returns immediately while observing asynchronous completion", async () => {
-    let resolve_task: ((value: { success: boolean; recordsProcessed: number }) => void) | null = null;
-    const task = vi.fn(
-      () =>
-        new Promise<{ success: boolean; recordsProcessed: number }>((resolve) => {
-          resolve_task = resolve;
-        }),
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    sunam_background_queue_testing.reset();
+  });
+
+  it("returns immediately and bounds concurrent ingestion pressure", async () => {
+    const warn_spy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { concurrency } = sunam_background_queue_testing.get_state();
+    const job_count = concurrency + 1;
+    const resolvers = new Map<
+      number,
+      (value: { success: boolean; recordsProcessed: number }) => void
+    >();
+    const tasks = Array.from({ length: job_count }, (_, index) =>
+      vi.fn(
+        () =>
+          new Promise<{ success: boolean; recordsProcessed: number }>((resolve) => {
+            resolvers.set(index, resolve);
+          }),
+      ),
     );
 
-    const launch = launch_sunam_background_ingestion("cfpb-complaints", task);
+    const launches = tasks.map((task, index) =>
+      launch_sunam_background_ingestion(`stream-${index}`, task),
+    );
 
-    expect(launch).toMatchObject({
-      stream_id: "cfpb-complaints",
-      status: "started",
+    expect(launches.slice(0, concurrency).every((item) => item.status === "started")).toBe(true);
+    expect(launches.at(-1)).toMatchObject({
+      stream_id: `stream-${job_count - 1}`,
+      status: "queued",
     });
-    expect(Number.isFinite(launch.started_at)).toBe(true);
+    expect(Number.isFinite(launches[0].accepted_at)).toBe(true);
 
-    await vi.waitFor(() => expect(task).toHaveBeenCalledTimes(1));
-    resolve_task?.({ success: true, recordsProcessed: 12 });
-    await Promise.resolve();
+    await vi.waitFor(() => {
+      expect(tasks.filter((task) => task.mock.calls.length === 1)).toHaveLength(
+        concurrency,
+      );
+      expect(sunam_background_queue_testing.get_state()).toMatchObject({
+        active: concurrency,
+        queued: 1,
+      });
+    });
+
+    resolvers.get(0)?.({ success: true, recordsProcessed: 12 });
+
+    await vi.waitFor(() => {
+      expect(tasks[job_count - 1]).toHaveBeenCalledTimes(1);
+      expect(sunam_background_queue_testing.get_state()).toMatchObject({
+        active: concurrency,
+        queued: 0,
+      });
+    });
+
+    for (let index = 1; index < job_count; index += 1) {
+      resolvers.get(index)?.({ success: true, recordsProcessed: index });
+    }
+
+    await vi.waitFor(() => {
+      expect(sunam_background_queue_testing.get_state()).toMatchObject({
+        active: 0,
+        queued: 0,
+      });
+    });
+
+    warn_spy.mockRestore();
   });
 
   it("captures background rejection without creating an unhandled promise", async () => {
@@ -47,6 +93,7 @@ describe("launch_sunam_background_ingestion", () => {
           error: "expected failure",
         }),
       );
+      expect(sunam_background_queue_testing.get_state().active).toBe(0);
     });
 
     error_spy.mockRestore();
