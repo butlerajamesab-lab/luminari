@@ -34,16 +34,41 @@ jobs:
       - name: Apply bounded reconciliation
         run: python3 scripts/reconcile-sunam-operator-runtime.py
 
-      - name: Validate durable diff
-        shell: bash
+      - name: Validate durable contract
         run: |
-          git diff --check
-          grep -q 'query_with_diagnostics<{ tablename: string }>' server/engines/system-copilot-sunam.ts
-          grep -q 'resolve_direct_sunam_instruction(instruction)' server/engines/sunam-executor.ts
-          grep -q 'tools: SUNAM_TOOLS' server/engines/sunam-executor.ts
-          grep -q 'execute: adminProcedure' server/routers/session76-router.ts
-          ! grep -q 'SUNAM_SERVICE_ONLY_TOOLS' server/engines/sunam-executor.ts
-          ! grep -q 'tableResult\[0\]' server/engines/system-copilot-sunam.ts
+          python3 - <<'PY'
+          from pathlib import Path
+
+          context = Path('server/engines/system-copilot-sunam.ts').read_text()
+          executor = Path('server/engines/sunam-executor.ts').read_text()
+          router = Path('server/routers/session76-router.ts').read_text()
+          ui = Path('client/src/pages/SovereignControl.tsx').read_text()
+
+          required = {
+              'postgres context': 'query_with_diagnostics<{ tablename: string }>' in context,
+              'postgres rows': 'table_result.rows' in context,
+              'direct routing': 'resolve_direct_sunam_instruction(instruction)' in executor,
+              'canonical LLM tools': 'tools: SUNAM_TOOLS' in executor,
+              'canonical dispatch': 'SUNAM_TOOL_NAMES.has(toolName)' in executor,
+              'admin execute': 'execute: adminProcedure' in router,
+              'admin tool list': 'getTools: adminProcedure' in router,
+              'admin dispatch': 'dispatchTool: adminProcedure' in router,
+              'truthful UI authority': 'Sunam has governed authority over streams, engines, scheduler, diagnostics, configuration, and UI.' in ui,
+          }
+          forbidden = {
+              'MySQL tuple context': 'tableResult[0]' in context,
+              'restricted registry import': 'SUNAM_SERVICE_ONLY_TOOLS' in executor,
+              'restricted registry path': 'sunam-service-only-tools' in executor,
+              'false UI SQL claim': 'Sunam has full authority over streams, engines, SQL, migrations, config, and UI.' in ui,
+          }
+
+          failures = [name for name, passed in required.items() if not passed]
+          failures += [name for name, present in forbidden.items() if present]
+          if failures:
+              raise SystemExit('contract validation failed: ' + ', '.join(failures))
+
+          print('Sunam durable contract validated')
+          PY
 
       - name: Remove bounded staging machinery
         run: |
