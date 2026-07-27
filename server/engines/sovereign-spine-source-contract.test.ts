@@ -10,6 +10,7 @@ const exportFacade = read("./export-spine-engine.ts");
 const restoreFacade = read("./restore-spine-engine.ts");
 const exporter = read("./sovereign-export-spine-engine.ts");
 const restorer = read("./sovereign-restore-spine-engine.ts");
+const bundleContract = read("./spine-bundle-contract.ts");
 const postgres = read("./spine-postgres.ts");
 const runs = read("./spine-run-store.ts");
 const migration = read(
@@ -32,10 +33,19 @@ describe("Sovereign Spine source contract", () => {
     expect(exporter).toContain("registryTables");
     expect(exporter).toContain("truncatedTables.length > 0");
     expect(exporter).toContain("rowLimitPerTable: 100_000");
+    expect(bundleContract).toContain("sign_spine_manifest");
+    expect(bundleContract).toContain("metadataValid");
     expect(exporter).not.toContain('databaseType: "mysql"');
     expect(exporter).not.toContain("insertId");
     expect(exporter).not.toContain("result[0]");
     expect(exporter).not.toContain("FROM `");
+  });
+
+  it("redacts secret fields, URL query credentials, and URL authority credentials", () => {
+    expect(exporter).toContain('url.username = ""');
+    expect(exporter).toContain('url.password = ""');
+    expect(exporter).toContain('url.searchParams.set(key, "ENV_PLACEHOLDER")');
+    expect(exporter).toContain("sanitize_spine_export_value");
   });
 
   it("requires authenticated bundles and reports partial restore truthfully", () => {
@@ -51,6 +61,13 @@ describe("Sovereign Spine source contract", () => {
     );
   });
 
+  it("prefers canonical pattern identities and rejects ambiguous fallback updates", () => {
+    expect(restorer).toContain('identityColumns: ["pattern_id", "pattern_name"]');
+    expect(restorer).toContain('"pattern_id", "pattern_name"');
+    expect(restorer).toContain("Bundle contains duplicate");
+    expect(restorer).toContain("Ambiguous ${tableName}.${identityColumn} target matched");
+  });
+
   it("uses parameterized PostgreSQL data writes and an explicit civic allowlist", () => {
     expect(postgres).toContain("on conflict do nothing");
     expect(postgres).toContain("SPINE_CONFIG_TABLE_SET.has(tableName)");
@@ -60,7 +77,7 @@ describe("Sovereign Spine source contract", () => {
     expect(postgres).not.toContain("INSERT INTO `");
   });
 
-  it("uses PostgreSQL RETURNING run ledgers and aligns the historical export sequence", () => {
+  it("uses PostgreSQL RETURNING ledgers and upgrades preserved legacy restore receipts", () => {
     expect(runs).toContain("returning id");
     expect(runs).toContain("public.restore_spine_runs");
     expect(runs).not.toContain("insertId");
@@ -69,6 +86,13 @@ describe("Sovereign Spine source contract", () => {
     );
     expect(migration).toContain(
       "create table if not exists public.restore_spine_runs",
+    );
+    expect(migration).toContain(
+      "alter column status_rsr type text using status_rsr::text",
+    );
+    expect(migration).toContain("add column if not exists restored_rows_rsr integer");
+    expect(migration).toContain(
+      "pg_get_serial_sequence('public.restore_spine_runs', 'id')",
     );
     expect(migration).toContain(
       "perform setval(sequence_name::regclass, maximum_id, true)",
