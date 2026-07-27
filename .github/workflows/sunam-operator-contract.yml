@@ -8,6 +8,8 @@ on:
       - "server/engines/system-copilot-sunam.ts"
       - "server/engines/sunam-runtime-contract.ts"
       - "server/engines/sunam-runtime-contract.test.ts"
+      - "server/engines/sunam-stream-selection.ts"
+      - "server/engines/sunam-stream-selection.test.ts"
       - "server/engines/sunam-operator-source-contract.test.ts"
       - "server/routers/session76-router.ts"
       - "client/src/pages/SovereignControl.tsx"
@@ -42,4 +44,5 @@ jobs:
         run: >-
           npx vitest run
           server/engines/sunam-runtime-contract.test.ts
+          server/engines/sunam-stream-selection.test.ts
           server/engines/sunam-operator-source-contract.test.ts
