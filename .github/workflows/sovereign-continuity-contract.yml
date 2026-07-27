@@ -16,6 +16,7 @@ on:
       - "server/routers.ts"
       - "client/src/pages/GovernanceDashboard.tsx"
       - "client/src/pages/Verify.tsx"
+      - "supabase/migrations/20260727120400_admin_change_log_sequence_alignment.sql"
       - "supabase/migrations/20260727120500_governance_snapshots.sql"
       - ".github/workflows/sovereign-continuity-contract.yml"
   workflow_dispatch:
