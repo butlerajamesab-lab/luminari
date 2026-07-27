@@ -1,0 +1,56 @@
+name: Apply World Index pool repair
+
+on:
+  push:
+    branches:
+      - fix/world-index-pool-saturation
+
+permissions:
+  contents: write
+
+concurrency:
+  group: world-index-pool-saturation
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, '[world-index-pool-repair-applied]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/world-index-pool-saturation
+          fetch-depth: 0
+
+      - name: Apply exact import replacement
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("server/services/world-index.ts")
+          text = path.read_text()
+          old = 'import { pool } from "../db";'
+          new = 'import { pool } from "./world-index-db";'
+
+          if text.count(old) != 1:
+              raise SystemExit(f"expected exactly one canonical pool import, found {text.count(old)}")
+
+          updated = text.replace(old, new, 1)
+          if updated.count(new) != 1:
+              raise SystemExit("World Index compatibility import was not installed exactly once")
+
+          path.write_text(updated)
+          PY
+
+      - name: Remove staging workflow
+        run: rm .github/workflows/apply-world-index-pool-repair.yml
+
+      - name: Commit bounded repair
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/services/world-index.ts .github/workflows/apply-world-index-pool-repair.yml
+          git commit -m "Route World Index reads through serialized adapter [world-index-pool-repair-applied]"
+          git push origin HEAD:fix/world-index-pool-saturation
