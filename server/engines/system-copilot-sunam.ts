@@ -11,7 +11,7 @@
  * - Approval workflow: draft → pending_approval → approved → executed
  * - Rollback support for executed changes
  */
-import { db } from "../db";
+import { db, query_with_diagnostics } from "../db";
 import { eq, desc, sql, and } from "drizzle-orm";
 import {
   copilotConversations,
@@ -33,8 +33,18 @@ import { uiReadFile, uiWriteFile, uiPatchFile, uiListFiles, uiGetChangeLog, uiRo
 /** Build a system context summary for the LLM */
 export async function buildSystemContext(): Promise<string> {
   // Get table list
-  const tableResult = await db.execute(sql`SELECT tablename FROM pg_tables WHERE schemaname = 'public'`);
-  const tableNames = (tableResult[0] as unknown as any[]).map((r: any) => Object.values(r)[0] as string).sort();
+  const table_result = await query_with_diagnostics<{ tablename: string }>(
+    "SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename",
+    [],
+    {
+      label: "sunam_system_context_tables",
+      pool_acquire_timeout_ms: 2_000,
+      query_timeout_ms: 5_000,
+    },
+  );
+  const tableNames = table_result.rows
+    .map((row) => String(row.tablename))
+    .filter(Boolean);
 
   // Get engine list
   const engines = await db.select().from(engineRegistry);

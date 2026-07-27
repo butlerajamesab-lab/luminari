@@ -474,7 +474,7 @@ const copilotRouter = router({
   // ─── DIRECT EXECUTION — No artifact, no approval, immediate action ───
   // Sunam receives an instruction, calls tools directly, returns results.
   // This is the full operator endpoint.
-  execute: protectedProcedure
+  execute: adminProcedure
     .input(z.object({
       instruction: z.string().describe("Natural language instruction for Sunam to execute"),
       maxSteps: z.number().default(10).optional(),
@@ -490,7 +490,7 @@ const copilotRouter = router({
     }),
 
   // Get available tools for Sunam (for UI display)
-  getTools: protectedProcedure.query(async () => {
+  getTools: adminProcedure.query(async () => {
     const { SUNAM_TOOLS } = await import("../engines/sunam-executor");
     return SUNAM_TOOLS.map(t => ({
       name: t.function.name,
@@ -500,7 +500,7 @@ const copilotRouter = router({
   }),
 
   // Direct tool dispatch — call a single tool by name with args
-  dispatchTool: protectedProcedure
+  dispatchTool: adminProcedure
     .input(z.object({
       toolName: z.string(),
       args: z.record(z.string(), z.any()),
