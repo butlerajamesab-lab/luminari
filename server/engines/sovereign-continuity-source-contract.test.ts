@@ -10,6 +10,7 @@ const sunam_executor = read("./sunam-executor.ts");
 const admin_control = read("./admin-sovereign-control.ts");
 const executor_service = read("./executor-service.ts");
 const root_router = read("../routers.ts");
+const constitutional_router = read("../routers/governance-router.ts");
 const governance_dashboard = read("../../client/src/pages/GovernanceDashboard.tsx");
 const verify_page = read("../../client/src/pages/Verify.tsx");
 const governance_log = read("../governance-log.ts");
@@ -27,12 +28,15 @@ describe("Sovereign Continuity source contract", () => {
     expect(executor_service).not.toContain("db.insert(adminChangeLog)");
   });
 
-  it("contains no MySQL schema inspection drift", () => {
+  it("contains no MySQL schema or SQL result drift", () => {
     expect(admin_control).toContain("list_sovereign_tables");
     expect(admin_control).toContain("inspect_sovereign_table");
+    expect(admin_control).toContain("(result as any).rows");
+    expect(executor_service).toContain("(result as any).rowCount");
     expect(admin_control).not.toContain("DESCRIBE `");
     expect(admin_control).not.toContain("FROM `");
     expect(admin_control).not.toContain("result[0] as unknown as any[]");
+    expect(executor_service).not.toContain("affectedRows = (result[0]");
   });
 
   it("preserves legacy governance while mounting constitutional governance separately", () => {
@@ -45,6 +49,13 @@ describe("Sovereign Continuity source contract", () => {
     expect(verify_page).toContain("trpc.constitutionalGovernance");
     expect(governance_dashboard).not.toContain("trpc.governance.");
     expect(verify_page).not.toContain("trpc.governance.");
+  });
+
+  it("returns the integrity metadata rendered by the dashboard", () => {
+    expect(constitutional_router).toContain("lastSeqNo,");
+    expect(constitutional_router).toContain("lastEntryAt,");
+    expect(constitutional_router).toContain("last_seq_no: lastSeqNo");
+    expect(constitutional_router).toContain("last_entry_at: lastEntryAt");
   });
 
   it("creates and returns PostgreSQL governance snapshot receipts", () => {
