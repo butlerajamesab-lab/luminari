@@ -1,0 +1,17 @@
+name: Focused hard-coded JWT audit
+
+on:
+  push:
+    branches:
+      - security/remove-render-secrets
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Report hard-coded JWT credentials
+        run: python3 scripts/audit-hardcoded-jwts.py
