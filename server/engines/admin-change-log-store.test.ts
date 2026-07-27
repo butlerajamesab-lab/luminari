@@ -1,4 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("../db", () => ({
+  query_with_diagnostics: vi.fn(),
+}));
+
 import {
   normalize_admin_change_log_timestamp,
   parse_admin_change_log_value,
