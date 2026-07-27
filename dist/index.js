@@ -85701,7 +85701,7 @@ var supportMatcherRouter = router({
   })
 });
 var proofSupabaseUrl = process.env.SUPABASE_URL || "https://wepxlinwbjrkqdzkqpar.supabase.co";
-var proofSupabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6IndlcHhsaW53Ympya3FkemtxcGFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3NjY5NzIsImV4cCI6MjA1ODM0Mjk3Mn0.zanDFBRHGAOhMFZE5T6LTm5EB-7SLkVO1S1GczH4s2c";
+var proofSupabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 async function proofRestSelect(table, params) {
   const url = new URL(`/rest/v1/${table}`, proofSupabaseUrl);
   for (const [key2, value] of Object.entries(params)) url.searchParams.set(key2, value);

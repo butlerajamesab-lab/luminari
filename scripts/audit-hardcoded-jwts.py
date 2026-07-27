@@ -6,7 +6,7 @@ import re
 import subprocess
 from pathlib import Path
 
-JWT = re.compile(r"eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}")
+JWT = re.compile(r"eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+")
 
 
 def decode_segment(segment: str) -> dict[str, object]:
