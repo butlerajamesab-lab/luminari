@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - fix/sunam-operator-runtime
+  workflow_dispatch:
 
 permissions:
   contents: write
