@@ -95,6 +95,54 @@ describe("signed Sovereign Spine bundle contract", () => {
     expect(result.verification.executable).toBe(false);
   });
 
+  it("allows an internally valid unsigned PostgreSQL bundle only under explicit legacy override", () => {
+    const bundle = createBundle();
+    delete bundle._manifest.signature;
+    process.env.ALLOW_LEGACY_UNSIGNED_SPINE_RESTORE = "true";
+
+    const result = verify_spine_bundle(stringify_spine_json(bundle));
+    expect(result.verification).toMatchObject({
+      checksumValid: true,
+      signatureValid: false,
+      metadataValid: true,
+      formatValid: true,
+      databaseValid: true,
+      legacyOverride: true,
+      executable: true,
+    });
+  });
+
+  it("keeps identity checks active under legacy override", () => {
+    const bundle = createBundle();
+    delete bundle._manifest.signature;
+    bundle._meta.bundleName = "mismatched-bundle";
+    process.env.ALLOW_LEGACY_UNSIGNED_SPINE_RESTORE = "true";
+
+    const result = verify_spine_bundle(stringify_spine_json(bundle));
+    expect(result.verification.metadataValid).toBe(false);
+    expect(result.verification.executable).toBe(false);
+  });
+
+  it("keeps format and database checks active under legacy override", () => {
+    const bundle = createBundle();
+    delete bundle._manifest.signature;
+    bundle._meta.bundleFormat = "legacy-mysql-spine";
+    bundle._manifest.bundleFormat = "legacy-mysql-spine";
+    bundle._meta.databaseType = "mysql";
+    bundle._manifest.databaseType = "mysql";
+    process.env.ALLOW_LEGACY_UNSIGNED_SPINE_RESTORE = "true";
+
+    const bundleWithoutManifest = { ...bundle };
+    delete bundleWithoutManifest._manifest;
+    bundle._manifest.checksum = compute_spine_checksum(bundleWithoutManifest);
+
+    const result = verify_spine_bundle(stringify_spine_json(bundle));
+    expect(result.verification.metadataValid).toBe(true);
+    expect(result.verification.formatValid).toBe(false);
+    expect(result.verification.databaseValid).toBe(false);
+    expect(result.verification.executable).toBe(false);
+  });
+
   it("serializes bigint values without breaking the bundle", () => {
     expect(stringify_spine_json({ id: 12n }, 0)).toBe('{"id":"12"}');
   });
