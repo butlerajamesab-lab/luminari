@@ -13,9 +13,9 @@ import {
   stringify_spine_json,
   type spine_bundle_type,
 } from "./spine-bundle-contract";
+import { export_spine_table_data_consistent } from "./spine-consistent-data-export";
 import {
   SPINE_CONFIG_TABLES,
-  export_spine_table_data,
   list_spine_public_tables,
   type spine_table_data,
   type spine_table_schema,
@@ -238,7 +238,9 @@ export async function exportTableData(
   tableName: string,
   limit = 100_000,
 ): Promise<DataExport> {
-  return sanitize_spine_export_value(await export_spine_table_data(tableName, limit));
+  return sanitize_spine_export_value(
+    await export_spine_table_data_consistent(tableName, limit),
+  );
 }
 
 export async function runExport(

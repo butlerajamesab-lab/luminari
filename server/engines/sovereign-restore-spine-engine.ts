@@ -4,6 +4,7 @@ import {
   parse_spine_bundle_json,
   verify_spine_bundle,
 } from "./spine-bundle-contract";
+import { preflight_spine_restore_request } from "./spine-restore-preflight";
 import {
   SPINE_CONFIG_TABLE_SET,
   assert_spine_identifier,
@@ -362,6 +363,7 @@ export async function executeRestore(
         `Spine bundle is not executable: ${preview.validation.warnings.join("; ")}`,
       );
     }
+    preflight_spine_restore_request(bundle, restoreType);
     await set_restore_spine_run_status(runId, "restoring");
 
     if (["full", "schema", "deployment"].includes(restoreType)) {
