@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const queryMock = vi.fn();
+const { queryMock } = vi.hoisted(() => ({
+  queryMock: vi.fn(),
+}));
+
 vi.mock("../db", () => ({
   query_with_diagnostics: queryMock,
 }));
