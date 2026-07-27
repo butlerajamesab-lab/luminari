@@ -54,6 +54,7 @@ describe("signed Sovereign Spine bundle contract", () => {
     expect(result.verification).toMatchObject({
       checksumValid: true,
       signatureValid: true,
+      metadataValid: true,
       formatValid: true,
       databaseValid: true,
       executable: true,
@@ -65,6 +66,23 @@ describe("signed Sovereign Spine bundle contract", () => {
     bundle.config.registryTables.push({ tableName: "engine_registry", rows: [] });
     const result = verify_spine_bundle(stringify_spine_json(bundle));
     expect(result.verification.checksumValid).toBe(false);
+    expect(result.verification.executable).toBe(false);
+  });
+
+  it("rejects signed-manifest inventory modified after signing", () => {
+    const bundle = createBundle();
+    bundle._manifest.includedTables.push("engine_registry");
+    const result = verify_spine_bundle(stringify_spine_json(bundle));
+    expect(result.verification.checksumValid).toBe(true);
+    expect(result.verification.signatureValid).toBe(false);
+    expect(result.verification.executable).toBe(false);
+  });
+
+  it("rejects identity metadata that disagrees with the signed manifest", () => {
+    const bundle = createBundle();
+    bundle._meta.bundleName = "different-bundle";
+    const result = verify_spine_bundle(stringify_spine_json(bundle));
+    expect(result.verification.metadataValid).toBe(false);
     expect(result.verification.executable).toBe(false);
   });
 
