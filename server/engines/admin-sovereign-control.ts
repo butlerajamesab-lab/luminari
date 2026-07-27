@@ -402,8 +402,10 @@ export async function executeSql(
 
   try {
     const result = await db.execute(sql.raw(sqlStatement));
-    const rows = result[0] as unknown as any[];
-    const rowsAffected = (result[0] as any)?.affectedRows || rows?.length || 0;
+    const rows = Array.isArray((result as any).rows)
+      ? (result as any).rows
+      : [];
+    const rowsAffected = Number((result as any).rowCount ?? rows.length ?? 0);
     let audit_error: string | undefined;
 
     try {

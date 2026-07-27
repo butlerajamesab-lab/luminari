@@ -322,7 +322,7 @@ export async function applySchemaPatch(
 
   try {
     const result = await db.execute(sql.raw(sqlStatement));
-    const affectedRows = (result[0] as any)?.affectedRows ?? 0;
+    const affectedRows = Number((result as any).rowCount ?? 0);
 
     const logEntry = await write_admin_change_log({
       adminId: executedBy,
