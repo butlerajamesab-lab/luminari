@@ -17,9 +17,11 @@ function bounded_integer(value: string | undefined, fallback: number, minimum: n
  * Deterministic routing for Sovereign Control's standard operator commands.
  *
  * These instructions must not depend on LLM interpretation. They map directly
- * to the same governed tools exposed in the Sunam tool registry. The phrases
- * below intentionally match the six quick-action instructions rendered by
- * Sovereign Control; changing either side requires updating the contract tests.
+ * to the same governed tools exposed in Sunam's additive canonical registry,
+ * which preserves both operational-control and Lighthouse case-service tools.
+ * The phrases below intentionally match the six quick-action instructions
+ * rendered by Sovereign Control; changing either side requires updating the
+ * contract tests.
  */
 export function resolve_direct_sunam_instruction(
   instruction: string,
