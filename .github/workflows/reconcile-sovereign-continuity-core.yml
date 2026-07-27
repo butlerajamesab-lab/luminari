@@ -1,0 +1,52 @@
+name: Reconcile Sovereign Continuity Core
+
+on:
+  push:
+    branches:
+      - fix/sovereign-continuity-core
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reconcile-sovereign-continuity-core
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout continuity branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/sovereign-continuity-core
+          fetch-depth: 0
+
+      - name: Apply bounded reconciliation
+        run: python3 scripts/reconcile-sovereign-continuity-core.py
+
+      - name: Validate durable source contract
+        run: |
+          grep -q 'write_admin_change_log' server/engines/sunam-executor.ts
+          grep -q 'list_sovereign_tables' server/engines/admin-sovereign-control.ts
+          grep -q 'constitutionalGovernance: constitutionalGovernanceRouter' server/routers.ts
+          grep -q 'trpc.constitutionalGovernance' client/src/pages/GovernanceDashboard.tsx
+          grep -q '.returning({ id: governanceSnapshots.id })' server/governance-log.ts
+          ! grep -q 'db.insert(adminChangeLog)' server/engines/sunam-executor.ts
+          ! grep -q 'db.insert(adminChangeLog)' server/engines/admin-sovereign-control.ts
+          ! grep -q 'db.insert(adminChangeLog)' server/engines/executor-service.ts
+          ! grep -q 'DESCRIBE `' server/engines/admin-sovereign-control.ts
+
+      - name: Remove bounded staging machinery
+        run: |
+          git rm scripts/reconcile-sovereign-continuity-core.py
+          git rm .github/workflows/reconcile-sovereign-continuity-core.yml
+
+      - name: Commit reconciled continuity core
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'Reconcile Sovereign Continuity PostgreSQL contracts [sovereign-continuity-core]'
+          git push origin HEAD:fix/sovereign-continuity-core
