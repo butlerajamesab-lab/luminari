@@ -4,5 +4,5 @@
 -- IMPORTANT: Replace with original SQL if available from git history.
 DO $$
 BEGIN
-  RAISE NOTICE Recovered placeholder for migration version 20260525232233;
+  RAISE NOTICE 'Recovered placeholder for migration version 20260525232233';
 END $$;
