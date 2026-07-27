@@ -14,6 +14,9 @@ const constitutional_router = read("../routers/governance-router.ts");
 const governance_dashboard = read("../../client/src/pages/GovernanceDashboard.tsx");
 const verify_page = read("../../client/src/pages/Verify.tsx");
 const governance_log = read("../governance-log.ts");
+const sequence_migration = read(
+  "../../supabase/migrations/20260727120400_admin_change_log_sequence_alignment.sql",
+);
 const snapshot_migration = read(
   "../../supabase/migrations/20260727120500_governance_snapshots.sql",
 );
@@ -26,6 +29,18 @@ describe("Sovereign Continuity source contract", () => {
     expect(sunam_executor).not.toContain("db.insert(adminChangeLog)");
     expect(admin_control).not.toContain("db.insert(adminChangeLog)");
     expect(executor_service).not.toContain("db.insert(adminChangeLog)");
+  });
+
+  it("aligns the administrative receipt sequence with existing ledger rows", () => {
+    expect(sequence_migration).toContain(
+      "pg_get_serial_sequence('public.admin_change_log', 'id')",
+    );
+    expect(sequence_migration).toContain(
+      "perform setval(sequence_name::regclass, maximum_id, true)",
+    );
+    expect(sequence_migration).toContain(
+      "perform setval(sequence_name::regclass, 1, false)",
+    );
   });
 
   it("contains no MySQL schema or SQL result drift", () => {
