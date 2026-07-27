@@ -45,8 +45,18 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Run continuity contract tests
-        run: >-
-          npx vitest run
-          server/engines/admin-change-log-store.test.ts
-          server/engines/sovereign-schema-inspector.test.ts
-          server/engines/sovereign-continuity-source-contract.test.ts
+        shell: bash
+        run: |
+          set -o pipefail
+          npx vitest run \
+            server/engines/admin-change-log-store.test.ts \
+            server/engines/sovereign-schema-inspector.test.ts \
+            server/engines/sovereign-continuity-source-contract.test.ts \
+            2>&1 | tee sovereign-continuity-test.log
+
+      - name: Upload continuity diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sovereign-continuity-test-diagnostics
+          path: sovereign-continuity-test.log
