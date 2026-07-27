@@ -56,28 +56,34 @@ jobs:
           }
 
           blocks = {}
-          current_key = None
+          current_block = None
           for line in lines:
               match = re.match(r"\s*- key: ([A-Z0-9_]+)\s*$", line)
               if match:
-                  current_key = match.group(1)
-                  blocks[current_key] = []
-              elif current_key is not None:
-                  blocks[current_key].append(line.strip())
+                  key = match.group(1)
+                  current_block = []
+                  blocks.setdefault(key, []).append(current_block)
+              elif current_block is not None:
+                  current_block.append(line.strip())
 
           failures = []
           for key in sorted(secret_keys):
-              block = blocks.get(key)
-              if block is None:
+              key_blocks = blocks.get(key, [])
+              if not key_blocks:
                   failures.append(f"missing deployment secret declaration: {key}")
                   continue
-              if any(item.startswith("value:") for item in block):
-                  failures.append(f"hard-coded deployment secret value: {key}")
-              if "sync: false" not in block:
-                  failures.append(f"deployment secret is not externally managed: {key}")
+              for index, block in enumerate(key_blocks, start=1):
+                  if any(item.startswith("value:") for item in block):
+                      failures.append(
+                          f"hard-coded deployment secret value: {key} occurrence {index}"
+                      )
+                  if "sync: false" not in block:
+                      failures.append(
+                          f"deployment secret is not externally managed: {key} occurrence {index}"
+                      )
 
           text = "\n".join(lines)
-          if re.search(r"eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}", text):
+          if re.search(r"eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+", text):
               failures.append("JWT-shaped credential found in render.yaml")
 
           if failures:
@@ -85,11 +91,10 @@ jobs:
                   print(failure)
               raise SystemExit(1)
 
-          print(f"Verified {len(secret_keys)} externally managed deployment secrets")
+          print(f"Verified {len(secret_keys)} externally managed deployment secret families")
           PY
 
-      - name: Report hard-coded JWT credentials
-        continue-on-error: true
+      - name: Reject hard-coded JWT credentials
         run: python3 scripts/audit-hardcoded-jwts.py
 
       - name: Setup Node 20
