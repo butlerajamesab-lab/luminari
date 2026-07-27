@@ -1,4 +1,4 @@
-name: Focused hard-coded JWT audit
+name: Finalize hard-coded JWT cleanup
 
 on:
   push:
@@ -6,12 +6,31 @@ on:
       - security/remove-render-secrets
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: finalize-hardcoded-jwt-cleanup
+  cancel-in-progress: false
 
 jobs:
-  audit:
+  finalize:
+    if: ${{ !contains(github.event.head_commit.message, '[jwt-cleanup-applied]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Report hard-coded JWT credentials
-        run: python3 scripts/audit-hardcoded-jwts.py
+        with:
+          ref: security/remove-render-secrets
+          fetch-depth: 0
+      - name: Apply bounded credential cleanup
+        run: python3 scripts/finalize-hardcoded-jwt-cleanup.py
+      - name: Commit direct cleanup and remove temporary machinery
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm scripts/finalize-hardcoded-jwt-cleanup.py
+          git rm .github/workflows/audit-hardcoded-jwts.yml
+          git rm .github/workflows/jwt-audit-comment.yml
+          git add render.yaml scripts/audit-hardcoded-jwts.py .github/workflows/pr-test.yml server/routers.ts dist/index.js bundle-src/luminari-intake-v2.html
+          git commit -m "Remove remaining hard-coded JWT credentials [jwt-cleanup-applied]"
+          git push origin HEAD:security/remove-render-secrets
