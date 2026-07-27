@@ -1,4 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("../db", () => ({
+  query_with_diagnostics: vi.fn(),
+}));
+
 import { assert_sovereign_table_name } from "./sovereign-schema-inspector";
 
 describe("assert_sovereign_table_name", () => {
