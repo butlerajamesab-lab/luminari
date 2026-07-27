@@ -25,6 +25,7 @@ import {
 export interface ValidationResult {
   checksumValid: boolean;
   signatureValid: boolean;
+  metadataValid: boolean;
   formatValid: boolean;
   databaseValid: boolean;
   executable: boolean;
@@ -45,12 +46,14 @@ export interface RestorePreview {
   validation: ValidationResult;
 }
 
-const REGISTRY_RESTORE_POLICY: Record<
-  string,
-  { identityColumn: string; writableColumns: string[] }
-> = {
+type registry_restore_policy = {
+  identityColumns: string[];
+  writableColumns: string[];
+};
+
+const REGISTRY_RESTORE_POLICY: Record<string, registry_restore_policy> = {
   engine_registry: {
-    identityColumn: "engine_id_er",
+    identityColumns: ["engine_id_er"],
     writableColumns: [
       "engine_id_er", "engine_name_er", "description_er", "category_er",
       "enabled_er", "sort_order_er", "config_json_er", "version_er",
@@ -58,7 +61,7 @@ const REGISTRY_RESTORE_POLICY: Record<
     ],
   },
   data_stream_registry: {
-    identityColumn: "stream_id_dsr",
+    identityColumns: ["stream_id_dsr"],
     writableColumns: [
       "stream_id_dsr", "stream_name_dsr", "stream_type_dsr", "source_url_dsr",
       "update_freq_dsr", "signal_weight_dsr", "confidence_multiplier_dsr",
@@ -69,7 +72,7 @@ const REGISTRY_RESTORE_POLICY: Record<
     ],
   },
   signal_registry: {
-    identityColumn: "signal_type",
+    identityColumns: ["signal_type"],
     writableColumns: [
       "signal_type", "domain", "trigger_patterns", "linked_doctrine",
       "linked_weak_joints", "linked_contradiction_templates", "severity",
@@ -79,15 +82,41 @@ const REGISTRY_RESTORE_POLICY: Record<
     ],
   },
   pattern_registry: {
-    identityColumn: "pattern_name",
+    // Newer schemas govern patterns by pattern_id. The current Lighthouse live
+    // schema predates that column, so pattern_name remains a fail-closed fallback
+    // only when it is present and unique in both the bundle and target table.
+    identityColumns: ["pattern_id", "pattern_name"],
     writableColumns: [
-      "pattern_name", "pattern_description", "pattern_type", "signal_type",
-      "trigger_threshold", "confidence_threshold", "jurisdiction_scope",
-      "related_laws", "related_agencies", "harm_domains", "metadata",
-      "created_at", "updated_at", "jurisdiction",
+      "pattern_id", "pattern_name", "pattern_description", "pattern_type",
+      "signal_type", "trigger_threshold", "confidence_threshold",
+      "jurisdiction_scope", "related_laws", "related_agencies", "harm_domains",
+      "metadata", "created_at", "updated_at", "jurisdiction",
     ],
   },
 };
+
+export function resolve_registry_identity_column(
+  tableName: string,
+  targetColumns: Iterable<string>,
+  rows: Array<Record<string, unknown>>,
+): string {
+  const policy = REGISTRY_RESTORE_POLICY[tableName];
+  if (!policy) throw new Error(`Unsupported registry restore table: ${tableName}`);
+  const available = new Set(targetColumns);
+
+  for (const candidate of policy.identityColumns) {
+    if (!available.has(candidate)) continue;
+    const complete = rows.every((row) => {
+      const value = row?.[candidate];
+      return value !== null && value !== undefined && String(value).trim() !== "";
+    });
+    if (complete) return candidate;
+  }
+
+  throw new Error(
+    `No complete canonical identity column is available for ${tableName}; expected one of ${policy.identityColumns.join(", ")}`,
+  );
+}
 
 export function parseBundleJson(jsonStr: string): { bundle: any; checksum: string } {
   const parsed = parse_spine_bundle_json(jsonStr);
@@ -157,6 +186,7 @@ export async function validateBundle(bundleJson: string): Promise<RestorePreview
     validation: {
       checksumValid: verification.checksumValid,
       signatureValid: verification.signatureValid,
+      metadataValid: verification.metadataValid,
       formatValid: verification.formatValid,
       databaseValid: verification.databaseValid,
       executable: verification.executable && schemaCompatible,
@@ -187,28 +217,42 @@ async function upsert_registry_table(
   const policy = REGISTRY_RESTORE_POLICY[tableName];
   if (!policy) throw new Error(`Unsupported registry restore table: ${tableName}`);
   const targetColumns = await load_table_columns(client, tableName);
+  const rows = (tableExport.rows ?? []) as Array<Record<string, unknown>>;
+  const identityColumn = resolve_registry_identity_column(
+    tableName,
+    targetColumns,
+    rows,
+  );
   const writable = new Set(
     policy.writableColumns.filter((column) => targetColumns.has(column)),
   );
-  const table = quote_spine_identifier(tableName);
-  const identityColumn = assert_spine_identifier(policy.identityColumn, "identity column");
   if (!writable.has(identityColumn)) {
     throw new Error(`Identity column ${identityColumn} is unavailable on ${tableName}`);
   }
 
+  const table = quote_spine_identifier(tableName);
+  const seenIdentities = new Set<string>();
   let restored = 0;
   const identityValues: string[] = [];
-  for (const rawRow of tableExport.rows ?? []) {
+
+  for (const rawRow of rows) {
     if (!rawRow || typeof rawRow !== "object" || Array.isArray(rawRow)) {
       throw new Error(`Invalid registry row in ${tableName}`);
     }
-    const identity = (rawRow as any)[identityColumn];
+    const identity = rawRow[identityColumn];
     if (identity === null || identity === undefined || String(identity).trim() === "") {
       throw new Error(`Registry row in ${tableName} is missing ${identityColumn}`);
     }
+    const identityValue = String(identity);
+    if (seenIdentities.has(identityValue)) {
+      throw new Error(
+        `Bundle contains duplicate ${tableName}.${identityColumn} identity: ${identityValue}`,
+      );
+    }
+    seenIdentities.add(identityValue);
+
     const entries = Object.entries(rawRow).filter(([column]) => writable.has(column));
     const updateEntries = entries.filter(([column]) => column !== identityColumn);
-    const identityValue = String(identity);
     identityValues.push(identityValue);
 
     const updateValues = updateEntries.map(([, value]) => value ?? null);
@@ -223,6 +267,12 @@ async function upsert_registry_table(
           [...updateValues, identity],
         )
       : { rowCount: 0 };
+
+    if ((updateResult.rowCount ?? 0) > 1) {
+      throw new Error(
+        `Ambiguous ${tableName}.${identityColumn} target matched ${updateResult.rowCount} rows for ${identityValue}`,
+      );
+    }
 
     if ((updateResult.rowCount ?? 0) === 0) {
       const names = entries.map(([column]) => quote_spine_identifier(column));
