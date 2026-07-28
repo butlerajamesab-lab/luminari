@@ -7,6 +7,7 @@ on:
       - "server/engines/export-spine-engine.ts"
       - "server/engines/restore-spine-engine.ts"
       - "server/engines/sovereign-export-spine-engine.ts"
+      - "server/engines/sovereign-export-spine-engine-v2.ts"
       - "server/engines/sovereign-export-spine-engine.test.ts"
       - "server/engines/sovereign-restore-spine-engine.ts"
       - "server/engines/sovereign-restore-spine-engine.test.ts"
@@ -14,6 +15,9 @@ on:
       - "server/engines/spine-bundle-contract.test.ts"
       - "server/engines/spine-consistent-data-export.ts"
       - "server/engines/spine-consistent-data-export.test.ts"
+      - "server/engines/spine-deployment-manifest.ts"
+      - "server/engines/spine-export-snapshot.ts"
+      - "server/engines/spine-export-snapshot.test.ts"
       - "server/engines/spine-postgres.ts"
       - "server/engines/spine-postgres.test.ts"
       - "server/engines/spine-restore-preflight.ts"
@@ -147,6 +151,7 @@ jobs:
           npx vitest run \
             server/engines/spine-bundle-contract.test.ts \
             server/engines/spine-consistent-data-export.test.ts \
+            server/engines/spine-export-snapshot.test.ts \
             server/engines/spine-postgres.test.ts \
             server/engines/spine-restore-preflight.test.ts \
             server/engines/spine-run-store.test.ts \
