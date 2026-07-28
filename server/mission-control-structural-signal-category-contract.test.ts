@@ -9,10 +9,14 @@ function read(relative_path: string): string {
 const router = read("./routers/admin-dashboard.ts");
 
 describe("Mission Control structural signal category contract", () => {
-  it("collapses event-specific numeric suffixes without mutating source rows", () => {
+  it("collapses only event-specific diagnostic suffixes without mutating source rows", () => {
     expect(router).toContain(
-      '"regexp_replace(COALESCE(signal_type, \'unknown\'), \'_[0-9]+$\', \'\')"',
+      "^(contradiction|inconsistency|missing_evidence)_[0-9]+$",
     );
+    expect(router).toContain(
+      "regexp_replace(COALESCE(signal_type, 'unknown'), '_[0-9]+$', '')",
+    );
+    expect(router).toContain("ELSE COALESCE(signal_type, 'unknown')");
     expect(router).toContain("GROUP BY ${NORMALIZED_SIGNAL_CATEGORY_SQL}");
     expect(router).toContain("${NORMALIZED_SIGNAL_CATEGORY_SQL} AS category");
     expect(router).not.toContain("UPDATE detected_signals");
