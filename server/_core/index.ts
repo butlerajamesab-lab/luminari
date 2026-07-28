@@ -73,7 +73,12 @@ function registerOptionalIntegrationStubs(app: express.Express) {
 function registerSlowRequestDiagnostics(app: express.Express) {
   app.use((req, res, next) => {
     const started_at = Date.now();
-    res.on("finish", () => {
+    let receipt_emitted = false;
+
+    const emit_receipt = (completion_state: "finished" | "closed") => {
+      if (receipt_emitted) return;
+      receipt_emitted = true;
+
       const duration_ms = Date.now() - started_at;
       if (duration_ms < 2_000) return;
 
@@ -89,10 +94,14 @@ function registerSlowRequestDiagnostics(app: express.Express) {
         path: req.path,
         status_code: res.statusCode,
         duration_ms,
-        response_bytes: Number.isFinite(response_bytes) ? response_bytes : null,
+        response_bytes: response_bytes !== null && Number.isFinite(response_bytes) ? response_bytes : null,
+        completion_state,
         request_id: req.get("x-request-id") ?? req.get("x-render-request-id") ?? null,
       });
-    });
+    };
+
+    res.once("finish", () => emit_receipt("finished"));
+    res.once("close", () => emit_receipt(res.writableEnded ? "finished" : "closed"));
     next();
   });
 }
@@ -101,11 +110,13 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
+  // Start timing before any route-specific or body-parsing work so slow uploads,
+  // parse failures, and prematurely closed requests remain observable.
+  registerSlowRequestDiagnostics(app);
   registerOptionalIntegrationStubs(app);
 
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
-  registerSlowRequestDiagnostics(app);
 
   app.use(sessionMiddleware);
   app.use("/api/invites", invite_redemption_router);
