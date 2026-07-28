@@ -70,6 +70,33 @@ function registerOptionalIntegrationStubs(app: express.Express) {
   });
 }
 
+function registerSlowRequestDiagnostics(app: express.Express) {
+  app.use((req, res, next) => {
+    const started_at = Date.now();
+    res.on("finish", () => {
+      const duration_ms = Date.now() - started_at;
+      if (duration_ms < 2_000) return;
+
+      const content_length = res.getHeader("content-length");
+      const response_bytes = typeof content_length === "string"
+        ? Number(content_length)
+        : typeof content_length === "number"
+          ? content_length
+          : null;
+
+      console.warn("[HTTP] slow_request", {
+        method: req.method,
+        path: req.path,
+        status_code: res.statusCode,
+        duration_ms,
+        response_bytes: Number.isFinite(response_bytes) ? response_bytes : null,
+        request_id: req.get("x-request-id") ?? req.get("x-render-request-id") ?? null,
+      });
+    });
+    next();
+  });
+}
+
 async function startServer() {
   const app = express();
   const server = createServer(app);
@@ -78,6 +105,7 @@ async function startServer() {
 
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  registerSlowRequestDiagnostics(app);
 
   app.use(sessionMiddleware);
   app.use("/api/invites", invite_redemption_router);
