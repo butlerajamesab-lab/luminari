@@ -14,6 +14,16 @@ describe("Sovereign Spine export redaction", () => {
     expect(url.searchParams.get("view")).toBe("public");
   });
 
+  it("redacts conventional bare key URL parameters", () => {
+    const sanitized = sanitize_spine_export_value(
+      "https://maps.example.com/geocode?key=live-map-key&address=Seattle",
+    );
+    const url = new URL(sanitized);
+
+    expect(url.searchParams.get("key")).toBe("ENV_PLACEHOLDER");
+    expect(url.searchParams.get("address")).toBe("Seattle");
+  });
+
   it("removes credentials from PostgreSQL connection URLs", () => {
     const sanitized = sanitize_spine_export_value(
       "postgresql://db_user:db_password@example.com:5432/lighthouse",
