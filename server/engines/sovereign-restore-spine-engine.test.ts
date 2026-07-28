@@ -12,7 +12,7 @@ describe("Sovereign Spine registry identity resolution", () => {
     ).toBe("pattern_id");
   });
 
-  it("supports the current Lighthouse pattern_name schema as a bounded fallback", () => {
+  it("supports pattern_name only when the target has no canonical pattern_id", () => {
     expect(
       resolve_registry_identity_column(
         "pattern_registry",
@@ -22,22 +22,22 @@ describe("Sovereign Spine registry identity resolution", () => {
     ).toBe("pattern_name");
   });
 
-  it("falls back when an older bundle has no pattern_id values", () => {
-    expect(
+  it("rejects an older name-only bundle when the target governs pattern_id", () => {
+    expect(() =>
       resolve_registry_identity_column(
         "pattern_registry",
         ["pattern_id", "pattern_name"],
         [{ pattern_name: "Repeat Entity" }],
       ),
-    ).toBe("pattern_name");
+    ).toThrow("requires complete pattern_id values");
   });
 
   it("fails closed when no complete governed identity exists", () => {
     expect(() =>
       resolve_registry_identity_column(
         "pattern_registry",
-        ["pattern_id", "pattern_name"],
-        [{ pattern_id: null, pattern_name: "" }],
+        ["pattern_name"],
+        [{ pattern_name: "" }],
       ),
     ).toThrow("No complete canonical identity column");
   });
