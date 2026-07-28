@@ -1,13 +1,21 @@
-import type { PoolClient } from "pg";
 import { getPool } from "../db";
 import type { spine_bundle_type } from "./spine-bundle-contract";
 import {
-  SPINE_CONFIG_TABLE_SET,
   assert_spine_identifier,
   build_spine_create_table_statement,
   build_spine_post_create_statements,
   type spine_table_schema,
 } from "./spine-postgres";
+import { select_spine_registry_write_row } from "./spine-registry-policy";
+import { SPINE_STATIC_CIVIC_TABLE_SET } from "./spine-static-table-policy";
+import {
+  build_incoming_spine_table_contracts,
+  load_spine_target_identity_counts,
+  load_spine_target_row_count,
+  load_spine_target_table_contracts,
+  validate_spine_row_against_target,
+  type spine_target_table_contract,
+} from "./spine-target-contract";
 
 export type spine_restore_type = "full" | "schema" | "config" | "deployment";
 export type spine_registry_identity_resolver = (
@@ -34,9 +42,6 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
-/**
- * Validate the requested restore capability and required top-level sections.
- */
 export function preflight_spine_restore_request(
   bundle: any,
   requestedRestoreType: spine_restore_type,
@@ -47,7 +52,6 @@ export function preflight_spine_restore_request(
       `Spine bundle has an unsupported manifest type: ${String(manifestType ?? "missing")}`,
     );
   }
-
   if (!RESTORE_CAPABILITIES[manifestType].has(requestedRestoreType)) {
     throw new Error(
       `Spine ${manifestType} bundle cannot execute requested ${requestedRestoreType} restore`,
@@ -79,8 +83,7 @@ export function preflight_spine_restore_request(
   return { manifestType, restoreType: requestedRestoreType };
 }
 
-function validateSchemaSection(bundle: any): Map<string, Set<string>> {
-  const schemaColumns = new Map<string, Set<string>>();
+function validateSchemaSection(bundle: any): spine_table_schema[] {
   const seenTables = new Set<string>();
   const seenEnums = new Set<string>();
 
@@ -99,7 +102,10 @@ function validateSchemaSection(bundle: any): Map<string, Set<string>> {
     }
   }
 
-  const tables = Array.isArray(bundle?.schema?.tables) ? bundle.schema.tables : [];
+  const tables = Array.isArray(bundle?.schema?.tables)
+    ? (bundle.schema.tables as unknown[])
+    : [];
+  const validated: spine_table_schema[] = [];
   for (const rawTable of tables) {
     if (!isPlainRecord(rawTable)) throw new Error("Invalid Spine table definition");
     const tableName = assert_spine_identifier(rawTable.tableName, "schema table");
@@ -121,63 +127,31 @@ function validateSchemaSection(bundle: any): Map<string, Set<string>> {
       columns.add(columnName);
     }
 
-    // Rebuild every executable statement now. The restore phase uses the same
-    // governed builders, so a malformed table cannot be discovered after a
-    // previous table has already been created.
     const table = rawTable as unknown as spine_table_schema;
     build_spine_create_table_statement(table);
     build_spine_post_create_statements(table);
-    schemaColumns.set(tableName, columns);
+    validated.push(table);
   }
-  return schemaColumns;
+  return validated;
 }
 
-async function loadTargetColumns(
-  client: PoolClient,
-  tableNames: string[],
-): Promise<Map<string, Set<string>>> {
-  if (tableNames.length === 0) return new Map();
-  const result = await client.query<{
-    table_name: string;
-    column_name: string;
-  }>(
-    `select table_name, column_name
-       from information_schema.columns
-      where table_schema='public' and table_name = any($1::text[])
-      order by table_name, ordinal_position`,
-    [tableNames],
-  );
-  const columns = new Map<string, Set<string>>();
-  for (const row of result.rows) {
-    const list = columns.get(row.table_name) ?? new Set<string>();
-    list.add(row.column_name);
-    columns.set(row.table_name, list);
-  }
-  return columns;
-}
-
-function resolveEffectiveColumns(
+function resolveEffectiveContract(
   tableName: string,
-  targetColumns: Map<string, Set<string>>,
-  schemaColumns: Map<string, Set<string>>,
+  targetContracts: Map<string, spine_target_table_contract>,
+  incomingContracts: Map<string, spine_target_table_contract>,
   schemaWillRun: boolean,
-): Set<string> {
-  const existing = targetColumns.get(tableName);
-  if (existing && existing.size > 0) return existing;
+): spine_target_table_contract {
+  const existing = targetContracts.get(tableName);
+  if (existing) return existing;
   if (schemaWillRun) {
-    const incoming = schemaColumns.get(tableName);
-    if (incoming && incoming.size > 0) return incoming;
+    const incoming = incomingContracts.get(tableName);
+    if (incoming) return incoming;
   }
   throw new Error(
     `Restore target has no table contract for ${tableName}; include it in the requested schema restore or create it first`,
   );
 }
 
-/**
- * Validate every schema/config/data entry—including target-dependent registry
- * identity and row-column compatibility—inside a read-only transaction before
- * any target mutation begins.
- */
 export async function preflight_spine_restore_contents(
   bundle: any,
   requestedRestoreType: spine_restore_type,
@@ -191,9 +165,8 @@ export async function preflight_spine_restore_contents(
     requestedRestoreType,
   );
   const dataWillRun = requestedRestoreType === "full";
-  const schemaColumns = schemaWillRun
-    ? validateSchemaSection(bundle)
-    : new Map<string, Set<string>>();
+  const schemaTables = schemaWillRun ? validateSchemaSection(bundle) : [];
+  const incomingContracts = build_incoming_spine_table_contracts(schemaTables);
 
   const registryTables = configWillRun ? bundle.config.registryTables : [];
   const dataTables = dataWillRun ? bundle.data : [];
@@ -215,7 +188,7 @@ export async function preflight_spine_restore_contents(
   const client = await getPool().connect();
   try {
     await client.query("begin transaction isolation level repeatable read read only");
-    const targetColumns = await loadTargetColumns(
+    const targetContracts = await load_spine_target_table_contracts(
       client,
       [...requestedTableNames],
     );
@@ -241,31 +214,59 @@ export async function preflight_spine_restore_contents(
         if (rows.some((row) => !isPlainRecord(row))) {
           throw new Error(`Registry table ${tableName} contains a malformed row`);
         }
-        const columns = resolveEffectiveColumns(
+
+        const contract = resolveEffectiveContract(
           tableName,
-          targetColumns,
-          schemaColumns,
+          targetContracts,
+          incomingContracts,
           schemaWillRun,
         );
         const identityColumn = resolveRegistryIdentity(
           tableName,
-          columns,
+          contract.columns.keys(),
           rows,
         );
-        const identities = new Set<string>();
-        for (const row of rows) {
-          const identity = String(row[identityColumn] ?? "").trim();
+        const identities = rows.map((row) => String(row[identityColumn] ?? "").trim());
+        const uniqueIdentities = new Set<string>();
+        for (const identity of identities) {
           if (!identity) {
             throw new Error(
               `Registry row in ${tableName} is missing ${identityColumn}`,
             );
           }
-          if (identities.has(identity)) {
+          if (uniqueIdentities.has(identity)) {
             throw new Error(
               `Bundle contains duplicate ${tableName}.${identityColumn} identity: ${identity}`,
             );
           }
-          identities.add(identity);
+          uniqueIdentities.add(identity);
+        }
+
+        const targetMatches = contract.exists
+          ? await load_spine_target_identity_counts(
+              client,
+              tableName,
+              identityColumn,
+              identities,
+            )
+          : new Map<string, number>();
+
+        for (let index = 0; index < rows.length; index += 1) {
+          const identity = identities[index];
+          const matchCount = targetMatches.get(identity) ?? 0;
+          if (matchCount > 1) {
+            throw new Error(
+              `Ambiguous ${tableName}.${identityColumn} target matched ${matchCount} rows for ${identity}`,
+            );
+          }
+          const plannedRow = select_spine_registry_write_row(
+            tableName,
+            contract.columns.keys(),
+            rows[index],
+          );
+          validate_spine_row_against_target(contract, plannedRow, {
+            requireInsertCompleteness: matchCount === 0,
+          });
         }
       }
     }
@@ -277,8 +278,10 @@ export async function preflight_spine_restore_contents(
           rawTable.tableName,
           "data table",
         );
-        if (!SPINE_CONFIG_TABLE_SET.has(tableName)) {
-          throw new Error(`Data table ${tableName} is outside the Spine allowlist`);
+        if (!SPINE_STATIC_CIVIC_TABLE_SET.has(tableName)) {
+          throw new Error(
+            `Data table ${tableName} is outside the static civic Spine policy`,
+          );
         }
         if (seenDataTables.has(tableName)) {
           throw new Error(`Duplicate data table export: ${tableName}`);
@@ -290,24 +293,23 @@ export async function preflight_spine_restore_contents(
         if (!Array.isArray(rawTable.rows)) {
           throw new Error(`Data table ${tableName} has invalid rows`);
         }
-        const columns = resolveEffectiveColumns(
+
+        const contract = resolveEffectiveContract(
           tableName,
-          targetColumns,
-          schemaColumns,
+          targetContracts,
+          incomingContracts,
           schemaWillRun,
         );
+        const existingRowCount = contract.exists
+          ? await load_spine_target_row_count(client, tableName)
+          : 0;
         for (const row of rawTable.rows) {
           if (!isPlainRecord(row) || Object.keys(row).length === 0) {
             throw new Error(`Data table ${tableName} contains a malformed row`);
           }
-          for (const columnName of Object.keys(row)) {
-            assert_spine_identifier(columnName, "data column");
-            if (!columns.has(columnName)) {
-              throw new Error(
-                `Data table ${tableName} contains unknown column ${columnName}`,
-              );
-            }
-          }
+          validate_spine_row_against_target(contract, row, {
+            requireInsertCompleteness: existingRowCount === 0,
+          });
         }
       }
     }
