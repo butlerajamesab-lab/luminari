@@ -215,44 +215,56 @@ export async function getPipelineCompletionState(): Promise<{
   engineRunSummary: Array<{ engine_name: string; engineName: string; total_runs: number; totalRuns: number; last_run: number | null; lastRun: number | null; last_status: string | null; lastStatus: string | null }>;
   ingestRunSummary: Array<{ dataset_id: string; datasetId: string; total_runs: number; totalRuns: number; last_run: number | null; lastRun: number | null; last_status: string | null; lastStatus: string | null; total_records: number; totalRecords: number }>;
 }> {
-  const [eventRows] = await pool.query(
-    `SELECT id, eventType, pipelineType as pipeline_id, stateCode, createdAt
+  const eventResult = await pool.query(
+    `SELECT id,
+            event_type,
+            pipeline_type AS pipeline_id,
+            state_code,
+            created_at
      FROM pipeline_events
-     ORDER BY createdAt DESC
+     ORDER BY created_at DESC
      LIMIT 50`,
   );
 
-  const [engineRows] = await pool.query(
-    `SELECT engine_id as engine_name,
-            COUNT(*) as total_runs,
-            MAX(completedAt) as last_run,
-            MAX(status) as last_status
+  const engineResult = await pool.query(
+    `SELECT engine_id AS engine_name,
+            COUNT(*)::int AS total_runs,
+            MAX(COALESCE(completed_at, started_at, created_at)) AS last_run,
+            (ARRAY_AGG(
+              COALESCE(engine_run_status, status)
+              ORDER BY COALESCE(completed_at, started_at, created_at) DESC, id DESC
+            ))[1] AS last_status
      FROM engine_runs
-     GROUP BY engine_id`,
+     GROUP BY engine_id
+     ORDER BY engine_id`,
   );
 
-  const [ingestRows] = await pool.query(
-    `SELECT datasetId_run as dataset_id,
-            COUNT(*) as total_runs,
-            MAX(endTime) as last_run,
-            (SELECT ingestStatus FROM ingest_runs i2 WHERE i2.datasetId_run = ingest_runs.datasetId_run ORDER BY endTime DESC LIMIT 1) as last_status,
-            SUM(recordsInserted) as total_records
+  const ingestResult = await pool.query(
+    `SELECT COALESCE(dataset_id_run, stream_id) AS dataset_id,
+            COUNT(*)::int AS total_runs,
+            MAX(COALESCE(end_time, completed_at, started_at, created_at)) AS last_run,
+            (ARRAY_AGG(
+              COALESCE(ingest_status::text, status)
+              ORDER BY COALESCE(end_time, completed_at, started_at, created_at) DESC, id DESC
+            ))[1] AS last_status,
+            SUM(COALESCE(records_inserted, records_processed, 0))::bigint AS total_records
      FROM ingest_runs
-     GROUP BY datasetId_run`,
+     GROUP BY COALESCE(dataset_id_run, stream_id)
+     ORDER BY COALESCE(dataset_id_run, stream_id)`,
   );
 
   return {
-    recentEvents: (eventRows as unknown as any[]).map((r: any) => ({
-      id: r.id,
-      eventType: r.eventType,
-      pipeline_id: r.pipeline_id || r.pipelineType || "",
-      payload: r.payload ? (typeof r.payload === "string" ? JSON.parse(r.payload) : r.payload) : { stateCode: r.stateCode },
-      createdAt: Number(r.createdAt),
+    recentEvents: eventResult.rows.map((r: any) => ({
+      id: Number(r.id),
+      eventType: r.event_type,
+      pipeline_id: r.pipeline_id ?? "",
+      payload: { stateCode: r.state_code },
+      createdAt: Number(r.created_at),
     })),
-    engineRunSummary: (engineRows as unknown as any[]).map((r: any) => {
+    engineRunSummary: engineResult.rows.map((r: any) => {
       const engineName = r.engine_name;
       const totalRuns = Number(r.total_runs) || 0;
-      const lastRun = r.last_run ? Number(r.last_run) : null;
+      const lastRun = r.last_run == null ? null : Number(r.last_run);
       const lastStatus = r.last_status ?? null;
       return {
         engine_name: engineName,
@@ -265,10 +277,10 @@ export async function getPipelineCompletionState(): Promise<{
         lastStatus,
       };
     }),
-    ingestRunSummary: (ingestRows as unknown as any[]).map((r: any) => {
+    ingestRunSummary: ingestResult.rows.map((r: any) => {
       const datasetId = r.dataset_id;
       const totalRuns = Number(r.total_runs) || 0;
-      const lastRun = r.last_run ? Number(r.last_run) : null;
+      const lastRun = r.last_run == null ? null : Number(r.last_run);
       const lastStatus = r.last_status ?? null;
       const totalRecords = Number(r.total_records) || 0;
       return {
