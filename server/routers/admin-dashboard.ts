@@ -13,8 +13,11 @@ const oneDayAgoIso = () => new Date(Date.now() - 86_400_000).toISOString();
 const oneDayAgoMillis = () => Date.now() - 86_400_000;
 const oneWeekAgoMillis = () => Date.now() - 604_800_000;
 
-const NORMALIZED_SIGNAL_CATEGORY_SQL =
-  "regexp_replace(COALESCE(signal_type, 'unknown'), '_[0-9]+$', '')";
+const NORMALIZED_SIGNAL_CATEGORY_SQL = `CASE
+  WHEN COALESCE(signal_type, 'unknown') ~ '^(contradiction|inconsistency|missing_evidence)_[0-9]+$'
+    THEN regexp_replace(COALESCE(signal_type, 'unknown'), '_[0-9]+$', '')
+  ELSE COALESCE(signal_type, 'unknown')
+END`;
 
 const getCount = async (query: string, params: unknown[] = []): Promise<number> => {
   const { rows } = await getPool().query(query, params);
