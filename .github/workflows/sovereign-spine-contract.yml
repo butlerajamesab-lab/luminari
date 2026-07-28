@@ -20,11 +20,16 @@ on:
       - "server/engines/spine-export-snapshot.test.ts"
       - "server/engines/spine-postgres.ts"
       - "server/engines/spine-postgres.test.ts"
+      - "server/engines/spine-registry-policy.ts"
       - "server/engines/spine-restore-preflight.ts"
       - "server/engines/spine-restore-preflight.test.ts"
       - "server/engines/spine-schema-export.ts"
       - "server/engines/spine-run-store.ts"
       - "server/engines/spine-run-store.test.ts"
+      - "server/engines/spine-static-table-policy.ts"
+      - "server/engines/spine-static-table-policy.test.ts"
+      - "server/engines/spine-target-contract.ts"
+      - "server/engines/spine-target-contract.test.ts"
       - "server/engines/sovereign-spine-source-contract.test.ts"
       - "supabase/migrations/20260727163000_sovereign_spine_run_substrate.sql"
       - ".github/workflows/sovereign-spine-contract.yml"
@@ -155,6 +160,8 @@ jobs:
             server/engines/spine-postgres.test.ts \
             server/engines/spine-restore-preflight.test.ts \
             server/engines/spine-run-store.test.ts \
+            server/engines/spine-static-table-policy.test.ts \
+            server/engines/spine-target-contract.test.ts \
             server/engines/sovereign-export-spine-engine.test.ts \
             server/engines/sovereign-restore-spine-engine.test.ts \
             server/engines/sovereign-spine-source-contract.test.ts \
