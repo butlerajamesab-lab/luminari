@@ -14,7 +14,10 @@ const restorer = read("./sovereign-restore-spine-engine.ts");
 const bundleContract = read("./spine-bundle-contract.ts");
 const consistentExport = read("./spine-consistent-data-export.ts");
 const snapshot = read("./spine-export-snapshot.ts");
+const registryPolicy = read("./spine-registry-policy.ts");
 const restorePreflight = read("./spine-restore-preflight.ts");
+const staticPolicy = read("./spine-static-table-policy.ts");
+const targetContract = read("./spine-target-contract.ts");
 const postgres = read("./spine-postgres.ts");
 const runs = read("./spine-run-store.ts");
 const migration = read(
@@ -22,7 +25,7 @@ const migration = read(
 );
 
 describe("Sovereign Spine source contract", () => {
-  it("preserves the public engine imports while routing export through the snapshot engine", () => {
+  it("preserves public imports while routing export through the bundle snapshot engine", () => {
     expect(exportFacade.trim()).toBe(
       'export * from "./sovereign-export-spine-engine";',
     );
@@ -48,18 +51,19 @@ describe("Sovereign Spine source contract", () => {
     );
     expect(bundleContract).toContain("sign_spine_manifest");
     expect(bundleContract).toContain("metadataValid");
-    expect(bundleContract).toContain("(signatureValid || legacyOverride)");
+    expect(bundleContract).toContain("legacyOverride && signatureAbsent");
     expect(exporter).not.toContain('databaseType: "mysql"');
     expect(exporter).not.toContain("insertId");
     expect(exporter).not.toContain("result[0]");
     expect(exporter).not.toContain("FROM `");
   });
 
-  it("redacts nested, authority, query, JWT, and bare-key credentials", () => {
+  it("redacts credentials and preserves Date values deterministically", () => {
     expect(exporter).toContain('url.username = ""');
     expect(exporter).toContain('url.password = ""');
     expect(exporter).toContain('"key"');
     expect(exporter).toContain('url.searchParams.set(key, "ENV_PLACEHOLDER")');
+    expect(exporter).toContain("value instanceof Date");
     expect(exporter).toContain("sanitize_spine_export_value");
   });
 
@@ -71,17 +75,51 @@ describe("Sovereign Spine source contract", () => {
     expect(consistentExport).not.toContain("count(*)");
   });
 
-  it("preflights complete schema, registry, target identity, and data contents before mutation", () => {
+  it("exports and restores only static civic knowledge—not case runtime", () => {
+    expect(exporter).toContain("SPINE_STATIC_CIVIC_TABLES");
+    expect(restorer).toContain("restore_static_spine_table_data");
+    expect(staticPolicy).toContain("SPINE_EXCLUDED_RUNTIME_TABLES");
+    for (const runtimeTable of [
+      "procedural_outputs",
+      "remedy_paths",
+      "strategy_paths",
+      "settlement_calculations",
+      "investigative_queries",
+      "outcome_registry",
+    ]) {
+      expect(staticPolicy).toContain(`"${runtimeTable}"`);
+      expect(postgres.split("export const SPINE_CONFIG_TABLE_SET", 1)[0]).not.toContain(
+        `"${runtimeTable}"`,
+      );
+    }
+  });
+
+  it("preflights target schema, identities, constraints, and values before mutation", () => {
     expect(restorer).toContain("preflight_spine_restore_contents(");
     expect(restorer.indexOf("preflight_spine_restore_contents(")).toBeLessThan(
       restorer.indexOf('set_restore_spine_run_status(runId, "restoring")'),
     );
     expect(restorePreflight).toContain("validateSchemaSection(bundle)");
-    expect(restorePreflight).toContain("loadTargetColumns(");
-    expect(restorePreflight).toContain("resolveRegistryIdentity(");
-    expect(restorePreflight).toContain("outside the Spine allowlist");
+    expect(restorePreflight).toContain("load_spine_target_table_contracts(");
+    expect(restorePreflight).toContain("load_spine_target_identity_counts(");
+    expect(restorePreflight).toContain("validate_spine_row_against_target(");
+    expect(restorePreflight).toContain("outside the static civic Spine policy");
     expect(restorePreflight).toContain("was truncated in the bundle");
-    expect(restorePreflight).toContain("contains unknown column");
+    expect(targetContract).toContain("cannot satisfy required target column");
+    expect(targetContract).toContain("cannot write generated column");
+    expect(targetContract).toContain("cannot write ALWAYS identity column");
+  });
+
+  it("uses one shared canonical registry identity and writable-field contract", () => {
+    expect(restorer).toContain("get_spine_registry_policy");
+    expect(restorer).toContain("select_spine_registry_write_row");
+    expect(registryPolicy).toContain('identityColumns: ["pattern_id", "pattern_name"]');
+    expect(registryPolicy).toContain('available.has("pattern_id")');
+    expect(registryPolicy).toContain("mutable name fallback is not permitted");
+    expect(restorer).toContain("Bundle contains duplicate");
+    expect(restorer).toContain(
+      "Ambiguous ${tableName}.${identityColumn} target matched",
+    );
   });
 
   it("requires authenticated bundles and reports partial restore truthfully", () => {
@@ -97,17 +135,7 @@ describe("Sovereign Spine source contract", () => {
     );
   });
 
-  it("requires canonical pattern IDs whenever the target supports them", () => {
-    expect(restorer).toContain('identityColumns: ["pattern_id", "pattern_name"]');
-    expect(restorer).toContain('available.has("pattern_id")');
-    expect(restorer).toContain("mutable name fallback is not permitted");
-    expect(restorer).toContain("Bundle contains duplicate");
-    expect(restorer).toContain(
-      "Ambiguous ${tableName}.${identityColumn} target matched",
-    );
-  });
-
-  it("uses parameterized PostgreSQL data writes and an explicit civic allowlist", () => {
+  it("uses parameterized PostgreSQL data writes and a static civic allowlist", () => {
     expect(postgres).toContain("on conflict do nothing");
     expect(postgres).toContain("SPINE_CONFIG_TABLE_SET.has(tableName)");
     expect(postgres).toContain("table_not_empty");
