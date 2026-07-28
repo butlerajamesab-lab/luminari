@@ -13,6 +13,9 @@ const oneDayAgoIso = () => new Date(Date.now() - 86_400_000).toISOString();
 const oneDayAgoMillis = () => Date.now() - 86_400_000;
 const oneWeekAgoMillis = () => Date.now() - 604_800_000;
 
+const NORMALIZED_SIGNAL_CATEGORY_SQL =
+  "regexp_replace(COALESCE(signal_type, 'unknown'), '_[0-9]+$', '')";
+
 const getCount = async (query: string, params: unknown[] = []): Promise<number> => {
   const { rows } = await getPool().query(query, params);
   return Number(rows[0]?.cnt ?? 0);
@@ -119,14 +122,14 @@ export const adminDashboardRouter = router({
          ORDER BY cnt DESC`
       ),
       getPool().query(
-        `SELECT COALESCE(signal_type, 'unknown') AS category, COUNT(*)::int AS cnt
+        `SELECT ${NORMALIZED_SIGNAL_CATEGORY_SQL} AS category, COUNT(*)::int AS cnt
          FROM detected_signals
-         GROUP BY COALESCE(signal_type, 'unknown')
-         ORDER BY cnt DESC`
+         GROUP BY ${NORMALIZED_SIGNAL_CATEGORY_SQL}
+         ORDER BY cnt DESC, category`
       ),
       getPool().query(
         `SELECT id::text, case_id::text, COALESCE(signal_description, signal_type, 'Detected signal') AS title,
-                severity::text AS severity, COALESCE(signal_type, 'signal') AS category, created_at
+                severity::text AS severity, ${NORMALIZED_SIGNAL_CATEGORY_SQL} AS category, created_at
          FROM detected_signals
          WHERE severity::text IN ('high', 'critical')
          ORDER BY created_at DESC
@@ -226,7 +229,7 @@ export const adminDashboardRouter = router({
 
       const { rows } = await getPool().query(
         `SELECT id::text, case_id::text, COALESCE(signal_description, signal_type, 'Detected signal') AS title,
-                severity::text AS severity, COALESCE(signal_type, 'signal') AS category, created_at
+                severity::text AS severity, ${NORMALIZED_SIGNAL_CATEGORY_SQL} AS category, created_at
          FROM detected_signals
          ${whereClause}
          ORDER BY created_at DESC
