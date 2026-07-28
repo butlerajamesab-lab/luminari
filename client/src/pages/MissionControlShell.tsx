@@ -1,12 +1,12 @@
-import MissionControlContainmentShell from "./MissionControlContainmentShell";
+import MissionControl from "./MissionControl";
 
 /**
- * Canonical /mission-control entry.
+ * Compatibility entry for the established `/mission-control` route.
  *
- * The overview shell is intentionally bounded. The complete historical
- * Mission Control surface remains available at /mission-control/full, but it
- * must not mount its full operational query fan-out on the canonical entry.
+ * The canonical route renders the complete Mission Control surface. The
+ * containment shell remains available as a separate implementation detail and
+ * must not replace the operational dashboard.
  */
 export default function MissionControlShell() {
-  return <MissionControlContainmentShell />;
+  return <MissionControl />;
 }

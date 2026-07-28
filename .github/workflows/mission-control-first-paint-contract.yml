@@ -1,4 +1,4 @@
-name: Mission Control First-Paint Contract
+name: Mission Control Canonical Surface Contract
 
 on:
   pull_request:
@@ -13,12 +13,12 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: mission-control-first-paint-${{ github.ref }}
+  group: mission-control-canonical-surface-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   contract:
-    name: Bounded canonical entry
+    name: Complete canonical surface
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -33,5 +33,5 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Run first-paint source contract
+      - name: Run canonical-surface source contract
         run: npx vitest run server/mission-control-first-paint-source-contract.test.ts
