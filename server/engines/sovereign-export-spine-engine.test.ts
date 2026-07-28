@@ -45,4 +45,14 @@ describe("Sovereign Spine export redaction", () => {
     expect(new URL(parsed.endpoint).username).toBe("");
     expect(parsed.api_token).toBe("ENV_PLACEHOLDER");
   });
+
+  it("preserves Date values as deterministic ISO strings", () => {
+    const date = new Date("2026-07-27T16:00:00.000Z");
+    expect(sanitize_spine_export_value(date)).toBe(
+      "2026-07-27T16:00:00.000Z",
+    );
+    expect(sanitize_spine_export_value({ observedAt: date })).toEqual({
+      observedAt: "2026-07-27T16:00:00.000Z",
+    });
+  });
 });
