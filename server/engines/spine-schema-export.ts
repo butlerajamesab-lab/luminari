@@ -1,3 +1,4 @@
+import type { PoolClient } from "pg";
 import { query_with_diagnostics } from "../db";
 import {
   build_spine_create_table_statement,
@@ -9,13 +10,33 @@ import {
   type spine_table_schema,
 } from "./spine-postgres";
 
-export async function export_spine_database_schema(): Promise<spine_table_schema[]> {
+async function run_schema_query<T>(
+  client: PoolClient | undefined,
+  text: string,
+  label: string,
+  queryTimeoutMs: number,
+): Promise<{ rows: T[] }> {
+  if (client) {
+    const result = await client.query(text);
+    return { rows: result.rows as T[] };
+  }
+  return query_with_diagnostics<T>(text, [], {
+    label,
+    pool_acquire_timeout_ms: 3_000,
+    query_timeout_ms: queryTimeoutMs,
+  });
+}
+
+export async function export_spine_database_schema(
+  client?: PoolClient,
+): Promise<spine_table_schema[]> {
   const [inventoryResult, columnsResult, constraintsResult, indexesResult] =
     await Promise.all([
-      query_with_diagnostics<{
+      run_schema_query<{
         table_name: string;
         estimated_row_count: string | number | null;
       }>(
+        client,
         `select
            c.relname as table_name,
            greatest(coalesce(s.n_live_tup, c.reltuples, 0), 0)::bigint as estimated_row_count
@@ -24,14 +45,10 @@ export async function export_spine_database_schema(): Promise<spine_table_schema
          left join pg_stat_user_tables s on s.relid = c.oid
          where n.nspname='public' and c.relkind in ('r','p')
          order by c.relname`,
-        [],
-        {
-          label: "spine_schema_inventory",
-          pool_acquire_timeout_ms: 3_000,
-          query_timeout_ms: 15_000,
-        },
+        "spine_schema_inventory",
+        15_000,
       ),
-      query_with_diagnostics<{
+      run_schema_query<{
         table_name: string;
         column_name: string;
         type_sql: string;
@@ -40,6 +57,7 @@ export async function export_spine_database_schema(): Promise<spine_table_schema
         identity_kind: "" | "a" | "d";
         generated_kind: "" | "s";
       }>(
+        client,
         `select
            c.relname as table_name,
            a.attname as column_name,
@@ -57,19 +75,16 @@ export async function export_spine_database_schema(): Promise<spine_table_schema
            and a.attnum > 0
            and not a.attisdropped
          order by c.relname, a.attnum`,
-        [],
-        {
-          label: "spine_schema_columns_all",
-          pool_acquire_timeout_ms: 3_000,
-          query_timeout_ms: 20_000,
-        },
+        "spine_schema_columns_all",
+        20_000,
       ),
-      query_with_diagnostics<{
+      run_schema_query<{
         table_name: string;
         constraint_name: string;
         constraint_type: "p" | "u" | "c" | "f";
         definition: string;
       }>(
+        client,
         `select
            c.relname as table_name,
            con.conname as constraint_name,
@@ -80,18 +95,15 @@ export async function export_spine_database_schema(): Promise<spine_table_schema
          join pg_namespace n on n.oid=c.relnamespace
          where n.nspname='public' and con.contype in ('p','u','c','f')
          order by c.relname, con.contype, con.conname`,
-        [],
-        {
-          label: "spine_schema_constraints_all",
-          pool_acquire_timeout_ms: 3_000,
-          query_timeout_ms: 20_000,
-        },
+        "spine_schema_constraints_all",
+        20_000,
       ),
-      query_with_diagnostics<{
+      run_schema_query<{
         table_name: string;
         index_name: string;
         definition: string;
       }>(
+        client,
         `select
            table_class.relname as table_name,
            index_class.relname as index_name,
@@ -105,12 +117,8 @@ export async function export_spine_database_schema(): Promise<spine_table_schema
            and not i.indisprimary
            and con.oid is null
          order by table_class.relname, index_class.relname`,
-        [],
-        {
-          label: "spine_schema_indexes_all",
-          pool_acquire_timeout_ms: 3_000,
-          query_timeout_ms: 20_000,
-        },
+        "spine_schema_indexes_all",
+        20_000,
       ),
     ]);
 
@@ -163,12 +171,14 @@ export async function export_spine_database_schema(): Promise<spine_table_schema
   });
 }
 
-
-export async function export_spine_database_enums(): Promise<spine_enum_definition[]> {
-  const result = await query_with_diagnostics<{
+export async function export_spine_database_enums(
+  client?: PoolClient,
+): Promise<spine_enum_definition[]> {
+  const result = await run_schema_query<{
     enum_name: string;
     labels: unknown;
   }>(
+    client,
     `select
        t.typname as enum_name,
        jsonb_agg(e.enumlabel order by e.enumsortorder) as labels
@@ -178,12 +188,8 @@ export async function export_spine_database_enums(): Promise<spine_enum_definiti
      where n.nspname='public'
      group by t.typname
      order by t.typname`,
-    [],
-    {
-      label: "spine_schema_enums_all",
-      pool_acquire_timeout_ms: 3_000,
-      query_timeout_ms: 10_000,
-    },
+    "spine_schema_enums_all",
+    10_000,
   );
   return result.rows.map((row) => ({
     enumName: row.enum_name,
