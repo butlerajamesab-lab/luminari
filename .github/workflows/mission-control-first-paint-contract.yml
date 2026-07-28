@@ -1,0 +1,37 @@
+name: Mission Control First-Paint Contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "client/src/pages/MissionControlShell.tsx"
+      - "client/src/pages/MissionControlContainmentShell.tsx"
+      - "client/src/hooks/mission/useMissionControlSchemaLedger.ts"
+      - "server/_core/index.ts"
+      - "server/mission-control-first-paint-source-contract.test.ts"
+      - ".github/workflows/mission-control-first-paint-contract.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: mission-control-first-paint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: Bounded canonical entry
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Run first-paint source contract
+        run: npx vitest run server/mission-control-first-paint-source-contract.test.ts
