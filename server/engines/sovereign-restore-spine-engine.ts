@@ -6,7 +6,6 @@ import {
 } from "./spine-bundle-contract";
 import { preflight_spine_restore_contents } from "./spine-restore-preflight";
 import {
-  SPINE_CONFIG_TABLE_SET,
   assert_spine_identifier,
   create_spine_missing_tables,
   list_spine_public_tables,
