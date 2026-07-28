@@ -230,12 +230,16 @@ export function verify_spine_bundle(bundle_json: string): {
   // Break-glass legacy mode waives only signature authentication. A legacy
   // bundle must still be internally consistent, identity-aligned, and explicitly
   // PostgreSQL-compatible before it can reach any restore mutation.
+  const signatureAbsent =
+    manifest.signature === undefined ||
+    manifest.signature === null ||
+    manifest.signature === "";
   const executable =
     checksumValid &&
     metadataValid &&
     formatValid &&
     databaseValid &&
-    (signatureValid || legacyOverride);
+    (signatureValid || (legacyOverride && signatureAbsent));
 
   return {
     bundle,

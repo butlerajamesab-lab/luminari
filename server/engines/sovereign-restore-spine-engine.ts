@@ -11,10 +11,16 @@ import {
   create_spine_missing_tables,
   list_spine_public_tables,
   quote_spine_identifier,
-  restore_spine_table_data,
   type spine_table_data,
   type spine_table_schema,
 } from "./spine-postgres";
+import {
+  get_spine_registry_policy,
+  resolve_registry_identity_column,
+  select_spine_registry_write_row,
+} from "./spine-registry-policy";
+import { restore_static_spine_table_data } from "./spine-static-table-policy";
+export { resolve_registry_identity_column } from "./spine-registry-policy";
 import {
   create_restore_spine_run,
   finish_restore_spine_run,
@@ -45,91 +51,6 @@ export interface RestorePreview {
   dataTableCount: number;
   riskLevel: "low" | "medium" | "high" | "critical";
   validation: ValidationResult;
-}
-
-type registry_restore_policy = {
-  identityColumns: string[];
-  writableColumns: string[];
-};
-
-const REGISTRY_RESTORE_POLICY: Record<string, registry_restore_policy> = {
-  engine_registry: {
-    identityColumns: ["engine_id_er"],
-    writableColumns: [
-      "engine_id_er", "engine_name_er", "description_er", "category_er",
-      "enabled_er", "sort_order_er", "config_json_er", "version_er",
-      "created_at_er", "updated_at_er",
-    ],
-  },
-  data_stream_registry: {
-    identityColumns: ["stream_id_dsr"],
-    writableColumns: [
-      "stream_id_dsr", "stream_name_dsr", "stream_type_dsr", "source_url_dsr",
-      "update_freq_dsr", "signal_weight_dsr", "confidence_multiplier_dsr",
-      "enabled_dsr", "description_dsr", "field_mapping_dsr", "source_dsr",
-      "api_url_dsr", "jurisdiction_dsr", "domain_dsr", "cron_expression_dsr",
-      "post_processing_engine_name_dsr", "parser_mode_dsr", "created_at_dsr",
-      "updated_at_dsr",
-    ],
-  },
-  signal_registry: {
-    identityColumns: ["signal_type"],
-    writableColumns: [
-      "signal_type", "domain", "trigger_patterns", "linked_doctrine",
-      "linked_weak_joints", "linked_contradiction_templates", "severity",
-      "explanation", "recommended_next_steps", "added_by", "created_at",
-      "updated_at", "cluster_id", "route_to_pattern_engine",
-      "route_to_strategy_engine", "route_to_procedural_engine",
-    ],
-  },
-  pattern_registry: {
-    // Newer schemas govern patterns by pattern_id. The current Lighthouse live
-    // schema predates that column, so pattern_name remains a fail-closed fallback
-    // only when it is present and unique in both the bundle and target table.
-    identityColumns: ["pattern_id", "pattern_name"],
-    writableColumns: [
-      "pattern_id", "pattern_name", "pattern_description", "pattern_type",
-      "signal_type", "trigger_threshold", "confidence_threshold",
-      "jurisdiction_scope", "related_laws", "related_agencies", "harm_domains",
-      "metadata", "created_at", "updated_at", "jurisdiction",
-    ],
-  },
-};
-
-export function resolve_registry_identity_column(
-  tableName: string,
-  targetColumns: Iterable<string>,
-  rows: Array<Record<string, unknown>>,
-): string {
-  const policy = REGISTRY_RESTORE_POLICY[tableName];
-  if (!policy) throw new Error(`Unsupported registry restore table: ${tableName}`);
-  const available = new Set(targetColumns);
-
-  if (tableName === "pattern_registry" && available.has("pattern_id")) {
-    const completePatternIds = rows.every((row) => {
-      const value = row?.pattern_id;
-      return value !== null && value !== undefined && String(value).trim() !== "";
-    });
-    if (!completePatternIds) {
-      throw new Error(
-        "Target pattern_registry requires complete pattern_id values; mutable name fallback is not permitted",
-      );
-    }
-    return "pattern_id";
-  }
-
-  for (const candidate of policy.identityColumns) {
-    if (!available.has(candidate)) continue;
-    const complete = rows.every((row) => {
-      const value = row?.[candidate];
-      return value !== null && value !== undefined && String(value).trim() !== "";
-    });
-    if (complete) return candidate;
-  }
-
-  throw new Error(
-    `No complete canonical identity column is available for ${tableName}; expected one of ${policy.identityColumns.join(", ")}`,
-  );
 }
 
 export function parseBundleJson(jsonStr: string): { bundle: any; checksum: string } {
@@ -228,8 +149,7 @@ async function upsert_registry_table(
   tableExport: spine_table_data,
 ): Promise<{ restored: number; identityValues: string[] }> {
   const tableName = assert_spine_identifier(tableExport.tableName, "registry table");
-  const policy = REGISTRY_RESTORE_POLICY[tableName];
-  if (!policy) throw new Error(`Unsupported registry restore table: ${tableName}`);
+  const policy = get_spine_registry_policy(tableName);
   const targetColumns = await load_table_columns(client, tableName);
   const rows = (tableExport.rows ?? []) as Array<Record<string, unknown>>;
   const identityColumn = resolve_registry_identity_column(
@@ -265,7 +185,9 @@ async function upsert_registry_table(
     }
     seenIdentities.add(identityValue);
 
-    const entries = Object.entries(rawRow).filter(([column]) => writable.has(column));
+    const entries = Object.entries(
+      select_spine_registry_write_row(tableName, targetColumns, rawRow),
+    );
     const updateEntries = entries.filter(([column]) => column !== identityColumn);
     identityValues.push(identityValue);
 
@@ -404,7 +326,7 @@ export async function executeRestore(
           continue;
         }
         try {
-          const result = await restore_spine_table_data(dataExport);
+          const result = await restore_static_spine_table_data(dataExport);
           if (result.skipped) {
             skippedTables.push({ tableName: result.tableName, reason: result.reason });
           } else {

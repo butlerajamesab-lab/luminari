@@ -11,11 +11,11 @@ import { export_spine_table_data_consistent } from "./spine-consistent-data-expo
 import { create_spine_deployment_manifest } from "./spine-deployment-manifest";
 import { with_spine_export_snapshot } from "./spine-export-snapshot";
 import {
-  SPINE_CONFIG_TABLES,
   type spine_table_data,
   type spine_table_schema,
   type spine_enum_definition,
 } from "./spine-postgres";
+import { SPINE_STATIC_CIVIC_TABLES } from "./spine-static-table-policy";
 import {
   export_spine_database_enums,
   export_spine_database_schema,
@@ -158,6 +158,7 @@ function sanitizeExportString(value: string): string {
 }
 
 export function sanitize_spine_export_value(value: any): any {
+  if (value instanceof Date) return value.toISOString();
   if (typeof value === "string") return sanitizeExportString(value);
   if (Array.isArray(value)) return value.map(sanitize_spine_export_value);
   if (value && typeof value === "object") {
@@ -359,7 +360,7 @@ export async function runExport(
         const inventory = new Set(
           schema.tables.map((table) => table.tableName),
         );
-        const existingConfigTables = SPINE_CONFIG_TABLES.filter((table) =>
+        const existingConfigTables = SPINE_STATIC_CIVIC_TABLES.filter((table) =>
           inventory.has(table),
         );
         const dataExports: DataExport[] = [];
@@ -379,7 +380,7 @@ export async function runExport(
         bundle.data = dataExports;
         bundle.dataPolicy = {
           allowlistedTables: existingConfigTables,
-          absentAllowlistedTables: SPINE_CONFIG_TABLES.filter(
+          absentAllowlistedTables: SPINE_STATIC_CIVIC_TABLES.filter(
             (table) => !inventory.has(table),
           ),
           rowLimitPerTable: 100_000,
