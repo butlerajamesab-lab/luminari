@@ -71,9 +71,23 @@ beforeEach(() => {
     if (text.includes("information_schema.columns")) {
       return {
         rows: [
-          { table_name: "engine_registry", column_name: "engine_id_er" },
+          {
+            table_name: "engine_registry",
+            column_name: "engine_id_er",
+            data_type: "text",
+            udt_name: "text",
+            is_nullable: "NO",
+            column_default: null,
+            is_identity: "NO",
+            identity_generation: null,
+            is_generated: "NEVER",
+          },
         ],
       };
+    }
+    if (text.includes("as identity_value")) return { rows: [] };
+    if (text.includes("count(*) as row_count")) {
+      return { rows: [{ row_count: 0 }] };
     }
     return { rows: [] };
   });
@@ -97,7 +111,7 @@ describe("Sovereign Spine restore preflight", () => {
     );
   });
 
-  it("validates schema, target identity, and data rows in one read-only preflight", async () => {
+  it("validates schema, target identity, constraints, and data rows in one read-only preflight", async () => {
     const resolver = vi.fn(() => "engine_id_er");
 
     await expect(
@@ -106,7 +120,7 @@ describe("Sovereign Spine restore preflight", () => {
 
     expect(resolver).toHaveBeenCalledWith(
       "engine_registry",
-      expect.any(Set),
+      expect.anything(),
       [{ engine_id_er: "pattern-engine" }],
     );
     expect(queryMock.mock.calls[0][0]).toBe(
@@ -148,6 +162,46 @@ describe("Sovereign Spine restore preflight", () => {
     await expect(
       preflight_spine_restore_contents(unknown, "full", () => "engine_id_er"),
     ).rejects.toThrow("contains unknown column unknown_column");
+  });
+
+  it("rejects target-only required columns before mutation", async () => {
+    queryMock.mockImplementation(async (text: string) => {
+      if (text.includes("information_schema.columns")) {
+        return {
+          rows: [
+            {
+              table_name: "engine_registry",
+              column_name: "engine_id_er",
+              data_type: "text",
+              udt_name: "text",
+              is_nullable: "NO",
+              column_default: null,
+              is_identity: "NO",
+              identity_generation: null,
+              is_generated: "NEVER",
+            },
+            {
+              table_name: "engine_registry",
+              column_name: "required_target_field",
+              data_type: "text",
+              udt_name: "text",
+              is_nullable: "NO",
+              column_default: null,
+              is_identity: "NO",
+              identity_generation: null,
+              is_generated: "NEVER",
+            },
+          ],
+        };
+      }
+      if (text.includes("as identity_value")) return { rows: [] };
+      if (text.includes("count(*) as row_count")) return { rows: [{ row_count: 0 }] };
+      return { rows: [] };
+    });
+
+    await expect(
+      preflight_spine_restore_contents(bundle("full"), "full", () => "engine_id_er"),
+    ).rejects.toThrow("cannot satisfy required target column");
   });
 
   it("requires every requested section before mutation", () => {
