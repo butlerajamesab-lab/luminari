@@ -1,0 +1,43 @@
+name: Replace Spine Legacy Allowlist
+
+on:
+  pull_request:
+    branches: [main]
+    types: [synchronize]
+    paths:
+      - "scripts/replace-spine-legacy-allowlist.py"
+      - "scripts/.replace-spine-legacy-allowlist-trigger"
+      - ".github/workflows/replace-spine-legacy-allowlist.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - run: python scripts/replace-spine-legacy-allowlist.py
+      - name: Validate static-only lower-level policy
+        run: |
+          grep -q '"registry_programs"' server/engines/spine-postgres.ts
+          ! grep -q '"procedural_outputs"' server/engines/spine-postgres.ts
+          ! grep -q 'SPINE_CONFIG_TABLE_SET,' server/engines/sovereign-restore-spine-engine.ts
+      - name: Remove staging machinery
+        run: |
+          rm -f scripts/replace-spine-legacy-allowlist.py
+          rm -f scripts/.replace-spine-legacy-allowlist-trigger
+          rm -f .github/workflows/replace-spine-legacy-allowlist.yml
+      - name: Commit durable policy
+        run: |
+          git config user.name "chatgpt-codex-connector[bot]"
+          git config user.email "chatgpt-codex-connector[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "Remove mixed runtime tables from lower-level Spine policy"
+          git push origin HEAD:${{ github.head_ref }}
