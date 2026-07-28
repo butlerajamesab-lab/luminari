@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import {
   Activity,
@@ -15,7 +16,6 @@ import {
   Search,
   Server,
   Shield,
-  Wrench,
   XCircle,
   Zap,
 } from "lucide-react";
@@ -24,8 +24,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 
-const OVERVIEW_QUERY_OPTIONS = {
+const HEALTH_QUERY_OPTIONS = {
   staleTime: 60_000,
+  refetchOnWindowFocus: false,
+  retry: false,
+} as const;
+
+const DEFERRED_OVERVIEW_QUERY_OPTIONS = {
+  enabled: false,
+  staleTime: 5 * 60_000,
+  gcTime: 15 * 60_000,
   refetchOnWindowFocus: false,
   retry: false,
 } as const;
@@ -71,6 +79,18 @@ function PanelEmpty({ label }: { label: string }) {
   return <div className="text-sm text-muted-foreground py-4 text-center">{label}</div>;
 }
 
+function DeferredPanel({ label, onLoad, isLoading }: { label: string; onLoad: () => void; isLoading: boolean }) {
+  return (
+    <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-center space-y-3">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <Button variant="outline" size="sm" onClick={onLoad} disabled={isLoading}>
+        {isLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Activity className="h-3.5 w-3.5 mr-1" />}
+        Load overview data
+      </Button>
+    </div>
+  );
+}
+
 function PanelSkeleton() {
   return (
     <div className="space-y-3 animate-pulse">
@@ -82,12 +102,31 @@ function PanelSkeleton() {
   );
 }
 
-export default function MissionControlShell() {
-  const systemHealth = trpc.adminDashboard.systemHealth.useQuery(undefined, OVERVIEW_QUERY_OPTIONS);
-  const knowledgePopulation = trpc.knowledgeIngestion.populationStats.useQuery(undefined, OVERVIEW_QUERY_OPTIONS);
-  const caseActivity = trpc.adminDashboard.caseActivity.useQuery(undefined, OVERVIEW_QUERY_OPTIONS);
-  const structuralSignals = trpc.adminDashboard.structuralSignals.useQuery(undefined, OVERVIEW_QUERY_OPTIONS);
-  const workQueue = trpc.adminDashboard.workQueue.useQuery(undefined, OVERVIEW_QUERY_OPTIONS);
+export default function MissionControlContainmentShell() {
+  const [overviewRequested, setOverviewRequested] = useState(false);
+  const [overviewLoading, setOverviewLoading] = useState(false);
+
+  const systemHealth = trpc.adminDashboard.systemHealth.useQuery(undefined, HEALTH_QUERY_OPTIONS);
+  const knowledgePopulation = trpc.knowledgeIngestion.populationStats.useQuery(undefined, DEFERRED_OVERVIEW_QUERY_OPTIONS);
+  const caseActivity = trpc.adminDashboard.caseActivity.useQuery(undefined, DEFERRED_OVERVIEW_QUERY_OPTIONS);
+  const structuralSignals = trpc.adminDashboard.structuralSignals.useQuery(undefined, DEFERRED_OVERVIEW_QUERY_OPTIONS);
+  const workQueue = trpc.adminDashboard.workQueue.useQuery(undefined, DEFERRED_OVERVIEW_QUERY_OPTIONS);
+
+  const loadOverview = async () => {
+    if (overviewLoading) return;
+    setOverviewRequested(true);
+    setOverviewLoading(true);
+    try {
+      // Deliberately sequential: each procedure already performs bounded internal
+      // queries, so the canonical entry must not create a second fan-out layer.
+      await knowledgePopulation.refetch();
+      await caseActivity.refetch();
+      await structuralSignals.refetch();
+      await workQueue.refetch();
+    } finally {
+      setOverviewLoading(false);
+    }
+  };
 
   const knowledgeSummary = knowledgePopulation.data?.summary;
   const knowledgeTables = safeArray(knowledgePopulation.data?.tables);
@@ -101,7 +140,14 @@ export default function MissionControlShell() {
   const byCategory = safeArray(structuralSignals.data?.byCategory);
   const criticalFindings = safeArray(structuralSignals.data?.criticalFindings);
 
-  const anyOverviewError = systemHealth.error || knowledgePopulation.error || caseActivity.error || structuralSignals.error || workQueue.error;
+  const anyOverviewError = Boolean(
+    systemHealth.error ||
+    (overviewRequested && (knowledgePopulation.error || caseActivity.error || structuralSignals.error || workQueue.error)),
+  );
+
+  const deferred = (label: string) => (
+    <DeferredPanel label={label} onLoad={() => void loadOverview()} isLoading={overviewLoading} />
+  );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -112,16 +158,26 @@ export default function MissionControlShell() {
               <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
                 <Activity className="h-6 w-6 text-primary" /> Mission Control
               </h1>
-              {anyOverviewError ? statusBadge("warning", "partial") : statusBadge("ok", "overview")}
+              {anyOverviewError
+                ? statusBadge("warning", "partial")
+                : overviewLoading
+                  ? statusBadge("loading", "loading overview")
+                  : overviewRequested
+                    ? statusBadge("ok", "overview loaded")
+                    : statusBadge("ok", "health check")}
             </div>
             <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-              Admin operational overview — system health, knowledge backbone, live intake, structural signals, work queue, and engine access.
+              Admin operational overview. The canonical entry keeps the health path hot and loads deeper counts sequentially on request.
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
+            <Button variant={overviewRequested ? "outline" : "default"} size="sm" onClick={() => void loadOverview()} disabled={overviewLoading}>
+              {overviewLoading ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Activity className="h-3.5 w-3.5 mr-1" />}
+              {overviewRequested ? "Refresh Overview" : "Load Overview Data"}
+            </Button>
             <Button variant="outline" size="sm" asChild><Link href="/admin/knowledge-population"><BookOpen className="h-3.5 w-3.5 mr-1" /> Knowledge Population</Link></Button>
             <Button variant="outline" size="sm" asChild><Link href="/ingestion-control"><Radio className="h-3.5 w-3.5 mr-1" /> Ingestion Control</Link></Button>
-            <Button variant="outline" size="sm" asChild><Link href="/mission-control/full"><ExternalLink className="h-3.5 w-3.5 mr-1" /> Legacy Deep View</Link></Button>
+            <Button variant="outline" size="sm" asChild><Link href="/mission-control/full"><ExternalLink className="h-3.5 w-3.5 mr-1" /> Full Mission Control</Link></Button>
           </div>
         </div>
 
@@ -150,7 +206,7 @@ export default function MissionControlShell() {
               </div>
             </CardHeader>
             <CardContent>
-              {knowledgePopulation.isLoading ? <PanelSkeleton /> : knowledgePopulation.error ? (
+              {!overviewRequested ? deferred("Load the bounded knowledge, case, signal, and queue summaries when needed.") : knowledgePopulation.isFetching ? <PanelSkeleton /> : knowledgePopulation.error ? (
                 <PanelEmpty label={`Knowledge backbone error: ${knowledgePopulation.error.message}`} />
               ) : (
                 <div className="space-y-4">
@@ -182,7 +238,7 @@ export default function MissionControlShell() {
           <Card>
             <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4 text-violet-400" /> Case Activity</CardTitle></CardHeader>
             <CardContent>
-              {caseActivity.isLoading ? <PanelSkeleton /> : caseActivity.error ? <PanelEmpty label={`Case activity error: ${caseActivity.error.message}`} /> : (
+              {!overviewRequested ? deferred("Case activity remains deferred on first paint.") : caseActivity.isFetching ? <PanelSkeleton /> : caseActivity.error ? <PanelEmpty label={`Case activity error: ${caseActivity.error.message}`} /> : (
                 <div className="grid grid-cols-2 gap-3">
                   <MetricCard label="Cases" value={caseActivity.data?.cases?.total ?? 0} icon={<FileText className="h-4 w-4" />} />
                   <MetricCard label="Documents" value={caseActivity.data?.documents?.total ?? 0} icon={<BookOpen className="h-4 w-4" />} tone="blue" />
@@ -196,7 +252,7 @@ export default function MissionControlShell() {
           <Card>
             <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Shield className="h-4 w-4 text-amber-400" /> Structural Signals</CardTitle></CardHeader>
             <CardContent>
-              {structuralSignals.isLoading ? <PanelSkeleton /> : structuralSignals.error ? <PanelEmpty label={`Structural signal error: ${structuralSignals.error.message}`} /> : (
+              {!overviewRequested ? deferred("Structural-signal aggregation remains deferred on first paint.") : structuralSignals.isFetching ? <PanelSkeleton /> : structuralSignals.error ? <PanelEmpty label={`Structural signal error: ${structuralSignals.error.message}`} /> : (
                 <div className="space-y-4">
                   <div className="grid grid-cols-3 gap-3">
                     <MetricCard label="Total" value={structuralSignals.data?.totalFindings ?? structuralSignals.data?.total_findings ?? 0} icon={<Shield className="h-4 w-4" />} tone="warning" />
@@ -213,7 +269,7 @@ export default function MissionControlShell() {
         <Card>
           <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Activity className="h-4 w-4 text-cyan-400" /> Work Queue</CardTitle></CardHeader>
           <CardContent>
-            {workQueue.isLoading ? <PanelSkeleton /> : workQueue.error ? <PanelEmpty label={`Work queue error: ${workQueue.error.message}`} /> : (
+            {!overviewRequested ? deferred("Work-queue history remains deferred on first paint.") : workQueue.isFetching ? <PanelSkeleton /> : workQueue.error ? <PanelEmpty label={`Work queue error: ${workQueue.error.message}`} /> : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <MetricCard label="Running" value={running.length} icon={<Loader2 className="h-4 w-4" />} tone={running.length > 0 ? "blue" : "ok"} />
                 <MetricCard label="Failed" value={failed.length} icon={<XCircle className="h-4 w-4" />} tone={failed.length > 0 ? "error" : "ok"} />
@@ -236,11 +292,12 @@ export default function MissionControlShell() {
           <Card>
             <CardHeader className="pb-3"><CardTitle className="text-base flex items-center gap-2"><Zap className="h-4 w-4 text-amber-400" /> Panel Activation</CardTitle></CardHeader>
             <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p>Deep-dive panels remain accessible, but are not mounted on the overview screen.</p>
+              <p>Deep-dive panels remain accessible, but are not mounted on the canonical overview screen.</p>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" asChild><Link href="/mission-control/full">Open Legacy Deep View</Link></Button>
+                <Button variant="outline" size="sm" asChild><Link href="/mission-control/full">Full Mission Control</Link></Button>
                 <Button variant="outline" size="sm" asChild><Link href="/mission-control/live">Live Monitor</Link></Button>
-                <Button variant="outline" size="sm" asChild><Link href="/mission-control/infinite">Internal Monitor</Link></Button>
+                <Button variant="outline" size="sm" asChild><Link href="/mission-control/intake">Intake Monitor</Link></Button>
+                <Button variant="outline" size="sm" asChild><Link href="/mission-control/governance">Governance</Link></Button>
                 <Button variant="outline" size="sm" asChild><Link href="/architecture-map">Architecture Map</Link></Button>
               </div>
             </CardContent>

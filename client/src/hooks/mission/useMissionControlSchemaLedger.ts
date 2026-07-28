@@ -1,20 +1,14 @@
 import { useEffect, useState } from "react";
 import { MissionControlPayload, normalizeMissionControlPayload } from "./missionControlPayload";
 
-const PRIMARY_ENDPOINT = "/api/roots/schema/ledger";
-const FALLBACK_ENDPOINT = "/api/system/schema";
+const SCHEMA_LEDGER_ENDPOINT = "/api/system/schema";
 
 async function fetchMissionControlPayload(): Promise<MissionControlPayload> {
-  const primaryResponse = await fetch(PRIMARY_ENDPOINT, { cache: "no-store" });
-  if (primaryResponse.ok) {
-    return normalizeMissionControlPayload(await primaryResponse.json());
+  const response = await fetch(SCHEMA_LEDGER_ENDPOINT, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`schema_ledger_fetch_failed_${response.status}`);
   }
-
-  const fallbackResponse = await fetch(FALLBACK_ENDPOINT, { cache: "no-store" });
-  if (!fallbackResponse.ok) {
-    throw new Error(`schema_ledger_fetch_failed_${fallbackResponse.status}`);
-  }
-  return normalizeMissionControlPayload(await fallbackResponse.json());
+  return normalizeMissionControlPayload(await response.json());
 }
 
 export function useMissionControlSchemaLedger() {
@@ -37,7 +31,7 @@ export function useMissionControlSchemaLedger() {
   };
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   return { payload, isLoading, error, refetch: load };
