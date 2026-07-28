@@ -112,6 +112,17 @@ describe("signed Sovereign Spine bundle contract", () => {
     });
   });
 
+  it("does not let legacy override accept a present but invalid signature", () => {
+    const bundle = createBundle();
+    bundle._manifest.signature = "0".repeat(64);
+    process.env.ALLOW_LEGACY_UNSIGNED_SPINE_RESTORE = "true";
+
+    const result = verify_spine_bundle(stringify_spine_json(bundle));
+    expect(result.verification.signatureValid).toBe(false);
+    expect(result.verification.legacyOverride).toBe(true);
+    expect(result.verification.executable).toBe(false);
+  });
+
   it("keeps identity checks active under legacy override", () => {
     const bundle = createBundle();
     delete bundle._manifest.signature;
