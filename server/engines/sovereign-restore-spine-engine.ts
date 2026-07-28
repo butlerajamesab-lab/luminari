@@ -4,7 +4,7 @@ import {
   parse_spine_bundle_json,
   verify_spine_bundle,
 } from "./spine-bundle-contract";
-import { preflight_spine_restore_request } from "./spine-restore-preflight";
+import { preflight_spine_restore_contents } from "./spine-restore-preflight";
 import {
   SPINE_CONFIG_TABLE_SET,
   assert_spine_identifier,
@@ -104,6 +104,19 @@ export function resolve_registry_identity_column(
   const policy = REGISTRY_RESTORE_POLICY[tableName];
   if (!policy) throw new Error(`Unsupported registry restore table: ${tableName}`);
   const available = new Set(targetColumns);
+
+  if (tableName === "pattern_registry" && available.has("pattern_id")) {
+    const completePatternIds = rows.every((row) => {
+      const value = row?.pattern_id;
+      return value !== null && value !== undefined && String(value).trim() !== "";
+    });
+    if (!completePatternIds) {
+      throw new Error(
+        "Target pattern_registry requires complete pattern_id values; mutable name fallback is not permitted",
+      );
+    }
+    return "pattern_id";
+  }
 
   for (const candidate of policy.identityColumns) {
     if (!available.has(candidate)) continue;
@@ -363,7 +376,11 @@ export async function executeRestore(
         `Spine bundle is not executable: ${preview.validation.warnings.join("; ")}`,
       );
     }
-    preflight_spine_restore_request(bundle, restoreType);
+    await preflight_spine_restore_contents(
+      bundle,
+      restoreType,
+      resolve_registry_identity_column,
+    );
     await set_restore_spine_run_status(runId, "restoring");
 
     if (["full", "schema", "deployment"].includes(restoreType)) {
