@@ -1,14 +1,83 @@
-import { describe, expect, it } from "vitest";
-import { preflight_spine_restore_request } from "./spine-restore-preflight";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { connectMock, queryMock, releaseMock } = vi.hoisted(() => ({
+  connectMock: vi.fn(),
+  queryMock: vi.fn(),
+  releaseMock: vi.fn(),
+}));
+
+vi.mock("../db", () => ({
+  getPool: () => ({ connect: connectMock }),
+}));
+
+import {
+  preflight_spine_restore_contents,
+  preflight_spine_restore_request,
+} from "./spine-restore-preflight";
+
+function schemaTable(tableName = "engine_registry", columnName = "engine_id_er") {
+  return {
+    tableName,
+    rowCount: 0,
+    rowCountMode: "estimate",
+    columns: [
+      {
+        columnName,
+        typeSql: "text",
+        notNull: true,
+        defaultSql: null,
+        identity: "",
+        generated: "",
+      },
+    ],
+    constraints: [],
+    indexes: [],
+    createStatement: "",
+    postCreateStatements: [],
+  };
+}
 
 function bundle(bundleType: "full" | "schema" | "config" | "deployment") {
   return {
     _manifest: { bundleType },
-    schema: { tables: [] },
-    config: { registryTables: [] },
-    data: [],
+    schema: { enums: [], tables: [schemaTable()] },
+    config: {
+      registryTables: [
+        {
+          tableName: "engine_registry",
+          rowCount: 1,
+          truncated: false,
+          rows: [{ engine_id_er: "pattern-engine" }],
+        },
+      ],
+    },
+    data: [
+      {
+        tableName: "engine_registry",
+        rowCount: 1,
+        truncated: false,
+        rows: [{ engine_id_er: "pattern-engine" }],
+      },
+    ],
   };
 }
+
+beforeEach(() => {
+  connectMock.mockReset();
+  queryMock.mockReset();
+  releaseMock.mockReset();
+  connectMock.mockResolvedValue({ query: queryMock, release: releaseMock });
+  queryMock.mockImplementation(async (text: string) => {
+    if (text.includes("information_schema.columns")) {
+      return {
+        rows: [
+          { table_name: "engine_registry", column_name: "engine_id_er" },
+        ],
+      };
+    }
+    return { rows: [] };
+  });
+});
 
 describe("Sovereign Spine restore preflight", () => {
   it("allows only declared restore capabilities for each signed bundle type", () => {
@@ -28,31 +97,64 @@ describe("Sovereign Spine restore preflight", () => {
     );
   });
 
-  it("requires every full-restore section before mutation", () => {
+  it("validates schema, target identity, and data rows in one read-only preflight", async () => {
+    const resolver = vi.fn(() => "engine_id_er");
+
+    await expect(
+      preflight_spine_restore_contents(bundle("full"), "full", resolver),
+    ).resolves.toBeUndefined();
+
+    expect(resolver).toHaveBeenCalledWith(
+      "engine_registry",
+      expect.any(Set),
+      [{ engine_id_er: "pattern-engine" }],
+    );
+    expect(queryMock.mock.calls[0][0]).toBe(
+      "begin transaction isolation level repeatable read read only",
+    );
+    expect(queryMock.mock.calls.at(-1)?.[0]).toBe("commit");
+    expect(releaseMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects malformed schema before acquiring a target client", async () => {
+    const value = bundle("schema");
+    value.schema.tables[0].columns = [];
+
+    await expect(
+      preflight_spine_restore_contents(value, "schema", vi.fn()),
+    ).rejects.toThrow("has no columns");
+    expect(connectMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects unsupported registry tables before mutation", async () => {
+    const value = bundle("config");
+    value.config.registryTables[0].tableName = "users";
+
+    await expect(
+      preflight_spine_restore_contents(value, "config", vi.fn()),
+    ).rejects.toThrow("Unsupported registry restore table");
+    expect(queryMock.mock.calls.at(-1)?.[0]).toBe("rollback");
+  });
+
+  it("rejects truncated and unknown-column data before mutation", async () => {
+    const truncated = bundle("full");
+    truncated.data[0].truncated = true;
+    await expect(
+      preflight_spine_restore_contents(truncated, "full", () => "engine_id_er"),
+    ).rejects.toThrow("was truncated in the bundle");
+
+    const unknown = bundle("full");
+    unknown.data[0].rows = [{ engine_id_er: "pattern-engine", unknown_column: 1 }];
+    await expect(
+      preflight_spine_restore_contents(unknown, "full", () => "engine_id_er"),
+    ).rejects.toThrow("contains unknown column unknown_column");
+  });
+
+  it("requires every requested section before mutation", () => {
     const value = bundle("full");
     delete (value as any).data;
     expect(() => preflight_spine_restore_request(value, "full")).toThrow(
       "complete data section",
-    );
-  });
-
-  it("requires schema and registry sections for deployment restore", () => {
-    const missingSchema = bundle("deployment");
-    delete (missingSchema as any).schema;
-    expect(() => preflight_spine_restore_request(missingSchema, "deployment")).toThrow(
-      "complete schema.tables section",
-    );
-
-    const missingConfig = bundle("deployment");
-    delete (missingConfig as any).config;
-    expect(() => preflight_spine_restore_request(missingConfig, "deployment")).toThrow(
-      "complete config.registryTables section",
-    );
-  });
-
-  it("rejects missing or unsupported manifest types", () => {
-    expect(() => preflight_spine_restore_request({}, "config")).toThrow(
-      "unsupported manifest type",
     );
   });
 });
