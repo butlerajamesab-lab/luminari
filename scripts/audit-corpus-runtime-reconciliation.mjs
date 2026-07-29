@@ -77,7 +77,16 @@ function summarize_candidate(candidate) {
   const promotion_ready = candidate.promotion_ready ?? {};
   const forensic_provenance = candidate.forensic_provenance ?? {};
   const confidence_scores = candidate.confidence_scores ?? {};
-  const fields = forensic_provenance.fields ?? {};
+  const fields =
+    forensic_provenance.fields ??
+    forensic_provenance.field_metadata ??
+    {};
+  const source_line_start =
+    forensic_provenance.start_line ??
+    forensic_provenance.source_line_start;
+  const source_line_end =
+    forensic_provenance.end_line ??
+    forensic_provenance.source_line_end;
   const excerpt = String(forensic_provenance.source_excerpt ?? "");
   return {
     id: String(candidate.id),
@@ -97,8 +106,8 @@ function summarize_candidate(candidate) {
     content_hash: candidate.content_hash ?? null,
     forensic_hash: candidate.forensic_hash ?? null,
     source_span_present:
-      Number.isFinite(Number(forensic_provenance.start_line)) &&
-      Number.isFinite(Number(forensic_provenance.end_line)),
+      Number.isFinite(Number(source_line_start)) &&
+      Number.isFinite(Number(source_line_end)),
     source_excerpt_present: excerpt.length > 0,
     fields_present:
       fields && typeof fields === "object" && Object.keys(fields).length > 0,
@@ -358,6 +367,9 @@ async function fetch_promotion_accounting(client, queue_ids) {
 }
 
 function derive_first_loss_point(slice, candidate_summary) {
+  if (candidate_summary.total_candidates === 0) {
+    return "candidate_extraction";
+  }
   if (
     slice.slice_id === "utah_parser_loss" &&
     candidate_summary.field_binding_loss_count > 0
