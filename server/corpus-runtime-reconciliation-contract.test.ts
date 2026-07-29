@@ -71,6 +71,10 @@ describe("corpus-to-runtime reconciliation contract", () => {
     expect(script).toContain("candidate_fingerprint_sha256");
     expect(script).toContain("source_text_sha256");
     expect(script).toContain("field_binding_loss_count");
+    expect(script).toContain("source_line_start");
+    expect(script).toContain("source_line_end");
+    expect(script).toContain("field_metadata");
+    expect(script).toContain('"candidate_extraction"');
     expect(script).toContain("blocked_pending_reconciliation");
   });
 
@@ -78,6 +82,7 @@ describe("corpus-to-runtime reconciliation contract", () => {
     expect(configRaw).toContain("no_production_promotion_during_audit");
     expect(script).not.toContain("promote_registry_entity_candidates_apply");
     expect(script).not.toContain("docket_bill_state_cache");
-    expect(script).not.toContain("LegiScan");
+    expect(script.toLowerCase()).not.toContain("https://api.legiscan.com");
+    expect(script).not.toContain("get_bill(");
   });
 });
