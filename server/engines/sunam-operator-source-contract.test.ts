@@ -8,6 +8,7 @@ function read(relative_path: string): string {
 
 const executor = read("./sunam-executor.ts");
 const context_builder = read("./system-copilot-sunam.ts");
+const executor_routes = read("../executor-routes.ts");
 const session_router = read("../routers/session76-router.ts");
 const sovereign_control = read("../../client/src/pages/SovereignControl.tsx");
 
@@ -42,6 +43,23 @@ describe("Sunam operator source contract", () => {
     expect(executor).toContain("summarize_sunam_exclusions");
     expect(executor).not.toContain("ingestRuns.datasetId");
     expect(executor).not.toContain("where(eq(dataStreamRegistry.enabled, true))");
+  });
+
+  it("uses the canonical PostgreSQL-safe stream selector for the Data Stream Manager button", () => {
+    expect(executor_routes).toContain("get_sunam_run_all_selection");
+    expect(executor_routes).toContain("summarize_sunam_exclusions");
+    expect(executor_routes).toContain('registry_truth_source: "data_stream_registry"');
+    expect(executor_routes).toContain('completion_source: "ingest_runs"');
+    expect(executor_routes).not.toContain("enabled_dsr = 1");
+    expect(executor_routes).not.toContain("auto_disabled_dsr = 0");
+    expect(executor_routes).not.toContain("success: true,\n            message: \"OK\"");
+  });
+
+  it("preserves executor result truth instead of forcing failed stream runs to success", () => {
+    expect(executor_routes).toContain("const success = normalized.success !== false");
+    expect(executor_routes).toContain("const run_success = result.success === true");
+    expect(executor_routes).toContain("if (run_success) succeeded += 1");
+    expect(executor_routes).toContain("else failed += 1");
   });
 
   it("uses PostgreSQL result.rows for system context", () => {
