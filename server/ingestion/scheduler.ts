@@ -407,24 +407,6 @@ export async function runIngestionPipeline(
       };
     }
 
-    const atlas_partial_failure = adapterSource === "atlas_stream" && result.recordsProcessed > 0 &&
-      result.diagnostics?.outcomeClassification === "partial_failure";
-    if (atlas_partial_failure) {
-      console.warn(
-        `[Scheduler] Atlas bridge partially synchronized ${datasetId}: ${result.recordsProcessed} committed before failure`,
-      );
-      return {
-        success: false,
-        recordsProcessed: result.recordsProcessed,
-        recordsInserted: result.recordsInserted,
-        recordsUpdated: result.recordsUpdated,
-        signalsGenerated: result.signalsGenerated,
-        errors: result.errors,
-        runId: result.runId,
-        diagnostics: result.diagnostics,
-      };
-    }
-
     // Step 2: Atlas owns its signal events. Only raw-source adapters run the
     // Lighthouse signal detector.
     let signalsGenerated = result.signalsGenerated;

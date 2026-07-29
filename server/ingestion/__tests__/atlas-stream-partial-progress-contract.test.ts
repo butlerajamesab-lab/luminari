@@ -40,6 +40,7 @@ describe("Atlas stream partial-progress contract", () => {
   });
 
   it("requires the scheduler to preserve an Atlas partial result", () => {
+    expect(scheduler_source).toContain('const atlasPartialFailure =');
     expect(scheduler_source).toContain(
       'adapterSource === "atlas_stream" && result.recordsProcessed > 0',
     );
