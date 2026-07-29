@@ -1,71 +1,20 @@
 import { createHash } from "node:crypto";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { eq, sql } from "drizzle-orm";
 import { dataStreamRegistry, ingestRuns } from "../../drizzle/schema";
 import { db, getPool } from "../db";
+import {
+  fetch_atlas_signal_events,
+  fetch_atlas_stream_definition,
+  get_atlas_bridge_client,
+  type atlas_signal_event,
+  type atlas_stream_definition,
+} from "./atlas-bridge-client";
 import type { IngestionResult } from "./socrata-adapter";
 
 const ATLAS_BRIDGE_CURSOR_NAME = "lighthouse-atlas-bridge-v1";
 const ATLAS_PAGE_SIZE = 1_000;
 const ATLAS_MAX_PAGES = 1_000;
 const ATLAS_ADAPTER_NAME = "atlas_stream";
-
-type atlas_stream_definition = {
-  stream_id: string;
-  source_id: string;
-  jurisdiction_id: string;
-  module_hint: string;
-  throughput_profile: string;
-  safety_profile: string;
-  governance_contract_id: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-};
-
-type atlas_signal_event = {
-  stream_id: string;
-  offset: number | string;
-  timestamp: string;
-  signal_type: string;
-  spacetime: Record<string, unknown>;
-  provenance: Record<string, unknown>;
-  payload: Record<string, unknown>;
-  source_id: string;
-  jurisdiction_id: string;
-  module_hint: string;
-  ingested_at: string;
-};
-
-type atlas_client_result =
-  | { configured: true; client: SupabaseClient }
-  | { configured: false; client: null; error_message: string };
-
-function get_atlas_client(): atlas_client_result {
-  const atlas_supabase_url = process.env.ATLAS_SUPABASE_URL;
-  const atlas_supabase_key =
-    process.env.ATLAS_SUPABASE_SERVICE_ROLE_KEY ??
-    process.env.ATLAS_SUPABASE_ANON_KEY;
-
-  if (!atlas_supabase_url || !atlas_supabase_key) {
-    return {
-      configured: false,
-      client: null,
-      error_message:
-        "ATLAS_SUPABASE_URL and ATLAS_SUPABASE_SERVICE_ROLE_KEY (or ATLAS_SUPABASE_ANON_KEY) are required",
-    };
-  }
-
-  return {
-    configured: true,
-    client: createClient(atlas_supabase_url, atlas_supabase_key, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    }),
-  };
-}
 
 function make_cursor_id(stream_id: string): string {
   const digest = createHash("sha256")
@@ -325,7 +274,7 @@ export async function ingest_atlas_stream(
     };
   }
 
-  const atlas_result = get_atlas_client();
+  const atlas_result = await get_atlas_bridge_client();
   if (!atlas_result.configured) {
     return {
       recordsProcessed: 0,
@@ -369,18 +318,14 @@ export async function ingest_atlas_stream(
   let page_count = 0;
 
   try {
-    const { data: stream_data, error: stream_error } = await atlas_result.client
-      .from("streams")
-      .select(
-        "stream_id,source_id,jurisdiction_id,module_hint,throughput_profile,safety_profile,governance_contract_id,status,created_at,updated_at",
-      )
-      .eq("stream_id", dataset_id)
-      .maybeSingle();
+    const stream_data = await fetch_atlas_stream_definition(
+      atlas_result.client,
+      dataset_id,
+    );
 
-    if (stream_error) throw new Error(`Atlas stream lookup failed: ${stream_error.message}`);
-    if (!stream_data) throw new Error(`Atlas stream ${dataset_id} is not registered`);
+    if (!stream_data) throw new Error(`Atlas stream ${dataset_id} is not registered or exported`);
 
-    await mirror_stream_definition(stream_data as atlas_stream_definition);
+    await mirror_stream_definition(stream_data);
 
     current_offset = await get_bridge_offset(dataset_id);
 
@@ -390,21 +335,11 @@ export async function ingest_atlas_stream(
         ? Math.min(ATLAS_PAGE_SIZE, remaining)
         : ATLAS_PAGE_SIZE;
 
-      const { data: event_data, error: event_error } = await atlas_result.client
-        .from("signal_events")
-        .select(
-          "stream_id,offset,timestamp,signal_type,spacetime,provenance,payload,source_id,jurisdiction_id,module_hint,ingested_at",
-        )
-        .eq("stream_id", dataset_id)
-        .gte("offset", current_offset)
-        .order("offset", { ascending: true })
-        .limit(page_size);
-
-      if (event_error) {
-        throw new Error(`Atlas signal event fetch failed: ${event_error.message}`);
-      }
-
-      const events = (event_data ?? []) as atlas_signal_event[];
+      const events = await fetch_atlas_signal_events(atlas_result.client, {
+        stream_id: dataset_id,
+        offset: current_offset,
+        limit: page_size,
+      });
       if (events.length === 0) break;
 
       const last_offset = Number(events[events.length - 1].offset);
@@ -432,18 +367,12 @@ export async function ingest_atlas_stream(
     }
 
     if (page_count >= ATLAS_MAX_PAGES && records_processed < max_records) {
-      const { data: remaining_events, error: remaining_error } = await atlas_result.client
-        .from("signal_events")
-        .select("offset")
-        .eq("stream_id", dataset_id)
-        .gte("offset", current_offset)
-        .order("offset", { ascending: true })
-        .limit(1);
-
-      if (remaining_error) {
-        throw new Error(`Atlas page-limit probe failed: ${remaining_error.message}`);
-      }
-      if ((remaining_events ?? []).length > 0) {
+      const remaining_events = await fetch_atlas_signal_events(atlas_result.client, {
+        stream_id: dataset_id,
+        offset: current_offset,
+        limit: 1,
+      });
+      if (remaining_events.length > 0) {
         throw new Error(
           `Atlas bridge page limit reached for ${dataset_id}; cursor preserved at ${current_offset}`,
         );
