@@ -11,6 +11,7 @@ function read_sibling(relative_path: string): string {
 
 describe("Atlas stream partial-progress contract", () => {
   const adapter_source = read_sibling("../atlas-stream-adapter.ts");
+  const run_store_source = read_sibling("../atlas-ingest-run-store.ts");
   const scheduler_source = read_sibling("../scheduler.ts");
 
   it("retains committed counts outside the page-processing try scope", () => {
@@ -24,8 +25,11 @@ describe("Atlas stream partial-progress contract", () => {
 
   it("returns committed counts and marks a later-page failure as partial", () => {
     expect(adapter_source).toContain("const partial_failure = records_processed > 0");
-    expect(adapter_source).toContain('"atlas_bridge_partial_failure"');
-    expect(adapter_source).toContain('outcomeClassification: partial_failure ? "partial_failure"');
+    expect(adapter_source).toContain(
+      'outcome_classification: partial_failure ? "partial_failure"',
+    );
+    expect(run_store_source).toContain('"atlas_bridge_partial_failure"');
+    expect(run_store_source).toContain('"partial_failure"');
     expect(adapter_source).toContain("recordsProcessed: records_processed");
     expect(adapter_source).toContain("recordsInserted: records_inserted");
     expect(adapter_source).toContain("recordsUpdated: records_updated");
@@ -36,6 +40,7 @@ describe("Atlas stream partial-progress contract", () => {
       "signalsGenerated: sql`coalesce(signals_generated_dsr, 0) + ${records_inserted}`",
     );
     expect(adapter_source).toContain("lastSignalsGenerated: records_inserted");
+    expect(run_store_source).toContain("signals_generated = $4");
   });
 
   it("does not fail an exactly satisfied bounded request at the page cap", () => {
