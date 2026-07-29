@@ -5,11 +5,14 @@ on:
     branches: [main]
     paths:
       - "server/ingestion/atlas-stream-adapter.ts"
+      - "server/ingestion/atlas-bridge-client.ts"
       - "server/ingestion/scheduler.ts"
-      - "server/ingestion/__tests__/atlas-stream-*.test.ts"
+      - "server/ingestion/__tests__/atlas-*.test.ts"
       - "server/unified-queries.ts"
       - "drizzle/schema.ts"
       - "supabase/migrations/20260729143000_atlas_stream_registry_recovery.sql"
+      - "supabase/migrations/20260729151500_atlas_bridge_vault_config.sql"
+      - "atlas/supabase/migrations/20260729151000_lighthouse_stream_export_contract.sql"
       - ".github/workflows/atlas-stream-recovery-contract.yml"
   workflow_dispatch:
 
@@ -39,9 +42,11 @@ jobs:
       - name: Run Atlas stream recovery contracts
         run: >-
           npx vitest run
+          server/ingestion/__tests__/atlas-bridge-client.test.ts
           server/ingestion/__tests__/atlas-stream-bridge-contract.test.ts
           server/ingestion/__tests__/atlas-stream-partial-progress-contract.test.ts
           server/ingestion/__tests__/atlas-stream-registry-recovery-contract.test.ts
+          server/ingestion/__tests__/atlas-vault-rpc-bridge-contract.test.ts
 
       - name: Verify clean patch
         run: git diff --check
