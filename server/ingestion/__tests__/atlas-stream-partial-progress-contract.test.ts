@@ -39,13 +39,17 @@ describe("Atlas stream partial-progress contract", () => {
     expect(adapter_source).toContain("remaining_events");
   });
 
-  it("requires the scheduler to preserve an Atlas partial result", () => {
-    expect(scheduler_source).toContain('const atlasPartialFailure =');
+  it("requires exactly one scheduler guard for an Atlas partial result", () => {
+    expect(scheduler_source).toContain("const atlasPartialFailure =");
+    expect(
+      scheduler_source.match(/const atlasPartialFailure\s*=/g) ?? [],
+    ).toHaveLength(1);
     expect(scheduler_source).toContain(
       'adapterSource === "atlas_stream" && result.recordsProcessed > 0',
     );
     expect(scheduler_source).toContain(
       'result.diagnostics?.outcomeClassification === "partial_failure"',
     );
+    expect(scheduler_source).not.toContain("const atlas_partial_failure =");
   });
 });
