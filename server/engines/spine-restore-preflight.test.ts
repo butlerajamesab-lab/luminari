@@ -37,19 +37,46 @@ function schemaTable(tableName = "engine_registry", columnName = "engine_id_er")
   };
 }
 
+const registryRows = [
+  {
+    tableName: "engine_registry",
+    rowCount: 1,
+    truncated: false,
+    rows: [{ engine_id_er: "pattern-engine" }],
+  },
+  {
+    tableName: "data_stream_registry",
+    rowCount: 1,
+    truncated: false,
+    rows: [{ stream_id_dsr: "census-acs" }],
+  },
+  {
+    tableName: "signal_registry",
+    rowCount: 1,
+    truncated: false,
+    rows: [{ signal_type: "deadline-risk" }],
+  },
+  {
+    tableName: "pattern_registry",
+    rowCount: 1,
+    truncated: false,
+    rows: [{ pattern_id: "pattern-1" }],
+  },
+];
+
+const identityByTable: Record<string, string> = {
+  engine_registry: "engine_id_er",
+  data_stream_registry: "stream_id_dsr",
+  signal_registry: "signal_type",
+  pattern_registry: "pattern_id",
+};
+
 function bundle(bundleType: "full" | "schema" | "config" | "deployment") {
   return {
     _manifest: { bundleType },
     schema: { enums: [], tables: [schemaTable()] },
     config: {
-      registryTables: [
-        {
-          tableName: "engine_registry",
-          rowCount: 1,
-          truncated: false,
-          rows: [{ engine_id_er: "pattern-engine" }],
-        },
-      ],
+      registryTables: structuredClone(registryRows),
     },
     data: [
       {
@@ -62,6 +89,20 @@ function bundle(bundleType: "full" | "schema" | "config" | "deployment") {
   };
 }
 
+function columnRow(table_name: string, column_name: string) {
+  return {
+    table_name,
+    column_name,
+    data_type: "text",
+    udt_name: "text",
+    is_nullable: "NO",
+    column_default: null,
+    is_identity: "NO",
+    identity_generation: null,
+    is_generated: "NEVER",
+  };
+}
+
 beforeEach(() => {
   connectMock.mockReset();
   queryMock.mockReset();
@@ -70,19 +111,9 @@ beforeEach(() => {
   queryMock.mockImplementation(async (text: string) => {
     if (text.includes("information_schema.columns")) {
       return {
-        rows: [
-          {
-            table_name: "engine_registry",
-            column_name: "engine_id_er",
-            data_type: "text",
-            udt_name: "text",
-            is_nullable: "NO",
-            column_default: null,
-            is_identity: "NO",
-            identity_generation: null,
-            is_generated: "NEVER",
-          },
-        ],
+        rows: Object.entries(identityByTable).map(([tableName, columnName]) =>
+          columnRow(tableName, columnName),
+        ),
       };
     }
     if (text.includes("as identity_value")) return { rows: [] };
@@ -112,7 +143,7 @@ describe("Sovereign Spine restore preflight", () => {
   });
 
   it("validates schema, target identity, constraints, and data rows in one read-only preflight", async () => {
-    const resolver = vi.fn(() => "engine_id_er");
+    const resolver = vi.fn((tableName: string) => identityByTable[tableName]);
 
     await expect(
       preflight_spine_restore_contents(bundle("full"), "full", resolver),
@@ -140,12 +171,37 @@ describe("Sovereign Spine restore preflight", () => {
     expect(connectMock).not.toHaveBeenCalled();
   });
 
+  it("rejects empty or incomplete registry inventory before mutation", () => {
+    const empty = bundle("config");
+    empty.config.registryTables = [];
+    expect(() => preflight_spine_restore_request(empty, "config")).toThrow(
+      "registryTables inventory is empty",
+    );
+
+    const incomplete = bundle("config");
+    incomplete.config.registryTables = incomplete.config.registryTables.filter(
+      (table) => table.tableName !== "pattern_registry",
+    );
+    expect(() => preflight_spine_restore_request(incomplete, "config")).toThrow(
+      "missing required registry tables: pattern_registry",
+    );
+  });
+
   it("rejects unsupported registry tables before mutation", async () => {
     const value = bundle("config");
-    value.config.registryTables[0].tableName = "users";
+    value.config.registryTables.push({
+      tableName: "users",
+      rowCount: 1,
+      truncated: false,
+      rows: [{ id: 1 }],
+    } as any);
 
     await expect(
-      preflight_spine_restore_contents(value, "config", vi.fn()),
+      preflight_spine_restore_contents(
+        value,
+        "config",
+        (tableName) => identityByTable[tableName] ?? "id",
+      ),
     ).rejects.toThrow("Unsupported registry restore table");
     expect(queryMock.mock.calls.at(-1)?.[0]).toBe("rollback");
   });
@@ -154,13 +210,21 @@ describe("Sovereign Spine restore preflight", () => {
     const truncated = bundle("full");
     truncated.data[0].truncated = true;
     await expect(
-      preflight_spine_restore_contents(truncated, "full", () => "engine_id_er"),
+      preflight_spine_restore_contents(
+        truncated,
+        "full",
+        (tableName) => identityByTable[tableName],
+      ),
     ).rejects.toThrow("was truncated in the bundle");
 
     const unknown = bundle("full");
     unknown.data[0].rows = [{ engine_id_er: "pattern-engine", unknown_column: 1 }];
     await expect(
-      preflight_spine_restore_contents(unknown, "full", () => "engine_id_er"),
+      preflight_spine_restore_contents(
+        unknown,
+        "full",
+        (tableName) => identityByTable[tableName],
+      ),
     ).rejects.toThrow("contains unknown column unknown_column");
   });
 
@@ -169,27 +233,12 @@ describe("Sovereign Spine restore preflight", () => {
       if (text.includes("information_schema.columns")) {
         return {
           rows: [
+            ...Object.entries(identityByTable).map(([tableName, columnName]) =>
+              columnRow(tableName, columnName),
+            ),
             {
-              table_name: "engine_registry",
-              column_name: "engine_id_er",
-              data_type: "text",
-              udt_name: "text",
-              is_nullable: "NO",
-              column_default: null,
-              is_identity: "NO",
-              identity_generation: null,
-              is_generated: "NEVER",
-            },
-            {
-              table_name: "engine_registry",
+              ...columnRow("engine_registry", "required_target_field"),
               column_name: "required_target_field",
-              data_type: "text",
-              udt_name: "text",
-              is_nullable: "NO",
-              column_default: null,
-              is_identity: "NO",
-              identity_generation: null,
-              is_generated: "NEVER",
             },
           ],
         };
@@ -200,7 +249,11 @@ describe("Sovereign Spine restore preflight", () => {
     });
 
     await expect(
-      preflight_spine_restore_contents(bundle("full"), "full", () => "engine_id_er"),
+      preflight_spine_restore_contents(
+        bundle("full"),
+        "full",
+        (tableName) => identityByTable[tableName],
+      ),
     ).rejects.toThrow("cannot satisfy required target column");
   });
 
