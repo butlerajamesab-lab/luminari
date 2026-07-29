@@ -8,17 +8,9 @@ import {
 /**
  * Full Spine carries only public/static civic configuration and knowledge.
  * Case artifacts, user queries, generated strategy/remedy instances,
- * calculations, procedural outputs, and outcome runtime are excluded.
- *
- * The lower-level PostgreSQL helper owns the canonical list; this module gives
- * the policy its constitutional name and guarded restore entrypoint.
+ * calculations, procedural outputs, generated entity maps, and outcome
+ * runtime are excluded.
  */
-export const SPINE_STATIC_CIVIC_TABLES = SPINE_CONFIG_TABLES;
-
-export const SPINE_STATIC_CIVIC_TABLE_SET = new Set<string>(
-  SPINE_STATIC_CIVIC_TABLES,
-);
-
 export const SPINE_EXCLUDED_RUNTIME_TABLES = [
   "interpreter_claim_matches",
   "investigative_queries",
@@ -35,7 +27,25 @@ export const SPINE_EXCLUDED_RUNTIME_TABLES = [
   "timeline_events",
   "outcome_registry",
   "outcome_metrics",
+  "harm_map_nodes",
+  "harm_map_edges",
 ] as const;
+
+export const SPINE_EXCLUDED_RUNTIME_TABLE_SET = new Set<string>(
+  SPINE_EXCLUDED_RUNTIME_TABLES,
+);
+
+// The historical PostgreSQL helper contains the broader configuration
+// inventory. The constitutional Full-export boundary is the filtered list
+// below; generated operational tables remain available to Lighthouse but are
+// never copied into portable static-data bundles.
+export const SPINE_STATIC_CIVIC_TABLES = SPINE_CONFIG_TABLES.filter(
+  (table) => !SPINE_EXCLUDED_RUNTIME_TABLE_SET.has(table),
+);
+
+export const SPINE_STATIC_CIVIC_TABLE_SET = new Set<string>(
+  SPINE_STATIC_CIVIC_TABLES,
+);
 
 export function assert_static_spine_table(tableName: string): string {
   if (!SPINE_STATIC_CIVIC_TABLE_SET.has(tableName)) {
