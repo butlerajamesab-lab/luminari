@@ -58,9 +58,9 @@ export async function export_spine_table_data_consistent(
     ? null
     : await connect_with_pool_timeout(1_000, "spine_export_data_consistent_snapshot");
   try {
-    const result = await (client ?? ownedClient).query<Record<string, unknown>>(
-      query as any,
-    );
+    const result = (await (client ?? ownedClient).query(query as any)) as {
+      rows: Record<string, unknown>[];
+    };
     const truncated = result.rows.length > bounded_limit;
     const rows = truncated ? result.rows.slice(0, bounded_limit) : result.rows;
     return {
