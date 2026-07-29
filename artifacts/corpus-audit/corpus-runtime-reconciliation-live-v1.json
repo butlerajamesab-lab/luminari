@@ -1,0 +1,216 @@
+{
+  "report_id": "corpus_runtime_reconciliation_live_v1",
+  "observed_date_utc": "2026-07-29",
+  "database_project": "Lighthouse",
+  "database_project_ref": "wepxlinwbjrkqdzkqpar",
+  "transaction_posture": "read_only",
+  "writes_performed": false,
+  "family_contract": {
+    "family_key": "general_state_registry",
+    "family_name": "General State Registry",
+    "required_object_classes": [
+      "state_metadata",
+      "layer0_policy_flags",
+      "resource_cards",
+      "contact_points",
+      "eligibility_rules",
+      "apply_notes",
+      "jurisdiction_overlays",
+      "tribal_context",
+      "workflow_bindings",
+      "deadline_rules",
+      "legal_authorities",
+      "oversight_bodies",
+      "provenance_spans"
+    ],
+    "expected_runtime_consumers": [
+      "v_ui_civic_map_v2",
+      "v_ui_intake_routing_v1",
+      "v_ui_workflow_router_v1",
+      "v_ui_benefits_navigator_v1",
+      "v_ui_registry_quality_v1"
+    ],
+    "canonical_destination_notes": "Extract to state registry, contact, workflow, deadline, legal authority, and oversight canonical objects.",
+    "is_active": true
+  },
+  "source_precedence": [
+    {
+      "object_class": "deadline_collision",
+      "jurisdiction_scope": "mixed",
+      "preferred_family_key": "sol_collision_reference",
+      "fallback_family_keys": ["federal_master_registry", "general_state_registry"],
+      "rule_description": "SOL Collision owns multi-forum deadline and preclusion logic."
+    },
+    {
+      "object_class": "global_benefit_program",
+      "jurisdiction_scope": "global",
+      "preferred_family_key": "universal_benefits_registry",
+      "fallback_family_keys": ["general_state_registry"],
+      "rule_description": "Global benefit programs belong to the universal benefits registry. State registries may add implementation variants, not duplicate global program identity."
+    },
+    {
+      "object_class": "regional_agency_node",
+      "jurisdiction_scope": "region",
+      "preferred_family_key": "regional_knowledge_backbone",
+      "fallback_family_keys": ["general_state_registry", "federal_master_registry"],
+      "rule_description": "Regional backbone owns multi-state graph nodes, federal regional offices, and state-by-state graph population references."
+    },
+    {
+      "object_class": "state_specific_resource",
+      "jurisdiction_scope": "state",
+      "preferred_family_key": "general_state_registry",
+      "fallback_family_keys": ["regional_knowledge_backbone", "universal_benefits_registry"],
+      "rule_description": "State-specific resources and implementation details are owned by the state registry family."
+    }
+  ],
+  "sources": [
+    {
+      "queue_id": 27,
+      "source_role": "enriched",
+      "source_name": "State Enriched Registry bucket/luminari-minnesota-ENRICHED-PASS3-2026.docx",
+      "storage_path": "luminari-minnesota-ENRICHED-PASS3-2026.docx",
+      "target_hint": "state_enriched_registry_docx_review",
+      "import_status": "candidates_created",
+      "worker_state": "completed_step",
+      "normalized_text_chars": 58250,
+      "source_text_sha256": "5fb21a52a1fbca48cb96ee7431b5cfa8d7fead7b96f112fa97f1bfa1b7623adf"
+    },
+    {
+      "queue_id": 205,
+      "source_role": "baseline",
+      "source_name": "State Enriched Registry bucket/luminari-minnesota-registry-3.docx",
+      "storage_path": "luminari-minnesota-registry-3.docx",
+      "target_hint": "state_enriched_registry_docx_review",
+      "import_status": "candidates_created",
+      "worker_state": "completed_step",
+      "normalized_text_chars": 39939,
+      "source_text_sha256": "fc3daaaaee4b07c0c0b68476fb40ab9cba002384ee2570cf45fb8b9b9894b7d1"
+    },
+    {
+      "queue_id": 215,
+      "source_role": "parser_loss_specimen",
+      "source_name": "State Enriched Registry bucket/luminari-UTAH-RESOURCE-DIRECTORY-2026.docx",
+      "storage_path": "luminari-UTAH-RESOURCE-DIRECTORY-2026.docx",
+      "target_hint": "state_enriched_registry_docx_review",
+      "import_status": "candidates_created",
+      "worker_state": "completed_step",
+      "normalized_text_chars": 40518,
+      "source_text_sha256": "dad537e33793502b68050e9b70e1a67f18b7b6e34472d265ff8b54f70d54b00f"
+    }
+  ],
+  "slices": [
+    {
+      "slice_id": "minnesota_lineage",
+      "queue_ids": [205, 27],
+      "candidate_metrics": {
+        "total_candidates": 1163,
+        "source_excerpt_count": 419,
+        "source_span_count": 508,
+        "fields_present_count": 8,
+        "promotable_count": 8,
+        "likely_field_binding_loss_count": 109,
+        "database_side_candidate_fingerprint_sha256": "25ded9171e86e336aa47beb68fe61966f36e70b303487706aca87e409cb79e1a"
+      },
+      "classification_counts": [
+        {"document_family":"state_enriched_registry_docx_review","candidate_type":"review_fragment","candidate_status":"human_review_required","rows":400},
+        {"document_family":"state_enriched_registry","candidate_type":"contact","candidate_status":"lane_classified_pending_verification","rows":121},
+        {"document_family":"state_enriched_registry_docx_review","candidate_type":"benefit_program","candidate_status":"candidate_created","rows":89},
+        {"document_family":"state_enriched_registry","candidate_type":"benefit_program","candidate_status":"lane_classified_pending_verification","rows":82},
+        {"document_family":"(null)","candidate_type":"contact","candidate_status":"candidate_created","rows":76},
+        {"document_family":"(null)","candidate_type":"benefit_program","candidate_status":"candidate_created","rows":61},
+        {"document_family":"(null)","candidate_type":"tribal_entity","candidate_status":"candidate_created","rows":51},
+        {"document_family":"state_enriched_registry","candidate_type":"legal_aid","candidate_status":"lane_classified_pending_verification","rows":28},
+        {"document_family":"state_enriched_registry","candidate_type":"workflow","candidate_status":"lane_classified_pending_verification","rows":28},
+        {"document_family":"(null)","candidate_type":"workflow","candidate_status":"candidate_created","rows":27},
+        {"document_family":"state_enriched_registry","candidate_type":"resource","candidate_status":"lane_classified_pending_verification","rows":23},
+        {"document_family":"state_enriched_registry","candidate_type":"deadline","candidate_status":"lane_classified_pending_verification","rows":22},
+        {"document_family":"(null)","candidate_type":"statute","candidate_status":"candidate_created","rows":20},
+        {"document_family":"(null)","candidate_type":"deadline","candidate_status":"candidate_created","rows":19},
+        {"document_family":"state_enriched_registry","candidate_type":"policy_alert","candidate_status":"lane_classified_pending_verification","rows":19},
+        {"document_family":"state_enriched_registry","candidate_type":"agency","candidate_status":"lane_classified_pending_verification","rows":16},
+        {"document_family":"(null)","candidate_type":"agency","candidate_status":"candidate_created","rows":12},
+        {"document_family":"state_enriched_registry","candidate_type":"court","candidate_status":"lane_classified_pending_verification","rows":12},
+        {"document_family":"(null)","candidate_type":"legal_aid","candidate_status":"candidate_created","rows":12},
+        {"document_family":"(null)","candidate_type":"resource","candidate_status":"candidate_created","rows":11},
+        {"document_family":"state_enriched_registry_docx_review","candidate_type":"benefit_program","candidate_status":"promotable_candidate","rows":8},
+        {"document_family":"(null)","candidate_type":"policy_alert","candidate_status":"candidate_created","rows":8},
+        {"document_family":"state_enriched_registry_docx_review","candidate_type":"context_fragment","candidate_status":"context_fragment","rows":7},
+        {"document_family":"(null)","candidate_type":"court","candidate_status":"candidate_created","rows":7},
+        {"document_family":"state_enriched_registry_docx_review","candidate_type":"review_fragment","candidate_status":"provenance_mismatch","rows":4}
+      ],
+      "promotion_accounting": [],
+      "first_demonstrated_loss_point": "candidate_field_binding",
+      "promotion_state": "blocked_pending_reconciliation"
+    },
+    {
+      "slice_id": "utah_parser_loss",
+      "queue_ids": [215],
+      "candidate_metrics": {
+        "total_candidates": 496,
+        "source_excerpt_count": 125,
+        "source_span_count": 209,
+        "fields_present_count": 42,
+        "promotable_count": 0,
+        "likely_field_binding_loss_count": 56,
+        "database_side_candidate_fingerprint_sha256": "ce16382713833f01a2800b1881024c54f6c0f02307e58d6b9a37f644fd48f1af"
+      },
+      "classification_counts": [
+        {"document_family":"state_enriched_registry_docx_review","candidate_type":"review_fragment","candidate_status":"human_review_required","rows":119},
+        {"document_family":"state_enriched_registry_docx_review","candidate_type":"benefit_program","candidate_status":"candidate_created","rows":84},
+        {"document_family":"(null)","candidate_type":"agency","candidate_status":"candidate_created","rows":53},
+        {"document_family":"(null)","candidate_type":"court","candidate_status":"candidate_created","rows":43},
+        {"document_family":"(null)","candidate_type":"resource","candidate_status":"candidate_created","rows":42},
+        {"document_family":"(null)","candidate_type":"tribal_entity","candidate_status":"candidate_created","rows":39},
+        {"document_family":"(null)","candidate_type":"contact","candidate_status":"candidate_created","rows":38},
+        {"document_family":"(null)","candidate_type":"benefit_program","candidate_status":"candidate_created","rows":33},
+        {"document_family":"(null)","candidate_type":"statute","candidate_status":"candidate_created","rows":20},
+        {"document_family":"(null)","candidate_type":"workflow","candidate_status":"candidate_created","rows":10},
+        {"document_family":"(null)","candidate_type":"legal_aid","candidate_status":"candidate_created","rows":7},
+        {"document_family":"state_enriched_registry_docx_review","candidate_type":"review_fragment","candidate_status":"provenance_mismatch","rows":6},
+        {"document_family":"(null)","candidate_type":"deadline","candidate_status":"candidate_created","rows":1},
+        {"document_family":"(null)","candidate_type":"policy_alert","candidate_status":"candidate_created","rows":1}
+      ],
+      "promotion_accounting": [],
+      "first_demonstrated_loss_point": "candidate_field_binding",
+      "promotion_state": "blocked_pending_reconciliation",
+      "representative_loss_samples": [
+        {
+          "candidate_id": 136165,
+          "candidate_status": "provenance_mismatch",
+          "source_lines": [3, 12],
+          "bound_fields": {},
+          "preserved_content": "UALD address, phone, fax, emails, portal, Utah Code authority, 180-day state deadline, 300-day federal route, notarization requirement, EEOC routing."
+        },
+        {
+          "candidate_id": 136169,
+          "candidate_status": "human_review_required",
+          "source_lines": [30, 32],
+          "bound_fields": {},
+          "preserved_content": "Title VII, ADA, ADEA statutory authority followed by HUD Region 8 routing."
+        },
+        {
+          "candidate_id": 136194,
+          "candidate_status": "human_review_required",
+          "source_lines": [201, 206],
+          "bound_fields": {},
+          "preserved_content": "Utah operational facts including 180/300-day deadlines and signed-and-notarized charge requirement."
+        },
+        {
+          "candidate_id": 136195,
+          "candidate_status": "human_review_required",
+          "source_lines": [207, 209],
+          "bound_fields": {},
+          "preserved_content": "Online filing portal, protected-class rule, religious exemptions, and minimum-wage local preemption claim."
+        }
+      ]
+    }
+  ],
+  "conclusion": {
+    "source_truth_preserved": true,
+    "candidate_extraction_occurred": true,
+    "typed_candidates_exist": true,
+    "promotion_receipts_exist_for_selected_slices": false,
+    "verified_first_loss_point": "candidate_field_binding",
+    "next_bounded_action": "Repair candidate accessors and classifier binding for source-backed typed statute, authority, contact, routing, deadline, jurisdiction, and policy facts; replay the same source hashes; compare candidate fingerprints and counts before considering promotion."
+  }
+}
