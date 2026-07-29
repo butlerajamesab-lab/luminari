@@ -42,8 +42,9 @@ describe("Atlas stream partial-progress contract", () => {
     expect(adapter_source).toContain(
       "page_count >= ATLAS_MAX_PAGES && records_processed < max_records",
     );
-    expect(adapter_source).toContain('select("offset")');
-    expect(adapter_source).toContain("remaining_events");
+    expect(adapter_source).toContain("const remaining_events = await fetch_atlas_signal_events");
+    expect(adapter_source).toContain("limit: 1");
+    expect(adapter_source).toContain("remaining_events.length > 0");
   });
 
   it("requires exactly one scheduler guard for an Atlas partial result", () => {

@@ -11,11 +11,12 @@ function read_sibling(relative_path: string): string {
 
 describe("Atlas stream bridge contract", () => {
   const adapter_source = read_sibling("../atlas-stream-adapter.ts");
+  const client_source = read_sibling("../atlas-bridge-client.ts");
   const scheduler_source = read_sibling("../scheduler.ts");
 
   it("preserves Atlas stream and event identities", () => {
-    expect(adapter_source).toContain('.from("streams")');
-    expect(adapter_source).toContain('.from("signal_events")');
+    expect(adapter_source).toContain("fetch_atlas_stream_definition");
+    expect(adapter_source).toContain("fetch_atlas_signal_events");
     expect(adapter_source).toContain(
       'ON CONFLICT (stream_id, "offset") DO UPDATE SET',
     );
@@ -23,10 +24,18 @@ describe("Atlas stream bridge contract", () => {
     expect(adapter_source).toContain("current_offset");
   });
 
-  it("uses the existing cross-project Atlas credentials", () => {
-    expect(adapter_source).toContain("ATLAS_SUPABASE_URL");
-    expect(adapter_source).toContain("ATLAS_SUPABASE_SERVICE_ROLE_KEY");
-    expect(adapter_source).toContain("ATLAS_SUPABASE_ANON_KEY");
+  it("uses environment configuration first and Lighthouse Vault as fallback", () => {
+    expect(client_source).toContain("ATLAS_SUPABASE_URL");
+    expect(client_source).toContain("ATLAS_SUPABASE_SERVICE_ROLE_KEY");
+    expect(client_source).toContain("ATLAS_SUPABASE_ANON_KEY");
+    expect(client_source).toContain("get_atlas_bridge_runtime_config()");
+  });
+
+  it("reads Atlas only through the explicit export RPCs", () => {
+    expect(client_source).toContain('client.rpc("get_lighthouse_stream_definition"');
+    expect(client_source).toContain('client.rpc("get_lighthouse_signal_events"');
+    expect(adapter_source).not.toContain('.from("streams")');
+    expect(adapter_source).not.toContain('.from("signal_events")');
   });
 
   it("creates PostgreSQL run identities without MySQL-only calls", () => {
