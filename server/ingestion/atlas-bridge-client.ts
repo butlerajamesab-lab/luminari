@@ -1,4 +1,3 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getPool } from "../db";
 
 export type atlas_stream_definition = {
@@ -28,31 +27,33 @@ export type atlas_signal_event = {
   ingested_at: string;
 };
 
+export type atlas_bridge_client = {
+  atlas_supabase_url: string;
+  atlas_supabase_key: string;
+};
+
 export type atlas_bridge_client_result =
-  | { configured: true; client: SupabaseClient; configuration_source: "environment" | "vault" }
-  | { configured: false; client: null; configuration_source: null; error_message: string };
+  | {
+      configured: true;
+      client: atlas_bridge_client;
+      configuration_source: "environment" | "vault";
+    }
+  | {
+      configured: false;
+      client: null;
+      configuration_source: null;
+      error_message: string;
+    };
 
 type atlas_bridge_runtime_config_row = {
   atlas_supabase_url: string | null;
   atlas_supabase_key: string | null;
 };
 
-type valid_atlas_config = {
-  atlas_supabase_url: string;
-  atlas_supabase_key: string;
-};
+type valid_atlas_config = atlas_bridge_client;
 
-function create_atlas_client(
-  atlas_supabase_url: string,
-  atlas_supabase_key: string,
-): SupabaseClient {
-  return createClient(atlas_supabase_url, atlas_supabase_key, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
-}
+const ATLAS_RPC_TIMEOUT_MS = 30_000;
+const ATLAS_RPC_ERROR_PREVIEW_LIMIT = 1_000;
 
 function normalize_atlas_config(
   atlas_supabase_url: unknown,
@@ -68,7 +69,7 @@ function normalize_atlas_config(
   }
 
   return {
-    atlas_supabase_url,
+    atlas_supabase_url: atlas_supabase_url.replace(/\/+$/, ""),
     atlas_supabase_key,
   };
 }
@@ -93,10 +94,7 @@ export async function get_atlas_bridge_client(): Promise<atlas_bridge_client_res
   if (environment_config) {
     return {
       configured: true,
-      client: create_atlas_client(
-        environment_config.atlas_supabase_url,
-        environment_config.atlas_supabase_key,
-      ),
+      client: environment_config,
       configuration_source: "environment",
     };
   }
@@ -111,10 +109,7 @@ export async function get_atlas_bridge_client(): Promise<atlas_bridge_client_res
     if (vault_config) {
       return {
         configured: true,
-        client: create_atlas_client(
-          vault_config.atlas_supabase_url,
-          vault_config.atlas_supabase_key,
-        ),
+        client: vault_config,
         configuration_source: "vault",
       };
     }
@@ -137,36 +132,74 @@ export async function get_atlas_bridge_client(): Promise<atlas_bridge_client_res
   };
 }
 
+async function call_atlas_rpc<T>(
+  client: atlas_bridge_client,
+  rpc_name: string,
+  body: Record<string, unknown>,
+): Promise<T> {
+  const controller = new AbortController();
+  const timeout_id = setTimeout(() => controller.abort(), ATLAS_RPC_TIMEOUT_MS);
+  const endpoint = `${client.atlas_supabase_url}/rest/v1/rpc/${rpc_name}`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        apikey: client.atlas_supabase_key,
+        Authorization: `Bearer ${client.atlas_supabase_key}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const response_text = await response.text().catch(() => "");
+      const preview = response_text.slice(0, ATLAS_RPC_ERROR_PREVIEW_LIMIT);
+      throw new Error(
+        `Atlas RPC ${rpc_name} failed with status ${response.status}${preview ? `: ${preview}` : ""}`,
+      );
+    }
+
+    return (await response.json()) as T;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error(`Atlas RPC ${rpc_name} timed out after ${ATLAS_RPC_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout_id);
+  }
+}
+
 export async function fetch_atlas_stream_definition(
-  client: SupabaseClient,
+  client: atlas_bridge_client,
   stream_id: string,
 ): Promise<atlas_stream_definition | null> {
-  const { data, error } = await client.rpc("get_lighthouse_stream_definition", {
-    p_stream_id: stream_id,
-  });
+  const rows = await call_atlas_rpc<atlas_stream_definition[]>(
+    client,
+    "get_lighthouse_stream_definition",
+    { p_stream_id: stream_id },
+  );
 
-  if (error) {
-    throw new Error(`Atlas stream definition RPC failed: ${error.message}`);
-  }
-
-  const rows = Array.isArray(data) ? data : [];
-  return (rows[0] as atlas_stream_definition | undefined) ?? null;
+  return (Array.isArray(rows) ? rows[0] : undefined) ?? null;
 }
 
 export async function fetch_atlas_signal_events(
-  client: SupabaseClient,
+  client: atlas_bridge_client,
   input: { stream_id: string; offset: number; limit: number },
 ): Promise<atlas_signal_event[]> {
   const bounded_limit = Math.min(1_000, Math.max(1, Math.floor(input.limit)));
-  const { data, error } = await client.rpc("get_lighthouse_signal_events", {
-    p_stream_id: input.stream_id,
-    p_offset: input.offset,
-    p_limit: bounded_limit,
-  });
+  const rows = await call_atlas_rpc<atlas_signal_event[]>(
+    client,
+    "get_lighthouse_signal_events",
+    {
+      p_stream_id: input.stream_id,
+      p_offset: input.offset,
+      p_limit: bounded_limit,
+    },
+  );
 
-  if (error) {
-    throw new Error(`Atlas signal event RPC failed: ${error.message}`);
-  }
-
-  return (Array.isArray(data) ? data : []) as atlas_signal_event[];
+  return Array.isArray(rows) ? rows : [];
 }

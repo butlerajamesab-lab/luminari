@@ -31,9 +31,14 @@ describe("Atlas stream bridge contract", () => {
     expect(client_source).toContain("get_atlas_bridge_runtime_config()");
   });
 
-  it("reads Atlas only through the explicit export RPCs", () => {
-    expect(client_source).toContain('client.rpc("get_lighthouse_stream_definition"');
-    expect(client_source).toContain('client.rpc("get_lighthouse_signal_events"');
+  it("reads Atlas only through native authenticated RPC requests", () => {
+    expect(client_source).toContain("/rest/v1/rpc/${rpc_name}");
+    expect(client_source).toContain("apikey: client.atlas_supabase_key");
+    expect(client_source).toContain(
+      "Authorization: `Bearer ${client.atlas_supabase_key}`",
+    );
+    expect(client_source).not.toContain("createClient");
+    expect(client_source).not.toContain("SupabaseClient");
     expect(adapter_source).not.toContain('.from("streams")');
     expect(adapter_source).not.toContain('.from("signal_events")');
   });

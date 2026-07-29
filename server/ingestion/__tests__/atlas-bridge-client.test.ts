@@ -1,13 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { create_client_mock, pool_query_mock, rpc_mock } = vi.hoisted(() => ({
-  create_client_mock: vi.fn(),
+const { fetch_mock, pool_query_mock } = vi.hoisted(() => ({
+  fetch_mock: vi.fn(),
   pool_query_mock: vi.fn(),
-  rpc_mock: vi.fn(),
-}));
-
-vi.mock("@supabase/supabase-js", () => ({
-  createClient: create_client_mock,
 }));
 
 vi.mock("../../db", () => ({
@@ -18,6 +13,7 @@ import {
   fetch_atlas_signal_events,
   fetch_atlas_stream_definition,
   get_atlas_bridge_client,
+  type atlas_bridge_client,
 } from "../atlas-bridge-client";
 
 const original_environment = {
@@ -34,13 +30,13 @@ function clear_atlas_environment(): void {
 
 beforeEach(() => {
   clear_atlas_environment();
-  create_client_mock.mockReset();
   pool_query_mock.mockReset();
-  rpc_mock.mockReset();
-  create_client_mock.mockReturnValue({ rpc: rpc_mock });
+  fetch_mock.mockReset();
+  vi.stubGlobal("fetch", fetch_mock);
 });
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   clear_atlas_environment();
   if (original_environment.url !== undefined) {
     process.env.ATLAS_SUPABASE_URL = original_environment.url;
@@ -55,7 +51,7 @@ afterEach(() => {
 
 describe("Atlas bridge client configuration", () => {
   it("uses environment configuration before querying Vault", async () => {
-    process.env.ATLAS_SUPABASE_URL = "https://atlas.example.test";
+    process.env.ATLAS_SUPABASE_URL = "https://atlas.example.test/";
     process.env.ATLAS_SUPABASE_SERVICE_ROLE_KEY = "test-service-key-with-sufficient-length";
 
     const result = await get_atlas_bridge_client();
@@ -63,13 +59,12 @@ describe("Atlas bridge client configuration", () => {
     expect(result).toMatchObject({
       configured: true,
       configuration_source: "environment",
+      client: {
+        atlas_supabase_url: "https://atlas.example.test",
+        atlas_supabase_key: "test-service-key-with-sufficient-length",
+      },
     });
     expect(pool_query_mock).not.toHaveBeenCalled();
-    expect(create_client_mock).toHaveBeenCalledWith(
-      "https://atlas.example.test",
-      "test-service-key-with-sufficient-length",
-      expect.objectContaining({ auth: expect.any(Object) }),
-    );
   });
 
   it("falls back to the protected Lighthouse Vault reader", async () => {
@@ -87,14 +82,13 @@ describe("Atlas bridge client configuration", () => {
     expect(result).toMatchObject({
       configured: true,
       configuration_source: "vault",
+      client: {
+        atlas_supabase_url: "https://atlas-vault.example.test",
+        atlas_supabase_key: "test-publishable-key-with-sufficient-length",
+      },
     });
     expect(pool_query_mock).toHaveBeenCalledWith(
       expect.stringContaining("get_atlas_bridge_runtime_config()"),
-    );
-    expect(create_client_mock).toHaveBeenCalledWith(
-      "https://atlas-vault.example.test",
-      "test-publishable-key-with-sufficient-length",
-      expect.objectContaining({ auth: expect.any(Object) }),
     );
   });
 
@@ -128,37 +122,56 @@ describe("Atlas bridge client configuration", () => {
   });
 });
 
-describe("Atlas bridge export RPCs", () => {
-  const client = { rpc: rpc_mock } as any;
+describe("Atlas bridge native RPC transport", () => {
+  const client: atlas_bridge_client = {
+    atlas_supabase_url: "https://atlas.example.test",
+    atlas_supabase_key: "test-publishable-key-with-sufficient-length",
+  };
 
   it("returns one allowlisted stream definition", async () => {
-    rpc_mock.mockResolvedValue({
-      data: [{ stream_id: "usda_snap", source_id: "usda_fns" }],
-      error: null,
-    });
+    fetch_mock.mockResolvedValue(
+      new Response(
+        JSON.stringify([{ stream_id: "usda_snap", source_id: "usda_fns" }]),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
 
     const result = await fetch_atlas_stream_definition(client, "usda_snap");
 
     expect(result).toMatchObject({ stream_id: "usda_snap" });
-    expect(rpc_mock).toHaveBeenCalledWith(
-      "get_lighthouse_stream_definition",
-      { p_stream_id: "usda_snap" },
+    expect(fetch_mock).toHaveBeenCalledWith(
+      "https://atlas.example.test/rest/v1/rpc/get_lighthouse_stream_definition",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          apikey: "test-publishable-key-with-sufficient-length",
+          Authorization: "Bearer test-publishable-key-with-sufficient-length",
+        }),
+        body: JSON.stringify({ p_stream_id: "usda_snap" }),
+      }),
     );
   });
 
-  it("propagates stream-definition RPC failures", async () => {
-    rpc_mock.mockResolvedValue({
-      data: null,
-      error: { message: "definition unavailable" },
-    });
+  it("propagates bounded HTTP failures without exposing the API key", async () => {
+    const console_spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    fetch_mock.mockResolvedValue(
+      new Response("definition unavailable", { status: 503 }),
+    );
 
     await expect(
       fetch_atlas_stream_definition(client, "usda_snap"),
-    ).rejects.toThrow("definition unavailable");
+    ).rejects.toThrow("status 503: definition unavailable");
+    expect(console_spy).not.toHaveBeenCalled();
+    console_spy.mockRestore();
   });
 
   it("bounds event page size to the Atlas export contract", async () => {
-    rpc_mock.mockResolvedValue({ data: [], error: null });
+    fetch_mock.mockResolvedValue(
+      new Response("[]", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
 
     await fetch_atlas_signal_events(client, {
       stream_id: "pro_publica",
@@ -166,28 +179,31 @@ describe("Atlas bridge export RPCs", () => {
       limit: 50_000,
     });
 
-    expect(rpc_mock).toHaveBeenCalledWith(
-      "get_lighthouse_signal_events",
-      {
-        p_stream_id: "pro_publica",
-        p_offset: 10,
-        p_limit: 1_000,
-      },
+    const request = fetch_mock.mock.calls[0];
+    expect(request[0]).toBe(
+      "https://atlas.example.test/rest/v1/rpc/get_lighthouse_signal_events",
     );
+    expect(JSON.parse(request[1].body)).toEqual({
+      p_stream_id: "pro_publica",
+      p_offset: 10,
+      p_limit: 1_000,
+    });
   });
 
-  it("raises event RPC errors without returning partial fake data", async () => {
-    rpc_mock.mockResolvedValue({
-      data: [{ stream_id: "usda_snap" }],
-      error: { message: "events unavailable" },
+  it("requires no WebSocket or Supabase JS client", async () => {
+    fetch_mock.mockResolvedValue(
+      new Response("[]", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await fetch_atlas_signal_events(client, {
+      stream_id: "usda_snap",
+      offset: 0,
+      limit: 10,
     });
 
-    await expect(
-      fetch_atlas_signal_events(client, {
-        stream_id: "usda_snap",
-        offset: 0,
-        limit: 10,
-      }),
-    ).rejects.toThrow("events unavailable");
+    expect(fetch_mock).toHaveBeenCalledTimes(1);
   });
 });
