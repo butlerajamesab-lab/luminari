@@ -1,0 +1,52 @@
+name: Fix Data Stream Control PostgreSQL Boundaries
+
+on:
+  push:
+    branches:
+      - fix/data-stream-control-postgres-boundaries
+    paths:
+      - scripts/fix-data-stream-control-postgres-boundaries.mjs
+      - .github/workflows/fix-data-stream-control-postgres-boundaries.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/data-stream-control-postgres-boundaries
+          fetch-depth: 0
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Apply deterministic PostgreSQL boundary repair
+        run: node scripts/fix-data-stream-control-postgres-boundaries.mjs
+
+      - name: Run focused data-stream contracts
+        run: >-
+          npx vitest run
+          server/ingestion/__tests__/data-stream-control-postgres-contract.test.ts
+          server/ingestion/__tests__/postgres-dialect-contract.test.ts
+          server/ingestion/__tests__/atlas-stream-bridge-contract.test.ts
+
+      - name: Verify patch formatting
+        run: git diff --check
+
+      - name: Commit repaired implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Repair data-stream control PostgreSQL boundaries"
+          git push origin HEAD:fix/data-stream-control-postgres-boundaries
