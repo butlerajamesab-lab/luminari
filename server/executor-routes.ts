@@ -14,8 +14,10 @@ import {
 import {
   resetStreamCheckpoint,
 } from "./engines/executor-service";
-import { db } from "./db";
-import { sql } from "drizzle-orm";
+import {
+  get_sunam_run_all_selection,
+  summarize_sunam_exclusions,
+} from "./engines/sunam-stream-selection";
 
 type ExecutorPayload = Record<string, unknown>;
 type ExecutorResult = ExecutorPayload & {
@@ -43,6 +45,24 @@ function normalizeExecutorResult<T>(value: T): T {
   ) as T;
 }
 
+function getExecutorFailureMessage(
+  result: ExecutorResult,
+  fallback: string,
+): string {
+  if (Array.isArray(result.errors)) {
+    const first_error = result.errors.find(
+      (error): error is string => typeof error === "string" && error.trim() !== "",
+    );
+    if (first_error) return first_error;
+  }
+
+  if (typeof result.error === "string" && result.error.trim() !== "") {
+    return result.error;
+  }
+
+  return fallback;
+}
+
 function getStreamId(req: Request, res: Response): string | undefined {
   const stream_id = req.body?.stream_id;
   if (typeof stream_id !== "string" || stream_id.trim() === "") {
@@ -58,12 +78,16 @@ function sendExecutorResult(
   message: string,
   result: ExecutorResult
 ) {
-  const normalized = normalizeExecutorResult(result);
+  const normalized = normalizeExecutorResult(result) as ExecutorResult;
+  const success = normalized.success !== false;
+
   res.json({
     ...normalized,
-    success: true,
+    success,
     stream_id,
-    message,
+    message: success
+      ? message
+      : getExecutorFailureMessage(normalized, `Stream ${stream_id} failed`),
   });
 }
 
@@ -85,35 +109,47 @@ export function registerExecutorRoutes(app: Express) {
   });
 
   // ─── POST /api/executor/run_all_streams ───
-  // Run all enabled streams sequentially
+  // Run every canonical registry-eligible stream sequentially.
   app.post("/api/executor/run_all_streams", async (_req: Request, res: Response) => {
     try {
       console.log("[Executor] run_all_streams");
-      // Get all enabled, non-auto-disabled streams
-      const rows = await db.execute(sql`
-        SELECT stream_id_dsr AS stream_id FROM data_stream_registry
-        WHERE enabled_dsr = 1 AND (auto_disabled_dsr = 0 OR auto_disabled_dsr IS NULL)
-        ORDER BY signal_weight_dsr DESC
-      `);
-      const streams = (rows as any).rows || rows;
-      const results: Array<{ stream_id: string; success: boolean; message: string; records_processed?: number; signals_generated?: number }> = [];
+
+      // Use the same PostgreSQL-safe, retirement-aware registry selection as
+      // Sunam. Do not compare boolean columns to MySQL-style integer literals.
+      const selection = await get_sunam_run_all_selection();
+      const streams = selection.eligible;
+      const results: Array<{
+        stream_id: string;
+        success: boolean;
+        message: string;
+        records_processed?: number;
+        signals_generated?: number;
+      }> = [];
       let succeeded = 0;
       let failed = 0;
 
-      for (const row of streams) {
-        const stream_id = (row as any).stream_id;
+      for (const stream of streams) {
+        const stream_id = stream.stream_id;
         try {
-          const result = normalizeExecutorResult(await triggerManualIngestion(stream_id)) as ExecutorResult;
+          const result = normalizeExecutorResult(
+            await triggerManualIngestion(stream_id),
+          ) as ExecutorResult;
+          const run_success = result.success === true;
+
           results.push({
             ...result,
             stream_id,
-            success: true,
-            message: "OK",
+            success: run_success,
+            message: run_success
+              ? "OK"
+              : getExecutorFailureMessage(result, "Stream run did not complete successfully"),
           });
-          succeeded++;
+
+          if (run_success) succeeded += 1;
+          else failed += 1;
         } catch (e: any) {
           results.push({ stream_id, success: false, message: e.message });
-          failed++;
+          failed += 1;
         }
       }
 
@@ -123,6 +159,9 @@ export function registerExecutorRoutes(app: Express) {
         succeeded,
         failed,
         results,
+        excluded: summarize_sunam_exclusions(selection),
+        registry_truth_source: "data_stream_registry",
+        completion_source: "ingest_runs",
       });
     } catch (e: any) {
       console.error("[Executor] run_all_streams error:", e);
