@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, pgEnum, serial, bigserial, uuid, varchar, text, integer, bigint, boolean, jsonb, numeric, timestamp, date, doublePrecision, real, smallint, char, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, serial, bigserial, uuid, varchar, text, integer, bigint, boolean, jsonb, numeric, timestamp, date, doublePrecision, real, smallint, char, index, uniqueIndex, primaryKey } from "drizzle-orm/pg-core";
 
 // -----------------------------------------------------------------------------
 // Auto-generated Drizzle schema for the Luminari Lighthouse Supabase Postgres DB.
@@ -1552,14 +1552,16 @@ export const crossStreamCorrelations = pgTable("cross_stream_correlations", {
 export type CrossStreamCorrelation = typeof crossStreamCorrelations.$inferSelect;
 
 export const cursors = pgTable("cursors", {
-  cursorId: text("cursor_id").notNull(),
+  cursorId: text("cursor_id").primaryKey(),
   streamId: text("stream_id").notNull(),
   name: text("name").notNull(),
   currentOffset: bigint("current_offset", { mode: "number" }).default(sql`0`).notNull(),
   createdBy: text("created_by").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => ({
+  streamNameUnique: uniqueIndex("cursors_stream_id_name_key").on(table.streamId, table.name),
+}));
 
 export type Cursors = typeof cursors.$inferSelect;
 export type InsertCursors = typeof cursors.$inferInsert;
@@ -2599,7 +2601,12 @@ export const signalEvents = pgTable("signal_events", {
   jurisdictionId: text("jurisdiction_id").notNull(),
   moduleHint: text("module_hint").notNull(),
   ingestedAt: timestamp("ingested_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => ({
+  signalEventsPkey: primaryKey({
+    columns: [table.streamId, table.offset],
+    name: "signal_events_pkey",
+  }),
+}));
 
 export type SignalEvents = typeof signalEvents.$inferSelect;
 export type InsertSignalEvents = typeof signalEvents.$inferInsert;
@@ -2712,7 +2719,7 @@ export type StreamSignalFlags = typeof streamSignalFlags.$inferSelect;
 export type InsertStreamSignalFlags = typeof streamSignalFlags.$inferInsert;
 
 export const streams = pgTable("streams", {
-  streamId: text("stream_id").notNull(),
+  streamId: text("stream_id").primaryKey(),
   sourceId: text("source_id").notNull(),
   jurisdictionId: text("jurisdiction_id").notNull(),
   moduleHint: text("module_hint").notNull(),
