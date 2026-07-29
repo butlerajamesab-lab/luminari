@@ -31,6 +31,13 @@ describe("Atlas stream partial-progress contract", () => {
     expect(adapter_source).toContain("recordsUpdated: records_updated");
   });
 
+  it("accounts for signals committed before a partial failure", () => {
+    expect(adapter_source).toContain(
+      "signalsGenerated: sql`coalesce(signals_generated_dsr, 0) + ${records_inserted}`",
+    );
+    expect(adapter_source).toContain("lastSignalsGenerated: records_inserted");
+  });
+
   it("does not fail an exactly satisfied bounded request at the page cap", () => {
     expect(adapter_source).toContain(
       "page_count >= ATLAS_MAX_PAGES && records_processed < max_records",

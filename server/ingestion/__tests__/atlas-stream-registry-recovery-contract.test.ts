@@ -22,6 +22,23 @@ describe("Atlas stream registry recovery migration", () => {
     expect(migration).toContain("source_dsr = 'atlas_stream'");
   });
 
+  it("verifies exact unique index shapes before stream activation", () => {
+    const verification = migration.indexOf("do $atlas_identity_contract$");
+    const activation = migration.indexOf("with atlas_runtime_rows as");
+    expect(verification).toBeGreaterThan(-1);
+    expect(verification).toBeLessThan(activation);
+    expect(migration).toContain("index_record.indisunique");
+    expect(migration).toContain("index_record.indisvalid");
+    expect(migration).toContain("index_record.indisready");
+    expect(migration).toContain("index_record.indpred is null");
+    expect(migration).toContain("index_record.indexprs is null");
+    expect(migration).toContain("index_record.indnatts = index_record.indnkeyatts");
+    expect(migration).toContain("array['stream_id']::text[]");
+    expect(migration).toContain("array['stream_id', 'offset']::text[]");
+    expect(migration).toContain("array['stream_id', 'name']::text[]");
+    expect(migration).toContain("raise exception");
+  });
+
   it("preserves the original upstream source before switching adapter family", () => {
     expect(migration).toContain("'Atlas upstream source: ' || runtime.source_dsr");
     expect(migration).toContain("coalesce(source_dsr, '') <> 'atlas_stream'");

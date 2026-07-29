@@ -540,6 +540,7 @@ export async function ingest_atlas_stream(
           .set({
             lastIngestedAt: now,
             recordsIngested: sql`coalesce(records_ingested_dsr, 0) + ${records_inserted}`,
+            signalsGenerated: sql`coalesce(signals_generated_dsr, 0) + ${records_inserted}`,
             lastRecordsIngested: records_inserted,
             lastSignalsGenerated: records_inserted,
             lastRunStatus: "partial",
