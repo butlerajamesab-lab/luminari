@@ -6,7 +6,11 @@ import {
   build_spine_post_create_statements,
   type spine_table_schema,
 } from "./spine-postgres";
-import { select_spine_registry_write_row } from "./spine-registry-policy";
+import {
+  SPINE_REGISTRY_TABLES,
+  SPINE_REGISTRY_TABLE_SET,
+  select_spine_registry_write_row,
+} from "./spine-registry-policy";
 import { SPINE_STATIC_CIVIC_TABLE_SET } from "./spine-static-table-policy";
 import {
   build_incoming_spine_table_contracts,
@@ -31,15 +35,29 @@ const RESTORE_CAPABILITIES: Record<spine_bundle_type, Set<spine_restore_type>> =
   config: new Set(["config"]),
 };
 
-const SPINE_REGISTRY_TABLE_SET = new Set([
-  "engine_registry",
-  "data_stream_registry",
-  "signal_registry",
-  "pattern_registry",
-]);
-
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function validateRequiredRegistryInventory(registryTables: unknown[]): void {
+  if (registryTables.length === 0) {
+    throw new Error("Spine config registryTables inventory is empty");
+  }
+
+  const names = new Set<string>();
+  for (const rawTable of registryTables) {
+    if (!isPlainRecord(rawTable)) {
+      throw new Error("Spine config contains an invalid registry table export");
+    }
+    names.add(assert_spine_identifier(rawTable.tableName, "registry table"));
+  }
+
+  const missing = SPINE_REGISTRY_TABLES.filter((tableName) => !names.has(tableName));
+  if (missing.length > 0) {
+    throw new Error(
+      `Spine config is missing required registry tables: ${missing.join(", ")}`,
+    );
+  }
 }
 
 export function preflight_spine_restore_request(
@@ -75,6 +93,9 @@ export function preflight_spine_restore_request(
     throw new Error(
       `Restore type ${requestedRestoreType} requires a complete config.registryTables section`,
     );
+  }
+  if (needsConfig) {
+    validateRequiredRegistryInventory(bundle.config.registryTables);
   }
   if (needsData && !Array.isArray(bundle?.data)) {
     throw new Error("Full restore requires a complete data section");
