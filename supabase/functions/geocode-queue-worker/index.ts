@@ -1,7 +1,7 @@
-import { createClient } from "npm:@supabase/supabase-js@2.49.8";
+import postgres from "npm:postgres@3.4.5";
 
 type QueueRow = {
-  id: number;
+  id: string;
   entity_domain: string;
   entity_id: string;
   address_text: string | null;
@@ -12,19 +12,11 @@ type QueueRow = {
   attempts: number;
 };
 
-type QueueStatus = "pending" | "completed" | "failed";
-
 type GeocodeOutcome =
   | { kind: "success"; lat: number; lon: number; precision: string }
   | { kind: "no_result" }
   | { kind: "permanent_error"; status: number }
   | { kind: "retryable_error"; status: number | null; reason: string };
-
-type QueueTransitionResult =
-  | { ok: true }
-  | { ok: false; reason: string };
-
-type SupabaseAdminClient = ReturnType<typeof createClient>;
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -36,7 +28,7 @@ function json(body: unknown, status = 200): Response {
 function buildAddress(row: QueueRow): string {
   return [row.address_text, row.city, row.state, row.postal_code, row.country]
     .map((value) => (value ?? "").trim())
-    .filter((value) => value.length > 0)
+    .filter(Boolean)
     .join(", ");
 }
 
@@ -61,30 +53,19 @@ function geocodePrecision(type: unknown): string {
 }
 
 async function geocode(address: string): Promise<GeocodeOutcome> {
-  const url =
-    `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(address)}`;
-
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(address)}`;
   try {
     const response = await fetch(url, {
-      headers: { "User-Agent": "supabase-geocode-queue-worker/1.0" },
+      headers: { "User-Agent": "luminari-geocode-worker/1.0" },
     });
-
-    if (
-      response.status === 408 ||
-      response.status === 425 ||
-      response.status === 429 ||
-      response.status >= 500
-    ) {
+    if ([408, 425, 429].includes(response.status) || response.status >= 500) {
       return {
         kind: "retryable_error",
         status: response.status,
         reason: "transient_geocoder_response",
       };
     }
-
-    if (!response.ok) {
-      return { kind: "permanent_error", status: response.status };
-    }
+    if (!response.ok) return { kind: "permanent_error", status: response.status };
 
     let data: unknown;
     try {
@@ -96,24 +77,13 @@ async function geocode(address: string): Promise<GeocodeOutcome> {
         reason: "invalid_geocoder_payload",
       };
     }
-
-    if (!Array.isArray(data) || data.length === 0) {
-      return { kind: "no_result" };
-    }
+    if (!Array.isArray(data) || data.length === 0) return { kind: "no_result" };
 
     const item = data[0] as { lat?: unknown; lon?: unknown; type?: unknown };
     const lat = Number(item.lat);
     const lon = Number(item.lon);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-      return { kind: "no_result" };
-    }
-
-    return {
-      kind: "success",
-      lat,
-      lon,
-      precision: geocodePrecision(item.type),
-    };
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return { kind: "no_result" };
+    return { kind: "success", lat, lon, precision: geocodePrecision(item.type) };
   } catch (error) {
     return {
       kind: "retryable_error",
@@ -123,285 +93,171 @@ async function geocode(address: string): Promise<GeocodeOutcome> {
   }
 }
 
-async function transitionQueueStatus(
-  supabase: SupabaseAdminClient,
-  row: QueueRow,
-  queueStatus: QueueStatus,
-  requireProcessing = true,
-): Promise<QueueTransitionResult> {
-  const attemptCount = Math.max(0, row.attempts) + 1;
-  let lastReason = "queue_transition_failed";
-
-  for (let transitionAttempt = 0; transitionAttempt < 2; transitionAttempt += 1) {
-    const baseQuery = supabase
-      .from("coordinate_enrichment_queue_v1")
-      .update({
-        queue_status: queueStatus,
-        last_attempt_at: new Date().toISOString(),
-        attempts: attemptCount,
-      })
-      .eq("id", row.id);
-
-    const { data, error } = requireProcessing
-      ? await baseQuery.eq("queue_status", "processing").select("id")
-      : await baseQuery.select("id");
-
-    if (!error && Array.isArray(data) && data.length === 1) {
-      return { ok: true };
-    }
-
-    lastReason = error?.message ??
-      `queue_transition_row_count_${Array.isArray(data) ? data.length : 0}`;
-  }
-
-  return { ok: false, reason: lastReason };
-}
-
-async function readQueueStatus(
-  supabase: SupabaseAdminClient,
-  rowId: number,
-): Promise<string | null> {
-  const { data, error } = await supabase
-    .from("coordinate_enrichment_queue_v1")
-    .select("queue_status")
-    .eq("id", rowId)
-    .maybeSingle();
-
-  if (error || !data || typeof data.queue_status !== "string") {
-    return null;
-  }
-
-  return data.queue_status;
-}
-
-async function recoverPending(
-  supabase: SupabaseAdminClient,
-  row: QueueRow,
-): Promise<QueueTransitionResult> {
-  const currentStatus = await readQueueStatus(supabase, row.id);
-  if (currentStatus === "pending") {
-    return { ok: true };
-  }
-  if (currentStatus !== "processing") {
-    return {
-      ok: false,
-      reason: currentStatus === null
-        ? "queue_status_unavailable"
-        : `queue_status_not_recoverable_${currentStatus}`,
-    };
-  }
-
-  return transitionQueueStatus(supabase, row, "pending");
-}
-
 Deno.serve(async (request: Request) => {
-  if (request.method !== "POST") {
-    return json({ error: "method_not_allowed" }, 405);
-  }
+  if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+
+  const connectionString = Deno.env.get("SUPABASE_DB_URL");
+  if (!connectionString) return json({ error: "missing_database_connection" }, 500);
+
+  const sql = postgres(connectionString, {
+    max: 1,
+    prepare: false,
+    idle_timeout: 5,
+    connect_timeout: 10,
+  });
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!supabaseUrl || !serviceRoleKey) {
-      return json({ error: "missing_admin_connection" }, 500);
-    }
-
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false },
-    });
-
-    // The worker is invoked by pg_cron/pg_net rather than a signed-in user.
-    // Platform JWT verification is therefore disabled for this deployment, but
-    // no queue access occurs until the dedicated Vault-backed secret is checked
-    // by a service-role-only RPC.
     const cronSecret = request.headers.get("x-cron-secret")?.trim() ?? "";
-    if (!cronSecret) {
-      return json({ error: "unauthorized" }, 401);
-    }
+    if (!cronSecret) return json({ error: "unauthorized" }, 401);
 
-    const { data: authorized, error: authorizationError } = await supabase.rpc(
-      "verify_geocode_worker_cron_secret",
-      { p_candidate: cronSecret },
-    );
-    if (authorizationError || authorized !== true) {
-      return json({ error: "unauthorized" }, 401);
-    }
+    const verification = await sql<{ authorized: boolean }[]>`
+      select public.verify_geocode_worker_cron_secret(${cronSecret}) as authorized
+    `;
+    if (verification[0]?.authorized !== true) return json({ error: "unauthorized" }, 401);
 
     const url = new URL(request.url);
-    const requestedBatchSize = Number(url.searchParams.get("batch_size") ?? "50");
+    const requestedBatchSize = Number(url.searchParams.get("batch_size") ?? "10");
     const batchSize = Math.min(
-      Number.isFinite(requestedBatchSize) ? Math.max(1, requestedBatchSize) : 50,
-      200,
+      Number.isFinite(requestedBatchSize) ? Math.max(1, requestedBatchSize) : 10,
+      25,
     );
 
-    const { data: pending, error: fetchError } = await supabase
-      .from("coordinate_enrichment_queue_v1")
-      .select(
-        "id, entity_domain, entity_id, address_text, city, state, postal_code, country, attempts",
-      )
-      .eq("queue_status", "pending")
-      .order("id", { ascending: true })
-      .limit(batchSize);
+    const claimed = await sql.begin(async (tx) => {
+      return await tx<QueueRow[]>`
+        with picked as (
+          select id
+          from public.coordinate_enrichment_queue_v1
+          where queue_status = 'pending'
+            and coalesce(attempts, 0) < 5
+          order by id
+          limit ${batchSize}
+          for update skip locked
+        )
+        update public.coordinate_enrichment_queue_v1 q
+        set queue_status = 'processing',
+            attempts = coalesce(q.attempts, 0) + 1,
+            last_attempt_at = now()
+        from picked
+        where q.id = picked.id
+        returning q.id::text, q.entity_domain, q.entity_id, q.address_text,
+                  q.city, q.state, q.postal_code, q.country, q.attempts
+      `;
+    });
 
-    if (fetchError) throw fetchError;
-    const pendingRows = (pending ?? []) as QueueRow[];
-    if (pendingRows.length === 0) {
+    if (claimed.length === 0) {
       return json({
         claimed: 0,
         completed: 0,
         failed: 0,
         requeued: 0,
-        queue_update_failures: 0,
-        message: "No pending rows",
+        finalize_failures: 0,
+        message: "No claimable rows",
       });
     }
-
-    const ids = pendingRows.map((row) => row.id);
-    const { data: claimed, error: claimError } = await supabase
-      .from("coordinate_enrichment_queue_v1")
-      .update({
-        queue_status: "processing",
-        last_attempt_at: new Date().toISOString(),
-      })
-      .in("id", ids)
-      .eq("queue_status", "pending")
-      .select(
-        "id, entity_domain, entity_id, address_text, city, state, postal_code, country, attempts",
-      );
-
-    if (claimError) throw claimError;
 
     let completed = 0;
     let failed = 0;
     let requeued = 0;
-    let queueUpdateFailures = 0;
+    let finalizeFailures = 0;
 
-    for (const row of (claimed ?? []) as QueueRow[]) {
+    for (const row of claimed) {
       try {
-        const fullAddress = buildAddress(row);
-        if (!isLikelyGeocodable(fullAddress)) {
-          const transition = await transitionQueueStatus(
-            supabase,
-            row,
-            "failed",
-          );
-          if (!transition.ok) {
-            throw new Error(`invalid_address_transition_failed:${transition.reason}`);
-          }
-          failed += 1;
+        const address = buildAddress(row);
+        if (!isLikelyGeocodable(address)) {
+          const result = await sql`
+            update public.coordinate_enrichment_queue_v1
+            set queue_status = 'failed', last_attempt_at = now()
+            where id = ${row.id}::bigint and queue_status = 'processing'
+            returning id
+          `;
+          if (result.length === 1) failed += 1;
+          else finalizeFailures += 1;
           continue;
         }
 
-        const outcome = await geocode(fullAddress);
-
+        const outcome = await geocode(address);
         if (outcome.kind === "retryable_error") {
-          const transition = await recoverPending(supabase, row);
-          if (!transition.ok) {
-            queueUpdateFailures += 1;
-          } else {
-            requeued += 1;
-          }
+          const result = await sql`
+            update public.coordinate_enrichment_queue_v1
+            set queue_status = 'pending', last_attempt_at = now()
+            where id = ${row.id}::bigint and queue_status = 'processing'
+            returning id
+          `;
+          if (result.length === 1) requeued += 1;
+          else finalizeFailures += 1;
           continue;
         }
 
-        if (
-          outcome.kind === "no_result" ||
-          outcome.kind === "permanent_error"
-        ) {
-          const transition = await transitionQueueStatus(
-            supabase,
-            row,
-            "failed",
-          );
-          if (!transition.ok) {
-            throw new Error(`terminal_geocode_transition_failed:${transition.reason}`);
-          }
-          failed += 1;
+        if (outcome.kind === "no_result" || outcome.kind === "permanent_error") {
+          const result = await sql`
+            update public.coordinate_enrichment_queue_v1
+            set queue_status = 'failed', last_attempt_at = now()
+            where id = ${row.id}::bigint and queue_status = 'processing'
+            returning id
+          `;
+          if (result.length === 1) failed += 1;
+          else finalizeFailures += 1;
           continue;
         }
 
-        if (
-          row.entity_domain === "normalized_civic_resource" ||
-          row.entity_domain === "civic"
-        ) {
-          const { data: updated, error: updateError } = await supabase
-            .from("normalized_civic_resource")
-            .update({
-              latitude: outcome.lat,
-              longitude: outcome.lon,
-              geocode_precision: outcome.precision,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", row.entity_id)
-            .select("id");
-
-          if (updateError || !updated || updated.length === 0) {
-            const transition = await transitionQueueStatus(
-              supabase,
-              row,
-              "failed",
-            );
-            if (!transition.ok) {
-              throw new Error(`resource_update_transition_failed:${transition.reason}`);
-            }
-            failed += 1;
-            continue;
-          }
-        } else {
-          const transition = await transitionQueueStatus(
-            supabase,
-            row,
-            "failed",
-          );
-          if (!transition.ok) {
-            throw new Error(`unsupported_domain_transition_failed:${transition.reason}`);
-          }
-          failed += 1;
-          continue;
-        }
-
-        const completionTransition = await transitionQueueStatus(
-          supabase,
-          row,
-          "completed",
-        );
-
-        if (!completionTransition.ok) {
-          const currentStatus = await readQueueStatus(supabase, row.id);
-          if (currentStatus === "completed") {
-            completed += 1;
-            continue;
+        const finalized = await sql.begin(async (tx) => {
+          if (row.entity_domain !== "normalized_civic_resource" && row.entity_domain !== "civic") {
+            const queueRows = await tx`
+              update public.coordinate_enrichment_queue_v1
+              set queue_status = 'failed', last_attempt_at = now()
+              where id = ${row.id}::bigint and queue_status = 'processing'
+              returning id
+            `;
+            return queueRows.length === 1 ? "failed" : "finalize_failure";
           }
 
-          const recovery = await recoverPending(supabase, row);
-          if (!recovery.ok) {
-            queueUpdateFailures += 1;
-          } else {
-            requeued += 1;
-          }
-          continue;
-        }
+          const resourceRows = await tx`
+            update public.normalized_civic_resource
+            set latitude = ${outcome.lat},
+                longitude = ${outcome.lon},
+                geocode_precision = ${outcome.precision},
+                updated_at = now()
+            where id = ${row.entity_id}
+            returning id
+          `;
+          const targetStatus = resourceRows.length === 1 ? "completed" : "failed";
+          const queueRows = await tx`
+            update public.coordinate_enrichment_queue_v1
+            set queue_status = ${targetStatus}, last_attempt_at = now()
+            where id = ${row.id}::bigint and queue_status = 'processing'
+            returning id
+          `;
+          return queueRows.length === 1 ? targetStatus : "finalize_failure";
+        });
 
-        completed += 1;
+        if (finalized === "completed") completed += 1;
+        else if (finalized === "failed") failed += 1;
+        else finalizeFailures += 1;
       } catch {
-        const recovery = await recoverPending(supabase, row);
-        if (!recovery.ok) {
-          queueUpdateFailures += 1;
-        } else {
-          requeued += 1;
-        }
+        const result = await sql`
+          update public.coordinate_enrichment_queue_v1
+          set queue_status = 'pending', last_attempt_at = now()
+          where id = ${row.id}::bigint and queue_status = 'processing'
+          returning id
+        `;
+        if (result.length === 1) requeued += 1;
+        else finalizeFailures += 1;
       }
     }
 
     return json({
-      claimed: claimed?.length ?? 0,
+      claimed: claimed.length,
       completed,
       failed,
       requeued,
-      queue_update_failures: queueUpdateFailures,
+      finalize_failures: finalizeFailures,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return json({ error: message }, 500);
+    return json(
+      { error: error instanceof Error ? error.message : "unknown_worker_error" },
+      500,
+    );
+  } finally {
+    await sql.end({ timeout: 5 });
   }
 });
