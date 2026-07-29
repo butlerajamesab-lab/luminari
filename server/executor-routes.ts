@@ -59,11 +59,20 @@ function sendExecutorResult(
   result: ExecutorResult
 ) {
   const normalized = normalizeExecutorResult(result);
+  const success = normalized.success !== false;
+  const errors = Array.isArray(normalized.errors)
+    ? normalized.errors.map(String)
+    : [];
+  const result_message = success
+    ? message
+    : errors.join(", ") ||
+      (typeof normalized.error === "string" ? normalized.error : message);
+
   res.json({
     ...normalized,
-    success: true,
+    success,
     stream_id,
-    message,
+    message: result_message,
   });
 }
 
@@ -92,7 +101,9 @@ export function registerExecutorRoutes(app: Express) {
       // Get all enabled, non-auto-disabled streams
       const rows = await db.execute(sql`
         SELECT stream_id_dsr AS stream_id FROM data_stream_registry
-        WHERE enabled_dsr = 1 AND (auto_disabled_dsr = 0 OR auto_disabled_dsr IS NULL)
+        WHERE enabled_dsr IS TRUE
+          AND COALESCE(auto_disabled_dsr, FALSE) IS FALSE
+          AND COALESCE(last_run_status_dsr, '') <> 'retired_superseded_by_atlas'
         ORDER BY signal_weight_dsr DESC
       `);
       const streams = (rows as any).rows || rows;
@@ -104,13 +115,20 @@ export function registerExecutorRoutes(app: Express) {
         const stream_id = (row as any).stream_id;
         try {
           const result = normalizeExecutorResult(await triggerManualIngestion(stream_id)) as ExecutorResult;
+          const stream_succeeded = result.success === true;
+          const errors = Array.isArray(result.errors)
+            ? result.errors.map(String)
+            : [];
           results.push({
             ...result,
             stream_id,
-            success: true,
-            message: "OK",
+            success: stream_succeeded,
+            message: stream_succeeded
+              ? "OK"
+              : errors.join(", ") || "Stream run returned unsuccessful",
           });
-          succeeded++;
+          if (stream_succeeded) succeeded++;
+          else failed++;
         } catch (e: any) {
           results.push({ stream_id, success: false, message: e.message });
           failed++;

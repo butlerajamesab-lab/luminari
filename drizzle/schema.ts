@@ -6236,14 +6236,14 @@ export type InsertDatasetRegistryEntry = typeof datasetRegistry.$inferInsert;
 
 export const ingestRuns = pgTable("ingest_runs", {
   id: serial("id").primaryKey(),
-  datasetId: varchar("datasetId_run", { length: 64 }).notNull(),
-  startTime: bigint("startTime", { mode: "number" }).notNull(),
-  endTime: bigint("endTime", { mode: "number" }),
-  recordsProcessed: integer("recordsProcessed").default(0).notNull(),
-  recordsInserted: integer("recordsInserted").default(0).notNull(),
-  recordsUpdated: integer("recordsUpdated").default(0).notNull(),
-  signalsGenerated: integer("signalsGenerated").default(0).notNull(),
-  status: pgEnum("ingest_runs_ingest_status_enum", ["running", "completed", "failed", "cancelled", "api_unavailable", "partial"])("ingestStatus").default("running").notNull(),
+  datasetId: varchar("dataset_id_run", { length: 64 }).notNull(),
+  startTime: bigint("start_time", { mode: "number" }).notNull(),
+  endTime: bigint("end_time", { mode: "number" }),
+  recordsProcessed: integer("records_processed").default(0).notNull(),
+  recordsInserted: integer("records_inserted").default(0).notNull(),
+  recordsUpdated: integer("records_updated").default(0).notNull(),
+  signalsGenerated: integer("signals_generated").default(0).notNull(),
+  status: pgEnum("ingest_runs_ingest_status_enum", ["running", "completed", "failed", "cancelled", "api_unavailable", "partial"])("ingest_status").default("running").notNull(),
   errors: jsonb("errors_run").$type<string[]>(),
   summary: text("summary_run"),
   // Session 80: Structured diagnostics
