@@ -20,6 +20,112 @@ create unique index if not exists signal_events_pkey
 create unique index if not exists cursors_stream_id_name_key
   on public.cursors (stream_id, name);
 
+-- IF NOT EXISTS is not sufficient when a same-named index already exists with
+-- the wrong uniqueness or columns. Resolve the ordered key columns from the
+-- PostgreSQL catalog and fail before any stream is activated unless every
+-- conflict target is exact, unique, valid, ready, non-partial, and expression-
+-- free.
+do $atlas_identity_contract$
+declare
+  streams_identity_columns text[];
+  signal_events_identity_columns text[];
+  cursors_identity_columns text[];
+begin
+  select array_agg(attribute.attname order by key_column.ordinality)
+    into streams_identity_columns
+    from pg_index index_record
+    join pg_class index_relation
+      on index_relation.oid = index_record.indexrelid
+    join pg_class table_relation
+      on table_relation.oid = index_record.indrelid
+    join pg_namespace namespace
+      on namespace.oid = table_relation.relnamespace
+    cross join lateral unnest(index_record.indkey::smallint[])
+      with ordinality as key_column(attnum, ordinality)
+    join pg_attribute attribute
+      on attribute.attrelid = table_relation.oid
+     and attribute.attnum = key_column.attnum
+   where namespace.nspname = 'public'
+     and table_relation.relname = 'streams'
+     and index_relation.relname = 'streams_pkey'
+     and index_record.indisunique
+     and index_record.indisvalid
+     and index_record.indisready
+     and index_record.indpred is null
+     and index_record.indexprs is null
+     and index_record.indnatts = index_record.indnkeyatts
+   group by index_record.indexrelid;
+
+  if streams_identity_columns is distinct from array['stream_id']::text[] then
+    raise exception
+      'Atlas identity mismatch for public.streams: expected unique (stream_id), observed %',
+      streams_identity_columns;
+  end if;
+
+  select array_agg(attribute.attname order by key_column.ordinality)
+    into signal_events_identity_columns
+    from pg_index index_record
+    join pg_class index_relation
+      on index_relation.oid = index_record.indexrelid
+    join pg_class table_relation
+      on table_relation.oid = index_record.indrelid
+    join pg_namespace namespace
+      on namespace.oid = table_relation.relnamespace
+    cross join lateral unnest(index_record.indkey::smallint[])
+      with ordinality as key_column(attnum, ordinality)
+    join pg_attribute attribute
+      on attribute.attrelid = table_relation.oid
+     and attribute.attnum = key_column.attnum
+   where namespace.nspname = 'public'
+     and table_relation.relname = 'signal_events'
+     and index_relation.relname = 'signal_events_pkey'
+     and index_record.indisunique
+     and index_record.indisvalid
+     and index_record.indisready
+     and index_record.indpred is null
+     and index_record.indexprs is null
+     and index_record.indnatts = index_record.indnkeyatts
+   group by index_record.indexrelid;
+
+  if signal_events_identity_columns is distinct from array['stream_id', 'offset']::text[] then
+    raise exception
+      'Atlas identity mismatch for public.signal_events: expected unique (stream_id, offset), observed %',
+      signal_events_identity_columns;
+  end if;
+
+  select array_agg(attribute.attname order by key_column.ordinality)
+    into cursors_identity_columns
+    from pg_index index_record
+    join pg_class index_relation
+      on index_relation.oid = index_record.indexrelid
+    join pg_class table_relation
+      on table_relation.oid = index_record.indrelid
+    join pg_namespace namespace
+      on namespace.oid = table_relation.relnamespace
+    cross join lateral unnest(index_record.indkey::smallint[])
+      with ordinality as key_column(attnum, ordinality)
+    join pg_attribute attribute
+      on attribute.attrelid = table_relation.oid
+     and attribute.attnum = key_column.attnum
+   where namespace.nspname = 'public'
+     and table_relation.relname = 'cursors'
+     and index_relation.relname = 'cursors_stream_id_name_key'
+     and index_record.indisunique
+     and index_record.indisvalid
+     and index_record.indisready
+     and index_record.indpred is null
+     and index_record.indexprs is null
+     and index_record.indnatts = index_record.indnkeyatts
+   group by index_record.indexrelid;
+
+  if cursors_identity_columns is distinct from array['stream_id', 'name']::text[] then
+    raise exception
+      'Atlas identity mismatch for public.cursors: expected unique (stream_id, name), observed %',
+      cursors_identity_columns;
+  end if;
+end
+$atlas_identity_contract$;
+
 with atlas_runtime_rows as (
   select id,
          stream_id_dsr,
