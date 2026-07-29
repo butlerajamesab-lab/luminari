@@ -10,7 +10,7 @@ vi.mock("@supabase/supabase-js", () => ({
   createClient: create_client_mock,
 }));
 
-vi.mock("../db", () => ({
+vi.mock("../../db", () => ({
   getPool: () => ({ query: pool_query_mock }),
 }));
 
