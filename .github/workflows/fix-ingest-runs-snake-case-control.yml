@@ -1,0 +1,53 @@
+name: Fix Ingest Runs Snake Case Control
+
+on:
+  push:
+    branches:
+      - fix/ingest-runs-snake-case-control
+    paths:
+      - scripts/fix-ingest-runs-snake-case-control.mjs
+      - .github/workflows/fix-ingest-runs-snake-case-control.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/ingest-runs-snake-case-control
+          fetch-depth: 0
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Apply deterministic ingest_runs mapping repair
+        run: node scripts/fix-ingest-runs-snake-case-control.mjs
+
+      - name: Run focused persistence contracts
+        run: >-
+          npx vitest run
+          server/ingestion/__tests__/ingest-runs-snake-case-contract.test.ts
+          server/ingestion/__tests__/postgres-dialect-contract.test.ts
+          server/ingestion/__tests__/atlas-stream-bridge-contract.test.ts
+          server/engines/sunam-operator-source-contract.test.ts
+
+      - name: Verify patch formatting
+        run: git diff --check
+
+      - name: Commit repaired mapping
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Repair ingest_runs snake_case mapping"
+          git push origin HEAD:fix/ingest-runs-snake-case-control
