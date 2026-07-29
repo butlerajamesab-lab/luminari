@@ -58,7 +58,7 @@ describe("Sovereign Spine source contract", () => {
     expect(exporter).not.toContain("FROM `");
   });
 
-  it("redacts credentials and preserves Date values deterministically", () => {
+  it("redacts credentials and preserves explicitly typed Date values deterministically", () => {
     expect(exporter).toContain('url.username = ""');
     expect(exporter).toContain('url.password = ""');
     expect(exporter).toContain('"key"');
@@ -67,15 +67,17 @@ describe("Sovereign Spine source contract", () => {
     expect(exporter).toContain("sanitize_spine_export_value");
   });
 
-  it("derives each table's rows and truncation through one statement in the bundle snapshot", () => {
+  it("derives each table's rows and truncation through one temporal-safe statement", () => {
     expect(exporter).toContain("export_spine_table_data_consistent");
     expect(consistentExport).toContain("bounded_limit + 1");
     expect(consistentExport).toContain("result.rows.length > bounded_limit");
-    expect(consistentExport).toContain("client.query<Record<string, unknown>>(text)");
+    expect(consistentExport).toContain("SPINE_TEMPORAL_TYPE_OIDS");
+    expect(consistentExport).toContain("types: SPINE_EXPORT_TYPE_OVERRIDES");
+    expect(consistentExport).toContain("(client ?? ownedClient).query(query as any)");
     expect(consistentExport).not.toContain("count(*)");
   });
 
-  it("exports and restores only static civic knowledge—not case runtime", () => {
+  it("exports and restores only static civic knowledge—not case or generated runtime", () => {
     expect(exporter).toContain("SPINE_STATIC_CIVIC_TABLES");
     expect(restorer).toContain("restore_static_spine_table_data");
     expect(staticPolicy).toContain("SPINE_EXCLUDED_RUNTIME_TABLES");
@@ -92,13 +94,19 @@ describe("Sovereign Spine source contract", () => {
         `"${runtimeTable}"`,
       );
     }
+    for (const generatedMapTable of ["harm_map_nodes", "harm_map_edges"]) {
+      expect(staticPolicy).toContain(`"${generatedMapTable}"`);
+    }
+    expect(staticPolicy).toContain("!SPINE_EXCLUDED_RUNTIME_TABLE_SET.has(table)");
   });
 
-  it("preflights target schema, identities, constraints, and values before mutation", () => {
+  it("preflights inventory, target schema, identities, constraints, and values before mutation", () => {
     expect(restorer).toContain("preflight_spine_restore_contents(");
     expect(restorer.indexOf("preflight_spine_restore_contents(")).toBeLessThan(
       restorer.indexOf('set_restore_spine_run_status(runId, "restoring")'),
     );
+    expect(restorePreflight).toContain("validateRequiredRegistryInventory");
+    expect(restorePreflight).toContain("missing required registry tables");
     expect(restorePreflight).toContain("validateSchemaSection(bundle)");
     expect(restorePreflight).toContain("load_spine_target_table_contracts(");
     expect(restorePreflight).toContain("load_spine_target_identity_counts(");
@@ -108,11 +116,14 @@ describe("Sovereign Spine source contract", () => {
     expect(targetContract).toContain("cannot satisfy required target column");
     expect(targetContract).toContain("cannot write generated column");
     expect(targetContract).toContain("cannot write ALWAYS identity column");
+    expect(targetContract).toContain("POSTGRES_INTEGER_RANGES");
+    expect(targetContract).toContain("outside PostgreSQL ${kind} range");
   });
 
   it("uses one shared canonical registry identity and writable-field contract", () => {
     expect(restorer).toContain("get_spine_registry_policy");
     expect(restorer).toContain("select_spine_registry_write_row");
+    expect(registryPolicy).toContain("SPINE_REGISTRY_TABLES");
     expect(registryPolicy).toContain('identityColumns: ["pattern_id", "pattern_name"]');
     expect(registryPolicy).toContain('available.has("pattern_id")');
     expect(registryPolicy).toContain("mutable name fallback is not permitted");
