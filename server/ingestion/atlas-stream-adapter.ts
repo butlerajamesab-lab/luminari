@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
-import { dataStreamRegistry, ingestRuns } from "../../drizzle/schema";
+import { dataStreamRegistry } from "../../drizzle/schema";
 import { db, getPool } from "../db";
 import {
   fetch_atlas_signal_events,
@@ -9,6 +9,11 @@ import {
   type atlas_signal_event,
   type atlas_stream_definition,
 } from "./atlas-bridge-client";
+import {
+  complete_atlas_ingest_run,
+  create_atlas_ingest_run,
+  fail_atlas_ingest_run,
+} from "./atlas-ingest-run-store";
 import type { IngestionResult } from "./socrata-adapter";
 
 const ATLAS_BRIDGE_CURSOR_NAME = "lighthouse-atlas-bridge-v1";
@@ -293,21 +298,11 @@ export async function ingest_atlas_stream(
     };
   }
 
-  const [run] = await db
-    .insert(ingestRuns)
-    .values({
-      datasetId: dataset_id,
-      startTime: Date.now(),
-      status: "running",
-      endpointAttempted: endpoint_attempted,
-      adapterUsed: ATLAS_ADAPTER_NAME,
-    })
-    .returning({ id: ingestRuns.id });
-
-  if (!run?.id) {
-    throw new Error(`Failed to create Atlas bridge ingest run for ${dataset_id}`);
-  }
-  const run_id = run.id;
+  const run_id = await create_atlas_ingest_run({
+    dataset_id,
+    start_time: Date.now(),
+    endpoint_attempted,
+  });
   const max_records = options?.max_records && options.max_records > 0
     ? Math.floor(options.max_records)
     : Number.POSITIVE_INFINITY;
@@ -323,7 +318,9 @@ export async function ingest_atlas_stream(
       dataset_id,
     );
 
-    if (!stream_data) throw new Error(`Atlas stream ${dataset_id} is not registered or exported`);
+    if (!stream_data) {
+      throw new Error(`Atlas stream ${dataset_id} is not registered or exported`);
+    }
 
     await mirror_stream_definition(stream_data);
 
@@ -344,7 +341,9 @@ export async function ingest_atlas_stream(
 
       const last_offset = Number(events[events.length - 1].offset);
       if (!Number.isSafeInteger(last_offset)) {
-        throw new Error(`Atlas offset is outside the JavaScript safe integer range: ${String(events[events.length - 1].offset)}`);
+        throw new Error(
+          `Atlas offset is outside the JavaScript safe integer range: ${String(events[events.length - 1].offset)}`,
+        );
       }
       const next_offset = last_offset + 1;
 
@@ -380,24 +379,14 @@ export async function ingest_atlas_stream(
     }
 
     const now = Date.now();
-    await db
-      .update(ingestRuns)
-      .set({
-        endTime: now,
-        recordsProcessed: records_processed,
-        recordsInserted: records_inserted,
-        recordsUpdated: records_updated,
-        signalsGenerated: records_inserted,
-        status: "completed",
-        errors: null,
-        summary: `Synchronized ${records_processed} Atlas events: ${records_inserted} inserted, ${records_updated} refreshed`,
-        endpointAttempted: endpoint_attempted,
-        adapterUsed: ATLAS_ADAPTER_NAME,
-        signalsProcessed: true,
-        postProcessingEngine: "atlas-stream-bridge",
-        outcomeClassification: "completed",
-      })
-      .where(eq(ingestRuns.id, run_id));
+    await complete_atlas_ingest_run({
+      run_id,
+      end_time: now,
+      records_processed,
+      records_inserted,
+      records_updated,
+      endpoint_attempted,
+    });
 
     await db
       .update(dataStreamRegistry)
@@ -436,32 +425,15 @@ export async function ingest_atlas_stream(
     const now = Date.now();
 
     try {
-      await db
-        .update(ingestRuns)
-        .set({
-          endTime: now,
-          recordsProcessed: records_processed,
-          recordsInserted: records_inserted,
-          recordsUpdated: records_updated,
-          signalsGenerated: records_inserted,
-          status: "failed",
-          errors: [error_message],
-          summary: partial_failure
-            ? `Partially synchronized ${records_processed} Atlas events before failure: ${records_inserted} inserted, ${records_updated} refreshed`
-            : `Atlas stream synchronization failed before any event page committed`,
-          errorClassification: "unknown",
-          endpointAttempted: endpoint_attempted,
-          adapterUsed: ATLAS_ADAPTER_NAME,
-          failureClassification: partial_failure
-            ? "atlas_bridge_partial_failure"
-            : "atlas_bridge_failure",
-          suggestedRemediation:
-            "Verify Atlas credentials, stream registration, and signal_events access.",
-          signalsProcessed: partial_failure,
-          postProcessingEngine: "atlas-stream-bridge",
-          outcomeClassification: partial_failure ? "partial_failure" : "pipeline_error",
-        })
-        .where(eq(ingestRuns.id, run_id));
+      await fail_atlas_ingest_run({
+        run_id,
+        end_time: now,
+        records_processed,
+        records_inserted,
+        records_updated,
+        error_message,
+        endpoint_attempted,
+      });
 
       if (partial_failure) {
         await db

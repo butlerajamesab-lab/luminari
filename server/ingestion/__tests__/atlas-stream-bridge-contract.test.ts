@@ -12,7 +12,11 @@ function read_sibling(relative_path: string): string {
 describe("Atlas stream bridge contract", () => {
   const adapter_source = read_sibling("../atlas-stream-adapter.ts");
   const client_source = read_sibling("../atlas-bridge-client.ts");
+  const run_store_source = read_sibling("../atlas-ingest-run-store.ts");
   const scheduler_source = read_sibling("../scheduler.ts");
+  const sequence_migration = read_sibling(
+    "../../../supabase/migrations/20260729154500_ingest_runs_sequence_alignment.sql",
+  );
 
   it("preserves Atlas stream and event identities", () => {
     expect(adapter_source).toContain("fetch_atlas_stream_definition");
@@ -43,10 +47,41 @@ describe("Atlas stream bridge contract", () => {
     expect(adapter_source).not.toContain('.from("signal_events")');
   });
 
-  it("creates PostgreSQL run identities without MySQL-only calls", () => {
-    expect(adapter_source).toContain(".returning({ id: ingestRuns.id })");
-    expect(adapter_source).not.toContain("$returningId");
-    expect(adapter_source).not.toContain("onDuplicateKeyUpdate");
+  it("writes the ingest ledger through the live snake_case PostgreSQL contract", () => {
+    for (const column of [
+      "dataset_id_run",
+      "start_time",
+      "end_time",
+      "records_processed",
+      "records_inserted",
+      "records_updated",
+      "signals_generated",
+      "ingest_status",
+      "endpoint_attempted_run",
+      "adapter_used_run",
+    ]) {
+      expect(run_store_source).toContain(column);
+    }
+    expect(run_store_source).toContain("returning id");
+    expect(run_store_source).not.toContain("datasetId_run");
+    expect(run_store_source).not.toContain('"startTime"');
+    expect(run_store_source).not.toContain("$returningId");
+    expect(adapter_source).toContain("create_atlas_ingest_run");
+    expect(adapter_source).toContain("complete_atlas_ingest_run");
+    expect(adapter_source).toContain("fail_atlas_ingest_run");
+    expect(adapter_source).not.toContain("ingestRuns");
+  });
+
+  it("realigns preserved ingest-run identities without destructive DDL", () => {
+    expect(sequence_migration).toContain(
+      "pg_get_serial_sequence('public.ingest_runs', 'id')",
+    );
+    expect(sequence_migration).toContain(
+      "perform setval(sequence_name::regclass, maximum_id, true)",
+    );
+    expect(sequence_migration).not.toMatch(/\bdelete\b/i);
+    expect(sequence_migration).not.toMatch(/\btruncate\b/i);
+    expect(sequence_migration).not.toMatch(/\bdrop\b/i);
   });
 
   it("routes only explicitly declared adapter families", () => {
