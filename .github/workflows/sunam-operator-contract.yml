@@ -11,6 +11,7 @@ on:
       - "server/engines/sunam-stream-selection.ts"
       - "server/engines/sunam-stream-selection.test.ts"
       - "server/engines/sunam-operator-source-contract.test.ts"
+      - "server/executor-routes.ts"
       - "server/routers/session76-router.ts"
       - "client/src/pages/SovereignControl.tsx"
       - ".github/workflows/sunam-operator-contract.yml"
