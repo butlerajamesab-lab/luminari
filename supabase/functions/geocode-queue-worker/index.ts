@@ -24,6 +24,11 @@ type QueueTransitionResult =
   | { ok: true }
   | { ok: false; reason: string };
 
+type CronAuthorizationOutcome =
+  | { kind: "authorized"; elapsed_ms: number }
+  | { kind: "rejected"; elapsed_ms: number }
+  | { kind: "unavailable"; elapsed_ms: number; reason: string };
+
 type SupabaseAdminClient = ReturnType<typeof createClient>;
 
 function json(body: unknown, status = 200): Response {
@@ -31,6 +36,10 @@ function json(body: unknown, status = 200): Response {
     status,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+function sleep(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 function buildAddress(row: QueueRow): string {
@@ -58,6 +67,94 @@ function geocodePrecision(type: unknown): string {
             : type === "state"
               ? "state"
               : "unknown";
+}
+
+async function verifyCronSecret(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  candidate: string,
+): Promise<CronAuthorizationOutcome> {
+  const startedAt = Date.now();
+  let lastReason = "verifier_request_failed";
+
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+
+    try {
+      const response = await fetch(
+        `${supabaseUrl}/rest/v1/rpc/verify_geocode_worker_cron_secret`,
+        {
+          method: "POST",
+          headers: {
+            apikey: serviceRoleKey,
+            Authorization: `Bearer ${serviceRoleKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ p_candidate: candidate }),
+          signal: controller.signal,
+        },
+      );
+      clearTimeout(timeout);
+
+      const responseText = await response.text();
+      if (response.ok) {
+        let verified: unknown;
+        try {
+          verified = JSON.parse(responseText);
+        } catch {
+          return {
+            kind: "unavailable",
+            elapsed_ms: Date.now() - startedAt,
+            reason: "verifier_invalid_json",
+          };
+        }
+
+        if (verified === true) {
+          return { kind: "authorized", elapsed_ms: Date.now() - startedAt };
+        }
+        if (verified === false) {
+          return { kind: "rejected", elapsed_ms: Date.now() - startedAt };
+        }
+        return {
+          kind: "unavailable",
+          elapsed_ms: Date.now() - startedAt,
+          reason: "verifier_invalid_payload",
+        };
+      }
+
+      const retryable = response.status === 408 || response.status === 425 ||
+        response.status === 429 || response.status >= 500;
+      lastReason = `verifier_http_${response.status}`;
+      if (!retryable || attempt === 2) {
+        return {
+          kind: "unavailable",
+          elapsed_ms: Date.now() - startedAt,
+          reason: lastReason,
+        };
+      }
+    } catch (error) {
+      clearTimeout(timeout);
+      lastReason = error instanceof DOMException && error.name === "AbortError"
+        ? "verifier_timeout"
+        : "verifier_network_error";
+      if (attempt === 2) {
+        return {
+          kind: "unavailable",
+          elapsed_ms: Date.now() - startedAt,
+          reason: lastReason,
+        };
+      }
+    }
+
+    await sleep(250);
+  }
+
+  return {
+    kind: "unavailable",
+    elapsed_ms: Date.now() - startedAt,
+    reason: lastReason,
+  };
 }
 
 async function geocode(address: string): Promise<GeocodeOutcome> {
@@ -206,26 +303,62 @@ Deno.serve(async (request: Request) => {
       return json({ error: "missing_admin_connection" }, 500);
     }
 
+    // The worker is invoked by pg_cron/pg_net rather than a signed-in user.
+    // Platform JWT verification is disabled for this deployment, but no queue
+    // read or write occurs before the dedicated Vault-backed credential is
+    // verified through the service-role-only PostgreSQL RPC.
+    const cronSecret = request.headers.get("x-cron-secret")?.trim() ?? "";
+    if (!cronSecret) {
+      console.warn(JSON.stringify({
+        event: "geocode_worker_cron_auth",
+        outcome: "rejected",
+        reason: "missing_cron_secret_header",
+      }));
+      return json({
+        error: "unauthorized",
+        diagnostic_code: "missing_cron_secret_header",
+      }, 401);
+    }
+
+    const authorization = await verifyCronSecret(
+      supabaseUrl,
+      serviceRoleKey,
+      cronSecret,
+    );
+    if (authorization.kind === "unavailable") {
+      console.error(JSON.stringify({
+        event: "geocode_worker_cron_auth",
+        outcome: "unavailable",
+        reason: authorization.reason,
+        elapsed_ms: authorization.elapsed_ms,
+      }));
+      return json({
+        error: "authorization_service_unavailable",
+        diagnostic_code: authorization.reason,
+      }, 503);
+    }
+    if (authorization.kind === "rejected") {
+      console.warn(JSON.stringify({
+        event: "geocode_worker_cron_auth",
+        outcome: "rejected",
+        reason: "verifier_rejected",
+        elapsed_ms: authorization.elapsed_ms,
+      }));
+      return json({
+        error: "unauthorized",
+        diagnostic_code: "verifier_rejected",
+      }, 401);
+    }
+
+    console.info(JSON.stringify({
+      event: "geocode_worker_cron_auth",
+      outcome: "authorized",
+      elapsed_ms: authorization.elapsed_ms,
+    }));
+
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false },
     });
-
-    // The worker is invoked by pg_cron/pg_net rather than a signed-in user.
-    // Platform JWT verification is therefore disabled for this deployment, but
-    // no queue access occurs until the dedicated Vault-backed secret is checked
-    // by a service-role-only RPC.
-    const cronSecret = request.headers.get("x-cron-secret")?.trim() ?? "";
-    if (!cronSecret) {
-      return json({ error: "unauthorized" }, 401);
-    }
-
-    const { data: authorized, error: authorizationError } = await supabase.rpc(
-      "verify_geocode_worker_cron_secret",
-      { p_candidate: cronSecret },
-    );
-    if (authorizationError || authorized !== true) {
-      return json({ error: "unauthorized" }, 401);
-    }
 
     const url = new URL(request.url);
     const requestedBatchSize = Number(url.searchParams.get("batch_size") ?? "50");
