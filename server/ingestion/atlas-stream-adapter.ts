@@ -359,6 +359,14 @@ export async function ingest_atlas_stream(
     throw new Error(`Failed to create Atlas bridge ingest run for ${dataset_id}`);
   }
   const run_id = run.id;
+  const max_records = options?.max_records && options.max_records > 0
+    ? Math.floor(options.max_records)
+    : Number.POSITIVE_INFINITY;
+  let current_offset = 0;
+  let records_processed = 0;
+  let records_inserted = 0;
+  let records_updated = 0;
+  let page_count = 0;
 
   try {
     const { data: stream_data, error: stream_error } = await atlas_result.client
@@ -374,14 +382,7 @@ export async function ingest_atlas_stream(
 
     await mirror_stream_definition(stream_data as atlas_stream_definition);
 
-    let current_offset = await get_bridge_offset(dataset_id);
-    let records_processed = 0;
-    let records_inserted = 0;
-    let records_updated = 0;
-    let page_count = 0;
-    const max_records = options?.max_records && options.max_records > 0
-      ? Math.floor(options.max_records)
-      : Number.POSITIVE_INFINITY;
+    current_offset = await get_bridge_offset(dataset_id);
 
     while (page_count < ATLAS_MAX_PAGES && records_processed < max_records) {
       const remaining = max_records - records_processed;
@@ -430,10 +431,23 @@ export async function ingest_atlas_stream(
       if (events.length < page_size) break;
     }
 
-    if (page_count >= ATLAS_MAX_PAGES) {
-      throw new Error(
-        `Atlas bridge page limit reached for ${dataset_id}; cursor preserved at ${current_offset}`,
-      );
+    if (page_count >= ATLAS_MAX_PAGES && records_processed < max_records) {
+      const { data: remaining_events, error: remaining_error } = await atlas_result.client
+        .from("signal_events")
+        .select("offset")
+        .eq("stream_id", dataset_id)
+        .gte("offset", current_offset)
+        .order("offset", { ascending: true })
+        .limit(1);
+
+      if (remaining_error) {
+        throw new Error(`Atlas page-limit probe failed: ${remaining_error.message}`);
+      }
+      if ((remaining_events ?? []).length > 0) {
+        throw new Error(
+          `Atlas bridge page limit reached for ${dataset_id}; cursor preserved at ${current_offset}`,
+        );
+      }
     }
 
     const now = Date.now();
@@ -460,7 +474,7 @@ export async function ingest_atlas_stream(
       .update(dataStreamRegistry)
       .set({
         lastIngestedAt: now,
-        recordsIngested: sql`records_ingested_dsr + ${records_inserted}`,
+        recordsIngested: sql`coalesce(records_ingested_dsr, 0) + ${records_inserted}`,
         lastRecordsIngested: records_inserted,
         lastRunStatus: "completed",
         lastSuccessAt: now,
@@ -489,43 +503,80 @@ export async function ingest_atlas_stream(
     };
   } catch (error) {
     const error_message = error instanceof Error ? error.message : String(error);
+    const partial_failure = records_processed > 0;
+    const now = Date.now();
 
     try {
       await db
         .update(ingestRuns)
         .set({
-          endTime: Date.now(),
+          endTime: now,
+          recordsProcessed: records_processed,
+          recordsInserted: records_inserted,
+          recordsUpdated: records_updated,
+          signalsGenerated: records_inserted,
           status: "failed",
           errors: [error_message],
+          summary: partial_failure
+            ? `Partially synchronized ${records_processed} Atlas events before failure: ${records_inserted} inserted, ${records_updated} refreshed`
+            : `Atlas stream synchronization failed before any event page committed`,
           errorClassification: "unknown",
           endpointAttempted: endpoint_attempted,
           adapterUsed: ATLAS_ADAPTER_NAME,
-          failureClassification: "atlas_bridge_failure",
+          failureClassification: partial_failure
+            ? "atlas_bridge_partial_failure"
+            : "atlas_bridge_failure",
           suggestedRemediation:
             "Verify Atlas credentials, stream registration, and signal_events access.",
-          outcomeClassification: "pipeline_error",
+          signalsProcessed: partial_failure,
+          postProcessingEngine: "atlas-stream-bridge",
+          outcomeClassification: partial_failure ? "partial_failure" : "pipeline_error",
         })
         .where(eq(ingestRuns.id, run_id));
+
+      if (partial_failure) {
+        await db
+          .update(dataStreamRegistry)
+          .set({
+            lastIngestedAt: now,
+            recordsIngested: sql`coalesce(records_ingested_dsr, 0) + ${records_inserted}`,
+            lastRecordsIngested: records_inserted,
+            lastSignalsGenerated: records_inserted,
+            lastRunStatus: "partial",
+            lastFailureAt: now,
+            lastErrorType: "atlas_bridge_partial_failure",
+            lastErrorMessage: error_message.substring(0, 500),
+            failureCount: sql`coalesce(failure_count_dsr, 0) + 1`,
+            consecutiveFailures: 0,
+            retryAfterAt: null,
+            autoDisabled: false,
+            disabledReason: null,
+            updatedAt: now,
+          })
+          .where(eq(dataStreamRegistry.streamId, dataset_id));
+      }
     } catch (run_update_error) {
       console.error(
-        `[Atlas Bridge] Failed to mark run ${run_id} failed:`,
+        `[Atlas Bridge] Failed to record run ${run_id} failure:`,
         run_update_error,
       );
     }
 
     return {
-      recordsProcessed: 0,
-      recordsInserted: 0,
-      recordsUpdated: 0,
-      signalsGenerated: 0,
+      recordsProcessed: records_processed,
+      recordsInserted: records_inserted,
+      recordsUpdated: records_updated,
+      signalsGenerated: records_inserted,
       errors: [error_message],
       runId: run_id,
       diagnostics: make_diagnostics({
         error_classification: "unknown",
-        failure_classification: "atlas_bridge_failure",
+        failure_classification: partial_failure
+          ? "atlas_bridge_partial_failure"
+          : "atlas_bridge_failure",
         suggested_remediation:
           "Verify Atlas credentials, stream registration, and signal_events access.",
-        outcome_classification: "pipeline_error",
+        outcome_classification: partial_failure ? "partial_failure" : "pipeline_error",
         endpoint_attempted,
       }),
     };
