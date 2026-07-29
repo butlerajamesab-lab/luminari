@@ -9,6 +9,9 @@ function read(relativePath: string): string {
 const migration = read(
   "../supabase/migrations/20260729022000_geocode_worker_cron_auth.sql",
 );
+const timeoutMigration = read(
+  "../supabase/migrations/20260729105500_geocode_worker_request_timeout.sql",
+);
 const worker = read("../supabase/functions/geocode-queue-worker/index.ts");
 
 describe("geocode worker cron authentication", () => {
@@ -33,6 +36,16 @@ describe("geocode worker cron authentication", () => {
     expect(migration).toContain("'x-cron-secret'");
     expect(migration).toContain("?batch_size=25");
     expect(migration).toContain("'*/15 * * * *'");
+  });
+
+  it("replaces the five-second caller default with an explicit bounded timeout", () => {
+    expect(timeoutMigration).toContain(
+      "cron.unschedule('geocode-queue-worker-timer')",
+    );
+    expect(timeoutMigration).toContain("?batch_size=10");
+    expect(timeoutMigration).toContain("timeout_milliseconds := 120000");
+    expect(timeoutMigration).toContain("'x-cron-secret'");
+    expect(timeoutMigration).toContain("'*/15 * * * *'");
   });
 
   it("authenticates before accessing queue data", () => {
