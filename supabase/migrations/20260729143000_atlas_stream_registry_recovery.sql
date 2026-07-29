@@ -8,6 +8,18 @@
 --
 -- This migration is replay-safe and non-destructive.
 
+-- The bridge uses PostgreSQL ON CONFLICT against these exact identities. Live
+-- Lighthouse already has these indexes; IF NOT EXISTS makes the contract safe
+-- for recovery databases and fresh schema builds without duplicating them.
+create unique index if not exists streams_pkey
+  on public.streams (stream_id);
+
+create unique index if not exists signal_events_pkey
+  on public.signal_events (stream_id, "offset");
+
+create unique index if not exists cursors_stream_id_name_key
+  on public.cursors (stream_id, name);
+
 with atlas_runtime_rows as (
   select id,
          stream_id_dsr,
