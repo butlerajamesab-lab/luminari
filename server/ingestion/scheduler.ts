@@ -369,6 +369,26 @@ export async function runIngestionPipeline(
       );
     }
 
+    const atlasPartialFailure =
+      adapterSource === "atlas_stream" && result.recordsProcessed > 0 &&
+      result.diagnostics?.outcomeClassification === "partial_failure";
+
+    // The Atlas adapter has already committed and accounted for these pages.
+    // Preserve the durable counts, but do not reinterpret the events or relabel
+    // the partial result as a successful run.
+    if (atlasPartialFailure) {
+      return {
+        success: false,
+        recordsProcessed: result.recordsProcessed,
+        recordsInserted: result.recordsInserted,
+        recordsUpdated: result.recordsUpdated,
+        signalsGenerated: result.signalsGenerated,
+        errors: result.errors,
+        runId: result.runId,
+        diagnostics: result.diagnostics,
+      };
+    }
+
     // Check if ingestion failed at the adapter level
     if (result.errors.length > 0 && result.recordsProcessed === 0) {
       // This is a failure — track it for self-healing
