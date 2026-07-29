@@ -37,6 +37,11 @@ type atlas_bridge_runtime_config_row = {
   atlas_supabase_key: string | null;
 };
 
+type valid_atlas_config = {
+  atlas_supabase_url: string;
+  atlas_supabase_key: string;
+};
+
 function create_atlas_client(
   atlas_supabase_url: string,
   atlas_supabase_key: string,
@@ -49,16 +54,23 @@ function create_atlas_client(
   });
 }
 
-function is_valid_atlas_config(
+function normalize_atlas_config(
   atlas_supabase_url: unknown,
   atlas_supabase_key: unknown,
-): atlas_supabase_url is string {
-  return (
-    typeof atlas_supabase_url === "string" &&
-    atlas_supabase_url.startsWith("https://") &&
-    typeof atlas_supabase_key === "string" &&
-    atlas_supabase_key.length >= 20
-  );
+): valid_atlas_config | null {
+  if (
+    typeof atlas_supabase_url !== "string" ||
+    !atlas_supabase_url.startsWith("https://") ||
+    typeof atlas_supabase_key !== "string" ||
+    atlas_supabase_key.length < 20
+  ) {
+    return null;
+  }
+
+  return {
+    atlas_supabase_url,
+    atlas_supabase_key,
+  };
 }
 
 async function read_atlas_config_from_vault(): Promise<atlas_bridge_runtime_config_row | null> {
@@ -72,33 +84,36 @@ async function read_atlas_config_from_vault(): Promise<atlas_bridge_runtime_conf
 }
 
 export async function get_atlas_bridge_client(): Promise<atlas_bridge_client_result> {
-  const environment_url = process.env.ATLAS_SUPABASE_URL;
-  const environment_key =
+  const environment_config = normalize_atlas_config(
+    process.env.ATLAS_SUPABASE_URL,
     process.env.ATLAS_SUPABASE_SERVICE_ROLE_KEY ??
-    process.env.ATLAS_SUPABASE_ANON_KEY;
+      process.env.ATLAS_SUPABASE_ANON_KEY,
+  );
 
-  if (is_valid_atlas_config(environment_url, environment_key)) {
+  if (environment_config) {
     return {
       configured: true,
-      client: create_atlas_client(environment_url, environment_key),
+      client: create_atlas_client(
+        environment_config.atlas_supabase_url,
+        environment_config.atlas_supabase_key,
+      ),
       configuration_source: "environment",
     };
   }
 
   try {
-    const vault_config = await read_atlas_config_from_vault();
-    if (
-      vault_config &&
-      is_valid_atlas_config(
-        vault_config.atlas_supabase_url,
-        vault_config.atlas_supabase_key,
-      )
-    ) {
+    const vault_config_row = await read_atlas_config_from_vault();
+    const vault_config = normalize_atlas_config(
+      vault_config_row?.atlas_supabase_url,
+      vault_config_row?.atlas_supabase_key,
+    );
+
+    if (vault_config) {
       return {
         configured: true,
         client: create_atlas_client(
           vault_config.atlas_supabase_url,
-          vault_config.atlas_supabase_key!,
+          vault_config.atlas_supabase_key,
         ),
         configuration_source: "vault",
       };
