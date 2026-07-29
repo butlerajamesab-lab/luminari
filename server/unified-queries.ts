@@ -68,6 +68,7 @@ export interface UnifiedSignalsInput {
 }
 
 const DEFAULT_LIMIT = 100;
+const RETIRED_STREAM_STATUS = "retired_superseded_by_atlas";
 
 function rows_from_result<T>(result: unknown): T[] {
   if (Array.isArray(result)) {
@@ -103,7 +104,6 @@ function parse_json(value: unknown): unknown {
     return value;
   }
 }
-
 
 async function get_detected_signal_columns(): Promise<Set<string>> {
   const result = await pool.query(
@@ -246,9 +246,10 @@ function normalize_stream(row: Record<string, unknown>): UnifiedStreamMetric {
 }
 
 export async function get_unified_ingestion_metrics(input: { stream_id?: string } = {}): Promise<UnifiedStreamMetric[]> {
-  const params: unknown[] = [];
-  const where = input.stream_id ? "WHERE stream_id_dsr = $1" : "";
-  if (input.stream_id) params.push(input.stream_id);
+  const params: unknown[] = [RETIRED_STREAM_STATUS];
+  const stream_filter = input.stream_id
+    ? `AND stream_id_dsr = $${params.push(input.stream_id)}`
+    : "";
 
   const result = await pool.query(
     `SELECT
@@ -286,7 +287,8 @@ export async function get_unified_ingestion_metrics(input: { stream_id?: string 
       created_at_dsr AS created_at,
       updated_at_dsr AS updated_at
     FROM data_stream_registry
-    ${where}
+    WHERE COALESCE(last_run_status_dsr, '') <> $1
+    ${stream_filter}
     ORDER BY stream_name_dsr ASC`,
     params,
   );
