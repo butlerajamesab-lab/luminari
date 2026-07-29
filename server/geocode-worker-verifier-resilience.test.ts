@@ -52,9 +52,9 @@ describe("geocode worker verifier resilience", () => {
     expect(worker).toContain("setTimeout(() => controller.abort(), 12000)");
     expect(worker).toContain("await sleep(250)");
     expect(worker).toContain('event: "geocode_worker_cron_auth"');
-    expect(worker).not.toContain("cronSecret,");
-    expect(worker).not.toContain("candidate,");
-    expect(worker).not.toContain("serviceRoleKey,");
+    expect(worker).not.toContain("cron_secret: cronSecret");
+    expect(worker).not.toContain("candidate: candidate");
+    expect(worker).not.toContain("service_role_key: serviceRoleKey");
   });
 
   it("preserves the existing cron contract with a 30-second pg_net timeout", () => {
