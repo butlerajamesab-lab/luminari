@@ -36,11 +36,14 @@ describe("Atlas Vault-backed RPC bridge contract", () => {
     expect(client).toContain('configuration_source: "vault"');
   });
 
-  it("calls only the Atlas export RPC contract", () => {
-    expect(client).toContain('client.rpc("get_lighthouse_stream_definition"');
-    expect(client).toContain('client.rpc("get_lighthouse_signal_events"');
-    expect(client).not.toContain('.from("streams")');
-    expect(client).not.toContain('.from("signal_events")');
+  it("uses native fetch rather than a WebSocket-dependent Supabase client", () => {
+    expect(client).toContain("await fetch(endpoint");
+    expect(client).toContain("/rest/v1/rpc/${rpc_name}");
+    expect(client).toContain("ATLAS_RPC_TIMEOUT_MS");
+    expect(client).not.toContain("@supabase/supabase-js");
+    expect(client).not.toContain("createClient");
+    expect(client).not.toContain("RealtimeClient");
+    expect(client).not.toContain("WebSocket");
   });
 
   it("keeps all credential values out of source control", () => {
