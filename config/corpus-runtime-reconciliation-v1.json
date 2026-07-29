@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0.0",
+  "report_id": "corpus_runtime_reconciliation_v1",
+  "purpose": "Read-only proof that selected source artifacts survive document-family classification, candidate extraction, verification state, promotion accounting, and declared runtime-consumer mapping without silent loss.",
+  "slices": [
+    {
+      "slice_id": "minnesota_lineage",
+      "family_key": "general_state_registry",
+      "jurisdiction": "Minnesota",
+      "queue_rows": [
+        {
+          "queue_id": 205,
+          "source_role": "baseline",
+          "expected_name_pattern": "minnesota.*registry"
+        },
+        {
+          "queue_id": 27,
+          "source_role": "enriched",
+          "expected_name_pattern": "minnesota.*enriched-pass3"
+        }
+      ],
+      "required_candidate_classes": [
+        "benefit_program",
+        "resource",
+        "contact",
+        "agency",
+        "workflow",
+        "deadline",
+        "legal_aid",
+        "court",
+        "statute",
+        "tribal_entity",
+        "policy_alert"
+      ],
+      "acceptance_focus": [
+        "baseline_and_enriched_sources_preserved",
+        "source_precedence_visible",
+        "typed_candidates_not_flattened",
+        "stale_or_contradicted_claims_blocked_from_current_truth",
+        "runtime_consumers_declared"
+      ]
+    },
+    {
+      "slice_id": "utah_parser_loss",
+      "family_key": "general_state_registry",
+      "jurisdiction": "Utah",
+      "queue_rows": [
+        {
+          "queue_id": 215,
+          "source_role": "parser_loss_specimen",
+          "expected_name_pattern": "utah.*resource-directory"
+        }
+      ],
+      "required_candidate_classes": [
+        "benefit_program",
+        "resource",
+        "contact",
+        "agency",
+        "workflow",
+        "deadline",
+        "legal_aid",
+        "court",
+        "statute",
+        "tribal_entity",
+        "policy_alert"
+      ],
+      "acceptance_focus": [
+        "exact_source_spans_preserved",
+        "first_loss_point_identified",
+        "legal_contact_deadline_and_jurisdiction_blocks_typed",
+        "replay_hashes_stable",
+        "no_production_promotion_during_audit"
+      ]
+    }
+  ]
+}
