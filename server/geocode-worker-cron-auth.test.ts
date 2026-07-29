@@ -49,6 +49,29 @@ describe("geocode worker cron authentication", () => {
   it("keeps privileged database access inside the authenticated worker", () => {
     expect(worker).toContain('Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")');
     expect(worker).toContain('auth: { persistSession: false }');
-    expect(worker).not.toContain("geocode_worker_cron_secret");
+    expect(worker).not.toMatch(
+      /Deno\.env\.get\(["']GEOCODE_WORKER_CRON_SECRET["']\)/,
+    );
+    expect(worker).not.toContain("vault.decrypted_secrets");
+  });
+
+  it("requeues transient geocoder failures instead of terminally failing them", () => {
+    expect(worker).toContain("response.status === 429");
+    expect(worker).toContain("response.status >= 500");
+    expect(worker).toContain('kind: "retryable_error"');
+    expect(worker).toContain("recoverPending(supabase, row)");
+    expect(worker).toContain("requeued");
+  });
+
+  it("checks final queue persistence before counting completion", () => {
+    const transitionIndex = worker.indexOf(
+      "const completionTransition = await transitionQueueStatus(",
+    );
+    const completedIndex = worker.indexOf("completed += 1;", transitionIndex);
+
+    expect(transitionIndex).toBeGreaterThan(-1);
+    expect(completedIndex).toBeGreaterThan(transitionIndex);
+    expect(worker).toContain('currentStatus === "completed"');
+    expect(worker).toContain("queue_update_failures");
   });
 });
