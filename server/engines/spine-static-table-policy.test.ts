@@ -20,7 +20,7 @@ describe("Sovereign Spine static civic data policy", () => {
     }
   });
 
-  it("excludes case, user, generated strategy, calculation, and outcome runtime", () => {
+  it("excludes case, user, generated strategy, map, calculation, and outcome runtime", () => {
     for (const table of SPINE_EXCLUDED_RUNTIME_TABLES) {
       expect(SPINE_STATIC_CIVIC_TABLE_SET.has(table)).toBe(false);
       expect(() => assert_static_spine_table(table)).toThrow(
@@ -29,7 +29,7 @@ describe("Sovereign Spine static civic data policy", () => {
     }
   });
 
-  it("specifically blocks the live case-bearing tables found in the audit", () => {
+  it("specifically blocks the live case-bearing and generated-map tables found in the audit", () => {
     for (const table of [
       "procedural_outputs",
       "remedy_paths",
@@ -39,6 +39,8 @@ describe("Sovereign Spine static civic data policy", () => {
       "investigative_queries",
       "outcome_registry",
       "outcome_metrics",
+      "harm_map_nodes",
+      "harm_map_edges",
     ]) {
       expect(SPINE_STATIC_CIVIC_TABLE_SET.has(table)).toBe(false);
     }
