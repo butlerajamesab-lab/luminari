@@ -3,6 +3,15 @@ export type spine_registry_restore_policy = {
   writableColumns: string[];
 };
 
+export const SPINE_REGISTRY_TABLES = [
+  "engine_registry",
+  "data_stream_registry",
+  "signal_registry",
+  "pattern_registry",
+] as const;
+
+export const SPINE_REGISTRY_TABLE_SET = new Set<string>(SPINE_REGISTRY_TABLES);
+
 export const SPINE_REGISTRY_RESTORE_POLICY: Record<
   string,
   spine_registry_restore_policy
