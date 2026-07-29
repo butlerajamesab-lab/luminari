@@ -114,6 +114,48 @@ function isNumericValue(value: unknown): boolean {
   );
 }
 
+function parseIntegerValue(value: unknown): bigint | null {
+  if (typeof value === "bigint") return value;
+  if (typeof value === "number") {
+    if (!Number.isSafeInteger(value)) return null;
+    return BigInt(value);
+  }
+  if (typeof value === "string" && /^[-+]?\d+$/.test(value.trim())) {
+    try {
+      return BigInt(value.trim());
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+const POSTGRES_INTEGER_RANGES = {
+  smallint: { min: -32768n, max: 32767n },
+  integer: { min: -2147483648n, max: 2147483647n },
+  bigint: { min: -9223372036854775808n, max: 9223372036854775807n },
+} as const;
+
+function validateIntegerValue(
+  tableName: string,
+  columnName: string,
+  value: unknown,
+  kind: keyof typeof POSTGRES_INTEGER_RANGES,
+): void {
+  const parsed = parseIntegerValue(value);
+  if (parsed === null) {
+    throw new Error(
+      `Spine row requires an integral ${kind} value for ${tableName}.${columnName}`,
+    );
+  }
+  const range = POSTGRES_INTEGER_RANGES[kind];
+  if (parsed < range.min || parsed > range.max) {
+    throw new Error(
+      `Spine row value for ${tableName}.${columnName} is outside PostgreSQL ${kind} range`,
+    );
+  }
+}
+
 function isDateValue(value: unknown): boolean {
   if (value instanceof Date) return !Number.isNaN(value.getTime());
   return typeof value === "string" && !Number.isNaN(Date.parse(value));
@@ -164,7 +206,19 @@ function validateValue(
     }
     return;
   }
-  if (/smallint|integer|bigint|numeric|decimal|real|double|float|money/.test(type)) {
+  if (/\b(smallint|int2)\b/.test(type)) {
+    validateIntegerValue(tableName, column.columnName, value, "smallint");
+    return;
+  }
+  if (/\b(integer|int4)\b/.test(type)) {
+    validateIntegerValue(tableName, column.columnName, value, "integer");
+    return;
+  }
+  if (/\b(bigint|int8)\b/.test(type)) {
+    validateIntegerValue(tableName, column.columnName, value, "bigint");
+    return;
+  }
+  if (/numeric|decimal|real|double|float|money/.test(type)) {
     if (!isNumericValue(value)) {
       throw new Error(`Spine row requires a numeric value for ${tableName}.${column.columnName}`);
     }
