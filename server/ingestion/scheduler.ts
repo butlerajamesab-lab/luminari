@@ -1,6 +1,6 @@
 /**
  * Ingestion Scheduler — Session 80 Hardened
- * 
+ *
  * T1. Initialize node-cron jobs for each enabled dataset in the registry.
  * T2. Prevent duplicate concurrent runs for the same dataset.
  * T3. Orchestrate: fetch → normalize → upsert → detect signals → log run.
@@ -13,9 +13,10 @@
 
 import { db } from "../db";
 import { dataStreamRegistry, ingestRuns } from "../../drizzle/schema";
-import { eq, and, sql, gt } from "drizzle-orm";
-import { ingestDataset, classifyError, suggestRemediation, type IngestionResult } from "./socrata-adapter";
+import { eq, sql } from "drizzle-orm";
+import { ingestDataset, classifyError, type IngestionResult } from "./socrata-adapter";
 import { ingestCfpbDataset } from "./cfpb-adapter";
+import { ingest_atlas_stream } from "./atlas-stream-adapter";
 import { detectSignals } from "./signal-detector";
 import { emitSignal, resolveSignalsForTarget } from "../live-signal-emitter";
 
@@ -182,7 +183,7 @@ async function handleFailure(datasetId: string, errorMsg: string, errorClass: st
     if (shouldAutoDisable) {
       updateSet.autoDisabled = true;
       updateSet.disabledReason = `Auto-disabled after ${currentConsecutive} consecutive failures. Last error: ${errorClass}. Use Sovereign Control to re-enable.`;
-      
+
       // Stop the scheduled job
       const job = activeJobs.get(datasetId);
       if (job) {
@@ -333,26 +334,59 @@ export async function runIngestionPipeline(
   console.log(`[Scheduler] Starting pipeline for ${datasetId}`);
 
   try {
-    // Step 1: Ingest data — route to correct adapter based on stream source
+    // Step 1: Ingest data — route only through a declared adapter.
     const [streamConfig] = await db
       .select({ source: dataStreamRegistry.source })
       .from(dataStreamRegistry)
       .where(eq(dataStreamRegistry.streamId, datasetId))
       .limit(1);
 
-    const adapterSource = streamConfig?.source ?? "socrata";
+    const adapterSource = streamConfig?.source;
+    if (!adapterSource) {
+      throw new Error(`Stream ${datasetId} has no declared ingestion source`);
+    }
+
     let result: IngestionResult;
 
-    if (adapterSource === "cfpb" || adapterSource === "cfpb_native") {
+    if (adapterSource === "atlas_stream") {
+      result = await ingest_atlas_stream(datasetId, {
+        max_records: options?.maxRecords,
+        on_progress: (msg) => console.log(msg),
+      });
+    } else if (adapterSource === "cfpb" || adapterSource === "cfpb_native") {
       result = await ingestCfpbDataset(datasetId, {
         maxRecords: options?.maxRecords,
         onProgress: (msg) => console.log(msg),
       });
-    } else {
+    } else if (adapterSource === "socrata") {
       result = await ingestDataset(datasetId, {
         maxRecords: options?.maxRecords,
         onProgress: (msg) => console.log(msg),
       });
+    } else {
+      throw new Error(
+        `Unsupported ingestion source '${adapterSource}' for stream ${datasetId}`,
+      );
+    }
+
+    const atlasPartialFailure =
+      adapterSource === "atlas_stream" && result.recordsProcessed > 0 &&
+      result.diagnostics?.outcomeClassification === "partial_failure";
+
+    // The Atlas adapter has already committed and accounted for these pages.
+    // Preserve the durable counts, but do not reinterpret the events or relabel
+    // the partial result as a successful run.
+    if (atlasPartialFailure) {
+      return {
+        success: false,
+        recordsProcessed: result.recordsProcessed,
+        recordsInserted: result.recordsInserted,
+        recordsUpdated: result.recordsUpdated,
+        signalsGenerated: result.signalsGenerated,
+        errors: result.errors,
+        runId: result.runId,
+        diagnostics: result.diagnostics,
+      };
     }
 
     // Check if ingestion failed at the adapter level
@@ -373,13 +407,19 @@ export async function runIngestionPipeline(
       };
     }
 
-    // Step 2: Trigger signal detection (complete signal loop)
-    let signalsGenerated = 0;
-    try {
-      signalsGenerated = await detectSignals(datasetId, result.runId, (msg) => console.log(msg));
-    } catch (signalErr) {
-      console.error(`[Scheduler] Signal detection failed for ${datasetId}:`, signalErr);
-      result.errors.push(`Signal detection: ${signalErr instanceof Error ? signalErr.message : String(signalErr)}`);
+    // Step 2: Atlas owns its signal events. Only raw-source adapters run the
+    // Lighthouse signal detector.
+    let signalsGenerated = result.signalsGenerated;
+    let postProcessingEngine = "atlas-stream-bridge";
+    if (adapterSource !== "atlas_stream") {
+      signalsGenerated = 0;
+      postProcessingEngine = "signal-detection-engine";
+      try {
+        signalsGenerated = await detectSignals(datasetId, result.runId, (msg) => console.log(msg));
+      } catch (signalErr) {
+        console.error(`[Scheduler] Signal detection failed for ${datasetId}:`, signalErr);
+        result.errors.push(`Signal detection: ${signalErr instanceof Error ? signalErr.message : String(signalErr)}`);
+      }
     }
 
     // Step 3: Update run with signal count + mark signals processed
@@ -390,7 +430,7 @@ export async function runIngestionPipeline(
           .set({
             signalsGenerated,
             signalsProcessed: true,
-            postProcessingEngine: "signal-detection-engine",
+            postProcessingEngine,
           })
           .where(eq(ingestRuns.id, result.runId));
       } catch { /* non-fatal */ }
