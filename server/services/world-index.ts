@@ -56,13 +56,21 @@ async function loadJurisdictions(): Promise<WorldObject[]> {
     select distinct jurisdiction from (
       select state as jurisdiction from normalized_civic_resource where state is not null
       union
+      select coalesce(nullif(jurisdiction_code, ''), nullif(jurisdiction_label, '')) as jurisdiction
+      from jurisdiction_assertions
+      where is_active is distinct from false
+        and promotion_status = 'promoted'
+      union
       select jurisdiction from national_resources where jurisdiction is not null
       union
       select state as jurisdiction from atlas_lighthouse_resource_bridge_v1 where state is not null
       union
-      select jurisdiction_id as jurisdiction from atlas_lighthouse_signal_bridge_v1 where jurisdiction_id is not null
-      union
-      select jurisdiction_id as jurisdiction from atlas_lighthouse_judicial_signal_bridge_v1 where jurisdiction_id is not null
+      select jurisdiction_raw_value as jurisdiction
+      from v_lighthouse_verified_legal_signals_v1
+      where verification_status = 'verified'
+        and signal_status = 'active'
+        and generation_method = 'deterministic_rule'
+        and signal_type <> 'stream_health_alert'
     ) j
     where jurisdiction is not null and jurisdiction <> ''
     order by jurisdiction
@@ -243,28 +251,169 @@ async function loadPrograms(): Promise<WorldObject[]> {
     });
   }
 
-  // --- registry_programs (3,405 rows) ---
+  // Canonical resource backbone. Public World Index consumers receive only
+  // records that have crossed both promotion and verification gates.
+  const [canonicalResourceRows] = await pool.query(`
+    select
+      e.resource_entity_id,
+      e.canonical_id,
+      e.resource_name,
+      e.resource_type,
+      e.resource_category,
+      e.layer,
+      e.jurisdiction,
+      e.jurisdiction_scope,
+      e.state,
+      e.county,
+      e.city,
+      e.description,
+      e.eligibility_summary,
+      e.apply_notes,
+      e.service_categories,
+      e.domains,
+      e.metadata,
+      e.verification_status,
+      e.promotion_status,
+      e.provenance_status,
+      e.source_table,
+      e.source_pk,
+      e.source_hash,
+      contacts.contacts,
+      location.address_line1,
+      location.address_line2,
+      location.city as location_city,
+      location.county as location_county,
+      location.state as location_state,
+      location.postal_code,
+      location.country,
+      location.latitude,
+      location.longitude,
+      location.coordinate_quality,
+      location.geocode_source
+    from luminari_resource_entities e
+    left join lateral (
+      select jsonb_object_agg(preferred.contact_type, preferred.contact_value) as contacts
+      from (
+        select distinct on (cp.contact_type)
+          cp.contact_type,
+          cp.contact_value
+        from luminari_resource_contact_points cp
+        where cp.resource_entity_id = e.resource_entity_id
+          and nullif(btrim(cp.contact_value), '') is not null
+        order by cp.contact_type, cp.is_primary desc nulls last, cp.created_at desc, cp.contact_point_id
+      ) preferred
+    ) contacts on true
+    left join lateral (
+      select
+        l.address_line1,
+        l.address_line2,
+        l.city,
+        l.county,
+        l.state,
+        l.postal_code,
+        l.country,
+        l.latitude,
+        l.longitude,
+        l.coordinate_quality,
+        l.geocode_source
+      from luminari_resource_locations l
+      where l.resource_entity_id = e.resource_entity_id
+      order by
+        (l.latitude is not null and l.longitude is not null) desc,
+        l.created_at desc,
+        l.location_id
+      limit 1
+    ) location on true
+    where e.promotion_status = 'promoted'
+      and e.verification_status = 'verified'
+  `) as any;
+
+  for (const r of canonicalResourceRows) {
+    const contacts = r.contacts && typeof r.contacts === 'object' ? r.contacts : {};
+    const state = r.location_state || r.state;
+    const city = r.location_city || r.city;
+    const county = r.location_county || r.county;
+    const category = firstArrayValue(r.service_categories) || r.resource_category || r.resource_type || 'general';
+    const website = contacts.website || contacts.portal || null;
+    const phone = contacts.phone || contacts.general || null;
+    const email = contacts.email || null;
+    nodes.push({
+      id: `canonical_resource_${r.resource_entity_id}`,
+      type: 'program',
+      jurisdiction: safeText(state || r.jurisdiction, 'unknown'),
+      domain: safeText(category, 'general'),
+      source_table: 'luminari_resource_entities',
+      source_id: String(r.resource_entity_id),
+      metadata: {
+        name: r.resource_name,
+        canonical_id: r.canonical_id,
+        resource_type: r.resource_type,
+        category,
+        layer: r.layer,
+        jurisdiction: r.jurisdiction,
+        jurisdiction_scope: r.jurisdiction_scope,
+        city,
+        county,
+        state,
+        address: [r.address_line1, r.address_line2].filter(Boolean).join(', '),
+        postal_code: r.postal_code,
+        country: r.country,
+        phone,
+        email,
+        website,
+        contact: phone || email || website,
+        contacts,
+        description: r.description,
+        eligibility: r.eligibility_summary,
+        apply_notes: r.apply_notes,
+        service_categories: r.service_categories,
+        domains: r.domains,
+        latitude: r.latitude,
+        longitude: r.longitude,
+        coordinate_quality: r.coordinate_quality,
+        geocode_source: r.geocode_source,
+        verification_status: r.verification_status,
+        promotion_status: r.promotion_status,
+        provenance_status: r.provenance_status,
+        canonical_source_table: r.source_table,
+        canonical_source_pk: r.source_pk,
+        source_hash: r.source_hash,
+        raw_metadata: r.metadata,
+      },
+    });
+  }
+
+  // --- registry_programs ---
   const [regProgRows] = await pool.query(`
-    select id, jurisdiction_id_rp, category_rp, name_rp, agency_rp, eligibility_rp, contact_rp, website_rp, apply_notes_rp
+    select
+      id,
+      coalesce(jurisdiction_id_rp, jurisdiction_id) as jurisdiction_id,
+      category,
+      name,
+      agency,
+      eligibility,
+      contact,
+      website,
+      apply_notes
     from registry_programs
   `) as any;
   for (const r of regProgRows) {
     nodes.push({
       id: `reg_program_${r.id}`,
       type: 'program',
-      jurisdiction: safeText(r.jurisdiction_id_rp, 'unknown'),
-      domain: safeText(r.category_rp, 'general'),
+      jurisdiction: safeText(r.jurisdiction_id, 'unknown'),
+      domain: safeText(r.category, 'general'),
       source_table: 'registry_programs',
       source_id: String(r.id),
       metadata: {
-        name: r.name_rp,
-        category: r.category_rp,
-        agency_name: r.agency_rp,
-        eligibility: r.eligibility_rp,
-        contact: r.contact_rp,
-        website: r.website_rp,
-        apply_notes: r.apply_notes_rp,
-        phone: r.contact_rp,
+        name: r.name,
+        category: r.category,
+        agency_name: r.agency,
+        eligibility: r.eligibility,
+        contact: r.contact,
+        website: r.website,
+        apply_notes: r.apply_notes,
+        phone: r.contact,
       },
     });
   }
@@ -403,6 +552,68 @@ async function loadPrograms(): Promise<WorldObject[]> {
 async function loadAgencies(): Promise<WorldObject[]> {
   const nodes: WorldObject[] = [];
 
+  const [canonicalOversightRows] = await pool.query(`
+    select
+      uuid,
+      entity_type,
+      full_entity_name,
+      jurisdiction,
+      verification_status,
+      contact,
+      website,
+      contact_phone,
+      physical_address,
+      complaint_portals,
+      public_filing_portals,
+      oversight_domains,
+      related_entities,
+      related_statutes,
+      workflow_deadlines,
+      provenance,
+      contact_email_norm,
+      contact_phone_norm,
+      contact_website_norm,
+      contact_physical_address_norm,
+      created_at
+    from oversight_registry
+    where verification_status = 'verified'
+  `) as any;
+
+  for (const r of canonicalOversightRows) {
+    const contact = r.contact && typeof r.contact === 'object' ? r.contact : {};
+    const phone = r.contact_phone_norm || r.contact_phone || contact.phone || null;
+    const email = r.contact_email_norm || contact.email || null;
+    const website = r.contact_website_norm || r.website || contact.website || null;
+    nodes.push({
+      id: `canonical_oversight_${r.uuid}`,
+      type: 'agency',
+      jurisdiction: safeText(r.jurisdiction, 'unknown'),
+      domain: safeText(firstArrayValue(r.oversight_domains) || r.entity_type, 'oversight'),
+      source_table: 'oversight_registry',
+      source_id: String(r.uuid),
+      metadata: {
+        name: r.full_entity_name,
+        agency_name: r.full_entity_name,
+        entity_type: r.entity_type,
+        function: r.oversight_domains,
+        oversight_domains: r.oversight_domains,
+        phone,
+        email,
+        website,
+        contact: phone || email || website,
+        physical_address: r.contact_physical_address_norm || r.physical_address,
+        complaint_portals: r.complaint_portals,
+        public_filing_portals: r.public_filing_portals,
+        related_entities: r.related_entities,
+        related_statutes: r.related_statutes,
+        workflow_deadlines: r.workflow_deadlines,
+        verification_status: r.verification_status,
+        provenance: r.provenance,
+        created_at: r.created_at,
+      },
+    });
+  }
+
   const [agencyRows] = await pool.query(`
     select id, agency_name, jurisdiction, metadata, created_at
     from agencies_registry
@@ -458,27 +669,40 @@ async function loadAgencies(): Promise<WorldObject[]> {
   }
 
   const [escRows] = await pool.query(`
-    select id, escalation_name, jurisdiction, metadata, created_at
+    select
+      uuid as id,
+      issue_type as escalation_name,
+      initial_route,
+      secondary_route,
+      federal_escalation,
+      civil_escalation,
+      federal_agencies,
+      related_statutes,
+      verification_status,
+      created_at
     from escalation_registry
+    where verification_status = 'verified'
   `) as any;
 
   for (const r of escRows) {
-    const domain = metadataValue(r.metadata, ['domain', 'case_type', 'category'], 'escalation');
+    const domain = safeText(r.escalation_name, 'escalation');
     nodes.push({
       id: `escalation_${r.id}`,
       type: 'agency',
-      jurisdiction: safeText(r.jurisdiction, 'unknown'),
+      jurisdiction: 'unknown',
       domain: safeText(domain, 'escalation'),
       source_table: 'escalation_registry',
       source_id: String(r.id),
       metadata: {
         name: r.escalation_name,
-        trigger_condition: metadataValue(r.metadata, ['trigger_condition', 'trigger', 'condition'], null),
-        escalation_path: metadataValue(r.metadata, ['escalation_path', 'pathway', 'path'], null),
-        deadline_days: metadataValue(r.metadata, ['deadline_days', 'deadline'], null),
-        agency_name: metadataValue(r.metadata, ['agency_name', 'agency', 'issuing_agency'], null),
-        jurisdiction_id: r.jurisdiction,
-        raw_metadata: r.metadata,
+        issue_type: r.escalation_name,
+        escalation_path: r.initial_route,
+        secondary_route: r.secondary_route,
+        federal_escalation: r.federal_escalation,
+        civil_escalation: r.civil_escalation,
+        federal_agencies: r.federal_agencies,
+        related_statutes: r.related_statutes,
+        verification_status: r.verification_status,
         created_at: r.created_at,
       },
     });
@@ -490,8 +714,63 @@ async function loadAgencies(): Promise<WorldObject[]> {
 async function loadWorkflows(): Promise<WorldObject[]> {
   const nodes: WorldObject[] = [];
 
+  const [canonicalWorkflowRows] = await pool.query(`
+    select
+      uuid,
+      workflow_type,
+      jurisdiction,
+      entry_agency,
+      filing_deadline,
+      extended_deadline,
+      filing_methods,
+      required_documents,
+      escalation_pathways,
+      official_portal,
+      related_statutes,
+      verification_status,
+      created_at
+    from workflow_registry
+    where verification_status = 'verified'
+  `) as any;
+
+  for (const r of canonicalWorkflowRows) {
+    nodes.push({
+      id: `canonical_workflow_${r.uuid}`,
+      type: 'workflow',
+      jurisdiction: safeText(r.jurisdiction, 'unknown'),
+      domain: safeText(r.workflow_type, 'general'),
+      source_table: 'workflow_registry',
+      source_id: String(r.uuid),
+      metadata: {
+        name: r.workflow_type,
+        workflow_type: r.workflow_type,
+        entry_agency: r.entry_agency,
+        agency_name: r.entry_agency,
+        filing_deadline: r.filing_deadline,
+        extended_deadline: r.extended_deadline,
+        filing_methods: r.filing_methods,
+        required_documents: r.required_documents,
+        escalation_pathways: r.escalation_pathways,
+        official_portal: r.official_portal,
+        source_url: r.official_portal,
+        related_statutes: r.related_statutes,
+        verification_status: r.verification_status,
+        created_at: r.created_at,
+      },
+    });
+  }
+
   const [stepRows] = await pool.query(`
-    select id, workflow_id, step_order, title, step_type, decision_logic, metadata, source_url, created_at
+    select
+      id,
+      workflow_id,
+      step_order,
+      title,
+      step_type,
+      decision_logic,
+      metadata,
+      null::text as source_url,
+      created_at
     from workflow_steps
   `) as any;
 
@@ -522,7 +801,17 @@ async function loadWorkflows(): Promise<WorldObject[]> {
   }
 
   const [remedyRows] = await pool.query(`
-    select id, template_id, template_name, template_type, claim_type, jurisdiction, template_text, metadata, source_url, created_at
+    select
+      id,
+      template_id,
+      template_name,
+      template_type,
+      claim_type,
+      jurisdiction,
+      template_body as template_text,
+      null::jsonb as metadata,
+      null::text as source_url,
+      created_at
     from remedy_templates
   `) as any;
 
@@ -553,157 +842,81 @@ async function loadWorkflows(): Promise<WorldObject[]> {
 }
 
 async function loadSignals(): Promise<WorldObject[]> {
-  const nodes: WorldObject[] = [];
-  const seen = new Set<string>();
-
-  const [detectedRows] = await pool.query(`
-    select id, case_id, finding_id, snapshot_id, pipeline_run_id, signal_type, signal_description, severity, confidence_score, created_at
-    from detected_signals
+  const [rows] = await pool.query(`
+    select
+      signal_family,
+      bridge_record_id,
+      atlas_signal_id,
+      signal_type,
+      source_system,
+      bridge_version,
+      jurisdiction_raw_value,
+      source_url,
+      detected_at,
+      bridged_at,
+      confidence_score,
+      severity,
+      signal_status,
+      rule_id,
+      rule_version,
+      generation_method,
+      record_origin,
+      verification_status,
+      evidence_payload,
+      provenance_metadata,
+      atlas_metadata_json,
+      source_view,
+      bridge_metadata
+    from v_lighthouse_verified_legal_signals_v1
+    where verification_status = 'verified'
+      and signal_status = 'active'
+      and generation_method = 'deterministic_rule'
+      and signal_type <> 'stream_health_alert'
+    order by detected_at desc, bridge_record_id
   `) as any;
 
-  for (const r of detectedRows) {
-    const nodeId = `detected_signal_${r.id}`;
-    if (seen.has(nodeId)) continue;
-    seen.add(nodeId);
-    nodes.push({
-      id: nodeId,
-      type: 'signal',
-      jurisdiction: 'case_scoped',
-      domain: 'case_signal',
-      source_table: 'detected_signals',
-      source_id: String(r.id),
-      metadata: {
-        origin: 'detection',
-        signal_type: r.signal_type,
-        severity: r.severity,
-        title: r.signal_type,
-        description: r.signal_description,
-        confidence_score: r.confidence_score,
-        case_id: r.case_id,
-        finding_id: r.finding_id,
-        snapshot_id: r.snapshot_id,
-        pipeline_run_id: r.pipeline_run_id,
-        detected_at: r.created_at,
-      },
-    });
-  }
-
-  const [signalBridgeRows] = await pool.query(`
-    select bridge_record_id, atlas_signal_id, signal_type, source_system, jurisdiction_raw_value, jurisdiction_id, source_url,
-           detected_at, bridged_at, confidence_score, severity, signal_status, rule_id, rule_version,
-           evidence_payload, provenance_metadata, atlas_metadata_json, bridge_metadata
-    from atlas_lighthouse_signal_bridge_v1
-  `) as any;
-
-  for (const r of signalBridgeRows) {
-    const nodeId = `bridge_signal_${r.bridge_record_id}`;
-    if (seen.has(nodeId)) continue;
-    seen.add(nodeId);
-    nodes.push({
-      id: nodeId,
-      type: 'signal',
-      jurisdiction: safeText(r.jurisdiction_id || r.jurisdiction_raw_value, 'unknown'),
-      domain: safeText(metadataValue(r.atlas_metadata_json, ['domain', 'category'], 'general'), 'general'),
-      source_table: 'atlas_lighthouse_signal_bridge_v1',
-      source_id: String(r.bridge_record_id),
-      metadata: {
-        origin: 'atlas_bridge',
-        signal_type: r.signal_type,
-        severity: r.severity,
-        title: metadataValue(r.evidence_payload, ['title', 'name', 'summary'], r.signal_type),
-        description: metadataValue(r.evidence_payload, ['description', 'summary', 'text'], null),
-        source_system: r.source_system,
-        atlas_signal_id: r.atlas_signal_id,
-        confidence_score: r.confidence_score,
-        signal_status: r.signal_status,
-        rule_id: r.rule_id,
-        rule_version: r.rule_version,
-        source_url: r.source_url,
-        detected_at: r.detected_at,
-        bridged_at: r.bridged_at,
-        evidence_payload: r.evidence_payload,
-        provenance_metadata: r.provenance_metadata,
-        atlas_metadata_json: r.atlas_metadata_json,
-        bridge_metadata: r.bridge_metadata,
-      },
-    });
-  }
-
-  const [judicialRows] = await pool.query(`
-    select bridge_record_id, atlas_signal_id, signal_type, source_system, jurisdiction_raw_value, jurisdiction_id, source_url,
-           detected_at, bridged_at, confidence_score, severity, signal_status, rule_id, rule_version,
-           evidence_payload, provenance_metadata, atlas_metadata_json, bridge_metadata
-    from atlas_lighthouse_judicial_signal_bridge_v1
-  `) as any;
-
-  for (const r of judicialRows) {
-    const nodeId = `judicial_signal_${r.bridge_record_id}`;
-    if (seen.has(nodeId)) continue;
-    seen.add(nodeId);
-    nodes.push({
-      id: nodeId,
-      type: 'signal',
-      jurisdiction: safeText(r.jurisdiction_id || r.jurisdiction_raw_value, 'unknown'),
-      domain: 'judicial',
-      source_table: 'atlas_lighthouse_judicial_signal_bridge_v1',
-      source_id: String(r.bridge_record_id),
-      metadata: {
-        origin: 'judicial_bridge',
-        signal_type: r.signal_type,
-        severity: r.severity,
-        title: metadataValue(r.evidence_payload, ['title', 'case_name', 'name'], r.signal_type),
-        description: metadataValue(r.evidence_payload, ['description', 'summary', 'text'], null),
-        source_system: r.source_system,
-        atlas_signal_id: r.atlas_signal_id,
-        confidence_score: r.confidence_score,
-        signal_status: r.signal_status,
-        rule_id: r.rule_id,
-        rule_version: r.rule_version,
-        source_url: r.source_url,
-        detected_at: r.detected_at,
-        bridged_at: r.bridged_at,
-        evidence_payload: r.evidence_payload,
-        provenance_metadata: r.provenance_metadata,
-        atlas_metadata_json: r.atlas_metadata_json,
-        bridge_metadata: r.bridge_metadata,
-      },
-    });
-  }
-
-  const [streamRows] = await pool.query(`
-    select stream_id, "offset", timestamp, signal_type, spacetime, provenance, payload, source_id, jurisdiction_id, module_hint, ingested_at
-    from signal_events
-  `) as any;
-
-  for (const r of streamRows) {
-    const nodeId = `stream_signal_${r.stream_id}_${r.offset}`;
-    if (seen.has(nodeId)) continue;
-    seen.add(nodeId);
-    nodes.push({
-      id: nodeId,
-      type: 'signal',
-      jurisdiction: safeText(r.jurisdiction_id || metadataValue(r.spacetime, ['region'], null), 'unknown'),
-      domain: safeText(r.module_hint, 'stream'),
-      source_table: 'signal_events',
-      source_id: `${r.stream_id}:${r.offset}`,
-      metadata: {
-        origin: 'stream',
-        signal_type: r.signal_type,
-        stream_id: r.stream_id,
-        offset: r.offset,
-        timestamp: r.timestamp,
-        source_id: r.source_id,
-        module_hint: r.module_hint,
-        ingested_at: r.ingested_at,
-        spacetime: r.spacetime,
-        provenance: r.provenance,
-        payload: r.payload,
-        confidence: metadataValue(r.provenance, ['confidence'], null),
-      },
-    });
-  }
-
-  return nodes;
+  return rows.map((r: any) => ({
+    id: `verified_legal_signal_${r.bridge_record_id}`,
+    type: 'signal' as const,
+    jurisdiction: safeText(r.jurisdiction_raw_value, 'unknown'),
+    domain: safeText(r.signal_family, 'legal'),
+    source_table: 'v_lighthouse_verified_legal_signals_v1',
+    source_id: String(r.bridge_record_id),
+    metadata: {
+      origin: 'verified_atlas_bridge',
+      signal_family: r.signal_family,
+      signal_type: r.signal_type,
+      severity: r.severity,
+      title: metadataValue(
+        r.atlas_metadata_json,
+        ['title', 'case_name', 'name', 'summary'],
+        metadataValue(r.evidence_payload, ['title', 'case_name', 'name', 'summary'], r.signal_type),
+      ),
+      description: metadataValue(
+        r.atlas_metadata_json,
+        ['description', 'summary', 'text'],
+        metadataValue(r.evidence_payload, ['description', 'summary', 'text'], null),
+      ),
+      source_system: r.source_system,
+      atlas_signal_id: r.atlas_signal_id,
+      bridge_version: r.bridge_version,
+      confidence_score: r.confidence_score,
+      signal_status: r.signal_status,
+      rule_id: r.rule_id,
+      rule_version: r.rule_version,
+      generation_method: r.generation_method,
+      record_origin: r.record_origin,
+      verification_status: r.verification_status,
+      source_url: r.source_url,
+      source_view: r.source_view,
+      detected_at: r.detected_at,
+      bridged_at: r.bridged_at,
+      evidence_payload: r.evidence_payload,
+      provenance_metadata: r.provenance_metadata,
+      atlas_metadata_json: r.atlas_metadata_json,
+      bridge_metadata: r.bridge_metadata,
+    },
+  }));
 }
 
 async function buildRelationships(nodes: WorldObject[]): Promise<WorldRelationship[]> {

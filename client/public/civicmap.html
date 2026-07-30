@@ -56,7 +56,8 @@
   <script>
     const US_CENTER = [39.8283, -98.5795];
     const VIEWPORT_LIMIT = 1200;
-    const CATEGORY_COLORS = { housing:'#f97316', food:'#84cc16', legal:'#06b6d4', health:'#ec4899', employment:'#eab308', government:'#10b981', civil:'#8b5cf6', enforcement:'#a855f7', other:'#64748b' };
+    const CATEGORY_COLORS = { verified_signal:'#f43f5e', housing:'#f97316', food:'#84cc16', legal:'#06b6d4', health:'#ec4899', employment:'#eab308', government:'#10b981', civil:'#8b5cf6', enforcement:'#a855f7', other:'#64748b' };
+    const CATEGORY_LABELS = { verified_signal:'verified legal signals' };
     const CATEGORY_MAP = { housing:['housing','shelter','tenant'], food:['food','nutrition'], legal:['legal','court','immigration_legal','record_clearing'], health:['health','clinic','hospital','mental','domestic_violence','hotline','crisis'], employment:['employment','unemployment','wage','worker','business'], government:['government','benefit','federal','program','tribal','utility','veteran','disability'], civil:['civil','advocacy','consumer','voter','rights','watchdog','transparency'], enforcement:['enforcement','oversight','fraud','agency_authority'], other:['resource','other'] };
     let map;
     let categoryLayers = {};
@@ -64,17 +65,153 @@
     let activeCategories = new Set(Object.keys(CATEGORY_COLORS));
     let debounceTimer = null;
     let requestSeq = 0;
+    let boundsAbortController = null;
     function updateStatus(message) { document.getElementById('statusText').textContent = message; }
     function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
     function escapeAttribute(value) { return escapeHtml(value).replace(/`/g, '&#96;'); }
     function toArray(value) { return Array.isArray(value) ? value : (value ? [value] : []); }
     function classifyNodeType(resourceType) { const type = String(resourceType || '').toLowerCase(); for (const [category, terms] of Object.entries(CATEGORY_MAP)) if (terms.some(term => type.includes(term))) return category; return 'other'; }
-    function initLayerPanel() { document.getElementById('layerPanel').innerHTML = '<div class="layer-title">Visible layers</div>' + Object.entries(CATEGORY_COLORS).map(([cat, color]) => `<label class="layer-item"><input type="checkbox" checked onchange="toggleCategory('${cat}')"><span class="dot" style="background:${color}"></span><span>${cat.replace(/_/g, ' ')}</span></label>`).join(''); }
+    function initLayerPanel() { document.getElementById('layerPanel').innerHTML = '<div class="layer-title">Visible layers</div>' + Object.entries(CATEGORY_COLORS).map(([cat, color]) => `<label class="layer-item"><input type="checkbox" checked onchange="toggleCategory('${cat}')"><span class="dot" style="background:${color}"></span><span>${CATEGORY_LABELS[cat] || cat.replace(/_/g, ' ')}</span></label>`).join(''); }
     function init() { initLayerPanel(); map = L.map('map').setView(US_CENTER, 4); L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution:'&copy; OpenStreetMap contributors &copy; CARTO', subdomains:'abcd', maxZoom:20 }).addTo(map); for (const category of Object.keys(CATEGORY_COLORS)) categoryLayers[category] = L.layerGroup().addTo(map); map.on('moveend zoomend', scheduleViewportReload); setupSearch(); reloadViewportPoints(true); }
     function scheduleViewportReload() { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => reloadViewportPoints(false), 300); }
-    async function reloadViewportPoints(force) { if (!map) return; const seq = ++requestSeq; const b = map.getBounds(); updateStatus('Loading visible CivicMap points...'); const url = `/api/civic-map/bounds?north=${encodeURIComponent(b.getNorth())}&south=${encodeURIComponent(b.getSouth())}&east=${encodeURIComponent(b.getEast())}&west=${encodeURIComponent(b.getWest())}&limit=${VIEWPORT_LIMIT}`; const response = await fetch(url); const payload = await response.json(); if (seq !== requestSeq) return; if (!response.ok || !payload.ok) { console.error('CivicMap bounds load failed', payload); updateStatus('CivicMap load failed — see console'); return; } loadedPoints = (payload.nodes || []).map(row => ({ ...row, id: row.node_id, name: row.name || 'Unnamed civic resource', resource_type: row.node_type || 'resource', category: classifyNodeType(row.node_type), latitude: Number(row.latitude), longitude: Number(row.longitude) })).filter(point => Number.isFinite(point.latitude) && Number.isFinite(point.longitude)); renderLoadedPoints(); updateStatus(`Loaded ${loadedPoints.length} visible points${loadedPoints.length >= VIEWPORT_LIMIT ? ' — zoom in for more precision' : ''}`); }
-    function renderLoadedPoints() { for (const layer of Object.values(categoryLayers)) layer.clearLayers(); const search = document.getElementById('searchInput').value.trim().toLowerCase(); const filtered = loadedPoints.filter(point => { if (!activeCategories.has(point.category)) return false; if (!search) return true; return [point.name, point.resource_type, point.city, point.county, point.state, point.source_key].some(v => String(v || '').toLowerCase().includes(search)); }); for (const point of filtered) { const color = CATEGORY_COLORS[point.category] || CATEGORY_COLORS.other; const size = point.category === 'enforcement' ? 14 : 12; const icon = L.divIcon({ className:'custom-marker', html:`<div style="background:${color};width:${size}px;height:${size}px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,.35);"></div>`, iconSize:[size,size], iconAnchor:[size/2,size/2] }); const marker = L.marker([point.latitude, point.longitude], { icon }); marker.on('click', () => loadPointDetail(point)); categoryLayers[point.category].addLayer(marker); } }
-    async function loadPointDetail(point) { document.getElementById('sidebar').classList.add('open'); document.getElementById('sbTitle').textContent = point.name; document.getElementById('sbMeta').textContent = `${point.resource_type.replace(/_/g, ' ').toUpperCase()} • loading detail`; document.getElementById('sbBody').innerHTML = '<p style="color:var(--muted);">Loading detail...</p>'; const response = await fetch(`/api/civic-map/detail/${encodeURIComponent(point.id)}`); const payload = await response.json(); if (!response.ok || !payload.ok) { console.error('CivicMap detail load failed', payload); renderDetail(point); return; } renderDetail(payload.node || point); }
+    function groupVerifiedSignals(rows) {
+      const groups = new Map();
+      for (const row of rows || []) {
+        const latitude = Number(row.latitude);
+        const longitude = Number(row.longitude);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) continue;
+        const key = `${row.state_code || row.jurisdiction || 'unknown'}:${latitude}:${longitude}`;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push({ ...row, latitude, longitude });
+      }
+      return Array.from(groups.entries()).map(([key, signals]) => {
+        const first = signals[0];
+        return {
+          id: `verified_signal_cluster_${key.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
+          kind: 'signal_cluster',
+          name: `${first.jurisdiction || first.state_code || 'Jurisdiction'} verified legal signals`,
+          resource_type: 'verified legal signals',
+          category: 'verified_signal',
+          latitude: first.latitude,
+          longitude: first.longitude,
+          state: first.state_code,
+          jurisdiction: first.jurisdiction,
+          coordinate_precision: first.coordinate_precision,
+          coordinate_source: first.coordinate_source,
+          signals,
+          signal_count: signals.length,
+        };
+      });
+    }
+    async function reloadViewportPoints(force) {
+      if (!map) return;
+      const seq = ++requestSeq;
+      const b = map.getBounds();
+      if (boundsAbortController) boundsAbortController.abort();
+      boundsAbortController = new AbortController();
+      updateStatus('Loading visible CivicMap resources and verified signals...');
+      const url = `/api/civic-map/bounds?north=${encodeURIComponent(b.getNorth())}&south=${encodeURIComponent(b.getSouth())}&east=${encodeURIComponent(b.getEast())}&west=${encodeURIComponent(b.getWest())}&limit=${VIEWPORT_LIMIT}`;
+      try {
+        const response = await fetch(url, { signal: boundsAbortController.signal });
+        const payload = await response.json();
+        if (seq !== requestSeq) return;
+        if (!response.ok || !payload.ok) {
+          console.error('CivicMap bounds load failed', payload);
+          updateStatus(`CivicMap load failed — ${payload.error || 'api_error'}`);
+          return;
+        }
+        const resources = (payload.nodes || []).map(row => ({
+          ...row,
+          id: row.node_id,
+          kind: 'resource',
+          name: row.name || 'Unnamed civic resource',
+          resource_type: row.node_type || 'resource',
+          category: classifyNodeType(row.node_type),
+          latitude: Number(row.latitude),
+          longitude: Number(row.longitude),
+        })).filter(point => Number.isFinite(point.latitude) && Number.isFinite(point.longitude));
+        const signalClusters = groupVerifiedSignals(payload.signals || []);
+        loadedPoints = [...signalClusters, ...resources];
+        renderLoadedPoints();
+        updateStatus(`Loaded ${resources.length} resources + ${payload.signal_count || 0} verified signals in ${signalClusters.length} jurisdiction marker${signalClusters.length === 1 ? '' : 's'}${resources.length >= VIEWPORT_LIMIT ? ' — zoom in for more precision' : ''}`);
+      } catch (error) {
+        if (error && error.name === 'AbortError') return;
+        console.error('CivicMap bounds request failed', error);
+        updateStatus('CivicMap request failed — check connection');
+      }
+    }
+    function renderLoadedPoints() {
+      for (const layer of Object.values(categoryLayers)) layer.clearLayers();
+      const search = document.getElementById('searchInput').value.trim().toLowerCase();
+      const filtered = loadedPoints.filter(point => {
+        if (!activeCategories.has(point.category)) return false;
+        if (!search) return true;
+        const baseMatch = [point.name, point.resource_type, point.city, point.county, point.state, point.source_key, point.jurisdiction].some(v => String(v || '').toLowerCase().includes(search));
+        const signalMatch = point.kind === 'signal_cluster' && point.signals.some(signal => [signal.name, signal.signal_family, signal.signal_type, signal.court, signal.docket_number].some(v => String(v || '').toLowerCase().includes(search)));
+        return baseMatch || signalMatch;
+      });
+      for (const point of filtered) {
+        const color = CATEGORY_COLORS[point.category] || CATEGORY_COLORS.other;
+        const isSignal = point.kind === 'signal_cluster';
+        const size = isSignal ? 32 : (point.category === 'enforcement' ? 14 : 12);
+        const markerBody = isSignal
+          ? `<div style="display:flex;align-items:center;justify-content:center;background:${color};color:#fff;width:${size}px;height:${size}px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);font-size:10px;font-weight:800;">${escapeHtml(point.signal_count)}</div>`
+          : `<div style="background:${color};width:${size}px;height:${size}px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,.35);"></div>`;
+        const icon = L.divIcon({ className:'custom-marker', html:markerBody, iconSize:[size,size], iconAnchor:[size/2,size/2] });
+        const marker = L.marker([point.latitude, point.longitude], { icon });
+        marker.on('click', () => loadPointDetail(point));
+        categoryLayers[point.category].addLayer(marker);
+      }
+    }
+    async function loadPointDetail(point) {
+      document.getElementById('sidebar').classList.add('open');
+      if (point.kind === 'signal_cluster') {
+        renderSignalCluster(point);
+        return;
+      }
+      document.getElementById('sbTitle').textContent = point.name;
+      document.getElementById('sbMeta').textContent = `${point.resource_type.replace(/_/g, ' ').toUpperCase()} • loading detail`;
+      document.getElementById('sbBody').innerHTML = '<p style="color:var(--muted);">Loading detail...</p>';
+      const response = await fetch(`/api/civic-map/detail/${encodeURIComponent(point.id)}`);
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) {
+        console.error('CivicMap detail load failed', payload);
+        renderDetail(point);
+        return;
+      }
+      renderDetail(payload.node || point);
+    }
+    function countBy(rows, key) {
+      return rows.reduce((counts, row) => {
+        const value = row[key] || 'unknown';
+        counts[value] = (counts[value] || 0) + 1;
+        return counts;
+      }, {});
+    }
+    function safeHttpUrl(value) {
+      if (!value) return '';
+      try {
+        const parsed = new URL(String(value), window.location.origin);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : '';
+      } catch {
+        return '';
+      }
+    }
+    function renderSignalCluster(point) {
+      const signals = point.signals || [];
+      const familyCounts = countBy(signals, 'signal_family');
+      const typeCounts = countBy(signals, 'signal_type');
+      document.getElementById('sbTitle').textContent = point.name;
+      document.getElementById('sbMeta').textContent = `${signals.length} VERIFIED DETERMINISTIC SIGNALS • JURISDICTION LEVEL`;
+      const familyTags = Object.entries(familyCounts).map(([name, count]) => `<span class="tag">${escapeHtml(name)} · ${count}</span>`).join('');
+      const typeRows = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]).map(([name, count]) => row(name.replace(/_/g, ' '), count)).join('');
+      const cards = signals.slice(0, 25).map(signal => {
+        const sourceUrl = safeHttpUrl(signal.source_url);
+        const detected = signal.detected_at ? new Date(signal.detected_at).toLocaleDateString() : '';
+        return `<div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,.08);"><div style="font-weight:700;font-size:13px;">${escapeHtml(signal.name || signal.signal_type)}</div><div style="color:var(--muted);font-size:11px;margin:4px 0;">${escapeHtml(signal.signal_family)} • ${escapeHtml(signal.signal_type)}${detected ? ` • ${escapeHtml(detected)}` : ''}</div>${signal.description ? `<div style="font-size:12px;line-height:1.45;">${escapeHtml(signal.description)}</div>` : ''}<div style="color:var(--muted);font-size:11px;margin-top:5px;">rule ${escapeHtml(signal.rule_id || '—')} ${escapeHtml(signal.rule_version || '')} • ${escapeHtml(signal.verification_status)}</div>${sourceUrl ? `<a class="action-btn" style="display:inline-block;margin-top:8px;padding:6px 9px;" href="${escapeAttribute(sourceUrl)}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> Source</a>` : ''}</div>`;
+      }).join('');
+      document.getElementById('sbBody').innerHTML = `<div class="section">${familyTags}</div><div class="section"><div class="section-title">Signal types</div>${typeRows}</div><div class="section"><div class="section-title">Coordinate policy</div><p style="font-size:13px;line-height:1.5;">This marker uses the ${escapeHtml(point.jurisdiction || point.state || 'state')} jurisdiction centroid. It is a display anchor, not an incident or source location.</p>${row('Precision', point.coordinate_precision)}${row('Coordinate source', point.coordinate_source)}${row('Signal source', 'v_lighthouse_verified_legal_signals_v1')}</div><div class="section"><div class="section-title">Most recent verified records</div>${cards}${signals.length > 25 ? `<p style="color:var(--muted);font-size:12px;margin-top:12px;">Showing 25 of ${signals.length} records in this viewport.</p>` : ''}</div>`;
+    }
     function renderDetail(item) { const title = item.name || item.organization_name || item.agency_name || item.title || 'Unnamed resource'; const metaParts = [item.resource_type || item.node_type, item.city, item.state].filter(Boolean); document.getElementById('sbTitle').textContent = title; document.getElementById('sbMeta').textContent = metaParts.join(' • ') || 'CivicMap detail'; const website = item.website_url || item.website || ''; const categories = toArray(item.service_categories); const languages = toArray(item.languages); document.getElementById('sbBody').innerHTML = `<div class="section"><span class="tag">${escapeHtml(item.resource_type || item.node_type || 'resource')}</span>${item.geocode_precision ? `<span class="tag">${escapeHtml(item.geocode_precision)}</span>` : ''}</div><div class="section"><div class="section-title">Details</div>${row('Organization', item.organization_name || item.agency_name || title)}${row('Description', item.description)}${row('Address', [item.address_line1, item.address_line2, item.city, item.state, item.postal_code].filter(Boolean).join(', '))}${row('Phone', item.phone)}${row('Email', item.email)}${row('Source', item.source_key)}${row('Updated', item.updated_at)}</div>${categories.length ? `<div class="section"><div class="section-title">Service categories</div>${categories.map(c => `<span class="tag">${escapeHtml(c)}</span>`).join('')}</div>` : ''}${languages.length ? `<div class="section"><div class="section-title">Languages</div>${languages.map(l => `<span class="tag">${escapeHtml(l)}</span>`).join('')}</div>` : ''}${item.eligibility_summary ? `<div class="section"><div class="section-title">Eligibility</div><p>${escapeHtml(item.eligibility_summary)}</p></div>` : ''}<div class="section"><div class="section-title">Actions</div><div class="action-grid">${item.phone ? `<a class="action-btn primary" href="tel:${escapeAttribute(item.phone)}"><i class="fas fa-phone"></i> Call</a>` : `<button class="action-btn">No phone</button>`}${website ? `<a class="action-btn" href="${escapeAttribute(website)}" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Website</a>` : `<button class="action-btn">No website</button>`}</div></div>`; }
     function row(label, value) { if (value === undefined || value === null || value === '') return ''; return `<div class="info-row"><span class="info-label">${escapeHtml(label)}</span><span>${escapeHtml(value)}</span></div>`; }
     function toggleCategory(category) { if (activeCategories.has(category)) { activeCategories.delete(category); map.removeLayer(categoryLayers[category]); } else { activeCategories.add(category); categoryLayers[category].addTo(map); } renderLoadedPoints(); }
