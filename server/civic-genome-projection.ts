@@ -111,9 +111,15 @@ const infer_policy_domain = (bill: legiscan_master_bill): string => {
   return "unclassified_legislation";
 };
 
-const infer_state_position = (bill: legiscan_master_bill): string => {
+export const infer_state_position = (bill: legiscan_master_bill): string => {
+  const last_action = (bill.last_action ?? "").toLowerCase();
   const text = `${bill.title ?? ""} ${bill.description ?? ""} ${bill.last_action ?? ""}`.toLowerCase();
 
+  // An explicit effective-date action is post-enactment evidence even when
+  // the cached master-list status remains the generic LegiScan "Passed" code.
+  // Restrict this signal to the action field so bills *about* effective dates
+  // are not falsely classified as enacted.
+  if (/\beffective date\b/.test(last_action)) return "enacted";
   if (/chapter|enacted|signed by governor|became law/.test(text)) return "enacted";
   if (/failed|withdrawn|dead|vetoed|postponed indefinitely/.test(text)) return "failed";
   if (/passed house and senate|passed both/.test(text)) return "advanced_two_chambers";
