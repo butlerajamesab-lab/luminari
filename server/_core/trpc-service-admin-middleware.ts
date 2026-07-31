@@ -39,9 +39,9 @@ export function extractTrpcProcedurePaths(req: Pick<Request, "path">): string[] 
 
   if (!rawPath) return [];
 
-  return rawPath
+  return decodeProcedurePath(rawPath)
     .split(",")
-    .map((procedurePath) => decodeProcedurePath(procedurePath.trim()))
+    .map((procedurePath) => procedurePath.trim())
     .filter(Boolean);
 }
 
