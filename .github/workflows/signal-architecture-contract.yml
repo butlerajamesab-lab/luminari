@@ -1,0 +1,38 @@
+name: Signal architecture contracts
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/20260731190500_signal_architecture_ground_truth.sql"
+      - "server/routers/enforcement-intel.ts"
+      - "server/signal-architecture-ground-truth.test.ts"
+      - "client/src/pages/SignalRegistry.tsx"
+      - ".github/workflows/signal-architecture-contract.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/migrations/20260731190500_signal_architecture_ground_truth.sql"
+      - "server/routers/enforcement-intel.ts"
+      - "server/signal-architecture-ground-truth.test.ts"
+      - "client/src/pages/SignalRegistry.tsx"
+      - ".github/workflows/signal-architecture-contract.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm install --legacy-peer-deps
+      - name: Run focused boundary contracts
+        run: npx vitest run server/signal-architecture-ground-truth.test.ts
+      - name: Verify formatting
+        run: git diff --check
