@@ -1,502 +1,405 @@
-import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import {
-  Radio, Loader2, Search, X, ChevronDown, ChevronRight,
-  Zap, Target, BookOpen, AlertTriangle, MapPin, ArrowRight,
-} from "lucide-react";
-import { CommitToCase, FlagArea } from "@/components/CommitToCase";
-import { NextStepBar } from "@/components/NextStepBar";
 import { LayerNavBar } from "@/components/LayerNavBar";
+import {
+  Activity,
+  AlertTriangle,
+  BookOpen,
+  Clock,
+  Database,
+  GitMerge,
+  Loader2,
+  MapPin,
+  Radio,
+  Scale,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 
-/* ═══════════════════════════════════════════════════════════════════════
-   SIGNAL REGISTRY
-   
-   Two views:
-   1. Registry Signals — 59 per-jurisdiction signal instances
-   2. Signal Types — 5 master signal type definitions
-   ═══════════════════════════════════════════════════════════════════════ */
-
-const c = {
-  bg: "#0c0f14",
-  paper: "#f0ece4",
-  muted: "rgba(240,236,228,0.55)",
-  cardBg: "rgba(255,255,255,0.03)",
-  cardBorder: "rgba(255,255,255,0.08)",
-  purple: "#a855f7",
-  purpleBg: "rgba(168,85,247,0.08)",
-  purpleBorder: "rgba(168,85,247,0.25)",
-  gold: "#D4A017",
-  goldBg: "rgba(212,160,23,0.08)",
-  goldBorder: "rgba(212,160,23,0.3)",
-  teal: "#0e7490",
-  tealBg: "rgba(14,116,144,0.08)",
-  tealBorder: "rgba(14,116,144,0.3)",
-  red: "#ef4444",
-  redBg: "rgba(239,68,68,0.06)",
-  amber: "#f59e0b",
-  amberBg: "rgba(245,158,11,0.08)",
-  green: "#34d399",
-  greenBg: "rgba(52,211,153,0.06)",
-  blue: "#3b82f6",
-  blueBg: "rgba(59,130,246,0.08)",
+const palette = {
+  background: "#0c0f14",
+  surface: "rgba(255,255,255,0.035)",
+  border: "rgba(255,255,255,0.09)",
+  text: "#f0ece4",
+  muted: "rgba(240,236,228,0.58)",
+  intake: "#38bdf8",
+  legal: "#c084fc",
+  live: "#f59e0b",
+  convergence: "#34d399",
+  danger: "#f87171",
 };
 
-const fontSerif = "'Playfair Display', Georgia, serif";
-const fontSans = "'Inter', system-ui, sans-serif";
-const fontMono = "'JetBrains Mono', 'Fira Code', monospace";
+const domain_meta = {
+  case_intake: {
+    icon: Users,
+    color: palette.intake,
+    short_label: "Domain 1",
+  },
+  legal_pattern: {
+    icon: Scale,
+    color: palette.legal,
+    short_label: "Domain 2",
+  },
+  live_data: {
+    icon: Activity,
+    color: palette.live,
+    short_label: "Domain 3",
+  },
+  convergence: {
+    icon: GitMerge,
+    color: palette.convergence,
+    short_label: "End-stage",
+  },
+} as const;
 
-const SEVERITY_COLORS: Record<string, { color: string; bg: string; border: string; label: string }> = {
-  critical: { color: c.red, bg: c.redBg, border: "rgba(239,68,68,0.3)", label: "Critical" },
-  high: { color: c.amber, bg: c.amberBg, border: "rgba(245,158,11,0.3)", label: "High" },
-  medium: { color: c.gold, bg: c.goldBg, border: c.goldBorder, label: "Medium" },
-  low: { color: c.teal, bg: c.tealBg, border: c.tealBorder, label: "Low" },
-  informational: { color: c.muted, bg: c.cardBg, border: c.cardBorder, label: "Info" },
-};
+function format_date(value: string | null | undefined): string {
+  if (!value) return "No record yet";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Unknown" : date.toLocaleString();
+}
+
+function format_number(value: number | null | undefined): string {
+  return new Intl.NumberFormat().format(value ?? 0);
+}
 
 export default function SignalRegistry() {
-  const [search, setSearch] = useState("");
-  const [filterCategory, setFilterCategory] = useState<string | null>(null);
-  const [filterSeverity, setFilterSeverity] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | number | null>(null);
-  const [activeTab, setActiveTab] = useState<"registry" | "types">("registry");
+  const architecture_query = trpc.enforcementIntel.get_signal_architecture.useQuery(
+    { limit: 40 },
+    { refetchInterval: 60_000 },
+  );
 
-  // Signal type catalog (5 types from signal_registry)
-  const { data: signal_types, isLoading: loadingTypes } = trpc.enforcementIntel.listSignals.useQuery();
-  // Per-jurisdiction signal instances (59 rows from registry_signals)
-  const { data: registrySignals, isLoading: loadingRegistry } = trpc.enforcementIntel.listRegistrySignals.useQuery({ limit: 200 });
-
-  const isLoading = loadingTypes || loadingRegistry;
-
-  // Unique categories
-  const categories = useMemo(() => {
-    if (!registrySignals) return [];
-    return [...new Set(registrySignals.map(s => s.category).filter(Boolean))].sort() as string[];
-  }, [registrySignals]);
-
-  const filteredRegistry = useMemo(() => {
-    if (!registrySignals) return [];
-    let result = registrySignals;
-    if (filterCategory) result = result.filter(s => s.category === filterCategory);
-    if (filterSeverity) result = result.filter(s => s.severity === filterSeverity);
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(s =>
-        (s.signal_type ?? "").toLowerCase().includes(q) ||
-        (s.category ?? "").toLowerCase().includes(q) ||
-        (s.jurisdictionId ?? "").toLowerCase().includes(q)
-      );
-    }
-    return result;
-  }, [registrySignals, filterCategory, filterSeverity, search]);
-
-  const filteredTypes = useMemo(() => {
-    if (!signal_types) return [];
-    if (!search) return signal_types;
-    const q = search.toLowerCase();
-    return signal_types.filter(s =>
-      s.signal_type.toLowerCase().includes(q) ||
-      s.domain.toLowerCase().includes(q)
-    );
-  }, [signal_types, search]);
-
-  if (isLoading) {
+  if (architecture_query.isLoading) {
     return (
-      <div style={{ background: c.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: palette.background,
+          color: palette.text,
+          display: "grid",
+          placeItems: "center",
+        }}
+      >
         <div style={{ textAlign: "center" }}>
-          <Loader2 size={32} style={{ color: c.amber, animation: "spin 1s linear infinite" }} />
-          <p style={{ color: c.muted, fontFamily: fontSans, marginTop: 12 }}>Loading signal registry...</p>
+          <Loader2 size={34} style={{ animation: "spin 1s linear infinite" }} />
+          <p style={{ color: palette.muted }}>Loading canonical signal architecture…</p>
         </div>
       </div>
     );
   }
 
+  if (architecture_query.error || !architecture_query.data) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: palette.background,
+          color: palette.text,
+          padding: 32,
+        }}
+      >
+        <LayerNavBar label="Signal Architecture" route="/signal-registry" />
+        <div
+          style={{
+            border: `1px solid ${palette.danger}`,
+            borderRadius: 12,
+            padding: 20,
+            background: "rgba(248,113,113,0.06)",
+          }}
+        >
+          <AlertTriangle size={22} color={palette.danger} />
+          <h1>Signal architecture unavailable</h1>
+          <p style={{ color: palette.muted }}>
+            {architecture_query.error?.message ?? "The canonical signal views are not available."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const { domains, integrity, recent_records } = architecture_query.data;
+
   return (
-    <div style={{ background: c.bg, minHeight: "100vh", padding: "24px 32px", fontFamily: fontSans }}>
-      <LayerNavBar label="Signal Registry" route="/signal-registry" />
-      {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <Radio size={22} style={{ color: c.amber }} />
-          <h1 style={{ fontFamily: fontSerif, color: c.paper, fontSize: 28, margin: 0 }}>
-            Signal Registry
+    <div
+      style={{
+        minHeight: "100vh",
+        background: palette.background,
+        color: palette.text,
+        padding: "24px 32px 48px",
+        fontFamily: "Inter, system-ui, sans-serif",
+      }}
+    >
+      <LayerNavBar label="Signal Architecture" route="/signal-registry" />
+
+      <header style={{ maxWidth: 1080, marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Radio size={26} color={palette.live} />
+          <h1 style={{ margin: 0, fontFamily: "Georgia, serif", fontSize: 30 }}>
+            Luminari Signal Architecture
           </h1>
         </div>
-        <p style={{ color: c.muted, fontSize: 14, margin: 0, maxWidth: 700 }}>
-          Live signal catalog spanning {registrySignals?.length ?? 0} jurisdiction-specific instances across{" "}
-          {categories.length} categories, plus {signal_types?.length ?? 0} master signal type definitions.
+        <p style={{ color: palette.muted, lineHeight: 1.6, marginBottom: 0 }}>
+          Three independent source domains. No source mixing. Convergence occurs only after
+          each domain has produced its own provenance-bound output.
         </p>
-      </div>
+      </header>
 
-      {/* Stats */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
-        {[
-          { value: registrySignals?.length ?? 0, label: "Registry Signals", color: c.amber },
-          { value: signal_types?.length ?? 0, label: "Signal Types", color: c.purple },
-          { value: categories.length, label: "Categories", color: c.teal },
-          { value: [...new Set(registrySignals?.map(s => s.jurisdictionId) ?? [])].length, label: "Jurisdictions", color: c.blue },
-        ].map(stat => (
-          <div key={stat.label} style={{
-            background: c.cardBg, border: `1px solid ${c.cardBorder}`,
-            borderRadius: 8, padding: "8px 16px", display: "flex", alignItems: "center", gap: 10,
-          }}>
-            <span style={{ color: stat.color, fontFamily: fontMono, fontSize: 20, fontWeight: 700 }}>
-              {stat.value}
-            </span>
-            <span style={{ color: c.muted, fontSize: 12 }}>{stat.label}</span>
+      <section
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+          gap: 12,
+          marginBottom: 22,
+        }}
+      >
+        <div style={metric_card_style}>
+          <Database size={18} color={palette.live} />
+          <div>
+            <div style={metric_value_style}>{format_number(integrity.atlas_unique_observation_count)}</div>
+            <div style={metric_label_style}>Unique Atlas observations</div>
+            <div style={metric_note_style}>
+              {format_number(integrity.atlas_raw_observation_count)} historical rows; {format_number(integrity.atlas_replay_observation_count)} replay rows preserved
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
+        <div style={metric_card_style}>
+          <ShieldCheck size={18} color={palette.convergence} />
+          <div>
+            <div style={metric_value_style}>
+              {format_number(
+                integrity.intake_signal_count +
+                  integrity.legal_pattern_count +
+                  integrity.live_data_signal_count,
+              )}
+            </div>
+            <div style={metric_label_style}>Canonical source-domain outputs</div>
+            <div style={metric_note_style}>Separated by source ownership</div>
+          </div>
+        </div>
+        <div style={metric_card_style}>
+          <GitMerge size={18} color={palette.convergence} />
+          <div>
+            <div style={metric_value_style}>{format_number(integrity.convergence_count)}</div>
+            <div style={metric_label_style}>Three-domain convergences</div>
+            <div style={metric_note_style}>Requires one record from every domain</div>
+          </div>
+        </div>
+        <div style={{ ...metric_card_style, borderColor: "rgba(248,113,113,0.32)" }}>
+          <AlertTriangle size={18} color={palette.danger} />
+          <div>
+            <div style={metric_value_style}>
+              {format_number(
+                integrity.legacy_detected_signals_count + integrity.legacy_live_signals_count,
+              )}
+            </div>
+            <div style={metric_label_style}>Legacy mixed rows quarantined</div>
+            <div style={metric_note_style}>Preserved as evidence; not canonicalized</div>
+          </div>
+        </div>
+      </section>
 
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: `1px solid ${c.cardBorder}`, paddingBottom: 0 }}>
-        {[
-          { key: "registry", label: `Registry Signals (${registrySignals?.length ?? 0})` },
-          { key: "types", label: `Signal Types (${signal_types?.length ?? 0})` },
-        ].map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key as any)}
-            style={{
-              background: "none", border: "none", cursor: "pointer",
-              padding: "8px 16px", fontSize: 13, fontFamily: fontSans,
-              color: activeTab === tab.key ? c.amber : c.muted,
-              borderBottom: activeTab === tab.key ? `2px solid ${c.amber}` : "2px solid transparent",
-              transition: "all 0.2s",
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <section
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: 14,
+          marginBottom: 26,
+        }}
+      >
+        {domains.map((domain) => {
+          const meta = domain_meta[domain.domain_code as keyof typeof domain_meta];
+          const Icon = meta?.icon ?? BookOpen;
+          const color = meta?.color ?? palette.text;
+          return (
+            <article
+              key={domain.domain_code}
+              style={{
+                background: palette.surface,
+                border: `1px solid ${palette.border}`,
+                borderTop: `3px solid ${color}`,
+                borderRadius: 12,
+                padding: 18,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                  <Icon size={20} color={color} />
+                  <div>
+                    <div style={{ color, fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>
+                      {meta?.short_label ?? "Domain"}
+                    </div>
+                    <h2 style={{ margin: "2px 0 0", fontSize: 18 }}>{domain.domain_label}</h2>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 24, fontWeight: 750, color }}>
+                    {format_number(domain.current_record_count)}
+                  </div>
+                  <div style={{ color: palette.muted, fontSize: 11 }}>current</div>
+                </div>
+              </div>
 
-      {/* Filters */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8,
-          background: c.cardBg, border: `1px solid ${c.cardBorder}`,
-          borderRadius: 8, padding: "6px 12px", flex: "1 1 200px", maxWidth: 300,
-        }}>
-          <Search size={14} style={{ color: c.muted }} />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder={activeTab === "registry" ? "Search by type, category, jurisdiction..." : "Search signals..."}
-            style={{
-              background: "transparent", border: "none", outline: "none",
-              color: c.paper, fontFamily: fontSans, fontSize: 13, width: "100%",
-            }}
-          />
-          {search && (
-            <button onClick={() => setSearch("")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-              <X size={14} style={{ color: c.muted }} />
-            </button>
-          )}
+              <p style={{ color: palette.muted, lineHeight: 1.55, minHeight: 66 }}>
+                {domain.description}
+              </p>
+
+              <div style={detail_row_style}>
+                <span>Owner</span>
+                <strong>{domain.source_owner}</strong>
+              </div>
+              <div style={detail_row_style}>
+                <span>Storage</span>
+                <code>{domain.canonical_relation}</code>
+              </div>
+              <div style={detail_row_style}>
+                <span>Latest</span>
+                <strong>{format_date(domain.latest_record_at)}</strong>
+              </div>
+
+              <details style={{ marginTop: 12 }}>
+                <summary style={{ cursor: "pointer", color }}>Boundary contract</summary>
+                <p style={contract_text_style}>{domain.source_boundary}</p>
+                <p style={contract_text_style}><strong>Severity:</strong> {domain.severity_policy}</p>
+                <p style={contract_text_style}><strong>Confidence:</strong> {domain.confidence_policy}</p>
+              </details>
+            </article>
+          );
+        })}
+      </section>
+
+      <section
+        style={{
+          background: palette.surface,
+          border: `1px solid ${palette.border}`,
+          borderRadius: 12,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            padding: "16px 18px",
+            borderBottom: `1px solid ${palette.border}`,
+          }}
+        >
+          <div>
+            <h2 style={{ margin: 0, fontSize: 19 }}>Recent canonical outputs</h2>
+            <p style={{ margin: "5px 0 0", color: palette.muted, fontSize: 13 }}>
+              Individual intake details are redacted on this cross-system surface.
+            </p>
+          </div>
+          <div style={{ color: palette.muted, fontSize: 12, display: "flex", gap: 6 }}>
+            <Clock size={14} />
+            Atlas freshness: {format_date(integrity.latest_atlas_observation_at)}
+          </div>
         </div>
 
-        {activeTab === "registry" && (
-          <>
-            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-              {categories.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setFilterCategory(filterCategory === cat ? null : cat)}
+        {recent_records.length === 0 ? (
+          <div style={{ padding: 28, textAlign: "center", color: palette.muted }}>
+            The canonical domain stores are ready. No domain output has been registered yet.
+          </div>
+        ) : (
+          <div>
+            {recent_records.map((record) => {
+              const meta = domain_meta[record.domain_code as keyof typeof domain_meta];
+              const color = meta?.color ?? palette.text;
+              return (
+                <div
+                  key={`${record.domain_code}:${record.record_id}`}
                   style={{
-                    background: filterCategory === cat ? c.tealBg : "transparent",
-                    border: `1px solid ${filterCategory === cat ? c.tealBorder : c.cardBorder}`,
-                    borderRadius: 6, padding: "4px 10px", cursor: "pointer",
-                    color: filterCategory === cat ? c.teal : c.muted, fontSize: 11,
-                    fontFamily: fontSans, transition: "all 0.2s",
+                    padding: "14px 18px",
+                    borderBottom: `1px solid ${palette.border}`,
+                    display: "grid",
+                    gridTemplateColumns: "minmax(170px, 0.8fr) minmax(260px, 2fr) minmax(150px, 0.7fr)",
+                    gap: 16,
+                    alignItems: "start",
                   }}
                 >
-                  {cat}
-                </button>
-              ))}
-            </div>
-            <div style={{ display: "flex", gap: 4 }}>
-              {["critical", "high", "medium", "low"].map(sev => {
-                const sc = SEVERITY_COLORS[sev];
-                return (
-                  <button
-                    key={sev}
-                    onClick={() => setFilterSeverity(filterSeverity === sev ? null : sev)}
-                    style={{
-                      background: filterSeverity === sev ? sc.bg : "transparent",
-                      border: `1px solid ${filterSeverity === sev ? sc.border : c.cardBorder}`,
-                      borderRadius: 6, padding: "4px 10px", cursor: "pointer",
-                      color: filterSeverity === sev ? sc.color : c.muted, fontSize: 11,
-                      fontFamily: fontSans, transition: "all 0.2s", textTransform: "capitalize",
-                    }}
-                  >
-                    {sc.label}
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Registry Signals Tab */}
-      {activeTab === "registry" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {filteredRegistry.map(s => {
-            const isExpanded = expandedId === s.id;
-            const severity = SEVERITY_COLORS[s.severity ?? "medium"] || SEVERITY_COLORS.medium;
-            return (
-              <div
-                key={s.id}
-                style={{
-                  background: c.cardBg, border: `1px solid ${isExpanded ? c.amber + "50" : c.cardBorder}`,
-                  borderRadius: 10, overflow: "hidden", transition: "border-color 0.2s",
-                }}
-              >
-                <button
-                  onClick={() => setExpandedId(isExpanded ? null : s.id)}
-                  style={{
-                    width: "100%", background: "none", border: "none", cursor: "pointer",
-                    padding: "12px 16px", display: "flex", alignItems: "center", gap: 12,
-                    textAlign: "left",
-                  }}
-                >
-                  {isExpanded ? (
-                    <ChevronDown size={14} style={{ color: c.amber, flexShrink: 0 }} />
-                  ) : (
-                    <ChevronRight size={14} style={{ color: c.muted, flexShrink: 0 }} />
-                  )}
-                  <Zap size={14} style={{ color: c.amber, flexShrink: 0 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <span style={{ color: c.paper, fontSize: 13, fontWeight: 600 }}>
-                        {s.signal_type ?? "Unknown Signal"}
-                      </span>
-                      {s.category && (
-                        <span style={{
-                          background: c.tealBg, border: `1px solid ${c.tealBorder}`,
-                          borderRadius: 4, padding: "1px 6px", fontSize: 10, color: c.teal,
-                        }}>
-                          {s.category}
+                  <div>
+                    <div style={{ color, fontSize: 11, textTransform: "uppercase" }}>
+                      {record.domain_code.replaceAll("_", " ")}
+                    </div>
+                    <div style={{ marginTop: 4, fontWeight: 650 }}>{record.title}</div>
+                  </div>
+                  <div>
+                    <div style={{ color: palette.muted, lineHeight: 1.45, fontSize: 13 }}>
+                      {record.description}
+                    </div>
+                    <div style={{ display: "flex", gap: 12, marginTop: 7, color: palette.muted, fontSize: 11 }}>
+                      {record.jurisdiction_id && (
+                        <span style={{ display: "flex", gap: 4 }}>
+                          <MapPin size={12} /> {record.jurisdiction_id}
                         </span>
                       )}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
-                      <MapPin size={10} style={{ color: c.muted }} />
-                      <span style={{ color: c.muted, fontSize: 11 }}>{s.jurisdictionId}</span>
-                    </div>
-                  </div>
-                  {s.severity && (
-                    <span style={{
-                      background: severity.bg, color: severity.color,
-                      border: `1px solid ${severity.border}`,
-                      padding: "2px 8px", borderRadius: 10, fontSize: 10, fontFamily: fontMono,
-                      textTransform: "capitalize",
-                    }}>
-                      {severity.label}
-                    </span>
-                  )}
-                </button>
-
-                {isExpanded && (
-                  <div style={{ padding: "0 16px 16px 44px" }}>
-                    {s.sourceReference && (
-                      <div style={{ marginBottom: 10 }}>
-                        <span style={{ color: c.gold, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>
-                          Source Reference
-                        </span>
-                        <p style={{ color: c.paper, fontSize: 12, margin: "4px 0 0 0", lineHeight: 1.5 }}>
-                          {s.sourceReference}
-                        </p>
-                      </div>
-                    )}
-                    {s.fingerprint && (
-                      <div style={{ marginBottom: 10 }}>
-                        <span style={{ color: c.muted, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>
-                          Fingerprint
-                        </span>
-                        <code style={{ display: "block", color: c.teal, fontSize: 11, fontFamily: fontMono, marginTop: 4 }}>
-                          {s.fingerprint}
-                        </code>
-                      </div>
-                    )}
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, paddingTop: 10, borderTop: `1px solid ${c.cardBorder}` }}>
-                      <a
-                        href={`/workshop?signal=${encodeURIComponent(s.signal_type ?? "")}&jurisdiction=${encodeURIComponent(s.jurisdictionId)}`}
-                        style={{
-                          display: "flex", alignItems: "center", gap: 6,
-                          background: c.amberBg, border: `1px solid ${c.goldBorder}`,
-                          borderRadius: 6, padding: "6px 12px", fontSize: 12, color: c.amber,
-                          textDecoration: "none", transition: "all 0.2s",
-                        }}
-                      >
-                        <ArrowRight size={12} />
-                        Use in Workshop
-                      </a>
-                      <a
-                        href="/litigation-barriers"
-                        style={{
-                          display: "flex", alignItems: "center", gap: 6,
-                          background: "transparent", border: `1px solid ${c.cardBorder}`,
-                          borderRadius: 6, padding: "6px 12px", fontSize: 12, color: c.muted,
-                          textDecoration: "none",
-                        }}
-                      >
-                        Check Barriers
-                      </a>
+                      {record.entity_resolution_status && (
+                        <span>entity: {record.entity_resolution_status}</span>
+                      )}
+                      {record.source_reference && <span>source: {record.source_reference}</span>}
                     </div>
                   </div>
-                )}
-              </div>
-            );
-          })}
-
-          {filteredRegistry.length === 0 && (
-            <div style={{ textAlign: "center", padding: 48 }}>
-              <Radio size={40} style={{ color: c.muted, marginBottom: 12 }} />
-              <p style={{ color: c.muted, fontSize: 14 }}>No registry signals match your filters.</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Signal Types Tab */}
-      {activeTab === "types" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {filteredTypes.map(s => {
-            const isExpanded = expandedId === s.id;
-            const severity = SEVERITY_COLORS[(s as any).severity ?? "medium"] || SEVERITY_COLORS.medium;
-            return (
-              <div
-                key={s.id}
-                style={{
-                  background: c.cardBg, border: `1px solid ${isExpanded ? c.amber + "50" : c.cardBorder}`,
-                  borderRadius: 10, overflow: "hidden", transition: "border-color 0.2s",
-                }}
-              >
-                <button
-                  onClick={() => setExpandedId(isExpanded ? null : s.id)}
-                  style={{
-                    width: "100%", background: "none", border: "none", cursor: "pointer",
-                    padding: "14px 16px", display: "flex", alignItems: "center", gap: 12,
-                    textAlign: "left",
-                  }}
-                >
-                  {isExpanded ? (
-                    <ChevronDown size={16} style={{ color: c.amber, flexShrink: 0 }} />
-                  ) : (
-                    <ChevronRight size={16} style={{ color: c.muted, flexShrink: 0 }} />
-                  )}
-                  <Zap size={16} style={{ color: c.amber, flexShrink: 0 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <h3 style={{ color: c.paper, fontSize: 14, margin: 0, fontWeight: 600 }}>
-                      {s.signal_type}
-                    </h3>
-                    <span style={{ color: c.muted, fontSize: 11 }}>{s.domain}</span>
-                  </div>
-                  <span style={{
-                    background: c.amberBg, color: c.amber,
-                    padding: "2px 8px", borderRadius: 10, fontSize: 10, fontFamily: fontMono,
-                  }}>
-                    {(s.trigger_patterns as string[]).length} triggers
-                  </span>
-                </button>
-
-                {isExpanded && (
-                  <div style={{ padding: "0 16px 16px 44px" }}>
-                    {/* Trigger patterns */}
-                    <div style={{ marginBottom: 12 }}>
-                      <span style={{ color: c.amber, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>
-                        Trigger Patterns
-                      </span>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 6 }}>
-                        {(s.trigger_patterns as string[]).map((p, i) => (
-                          <div key={i} style={{
-                            display: "flex", alignItems: "flex-start", gap: 8,
-                            background: c.amberBg, borderRadius: 6, padding: "6px 10px",
-                          }}>
-                            <Target size={12} style={{ color: c.amber, marginTop: 2, flexShrink: 0 }} />
-                            <span style={{ color: c.paper, fontSize: 12, lineHeight: 1.5 }}>{p}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Linked doctrines */}
-                    {s.linked_doctrine && (s.linked_doctrine as string[]).length > 0 && (
-                      <div style={{ marginBottom: 12 }}>
-                        <span style={{ color: c.purple, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>
-                          Linked Doctrines
-                        </span>
-                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 6 }}>
-                          {(s.linked_doctrine as string[]).map((d, i) => (
-                            <a
-                              key={i}
-                              href="/doctrine-graph"
-                              style={{
-                                background: c.purpleBg, border: `1px solid ${c.purpleBorder}`,
-                                borderRadius: 4, padding: "3px 8px", fontSize: 11, color: c.purple,
-                                textDecoration: "none",
-                              }}
-                            >
-                              {d}
-                            </a>
-                          ))}
-                        </div>
+                  <div style={{ textAlign: "right", fontSize: 12 }}>
+                    <div style={{ color }}>{record.status}</div>
+                    {record.severity && <div style={{ marginTop: 4 }}>severity: {record.severity}</div>}
+                    {record.confidence_score != null && (
+                      <div style={{ marginTop: 4 }}>
+                        confidence: {(record.confidence_score * 100).toFixed(1)}%
                       </div>
                     )}
-
-                    {/* Explanation */}
-                    {s.explanation && (
-                      <div style={{
-                        background: c.tealBg, border: `1px solid ${c.tealBorder}`,
-                        borderRadius: 8, padding: 12,
-                      }}>
-                        <span style={{ color: c.teal, fontSize: 10, fontFamily: fontMono, textTransform: "uppercase" }}>
-                          Explanation
-                        </span>
-                        <p style={{ color: c.paper, fontSize: 12, margin: "6px 0 0 0", lineHeight: 1.5 }}>
-                          {s.explanation}
-                        </p>
-                      </div>
-                    )}
-
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 16, paddingTop: 12, borderTop: `1px solid ${c.cardBorder}` }}>
-                      <CommitToCase type="signal" itemId={s.id} signal_type={(s.signal_type as any) || "structural"} label="Commit Signal to Case" />
-                      <FlagArea location="signal_registry" targetId={s.id} targetType="signal" message={`Review signal: ${s.name}`} />
-                      <a
-                        href={`/workshop?signal_type=${encodeURIComponent(s.signal_type)}`}
-                        style={{
-                          display: "flex", alignItems: "center", gap: 6,
-                          background: c.amberBg, border: `1px solid ${c.goldBorder}`,
-                          borderRadius: 6, padding: "6px 12px", fontSize: 12, color: c.amber,
-                          textDecoration: "none",
-                        }}
-                      >
-                        <ArrowRight size={12} />
-                        Open in Workshop
-                      </a>
+                    <div style={{ marginTop: 5, color: palette.muted }}>
+                      {format_date(record.occurred_at)}
                     </div>
                   </div>
-                )}
-              </div>
-            );
-          })}
-
-          {filteredTypes.length === 0 && (
-            <div style={{ textAlign: "center", padding: 48 }}>
-              <Radio size={40} style={{ color: c.muted, marginBottom: 12 }} />
-              <p style={{ color: c.muted, fontSize: 14 }}>No signal types match your search.</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      <NextStepBar
-        context="Signals reviewed. Promote key signals to your case or explore the patterns they reveal."
-        steps={[
-          { label: "Explore Patterns", href: "/patterns", icon: "search", variant: "primary", description: "See recurring patterns across signals" },
-          { label: "Litigation Barriers", href: "/litigation-barriers", icon: "shield", description: "Check what structural obstacles apply" },
-          { label: "Control Room", href: "/control-room", icon: "map", description: "Review your committed case state" },
-        ]}
-      />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
+
+const metric_card_style = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 12,
+  padding: 16,
+  background: palette.surface,
+  border: `1px solid ${palette.border}`,
+  borderRadius: 10,
+} as const;
+
+const metric_value_style = {
+  fontSize: 22,
+  fontWeight: 750,
+  lineHeight: 1,
+} as const;
+
+const metric_label_style = {
+  marginTop: 5,
+  fontSize: 13,
+} as const;
+
+const metric_note_style = {
+  marginTop: 4,
+  color: palette.muted,
+  fontSize: 11,
+} as const;
+
+const detail_row_style = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: 12,
+  borderTop: `1px solid ${palette.border}`,
+  padding: "8px 0",
+  fontSize: 12,
+  color: palette.muted,
+} as const;
+
+const contract_text_style = {
+  color: palette.muted,
+  lineHeight: 1.5,
+  fontSize: 12,
+  marginBottom: 6,
+} as const;
