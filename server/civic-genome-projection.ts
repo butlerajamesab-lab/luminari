@@ -119,7 +119,7 @@ export const infer_state_position = (bill: legiscan_master_bill): string => {
   // the cached master-list status remains the generic LegiScan "Passed" code.
   // Restrict this signal to the action field so bills *about* effective dates
   // are not falsely classified as enacted.
-  if (/\beffective date\b/.test(last_action)) return "enacted";
+  if (/^\s*effective date\b/.test(last_action)) return "enacted";
   if (/chapter|enacted|signed by governor|became law/.test(text)) return "enacted";
   if (/failed|withdrawn|dead|vetoed|postponed indefinitely/.test(text)) return "failed";
   if (/passed house and senate|passed both/.test(text)) return "advanced_two_chambers";
@@ -153,8 +153,15 @@ const build_structural_dna_json = (state_row: docket_state_cache_row, bill: legi
   source_last_action_date: bill.last_action_date ?? null,
 });
 
-const should_append_change_event = (existing_hash: string | null, next_hash: string): boolean =>
-  existing_hash === null || existing_hash !== next_hash;
+export const should_append_projection_event = (
+  existing_hash: string | null,
+  next_hash: string,
+  existing_state_position: string | null,
+  next_state_position: string,
+): boolean =>
+  existing_hash === null
+  || existing_hash !== next_hash
+  || (existing_state_position !== null && existing_state_position !== next_state_position);
 
 const upsert_family = async (family_key: string, bill: legiscan_master_bill): Promise<string> => {
   const pool = getPool();
@@ -300,9 +307,11 @@ const project_bill = async (
     : existing?.rosetta_extraction_run_id
       ? null
       : existing?.structural_dna_hash ?? null;
-  const should_append_event = should_append_change_event(
+  const should_append_event = should_append_projection_event(
     existing_docket_observation_hash,
     docket_observation_hash,
+    existing?.current_state_position ?? null,
+    current_state_position,
   );
 
   const { rows } = await pool.query<{ genome_bill_id: string; family_id: string }>(

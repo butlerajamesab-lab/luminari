@@ -25,7 +25,7 @@ export const classify_docket_event = (
   const text = bill_text(bill);
   const last_action = `${bill.last_action ?? ""}`.toLowerCase();
 
-  if (/effective date/.test(last_action)) {
+  if (/^\s*effective date\b/.test(last_action)) {
     return {
       event_type: "effective_date_set",
       event_summary: summarize(bill, "has an effective date on the live docket"),
