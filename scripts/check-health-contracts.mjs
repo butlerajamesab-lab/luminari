@@ -6,6 +6,7 @@ const diagnostic = readFileSync('server/_core/health-diagnostics.ts', 'utf8');
 const systemRouter = readFileSync('server/_core/systemRouter.ts', 'utf8');
 const context = readFileSync('server/_core/context.ts', 'utf8');
 const userCache = readFileSync('server/_core/user-cache.ts', 'utf8');
+const expressAdmin = readFileSync('server/_core/express-admin-middleware.ts', 'utf8');
 
 const required_liveness = ['ok', 'runtime', 'service', 'supabase_project', 'timestamp'];
 const forbidden_liveness = ['supabaseProject', 'publicTables', 'databaseUrl', 'dbDiagnostic', 'database_version', 'public_tables', 'database', 'db_diagnostic'];
@@ -39,5 +40,13 @@ if (context.includes('VITE_LIGHTHOUSE_INSPECTION_MODE')) fail('client-exposed en
 if (context.includes('isLighthouseInspectionMode(opts.req)')) fail('request state must not participate in inspection identity activation');
 if (!context.includes('process.env.NODE_ENV !== "production"')) fail('inspection identity must fail closed in production');
 if (!context.includes('process.env.LIGHTHOUSE_INSPECTION_MODE === "true"')) fail('non-production inspection identity requires an explicit server-only flag');
+
+if (!index.includes('import { requireExpressAdmin } from "./express-admin-middleware"')) fail('Express administrator middleware must be imported');
+if (!index.includes('app.use("/api/system", requireExpressAdmin, systemVisibilityRouter)')) fail('/api/system visibility routes must require an administrator');
+if (index.includes('app.use("/api/system", systemVisibilityRouter)')) fail('/api/system must not be mounted without an administrator gate');
+if (!expressAdmin.includes('resolve_user_for_procedure')) fail('Express administrator gate must resolve the canonical runtime user');
+if (!expressAdmin.includes('user.role !== "admin"')) fail('Express administrator gate must enforce the admin role');
+if (!expressAdmin.includes('status(401)') || !expressAdmin.includes('status(403)') || !expressAdmin.includes('status(503)')) fail('Express administrator gate must fail closed for missing, forbidden, and unavailable auth states');
+if (expressAdmin.includes('supabase_user_id') || expressAdmin.includes('supabase_email')) fail('Express administrator gate must not log or return account identifiers');
 
 console.log('health diagnostic and authentication runtime security contracts passed');
