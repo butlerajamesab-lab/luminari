@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
-import { invokeLLMInteractive } from "../_core/llm";
 import { db } from "../db";
 import { eq, and, sql, like, count } from "drizzle-orm";
 import {
@@ -56,72 +55,43 @@ export const viabilityEngineRouter = router({
       const [caseRow] = await db.select().from(cases)
         .where(eq(cases.id, input.caseId));
 
-      // Build claim text for LLM extraction
-      const claimTexts = caseClaims.slice(0, 50).map((c: any, i: any) =>
-        `[${i + 1}] (${c.claimType}, origin: ${c.statementOrigin}) ${c.claimText}`
-      ).join("\n");
+      // Deterministic fact extraction — map each claim directly to a structured fact
+      const CLAIM_TYPE_TO_FACT_TYPE: Record<string, string> = {
+        legal_filing: "procedural",
+        testimony: "statement",
+        event: "event",
+        deadline: "temporal",
+      };
+      const DATE_PATTERN = /\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},?\s+\d{4}|\d{4}-\d{2}-\d{2})\b/i;
 
-      const response = await invokeLLMInteractive({
-        messages: [
-          {
-            role: "system",
-            content: `You are a forensic fact extraction engine. Given a list of claims from legal documents, extract structured fact assertions. Each fact must have:
-- sourceType: "claim" | "quote" | "finding"
-- actor: the person or entity performing the action (or null)
-- factType: one of: "action", "statement", "event", "condition", "relationship", "financial", "temporal", "procedural"
-- factValue: the factual assertion in neutral, extractive language
-- relatedEvent: brief event description if applicable (or null)
-- eventDate: Unix timestamp in milliseconds if a date is mentioned (or null)
+      const parsed = {
+        facts: caseClaims.slice(0, 50).map((c: any) => {
+          // Extract first capitalized word sequence as actor
+          const actorMatch = (c.claimText ?? "").match(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/);
+          const actor = actorMatch ? actorMatch[1] : null;
 
-Return a JSON array of fact objects. Extract ONLY what is explicitly stated. Do not infer or synthesize.`
-          },
-          {
-            role: "user",
-            content: `Case: ${caseRow?.name ?? "Unknown"}\nDomain: ${caseRow?.domain ?? "general"}\n\nClaims:\n${claimTexts}`
+          // Map claimType to factType
+          const factType = CLAIM_TYPE_TO_FACT_TYPE[c.claimType] ?? "statement";
+
+          // Extract date from claimText if present
+          const dateMatch = (c.claimText ?? "").match(DATE_PATTERN);
+          let eventDate: number | null = null;
+          if (dateMatch) {
+            const parsed = Date.parse(dateMatch[0]);
+            if (!isNaN(parsed)) eventDate = parsed;
           }
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "fact_extraction",
-            strict: true,
-            schema: {
-              type: "object",
-              properties: {
-                facts: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      sourceType: { type: "string" },
-                      actor: { type: ["string", "null"] },
-                      factType: { type: "string" },
-                      factValue: { type: "string" },
-                      relatedEvent: { type: ["string", "null"] },
-                      eventDate: { type: ["number", "null"] },
-                      confidenceScore: { type: "number" },
-                    },
-                    required: ["sourceType", "actor", "factType", "factValue", "relatedEvent", "eventDate", "confidenceScore"],
-                    additionalProperties: false,
-                  }
-                }
-              },
-              required: ["facts"],
-              additionalProperties: false,
-            }
-          }
-        }
-      });
 
-      const content = typeof response.choices[0]?.message?.content === "string"
-        ? response.choices[0].message.content
-        : "";
-      let parsed: { facts: any[] };
-      try {
-        parsed = JSON.parse(content);
-      } catch {
-        return { extracted: 0, message: "LLM returned invalid JSON for fact extraction." };
-      }
+          return {
+            sourceType: "claim",
+            actor,
+            factType,
+            factValue: c.claimText ?? "",
+            relatedEvent: null,
+            eventDate,
+            confidenceScore: 0.6,
+          };
+        }),
+      };
 
       // Clear previous fact claims for this case
       await db.delete(factClaims).where(eq(factClaims.caseId, input.caseId));
@@ -442,75 +412,66 @@ Return a JSON array of fact objects. Extract ONLY what is explicitly stated. Do 
       // Get contradiction templates for pattern matching
       const templates = await db.select().from(contradictionTemplates);
 
-      // Build fact pairs for LLM analysis (limit to manageable size)
-      const factTexts = facts.slice(0, 30).map((f: any, i: any) =>
-        `[F${f.id}] (${f.factType}, actor: ${f.actor || "unknown"}) ${f.factValue}`
-      ).join("\n");
+      // Deterministic contradiction detection via keyword heuristics
+      const NEGATION_WORDS = ["not", "never", "denied", "refused", "rejected", "did not", "does not", "was not", "has not"];
+      const AFFIRMATIVE_WORDS = ["confirmed", "approved", "granted", "agreed", "accepted", "did", "was", "has"];
 
-      const response = await invokeLLMInteractive({
-        messages: [
-          {
-            role: "system",
-            content: `You are a forensic contradiction detection engine. Given a list of fact claims, identify pairs that contradict each other. A contradiction exists when:
-1. Two facts assert incompatible states about the same subject/event
-2. Two facts provide conflicting timelines
-3. Two facts attribute contradictory actions to the same actor
-4. A fact contradicts a known legal requirement or standard
+      const detectedContradictions: Array<{
+        factIdA: number;
+        factIdB: number;
+        contradictionType: string;
+        severityScore: number;
+        confidence: number;
+      }> = [];
 
-For each contradiction found, provide:
-- factIdA: the ID number of the first fact (from the [F#] prefix)
-- factIdB: the ID number of the second fact
-- contradictionType: "factual_inconsistency" | "timeline_conflict" | "actor_contradiction" | "legal_requirement_violation" | "procedural_contradiction"
-- severityScore: 0.0 to 1.0 (how severe the contradiction is)
-- confidence: 0.0 to 1.0 (how confident you are this is a real contradiction)
+      const workingFacts = facts.slice(0, 30);
+      for (let i = 0; i < workingFacts.length; i++) {
+        for (let j = i + 1; j < workingFacts.length; j++) {
+          const fa = workingFacts[i];
+          const fb = workingFacts[j];
+          const fav = (fa.factValue ?? "").toLowerCase();
+          const fbv = (fb.factValue ?? "").toLowerCase();
 
-Return ONLY genuine contradictions. Do not flag differences that are merely complementary or additive information.`
-          },
-          {
-            role: "user",
-            content: `Fact claims:\n${factTexts}`
+          // Only compare facts with the same actor
+          if (!fa.actor || !fb.actor || fa.actor !== fb.actor) continue;
+
+          const faIsNegative = NEGATION_WORDS.some(w => fav.includes(w));
+          const fbIsNegative = NEGATION_WORDS.some(w => fbv.includes(w));
+          const faIsPositive = AFFIRMATIVE_WORDS.some(w => fav.includes(w));
+          const fbIsPositive = AFFIRMATIVE_WORDS.some(w => fbv.includes(w));
+
+          // Direct negation: one positive, one negative about same actor
+          if ((faIsPositive && fbIsNegative) || (faIsNegative && fbIsPositive)) {
+            detectedContradictions.push({
+              factIdA: fa.id,
+              factIdB: fb.id,
+              contradictionType: "factual_inconsistency",
+              severityScore: 0.7,
+              confidence: 0.6,
+            });
+            continue;
           }
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "contradiction_detection",
-            strict: true,
-            schema: {
-              type: "object",
-              properties: {
-                contradictions: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      factIdA: { type: "number" },
-                      factIdB: { type: "number" },
-                      contradictionType: { type: "string" },
-                      severityScore: { type: "number" },
-                      confidence: { type: "number" },
-                    },
-                    required: ["factIdA", "factIdB", "contradictionType", "severityScore", "confidence"],
-                    additionalProperties: false,
-                  }
-                }
-              },
-              required: ["contradictions"],
-              additionalProperties: false,
+
+          // Timeline conflict: both have dates but different values
+          if (fa.eventDate && fb.eventDate && fa.eventDate !== fb.eventDate) {
+            // Check if they appear to describe the same event (shared keywords)
+            const faWords = new Set(fav.split(/\s+/).filter((w: string) => w.length > 4));
+            const fbWords = fbv.split(/\s+/).filter((w: string) => w.length > 4);
+            const sharedWords = fbWords.filter((w: string) => faWords.has(w));
+            if (sharedWords.length >= 2) {
+              detectedContradictions.push({
+                factIdA: fa.id,
+                factIdB: fb.id,
+                contradictionType: "timeline_conflict",
+                severityScore: 0.5,
+                confidence: 0.6,
+              });
             }
           }
         }
-      });
-
-      const content = typeof response.choices[0]?.message?.content === "string"
-        ? response.choices[0].message.content
-        : "";
-      let parsed: { contradictions: any[] };
-      try {
-        parsed = JSON.parse(content);
-      } catch {
-        return { detected: 0, message: "LLM returned invalid JSON for contradiction detection." };
       }
+
+      const parsed = { contradictions: detectedContradictions };
 
       // Clear previous contradiction scores
       await db.delete(contradictionScores).where(eq(contradictionScores.caseId, input.caseId));
@@ -559,9 +520,9 @@ Return ONLY genuine contradictions. Do not flag differences that are merely comp
 
       return {
         detected: inserted,
-        llm_contradictions: parsed.contradictions.length,
+        heuristic_contradictions: parsed.contradictions.length,
         templateMatches,
-        message: `Detected ${inserted} contradictions (${parsed.contradictions.length} from analysis, ${templateMatches} from templates).`,
+        message: `Detected ${inserted} contradictions (${parsed.contradictions.length} from heuristic analysis, ${templateMatches} from templates).`,
       };
     }),
 
