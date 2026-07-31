@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
-import { invokeLLMInteractive } from "../_core/llm";
 import { db } from "../db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { governedPatternStrategyBoost } from "../governance-hooks";
@@ -23,16 +22,66 @@ import { writePatternResult, canonicalUpdate } from "../canonical-write-adapter"
 // ═══════════════════════════════════════════════════════════════════════════
 // PATTERN AGGREGATION ENGINE — Cross-Case Analysis Pipeline
 //
-// P1. Cluster Entities across cases (repeat offenders)
-// P2. Cluster Conduct types across cases
+// P1. Cluster Entities across cases (Levenshtein name similarity)
+// P2. Cluster Conduct types across cases (exact match grouping)
 // P3. Detect Case Links (shared entities/conduct)
-// P4. Generate Systemic Inferences
+// P4. Generate Systemic Inferences (template-based)
 // P5. Apply Feedback Loop to Strategy Paths
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ─── String Helpers (from entity-dedup.ts pattern) ───
+
+const TITLE_SUFFIXES = /\b(esq\.?|jr\.?|sr\.?|dr\.?|mr\.?|mrs\.?|ms\.?|ii|iii|iv)\b/gi;
+
+function normalizeName(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(TITLE_SUFFIXES, "")
+    .replace(/[^\w\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function levenshtein(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+
+  let prev = new Array(n + 1);
+  let curr = new Array(n + 1);
+
+  for (let j = 0; j <= n; j++) prev[j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= n; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        curr[j] = prev[j - 1];
+      } else {
+        curr[j] = 1 + Math.min(prev[j - 1], prev[j], curr[j - 1]);
+      }
+    }
+    [prev, curr] = [curr, prev];
+  }
+
+  return prev[n];
+}
+
+function nameSimilar(a: string, b: string): boolean {
+  const na = normalizeName(a);
+  const nb = normalizeName(b);
+  if (na === nb) return true;
+  if (na.includes(nb) || nb.includes(na)) return true;
+  const maxLen = Math.max(na.length, nb.length);
+  if (maxLen === 0) return false;
+  return levenshtein(na, nb) / maxLen < 0.2;
+}
+
 export const patternEngineRouter = router({
 
-  // ─── P1: Cluster Entities ───────────────────────────────────────────
+  // ─── P1: Cluster Entities (Levenshtein similarity) ─────────────────
   clusterEntities: protectedProcedure
     .input(z.object({ caseIds: z.array(z.number()).optional() }))
     .mutation(async ({ input }) => {
@@ -51,54 +100,74 @@ export const patternEngineRouter = router({
 
       if (allEntities.length === 0) return { clusters_created: 0, message: "No entities found." };
 
-      const entitySummary = allEntities.slice(0, 100).map((e: any) =>
-        `${e.id}|case:${e.caseId}|${e.name}|${e.type}|${e.description?.slice(0, 60) ?? ""}`
-      ).join("\n");
+      // Group entities by name similarity using Levenshtein
+      // Only create clusters for entities appearing in 2+ different cases
+      const clusters: Array<{
+        entityName: string;
+        entityType: string;
+        aliases: string[];
+        caseIds: number[];
+        jurisdictions: string[];
+        claimTypes: string[];
+        riskScore: number;
+        notes: string;
+      }> = [];
 
-      const response = await invokeLLMInteractive({
-        messages: [
-          {
-            role: "system",
-            content: `You are a pattern detection engine. Group entities that appear to be the same real-world entity across different cases. Return JSON:
-{"clusters":[{
-  "entityName": "canonical name",
-  "entityType": "person|organization|government_agency",
-  "aliases": ["variant names"],
-  "caseIds": [case IDs where this entity appears],
-  "jurisdictions": ["jurisdictions involved"],
-  "claimTypes": ["claim types associated"],
-  "riskScore": number (0.00-1.00, higher = more cases/risk),
-  "notes": "brief description"
-}]}
-Only create clusters for entities appearing in 2+ cases or with notable risk indicators.`
-          },
-          { role: "user", content: `Entities:\n${entitySummary}` }
-        ],
-        response_format: { type: "json_object" },
-      });
+      const processed = new Set<number>();
 
-      const content = typeof response.choices[0]?.message?.content === "string"
-        ? response.choices[0].message.content : "";
-      let clusters: any[];
-      try {
-        const parsed = JSON.parse(content);
-        clusters = Array.isArray(parsed) ? parsed : (parsed.clusters ?? []);
-      } catch { clusters = []; }
+      for (let i = 0; i < allEntities.length; i++) {
+        if (processed.has(allEntities[i].id)) continue;
+
+        const group = [allEntities[i]];
+        processed.add(allEntities[i].id);
+
+        for (let j = i + 1; j < allEntities.length; j++) {
+          if (processed.has(allEntities[j].id)) continue;
+          if (nameSimilar(allEntities[i].name, allEntities[j].name)) {
+            group.push(allEntities[j]);
+            processed.add(allEntities[j].id);
+          }
+        }
+
+        // Only create cluster if entity appears in 2+ cases
+        const uniqueCaseIds = Array.from(new Set(group.map((e: any) => Number(e.caseId))));
+        if (uniqueCaseIds.length < 2) continue;
+
+        // Pick canonical name (longest variant)
+        const canonicalName = group.reduce((longest, e) =>
+          e.name.length > longest.length ? e.name : longest, group[0].name);
+        const aliases = Array.from(new Set(group.map(e => e.name).filter(n => n !== canonicalName)));
+        const entityType = group[0].type || "unknown";
+
+        // Risk score: more cases = higher risk
+        const riskScore = Math.min(uniqueCaseIds.length * 0.15, 1.0);
+
+        clusters.push({
+          entityName: canonicalName,
+          entityType,
+          aliases,
+          caseIds: uniqueCaseIds,
+          jurisdictions: [],
+          claimTypes: [],
+          riskScore,
+          notes: `Entity appears in ${uniqueCaseIds.length} cases with ${group.length} total mentions.`,
+        });
+      }
 
       let created = 0;
       for (const c of clusters) {
         await db.insert(patternEntityClusters).values({
-          entityName: c.entityName ?? "Unknown",
-          entityType: c.entityType ?? null,
-          aliases: c.aliases ?? [],
-          caseIds: c.caseIds ?? [],
-          caseCount: (c.caseIds ?? []).length,
+          entityName: c.entityName,
+          entityType: c.entityType,
+          aliases: c.aliases,
+          caseIds: c.caseIds,
+          caseCount: c.caseIds.length,
           firstSeen: now,
           lastSeen: now,
-          jurisdictions: c.jurisdictions ?? [],
-          claimTypes: c.claimTypes ?? [],
-          riskScore: String(c.riskScore ?? 0),
-          notes: c.notes ?? null,
+          jurisdictions: c.jurisdictions,
+          claimTypes: c.claimTypes,
+          riskScore: String(c.riskScore),
+          notes: c.notes,
           createdAt: now,
           updatedAt: now,
         });
@@ -108,7 +177,7 @@ Only create clusters for entities appearing in 2+ cases or with notable risk ind
       return { clusters_created: created };
     }),
 
-  // ─── P2: Cluster Conduct ────────────────────────────────────────────
+  // ─── P2: Cluster Conduct (exact type match) ───────────────────────
   clusterConduct: protectedProcedure
     .input(z.object({ caseIds: z.array(z.number()).optional() }))
     .mutation(async ({ input }) => {
@@ -126,58 +195,63 @@ Only create clusters for entities appearing in 2+ cases or with notable risk ind
 
       if (allClaims.length === 0) return { clusters_created: 0, message: "No claims found." };
 
-      const claimSummary = allClaims.slice(0, 80).map((c: any) =>
-        `case:${c.caseId}|${c.claimType}|${c.claimText?.slice(0, 100) ?? ""}`
-      ).join("\n");
+      // Group by exact claimType match
+      const conductGroups = new Map<string, { caseIds: Set<number>; claims: typeof allClaims }>();
 
+      for (const claim of allClaims) {
+        const conductType = (claim as any).claimType || "unknown";
+        if (!conductGroups.has(conductType)) {
+          conductGroups.set(conductType, { caseIds: new Set(), claims: [] });
+        }
+        const group = conductGroups.get(conductType)!;
+        group.caseIds.add(Number((claim as any).caseId));
+        group.claims.push(claim);
+      }
+
+      // Get entity clusters for reference
       const entityClusters = await db.select().from(patternEntityClusters);
-      const entityRef = entityClusters.map((e: any) => `${e.id}. ${e.entityName} (${e.caseCount} cases)`).join(", ");
-
-      const response = await invokeLLMInteractive({
-        messages: [
-          {
-            role: "system",
-            content: `You are a conduct pattern detector. Group similar types of misconduct across cases. Return JSON:
-{"clusters":[{
-  "conductType": "descriptive name for the conduct pattern",
-  "conductCategory": "discrimination|retaliation|harassment|wage_theft|policy_violation|fraud|negligence|other",
-  "description": "description of the pattern",
-  "caseIds": [case IDs],
-  "entityClusterIds": [entity cluster IDs involved],
-  "commonElements": ["common legal elements"],
-  "frequencyScore": number (0.00-1.00),
-  "severityScore": number (0.00-1.00)
-}]}
-Focus on patterns that repeat across multiple cases.`
-          },
-          {
-            role: "user",
-            content: `Claims:\n${claimSummary}\n\nEntity Clusters: ${entityRef}`
-          }
-        ],
-        response_format: { type: "json_object" },
-      });
-
-      const content = typeof response.choices[0]?.message?.content === "string"
-        ? response.choices[0].message.content : "";
-      let clusters: any[];
-      try {
-        const parsed = JSON.parse(content);
-        clusters = Array.isArray(parsed) ? parsed : (parsed.clusters ?? []);
-      } catch { clusters = []; }
 
       let created = 0;
-      for (const c of clusters) {
+      for (const [conductType, group] of Array.from(conductGroups.entries())) {
+        // Only create cluster if conduct appears in 2+ cases
+        if (group.caseIds.size < 2) continue;
+
+        const caseIdsArr = Array.from(group.caseIds);
+
+        // Find entity clusters that overlap with these cases
+        const relatedEntityClusterIds = entityClusters
+          .filter((ec: any) => {
+            const ecCaseIds = (ec.caseIds as number[]) ?? [];
+            return ecCaseIds.some(id => group.caseIds.has(id));
+          })
+          .map((ec: any) => ec.id);
+
+        // Determine category from conductType
+        const categoryMap: Record<string, string> = {
+          housing_discrimination: "discrimination",
+          employment_discrimination: "discrimination",
+          wage_theft: "wage_theft",
+          consumer_fraud: "fraud",
+          debt_collection_abuse: "harassment",
+          police_misconduct: "policy_violation",
+          retaliation: "retaliation",
+          harassment: "harassment",
+        };
+        const conductCategory = categoryMap[conductType] || "other";
+
+        const frequencyScore = Math.min(group.claims.length * 0.05, 1.0);
+        const severityScore = Math.min(caseIdsArr.length * 0.2, 1.0);
+
         await db.insert(patternConductClusters).values({
-          conductType: c.conductType ?? "Unknown",
-          conductCategory: c.conductCategory ?? null,
-          description: c.description ?? null,
-          caseIds: c.caseIds ?? [],
-          caseCount: (c.caseIds ?? []).length,
-          entityClusterIds: c.entityClusterIds ?? [],
-          commonElements: c.commonElements ?? [],
-          frequencyScore: String(c.frequencyScore ?? 0),
-          severityScore: String(c.severityScore ?? 0),
+          conductType,
+          conductCategory,
+          description: `${conductType.replace(/_/g, " ")} pattern detected across ${caseIdsArr.length} cases with ${group.claims.length} total claims.`,
+          caseIds: caseIdsArr,
+          caseCount: caseIdsArr.length,
+          entityClusterIds: relatedEntityClusterIds,
+          commonElements: [],
+          frequencyScore: String(frequencyScore),
+          severityScore: String(severityScore),
           createdAt: now,
           updatedAt: now,
         });
@@ -202,7 +276,6 @@ Focus on patterns that repeat across multiple cases.`
         const caseIdsArr = (ec.caseIds as number[]) ?? [];
         for (let i = 0; i < caseIdsArr.length; i++) {
           for (let j = i + 1; j < caseIdsArr.length; j++) {
-            const key = `${caseIdsArr[i]}-${caseIdsArr[j]}`;
             let existing = links.find(l => l.caseIdA === caseIdsArr[i] && l.caseIdB === caseIdsArr[j]);
             if (!existing) {
               existing = { caseIdA: caseIdsArr[i], caseIdB: caseIdsArr[j], sharedEntities: [], sharedConduct: [], score: 0 };
@@ -250,7 +323,7 @@ Focus on patterns that repeat across multiple cases.`
       return { links_created: created };
     }),
 
-  // ─── P4: Generate Systemic Inferences ───────────────────────────────
+  // ─── P4: Generate Systemic Inferences (template-based) ─────────────
   generateSystemicInferences: protectedProcedure
     .mutation(async () => {
       const now = Date.now();
@@ -262,59 +335,85 @@ Focus on patterns that repeat across multiple cases.`
         return { inferences_generated: 0, message: "No clusters found. Run P1 and P2 first." };
       }
 
-      const ecSummary = entityClusters.map((e: any) =>
-        `Entity: ${e.entityName} (${e.caseCount} cases, risk: ${e.riskScore})`
-      ).join("\n");
+      const inferences: Array<{
+        inferenceType: string;
+        description: string;
+        entityClusterIds: number[];
+        conductClusterIds: number[];
+        evidenceStrength: string;
+        confidenceScore: number;
+        legalImplications: string;
+        recommendedActions: string[];
+      }> = [];
 
-      const ccSummary = conductClusters.map((c: any) =>
-        `Conduct: ${c.conductType} (${c.caseCount} cases, severity: ${c.severityScore})`
-      ).join("\n");
+      // Generate inferences from entity clusters (repeat offenders)
+      for (const ec of entityClusters) {
+        const caseCount = ec.caseCount ?? 0;
+        if (caseCount < 2) continue;
 
-      const response = await invokeLLMInteractive({
-        messages: [
-          {
-            role: "system",
-            content: `You are a systemic pattern analyst. Given entity and conduct clusters from multiple cases, generate systemic inferences about patterns of misconduct. Return JSON:
-{"inferences":[{
-  "inferenceType": "repeat_offender|systemic_policy|industry_pattern|geographic_cluster|temporal_escalation",
-  "description": "detailed description of the systemic inference",
-  "entityClusterIds": [relevant entity cluster IDs],
-  "conductClusterIds": [relevant conduct cluster IDs],
-  "evidenceStrength": "strong|moderate|preliminary",
-  "confidenceScore": number (0.00-1.00),
-  "legalImplications": "what this means legally",
-  "recommendedActions": ["recommended next steps"]
-}]}
-Focus on actionable inferences that strengthen individual cases.`
-          },
-          {
-            role: "user",
-            content: `Entity Clusters:\n${ecSummary}\n\nConduct Clusters:\n${ccSummary}\n\nCase Links: ${caseLinks.length} connections found`
-          }
-        ],
-        response_format: { type: "json_object" },
-      });
+        const riskScore = parseFloat(String(ec.riskScore ?? 0));
+        const confidenceScore = Math.min(riskScore + 0.2, 1.0);
 
-      const content = typeof response.choices[0]?.message?.content === "string"
-        ? response.choices[0].message.content : "";
-      let inferences: any[];
-      try {
-        const parsed = JSON.parse(content);
-        inferences = Array.isArray(parsed) ? parsed : (parsed.inferences ?? []);
-      } catch { inferences = []; }
+        // Find conduct clusters that share cases with this entity
+        const entityCaseIds = new Set((ec.caseIds as number[]) ?? []);
+        const relatedConduct = conductClusters.filter((cc: any) => {
+          const ccCaseIds = (cc.caseIds as number[]) ?? [];
+          return ccCaseIds.some(id => entityCaseIds.has(id));
+        });
+        const conductTypes = relatedConduct.map((cc: any) => cc.conductType).join(", ");
+
+        inferences.push({
+          inferenceType: "repeat_offender",
+          description: `Entity "${ec.entityName}" appears in ${caseCount} cases${conductTypes ? ` involving ${conductTypes}` : ""}. This pattern suggests systemic behavior.`,
+          entityClusterIds: [ec.id],
+          conductClusterIds: relatedConduct.map((cc: any) => cc.id),
+          evidenceStrength: caseCount >= 4 ? "strong" : caseCount >= 3 ? "moderate" : "preliminary",
+          confidenceScore,
+          legalImplications: `Multiple cases against the same entity may support pattern-or-practice claims and strengthen individual cases through corroborating evidence.`,
+          recommendedActions: [
+            `Cross-reference evidence across all ${caseCount} cases involving ${ec.entityName}`,
+            "Consider consolidated or class action approach",
+            "Request discovery of internal policies and training materials",
+          ],
+        });
+      }
+
+      // Generate inferences from conduct clusters (systemic patterns)
+      for (const cc of conductClusters) {
+        const caseCount = cc.caseCount ?? 0;
+        if (caseCount < 3) continue;
+
+        const severityScore = parseFloat(String(cc.severityScore ?? 0));
+        const confidenceScore = Math.min(severityScore + 0.1, 1.0);
+
+        inferences.push({
+          inferenceType: "systemic_policy",
+          description: `${(cc.conductType || "Unknown conduct").replace(/_/g, " ")} pattern detected across ${caseCount} cases. This suggests a systemic policy or practice rather than isolated incidents.`,
+          entityClusterIds: (cc.entityClusterIds as number[]) ?? [],
+          conductClusterIds: [cc.id],
+          evidenceStrength: caseCount >= 5 ? "strong" : caseCount >= 3 ? "moderate" : "preliminary",
+          confidenceScore,
+          legalImplications: `Systemic patterns of ${(cc.conductType || "misconduct").replace(/_/g, " ")} may support regulatory action, class certification, or pattern-or-practice litigation.`,
+          recommendedActions: [
+            `Document the pattern across all ${caseCount} affected cases`,
+            "Identify common policies or practices enabling the conduct",
+            "Consider regulatory complaint or legislative advocacy",
+          ],
+        });
+      }
 
       let created = 0;
       for (const inf of inferences) {
         await db.insert(patternSystemicInferences).values({
-          inferenceType: inf.inferenceType ?? "systemic_policy",
-          description: inf.description ?? "",
-          entityClusterIds: inf.entityClusterIds ?? [],
-          conductClusterIds: inf.conductClusterIds ?? [],
+          inferenceType: inf.inferenceType,
+          description: inf.description,
+          entityClusterIds: inf.entityClusterIds,
+          conductClusterIds: inf.conductClusterIds,
           supportingCaseIds: [],
-          evidenceStrength: inf.evidenceStrength ?? "preliminary",
-          confidenceScore: String(inf.confidenceScore ?? 0),
-          legalImplications: inf.legalImplications ?? null,
-          recommendedActions: inf.recommendedActions ?? [],
+          evidenceStrength: inf.evidenceStrength,
+          confidenceScore: String(inf.confidenceScore),
+          legalImplications: inf.legalImplications,
+          recommendedActions: inf.recommendedActions,
           createdAt: now,
           updatedAt: now,
         });
