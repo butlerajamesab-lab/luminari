@@ -95,107 +95,46 @@ const intakeRouter = router({
       messages: z.array(z.object({ role: z.enum(["assistant", "user"]), content: z.string() })),
     }))
     .mutation(async ({ ctx, input }) => {
-      const { invokeLLM } = await import("./_core/llm");
+      const { autoDetect } = await import("./intake-autodetect");
 
-      const situationContext: Record<string, string> = {
-        // Personal Crisis
-        insurance: "The user is dealing with an insurance claim denial. Help them identify what documents they need (policy, denial letter, correspondence, medical records if health-related, repair estimates if property). Ask about: type of insurance, what was denied, reason given, timeline.",
-        custody: "The user is in a custody or family court situation. Help them identify relevant documents (court orders, communication records, school/medical records, financial documents). Ask about: current custody arrangement, what they're seeking, key concerns, timeline of events.",
-        medical: "The user has concerns about their medical records. Help them identify what to gather (medical records, billing statements, insurance EOBs, correspondence with providers). Ask about: what happened, what concerns them, which providers, timeline.",
-        workplace: "The user is experiencing workplace retaliation. Help them identify evidence (employment records, emails, performance reviews, HR complaints, witness statements). Ask about: what happened, when it started, what changed, any formal complaints filed.",
-        housing: "The user has a housing or landlord dispute. Help them identify documents (lease agreement, correspondence, photos, repair requests, payment records). Ask about: type of dispute, lease terms, timeline, any notices received.",
-        consumer: "The user is dealing with a consumer protection issue — predatory lending, debt collection harassment, deceptive business practices, or unfair contracts. Help them identify documents (contracts, billing statements, collection letters, correspondence, credit reports, recordings if legal in their state). Ask about: what company/entity, what happened, amounts involved, any threats or harassment, timeline.",
-        // Government Benefits
-        disability: "The user is dealing with disability benefits or a benefits denial (SSI/SSDI). Help them identify documents (application, denial letter, medical records, doctor's letters, correspondence with SSA). Ask about: type of benefits (SSDI, SSI), what happened, reason for denial if applicable, appeal stage, timeline.",
-        medicaid: "The user is dealing with Medicaid or Medicare coverage issues — a denial, reduction in coverage, or prior authorization rejection. Help them identify documents (coverage determination letter, prior authorization denial, EOBs, medical records, appeal correspondence). Ask about: what was denied or reduced, which program (Medicaid/Medicare/both), what treatment or service, any appeals filed, timeline.",
-        snap: "The user is dealing with food assistance benefits (SNAP/WIC) — denial, reduction, or termination. Help them identify documents (application, determination letter, recertification notice, income documentation, correspondence with the agency). Ask about: what happened to their benefits, any changes in household, recertification issues, timeline.",
-        veterans: "The user is a veteran dealing with VA benefits issues — disability rating disputes, healthcare access denials, or service connection problems. Help them identify documents (DD-214, VA decision letters, medical records, C&P exam results, appeal correspondence, buddy statements). Ask about: branch of service, what benefits are at issue, current rating if any, any appeals filed, timeline.",
-        unemployment: "The user is dealing with unemployment benefits — denial, employer contest, or overpayment claim. Help them identify documents (denial letter, employer contest documentation, wage records, correspondence with the unemployment office, any hearing notices). Ask about: why they left their job, what reason was given for denial, any employer disputes, timeline.",
-        // Elder Care
-        nursing: "The user has concerns about care at a nursing home or assisted living facility — for themselves or a loved one. Help them identify documents (care plans, incident reports, medical records, billing statements, facility correspondence, photos of conditions). Ask about: what concerns them, any injuries or changes in condition, facility responses, any complaints filed, timeline.",
-        guardianship: "The user has concerns about a guardianship or conservatorship — either being placed under one unfairly, or concerned about how a guardian is treating someone. Help them identify documents (court orders, financial accountings, care plans, medical records, guardian reports, correspondence). Ask about: who is under guardianship, what concerns them, any financial issues, timeline.",
-        elderabuse: "The user suspects elder abuse or neglect — physical, financial, emotional, or neglect. Help them identify documents (medical records, financial statements, photos, incident reports, caregiver logs, witness statements). Ask about: who is affected, what type of abuse suspected, any injuries or financial losses, who the suspected abuser is, any reports filed, timeline. Be especially gentle — this is deeply painful.",
-        // Vulnerable Populations
-        immigration: "The user is dealing with immigration or asylum issues. Help them identify documents (USCIS correspondence, visa applications, asylum application, country condition evidence, employment authorization, court notices, attorney correspondence). Ask about: immigration status, what happened, any deadlines approaching, any hearings scheduled, timeline. Be aware they may be afraid — reassure about privacy.",
-        childwelfare: "The user is dealing with child welfare or CPS involvement — either as a parent whose children were removed or are being investigated, or as someone concerned about a child. Help them identify documents (CPS reports, court orders, service plans, visitation records, school records, medical records). Ask about: what happened, current status of the case, any services required, any hearings scheduled, timeline. This is deeply emotional — be very gentle.",
-        education: "The user has concerns about their child's education rights (IEP, 504 plan, special education). Help them identify documents (IEP/504 plan, meeting notes, progress reports, evaluations, school correspondence, report cards). Ask about: what's happening, what the school is or isn't doing, any meetings held, timeline.",
-        section8: "The user is dealing with public housing or Section 8 voucher issues — termination, denial, or transfer problems. Help them identify documents (voucher documents, PHA correspondence, lease, inspection reports, hearing notices, income documentation). Ask about: what happened to their housing assistance, any notices received, any hearings scheduled, timeline.",
-        juvenile: "The user is dealing with juvenile justice issues — a young person facing school discipline, court involvement, or treatment concerns. Help them identify documents (school disciplinary records, court documents, treatment plans, IEP if applicable, police reports, probation records). Ask about: what happened, the young person's age, any school involvement, any court dates, timeline. Remember the stakes are a young person's future.",
-        // Tribal Law / Indigenous Rights
-        icwa: "You are helping someone involved in an Indian Child Welfare Act (ICWA) case. This may be a parent whose child has been removed or is at risk of removal, a tribal ICWA worker trying to intervene in a state proceeding, or a family member seeking placement. ICWA cases involve specific federal requirements: proper notice to the tribe, active efforts to prevent family breakup, qualified expert witness testimony, and placement preferences favoring tribal families. The documents include state agency notices, court orders, case plans, active efforts logs, placement records, and tribal membership verification. Help the user identify what documents they have, what is missing, and whether ICWA requirements have been followed. Ask about: which tribe(s) are involved, whether the tribe has been properly notified, what the state agency's stated reasons for removal are, and whether the user has copies of court orders and case plans. Use 'tribal nation' not 'reservation'. These are sovereign rights, not claims.",
-        mmiw: "You are helping someone whose family member or community member is missing or has been murdered. This is an extraordinarily painful situation — proceed with deep respect and patience. Many families have experienced dismissive or inadequate responses from law enforcement across multiple jurisdictions. The jurisdictional complexity between tribal, state, and federal law enforcement often means cases fall through the cracks. Documents may include police reports from different agencies, FOIA responses, tribal law enforcement records, medical examiner reports, and FBI/BIA correspondence. Help the user organize what they have, identify which jurisdictions have been contacted, and surface gaps in the investigative record. Ask about: where the person was last seen (tribal land, state land, or unclear), which law enforcement agencies have been contacted, whether FOIA requests have been filed, and what responses have been received. Acknowledge that previous interactions with law enforcement may have been harmful.",
-        treatyrights: "You are helping someone involved in a treaty rights dispute — fishing, hunting, gathering, water rights, land use, or other rights reserved by treaty between a tribal nation and the federal government. Treaty rights cases require cross-referencing historical treaty language against current government actions or restrictions. Documents may include the original treaty text, federal court opinions, BIA correspondence, tribal council resolutions, environmental impact statements, and agency regulations. Help the user identify which treaty provisions are relevant, what the government's stated basis for restriction is, and whether the documentary record supports or contradicts the government's position. Ask about: which tribal nation and which treaty, what specific right is being restricted, and which government entity is imposing the restriction.",
-        triballand: "You are helping someone with a tribal land or trust fund issue — fractionated land ownership, BIA allotment records, Individual Indian Money (IIM) account disputes, lease agreements on trust land, or probate of a deceased allottee's interests. The BIA manages millions of fractionated ownership records, and individual allottees often have difficulty understanding their ownership interests or accessing trust fund accounting. Documents may include BIA allotment records, title status reports, probate records, IIM account statements, lease agreements, and correspondence with BIA or the Office of the Special Trustee. Help the user understand what documents they have, identify missing records, and surface discrepancies. Ask about: whether this involves land ownership, trust fund accounting, or both; which BIA regional office manages the records; and whether the user has requested their records from BIA.",
-        tribalenrollment: "You are helping someone with a tribal enrollment or disenrollment issue. Tribal enrollment is a matter of sovereign self-determination — criteria vary by tribe (blood quantum, lineal descent, or combination). Enrollment disputes often require tracing genealogical connections through historical records that may be incomplete, inaccurate, or deliberately obscured during the assimilation era. Documents may include historical Census rolls (Dawes Rolls, Baker Roll, etc.), birth certificates, tribal enrollment applications, blood quantum certificates, BIA enrollment records, and genealogical documentation. Help the user organize their documentation, identify gaps in the genealogical record, and understand what their tribe's specific criteria require. Ask about: which tribe, what the enrollment criteria are, whether they have copies of historical roll entries, and whether this is a new application or a challenge to disenrollment.",
-        tribalhousing: "You are helping someone with tribal housing or federal benefits issues — applications through a tribal housing authority under NAHASDA, disputes with HUD, housing inspection issues, or access to federal benefits programs administered through tribal governments. Housing on tribal lands faces unique challenges including environmental review requirements, infrastructure limitations, and compliance documentation that can delay construction or repairs for years. Documents may include housing applications, NAHASDA plans, HUD correspondence, inspection reports, environmental reviews, and tribal housing authority decisions. Help the user understand where their application or dispute stands, what documentation is required, and relevant timelines and deadlines. Ask about: whether this involves a new application, a dispute with existing housing, or a benefits access issue; which tribal housing authority is involved; and what correspondence they have received.",
-        tribalsovereignty: "You are helping someone navigating a jurisdictional conflict between tribal, state, and federal authority. These conflicts arise in criminal cases, civil disputes, regulatory matters, and administrative proceedings where it is unclear which government has authority. Jurisdictional questions in Indian Country are among the most complex in American law, involving overlapping federal statutes, treaties, tribal codes, and state laws. Documents may include tribal court orders, state court filings, federal court opinions, BIA administrative decisions, tribal constitutions, and correspondence between governmental entities. Help the user understand which documents establish jurisdiction, identify conflicts between different governmental positions, and organize the documentary record for legal review. Ask about: what type of matter (criminal, civil, regulatory), where events occurred (tribal land, state land, or disputed), and which governmental entities have asserted authority.",
-        // Justice & Financial Defense
-        workerscomp: "The user is dealing with a workers' compensation claim — a workplace injury, denied claim, or disputed benefits. Workers' comp systems are adversarial by design: the employer's insurer controls the process, selects the treating physician in many states, and has financial incentive to minimize or deny. Documents may include the incident report, claim filing, medical records, IME (Independent Medical Examination) reports, wage statements, employer correspondence, and any denial or reduction letters. Help the user identify what they have and what's missing. Ask about: what happened (injury/illness), when it occurred, whether they reported it to their employer, whether they've seen a doctor, whether the claim was accepted or denied, any return-to-work pressure, and timeline. Many workers fear retaliation — acknowledge that.",
-        wrongfulconviction: "You are helping someone who believes they or a loved one was wrongfully convicted. This is one of the most consequential situations a person can face — years or decades of life taken. The documentary record in these cases is often enormous and scattered across police files, court records, forensic lab reports, witness statements, and appellate filings. Documents may include trial transcripts, police reports, forensic evidence reports, witness recantations, alibi evidence, Brady material (evidence the prosecution failed to disclose), ineffective assistance of counsel records, and post-conviction filings. Help the user organize what they have and identify critical gaps. Ask about: what the conviction was for, when it occurred, what evidence they believe shows innocence, whether any appeals have been filed, whether they have trial transcripts, and whether any witnesses have recanted. Proceed with deep respect — this person or their loved one may have lost years.",
-        debtcollection: "The user is being pursued by debt collectors and needs help defending themselves. Debt collection is heavily regulated under the FDCPA (Fair Debt Collection Practices Act) and state equivalents, but violations are rampant. Documents may include collection letters, phone call logs, credit reports, original account statements, validation notices (or lack thereof), court summons if sued, and any correspondence with the collector. Help the user identify what they have. Ask about: who is contacting them, what debt they claim is owed, whether they've received a written validation notice, whether they've been sued, any harassment (calls at odd hours, threats, contacting employers), and timeline. Many people don't know they have rights here — help them understand they do.",
-        policemisconduct: "You are helping someone who has experienced police misconduct — excessive force, false arrest, racial profiling, coerced confession, evidence planting, or other civil rights violations. This is deeply traumatic and the person may distrust institutions, including this one. Documents may include police reports, body camera footage requests, internal affairs complaints, medical records from injuries, witness statements, 911 call recordings, booking records, court filings, and any civilian complaint board correspondence. Help the user organize what they have and identify what to request. Ask about: what happened, when and where, whether they were injured, whether they filed a complaint, whether they have any video or witness information, whether charges were filed against them, and timeline. Acknowledge that reporting misconduct by the people who are supposed to protect you takes courage.",
-        bankruptcy: "The user is considering or going through bankruptcy — Chapter 7, Chapter 13, or dealing with creditor actions. Bankruptcy involves extensive documentation requirements and strict deadlines. Documents may include credit reports, debt statements, income records (pay stubs, tax returns), asset inventories, mortgage/lease documents, vehicle titles, bank statements, creditor correspondence, and any court filings if already in process. Help the user understand what documents they need to gather. Ask about: what type of debts (medical, credit card, mortgage, business), approximate total, whether they've consulted an attorney, whether any creditors have filed lawsuits or garnishments, their income situation, and timeline. Financial distress carries shame — be matter-of-fact and non-judgmental.",
-        // Community & Institutional
-        environmental: "You are helping someone dealing with environmental justice issues — contaminated water, toxic exposure, industrial pollution affecting their community, or environmental racism in facility siting. These cases often affect entire communities, disproportionately communities of color and low-income areas. Documents may include EPA correspondence, state environmental agency records, water quality test results, health department reports, environmental impact statements, permit applications, community health surveys, medical records showing exposure-related illness, and FOIA responses. Help the user organize what they have. Ask about: what the environmental concern is (water, air, soil, industrial facility), how long it's been happening, whether government agencies have been contacted, any health effects in the community, whether testing has been done, and timeline. These fights can take years — acknowledge the community's persistence.",
-        hoa: "The user is in a dispute with their Homeowners Association (HOA) or condo association. HOA disputes range from selective enforcement of rules to financial mismanagement to discriminatory practices. Documents may include HOA bylaws, CC&Rs (covenants, conditions, and restrictions), board meeting minutes, violation notices, fine letters, financial statements/budgets, assessment records, correspondence with the board, and any state regulatory filings. Help the user identify what they have. Ask about: what the dispute is about (fines, rules enforcement, financial issues, elections, maintenance), whether they've attended board meetings, whether the HOA has followed its own bylaws, any selective enforcement concerns, and timeline.",
-        taxdispute: "The user is dealing with a tax dispute — an IRS audit, state tax assessment, penalty, or collection action. Tax disputes involve complex documentation and strict deadlines that can result in liens, levies, or wage garnishment if missed. Documents may include tax returns, IRS/state notices (CP2000, deficiency notices, collection notices), W-2s/1099s, receipts and records for disputed deductions, correspondence with the IRS or state agency, any installment agreement documents, and Offer in Compromise paperwork. Help the user identify what they have and what deadlines they face. Ask about: what type of tax (income, business, property), what the agency is claiming, the tax year(s) involved, any notices received with response deadlines, whether they've responded, and timeline. Tax issues create enormous anxiety — be calm and systematic.",
-        fostercare: "You are helping someone who was in the foster care system and needs access to their own records, or a current/former foster parent dealing with the system. Foster care records are notoriously difficult to obtain — they're scattered across agencies, courts, and providers, and access rules vary by state. Documents may include placement records, court orders, case plans, medical records, educational records, social worker reports, adoption records (if applicable), and aging-out documentation. Help the user identify what they're looking for and which agencies to contact. Ask about: which state(s) they were in care, approximate years, whether they've requested records before, what specific information they need, and any identifying information they have (case numbers, agency names). For people who grew up in the system, these records are often the only documentation of their childhood — treat this with the gravity it deserves.",
-        medmalpractice: "You are helping someone who believes they or a loved one experienced medical malpractice — a surgical error, misdiagnosis, medication error, birth injury, or failure to treat. Medical malpractice cases require extensive documentation and most have statutes of limitations that vary by state. Documents may include medical records from all treating providers, imaging studies, lab results, pharmacy records, billing records, informed consent forms, hospital incident reports (if obtainable), expert medical opinions, and any correspondence with the healthcare provider. Help the user organize what they have. Ask about: what happened, which provider(s) were involved, when the incident occurred, what the outcome was, whether they've obtained their medical records, whether they've consulted a malpractice attorney, and timeline. Medical harm by people you trusted is deeply disorienting — acknowledge that.",
-        // Systemic Accountability
-        predatorylending: "You are helping someone who has been targeted by predatory lending — payday loans with excessive interest, deceptive mortgage terms, auto title loans, rent-to-own schemes, or other exploitative financial products. These practices disproportionately target low-income communities and communities of color. Documents may include loan agreements, Truth in Lending Act (TILA) disclosures, payment histories, bank statements showing automatic withdrawals, collection notices, credit reports, and any advertising or solicitation materials. Help the user identify what they have. Ask about: what type of loan or financial product, the interest rate and terms, how they were solicited, whether they understood the terms when they signed, total amount paid vs. original principal, any collection actions, and timeline. Predatory lending is designed to be confusing — that's not the borrower's fault.",
-        whistleblower: "You are helping someone who has experienced retaliation for reporting wrongdoing — in their workplace, their industry, or to a government agency. Whistleblower retaliation can include termination, demotion, harassment, blacklisting, or threats. Multiple federal and state laws protect whistleblowers, but the protections vary by industry and type of report. Documents may include the original report or complaint, evidence of the wrongdoing reported, employment records showing timeline of retaliation, performance reviews (before and after reporting), HR complaints, correspondence with regulatory agencies (SEC, OSHA, DOJ), and any settlement or severance documents. Help the user organize what they have. Ask about: what they reported, to whom, when, what happened afterward, whether they filed with any agency, any documentation of the retaliation, and timeline. Whistleblowers often feel isolated — acknowledge their courage.",
-        marketconcentration: "You are helping someone who is investigating or affected by market concentration — where a small number of corporations have consolidated control over an industry's supply chain, pricing, or distribution. This pattern appears across agriculture (seed, fertilizer, equipment monopolies), meatpacking (four companies controlling 80%+ of processing), pharmaceuticals (PBM consolidation), healthcare (hospital system mergers), tech (platform monopolies), and many other sectors. The cycle is predictable: consolidation drives up input costs, squeezes out small operators, creates dependency, triggers government bailouts that flow back to the consolidated entities. Documents may include market share reports, pricing histories, SEC filings, merger/acquisition records, lobbying disclosures (OpenSecrets data), USDA/FTC/DOJ reports, congressional testimony, subsidy distribution records, Farm Bill allocation data, bankruptcy filings, and news coverage of consolidation events. Help the user identify what industry they're investigating, what specific consolidation pattern they see, what time period they're covering, and what documents they can access. Ask about: which industry or supply chain, how many dominant players exist, what pricing changes they've observed, whether government subsidies or bailouts are involved, and what the impact has been on small operators or consumers. This work matters — these patterns are designed to be invisible at the individual level but devastating at scale.",
-        agricultureexploitation: "You are helping someone — likely a farmer, rancher, agricultural worker, or rural community advocate — who is dealing with the consequences of agricultural industry consolidation. The numbers tell the story: in the 1980s there were thousands of suppliers for seeds, fertilizers, and chemicals. Now there are roughly five. For an acre of land that might generate $500 in revenue, input costs can consume $450 or more. When farmers can't make money, they take on debt. When they default, the government bails them out — and the bailout payments go to the creditors, who are often the same consolidated entities that inflated the input costs. Documents may include farm expense records, input purchase receipts, loan documents, USDA subsidy records (searchable via EWG Farm Subsidy Database), crop insurance claims, equipment financing agreements, seed/chemical contracts (especially technology use agreements from Monsanto/Bayer), land lease agreements, bankruptcy filings, and any correspondence with USDA, FSA, or state agriculture departments. Help the user organize what they have. Ask about: what they farm/ranch, how long they've been operating, what their biggest cost categories are, who their suppliers are, whether they've received government payments, what debt they carry, and timeline. Farming families often carry generations of pride and pain — this isn't just about money, it's about a way of life being systematically dismantled.",
-        nonprofitcompliance: "You are helping someone with concerns about a nonprofit organization — financial mismanagement, board governance failures, misuse of restricted funds, or regulatory compliance issues. This may be a board member, donor, employee, or beneficiary. Documents may include IRS Form 990s, financial statements, audit reports, board meeting minutes, bylaws, grant agreements, donor restriction letters, state attorney general correspondence, and whistleblower complaints. Help the user identify what they have and what's publicly available (990s are public records). Ask about: what the concern is (financial, governance, mission drift, fraud), their relationship to the organization, what evidence they have, whether they've raised concerns internally, and timeline.",
-        // General
-        other: "The user needs general advocacy help. Listen carefully to understand their situation, then identify the type of case and what documents would be relevant. Try to map their situation to one of the known domains: insurance, custody, medical, workplace, housing, consumer protection, disability/SSI/SSDI, Medicaid/Medicare, food assistance, veterans, unemployment, nursing home, guardianship, elder abuse, immigration, child welfare, education, public housing, juvenile justice, tribal law (ICWA, MMIW, treaty rights, land/trust, enrollment, housing, sovereignty), workers' compensation, wrongful conviction, debt collection, police misconduct, bankruptcy, environmental justice, HOA disputes, tax disputes, foster care, medical malpractice, predatory lending, whistleblower retaliation, nonprofit compliance, market concentration/antitrust, or agricultural exploitation.",
-      };
+      // Deterministic conversation state machine
+      const userMessages = input.messages.filter(m => m.role === "user");
+      const combinedText = userMessages.map(m => m.content).join(" ");
 
-      const systemPrompt = `You are Luminari's intake advocate. You are talking to someone who may be overwhelmed, traumatized, or struggling. Your job is to:
+      let reply: string;
+      let plan: any = null;
 
-1. LISTEN with empathy. Use warm, simple language. Short sentences. No legal jargon.
-2. ASK gentle clarifying questions — one or two at a time, never a list of five.
-3. UNDERSTAND their situation well enough to recommend what documents they should gather.
-4. When you have enough information (usually after 2-4 exchanges), include a JSON plan block.
+      if (userMessages.length <= 1) {
+        // First exchange: ask what happened and when
+        reply = "Thank you for reaching out. I want to make sure I understand your situation clearly. Can you tell me — what happened, and when did it start? Take your time.";
+      } else if (userMessages.length <= 2) {
+        // Second exchange: ask about documents and who's involved
+        reply = "That sounds really difficult, and I appreciate you sharing that. Let me ask — do you have any documents related to this? Things like letters, emails, contracts, or official notices? Also, who are the main people or organizations involved?";
+      } else {
+        // Third+ exchange: run autoDetect and build a plan
+        const result = autoDetect({ combined_text: combinedText });
+        const topSuggestion = result.suggestions[0];
 
-TONE RULES:
-- Speak like a patient, caring friend who happens to know how to organize evidence
-- Never say "I understand how you feel" — instead show understanding through specific responses
-- Validate their experience: "That sounds really difficult" or "You're right to look into this"
-- Use "we" and "let's" — they're not alone in this
-- Keep responses under 150 words unless explaining something important
-- Never use legal terms without immediately explaining them in plain language
-
-SITUATION CONTEXT:
-${situationContext[input.situationType] || situationContext.other}
-
-When you have gathered enough information, append a JSON block at the END of your message in this exact format:
-
----PLAN---
-{"caseName": "short descriptive name", "caseDescription": "2-3 sentence description of what we're looking for", "domain": "category like Insurance, Family Court, Medical, Employment, Housing", "documentChecklist": [{"label": "Document name", "description": "Why we need it and where to find it", "priority": "essential|helpful|optional"}], "nextSteps": ["Step 1 in plain language", "Step 2"], "ready": true}
----END---
-
-Do NOT include the plan until you genuinely understand their situation. Ask at least 2 questions first. The plan should feel like a natural conclusion to the conversation, not a premature form fill.`;
-
-      const llmMessages = [
-        { role: "system" as const, content: systemPrompt },
-        ...input.messages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
-      ];
-
-      const response = await invokeLLM({ messages: llmMessages });
-      const rawContent = response.choices[0]?.message?.content;
-      let reply = (typeof rawContent === "string" ? rawContent : "") || "I'm sorry, I wasn't able to respond. Could you try again?";
-
-      // Extract plan if present
-      let plan = null;
-      const planMatch = reply.match(/---PLAN---(\s*\{[\s\S]*?\})\s*---END---/);
-      if (planMatch) {
-        try {
-          plan = JSON.parse(planMatch[1]);
-          // Remove the plan block from the visible reply
-          reply = reply.replace(/---PLAN---[\s\S]*?---END---/, "").trim();
-        } catch {
-          // Plan parsing failed, just show the reply without it
+        if (result.ready_to_recommend && topSuggestion) {
+          reply = `Based on what you've shared, it sounds like this involves ${topSuggestion.pipeline_type.replace(/_/g, " ")} issues. Let's get organized — I've put together a plan for what documents to gather and what steps to take next.`;
+          plan = {
+            caseName: `${input.situationType} case`,
+            caseDescription: combinedText.slice(0, 300),
+            domain: topSuggestion.pipeline_type.replace(/_/g, " "),
+            documentChecklist: [
+              { label: "Key correspondence", description: "Any letters, emails, or notices related to your situation", priority: "essential" },
+              { label: "Official documents", description: "Contracts, agreements, court orders, or agency decisions", priority: "essential" },
+              { label: "Timeline records", description: "Anything that helps establish when events occurred", priority: "helpful" },
+            ],
+            nextSteps: [
+              "Upload your documents so we can analyze them",
+              "We'll identify key findings and build your evidence",
+              "Then we'll map out your options for next steps",
+            ],
+            ready: true,
+          };
+        } else {
+          reply = "I'm getting a clearer picture. Is there anything else you'd like me to know — any deadlines coming up, or other concerns? The more context I have, the better I can help you organize your next steps.";
         }
       }
 
@@ -205,9 +144,6 @@ Do NOT include the plan until you genuinely understand their situation. Ask at l
   generateActionPath: protectedProcedure
     .input(z.object({ caseId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
-      const { invokeLLM } = await import("./_core/llm");
-
       const caseData = await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const findings = await db_helpers.listFindingsEnriched(input.caseId);
       const docs = await db_helpers.listDocuments(input.caseId);
@@ -216,80 +152,53 @@ Do NOT include the plan until you genuinely understand their situation. Ask at l
         return {
           summary: "We haven't found anything yet. Upload your documents and run the analysis first.",
           actions: [],
-          letter_template: null,
+          letterTemplate: null,
         };
       }
 
-      const findingSummary = findings.slice(0, 10).map((f: any) => {
-        let entry = `- ${f.title}: ${f.description}`;
-        if (f.significance) entry += ` (Significance: ${f.significance})`;
-        if (f.backingEvidence?.length) {
-          entry += `\n  Evidence: ${f.backingEvidence.slice(0, 2).map((e: any) => `"${e.verbatimQuote || e.claimText}" from ${e.documentDisplayLabel}`).join("; ")}`;
+      // Deterministic action path from findings
+      const findingTypes = Array.from(new Set(findings.map((f: any) => f.findingType || f.title?.split(":")[0] || "issue").filter(Boolean)));
+      const topTypes = findingTypes.slice(0, 3).join(", ");
+
+      const summary = `Your case has ${findings.length} finding${findings.length === 1 ? "" : "s"} across ${docs.length} document${docs.length === 1 ? "" : "s"}. Key issues: ${topTypes || "general concerns"}.`;
+
+      // Map finding types to standard actions
+      const ACTION_MAP: Record<string, { title: string; description: string; priority: "urgent" | "important" | "optional" }> = {
+        violation: { title: "File complaint with relevant agency", description: "Based on the violations found in your documents, you may want to file a formal complaint with the appropriate regulatory agency.", priority: "urgent" },
+        denial: { title: "File an appeal", description: "Your documents show a denial. Most denials can be appealed within a specific timeframe — check your denial letter for the deadline.", priority: "urgent" },
+        discrimination: { title: "File a discrimination complaint", description: "Document the discriminatory conduct and file with the appropriate civil rights agency (EEOC, HUD, or state equivalent).", priority: "urgent" },
+        discrepancy: { title: "Request records correction", description: "Your documents show discrepancies. Send a written request to the responsible party asking them to correct the record.", priority: "important" },
+        pattern: { title: "Document the pattern", description: "Multiple instances of the same issue strengthen your case. Keep a detailed log with dates and specifics.", priority: "important" },
+        deadline: { title: "Note upcoming deadlines", description: "Your documents reference time-sensitive deadlines. Mark these on your calendar and plan to act before they pass.", priority: "urgent" },
+        financial: { title: "Calculate your damages", description: "Add up the financial impact — lost wages, extra costs, fees charged. Keep receipts and records of everything.", priority: "important" },
+      };
+
+      const actions: Array<{ title: string; description: string; priority: string }> = [];
+      const usedTitles = new Set<string>();
+
+      // Always include "organize your evidence" as first action
+      actions.push({ title: "Organize your evidence", description: `You have ${docs.length} document${docs.length === 1 ? "" : "s"} uploaded. Review them to make sure nothing is missing.`, priority: "important" });
+      usedTitles.add("Organize your evidence");
+
+      for (const finding of findings.slice(0, 10)) {
+        const fType = ((finding as any).findingType || "").toLowerCase();
+        for (const [key, action] of Object.entries(ACTION_MAP)) {
+          if (fType.includes(key) && !usedTitles.has(action.title)) {
+            actions.push(action);
+            usedTitles.add(action.title);
+          }
         }
-        return entry;
-      }).join("\n");
+      }
 
-      const systemPrompt = `You are Luminari's action path generator. Based on the case findings below, generate:
+      // Always include "consult with legal aid" as final action
+      if (!usedTitles.has("Consult with legal aid")) {
+        actions.push({ title: "Consult with legal aid", description: "Consider reaching out to a legal aid organization in your area for guidance on your specific situation.", priority: "optional" });
+      }
 
-1. A plain-language SUMMARY (2-3 sentences) of what the evidence shows — written for someone who is overwhelmed and needs clarity.
-2. A list of ACTIONS — concrete next steps they can take, written simply. Each action should have a title, description, and priority (urgent/important/optional).
-3. If appropriate, a LETTER TEMPLATE they could use (e.g., appeal letter, demand letter, complaint). If no letter is appropriate, return null.
-
-TONE: Warm, empowering, simple. No legal jargon without explanation. Use "you" and "your".
-
-CASE: ${caseData.name} (${caseData.domain || "General"})
-DESCRIPTION: ${caseData.description || "No description"}
-DOCUMENTS: ${docs.length} documents analyzed
-
-FINDINGS:
-${findingSummary}
-
-Respond in this exact JSON format:
-{"summary": "...", "actions": [{"title": "...", "description": "...", "priority": "urgent|important|optional"}], "letterTemplate": "full letter text or null"}`;
-
-      const response = await invokeLLM({
-        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: "Generate the action path for this case." }],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "action_path",
-            strict: true,
-            schema: {
-              type: "object",
-              properties: {
-                summary: { type: "string" },
-                actions: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      title: { type: "string" },
-                      description: { type: "string" },
-                      priority: { type: "string", enum: ["urgent", "important", "optional"] },
-                    },
-                    required: ["title", "description", "priority"],
-                    additionalProperties: false,
-                  },
-                },
-                letterTemplate: { type: ["string", "null"] },
-              },
-              required: ["summary", "actions", "letterTemplate"],
-              additionalProperties: false,
-            },
-          },
-        },
-      });
-
-      const rawContent = response.choices[0]?.message?.content;
-      const content = typeof rawContent === "string" ? rawContent : "";
       // Pipeline event: export_created (action path generated)
       db_helpers.logPipelineEventByCase(input.caseId, "export_created").catch(() => {});
 
-      try {
-        return JSON.parse(content);
-      } catch {
-        return { summary: "Unable to generate action path. Please try again.", actions: [], letter_template: null };
-      }
+      return { summary, actions, letterTemplate: null };
     }),
 
   /** Auto-detect pipeline from free-text answers */
@@ -328,81 +237,21 @@ Respond in this exact JSON format:
         .sort((a, b) => a.order - b.order);
     }),
 
-  /** LLM-enhanced auto-detect: uses the LLM to extract structured signals from free text, then runs scoring */
+  /** Deterministic auto-detect: runs keyword scoring directly on free text */
   smartDetect: protectedProcedure
     .input(z.object({
       text: z.string().min(1),
     }))
     .mutation(async ({ input }) => {
-      const { invokeLLM } = await import("./_core/llm");
       const { autoDetect } = await import("./intake-autodetect");
 
-      // Use LLM to extract structured signals from the free text
-      const extractionPrompt = `You are a legal intake classifier. Given the user's description of their situation, extract structured information.
+      // autoDetect already handles raw text via combined_text parameter
+      const result = autoDetect({ combined_text: input.text });
 
-User's description:
-"${input.text}"
-
-Extract the following fields. If a field is not mentioned, use an empty string.
-- what_happened: What is the core issue or event?
-- who_involved: Who are the parties involved (people, organizations, agencies)?
-- documents_mentioned: What documents, records, or evidence are mentioned?
-- location: Where did this happen (state, city, jurisdiction)?
-- urgency_signals: Any deadlines, threats, or time-sensitive elements?
-- emotional_context: Key emotional or situational factors (trauma, fear, confusion)?`;
-
-      try {
-        const response = await invokeLLM({
-          messages: [
-            { role: "system", content: extractionPrompt },
-            { role: "user", content: "Extract the structured fields from the description above." },
-          ],
-          response_format: {
-            type: "json_schema",
-            json_schema: {
-              name: "intake_extraction",
-              strict: true,
-              schema: {
-                type: "object",
-                properties: {
-                  what_happened: { type: "string" },
-                  who_involved: { type: "string" },
-                  documents_mentioned: { type: "string" },
-                  location: { type: "string" },
-                  urgency_signals: { type: "string" },
-                  emotional_context: { type: "string" },
-                },
-                required: ["what_happened", "who_involved", "documents_mentioned", "location", "urgency_signals", "emotional_context"],
-                additionalProperties: false,
-              },
-            },
-          },
-        });
-
-        const rawContent = response.choices[0]?.message?.content;
-        const extracted = JSON.parse(typeof rawContent === "string" ? rawContent : "{}");
-
-        // Run auto-detect with both raw text and extracted signals
-        const result = autoDetect({
-          what_happened: extracted.what_happened || undefined,
-          who_involved: extracted.who_involved || undefined,
-          documents_available: extracted.documents_mentioned || undefined,
-          where: extracted.location || undefined,
-          additional_context: [extracted.urgency_signals, extracted.emotional_context].filter(Boolean).join(". ") || undefined,
-          combined_text: input.text,
-        });
-
-        return {
-          ...result,
-          extracted_signals: extracted,
-        };
-      } catch {
-        // Fallback: run auto-detect with just the raw text
-        return {
-          ...autoDetect({ combined_text: input.text }),
-          extracted_signals: null,
-        };
-      }
+      return {
+        ...result,
+        extracted_signals: null,
+      };
     }),
 });
 
@@ -1455,43 +1304,41 @@ const chatRouter = router({
         content: input.message,
       });
 
-      // Get case context for the AI
+      // Deterministic structured query interface
       const stats = await db_helpers.getCaseStats(input.caseId);
       const recentDocs = await db_helpers.listDocuments(input.caseId);
       const recentFindings = await db_helpers.listFindings(input.caseId);
-      const chatHistory = await db_helpers.getChatHistory(input.caseId, 20);
 
-      // Build context for LLM
-      const { invokeLLMInteractive } = await import("./_core/llm");
+      const msg = input.message.toLowerCase();
+      let assistantContent: string;
 
-      const systemPrompt = `You are the Luminari evidence assistant. You answer questions about case evidence using attribution-first, extractive language.
-
-TONE RULES:
-- Always cite specific documents: "Document #[ID] ([filename]) states: '[verbatim quote]' (p.[page])"
-- Never use synthesis verbs: confirms, proves, reveals, demonstrates, implicates, directly links, perpetrated, orchestrated, facilitated
-- Never use conclusory adjectives: clear, obvious, significant, critical, damning
-- Never speculate, infer consequences, or draw conclusions
-- If asked "what does this mean?", respond with what the documents literally state and let the user interpret
-- When documents conflict, state both positions and identify the specific factual point of difference
-- Present what the documents state, not what they "show" or "prove"
-
-Case Statistics: ${JSON.stringify(stats)}
-Recent Documents: ${recentDocs.slice(0, 10).map((d: any) => `[Doc #${d.id}] ${d.filename} (${d.documentType || d.fileType}) - ${d.documentPurpose || "No summary yet"}`).join("\n")}
-Recent Findings: ${recentFindings.slice(0, 5).map((f: any) => `[Finding] ${f.title}: ${f.description}`).join("\n")}`;
-
-      const messages = [
-        { role: "system" as const, content: systemPrompt },
-        ...chatHistory.reverse().slice(-10).map((m: any) => ({
-          role: m.role as "user" | "assistant",
-          content: m.content,
-        })),
-        { role: "user" as const, content: input.message },
-      ];
-
-      const response = await invokeLLMInteractive({ messages });
-      const assistantContent = typeof response.choices[0]?.message?.content === "string"
-        ? response.choices[0].message.content
-        : "I was unable to generate a response. Please try again.";
+      if (msg.includes("finding") || msg.includes("what did you find") || msg.includes("what's wrong") || msg.includes("issues")) {
+        if (recentFindings.length === 0) {
+          assistantContent = "No findings have been generated yet. Upload your documents and run the analysis to identify key issues.";
+        } else {
+          const findingList = recentFindings.slice(0, 10).map((f: any, i: number) =>
+            `${i + 1}. ${f.title}: ${f.description}`
+          ).join("\n");
+          assistantContent = `Your case has ${recentFindings.length} finding${recentFindings.length === 1 ? "" : "s"}:\n\n${findingList}`;
+        }
+      } else if (msg.includes("document") || msg.includes("evidence") || msg.includes("file") || msg.includes("upload")) {
+        if (recentDocs.length === 0) {
+          assistantContent = "No documents have been uploaded yet. Upload your documents to get started.";
+        } else {
+          const docList = recentDocs.slice(0, 10).map((d: any, i: number) =>
+            `${i + 1}. [Doc #${d.id}] ${d.filename} (${d.documentType || d.fileType || "unknown type"})${d.documentPurpose ? " \u2014 " + d.documentPurpose : ""}`
+          ).join("\n");
+          assistantContent = `Your case has ${recentDocs.length} document${recentDocs.length === 1 ? "" : "s"}:\n\n${docList}`;
+        }
+      } else if (msg.includes("next step") || msg.includes("what should i do") || msg.includes("action") || msg.includes("what now")) {
+        assistantContent = "To see your recommended next steps, go to the Action Path section of your case. It will show you concrete actions based on your findings, prioritized by urgency.";
+      } else if (msg.includes("timeline") || msg.includes("when") || msg.includes("date") || msg.includes("chronolog")) {
+        assistantContent = "Your case timeline is available in the Timeline view. It shows all events extracted from your documents in chronological order.";
+      } else if (msg.includes("status") || msg.includes("summary") || msg.includes("overview")) {
+        assistantContent = `Case overview: ${(stats as any).documentCount || 0} documents uploaded, ${(stats as any).findingCount || 0} findings identified, ${(stats as any).entityCount || 0} entities detected.`;
+      } else {
+        assistantContent = "I can help you understand your case data. Try asking about:\n\n\u2022 Your findings (\"What did you find?\")\n\u2022 Your documents (\"What evidence do I have?\")\n\u2022 Next steps (\"What should I do?\")\n\u2022 Timeline (\"When did things happen?\")\n\u2022 Case status (\"Give me an overview\")";
+      }
 
       await db_helpers.addChatMessage({
         caseId: input.caseId,
@@ -1629,12 +1476,11 @@ const presentationsRouter = router({
       return { success: true };
     }),
 
-  // LLM-powered auto-generation from case data
+  // Deterministic slide generation from case data
   generateSlides: protectedProcedure
     .input(z.object({ caseId: z.number(), presentationId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       await verifyPresentationWriteAccess(input.presentationId, ctx.user.id);
-      const { invokeLLM } = await import("./_core/llm");
 
       const caseData = await db_helpers.verifyCaseOwnership(input.caseId, ctx.user.id);
       const findings = await db_helpers.listFindingsEnriched(input.caseId);
@@ -1646,98 +1492,87 @@ const presentationsRouter = router({
         throw new TRPCError({ code: "PRECONDITION_FAILED", message: "No findings or documents to build a presentation from. Upload and analyze documents first." });
       }
 
-      const findingSummary = findings.slice(0, 15).map((f: any, i: any) => {
-        let entry = `${i + 1}. ${f.title}: ${f.description}`;
-        if (f.significance) entry += ` [Significance: ${f.significance}]`;
-        if (f.backingEvidence?.length) {
-          entry += `\n   Evidence: ${f.backingEvidence.slice(0, 3).map((e: any) => `"${(e.verbatimQuote || e.claimText || "").slice(0, 120)}" (${e.documentDisplayLabel})`).join("; ")}`;
-        }
-        return entry;
-      }).join("\n");
+      // Build slides deterministically
+      const generatedSlides: Array<{ slideType: string; title: string; content: string; notes: string; layout: string; sourceCitations: any[]; metadata: any }> = [];
 
-      const entitySummary = entities.slice(0, 20).map((e: any) => `${e.name} (${e.type})`).join(", ");
-      const eventSummary = events.slice(0, 10).map((e: any) => `${e.dateOccurred || "undated"}: ${e.description?.slice(0, 100)}`).join("\n");
-
-      const systemPrompt = `You are a forensic presentation builder. Create a courtroom-ready slide deck from the case evidence below.
-
-Rules:
-1. First slide: title slide with case name and one-sentence thesis
-2. Build a logical narrative arc: Background → Key Findings → Evidence → Timeline → Entities → Conclusion
-3. Each finding slide should cite specific evidence (document names, quotes)
-4. Use clear, factual language suitable for a judge, mediator, or advocate
-5. Include speaker notes with talking points for each slide
-6. 8-15 slides total depending on evidence density
-
-CASE: ${caseData.name} (${caseData.domain || "General"})
-DESCRIPTION: ${caseData.description || "No description"}
-DOCUMENTS: ${docs.length} analyzed
-
-FINDINGS:
-${findingSummary || "No findings yet"}
-
-KEY ENTITIES: ${entitySummary || "None"}
-
-TIMELINE:
-${eventSummary || "No events"}
-
-Respond in this exact JSON format:
-{"slides": [{"slideType": "title|finding|evidence_quote|timeline|entity_map|summary", "title": "...", "content": "markdown content", "notes": "speaker notes", "layout": "default|split|full_quote|evidence_grid", "sourceCitations": [{"documentName": "...", "quote": "..."}], "metadata": {"significance": "high|medium|low"}}]}`;
-
-      const response = await invokeLLM({
-        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: "Generate the courtroom presentation slides." }],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "presentation_slides",
-            strict: true,
-            schema: {
-              type: "object",
-              properties: {
-                slides: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      slideType: { type: "string", enum: ["title", "finding", "evidence_quote", "timeline", "entity_map", "summary"] },
-                      title: { type: "string" },
-                      content: { type: "string" },
-                      notes: { type: "string" },
-                      layout: { type: "string", enum: ["default", "split", "full_quote", "evidence_grid"] },
-                      sourceCitations: {
-                        type: "array",
-                        items: {
-                          type: "object",
-                          properties: {
-                            documentName: { type: "string" },
-                            quote: { type: "string" },
-                          },
-                          required: ["documentName", "quote"],
-                          additionalProperties: false,
-                        },
-                      },
-                      metadata: {
-                        type: "object",
-                        properties: {
-                          significance: { type: "string", enum: ["high", "medium", "low"] },
-                        },
-                        required: ["significance"],
-                        additionalProperties: false,
-                      },
-                    },
-                    required: ["slideType", "title", "content", "notes", "layout", "sourceCitations", "metadata"],
-                    additionalProperties: false,
-                  },
-                },
-              },
-              required: ["slides"],
-              additionalProperties: false,
-            },
-          },
-        },
+      // Slide 1: Title
+      generatedSlides.push({
+        slideType: "title",
+        title: caseData.name || "Case Presentation",
+        content: `${caseData.description || "Evidence presentation"}\n\n${docs.length} documents analyzed \u2022 ${findings.length} findings \u2022 ${entities.length} entities identified`,
+        notes: caseData.description || "",
+        layout: "default",
+        sourceCitations: [],
+        metadata: { significance: "high" },
       });
 
-      const parsed = JSON.parse((response.choices[0].message.content as unknown as string) || "{ \"slides\": [] }");
-      const generatedSlides = parsed.slides || [];
+      // Slide 2: Summary
+      const findingTypes = Array.from(new Set(findings.map((f: any) => f.findingType || "general").filter(Boolean)));
+      generatedSlides.push({
+        slideType: "summary",
+        title: "Case Overview",
+        content: `**Domain:** ${caseData.domain || "General"}\n\n**Key issue areas:** ${findingTypes.slice(0, 5).join(", ") || "Under analysis"}\n\n**Evidence base:** ${docs.length} document${docs.length === 1 ? "" : "s"} analyzed\n\n**Findings:** ${findings.length} issue${findings.length === 1 ? "" : "s"} identified`,
+        notes: "Overview of case scope and evidence base.",
+        layout: "default",
+        sourceCitations: [],
+        metadata: { significance: "high" },
+      });
+
+      // Slides 3-N: One per finding (up to 10)
+      for (const finding of findings.slice(0, 10)) {
+        const f = finding as any;
+        const citations: any[] = [];
+        let evidenceContent = "";
+
+        if (f.backingEvidence?.length) {
+          for (const ev of f.backingEvidence.slice(0, 3)) {
+            const quote = (ev.verbatimQuote || ev.claimText || "").slice(0, 200);
+            const docName = ev.documentDisplayLabel || "Document";
+            citations.push({ documentName: docName, quote });
+            evidenceContent += `\n\n> \"${quote}\" \u2014 *${docName}*`;
+          }
+        }
+
+        generatedSlides.push({
+          slideType: "finding",
+          title: f.title || "Finding",
+          content: `${f.description || ""}${evidenceContent}`,
+          notes: f.description || "",
+          layout: citations.length > 0 ? "split" : "default",
+          sourceCitations: citations,
+          metadata: { significance: f.significance === "high" ? "high" : f.significance === "low" ? "low" : "medium" },
+        });
+      }
+
+      // Entity slide (if entities exist)
+      if (entities.length > 0) {
+        const entityList = entities.slice(0, 15).map((e: any) => `- **${e.name}** (${e.type || "unknown"})`).join("\n");
+        generatedSlides.push({
+          slideType: "entity_map",
+          title: "Key Entities",
+          content: entityList,
+          notes: `${entities.length} entities identified across case documents.`,
+          layout: "evidence_grid",
+          sourceCitations: [],
+          metadata: { significance: "medium" },
+        });
+      }
+
+      // Timeline slide (if events exist)
+      if (events.length > 0) {
+        const timelineContent = events.slice(0, 10).map((e: any) =>
+          `- **${e.dateOccurred || "Undated"}:** ${(e.description || "").slice(0, 150)}`
+        ).join("\n");
+        generatedSlides.push({
+          slideType: "timeline",
+          title: "Timeline of Events",
+          content: timelineContent,
+          notes: `${events.length} events in chronological order.`,
+          layout: "default",
+          sourceCitations: [],
+          metadata: { significance: "medium" },
+        });
+      }
 
       // Clear existing slides and insert generated ones
       const { presentationSlides: psTable } = await import("../drizzle/schema");
@@ -1766,47 +1601,20 @@ Respond in this exact JSON format:
       return { slide_count: insertedIds.length, slide_ids: insertedIds };
     }),
 
-  // Refine a single slide's content with LLM
+  // TODO: Slide refinement requires manual editing via updateSlide endpoint.
+  // This endpoint now appends the instruction as a note and returns the slide unchanged.
   refineSlide: protectedProcedure
     .input(z.object({ presentationId: z.number(), slideId: z.number(), instruction: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      const pres = await verifyPresentationWriteAccess(input.presentationId, ctx.user.id);
+      await verifyPresentationWriteAccess(input.presentationId, ctx.user.id);
       const slide = await db_helpers.getSlide(input.slideId);
       if (!slide || slide.presentationId !== input.presentationId) throw new TRPCError({ code: "NOT_FOUND", message: "Slide not found" });
 
-      const { invokeLLM } = await import("./_core/llm");
-      const response = await invokeLLM({
-        messages: [
-          { role: "system", content: `You are editing a courtroom presentation slide. Current slide:\nTitle: ${slide.title}\nContent: ${slide.content}\nNotes: ${slide.notes || "none"}\n\nApply the user's instruction and return the updated slide. Keep the tone factual and evidence-based. Respond in JSON: {"title": "...", "content": "...", "notes": "..."}` },
-          { role: "user", content: input.instruction },
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "refined_slide",
-            strict: true,
-            schema: {
-              type: "object",
-              properties: {
-                title: { type: "string" },
-                content: { type: "string" },
-                notes: { type: "string" },
-              },
-              required: ["title", "content", "notes"],
-              additionalProperties: false,
-            },
-          },
-        },
-      });
+      // Append instruction to notes so the user's intent is preserved
+      const updatedNotes = [slide.notes || "", `[Edit request: ${input.instruction}]`].filter(Boolean).join("\n");
+      await db_helpers.updateSlide(input.slideId, { notes: updatedNotes });
 
-      const parsed = JSON.parse((response.choices[0].message.content as unknown as string) || "{}");
-      await db_helpers.updateSlide(input.slideId, {
-        title: parsed.title || slide.title,
-        content: parsed.content || slide.content,
-        notes: parsed.notes || slide.notes,
-      });
-
-      return { success: true, title: parsed.title, content: parsed.content, notes: parsed.notes };
+      return { success: true, title: slide.title, content: slide.content, notes: updatedNotes };
     }),
 
   // Export presentation as printable HTML (print to PDF)
