@@ -164,15 +164,17 @@ async function startServer() {
 
   app.use("/api/ai", aiInspectRouter);
   app.use("/api/system", requireExpressAdmin, systemVisibilityRouter);
-  app.use("/api/conveyor", conveyorRouter);
+  app.use("/api/conveyor", requireExpressAdmin, conveyorRouter);
   app.use("/api/civic-map", civicMapRouter);
   app.use("/api/atlas", atlasProxyRouter);
+  app.use("/api/ingestion-control", requireExpressAdmin);
   app.use("/api/ingestion-control", ingestion_control_read_cache_router);
   app.use("/api/ingestion-control", substrate_readiness_router);
   app.use("/api/ingestion-control", ingestion_control_rest_router);
   app.use("/api/docket", docket_router);
   app.use("/api/prism", prism_verification_router);
   registerUploadRoute(app);
+  app.use("/api/executor", requireExpressAdmin);
   registerExecutorRoutes(app);
 
   if (process.env.NODE_ENV === "development") await setupVite(app, server);
