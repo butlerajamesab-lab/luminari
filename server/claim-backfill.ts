@@ -3,16 +3,14 @@
  * 
  * One-time surgical pass to link existing claims to existing findings.
  * 
- * Strategy: Document-scoped pre-filtering.
+ * Strategy: Document-scoped pre-filtering + keyword overlap matching.
  * 1. Parse document IDs from finding description ("Document XXXXX states...")
  * 2. Load only claims from those specific documents (~19 claims/doc avg)
- * 3. Send one LLM call per finding with the pre-filtered candidate set
+ * 3. Use deterministic keyword overlap to match findings to claims
  * 
- * This reduces from ~117,000 LLM calls to ~322 calls.
- * No new claims are created. No documents are re-extracted.
+ * No LLM calls. Matching is based on token overlap and document ID references.
  */
 
-import { invokeLLMDeterministic } from "./_core/llm";
 import { createHash } from "crypto";
 import * as dbHelpers from "./db";
 import { db } from "./db";
@@ -38,6 +36,35 @@ interface BackfillSummary {
   testStubsCleaned: number;
 }
 
+// ─── Stop Words ───
+
+const STOP_WORDS = new Set([
+  "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
+  "have", "has", "had", "do", "does", "did", "will", "would", "could",
+  "should", "may", "might", "shall", "can", "need", "dare", "ought",
+  "used", "to", "of", "in", "for", "on", "with", "at", "by", "from",
+  "as", "into", "through", "during", "before", "after", "above", "below",
+  "between", "out", "off", "over", "under", "again", "further", "then",
+  "once", "here", "there", "when", "where", "why", "how", "all", "each",
+  "every", "both", "few", "more", "most", "other", "some", "such", "no",
+  "nor", "not", "only", "own", "same", "so", "than", "too", "very",
+  "just", "because", "but", "and", "or", "if", "while", "that", "this",
+  "these", "those", "it", "its", "they", "them", "their", "we", "our",
+  "you", "your", "he", "him", "his", "she", "her", "i", "me", "my",
+  "also", "which", "who", "whom", "what", "about", "up",
+]);
+
+// ─── Tokenization ───
+
+function tokenize(text: string): Set<string> {
+  const words = text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, " ")
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !STOP_WORDS.has(w));
+  return new Set(words);
+}
+
 // ─── Document Reference Extraction ───
 
 /**
@@ -50,14 +77,11 @@ export function extractDocumentRefs(description: string): number[] {
   return ids.filter(id => !isNaN(id) && id > 0);
 }
 
-// ─── Claim Matching via LLM ───
+// ─── Claim Matching via Keyword Overlap ───
 
 /**
  * Given a finding and a pre-filtered set of candidate claims (from referenced documents),
- * use LLM to identify which claims directly support the finding.
- * 
- * With document-scoped pre-filtering, candidate sets are typically 10-50 claims,
- * so this is always a single LLM call.
+ * use deterministic keyword overlap to identify which claims directly support the finding.
  */
 async function matchClaimsToFinding(
   finding: { id: number | string; title: string | null; description: string | null; findingType: string | null },
@@ -67,99 +91,41 @@ async function matchClaimsToFinding(
     return { matchedIds: [], confidence: "low" };
   }
 
-  // With document-scoped filtering, batches are small enough for a single call
-  // But still batch at 100 as a safety valve
-  const BATCH_SIZE = 100;
-  const allMatchedIds: string[] = [];
+  // Tokenize the finding description
+  const findingText = [finding.title || "", finding.description || ""].join(" ");
+  const findingTokens = tokenize(findingText);
 
-  for (let i = 0; i < candidateClaims.length; i += BATCH_SIZE) {
-    const batch = candidateClaims.slice(i, i + BATCH_SIZE);
-    const batchIds = await matchClaimBatch(finding, batch);
-    allMatchedIds.push(...batchIds);
+  if (findingTokens.size === 0) {
+    return { matchedIds: [], confidence: "low" };
   }
 
-  const confidence = allMatchedIds.length >= 3 ? "high" 
-    : allMatchedIds.length >= 1 ? "medium" 
+  // Extract document IDs referenced in the finding
+  const findingDocRefs = new Set(
+    extractDocumentRefs(finding.description || "").map(String)
+  );
+
+  const matchedIds: string[] = [];
+
+  for (const claim of candidateClaims) {
+    // Check 1: Token overlap
+    const claimTokens = tokenize(claim.claimText || "");
+    const intersection = new Set([...findingTokens].filter(t => claimTokens.has(t)));
+    const overlapScore = intersection.size / findingTokens.size;
+
+    // Check 2: Document ID match
+    const docIdMatch = claim.documentId != null && findingDocRefs.has(String(claim.documentId));
+
+    // Match if overlap > 0.3 OR document ID match with any overlap
+    if (overlapScore > 0.3 || (docIdMatch && overlapScore > 0.1)) {
+      matchedIds.push(claim.id);
+    }
+  }
+
+  const confidence = matchedIds.length >= 3 ? "high"
+    : matchedIds.length >= 1 ? "medium"
     : "low";
 
-  return { matchedIds: allMatchedIds, confidence };
-}
-
-async function matchClaimBatch(
-  finding: { id: number | string; title: string | null; description: string | null; findingType: string | null },
-  batch: Array<{ id: string; claimText: string; claimType: string | null; documentId: string | null }>
-): Promise<string[]> {
-  const claimList = batch.map(c => 
-    `[${c.id}] (doc ${c.documentId}, type: ${c.claimType}): ${c.claimText}`
-  ).join("\n");
-
-  // Derive deterministic hash from finding content + batch claim IDs
-  const backfillHash = createHash("sha256")
-    .update(`finding:${finding.id}:${finding.description}:claims:${batch.map(c => c.id).sort().join(",")}`)
-    .digest("hex");
-
-  const response = await invokeLLMDeterministic({
-    documentHash: backfillHash,
-    pass: "backfill",
-    messages: [
-      {
-        role: "system",
-        content: `You are a forensic claim matcher. Given a finding and a list of candidate claims, identify which claims directly support or are referenced by the finding.
-
-RULES:
-- Only match claims that are DIRECTLY relevant to the finding's content
-- A claim supports a finding if the finding's description references the same facts, events, entities, or quotes as the claim
-- Do NOT match tangentially related claims
-- Return ONLY the claim IDs that are direct matches
-- If no claims match, return an empty array
-- Return valid JSON only`
-      },
-      {
-        role: "user",
-        content: `FINDING [${finding.id}]:
-Title: ${finding.title ?? ""}
-Type: ${finding.findingType ?? ""}
-Description: ${finding.description ?? ""}
-
-CANDIDATE CLAIMS:
-${claimList}
-
-Return JSON: { "matched_claim_ids": [<ids>] }`
-      }
-    ],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "claim_match",
-        strict: true,
-        schema: {
-          type: "object",
-          properties: {
-            matched_claim_ids: {
-              type: "array",
-              items: { type: "integer" }
-            }
-          },
-          required: ["matched_claim_ids"],
-          additionalProperties: false,
-        }
-      }
-    }
-  });
-
-  const raw = response?.choices?.[0]?.message?.content;
-  const content = typeof raw === "string" ? raw : "";
-  if (!content) return [];
-
-  try {
-    const parsed = JSON.parse(content);
-    const ids = parsed.matched_claim_ids || [];
-    // Validate: only return IDs that exist in the batch
-    const validIds = new Set(batch.map(c => c.id));
-    return ids.filter((id: string) => validIds.has(id));
-  } catch {
-    return [];
-  }
+  return { matchedIds, confidence };
 }
 
 // ─── Finding Linkage Updater ───
