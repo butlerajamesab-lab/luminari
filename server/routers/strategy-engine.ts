@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
-import { invokeLLMInteractive } from "../_core/llm";
 import { db } from "../db";
 import { eq, and, desc } from "drizzle-orm";
 import {
@@ -38,38 +37,53 @@ export const strategyEngineRouter = router({
       const caseClaims = await db.select().from(claims).where(eq(claims.caseId, String(input.caseId)));
       const caseEvents = await db.select().from(events).where(eq(events.caseId, String(input.caseId)));
 
-      const entitySummary = caseEntities.slice(0, 30).map((e: any) => `${e.name} (${e.type})`).join(", ");
-      const claimSummary = caseClaims.slice(0, 20).map((c: any) => `${c.claimType}: ${c.claimText?.slice(0, 120)}`).join("\n");
-      const eventSummary = caseEvents.slice(0, 20).map((e: any) => `${e.eventType}: ${e.description?.slice(0, 120)}`).join("\n");
+      // Deterministic matter profile extraction
+      const DATE_RE = /\b(\d{4}-\d{2}-\d{2}|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},?\s+\d{4})\b/i;
 
-      const response = await invokeLLMInteractive({
-        messages: [
-          {
-            role: "system",
-            content: `You are a legal strategy analyst. Given case data, produce a structured matter profile. Return JSON:
-{
-  "jurisdiction": "state name or Federal",
-  "domain": "employment_discrimination|wage_theft|retaliation|harassment|wrongful_termination|other",
-  "incidentDate": "YYYY-MM-DD or null",
-  "filingDeadline": "YYYY-MM-DD or null",
-  "opposingParties": ["array of opposing party names"],
-  "keyFacts": ["array of key factual assertions"],
-  "riskFactors": ["array of risk factors"],
-  "statusSummary": "2-3 sentence matter summary"
-}`
-          },
-          {
-            role: "user",
-            content: `Case: ${caseRow.name}\nDomain: ${caseRow.domain ?? "general"}\n\nEntities: ${entitySummary}\n\nClaims:\n${claimSummary}\n\nEvents:\n${eventSummary}`
-          }
-        ],
-        response_format: { type: "json_object" },
-      });
+      // jurisdiction: first government_agency entity's name, else "Unknown"
+      const agencyEntity = caseEntities.find((e: any) => e.type === "government_agency");
+      const jurisdiction = agencyEntity
+        ? (agencyEntity.name ?? "Unknown")
+        : "Unknown";
 
-      const content = typeof response.choices[0]?.message?.content === "string"
-        ? response.choices[0].message.content : "";
-      let profile: any;
-      try { profile = JSON.parse(content); } catch { profile = {}; }
+      // incidentDate: first event that has a date
+      const firstEventWithDate = caseEvents.find((e: any) => e.eventDate || (e.description && DATE_RE.test(e.description)));
+      let incidentDate: string | null = null;
+      if (firstEventWithDate?.eventDate) {
+        incidentDate = typeof firstEventWithDate.eventDate === "number"
+          ? new Date(firstEventWithDate.eventDate).toISOString().split("T")[0]
+          : String(firstEventWithDate.eventDate);
+      } else if (firstEventWithDate?.description) {
+        const m = firstEventWithDate.description.match(DATE_RE);
+        if (m) incidentDate = m[0];
+      }
+
+      // opposingParties: entities that are org or person but not the claimant
+      const opposingParties = caseEntities
+        .filter((e: any) => e.type === "organization" || e.type === "person" || e.type === "corporation")
+        .map((e: any) => e.name)
+        .filter(Boolean);
+
+      // keyFacts: top 5 claims by evidentiaryWeight (or first 5)
+      const sortedClaims = [...caseClaims].sort((a: any, b: any) =>
+        (parseFloat(String(b.evidentiaryWeight ?? 0)) - parseFloat(String(a.evidentiaryWeight ?? 0)))
+      );
+      const keyFacts = sortedClaims.slice(0, 5).map((c: any) => c.claimText ?? "").filter(Boolean);
+
+      const domain = caseRow.domain ?? "general";
+      const claimCount = caseClaims.length;
+      const entityCount = caseEntities.length;
+
+      const profile = {
+        jurisdiction,
+        domain,
+        incidentDate,
+        filingDeadline: null, // requires legal knowledge — mark as requires_review
+        opposingParties,
+        keyFacts,
+        riskFactors: ["Filing deadline unknown", "Evidence gaps may exist"],
+        statusSummary: `Case in ${domain} with ${claimCount} claims and ${entityCount} entities identified.`,
+      };
 
       const [inserted] = await db.insert(strategyMatterProfile).values({
         caseId: input.caseId,
@@ -107,38 +121,26 @@ export const strategyEngineRouter = router({
         return { facts_inserted: 0, message: "No evidence found. Upload and analyze documents first." };
       }
 
-      const evidenceText = evidenceItems.map((e, i) =>
-        `[${i + 1}] (${e.source} #${e.id}) ${e.text}`
-      ).join("\n");
+      // Deterministic fact matrix — map each evidence item directly
+      const FACT_DATE_RE = /\b(\d{4}-\d{2}-\d{2}|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},?\s+\d{4})\b/i;
+      const SOURCE_TYPE_TO_FACT_TYPE: Record<string, string> = {
+        quote: "statement",
+        finding: "event",
+        claim: "action",
+      };
 
-      const response = await invokeLLMInteractive({
-        messages: [
-          {
-            role: "system",
-            content: `You are a legal fact extraction engine. Extract structured facts for a strategy fact matrix. Return JSON:
-{"facts":[{
-  "factText": "concise fact statement",
-  "factType": "action|statement|event|condition|relationship|financial|temporal|procedural",
-  "actor": "name or null",
-  "dateOccurred": "YYYY-MM-DD or null",
-  "sourceType": "quote|finding|claim",
-  "sourceId": number,
-  "relevanceScore": number (0.00-1.00)
-}]}
-Extract only explicitly stated facts. Maximum 50 facts.`
-          },
-          { role: "user", content: evidenceText }
-        ],
-        response_format: { type: "json_object" },
+      const facts: any[] = evidenceItems.slice(0, 50).map((e) => {
+        const dateMatch = e.text.match(FACT_DATE_RE);
+        return {
+          factText: e.text.slice(0, 500),
+          factType: SOURCE_TYPE_TO_FACT_TYPE[e.source] ?? "statement",
+          actor: null, // NER not available — leave for human review
+          dateOccurred: dateMatch ? dateMatch[0] : null,
+          sourceType: e.source,
+          sourceId: e.id,
+          relevanceScore: 0.5,
+        };
       });
-
-      const content = typeof response.choices[0]?.message?.content === "string"
-        ? response.choices[0].message.content : "";
-      let facts: any[];
-      try {
-        const parsed = JSON.parse(content);
-        facts = Array.isArray(parsed) ? parsed : (parsed.facts ?? []);
-      } catch { facts = []; }
 
       let inserted = 0;
       for (const fact of facts.slice(0, 50)) {
@@ -178,47 +180,52 @@ Extract only explicitly stated facts. Maximum 50 facts.`
 
       const catalog = await db.select().from(strategyClaimCatalog);
 
-      const factSummary = facts.slice(0, 40).map((f: any) =>
-        `[${f.factType}] ${f.factText} (relevance: ${f.relevanceScore})`
-      ).join("\n");
+      // Deterministic claim candidate generation — map unique fact types to candidates
+      const uniqueFactTypes = [...new Set(facts.map((f: any) => f.factType).filter(Boolean))];
 
-      const catalogSummary = catalog.map((c: any) =>
-        `${c.id}. ${c.claimType} (${c.jurisdiction}) — Elements: ${JSON.stringify(c.elementsRequired)}`
-      ).join("\n");
+      // Map each unique claimType from catalog that has any matching fact types
+      const candidateMap = new Map<string, any>();
+      for (const catalogEntry of catalog) {
+        const claimType = catalogEntry.claimType;
+        if (!claimType || candidateMap.has(claimType)) continue;
+        // Find fact types that exist for this claim
+        const elementsSatisfied = uniqueFactTypes.filter(ft =>
+          (catalogEntry.elementsRequired as string[] ?? []).some((el: string) =>
+            el.toLowerCase().includes(ft) || ft.includes(el.toLowerCase())
+          )
+        );
+        candidateMap.set(claimType, {
+          catalogId: catalogEntry.id,
+          claimType,
+          viabilityScore: 0.5,
+          elementsSatisfied,
+          elementsMissing: ["Requires legal review"],
+          supportingFactIds: facts.slice(0, 5).map((f: any) => f.id).filter(Boolean),
+          solStatus: "unknown",
+          recommendation: "investigate_further",
+          notes: "Automated candidate — requires human assessment.",
+        });
+        if (candidateMap.size >= 8) break;
+      }
 
-      const response = await invokeLLMInteractive({
-        messages: [
-          {
-            role: "system",
-            content: `You are a legal claim matching engine. Given a matter profile, fact matrix, and claim catalog, identify viable claim candidates. Return JSON:
-{"candidates":[{
-  "catalogId": number,
-  "claimType": "string",
-  "viabilityScore": number (0.00-1.00),
-  "elementsSatisfied": ["elements with supporting facts"],
-  "elementsMissing": ["elements lacking evidence"],
-  "supportingFactIds": [fact matrix IDs],
-  "solStatus": "within|expiring_soon|expired|unknown",
-  "recommendation": "pursue|investigate_further|weak|barred",
-  "notes": "brief rationale"
-}]}
-Be conservative. Maximum 8 candidates.`
-          },
-          {
-            role: "user",
-            content: `Matter: ${profile.domain}, ${profile.jurisdiction}\nKey Facts: ${JSON.stringify(profile.keyFacts)}\n\nFact Matrix:\n${factSummary}\n\nClaim Catalog:\n${catalogSummary}`
-          }
-        ],
-        response_format: { type: "json_object" },
-      });
+      // If catalog is empty or no matches, create one candidate per unique factType
+      if (candidateMap.size === 0) {
+        for (const ft of uniqueFactTypes.slice(0, 8)) {
+          candidateMap.set(ft, {
+            catalogId: null,
+            claimType: ft,
+            viabilityScore: 0.5,
+            elementsSatisfied: [ft],
+            elementsMissing: ["Requires legal review"],
+            supportingFactIds: facts.filter((f: any) => f.factType === ft).map((f: any) => f.id),
+            solStatus: "unknown",
+            recommendation: "investigate_further",
+            notes: "Automated candidate — requires human assessment.",
+          });
+        }
+      }
 
-      const content = typeof response.choices[0]?.message?.content === "string"
-        ? response.choices[0].message.content : "";
-      let candidates: any[];
-      try {
-        const parsed = JSON.parse(content);
-        candidates = Array.isArray(parsed) ? parsed : (parsed.candidates ?? []);
-      } catch { candidates = []; }
+      const candidates = [...candidateMap.values()];
 
       let inserted = 0;
       for (const cand of candidates.slice(0, 8)) {
@@ -263,36 +270,34 @@ Be conservative. Maximum 8 candidates.`
 
       let assessmentsCreated = 0;
       for (const cand of candidates) {
-        const factText = facts.slice(0, 20).map((f: any) => `[${f.factType}] ${f.factText}`).join("\n");
+        // Deterministic viability scoring
+        const satisfied = (cand.elementsSatisfied as string[]) ?? [];
+        const missing = (cand.elementsMissing as string[]) ?? [];
+        const totalElements = satisfied.length + missing.length;
+        const elementScore = totalElements > 0 ? satisfied.length / totalElements : 0.5;
 
-        const response = await invokeLLMInteractive({
-          messages: [
-            {
-              role: "system",
-              content: `You are a legal viability assessor. Evaluate claim viability. Return JSON:
-{
-  "overallScore": number (0.00-1.00),
-  "elementScore": number (0.00-1.00),
-  "evidenceScore": number (0.00-1.00),
-  "contradictionPenalty": number (0.00-1.00, 0=no contradictions),
-  "weakJointPenalty": number (0.00-1.00, 0=no weak joints),
-  "solScore": number (0.00-1.00, 1=safely within SOL),
-  "patternBonus": number (0.00-0.20, bonus for pattern evidence),
-  "assessmentDetails": {"elementAnalysis":[{"element":"name","strength":"strong|moderate|weak|absent","evidence":"note"}],"weaknesses":[],"recommendations":[]}
-}`
-            },
-            {
-              role: "user",
-              content: `Claim: ${cand.claimType}\nElements Satisfied: ${JSON.stringify(cand.elementsSatisfied)}\nElements Missing: ${JSON.stringify(cand.elementsMissing)}\nSOL: ${cand.solStatus}\n\nFacts:\n${factText}`
-            }
-          ],
-          response_format: { type: "json_object" },
-        });
+        const supportingFactIds = (cand.supportingFactIds as number[]) ?? [];
+        const evidenceScore = Math.min(1.0, supportingFactIds.length / 10);
 
-        const content = typeof response.choices[0]?.message?.content === "string"
-          ? response.choices[0].message.content : "";
-        let assessment: any;
-        try { assessment = JSON.parse(content); } catch { assessment = {}; }
+        const solStatus = cand.solStatus ?? "unknown";
+        const solScore = solStatus === "within" ? 1.0 : solStatus === "expired" ? 0 : 0.5;
+
+        const overallScore = (elementScore + evidenceScore + solScore) / 3;
+
+        const assessment = {
+          overallScore: parseFloat(overallScore.toFixed(2)),
+          elementScore: parseFloat(elementScore.toFixed(2)),
+          evidenceScore: parseFloat(evidenceScore.toFixed(2)),
+          contradictionPenalty: 0,
+          weakJointPenalty: 0,
+          solScore: parseFloat(solScore.toFixed(2)),
+          patternBonus: 0,
+          assessmentDetails: {
+            elementAnalysis: [],
+            weaknesses: ["Automated scoring — requires human review"],
+            recommendations: ["Consult legal counsel"],
+          },
+        };
 
         await db.insert(strategyViabilityAssessment).values({
           caseId: input.caseId,
@@ -438,42 +443,16 @@ Be conservative. Maximum 8 candidates.`
 
       let tasksCreated = 0;
       for (const [candId, candLinks] of Object.entries(byCand)) {
-        const elemList = candLinks.map((l: any) => `${l.element} (${l.linkStrength})`).join(", ");
-
-        const response = await invokeLLMInteractive({
-          messages: [
-            {
-              role: "system",
-              content: `You are a legal evidence strategist. For each weak/absent element, suggest evidence to obtain. Return JSON:
-{"tasks":[{
-  "element": "element name",
-  "suggestedEvidenceType": "type of evidence",
-  "suggestedSource": "where to obtain it",
-  "taskPriority": "critical|high|medium|low"
-}]}`
-            },
-            { role: "user", content: `Weak/absent elements for candidate #${candId}:\n${elemList}` }
-          ],
-          response_format: { type: "json_object" },
-        });
-
-        const content = typeof response.choices[0]?.message?.content === "string"
-          ? response.choices[0].message.content : "";
-        let tasks: any[];
-        try {
-          const parsed = JSON.parse(content);
-          tasks = Array.isArray(parsed) ? parsed : (parsed.tasks ?? []);
-        } catch { tasks = []; }
-
-        for (const task of tasks) {
+        // Deterministic missing evidence tasks — one task per weak/absent element
+        for (const link of candLinks) {
           await db.insert(strategyMissingEvidenceTasks).values({
             caseId: input.caseId,
             candidateId: Number(candId),
-            element: task.element ?? "unknown",
-            currentStrength: (candLinks.find((l: any) => l.element === task.element)?.linkStrength as any) ?? "absent",
-            suggestedEvidenceType: task.suggestedEvidenceType ?? null,
-            suggestedSource: task.suggestedSource ?? null,
-            taskPriority: task.taskPriority ?? "medium",
+            element: link.element ?? "unknown",
+            currentStrength: (link.linkStrength as any) ?? "absent",
+            suggestedEvidenceType: "documentation",
+            suggestedSource: "Case records or discovery",
+            taskPriority: "medium",
             taskStatus: "open",
             createdAt: now,
             updatedAt: now,
@@ -510,49 +489,51 @@ Be conservative. Maximum 8 candidates.`
           eq(strategyDeadlineEngine.matterProfileId, input.matterProfileId),
         ));
 
-      const candSummary = candidates.map((c: any) => {
-        const assess = assessments.find((a: any) => a.candidateId === c.id);
-        const dl = deadlines.find((d: any) => d.claimType === c.claimType);
-        return `- ${c.claimType} (viability: ${c.viabilityScore}, overall: ${assess?.overallScore ?? "?"}, SOL days: ${dl?.daysRemaining ?? "?"})`;
-      }).join("\n");
+      // Deterministic strategy path generation — one path per forum for each viable candidate
+      const viableCandidates = candidates.filter((c: any) =>
+        parseFloat(String(c.viabilityScore ?? 0)) > 0.3
+      );
 
-      const forumSummary = forumRulesList.map((f: any) =>
-        `${f.id}. ${f.forumName} (${f.forumType}) — Timeline: ${f.typicalTimeline}, Cost: ${f.costEstimate}`
-      ).join("\n");
+      // Build paths: one per (viable candidate, forum rule) pair, capped at 4
+      const pathEntries: Array<{
+        pathLabel: string;
+        claimCandidateIds: number[];
+        recommendedForum: string | null;
+        forumRuleId: number | null;
+        estimatedStrength: number;
+        estimatedTimeline: string | null;
+        riskFactors: string[];
+        advantages: string[];
+        disadvantages: string[];
+        priorityRank: number;
+      }> = [];
 
-      const response = await invokeLLMInteractive({
-        messages: [
-          {
-            role: "system",
-            content: `You are a legal strategy architect. Generate 2-4 strategy paths combining claims + forum + approach. Return JSON:
-{"paths":[{
-  "pathLabel": "descriptive name",
-  "claimCandidateIds": [candidate IDs],
-  "recommendedForum": "forum name",
-  "forumRuleId": number,
-  "estimatedStrength": number (0.00-1.00),
-  "estimatedTimeline": "e.g., 12-18 months",
-  "riskFactors": ["risks"],
-  "advantages": ["advantages"],
-  "disadvantages": ["disadvantages"],
-  "priorityRank": number (1=best)
-}]}`
-          },
-          {
-            role: "user",
-            content: `Matter: ${profile.domain}, ${profile.jurisdiction}\n\nCandidates:\n${candSummary}\n\nForums:\n${forumSummary}`
-          }
-        ],
-        response_format: { type: "json_object" },
-      });
+      const forumsToUse = forumRulesList.length > 0 ? forumRulesList : [null];
+      outer: for (const cand of viableCandidates) {
+        for (const forum of forumsToUse) {
+          pathEntries.push({
+            pathLabel: forum
+              ? `${cand.claimType} via ${forum.forumName}`
+              : `${cand.claimType} — direct filing`,
+            claimCandidateIds: [cand.id],
+            recommendedForum: forum?.forumName ?? null,
+            forumRuleId: forum?.id ?? null,
+            estimatedStrength: parseFloat(String(cand.viabilityScore ?? 0.5)),
+            estimatedTimeline: forum?.typicalTimeline ?? null,
+            riskFactors: ["Automated assessment — requires legal review"],
+            advantages: [],
+            disadvantages: [],
+            priorityRank: pathEntries.length + 1,
+          });
+          if (pathEntries.length >= 4) break outer;
+        }
+      }
 
-      const content = typeof response.choices[0]?.message?.content === "string"
-        ? response.choices[0].message.content : "";
-      let paths: any[];
-      try {
-        const parsed = JSON.parse(content);
-        paths = Array.isArray(parsed) ? parsed : (parsed.paths ?? parsed.strategies ?? []);
-      } catch { paths = []; }
+      // Sort by estimatedStrength descending and reassign priorityRank
+      pathEntries.sort((a, b) => b.estimatedStrength - a.estimatedStrength);
+      pathEntries.forEach((p, i) => { p.priorityRank = i + 1; });
+
+      const paths = pathEntries;
 
       let pathsCreated = 0;
       for (const path of paths.slice(0, 4)) {
