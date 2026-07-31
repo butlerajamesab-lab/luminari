@@ -2,11 +2,11 @@
  * Entity Deduplication Scanner
  * 
  * Container-aware: never suggests merges across different containers.
- * Uses LLM to detect similar entity names and generate reviewable suggestions.
+ * Uses deterministic string comparison (Levenshtein distance, normalized matching,
+ * alias overlap) to detect similar entity names and generate reviewable suggestions.
  * No automatic merges — all suggestions require human approval.
  */
 import * as db from "./db";
-import { invokeLLMDeterministic } from "./_core/llm";
 import { createHash } from "crypto";
 
 interface DedupCandidate {
@@ -18,7 +18,7 @@ interface DedupCandidate {
 
 /**
  * Run deduplication scan for a case.
- * Groups entities by type, then sends batches to LLM for similarity analysis.
+ * Groups entities by type, then compares pairs using string similarity.
  * Container-aware: only compares entities that share the same case (and thus the same container).
  */
 export async function runDedupScan(caseId: number): Promise<number> {
@@ -37,13 +37,13 @@ export async function runDedupScan(caseId: number): Promise<number> {
   for (const [type, entitiesOfType] of Object.entries(byType)) {
     if (entitiesOfType.length < 2) continue;
 
-    // Process in batches to stay within LLM context limits
+    // Process in batches
     const BATCH_SIZE = 80;
     for (let i = 0; i < entitiesOfType.length; i += BATCH_SIZE) {
       const batch = entitiesOfType.slice(i, i + BATCH_SIZE);
       if (batch.length < 2) continue;
 
-      const candidates = await detectDuplicatesInBatch(batch, type);
+      const candidates = detectDuplicatesInBatch(batch, type);
       for (const c of candidates) {
         await db.createMergeSuggestion({
           caseId,
@@ -60,98 +60,128 @@ export async function runDedupScan(caseId: number): Promise<number> {
   return totalSuggestions;
 }
 
-async function detectDuplicatesInBatch(
+// ─── String Normalization ───
+
+const TITLE_SUFFIXES = /\b(esq\.?|jr\.?|sr\.?|dr\.?|mr\.?|mrs\.?|ms\.?|ii|iii|iv)\b/gi;
+
+function normalizeName(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(TITLE_SUFFIXES, "")
+    .replace(/[^\w\s]/g, "")  // remove punctuation
+    .replace(/\s+/g, " ")     // collapse whitespace
+    .trim();
+}
+
+// ─── Levenshtein Distance ───
+
+function levenshtein(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+
+  // Use two rows instead of full matrix for memory efficiency
+  let prev = new Array(n + 1);
+  let curr = new Array(n + 1);
+
+  for (let j = 0; j <= n; j++) prev[j] = j;
+
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= n; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        curr[j] = prev[j - 1];
+      } else {
+        curr[j] = 1 + Math.min(prev[j - 1], prev[j], curr[j - 1]);
+      }
+    }
+    [prev, curr] = [curr, prev];
+  }
+
+  return prev[n];
+}
+
+// ─── Duplicate Detection ───
+
+function detectDuplicatesInBatch(
   entities: Array<{ id: number; name: string; type: string; description: string | null; aliases: unknown }>,
   entityType: string,
-): Promise<DedupCandidate[]> {
-  const entityList = entities.map(e => {
-    const aliasStr = Array.isArray(e.aliases) ? (e.aliases as string[]).join(", ") : "";
-    return `ID:${e.id} | Name: "${e.name}"${aliasStr ? ` | Aliases: ${aliasStr}` : ""}${e.description ? ` | Desc: ${e.description.slice(0, 100)}` : ""}`;
-  }).join("\n");
+): DedupCandidate[] {
+  const candidates: DedupCandidate[] = [];
 
-  // Derive deterministic hash from sorted entity IDs in this batch
-  const dedupHash = createHash("sha256")
-    .update(`dedup:${entityType}:${entities.map(e => e.id).sort((a, b) => a - b).join(",")}`)
-    .digest("hex");
+  for (let i = 0; i < entities.length; i++) {
+    for (let j = i + 1; j < entities.length; j++) {
+      const a = entities[i];
+      const b = entities[j];
 
-  const response = await invokeLLMDeterministic({
-    documentHash: dedupHash,
-    pass: "dedup",
-    messages: [
-      {
-        role: "system",
-        content: `You are a forensic entity deduplication assistant. You analyze lists of ${entityType} entities and identify likely duplicates — entities that refer to the same real-world person, organization, or location.
+      const normA = normalizeName(a.name);
+      const normB = normalizeName(b.name);
 
-RULES:
-1. Only flag pairs that very likely refer to the SAME real-world entity
-2. Consider name variations: "John Smith" vs "J. Smith" vs "John A. Smith" vs "Smith, John"
-3. Consider titles/suffixes: "Bradley Edwards" vs "Bradley J. Edwards, Esq."
-4. Consider abbreviations: "FBI" vs "Federal Bureau of Investigation"
-5. Consider nicknames or informal names
-6. Do NOT flag entities that are merely related (e.g., parent company vs subsidiary)
-7. Do NOT flag entities with the same common name if context suggests different people
-8. The entity with the more complete/formal name should be the target (surviving entity)
-9. Confidence: 0.9+ for near-certain matches, 0.7-0.89 for likely matches, 0.5-0.69 for possible matches
-10. Only suggest pairs with confidence >= 0.5
+      if (!normA || !normB) continue;
 
-Return a JSON array of duplicate pairs. If no duplicates found, return an empty array.`,
-      },
-      {
-        role: "user",
-        content: `Analyze these ${entityType} entities for duplicates:\n\n${entityList}`,
-      },
-    ],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "dedup_results",
-        strict: true,
-        schema: {
-          type: "object",
-          properties: {
-            pairs: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  source_id: { type: "integer", description: "ID of entity to be absorbed (less complete name)" },
-                  target_id: { type: "integer", description: "ID of surviving entity (more complete name)" },
-                  confidence: { type: "number", description: "0.0-1.0 confidence score" },
-                  reason: { type: "string", description: "Brief factual explanation of why these are likely the same entity" },
-                },
-                required: ["source_id", "target_id", "confidence", "reason"],
-                additionalProperties: false,
-              },
-            },
-          },
-          required: ["pairs"],
-          additionalProperties: false,
-        },
-      },
-    },
-  });
+      let confidence = 0;
+      let reason = "";
 
-  try {
-    const content = response.choices[0]?.message?.content as string | undefined;
-    if (!content) return [];
-    const parsed = JSON.parse(content);
-    const validIds = new Set(entities.map(e => e.id));
+      // Check 1: Exact match on normalized name
+      if (normA === normB) {
+        confidence = 0.95;
+        reason = `Normalized names are identical: "${normA}"`;
+      }
+      // Check 2: One name contains the other
+      else if (normA.includes(normB) || normB.includes(normA)) {
+        confidence = 0.85;
+        const shorter = normA.length < normB.length ? normA : normB;
+        const longer = normA.length >= normB.length ? normA : normB;
+        reason = `Name "${shorter}" is contained within "${longer}"`;
+      }
+      // Check 3: Levenshtein distance relative to max length
+      else {
+        const maxLen = Math.max(normA.length, normB.length);
+        if (maxLen > 0) {
+          const dist = levenshtein(normA, normB);
+          const ratio = dist / maxLen;
+          if (ratio < 0.2) {
+            confidence = 0.75;
+            reason = `Names are very similar (edit distance ${dist}/${maxLen}): "${a.name}" vs "${b.name}"`;
+          }
+        }
+      }
 
-    return (parsed.pairs || [])
-      .filter((p: any) =>
-        p.confidence >= 0.5 &&
-        validIds.has(p.source_id) &&
-        validIds.has(p.target_id) &&
-        p.source_id !== p.target_id
-      )
-      .map((p: any) => ({
-        sourceId: p.source_id,
-        targetId: p.target_id,
-        confidence: Math.min(1, Math.max(0, p.confidence)),
-        reason: p.reason,
-      }));
-  } catch {
-    console.error("[Dedup] Failed to parse LLM response");
-    return [];
+      // Check 4: Aliases overlap (can upgrade confidence)
+      if (confidence < 0.80) {
+        const aliasesA = Array.isArray(a.aliases) ? (a.aliases as string[]).map(x => normalizeName(x)) : [];
+        const aliasesB = Array.isArray(b.aliases) ? (b.aliases as string[]).map(x => normalizeName(x)) : [];
+
+        if (aliasesA.length > 0 && aliasesB.length > 0) {
+          const overlap = aliasesA.some(aa => aliasesB.includes(aa));
+          if (overlap) {
+            confidence = Math.max(confidence, 0.80);
+            reason = `Shared alias found between "${a.name}" and "${b.name}"`;
+          }
+        }
+
+        // Also check if one entity's name matches the other's alias
+        if (aliasesB.includes(normA) || aliasesA.includes(normB)) {
+          confidence = Math.max(confidence, 0.80);
+          reason = `One entity's name matches the other's alias: "${a.name}" / "${b.name}"`;
+        }
+      }
+
+      // Only emit if confidence meets threshold
+      if (confidence >= 0.5) {
+        // The entity with the longer/more complete name is the target (surviving entity)
+        const aIsSource = a.name.length <= b.name.length;
+        candidates.push({
+          sourceId: aIsSource ? a.id : b.id,
+          targetId: aIsSource ? b.id : a.id,
+          confidence: Math.min(1, Math.max(0, confidence)),
+          reason,
+        });
+      }
+    }
   }
+
+  return candidates;
 }
