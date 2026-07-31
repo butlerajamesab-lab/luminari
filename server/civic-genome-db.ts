@@ -322,6 +322,8 @@ export interface GenomeStats {
   active_families: number;
   total_bills: number;
   total_events: number;
+  observed_state_count: number;
+  cross_state_family_count: number;
   policy_domains: string[];
 }
 
@@ -332,12 +334,24 @@ export async function get_genome_stats(): Promise<GenomeStats> {
     active_families: string;
     total_bills: string;
     total_events: string;
+    observed_state_count: string;
+    cross_state_family_count: string;
   }>(
     `select
        (select count(*)::text from civic_genome_family) as total_families,
        (select count(*)::text from civic_genome_family where family_status = 'active') as active_families,
        (select count(*)::text from civic_genome_bill) as total_bills,
-       (select count(*)::text from civic_genome_event) as total_events`
+       (select count(*)::text from civic_genome_event) as total_events,
+       (select count(distinct state_code)::text from civic_genome_bill) as observed_state_count,
+       (
+         select count(*)::text
+           from (
+             select family_id
+               from civic_genome_bill
+              group by family_id
+             having count(distinct state_code) > 1
+           ) cross_state_families
+       ) as cross_state_family_count`
   );
   const { rows: domain_rows } = await pool.query<{ policy_domain: string }>(
     `select distinct policy_domain from civic_genome_family order by policy_domain`
@@ -348,6 +362,8 @@ export async function get_genome_stats(): Promise<GenomeStats> {
     active_families: parseInt(r.active_families, 10),
     total_bills: parseInt(r.total_bills, 10),
     total_events: parseInt(r.total_events, 10),
+    observed_state_count: parseInt(r.observed_state_count, 10),
+    cross_state_family_count: parseInt(r.cross_state_family_count, 10),
     policy_domains: domain_rows.map((d) => d.policy_domain),
   };
 }

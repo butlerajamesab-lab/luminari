@@ -22,6 +22,7 @@ import { loadLensRegistry } from "../lens-engine";
 import { serveStatic, setupVite } from "./vite";
 import { livenessPayload, sendDatabaseDiagnostic, SUPABASE_PROJECT } from "./health-diagnostics";
 import { initializeScheduler } from "../ingestion/scheduler";
+import { run_with_database_request_context } from "../db-request-context";
 
 const runtime_fingerprint = Object.freeze({
   render_git_commit: process.env.RENDER_GIT_COMMIT || null,
@@ -113,6 +114,13 @@ async function startServer() {
   // Start timing before any route-specific or body-parsing work so slow uploads,
   // parse failures, and prematurely closed requests remain observable.
   registerSlowRequestDiagnostics(app);
+  app.use((req, _res, next) => {
+    run_with_database_request_context({
+      method: req.method,
+      path: req.path,
+      request_id: req.get("x-request-id") ?? req.get("x-render-request-id") ?? null,
+    }, next);
+  });
   registerOptionalIntegrationStubs(app);
 
   app.use(express.json({ limit: "50mb" }));

@@ -1,9 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const get_view_by_run = vi.fn();
-const get_view_by_document = vi.fn();
-const query = vi.fn();
-const release = vi.fn();
+const {
+  get_view_by_run,
+  get_view_by_document,
+  query,
+  release,
+} = vi.hoisted(() => ({
+  get_view_by_run: vi.fn(),
+  get_view_by_document: vi.fn(),
+  query: vi.fn(),
+  release: vi.fn(),
+}));
 
 vi.mock("./civic-genome-rosetta-contract", () => ({
   get_rosetta_law_view_by_extraction_run: get_view_by_run,
@@ -125,6 +132,55 @@ describe("Rosetta -> Civic Genome assembly activation", () => {
     await expect(assemble_rosetta_structural_dna({ genome_bill_id, source_document_id: 7, extraction_run_id: 42 }))
       .rejects.toThrow("rosetta_object_extraction_run_mismatch");
     expect(query).not.toHaveBeenCalled();
+  });
+
+  it("rejects an in-progress Rosetta extraction before persistence", async () => {
+    const in_progress = law_view();
+    in_progress.run_status = "in_progress";
+    in_progress.completed_at = null;
+    get_view_by_run.mockResolvedValue(in_progress);
+
+    await expect(assemble_rosetta_structural_dna({
+      genome_bill_id,
+      source_document_id: 7,
+      extraction_run_id: 42,
+    })).rejects.toThrow("rosetta_extraction_not_completed");
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it("rejects failed provenance and completed empty runs", async () => {
+    const failed = law_view();
+    failed.law_view.provenanceState = "failed";
+    get_view_by_run.mockResolvedValue(failed);
+    await expect(assemble_rosetta_structural_dna({
+      genome_bill_id,
+      source_document_id: 7,
+      extraction_run_id: 42,
+    })).rejects.toThrow("rosetta_provenance_failed");
+
+    const empty = law_view();
+    empty.law_view.objects = [];
+    get_view_by_run.mockResolvedValue(empty);
+    await expect(assemble_rosetta_structural_dna({
+      genome_bill_id,
+      source_document_id: 7,
+      extraction_run_id: 42,
+    })).rejects.toThrow("rosetta_completed_run_has_no_objects");
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it("merges Rosetta output without deleting Docket source identity", async () => {
+    successful_queries(false);
+    await assemble_rosetta_structural_dna({
+      genome_bill_id,
+      source_document_id: 7,
+      extraction_run_id: 42,
+    });
+    const bill_update = query.mock.calls.find(([sql]) =>
+      String(sql).includes("update public.civic_genome_bill")
+      && String(sql).includes("'rosetta_assembly'"));
+    expect(bill_update).toBeDefined();
+    expect(String(bill_update?.[0])).toContain("coalesce(structural_dna_json, '{}'::jsonb)");
   });
 
   it("preserves partial five-layer coverage without inventing missing traits", async () => {

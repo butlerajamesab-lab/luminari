@@ -7,6 +7,7 @@ const rosetta_layers: RosettaLayer[] = [
   "override",
   "definition",
 ];
+const ROSETTA_CONTRACT_TIMEOUT_MS = 8_000;
 
 type rosetta_export_row = {
   extraction_run_id: number;
@@ -146,14 +147,27 @@ async function request_rosetta_rows(query: URLSearchParams): Promise<rosetta_exp
   const service_role_key = get_required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
   const url = `${base_url}/rest/v1/v_civic_genome_law_view_v1?${query.toString()}`;
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      apikey: service_role_key,
-      authorization: `Bearer ${service_role_key}`,
-      accept: "application/json",
-    },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ROSETTA_CONTRACT_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "GET",
+      headers: {
+        apikey: service_role_key,
+        authorization: `Bearer ${service_role_key}`,
+        accept: "application/json",
+      },
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error(`rosetta_contract_request_timeout:${ROSETTA_CONTRACT_TIMEOUT_MS}`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     const preview = (await response.text()).slice(0, 500);
@@ -186,6 +200,27 @@ export async function get_latest_rosetta_law_view_by_source_document(
   const query = new URLSearchParams({
     select: "*",
     source_document_id: `eq.${source_document_id}`,
+    order: "run_version.desc,extraction_run_id.desc",
+    limit: "1",
+  });
+  const rows = await request_rosetta_rows(query);
+  return rows[0] ? normalize_export_row(rows[0]) : null;
+}
+
+/**
+ * Resolve the Rosetta handoff created for one Docket source bill.
+ *
+ * The Docket numeric bill ID is persisted as Rosetta's document_identifier.
+ * This exact identifier lookup is intentionally narrower than title, URL, or
+ * semantic matching so a cross-service contract can never bind the wrong bill.
+ */
+export async function get_latest_rosetta_law_view_by_document_identifier(
+  document_identifier: string,
+): Promise<civic_genome_rosetta_law_view | null> {
+  const query = new URLSearchParams({
+    select: "*",
+    document_identifier: `eq.${document_identifier}`,
+    document_type: "eq.bill",
     order: "run_version.desc,extraction_run_id.desc",
     limit: "1",
   });
