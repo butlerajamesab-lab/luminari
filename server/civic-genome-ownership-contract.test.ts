@@ -11,7 +11,7 @@ const resolution_source = readFileSync(
 );
 const reassignment_migration = readFileSync(
   new URL(
-    "../supabase/migrations/20260731142000_civic_genome_family_reassignment_cascade.sql",
+    "../supabase/migrations/20260731091821_civic_genome_family_reassignment_cascade.sql",
     import.meta.url,
   ),
   "utf8",
