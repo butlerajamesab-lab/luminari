@@ -19,6 +19,14 @@ function normalize_key(key: string) {
   return key.trim().toLowerCase();
 }
 
+function classify_lookup_key(key: string): "email" | "uuid" | "opaque" {
+  if (key.includes("@")) return "email";
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(key)) {
+    return "uuid";
+  }
+  return "opaque";
+}
+
 export function get_cached_user(key: string, allow_stale = false): RuntimeUser | null {
   const normalized = normalize_key(key);
   const entry = cache.get(normalized);
@@ -47,10 +55,11 @@ export function set_cached_user(keys: Array<string | null | undefined>, user: Ru
 
 export async function dedupe_user_lookup(key: string, lookup: () => Promise<RuntimeUser | null>): Promise<RuntimeUser | null> {
   const normalized = normalize_key(key);
+  const lookup_key_kind = classify_lookup_key(normalized);
   const existing = in_flight.get(normalized);
   if (existing) {
     console.warn("[CONTEXT] profile_lookup_in_flight_dedupe_hit", {
-      cache_key: normalized,
+      lookup_key_kind,
       duplicate_lookup_suppressed: true,
       in_flight_count: in_flight.size,
     });
@@ -63,7 +72,7 @@ export async function dedupe_user_lookup(key: string, lookup: () => Promise<Runt
 
   in_flight.set(normalized, promise);
   console.warn("[CONTEXT] profile_lookup_in_flight_registered", {
-    cache_key: normalized,
+    lookup_key_kind,
     duplicate_lookup_suppressed: false,
     in_flight_count: in_flight.size,
   });

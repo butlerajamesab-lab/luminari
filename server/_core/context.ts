@@ -59,6 +59,9 @@ function readPositiveIntegerEnv(name: string, fallback: number): number {
 
 const CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS = readPositiveIntegerEnv("CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS", 2500);
 const CONTEXT_SLOW_USER_LOOKUP_LOG_MS = readPositiveIntegerEnv("CONTEXT_SLOW_USER_LOOKUP_LOG_MS", 250);
+const SENSITIVE_AUTH_LOG_KEY = /(^|_)(email|user_id|open_id|cache_key|session|token|authorization|apikey|api_key|secret|password)(_|$)/i;
+const EMAIL_LOG_VALUE = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
+const UUID_LOG_VALUE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi;
 
 export async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -92,6 +95,41 @@ function errorDetail(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function redactSensitiveLogText(value: string): string {
+  return value
+    .replace(EMAIL_LOG_VALUE, "[redacted_email]")
+    .replace(UUID_LOG_VALUE, "[redacted_uuid]")
+    .replace(/(bearer\s+)[^\s]+/gi, "$1[redacted]")
+    .replace(/([?&](?:token|apikey|api_key|secret|password)=)[^&\s]+/gi, "$1[redacted]")
+    .replace(/(password=)[^\s&]+/gi, "$1[redacted]")
+    .slice(0, 500);
+}
+
+function sanitizeAuthLogValue(value: unknown, key?: string): unknown {
+  if (key && SENSITIVE_AUTH_LOG_KEY.test(key)) return "[redacted]";
+  if (typeof value === "string") return redactSensitiveLogText(value);
+  if (Array.isArray(value)) return value.map((item) => sanitizeAuthLogValue(item));
+  if (value instanceof Error) {
+    return {
+      name: value.name,
+      message: redactSensitiveLogText(value.message),
+    };
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([nestedKey, nestedValue]) => [
+        nestedKey,
+        sanitizeAuthLogValue(nestedValue, nestedKey),
+      ])
+    );
+  }
+  return value;
+}
+
+function sanitizeAuthLogDetails(details: Record<string, unknown>): Record<string, unknown> {
+  return sanitizeAuthLogValue(details) as Record<string, unknown>;
+}
+
 function createUnauthenticatedAuth(): ContextAuth {
   return { auth_status: "unauthenticated", supabase_user_id: null, supabase_email: null, profile_resolution_status: "not_attempted", profile_resolution_error: null };
 }
@@ -121,7 +159,7 @@ function createResolvedAuth(user: RuntimeUser): ContextAuth {
 }
 
 function logContextAuthEvent(event: string, details: Record<string, unknown>): void {
-  console.warn("[CONTEXT] auth_context_event", { event, ...details });
+  console.warn("[CONTEXT] auth_context_event", sanitizeAuthLogDetails({ event, ...details }));
 }
 
 async function timeContextPhase<T>(phase: string, phases: ContextLookupPhase[], task: () => Promise<T>): Promise<T> {
@@ -148,7 +186,15 @@ function serializeContextLookupPhases(phases: ContextLookupPhase[]) {
 
 function logSlowContextUserLookup(phases: ContextLookupPhase[], total_ms: number): void {
   if (!phases.length || total_ms < CONTEXT_SLOW_USER_LOOKUP_LOG_MS) return;
-  console.warn("[CONTEXT] Slow context auth lookup", { total_ms, supabase_auth_fetch_timeout_ms: CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS, slow_log_threshold_ms: CONTEXT_SLOW_USER_LOOKUP_LOG_MS, phases: serializeContextLookupPhases(phases) });
+  console.warn(
+    "[CONTEXT] Slow context auth lookup",
+    sanitizeAuthLogDetails({
+      total_ms,
+      supabase_auth_fetch_timeout_ms: CONTEXT_SUPABASE_AUTH_FETCH_TIMEOUT_MS,
+      slow_log_threshold_ms: CONTEXT_SLOW_USER_LOOKUP_LOG_MS,
+      phases: serializeContextLookupPhases(phases),
+    })
+  );
 }
 
 function getSupabaseConfig(): { url: string; key: string } | null {
@@ -324,4 +370,5 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
 
 export const __testing = {
   resolveProfileFromSupabaseAuthUser,
+  sanitizeAuthLogDetails,
 };

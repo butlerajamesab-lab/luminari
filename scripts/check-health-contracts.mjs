@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 const index = readFileSync('server/_core/index.ts', 'utf8');
 const diagnostic = readFileSync('server/_core/health-diagnostics.ts', 'utf8');
 const systemRouter = readFileSync('server/_core/systemRouter.ts', 'utf8');
+const context = readFileSync('server/_core/context.ts', 'utf8');
+const userCache = readFileSync('server/_core/user-cache.ts', 'utf8');
 
 const required_liveness = ['ok', 'runtime', 'service', 'supabase_project', 'timestamp'];
 const forbidden_liveness = ['supabaseProject', 'publicTables', 'databaseUrl', 'dbDiagnostic', 'database_version', 'public_tables', 'database', 'db_diagnostic'];
@@ -24,4 +26,12 @@ if (!index.includes('diagnostic_not_public')) fail('closed diagnostic routes mus
 if (index.includes('sendDatabaseDiagnostic')) fail('Express entrypoint must not expose the deep diagnostic sender');
 if (!systemRouter.includes('health: adminProcedure.query(() => getDatabaseDiagnostic())')) fail('deep tRPC diagnostic must require adminProcedure');
 if (systemRouter.includes('health: publicProcedure.query(() => getDatabaseDiagnostic())')) fail('deep tRPC diagnostic must not use publicProcedure');
-console.log('health diagnostic contracts passed');
+
+if (!context.includes('function sanitizeAuthLogDetails')) fail('authentication log sanitizer is missing');
+if (!context.includes('console.warn("[CONTEXT] auth_context_event", sanitizeAuthLogDetails')) fail('authentication events must pass through the log sanitizer');
+if (!context.includes('"[CONTEXT] Slow context auth lookup",\n    sanitizeAuthLogDetails')) fail('slow authentication diagnostics must pass through the log sanitizer');
+if (context.includes('console.warn("[CONTEXT] auth_context_event", { event, ...details })')) fail('raw authentication details must not be logged');
+if (userCache.includes('cache_key: normalized')) fail('authentication cache keys must not be logged');
+if (!userCache.includes('lookup_key_kind')) fail('authentication cache diagnostics must retain only key classification');
+
+console.log('health diagnostic and authentication log privacy contracts passed');
