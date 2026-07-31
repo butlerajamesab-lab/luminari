@@ -1,0 +1,98 @@
+name: Apply Atlas identity projection semantics
+
+on:
+  push:
+    branches:
+      - fix/atlas-runtime-circulation-reconciliation
+    paths:
+      - ".github/workflows/apply-atlas-identity-projection.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/atlas-runtime-circulation-reconciliation
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Patch API, UI, and contracts
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          router = Path('server/routers/enforcement-intel.ts')
+          text = router.read_text()
+          before = '          atlas_raw_observation_count: to_count(integrity.atlas_raw_observation_count),\n'
+          after = '''          atlas_raw_observation_count: to_count(integrity.atlas_raw_observation_count),
+          atlas_unique_observation_count: to_count(integrity.atlas_unique_observation_count),
+          atlas_replay_observation_count: to_count(integrity.atlas_replay_observation_count),
+'''
+          if text.count(before) != 1:
+              raise SystemExit('router integrity marker missing or ambiguous')
+          router.write_text(text.replace(before, after, 1))
+
+          page = Path('client/src/pages/SignalRegistry.tsx')
+          text = page.read_text()
+          replacements = [
+            ('<div style={metric_value_style}>{format_number(integrity.atlas_raw_observation_count)}</div>', '<div style={metric_value_style}>{format_number(integrity.atlas_unique_observation_count)}</div>'),
+            ('<div style={metric_label_style}>Raw Atlas observations</div>', '<div style={metric_label_style}>Unique Atlas observations</div>'),
+            ('<div style={metric_note_style}>Evidence ledger—not Domain 3 signal cards</div>', '<div style={metric_note_style}>{format_number(integrity.atlas_raw_observation_count)} historical rows; {format_number(integrity.atlas_replay_observation_count)} replay rows preserved</div>'),
+          ]
+          for before, after in replacements:
+              if text.count(before) != 1:
+                  raise SystemExit(f'page marker missing or ambiguous: {before}')
+              text = text.replace(before, after, 1)
+          page.write_text(text)
+
+          test = Path('server/signal-architecture-ground-truth.test.ts')
+          text = test.read_text()
+          before = '    expect(page).toContain("Raw Atlas observations");\n    expect(page).toContain("Evidence ledger—not Domain 3 signal cards");\n'
+          after = '''    expect(page).toContain("Unique Atlas observations");
+    expect(page).toContain("historical rows");
+    expect(page).toContain("replay rows preserved");
+'''
+          if text.count(before) != 1:
+              raise SystemExit('test UI marker missing or ambiguous')
+          text = text.replace(before, after, 1)
+          text = text.replace(
+            '  const migration = read_repo_file(\n    "../supabase/migrations/20260731190500_signal_architecture_ground_truth.sql",\n  );',
+            '  const migration = read_repo_file(\n    "../supabase/migrations/20260731190500_signal_architecture_ground_truth.sql",\n  );\n  const identity_projection = read_repo_file(\n    "../supabase/migrations/20260731194000_atlas_observation_identity_projection.sql",\n  );',
+            1,
+          )
+          insert_before = '  it("protects intake detail on the cross-system runtime surface", () => {'
+          contract = '''  it("separates unique Atlas identities from historical replay volume", () => {
+    expect(identity_projection).toContain("atlas_unique_observation_count");
+    expect(identity_projection).toContain("atlas_replay_observation_count");
+    expect(identity_projection).toContain("count(distinct public.lighthouse_atlas_event_identity_hash_v1");
+    expect(router).toContain("atlas_unique_observation_count");
+    expect(router).toContain("atlas_replay_observation_count");
+  });
+
+'''
+          if text.count(insert_before) != 1:
+              raise SystemExit('test insertion marker missing or ambiguous')
+          test.write_text(text.replace(insert_before, contract + insert_before, 1))
+          PY
+      - run: npm install --legacy-peer-deps
+      - name: Run signal contracts
+        run: npx vitest run server/signal-architecture-ground-truth.test.ts
+      - name: Build production bundle
+        run: npm run build
+      - name: Commit implementation
+        run: |
+          rm .github/workflows/apply-atlas-identity-projection.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Project unique Atlas observations separately from replay history"
+          git push origin HEAD:fix/atlas-runtime-circulation-reconciliation
