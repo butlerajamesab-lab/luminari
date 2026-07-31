@@ -13,10 +13,42 @@ import { router, publicProcedure } from "../_core/trpc";
 import { db } from "../db";
 import { eq, like, and, sql } from "drizzle-orm";
 import { legalStatutes, legalCaseLaw, legalEnforcementRecords, detectedSignals } from "../../drizzle/schema";
-import { invokeLLM } from "../_core/llm";
+
+// ─── Static Signal Interpretation Lookup ───
+
+const SIGNAL_INTERPRETATIONS: Record<string, string> = {
+  "02_resource_contacts": "This signal identifies a resource contact point — an agency, organization, or individual that can provide assistance. It indicates that a potential support pathway has been mapped for your situation.",
+  "location": "This signal identifies a geographic location relevant to your case. Locations help establish jurisdiction, identify responsible agencies, and connect you with local resources.",
+  "resource": "This signal identifies a resource that may be available to help with your situation. Resources include programs, services, legal aid, and other forms of assistance.",
+  "01_resources": "This signal identifies a documented resource entry in the system. It represents a verified program, service, or support pathway that has been cataloged for reference.",
+  "contact": "This signal identifies a contact person or office relevant to your case. Having the right contact information is critical for navigating bureaucratic systems effectively.",
+  "nyc-housing-complaint": "This signal relates to a housing complaint filed in New York City. NYC housing complaints often indicate patterns of landlord neglect, code violations, or tenant rights issues that may have legal remedies.",
+  "weak_joint": "This signal identifies a weak connection between two pieces of evidence or claims in your case. Weak joints indicate areas where additional documentation or corroboration may strengthen your position.",
+  "contradiction": "This signal identifies a contradiction in the record — two statements, documents, or data points that conflict with each other. Contradictions can indicate errors, inconsistencies in official accounts, or potential evidence of misconduct.",
+  "inconsistency": "This signal identifies an inconsistency in the documentation or narrative. While not a direct contradiction, inconsistencies suggest that further investigation may reveal important discrepancies.",
+  "missing_evidence": "This signal identifies evidence that should exist based on standard procedures but is absent from the record. Missing evidence can indicate incomplete investigations, destroyed records, or deliberate omissions.",
+  "INGESTION_SIGNAL": "This signal was generated during document ingestion. It indicates that the system has processed new information and identified something noteworthy during initial analysis.",
+  "FORM_SIGNAL": "This signal was generated from a form submission. It captures structured information provided directly by a user or intake process.",
+  "REAL_DOCUMENT_SIGNAL": "This signal was generated from analysis of an actual document. It represents a finding extracted from official records, correspondence, or other documentary evidence.",
+  "gap": "This signal identifies a gap in the record — information that is expected but missing. Gaps may indicate areas where additional records requests or investigation are needed.",
+};
+
+/**
+ * Strip numeric suffixes from signal types to match the base type.
+ * e.g., "contradiction_262205" → "contradiction"
+ */
+function getBaseSignalType(signalType: string): string {
+  return signalType.replace(/_\d+$/, "");
+}
+
+function getStaticInterpretation(signalType: string, severity?: string): string {
+  const baseType = getBaseSignalType(signalType);
+  const lookup = SIGNAL_INTERPRETATIONS[baseType];
+  if (lookup) return lookup;
+  return `This signal of type ${signalType} with severity ${severity || "unknown"} has been detected and requires review.`;
+}
 
 // ─── Signal Interpretation ───
-// Uses LLM to explain what a signal means in plain language
 
 export const meaningLayerRouter = router({
   /**
@@ -43,35 +75,13 @@ export const meaningLayerRouter = router({
           };
         }
 
-        // Otherwise, use LLM to generate interpretation
-        const prompt = `You are a legal expert explaining signals of systemic injustice to people affected by them.
-
-Signal Type: ${input.signalType}
-Severity: ${input.severity || "unknown"}
-Description: ${input.description || "no description provided"}
-Context: ${input.context || "no context provided"}
-
-Generate a brief, clear explanation (2-3 sentences) of what this signal means and why it matters to someone experiencing this problem. Use plain language. Focus on the human impact, not technical details.`;
-
-        const response = await invokeLLM({
-          messages: [
-            {
-              role: "system",
-              content: "You are a legal expert who explains complex legal signals in plain, accessible language.",
-            },
-            {
-              role: "user",
-              content: prompt,
-            },
-          ],
-        });
-
-        const interpretation = response.choices?.[0]?.message?.content || "Unable to interpret signal";
+        // Use static lookup for interpretation
+        const interpretation = getStaticInterpretation(input.signalType, input.severity);
 
         return {
           signal_type: input.signalType,
           interpretation,
-          source: "llm",
+          source: "static",
         };
       } catch (error) {
         console.error("Error interpreting signal:", error);
