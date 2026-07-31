@@ -1,7 +1,7 @@
 /**
  * System Copilot — Sunam
  * 
- * LLM-powered conversational assistant for system administration.
+ * Deterministic conversational assistant for system administration.
  * Can inspect, analyze, and propose modifications to the Luminari platform.
  * 
  * Capabilities:
@@ -24,7 +24,6 @@ import {
   dataStreamRegistry,
   adminChangeLog,
 } from "../../drizzle/schema";
-import { invokeLLM } from "../_core/llm";
 import { applyEnginePatch, applyStreamPatch, applySchemaPatch, rollbackPatch as executorRollback, getExecutionLog } from "./executor-service";
 import { uiReadFile, uiWriteFile, uiPatchFile, uiListFiles, uiGetChangeLog, uiRollbackLastWrite } from "../ui-editor";
 
@@ -261,9 +260,50 @@ Be concise, technical, and safety-conscious. Flag destructive operations clearly
     }
   }
 
-  // Call LLM
-  const llmResponse = await invokeLLM({ messages });
-  const responseText = llmResponse.choices?.[0]?.message?.content || "I apologize, I was unable to generate a response. Please try again.";
+  // Deterministic response: route by keyword intent and return a structured action plan
+  const lowerMsg = userMessage.toLowerCase();
+  let responseText: string;
+
+  if (/\bbackfill\b|\bprocess signals\b|\bfill detected\b/.test(lowerMsg)) {
+    responseText = "To backfill signals, I will run the backfill_stream tool.\n\n[ARTIFACT:sql:Backfill detected_signals from live_signals]\nSELECT COUNT(*) FROM live_signals WHERE id NOT IN (SELECT COALESCE(source_signal_id, 0) FROM detected_signals);\n-- ROLLBACK: -- No rollback needed for SELECT\n[/ARTIFACT]";
+  } else if (/\binspect\b|\bcheck table\b|\bcount rows\b|\bhow many\b/.test(lowerMsg)) {
+    const tableMatch = userMessage.match(/(?:table|from|in)\s+[`']?([\w_]+)[`']?/i);
+    const tbl = tableMatch ? tableMatch[1] : "live_signals";
+    responseText = `To inspect ${tbl}, here is a query:\n\n[ARTIFACT:sql:Inspect ${tbl}]\nSELECT COUNT(*) as total_rows FROM \`${tbl}\` LIMIT 1;\n-- ROLLBACK: -- No rollback needed for SELECT\n[/ARTIFACT]`;
+  } else if (/\bstream\b.*\bfail|\bfailing stream|\bstream.*error|\bstream.*health/.test(lowerMsg)) {
+    responseText = "To check stream health, use the get_stream_diagnostics tool from Sovereign Control, or run:\n\n[ARTIFACT:sql:Check failing streams]\nSELECT stream_id, stream_name, consecutive_failures, last_error_message, enabled, auto_disabled FROM data_stream_registry WHERE consecutive_failures > 0 OR auto_disabled = true ORDER BY consecutive_failures DESC;\n-- ROLLBACK: -- No rollback needed for SELECT\n[/ARTIFACT]";
+  } else if (/\benable\b.*\bstream|\bactivate\b.*\bstream/.test(lowerMsg)) {
+    const idMatch = userMessage.match(/([a-z0-9][-a-z0-9]{2,})/i);
+    const streamId = idMatch ? idMatch[1] : "<stream_id>";
+    responseText = `To enable stream ${streamId}:\n\n[ARTIFACT:stream_patch:Enable stream ${streamId}]\n{"streamId": "${streamId}", "updates": {"enabled": true, "autoDisabled": false}}\n[/ARTIFACT]`;
+  } else if (/\bdisable\b.*\bstream|\bdeactivate\b.*\bstream/.test(lowerMsg)) {
+    const idMatch = userMessage.match(/([a-z0-9][-a-z0-9]{2,})/i);
+    const streamId = idMatch ? idMatch[1] : "<stream_id>";
+    responseText = `To disable stream ${streamId}:\n\n[ARTIFACT:stream_patch:Disable stream ${streamId}]\n{"streamId": "${streamId}", "updates": {"enabled": false}}\n[/ARTIFACT]`;
+  } else if (/\bpatch engine\b|\bupdate engine\b|\bmodify engine\b/.test(lowerMsg)) {
+    const idMatch = userMessage.match(/engine[\s-]+([a-z0-9][-a-z0-9]{2,})/i);
+    const engineId = idMatch ? idMatch[1] : "<engine_id>";
+    responseText = `To patch engine ${engineId}, provide the config updates:\n\n[ARTIFACT:engine_patch:Update ${engineId}]\n{"engineId": "${engineId}", "updates": {"configJson": {}}}\n[/ARTIFACT]`;
+  } else if (/\bread file\b|\bview file\b|\bshow file\b/.test(lowerMsg)) {
+    const pathMatch = userMessage.match(/(?:file|path)[:\s]+([\w/.-]+)/i);
+    const filePath = pathMatch ? pathMatch[1] : "pages/SovereignControl.tsx";
+    responseText = `To read ${filePath}:\n\n[ARTIFACT:ui_patch:Read ${filePath}]\n{"action": "read", "filePath": "${filePath}"}\n[/ARTIFACT]`;
+  } else if (/\bpatch file\b|\bedit file\b|\bmodify file\b|\bfix file\b/.test(lowerMsg)) {
+    const pathMatch = userMessage.match(/(?:file|path)[:\s]+([\w/.-]+)/i);
+    const filePath = pathMatch ? pathMatch[1] : "pages/SovereignControl.tsx";
+    responseText = `To patch ${filePath}, first read it then apply changes:\n\n[ARTIFACT:ui_patch:Patch ${filePath}]\n{"action": "patch", "filePath": "${filePath}", "patches": [{"find": "<old text>", "replace": "<new text>"}]}\n[/ARTIFACT]`;
+  } else if (/\bsystem state\b|\bcurrent state\b|\bsystem status\b|\bget state\b/.test(lowerMsg)) {
+    responseText = "To get system state, use the get_system_state button in Sovereign Control, or run:\n\n[ARTIFACT:sql:System overview]\nSELECT 'engines' as type, COUNT(*) as total, SUM(CASE WHEN enabled THEN 1 ELSE 0 END) as enabled FROM engine_registry\nUNION ALL\nSELECT 'streams', COUNT(*), SUM(CASE WHEN enabled THEN 1 ELSE 0 END) FROM data_stream_registry\nUNION ALL\nSELECT 'live_signals', COUNT(*), COUNT(*) FROM live_signals\nUNION ALL\nSELECT 'detected_signals', COUNT(*), COUNT(*) FROM detected_signals;\n-- ROLLBACK: -- No rollback needed for SELECT\n[/ARTIFACT]";
+  } else if (/\bexecute sql\b|\brun sql\b|\brun query\b|\bselect \b|\binsert \b/.test(lowerMsg)) {
+    responseText = `To execute SQL, format it as an artifact:\n\n[ARTIFACT:sql:Execute query]\n${userMessage}\n-- ROLLBACK: -- Add rollback SQL here if needed\n[/ARTIFACT]`;
+  } else if (/\brollback\b|\bundo\b|\brevert\b/.test(lowerMsg)) {
+    responseText = "To rollback the last change, use the Rollback button on the most recent executed artifact in the Artifacts panel.";
+  } else if (/\bhelp\b|\bwhat can you\b|\bcommands\b|\boperations\b/.test(lowerMsg)) {
+    responseText = "Available operations:\n- **Inspect tables**: \"check table live_signals\"\n- **Stream health**: \"show failing streams\"\n- **Enable/disable streams**: \"enable stream <id>\"\n- **Patch engines**: \"patch engine <id>\"\n- **Read/edit files**: \"read file pages/SovereignControl.tsx\"\n- **System state**: \"get system state\"\n- **Execute SQL**: \"run query SELECT ...\"\n- **Backfill signals**: \"backfill detected_signals\"";
+  } else {
+    // Default: return a diagnostics artifact
+    responseText = `I'll help with: "${userMessage}". Here is a system overview to start:\n\n[ARTIFACT:sql:System overview]\nSELECT 'engines' as type, COUNT(*) as total FROM engine_registry\nUNION ALL SELECT 'streams', COUNT(*) FROM data_stream_registry\nUNION ALL SELECT 'live_signals', COUNT(*) FROM live_signals\nUNION ALL SELECT 'detected_signals', COUNT(*) FROM detected_signals;\n-- ROLLBACK: -- No rollback needed for SELECT\n[/ARTIFACT]`;
+  }
 
   // Parse artifacts from response
   let artifact: { id: number; type: string; title: string } | undefined;
