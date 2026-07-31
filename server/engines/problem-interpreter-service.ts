@@ -1,20 +1,19 @@
 /**
  * Engine 5: Problem Interpreter / Front Door
  * 
- * LLM-powered plain-language intake system.
+ * Deterministic keyword-based intake system.
  * User tells their story → system detects claim types → asks clarifying questions
  * → generates evidence guidance → produces case summary.
  * 
  * Flow:
  * 1. "Tell me what happened" → raw story input
- * 2. LLM parses story → detects jurisdiction + claim candidates
+ * 2. Keyword matching parses story → detects jurisdiction + claim candidates
  * 3. Clarifying questions refine the claim
  * 4. Evidence guidance tells user what to gather
  * 5. Output: claim summary, evidence needs, next steps
  */
 import { db } from "../db";
 import { sql } from "drizzle-orm";
-import { invokeLLM } from "../_core/llm";
 
 // Known claim types the system can detect
 const CLAIM_TYPES = [
@@ -25,7 +24,9 @@ const CLAIM_TYPES = [
   "civil_rights_violation", "family_law", "immigration",
   "workers_compensation", "social_security_disability", "veterans_benefits",
   "education_rights", "elder_abuse", "disability_discrimination",
-  "retaliation", "whistleblower", "government_benefits"
+  "retaliation", "whistleblower", "government_benefits",
+  "disability_benefits", "medicaid", "snap", "veterans", "unemployment",
+  "nursing_home", "guardianship", "child_welfare",
 ] as const;
 
 export interface IntakeSession {
@@ -59,110 +60,151 @@ export interface EvidenceGuidanceItem {
   guidanceText: string;
 }
 
+// US state names and abbreviations for jurisdiction detection
+const STATE_MAP: Record<string, string> = {
+  "alabama": "Alabama", "al": "Alabama",
+  "alaska": "Alaska", "ak": "Alaska",
+  "arizona": "Arizona", "az": "Arizona",
+  "arkansas": "Arkansas", "ar": "Arkansas",
+  "california": "California", "ca": "California",
+  "colorado": "Colorado", "co": "Colorado",
+  "connecticut": "Connecticut", "ct": "Connecticut",
+  "delaware": "Delaware", "de": "Delaware",
+  "florida": "Florida", "fl": "Florida",
+  "georgia": "Georgia", "ga": "Georgia",
+  "hawaii": "Hawaii", "hi": "Hawaii",
+  "idaho": "Idaho", "id": "Idaho",
+  "illinois": "Illinois", "il": "Illinois",
+  "indiana": "Indiana", "in": "Indiana",
+  "iowa": "Iowa", "ia": "Iowa",
+  "kansas": "Kansas", "ks": "Kansas",
+  "kentucky": "Kentucky", "ky": "Kentucky",
+  "louisiana": "Louisiana", "la": "Louisiana",
+  "maine": "Maine", "me": "Maine",
+  "maryland": "Maryland", "md": "Maryland",
+  "massachusetts": "Massachusetts", "ma": "Massachusetts",
+  "michigan": "Michigan", "mi": "Michigan",
+  "minnesota": "Minnesota", "mn": "Minnesota",
+  "mississippi": "Mississippi", "ms": "Mississippi",
+  "missouri": "Missouri", "mo": "Missouri",
+  "montana": "Montana", "mt": "Montana",
+  "nebraska": "Nebraska", "ne": "Nebraska",
+  "nevada": "Nevada", "nv": "Nevada",
+  "new hampshire": "New Hampshire", "nh": "New Hampshire",
+  "new jersey": "New Jersey", "nj": "New Jersey",
+  "new mexico": "New Mexico", "nm": "New Mexico",
+  "new york": "New York", "ny": "New York",
+  "north carolina": "North Carolina", "nc": "North Carolina",
+  "north dakota": "North Dakota", "nd": "North Dakota",
+  "ohio": "Ohio", "oh": "Ohio",
+  "oklahoma": "Oklahoma", "ok": "Oklahoma",
+  "oregon": "Oregon", "or": "Oregon",
+  "pennsylvania": "Pennsylvania", "pa": "Pennsylvania",
+  "rhode island": "Rhode Island", "ri": "Rhode Island",
+  "south carolina": "South Carolina", "sc": "South Carolina",
+  "south dakota": "South Dakota", "sd": "South Dakota",
+  "tennessee": "Tennessee", "tn": "Tennessee",
+  "texas": "Texas", "tx": "Texas",
+  "utah": "Utah", "ut": "Utah",
+  "vermont": "Vermont", "vt": "Vermont",
+  "virginia": "Virginia", "va": "Virginia",
+  "washington": "Washington", "wa": "Washington",
+  "west virginia": "West Virginia", "wv": "West Virginia",
+  "wisconsin": "Wisconsin", "wi": "Wisconsin",
+  "wyoming": "Wyoming", "wy": "Wyoming",
+  "district of columbia": "District of Columbia", "dc": "District of Columbia",
+};
+
 /**
- * Start a new intake session: parse the user's story with LLM
+ * Detect jurisdiction from story text using state name/abbreviation matching
+ */
+function detectJurisdiction(text: string): string {
+  const lower = text.toLowerCase();
+  // Check full state names first (longer matches first)
+  const stateNames = Object.keys(STATE_MAP).sort((a, b) => b.length - a.length);
+  for (const key of stateNames) {
+    // For 2-letter abbreviations, require word boundary
+    if (key.length === 2) {
+      const regex = new RegExp(`\\b${key}\\b`, "i");
+      if (regex.test(lower)) {
+        return STATE_MAP[key];
+      }
+    } else {
+      if (lower.includes(key)) {
+        return STATE_MAP[key];
+      }
+    }
+  }
+  // Check for "federal" keywords
+  if (/\bfederal\b|\bfed\b|\bu\.?s\.?\b/i.test(text)) {
+    return "Federal";
+  }
+  return "Unknown";
+}
+
+/**
+ * Start a new intake session: parse the user's story with keyword matching
  */
 export async function startIntakeSession(userId: number | null, rawStory: string): Promise<IntakeSession> {
   const now = Date.now();
 
-  // Use LLM to parse the story
-  const systemPrompt = `You are a legal intake specialist. Analyze the user's story and identify:
-1. The most likely jurisdiction (state/federal)
-2. Up to 3 potential legal claim types from this list: ${CLAIM_TYPES.join(", ")}
-3. For each claim type, provide confidence (0-1), reasoning, and supporting keywords from the story.
+  // Keyword-based claim detection
+  const storyLower = rawStory.toLowerCase();
+  const keywordMap: Record<string, string[]> = {
+    housing_discrimination: ["landlord", "eviction", "rent", "housing", "apartment", "lease", "tenant", "fair housing", "hud"],
+    employment_discrimination: ["fired", "employer", "job", "workplace", "discrimination", "harass", "terminated", "wrongful termination"],
+    consumer_fraud: ["scam", "fraud", "deceived", "misrepresent", "refund", "purchase", "false advertising"],
+    insurance_bad_faith: ["insurance", "claim denied", "coverage", "policy", "adjuster", "denied claim", "bad faith"],
+    medical_malpractice: ["doctor", "hospital", "surgery", "misdiagnos", "medical error", "malpractice", "negligent"],
+    police_misconduct: ["police", "officer", "arrested", "excessive force", "brutality", "misconduct", "false arrest"],
+    wage_theft: ["wages", "overtime", "unpaid", "paycheck", "minimum wage", "wage theft", "hours worked"],
+    landlord_tenant: ["landlord", "repair", "deposit", "habitability", "mold", "lease violation", "security deposit"],
+    debt_collection_abuse: ["debt collector", "collection", "harassing calls", "credit", "collection agency", "garnish"],
+    predatory_lending: ["loan", "interest rate", "predatory", "mortgage", "payday loan", "lending", "refinance"],
+    environmental_harm: ["pollution", "contamination", "toxic", "chemical", "water quality", "environmental"],
+    product_liability: ["defective", "product", "injury", "recall", "manufacturer", "dangerous product"],
+    civil_rights_violation: ["civil rights", "constitutional", "first amendment", "due process", "equal protection"],
+    family_law: ["divorce", "custody", "child support", "alimony", "visitation", "domestic"],
+    immigration: ["immigration", "visa", "deportation", "asylum", "green card", "uscis", "ice", "undocumented"],
+    workers_compensation: ["work injury", "workers comp", "on the job", "workplace injury", "occupational"],
+    social_security_disability: ["social security", "ssdi", "ssi", "disability benefits", "disability claim"],
+    veterans_benefits: ["veteran", "va benefits", "military", "service-connected", "va claim", "gi bill"],
+    education_rights: ["school", "iep", "special education", "expulsion", "student rights", "504 plan"],
+    elder_abuse: ["elder", "nursing home", "elderly", "senior", "abuse of elderly", "neglect of elder"],
+    disability_discrimination: ["disability", "ada", "accommodation", "accessible", "disabled"],
+    retaliation: ["retaliation", "retaliated", "fired for reporting", "whistleblower retaliation"],
+    whistleblower: ["whistleblower", "reported fraud", "qui tam", "false claims act"],
+    government_benefits: ["benefits denied", "government benefits", "public assistance", "welfare"],
+    disability_benefits: ["disability", "ssdi", "ssi", "disabled", "disability insurance", "unable to work"],
+    medicaid: ["medicaid", "medical assistance", "medi-cal", "healthcare coverage", "medicaid denied"],
+    snap: ["snap", "food stamps", "ebt", "food assistance", "supplemental nutrition"],
+    veterans: ["veteran", "va", "military service", "combat", "service-connected", "veterans affairs"],
+    unemployment: ["unemployment", "unemployment benefits", "laid off", "jobless", "unemployment insurance", "ui claim"],
+    nursing_home: ["nursing home", "assisted living", "long-term care", "nursing facility", "resident rights"],
+    guardianship: ["guardianship", "conservatorship", "ward", "incapacitated", "guardian"],
+    child_welfare: ["cps", "child protective", "foster care", "child welfare", "dcfs", "child removal"],
+  };
 
-Respond in JSON format:
-{
-  "jurisdiction": "string",
-  "claims": [
-    {
-      "claim_type": "string",
-      "confidence": number,
-      "reasoning": "string",
-      "supporting_keywords": ["string"]
-    }
-  ]
-}`;
-
-  let jurisdictionGuess = "Unknown";
   let claimCandidates: ClaimCandidate[] = [];
-  let overallConfidence = 0;
 
-  try {
-    const response = await invokeLLM({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: rawStory }
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "intake_analysis",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              jurisdiction: { type: "string", description: "Likely jurisdiction" },
-              claims: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    claim_type: { type: "string" },
-                    confidence: { type: "number" },
-                    reasoning: { type: "string" },
-                    supporting_keywords: { type: "array", items: { type: "string" } }
-                  },
-                  required: ["claim_type", "confidence", "reasoning", "supporting_keywords"],
-                  additionalProperties: false
-                }
-              }
-            },
-            required: ["jurisdiction", "claims"],
-            additionalProperties: false
-          }
-        }
-      }
-    });
-
-    // @ts-ignore pre-existing type mismatch
-    const parsed = JSON.parse(response.choices[0].message.content || "{}");
-    jurisdictionGuess = parsed.jurisdiction || "Unknown";
-    claimCandidates = (parsed.claims || []).map((c: any) => ({
-      claimType: c.claim_type,
-      confidence: c.confidence,
-      reasoning: c.reasoning,
-      supportingKeywords: c.supporting_keywords || [],
-    }));
-    overallConfidence = claimCandidates.length > 0 ? claimCandidates[0].confidence : 0;
-  } catch (err: any) {
-    // Fallback: keyword-based detection
-    const storyLower = rawStory.toLowerCase();
-    const keywordMap: Record<string, string[]> = {
-      housing_discrimination: ["landlord", "eviction", "rent", "housing", "apartment", "lease", "tenant"],
-      employment_discrimination: ["fired", "employer", "job", "workplace", "discrimination", "harass"],
-      consumer_fraud: ["scam", "fraud", "deceived", "misrepresent", "refund", "purchase"],
-      insurance_bad_faith: ["insurance", "claim denied", "coverage", "policy", "adjuster"],
-      wage_theft: ["wages", "overtime", "unpaid", "paycheck", "minimum wage"],
-      debt_collection_abuse: ["debt collector", "collection", "harassing calls", "credit"],
-      landlord_tenant: ["landlord", "repair", "deposit", "habitability", "mold"],
-    };
-
-    for (const [claimType, keywords] of Object.entries(keywordMap)) {
-      const matchCount = keywords.filter(k => storyLower.includes(k)).length;
-      if (matchCount >= 2) {
-        claimCandidates.push({
-          claimType,
-          confidence: Math.min(0.9, matchCount * 0.2),
-          reasoning: `Keyword matches: ${keywords.filter(k => storyLower.includes(k)).join(", ")}`,
-          supportingKeywords: keywords.filter(k => storyLower.includes(k)),
-        });
-      }
+  for (const [claimType, keywords] of Object.entries(keywordMap)) {
+    const matchedKeywords = keywords.filter(k => storyLower.includes(k));
+    const matchCount = matchedKeywords.length;
+    if (matchCount >= 2) {
+      claimCandidates.push({
+        claimType,
+        confidence: Math.min(0.9, matchCount * 0.2),
+        reasoning: `Keyword matches: ${matchedKeywords.join(", ")}`,
+        supportingKeywords: matchedKeywords,
+      });
     }
-    claimCandidates.sort((a, b) => b.confidence - a.confidence);
-    claimCandidates = claimCandidates.slice(0, 3);
-    overallConfidence = claimCandidates.length > 0 ? claimCandidates[0].confidence : 0;
   }
+  claimCandidates.sort((a, b) => b.confidence - a.confidence);
+  claimCandidates = claimCandidates.slice(0, 3);
+  const overallConfidence = claimCandidates.length > 0 ? claimCandidates[0].confidence : 0;
+
+  // Detect jurisdiction from text
+  const jurisdictionGuess = detectJurisdiction(rawStory);
 
   // Save session
   await db.execute(sql`
