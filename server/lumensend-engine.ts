@@ -1,8 +1,9 @@
 /**
  * LumenSend — Letter Generation Engine
  *
- * Uses LLM to generate contextual letters, complaints, appeals, and applications
- * from Luminari's registry data. Pre-fills recipient info from programs and oversight bodies.
+ * Uses deterministic template-based generation to produce contextual letters,
+ * complaints, appeals, and applications from Luminari's registry data.
+ * Pre-fills recipient info from programs and oversight bodies.
  *
  * Principle: Help the person navigate the system as it was designed to work.
  * Surface eligibility boundaries and disqualifiers before sending.
@@ -10,7 +11,6 @@
 import { readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
-import { invokeLLM } from "./_core/llm";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const statesDir = join(__dirname, "config", "states");
@@ -83,7 +83,7 @@ export function findOversightBody(stateCode: string, bodyName: string): Oversigh
   return bodies.find(b => b.oversight_body === bodyName) ?? null;
 }
 
-// ─── Pre-Flight: Eligibility & Disqualifier Check ───
+// ─── Pre-Flight: Static Eligibility & Disqualifier Warnings ───
 
 export interface PreFlightWarning {
   type: "eligibility_boundary" | "benefit_cliff" | "disqualifier" | "cross_program" | "deadline" | "documentation";
@@ -93,6 +93,129 @@ export interface PreFlightWarning {
   source?: string;
 }
 
+/**
+ * Static pre-flight warnings by document type.
+ * These are structural warnings that apply regardless of specific program details.
+ */
+const STATIC_WARNINGS: Record<string, PreFlightWarning[]> = {
+  appeal: [
+    {
+      type: "deadline",
+      severity: "critical",
+      title: "Appeal Deadline",
+      description: "Most appeals have strict filing deadlines (often 30-90 days from the denial date). Verify your deadline before submitting — late appeals are typically dismissed regardless of merit.",
+    },
+    {
+      type: "documentation",
+      severity: "warning",
+      title: "Documentation Requirements",
+      description: "Appeals require supporting documentation. Gather all denial letters, prior correspondence, and evidence of eligibility before filing. Missing documents may result in summary denial.",
+    },
+    {
+      type: "cross_program",
+      severity: "info",
+      title: "Continued Benefits During Appeal",
+      description: "In some programs, filing a timely appeal preserves your current benefits until a decision is made. Check whether your program offers benefit continuation during the appeal period.",
+    },
+  ],
+  complaint: [
+    {
+      type: "documentation",
+      severity: "warning",
+      title: "Retaliation Protection",
+      description: "Filing a complaint may trigger retaliation. Document your current situation thoroughly before filing. Keep copies of all communications and note any changes in treatment after submission.",
+    },
+    {
+      type: "documentation",
+      severity: "warning",
+      title: "Evidence Preservation",
+      description: "Preserve all evidence before filing. Once a complaint is filed, the subject may destroy or alter records. Photograph documents, save digital copies, and note witness names.",
+    },
+    {
+      type: "deadline",
+      severity: "info",
+      title: "Statute of Limitations",
+      description: "Complaints often have filing deadlines. Federal civil rights complaints typically must be filed within 180-300 days of the discriminatory act. State deadlines vary.",
+    },
+  ],
+  inquiry: [
+    {
+      type: "documentation",
+      severity: "info",
+      title: "Written Record Recommended",
+      description: "Submit inquiries in writing to create a paper trail. Written inquiries establish a record of your request and the agency's response timeline.",
+    },
+    {
+      type: "deadline",
+      severity: "info",
+      title: "Response Timeline",
+      description: "Agencies typically have 10-30 business days to respond to written inquiries. Note the date you submit and follow up if no response is received within the stated timeline.",
+    },
+  ],
+  application: [
+    {
+      type: "eligibility_boundary",
+      severity: "warning",
+      title: "Income Verification",
+      description: "Most assistance programs have income thresholds. Gather recent pay stubs, tax returns, or benefit statements. Reporting income incorrectly (even accidentally) can result in disqualification or fraud charges.",
+    },
+    {
+      type: "benefit_cliff",
+      severity: "warning",
+      title: "Benefit Cliff Warning",
+      description: "Receiving one benefit may affect eligibility for others. Some programs count other benefits as income. Review how this application may interact with your current benefits before submitting.",
+    },
+    {
+      type: "documentation",
+      severity: "info",
+      title: "Required Documents",
+      description: "Applications typically require ID, proof of residence, income verification, and household composition documentation. Incomplete applications are often denied without review.",
+    },
+  ],
+  follow_up: [
+    {
+      type: "documentation",
+      severity: "info",
+      title: "Reference Prior Communication",
+      description: "Include reference numbers, dates, and names from prior communications. This helps the recipient locate your file and demonstrates a documented history of engagement.",
+    },
+    {
+      type: "deadline",
+      severity: "info",
+      title: "Escalation Path",
+      description: "If this is a second or third follow-up without response, consider escalating to a supervisor or filing a formal complaint about non-responsiveness.",
+    },
+  ],
+  demand: [
+    {
+      type: "deadline",
+      severity: "critical",
+      title: "Legal Deadline Implications",
+      description: "Demand letters often precede legal action. Ensure your stated deadline is reasonable (typically 10-30 days) and that you are prepared to follow through if the demand is not met.",
+    },
+    {
+      type: "documentation",
+      severity: "warning",
+      title: "Factual Basis Required",
+      description: "Demand letters must be grounded in documented facts and legal rights. Making unsupported claims can undermine your position or expose you to counterclaims.",
+    },
+  ],
+  notice: [
+    {
+      type: "documentation",
+      severity: "info",
+      title: "Proof of Delivery",
+      description: "Send notices via certified mail or other trackable delivery method. Proof of delivery establishes that the recipient was notified, which may be legally significant.",
+    },
+    {
+      type: "deadline",
+      severity: "info",
+      title: "Notice Period",
+      description: "Many legal actions require advance notice (often 30-60 days). Verify the required notice period for your situation before sending.",
+    },
+  ],
+};
+
 export async function generatePreFlight(opts: {
   stateCode: string;
   documentType: string;
@@ -101,99 +224,52 @@ export async function generatePreFlight(opts: {
   oversightBody?: string;
   userSituation?: string;
 }): Promise<PreFlightWarning[]> {
-  const { stateCode, documentType, contextType, programId, oversightBody, userSituation } = opts;
+  const { stateCode, documentType, programId, oversightBody } = opts;
 
-  // Gather context
-  let contextData = "";
+  // Start with static warnings for this document type
+  const warnings: PreFlightWarning[] = [
+    ...(STATIC_WARNINGS[documentType] || STATIC_WARNINGS["inquiry"] || []),
+  ];
+
+  // Add program-specific eligibility warning if we have program data
   if (programId) {
     const prog = findProgram(stateCode, programId);
-    if (prog) {
-      contextData += `\nTarget Program: ${prog.program_name}\nAgency: ${prog.agency}\nEligibility: ${prog.eligibility}\nApply Notes: ${prog.apply_notes}\n`;
+    if (prog && prog.eligibility) {
+      warnings.push({
+        type: "eligibility_boundary",
+        severity: "warning",
+        title: `${prog.program_name} Eligibility Requirements`,
+        description: `This program requires: ${prog.eligibility.slice(0, 250)}`,
+        source: prog.source,
+      });
     }
   }
+
+  // Add oversight body threshold warning if applicable
   if (oversightBody) {
     const body = findOversightBody(stateCode, oversightBody);
-    if (body) {
-      contextData += `\nOversight Body: ${body.oversight_body}\nWhat to Report: ${body.what_to_report}\nLegal Threshold: ${body.legal_threshold}\nResponse Timeline: ${body.response_timeline}\n`;
+    if (body && body.legal_threshold) {
+      warnings.push({
+        type: "eligibility_boundary",
+        severity: "warning",
+        title: `${body.oversight_body} Filing Threshold`,
+        description: `This body requires: ${body.legal_threshold.slice(0, 250)}`,
+      });
+    }
+    if (body && body.response_timeline) {
+      warnings.push({
+        type: "deadline",
+        severity: "info",
+        title: `Expected Response Timeline`,
+        description: `${body.oversight_body} response timeline: ${body.response_timeline.slice(0, 200)}`,
+      });
     }
   }
 
-  // Load related programs for cross-program warnings
-  const allPrograms = loadPrograms(stateCode);
-  const programSummary = allPrograms.slice(0, 20).map(p =>
-    `${p.program_name}: ${p.eligibility}`
-  ).join("\n");
-
-  const response = await invokeLLM({
-    messages: [
-      {
-        role: "system",
-        content: `You are a pre-flight eligibility checker for a civic assistance tool called Luminari LumenSend. Your job is to surface eligibility boundaries, benefit cliffs, disqualifiers, and cross-program interactions that the user should know BEFORE they submit an application, appeal, or complaint.
-
-You must be factual and structural. Do not give legal advice. Do not judge. Surface documented rules and thresholds only.
-
-Return a JSON array of warnings. Each warning has:
-- type: "eligibility_boundary" | "benefit_cliff" | "disqualifier" | "cross_program" | "deadline" | "documentation"
-- severity: "info" | "warning" | "critical"
-- title: short title (max 80 chars)
-- description: clear explanation of the boundary/cliff/disqualifier (max 300 chars)
-
-Return between 2-6 warnings. Focus on the most important structural traps.`
-      },
-      {
-        role: "user",
-        content: `State: ${stateCode}
-Document Type: ${documentType}
-Context: ${contextType}
-${contextData}
-${userSituation ? `User Situation: ${userSituation}` : ""}
-
-Available programs in this state:
-${programSummary}
-
-Generate pre-flight warnings for this action.`
-      }
-    ],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "preflight_warnings",
-        strict: true,
-        schema: {
-          type: "object",
-          properties: {
-            warnings: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  type: { type: "string", enum: ["eligibility_boundary", "benefit_cliff", "disqualifier", "cross_program", "deadline", "documentation"] },
-                  severity: { type: "string", enum: ["info", "warning", "critical"] },
-                  title: { type: "string" },
-                  description: { type: "string" },
-                },
-                required: ["type", "severity", "title", "description"],
-                additionalProperties: false,
-              }
-            }
-          },
-          required: ["warnings"],
-          additionalProperties: false,
-        }
-      }
-    }
-  });
-
-  try {
-    const content = response.choices[0].message.content;
-    const parsed = JSON.parse(typeof content === "string" ? content : "{}");
-    return parsed.warnings ?? [];
-  } catch {
-    return [];
-  }
+  return warnings;
 }
 
-// ─── Letter Generation ───
+// ─── Letter Generation (Template-Based) ───
 
 export interface GeneratedLetter {
   subject: string;
@@ -210,6 +286,16 @@ export interface GeneratedLetter {
     description: string;
   }>;
 }
+
+const docTypeLabels: Record<string, string> = {
+  appeal: "Appeal Letter",
+  complaint: "Formal Complaint",
+  inquiry: "Inquiry Letter",
+  application: "Application Cover Letter",
+  follow_up: "Follow-Up Letter",
+  demand: "Demand Letter",
+  notice: "Notice Letter",
+};
 
 export async function generateLetter(opts: {
   stateCode: string;
@@ -232,19 +318,19 @@ export async function generateLetter(opts: {
   } = opts;
 
   // Gather recipient info
-  let recipientInfo = "";
   let recipientAgency = "";
   let recipientAddress = "";
   let recipientEmail = "";
   let recipientPhone = "";
-  let recipientName = "";
+  let recipientName = "To Whom It May Concern";
+  let recipientContext = "";
 
   if (programId) {
     const prog = findProgram(stateCode, programId);
     if (prog) {
       recipientAgency = prog.agency;
       recipientPhone = prog.phone || "";
-      recipientInfo = `Agency: ${prog.agency}\nProgram: ${prog.program_name}\nPhone: ${prog.phone}\nWebsite: ${prog.website}\nEligibility: ${prog.eligibility}\nHow to Apply: ${prog.apply_notes}`;
+      recipientContext = `Program: ${prog.program_name}\nEligibility: ${prog.eligibility}\nHow to Apply: ${prog.apply_notes}`;
     }
   }
 
@@ -254,130 +340,111 @@ export async function generateLetter(opts: {
       recipientAgency = body.oversight_body;
       recipientAddress = [body.street_address, body.city, body.state_code, body.zip].filter(Boolean).join(", ");
       recipientPhone = body.phone || "";
-      recipientInfo = `Body: ${body.oversight_body}\nAddress: ${recipientAddress}\nPhone: ${body.phone}\nComplaint Portal: ${body.complaint_portal}\nWhat to Report: ${body.what_to_report}\nLegal Threshold: ${body.legal_threshold}\nResponse Timeline: ${body.response_timeline}`;
+      recipientEmail = body.complaint_portal || "";
+      recipientContext = `What to Report: ${body.what_to_report}\nLegal Threshold: ${body.legal_threshold}`;
     }
   }
 
-  // Load related oversight bodies for dispatch bundle suggestions
-  const allBodies = loadOversightBodies(stateCode);
-  const bodySummary = allBodies.slice(0, 10).map(b =>
-    `${b.oversight_body} (${b.jurisdiction}): ${b.what_to_report}`
-  ).join("\n");
-
-  const docTypeLabels: Record<string, string> = {
-    appeal: "Appeal Letter",
-    complaint: "Formal Complaint",
-    inquiry: "Inquiry Letter",
-    application: "Application Cover Letter",
-    follow_up: "Follow-Up Letter",
-    demand: "Demand Letter",
-    notice: "Notice Letter",
-  };
-
-  const response = await invokeLLM({
-    messages: [
-      {
-        role: "system",
-        content: `You are a document generation engine for Luminari LumenSend. You generate formal ${docTypeLabels[documentType] || "letters"} that help people navigate government systems, file complaints, appeal denials, and apply for programs.
-
-Rules:
-- Write in a formal, professional tone
-- Include specific statutory references, agency names, and contact info from the provided context
-- Include protective language: request written confirmation of receipt, request information about how this action may affect other benefits
-- Do not give legal advice — frame everything as the person exercising their documented rights
-- Include a clear subject line
-- Date the letter with today's date
-- Include sender and recipient addresses in the body
-- End with a clear call to action and response deadline request
-
-Also identify 0-3 related actions the person should consider (other agencies to contact, related programs to apply for, escalation paths). These form the "dispatch bundle."
-
-Return JSON with: subject, body, recipientAgency, recipientName (use "To Whom It May Concern" if unknown), recipientAddress, recipientEmail, recipientPhone, documentType, and relatedActions array.`
-      },
-      {
-        role: "user",
-        content: `State: ${stateCode}
-Document Type: ${documentType}
-Context: ${contextType}
-
-Sender: ${senderName}
-${senderAddress ? `Address: ${senderAddress}` : ""}
-${senderEmail ? `Email: ${senderEmail}` : ""}
-${senderPhone ? `Phone: ${senderPhone}` : ""}
-
-Recipient Info:
-${recipientInfo || "Not specified — use general inquiry format"}
-
-Situation:
-${situation}
-
-${additionalContext ? `Additional Context:\n${additionalContext}` : ""}
-
-Other oversight bodies in this state:
-${bodySummary}
-
-Generate the ${docTypeLabels[documentType] || "letter"}.`
-      }
-    ],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "generated_letter",
-        strict: true,
-        schema: {
-          type: "object",
-          properties: {
-            subject: { type: "string" },
-            body: { type: "string" },
-            recipientAgency: { type: "string" },
-            recipientName: { type: "string" },
-            recipientAddress: { type: "string" },
-            recipientEmail: { type: "string" },
-            recipientPhone: { type: "string" },
-            documentType: { type: "string" },
-            relatedActions: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  documentType: { type: "string" },
-                  recipientAgency: { type: "string" },
-                  description: { type: "string" },
-                },
-                required: ["documentType", "recipientAgency", "description"],
-                additionalProperties: false,
-              }
-            }
-          },
-          required: ["subject", "body", "recipientAgency", "recipientName", "recipientAddress", "recipientEmail", "recipientPhone", "documentType", "relatedActions"],
-          additionalProperties: false,
-        }
-      }
-    }
+  const today = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 
-  try {
-    const content = response.choices[0].message.content;
-    const parsed = JSON.parse(typeof content === "string" ? content : "{}");
-    // Override with known data if we have it
-    return {
-      ...parsed,
-      recipientAgency: recipientAgency || parsed.recipientAgency,
-      recipientAddress: recipientAddress || parsed.recipientAddress,
-      recipientEmail: recipientEmail || parsed.recipientEmail,
-      recipientPhone: recipientPhone || parsed.recipientPhone,
-    };
-  } catch {
-    return {
-      subject: `${docTypeLabels[documentType] || "Letter"} — ${situation.slice(0, 60)}`,
-      body: `Dear Sir or Madam,\n\nI am writing regarding: ${situation}\n\nPlease respond at your earliest convenience.\n\nSincerely,\n${senderName}`,
-      recipientAgency,
-      recipientName: "To Whom It May Concern",
-      recipientAddress,
-      recipientEmail,
-      recipientPhone,
-      documentType,
-      relatedActions: [],
-    };
+  const docLabel = docTypeLabels[documentType] || "Letter";
+  const subject = `${docLabel} — ${situation.slice(0, 80)}`;
+
+  // Build the letter body from template
+  const senderBlock = [
+    senderName,
+    senderAddress || "[YOUR ADDRESS]",
+    senderEmail || "[YOUR EMAIL]",
+    senderPhone || "[YOUR PHONE]",
+  ].join("\n");
+
+  const recipientBlock = [
+    recipientName,
+    recipientAgency || "[AGENCY NAME]",
+    recipientAddress || "[AGENCY ADDRESS]",
+  ].filter(Boolean).join("\n");
+
+  // Document type-specific opening and closing
+  const openings: Record<string, string> = {
+    appeal: "I am writing to formally appeal the decision described below. I believe this decision was made in error and respectfully request that it be reconsidered based on the following information.",
+    complaint: "I am writing to file a formal complaint regarding the matter described below. I request that this complaint be investigated and that appropriate corrective action be taken.",
+    inquiry: "I am writing to request information regarding the matter described below. I would appreciate a written response at your earliest convenience.",
+    application: "I am writing to submit my application for the program described below. I believe I meet the eligibility requirements and have enclosed the relevant supporting documentation.",
+    follow_up: "I am writing to follow up on my previous communication regarding the matter described below. I have not yet received a response and would appreciate an update on the status of my request.",
+    demand: "I am writing to formally demand action regarding the matter described below. If this matter is not resolved within a reasonable timeframe, I will be forced to pursue additional remedies available to me under law.",
+    notice: "This letter serves as formal notice regarding the matter described below. Please take appropriate action within the timeframe specified.",
+  };
+
+  const closings: Record<string, string> = {
+    appeal: "I respectfully request that this appeal be reviewed promptly and that I receive written notification of the decision. Please confirm receipt of this appeal in writing.",
+    complaint: "I request written confirmation of receipt of this complaint and notification of any investigation or action taken. Please provide a timeline for resolution.",
+    inquiry: "I would appreciate a written response within 30 days. If additional information is needed to process this request, please contact me at the information provided above.",
+    application: "Please confirm receipt of this application and notify me of any additional documentation required. I am available to provide further information as needed.",
+    follow_up: "I request a written response within 10 business days. If my original request has been processed, please provide the current status. If additional information is needed, please contact me.",
+    demand: "I expect a written response within 14 days of receipt of this letter. Failure to respond or take corrective action will result in my pursuing all available legal remedies.",
+    notice: "Please acknowledge receipt of this notice in writing. Retain this letter for your records.",
+  };
+
+  const opening = openings[documentType] || openings["inquiry"];
+  const closing = closings[documentType] || closings["inquiry"];
+
+  const body = `${today}
+
+${senderBlock}
+
+${recipientBlock}
+
+RE: ${subject}
+
+Dear ${recipientName}:
+
+${opening}
+
+SITUATION:
+${situation}
+${additionalContext ? `\nADDITIONAL CONTEXT:\n${additionalContext}` : ""}
+${recipientContext ? `\nRELEVANT PROGRAM/AGENCY INFORMATION:\n${recipientContext}` : ""}
+
+${closing}
+
+I request written confirmation of receipt of this ${docLabel.toLowerCase()}.
+
+Sincerely,
+
+${senderName}
+${senderAddress || "[YOUR ADDRESS]"}
+${senderEmail || "[YOUR EMAIL]"}
+${senderPhone || "[YOUR PHONE]"}`;
+
+  // Build related actions from other oversight bodies in the state
+  const relatedActions: Array<{ documentType: string; recipientAgency: string; description: string }> = [];
+  const allBodies = loadOversightBodies(stateCode);
+  const otherBodies = allBodies.filter(b => b.oversight_body !== recipientAgency).slice(0, 3);
+  for (const ob of otherBodies) {
+    if (ob.what_to_report && situation.toLowerCase().split(/\s+/).some(word =>
+      word.length > 4 && ob.what_to_report.toLowerCase().includes(word)
+    )) {
+      relatedActions.push({
+        documentType: "complaint",
+        recipientAgency: ob.oversight_body,
+        description: `Consider also filing with ${ob.oversight_body} (${ob.jurisdiction}): ${ob.what_to_report.slice(0, 100)}`,
+      });
+    }
   }
+
+  return {
+    subject,
+    body,
+    recipientAgency,
+    recipientName,
+    recipientAddress,
+    recipientEmail,
+    recipientPhone,
+    documentType,
+    relatedActions,
+  };
 }
