@@ -14,6 +14,17 @@ import "./index.css";
 // Initialize validation session for /intake and /case/:id routes
 initializeValidationSession().catch(console.error);
 
+function is_non_retryable_runtime_error(error: unknown): boolean {
+  const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  return [
+    "timeout exceeded when trying to connect",
+    "pool acquire timed out",
+    "pool is saturated",
+    "application_pool_saturated",
+    "request timed out",
+  ].some(fragment => message.includes(fragment));
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -23,6 +34,10 @@ const queryClient = new QueryClient({
           if (error.message === UNAUTHED_ERR_MSG) return false;
           if (error.message?.includes('cancel')) return false;
         }
+        // Replaying database saturation multiplies pressure on the same pool
+        // and keeps read-only screens in a misleading loading state. Surface
+        // the first bounded failure and let the user retry deliberately.
+        if (is_non_retryable_runtime_error(error)) return false;
         return failureCount < 2;
       },
       staleTime: 10000,
@@ -80,9 +95,25 @@ queryClient.getMutationCache().subscribe(event => {
 });
 
 // Helper: get a fresh Supabase session token, refreshing if expiring soon
+async function with_timeout<T>(promise: Promise<T>, timeout_ms: number, label: string): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const timeout_promise = new Promise<never>((_resolve, reject) => {
+    timeout = setTimeout(() => reject(new Error(`${label} timed out after ${timeout_ms}ms`)), timeout_ms);
+  });
+  try {
+    return await Promise.race([promise, timeout_promise]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
 async function getFreshSessionToken(): Promise<string | null> {
   try {
-    const { data: sessionData } = await supabase.auth.getSession();
+    const { data: sessionData } = await with_timeout(
+      supabase.auth.getSession(),
+      3_000,
+      "Supabase session lookup",
+    );
     const token = sessionData.session?.access_token ?? null;
 
     if (!token) {
@@ -95,7 +126,11 @@ async function getFreshSessionToken(): Promise<string | null> {
     const nowSecs = Math.floor(Date.now() / 1000);
     if (expiresAt && expiresAt - nowSecs < 60) {
       console.log('[AUTH] Token expiring soon, refreshing...');
-      const { data: refreshData, error } = await supabase.auth.refreshSession();
+      const { data: refreshData, error } = await with_timeout(
+        supabase.auth.refreshSession(),
+        5_000,
+        "Supabase session refresh",
+      );
       if (error) {
         console.warn('[AUTH] Session refresh failed:', error.message);
         return token; // Fall back to existing token
@@ -125,11 +160,41 @@ const trpcClient = trpc.createClient({
           console.warn('[AUTH] tRPC call proceeding without auth token — expect 10001 if route is protected');
         }
 
-        return globalThis.fetch(input, {
-          ...(init ?? {}),
-          headers,
-          credentials: "include",
-        });
+        const request_url = typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url;
+        const bounded_runtime_read = request_url.includes("civicGenome.")
+          || request_url.includes("uploadSessions.getActive");
+        if (!bounded_runtime_read) {
+          return globalThis.fetch(input, {
+            ...(init ?? {}),
+            headers,
+            credentials: "include",
+          });
+        }
+
+        const controller = new AbortController();
+        const upstream_signal = init?.signal;
+        const forward_abort = () => controller.abort(upstream_signal?.reason);
+        if (upstream_signal?.aborted) forward_abort();
+        else upstream_signal?.addEventListener("abort", forward_abort, { once: true });
+        const timeout = setTimeout(() => {
+          controller.abort(new Error("Lighthouse request timed out after 12000ms"));
+        }, 12_000);
+
+        try {
+          return await globalThis.fetch(input, {
+            ...(init ?? {}),
+            headers,
+            credentials: "include",
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeout);
+          upstream_signal?.removeEventListener("abort", forward_abort);
+        }
       },
     }),
   ],

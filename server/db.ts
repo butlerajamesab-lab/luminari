@@ -5,6 +5,8 @@ import { runPhoenixDetection, emitPhoenixSignal } from "./engines/phoenix-detect
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { create_database_pool, get_database_host_label } from "./pg-config";
+import { get_database_pool_lease_guard_snapshot } from "./database-pool-lease-guard";
+import { create_receiver_bound_lazy_proxy } from "./lazy-receiver-bound-proxy";
 import {
   users, cases, documents, quotes, entities, entityRoles,
   relationships, relationshipEvidence, claims, findings,
@@ -74,6 +76,7 @@ function initializePool(): Pool {
     max: 25,
     idle_timeout_millis: 10000,
     query_timeout_millis: 8000,
+    client_lease_timeout_millis: 60_000,
     application_name: "luminari-render",
   });
   console.log("[DB] runtime pool configuration", get_pool_runtime_configuration());
@@ -82,6 +85,7 @@ function initializePool(): Pool {
 
 export function get_pool_runtime_configuration() {
   const pool = pgPool;
+  const lease_guard = get_database_pool_lease_guard_snapshot(pool);
   return {
     host: get_database_host_label(),
     pool_max: (pool as any)?.options?.max ?? 5,
@@ -94,6 +98,7 @@ export function get_pool_runtime_configuration() {
     pool_total_count: pool?.totalCount ?? 0,
     pool_idle_count: pool?.idleCount ?? 0,
     pool_waiting_count: pool?.waitingCount ?? 0,
+    ...lease_guard,
   };
 }
 
@@ -106,11 +111,7 @@ export function getDb() {
 }
 
 // Lazy getter for backward compatibility
-export const db = new Proxy({} as any, {
-  get: (target, prop) => {
-    return getDb()[prop as any];
-  },
-});
+export const db = create_receiver_bound_lazy_proxy(() => getDb()) as any;
 
 // Export pool for direct access if needed
 export function getPool(): Pool {
@@ -261,11 +262,7 @@ export async function query_with_diagnostics<T = any>(
   }
 }
 
-export const pool = new Proxy({} as any, {
-  get: (target, prop) => {
-    return initializePool()[prop as any];
-  },
-});
+export const pool = create_receiver_bound_lazy_proxy(() => initializePool()) as any;
 
 // 3. Runtime guard validates actual connection success instead of hardcoded name
 export async function verifyConnection() {

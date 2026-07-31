@@ -334,6 +334,7 @@ export default function Upload() {
         const stored = JSON.parse(localStorage.getItem("activeUploadSessionIds") || "[]");
         stored.push(sessionId);
         localStorage.setItem("activeUploadSessionIds", JSON.stringify(stored));
+        window.dispatchEvent(new Event("lighthouse:upload-sessions-changed"));
         // Invalidate active sessions query so GlobalUploadIndicator picks it up
         utils.uploadSessions.getActive.invalidate();
       } catch {
@@ -447,6 +448,7 @@ export default function Upload() {
         } else {
           localStorage.removeItem("activeUploadSessionIds");
         }
+        window.dispatchEvent(new Event("lighthouse:upload-sessions-changed"));
         utils.uploadSessions.getActive.invalidate();
       } catch {
         // Non-critical

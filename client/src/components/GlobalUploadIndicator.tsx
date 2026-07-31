@@ -16,12 +16,39 @@ export default function GlobalUploadIndicator() {
   const [, setLocation] = useLocation();
   const [expanded, setExpanded] = useState(false);
   const [dismissed, setDismissed] = useState<Set<number>>(new Set());
+  const [hasTrackedSessions, setHasTrackedSessions] = useState(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("activeUploadSessionIds") || "[]");
+      return Array.isArray(stored) && stored.length > 0;
+    } catch {
+      return false;
+    }
+  });
 
-  // Poll for active sessions every 3 seconds — only when authenticated
+  useEffect(() => {
+    const syncTrackedSessions = () => {
+      try {
+        const stored = JSON.parse(localStorage.getItem("activeUploadSessionIds") || "[]");
+        setHasTrackedSessions(Array.isArray(stored) && stored.length > 0);
+      } catch {
+        setHasTrackedSessions(false);
+      }
+    };
+    window.addEventListener("storage", syncTrackedSessions);
+    window.addEventListener("lighthouse:upload-sessions-changed", syncTrackedSessions);
+    return () => {
+      window.removeEventListener("storage", syncTrackedSessions);
+      window.removeEventListener("lighthouse:upload-sessions-changed", syncTrackedSessions);
+    };
+  }, []);
+
+  // Poll only while this browser is tracking an upload. A global authenticated
+  // poll with no active work amplified database incidents across every page.
   const { data: activeSessions } = trpc.uploadSessions.getActive.useQuery(undefined, {
-    refetchInterval: 3000,
+    refetchInterval: query => query.state.status === "error" ? false : 3000,
     refetchIntervalInBackground: false,
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && hasTrackedSessions,
+    retry: false,
   });
 
   // Also check localStorage for session IDs to reattach after refresh
@@ -39,10 +66,12 @@ export default function GlobalUploadIndicator() {
           }
           if (stillActive.length === 0) {
             localStorage.removeItem("activeUploadSessionIds");
+            setHasTrackedSessions(false);
           }
         }
       } catch {
         localStorage.removeItem("activeUploadSessionIds");
+        setHasTrackedSessions(false);
       }
     }
   }, [activeSessions]);

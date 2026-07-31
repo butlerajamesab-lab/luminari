@@ -18,6 +18,10 @@ vi.mock("pg", () => ({
       pool_state.event_names.push(event_name);
       return this;
     }
+
+    connect() {
+      return Promise.reject(new Error("not used by this test"));
+    }
   },
 }));
 
@@ -50,6 +54,6 @@ describe("canonical PostgreSQL pool configuration", () => {
       query_timeout: 8000,
       application_name: "luminari-render",
     });
-    expect(pool_state.event_names).toEqual(["error"]);
+    expect(pool_state.event_names).toEqual(["error", "remove"]);
   });
 });

@@ -29,6 +29,7 @@ const sans = "'Inter', system-ui, sans-serif";
 const serif = "'Cormorant Garamond', serif";
 const score = (value?: number | null) => Number(value ?? 0).toFixed(2);
 const date = (value?: string | null) => value ? new Date(value).toLocaleDateString() : "Not observed";
+const stable_read_options = { retry: false, refetchOnWindowFocus: false } as const;
 
 type operating_contract = {
   service_key: string;
@@ -98,34 +99,34 @@ export default function CivicGenomePage() {
 
   const auth_identity = trpc.auth.me.useQuery();
   const is_admin = isAuthenticated && auth_identity.data?.role === "admin";
-  const stats = trpc.civicGenome.stats.useQuery();
-  const families = trpc.civicGenome.list_families.useQuery({ limit: 30 });
-  const operating_contracts = trpc.civicGenome.operating_contracts.useQuery();
+  const stats = trpc.civicGenome.stats.useQuery(undefined, stable_read_options);
+  const families = trpc.civicGenome.list_families.useQuery({ limit: 30 }, stable_read_options);
+  const operating_contracts = trpc.civicGenome.operating_contracts.useQuery(undefined, stable_read_options);
   const bill_lookup = trpc.civicGenome.get_bill_by_source_id.useQuery(
     { source_bill_id: numeric_source_bill_id ?? 0 },
-    { enabled: valid_source_bill_id },
+    { enabled: valid_source_bill_id, ...stable_read_options },
   );
   const rosetta_pipeline = trpc.civicGenome.get_rosetta_pipeline_status.useQuery(
     { source_bill_id: numeric_source_bill_id ?? 0 },
-    { enabled: is_admin && valid_source_bill_id },
+    { enabled: is_admin && valid_source_bill_id, ...stable_read_options },
   );
 
   const selected = bill_lookup.data ?? null;
   const family_id = selected?.family_id ?? null;
   const bill_detail = trpc.civicGenome.get_bill_detail.useQuery(
     { genome_bill_id: selected?.genome_bill_id ?? "00000000-0000-0000-0000-000000000000" },
-    { enabled: Boolean(selected?.genome_bill_id) },
+    { enabled: Boolean(selected?.genome_bill_id), ...stable_read_options },
   );
   const family = trpc.civicGenome.get_family.useQuery(
     { family_id: family_id ?? "00000000-0000-0000-0000-000000000000" },
-    { enabled: Boolean(family_id) },
+    { enabled: Boolean(family_id), ...stable_read_options },
   );
-  const family_bills = trpc.civicGenome.list_bills.useQuery({ family_id: family_id ?? undefined, limit: 100 }, { enabled: Boolean(family_id) });
-  const events = trpc.civicGenome.list_events.useQuery({ family_id: family_id ?? undefined, limit: 100 }, { enabled: Boolean(family_id) });
-  const lineage = trpc.civicGenome.list_lineage_edges.useQuery({ family_id: family_id ?? undefined, limit: 100 }, { enabled: Boolean(family_id) });
+  const family_bills = trpc.civicGenome.list_bills.useQuery({ family_id: family_id ?? undefined, limit: 100 }, { enabled: Boolean(family_id), ...stable_read_options });
+  const events = trpc.civicGenome.list_events.useQuery({ family_id: family_id ?? undefined, limit: 100 }, { enabled: Boolean(family_id), ...stable_read_options });
+  const lineage = trpc.civicGenome.list_lineage_edges.useQuery({ family_id: family_id ?? undefined, limit: 100 }, { enabled: Boolean(family_id), ...stable_read_options });
   const momentum = trpc.civicGenome.list_momentum_snapshots.useQuery(
     { family_id: family_id ?? "00000000-0000-0000-0000-000000000000", limit: 30 },
-    { enabled: Boolean(family_id) },
+    { enabled: Boolean(family_id), ...stable_read_options },
   );
   const refresh_selected_record = async () => {
     await Promise.all([
@@ -361,7 +362,12 @@ export default function CivicGenomePage() {
       {!source_bill_id ? <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: "1rem" }}>
         <aside style={panel}><div style={{ display: "flex", alignItems: "center", gap: ".5rem", fontFamily: mono, color: p.green, fontSize: ".72rem", marginBottom: ".8rem" }}><Network size={15}/> Highest-momentum families</div><div style={{ display: "grid", gap: ".55rem" }}>{family_items.map(item => <div key={item.family_id} style={{ background: p.soft, border: `1px solid ${p.border}`, borderRadius: 8, padding: ".7rem" }}><div style={{ fontFamily: sans, fontWeight: 650 }}>{item.family_label}</div><div style={{ fontFamily: mono, fontSize: ".63rem", color: p.muted, marginTop: ".35rem" }}>{item.policy_domain} · {item.family_status} · momentum {score(item.momentum_score)}</div></div>)}</div></aside>
         <main style={{ ...panel, padding: "clamp(1rem,3vw,2rem)", minHeight: 420, display: "grid", alignContent: "center" }}><GitBranch size={36} color={p.green}/><h2 style={{ fontFamily: serif, fontSize: "2.2rem", margin: ".7rem 0" }}>Choose an entry point</h2><p style={{ color: p.muted, fontFamily: sans, lineHeight: 1.7 }}>Open a bill from the Docket Room or enter its source bill ID. The Genome resolves its family, structural DNA, events, lineage, momentum, and provenance.</p></main>
-      </div> : !valid_source_bill_id ? <Empty>The source bill ID must be a positive numeric Docket identifier.</Empty> : bill_lookup.isLoading ? <Empty>Resolving the selected bill against the Civic Genome substrate…</Empty> : bill_lookup.error ? <Empty>Genome lookup failed: {bill_lookup.error.message}</Empty> : !selected ? <div style={panel}>
+      </div> : !valid_source_bill_id ? <Empty>The source bill ID must be a positive numeric Docket identifier.</Empty> : bill_lookup.isLoading ? <Empty>Resolving the selected bill against the Civic Genome substrate…</Empty> : bill_lookup.error ? <div style={panel}>
+        <h2 style={{ fontFamily: serif, margin: 0 }}>Genome service temporarily unavailable</h2>
+        <p style={{ color: p.muted, fontFamily: sans, lineHeight: 1.6 }}>The bounded read could not complete. No Docket or Civic Genome record was changed.</p>
+        <button onClick={() => bill_lookup.refetch()} disabled={bill_lookup.isFetching} style={{ background: p.green_soft, border: `1px solid ${p.green}`, color: p.green, borderRadius: 8, padding: ".6rem .85rem", fontFamily: mono, fontSize: ".7rem", cursor: bill_lookup.isFetching ? "wait" : "pointer" }}>{bill_lookup.isFetching ? "Retrying…" : "Retry genome lookup"}</button>
+        <details style={{ marginTop: ".7rem" }}><summary style={{ cursor: "pointer", color: p.muted, fontFamily: mono, fontSize: ".62rem" }}>Technical detail</summary><div style={{ marginTop: ".35rem", color: p.muted, fontFamily: mono, fontSize: ".62rem", overflowWrap: "anywhere" }}>{bill_lookup.error.message}</div></details>
+      </div> : !selected ? <div style={panel}>
         <h2 style={{ fontFamily: serif, marginTop: 0 }}>Not assembled yet</h2><p style={{ color: p.muted, fontFamily: sans, lineHeight: 1.6 }}>No Civic Genome record currently exists for this Docket bill. The official Docket record remains intact and no relationship has been invented.</p>
         <button onClick={assemble_selected} disabled={assemble_docket_cache.isPending || !is_admin} style={{ background: p.green_soft, border: `1px solid ${is_admin ? p.green : p.border}`, color: is_admin ? p.green : p.muted, borderRadius: 8, padding: ".6rem .85rem", fontFamily: mono, fontSize: ".7rem", cursor: assemble_docket_cache.isPending ? "wait" : is_admin ? "pointer" : "not-allowed" }}>{assemble_docket_cache.isPending ? "Assembling from Docket cache…" : is_admin ? "Assemble from Docket cache" : "Administrator sign-in required"}</button>
         {assemble_docket_cache.error && <p style={{ color: p.muted, fontFamily: mono, fontSize: ".68rem" }}>Assembly failed: {assemble_docket_cache.error.message}</p>}

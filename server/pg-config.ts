@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import { install_database_pool_lease_guard } from "./database-pool-lease-guard";
 
 const fast_fail_connection_string = "postgresql://x:x@127.0.0.1:1/x";
 const stripped_database_url_params = [
@@ -20,6 +21,7 @@ type database_pool_options = {
   max_uses?: number;
   keep_alive?: boolean;
   query_timeout_millis?: number;
+  client_lease_timeout_millis?: number;
   application_name?: string;
 };
 
@@ -78,6 +80,7 @@ export function create_database_pool(options: database_pool_options = {}): Pool 
   const max_uses = options.max_uses ?? 7500;
   const keep_alive = options.keep_alive ?? true;
   const query_timeout_millis = options.query_timeout_millis;
+  const client_lease_timeout_millis = options.client_lease_timeout_millis ?? 60_000;
 
   const pool = new Pool({
     connectionString: sanitized_connection_string,
@@ -92,6 +95,10 @@ export function create_database_pool(options: database_pool_options = {}): Pool 
   });
   pool.on("error", (err) => {
     console.error(`[${label}] Unexpected PostgreSQL pool error:`, err);
+  });
+  install_database_pool_lease_guard(pool, {
+    timeout_ms: client_lease_timeout_millis,
+    warn_ms: Math.min(10_000, client_lease_timeout_millis),
   });
   // Do not issue session-level SET commands from the pool connect event. The
   // canonical DATABASE_URL uses Supavisor transaction mode, where session
