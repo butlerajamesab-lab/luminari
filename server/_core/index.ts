@@ -5,6 +5,7 @@ import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { requireExpressAdmin } from "./express-admin-middleware";
 import { sessionMiddleware } from "./session-middleware";
 import { aiInspectRouter } from "../routes/ai-inspect-router";
 import { systemVisibilityRouter } from "../routes/system-visibility-router";
@@ -158,7 +159,7 @@ async function startServer() {
   });
 
   app.use("/api/ai", aiInspectRouter);
-  app.use("/api/system", systemVisibilityRouter);
+  app.use("/api/system", requireExpressAdmin, systemVisibilityRouter);
   app.use("/api/conveyor", conveyorRouter);
   app.use("/api/civic-map", civicMapRouter);
   app.use("/api/atlas", atlasProxyRouter);
