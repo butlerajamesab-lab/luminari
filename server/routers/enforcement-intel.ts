@@ -118,6 +118,8 @@ export const enforcementIntelRouter = router({
         })),
         integrity: {
           atlas_raw_observation_count: to_count(integrity.atlas_raw_observation_count),
+          atlas_unique_observation_count: to_count(integrity.atlas_unique_observation_count),
+          atlas_replay_observation_count: to_count(integrity.atlas_replay_observation_count),
           legacy_detected_signals_count: to_count(integrity.legacy_detected_signals_count),
           legacy_live_signals_count: to_count(integrity.legacy_live_signals_count),
           prior_v2_signal_count: to_count(integrity.prior_v2_signal_count),
@@ -150,7 +152,6 @@ export const enforcementIntelRouter = router({
       const { domain, claimType, agencyShort, hasDocuments, hasWitnesses } =
         input;
 
-      // Query workflow_master for matching domain
       const workflows = await db
         .select()
         .from(workflowMaster)
@@ -177,14 +178,12 @@ export const enforcementIntelRouter = router({
 
       const workflowId = workflows[0].id;
 
-      // Query workflow_steps for this workflow
       const steps = await db
         .select()
         .from(workflowSteps)
         .where(eq(workflowSteps.workflowId, workflowId))
         .orderBy(workflowSteps.stepOrder);
 
-      // Query claim elements if claimType provided
       let claimElements: any[] = [];
       if (claimType) {
         claimElements = await db
@@ -199,13 +198,11 @@ export const enforcementIntelRouter = router({
           .orderBy(claimElementMatrix.elementOrder);
       }
 
-      // Query proof frameworks
       const proofFws = await db
         .select()
         .from(proofFrameworks)
         .where(eq(proofFrameworks.domain, domain));
 
-      // Build investigation workflow from database records
       const immediateActions = steps
         .filter((s) => s.type === "eligibility_check")
         .map((s, i) => ({
