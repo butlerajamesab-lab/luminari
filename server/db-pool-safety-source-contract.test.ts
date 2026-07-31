@@ -16,6 +16,8 @@ const ingestion_control_source = read("./engines/ingestion_control.ts");
 const civic_genome_page = read("../client/src/pages/CivicGenome.tsx");
 const client_runtime = read("../client/src/main.tsx");
 const lazy_proxy_source = read("./lazy-receiver-bound-proxy.ts");
+const core_pool_source = read("./core/pg-pool.ts");
+const internal_core_pool_source = read("./_core/pg-pool.ts");
 
 describe("shared PostgreSQL pool safety contract", () => {
   it("does not race a session SET against the first transaction-pooler query", () => {
@@ -40,6 +42,10 @@ describe("shared PostgreSQL pool safety contract", () => {
     expect(db_source).toContain("create_receiver_bound_lazy_proxy(() => initializePool())");
     expect(lazy_proxy_source).toContain("value.bind(instance)");
     expect(lazy_proxy_source).toContain("Reflect.set(instance, property, value, instance)");
+    expect(core_pool_source).toContain('export { pool } from "../db"');
+    expect(internal_core_pool_source).toContain('export { pool } from "../db"');
+    expect(core_pool_source).not.toContain("new Proxy");
+    expect(internal_core_pool_source).not.toContain("new Proxy");
   });
 
   it("runs registry promotion policy gates before checking out a client", () => {

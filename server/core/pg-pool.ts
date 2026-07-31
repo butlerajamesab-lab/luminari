@@ -5,11 +5,6 @@
  * DO NOT create a separate pool here — see DATABASE_ACCESS_CONSTITUTION.md.
  */
 
-import { getPool } from "../db";
-
-// Re-export the canonical pool so existing imports continue to work
-const pool = new Proxy({} as any, {
-  get: (_target, prop) => (getPool() as any)[prop],
-});
-
-export { pool };
+// Re-export the canonical receiver-bound lazy facade so existing imports
+// cannot reintroduce a second, unbound Proxy receiver.
+export { pool } from "../db";
