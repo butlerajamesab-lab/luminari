@@ -2,7 +2,13 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { getTableColumns } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { corpusSnapshots, documents, uploadSessions } from "../drizzle/schema";
+import {
+  auditTrail,
+  corpusSnapshots,
+  documents,
+  pipelineEvents,
+  uploadSessions,
+} from "../drizzle/schema";
 
 function read_source(relative_path: string): string {
   return readFileSync(
@@ -111,6 +117,54 @@ describe("document upload PostgreSQL persistence contract", () => {
     expect(columns.id.getSQLType()).toBe("serial");
     expect(columns.caseId.getSQLType()).toBe("integer");
     expect(columns.snapshotId.getSQLType()).toBe("integer");
+  });
+
+  it("maps upload audit and pipeline receipts to their live snake_case tables", () => {
+    const audit_columns = getTableColumns(auditTrail);
+    const pipeline_columns = getTableColumns(pipelineEvents);
+
+    expect(physical_column_names(audit_columns)).toEqual({
+      id: "id",
+      caseId: "case_id",
+      userId: "user_id",
+      action: "action",
+      targetType: "target_type",
+      targetId: "target_id",
+      details: "details",
+      hash: "hash",
+      createdAt: "created_at",
+    });
+    expect(audit_columns.details.getSQLType()).toBe("text");
+    expect(audit_columns.details.mapToDriverValue({ source: "upload" })).toBe(
+      '{"source":"upload"}',
+    );
+
+    expect(physical_column_names(pipeline_columns)).toEqual({
+      id: "id",
+      userId: "user_id",
+      pipelineType: "pipeline_type",
+      eventType: "event_type",
+      stateCode: "state_code",
+      createdAt: "created_at",
+    });
+    expect(pipeline_columns.eventType.getSQLType()).toBe("text");
+  });
+
+  it("registers the upload route before the production static fallback", () => {
+    const entrypoint_source = read_source("./_core/index.ts");
+    const import_index = entrypoint_source.indexOf(
+      'import { registerUploadRoute } from "../upload-route";',
+    );
+    const registration_index = entrypoint_source.indexOf(
+      "registerUploadRoute(app);",
+    );
+    const static_fallback_index = entrypoint_source.indexOf(
+      "else serveStatic(app);",
+    );
+
+    expect(import_index).toBeGreaterThanOrEqual(0);
+    expect(registration_index).toBeGreaterThan(import_index);
+    expect(static_fallback_index).toBeGreaterThan(registration_index);
   });
 
   it("uses PostgreSQL RETURNING for every upload-path identity", () => {
