@@ -1,5 +1,9 @@
 import express, { Request, Response } from "express";
-import { getPool } from "../db";
+import {
+  getResourceDirectoryDetail,
+  getResourceDirectoryMapPoints,
+  getResourceDirectorySummary,
+} from "../services/resource-directory";
 
 export const civicMapRouter = express.Router();
 
@@ -11,154 +15,153 @@ function parseNumber(value: QueryParam, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function parsePositiveInteger(value: QueryParam, fallback: number, max: number): number {
+function parsePositiveInteger(
+  value: QueryParam,
+  fallback: number,
+  max: number
+): number {
   const parsed = parseNumber(value, fallback);
   if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
   return Math.min(Math.floor(parsed), max);
 }
 
 function sendError(res: Response, error: unknown) {
-  const message = error instanceof Error ? error.message : String(error);
-  return res.status(500).json({ ok: false, error: message });
+  console.error("[CivicMap] directory geography request failed", error);
+  return res
+    .status(500)
+    .json({ ok: false, error: "civic_map_directory_unavailable" });
 }
 
 function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value
+  );
+}
+
+function parseBounds(req: Request) {
+  const north = parseNumber(req.query.north as QueryParam, 90);
+  const south = parseNumber(req.query.south as QueryParam, -90);
+  const east = parseNumber(req.query.east as QueryParam, 180);
+  const west = parseNumber(req.query.west as QueryParam, -180);
+  const valid =
+    north >= -90 &&
+    north <= 90 &&
+    south >= -90 &&
+    south <= 90 &&
+    east >= -180 &&
+    east <= 180 &&
+    west >= -180 &&
+    west <= 180 &&
+    north >= south;
+  return { north, south, east, west, valid };
 }
 
 civicMapRouter.get("/health", async (_req: Request, res: Response) => {
   try {
-    const pool = getPool();
-    const { rows } = await pool.query(`
-      select
-        (select count(*)::int from public.v_unified_civic_infrastructure) as unified_rows,
-        (select count(*)::int from public.normalized_civic_resource) as normalized_rows,
-        (select count(*)::int from public.v_ui_civic_map_v2) as strict_geocoded_rows,
-        (select count(*)::int from public.coordinate_enrichment_queue_v1) as geocode_queue_rows
-    `);
-
-    return res.json({ ok: true, ...rows[0] });
+    const summary = (await getResourceDirectorySummary({
+      bypassCache: true,
+    })) as Record<string, unknown>;
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({
+      ok: true,
+      source: "resource_directory_v3_13",
+      corpus_resources: summary.total_resources ?? 0,
+      jurisdictions: summary.jurisdiction_count ?? 0,
+      resources_with_location_context:
+        summary.resources_with_locations ?? 0,
+      verified_physical_sites:
+        summary.verified_physical_sites ?? 0,
+      exact_mappable_resources: summary.exact_mappable_resources ?? 0,
+    });
   } catch (error) {
     return sendError(res, error);
   }
 });
 
-civicMapRouter.get("/preview", async (req: Request, res: Response) => {
+civicMapRouter.get("/coverage", async (_req: Request, res: Response) => {
   try {
-    const limit = parsePositiveInteger(req.query.limit as QueryParam, 500, 1500);
-    const pool = getPool();
-
-    const { rows } = await pool.query(
-      `
-        select
-          id::text as node_id,
-          title as name,
-          resource_type as node_type,
-          coalesce(nullif(city, ''), nullif(county, ''), nullif(state, ''), 'UNKNOWN') as jurisdiction,
-          latitude::float8 as latitude,
-          longitude::float8 as longitude,
-          'map_layer1_points'::text as source_table,
-          normalization_confidence::float8 as normalization_confidence,
-          source_key
-        from public.map_layer1_points(-90, 90, -180, 180, $1)
-      `,
-      [limit]
+    const summary = await getResourceDirectorySummary();
+    res.setHeader(
+      "Cache-Control",
+      "public, max-age=60, stale-while-revalidate=300"
     );
-
-    return res.json({ ok: true, count: rows.length, nodes: rows });
+    return res.json({
+      ok: true,
+      source: "resource_directory_v3_13",
+      coverage: summary,
+    });
   } catch (error) {
     return sendError(res, error);
   }
 });
 
-civicMapRouter.get("/bounds", async (req: Request, res: Response) => {
+async function sendPoints(req: Request, res: Response) {
   try {
-    const north = parseNumber(req.query.north as QueryParam, 90);
-    const south = parseNumber(req.query.south as QueryParam, -90);
-    const east = parseNumber(req.query.east as QueryParam, 180);
-    const west = parseNumber(req.query.west as QueryParam, -180);
-    const limit = parsePositiveInteger(req.query.limit as QueryParam, 1200, 2000);
-    const pool = getPool();
-
-    const { rows } = await pool.query(
-      `
-        select
-          id::text as node_id,
-          title as name,
-          resource_type as node_type,
-          coalesce(nullif(city, ''), nullif(county, ''), nullif(state, ''), 'UNKNOWN') as jurisdiction,
-          latitude::float8 as latitude,
-          longitude::float8 as longitude,
-          'map_layer1_points'::text as source_table,
-          normalization_confidence::float8 as normalization_confidence,
-          source_key,
-          city,
-          county,
-          state
-        from public.map_layer1_points($1, $2, $3, $4, $5)
-      `,
-      [south, north, west, east, limit]
-    );
-
-    return res.json({ ok: true, count: rows.length, nodes: rows });
-  } catch (error) {
-    return sendError(res, error);
-  }
-});
-
-civicMapRouter.get("/detail/:node_id", async (req: Request, res: Response) => {
-  try {
-    const { node_id } = req.params;
-    if (!isUuid(node_id)) {
-      return res.status(400).json({ ok: false, error: "invalid_uuid", node_id });
+    const bounds = parseBounds(req);
+    if (!bounds.valid) {
+      return res.status(400).json({
+        ok: false,
+        error: "invalid_bounds",
+      });
     }
 
-    const pool = getPool();
-    const { rows } = await pool.query(
-      `
-        select
-          id::text as node_id,
-          resource_type as node_type,
-          id,
-          source_key,
-          resource_type,
-          name,
-          description,
-          organization_name,
-          agency_name,
-          address_line1,
-          address_line2,
-          city,
-          county,
-          state,
-          postal_code,
-          country,
-          latitude::float8 as latitude,
-          longitude::float8 as longitude,
-          geocode_precision,
-          phone,
-          email,
-          website_url,
-          service_categories,
-          eligibility_summary,
-          hours,
-          languages,
-          accessibility_features,
-          normalization_confidence::float8 as normalization_confidence,
-          program_owner_final,
-          updated_at
-        from public.map_layer2_detail($1::uuid)
-        limit 1
-      `,
-      [node_id]
+    const limit = parsePositiveInteger(
+      req.query.limit as QueryParam,
+      1200,
+      2000
     );
+    const points = await getResourceDirectoryMapPoints({
+      ...bounds,
+      limit,
+    });
 
-    if (rows.length === 0) {
-      return res.status(404).json({ ok: false, error: "not_found", node_id });
-    }
-
-    return res.json({ ok: true, node: rows[0] });
+    res.setHeader(
+      "Cache-Control",
+      "public, max-age=60, stale-while-revalidate=300"
+    );
+    return res.json({
+      ok: true,
+      source: "resource_directory_v3_13_exact_public_sites",
+      count: points.length,
+      points,
+    });
   } catch (error) {
     return sendError(res, error);
   }
-});
+}
+
+civicMapRouter.get("/preview", sendPoints);
+civicMapRouter.get("/bounds", sendPoints);
+
+civicMapRouter.get(
+  "/detail/:resource_entity_id",
+  async (req: Request, res: Response) => {
+    try {
+      const { resource_entity_id } = req.params;
+      if (!isUuid(resource_entity_id)) {
+        return res.status(400).json({
+          ok: false,
+          error: "invalid_uuid",
+          resource_entity_id,
+        });
+      }
+
+      const resource = await getResourceDirectoryDetail(resource_entity_id);
+      if (!resource) {
+        return res.status(404).json({
+          ok: false,
+          error: "not_found",
+          resource_entity_id,
+        });
+      }
+
+      res.setHeader(
+        "Cache-Control",
+        "public, max-age=60, stale-while-revalidate=300"
+      );
+      return res.json({ ok: true, resource });
+    } catch (error) {
+      return sendError(res, error);
+    }
+  }
+);

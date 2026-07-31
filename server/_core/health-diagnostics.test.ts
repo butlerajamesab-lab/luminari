@@ -11,16 +11,17 @@ vi.mock("../db", () => dbMock);
 const moduleUnderTest = await import("./health-diagnostics");
 const { getDatabaseDiagnostic, __health_diagnostics_test } = moduleUnderTest;
 
+function mock_query_result<T>(rows: T[]) {
+  const result = { rows } as { rows: T[]; rowCount: number };
+  result.rowCount = rows.length;
+  return result;
+}
+
 describe("health diagnostics cache and semantics", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     __health_diagnostics_test.reset();
     dbMock.classify_db_error.mockReturnValue("db_error");
-    const mock_query_result = <T>(rows: T[]) => {
-      const result = { rows } as { rows: T[]; rowCount: number };
-      result.rowCount = rows.length;
-      return result;
-    };
     dbMock.query_with_diagnostics.mockImplementation(async (text: string) => {
       if (text.includes("version()")) return mock_query_result([{ version: "PostgreSQL test" }]);
       if (text.includes("information_schema.tables")) {
@@ -37,6 +38,40 @@ describe("health diagnostics cache and semantics", () => {
     expect(a.db_diagnostic.generated_at).toBeTruthy();
     expect(b.db_diagnostic.generated_at).toBe(a.db_diagnostic.generated_at);
     expect(dbMock.query_with_diagnostics.mock.calls.filter(([text]) => String(text).includes("information_schema.tables"))).toHaveLength(1);
+  });
+
+  it("uses at most one database lease during a deep diagnostic refresh", async () => {
+    let active_queries = 0;
+    let maximum_active_queries = 0;
+    dbMock.query_with_diagnostics.mockImplementation(async (text: string) => {
+      active_queries += 1;
+      maximum_active_queries = Math.max(maximum_active_queries, active_queries);
+      await new Promise<void>((resolve) => setTimeout(resolve, 1));
+      active_queries -= 1;
+
+      if (text.includes("version()")) {
+        return mock_query_result([{ version: "PostgreSQL test" }]);
+      }
+      if (text.includes("information_schema.tables")) {
+        return mock_query_result([{ table_name: "alpha", column_count: 2 }]);
+      }
+      if (text.includes("information_schema.views")) {
+        return mock_query_result([{ view_name: "alpha_view" }]);
+      }
+      return mock_query_result([
+        {
+          table_name: "alpha",
+          column_name: "beta",
+          foreign_table_name: "gamma",
+          foreign_column_name: "id",
+        },
+      ]);
+    });
+
+    await getDatabaseDiagnostic({ force: true });
+
+    expect(maximum_active_queries).toBe(1);
+    expect(active_queries).toBe(0);
   });
 
   it("keeps base-table and view totals separate", async () => {
@@ -57,9 +92,7 @@ describe("health diagnostics cache and semantics", () => {
     const first = await getDatabaseDiagnostic({ force: true });
     dbMock.query_with_diagnostics.mockImplementation(async (text: string) => {
       if (text.includes("version()")) {
-        const result = { rows: [{ version: "PostgreSQL test" }] } as { rows: { version: string }[]; rowCount: number };
-        result.rowCount = 1;
-        return result;
+        return mock_query_result([{ version: "PostgreSQL test" }]);
       }
       throw new Error("refresh failed");
     });

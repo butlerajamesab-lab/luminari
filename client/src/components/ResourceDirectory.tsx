@@ -1,265 +1,269 @@
-import { useState } from "react";
-import { ExternalLink, ChevronDown, ChevronUp, BookOpen, Phone, Globe, Shield } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import {
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Loader2,
+  MapPin,
+  Phone,
+  Search,
+} from "lucide-react";
+import { useMemo, useState } from "react";
+import { Link } from "wouter";
 
-type Resource = {
-  name: string;
-  url: string;
-  description: string;
-  type: "legal_aid" | "hotline" | "government" | "nonprofit";
+type CompactContact = {
+  contact_point_id: string;
+  contact_type: string;
+  contact_value: string;
 };
 
-const RESOURCE_ICON = {
-  legal_aid: BookOpen,
-  hotline: Phone,
-  government: Globe,
-  nonprofit: Shield,
+type CompactResource = {
+  resource_entity_id: string;
+  resource_name: string;
+  resource_category?: string | null;
+  state?: string | null;
+  description?: string | null;
+  apply_notes?: string | null;
+  contacts: CompactContact[];
 };
 
-const RESOURCES: Record<string, Resource[]> = {
-  // Personal Crisis
-  insurance: [
-    { name: "National Association of Insurance Commissioners", url: "https://www.naic.org", description: "File complaints and find your state insurance department.", type: "government" },
-    { name: "United Policyholders", url: "https://www.uphelp.org", description: "Free insurance claim help and advocacy resources.", type: "nonprofit" },
-    { name: "State Insurance Department Finder", url: "https://www.naic.org/state_web_map.htm", description: "Find your state's insurance regulator.", type: "government" },
-  ],
-  custody: [
-    { name: "LawHelp.org", url: "https://www.lawhelp.org", description: "Find free legal aid in your area for family law matters.", type: "legal_aid" },
-    { name: "National Domestic Violence Hotline", url: "https://www.thehotline.org", description: "1-800-799-7233 — Safety planning and legal referrals.", type: "hotline" },
-    { name: "Child Welfare Information Gateway", url: "https://www.childwelfare.gov", description: "Federal resources for families in the child welfare system.", type: "government" },
-  ],
-  medical: [
-    { name: "Patient Advocate Foundation", url: "https://www.patientadvocate.org", description: "Free case management for patients with chronic conditions.", type: "nonprofit" },
-    { name: "Medicare Rights Center", url: "https://www.medicarerights.org", description: "Free counseling for Medicare beneficiaries.", type: "nonprofit" },
-    { name: "CMS Hospital Compare", url: "https://www.medicare.gov/care-compare/", description: "Compare hospital quality and patient outcomes.", type: "government" },
-  ],
-  workplace: [
-    { name: "EEOC", url: "https://www.eeoc.gov", description: "File discrimination charges and learn about your rights.", type: "government" },
-    { name: "Department of Labor", url: "https://www.dol.gov/agencies/whd/contact/complaints", description: "File wage and hour complaints.", type: "government" },
-    { name: "National Employment Law Project", url: "https://www.nelp.org", description: "Workers' rights research and advocacy.", type: "nonprofit" },
-  ],
-  housing: [
-    { name: "HUD Housing Counseling", url: "https://www.hud.gov/counseling", description: "Free housing counseling services.", type: "government" },
-    { name: "National Housing Law Project", url: "https://www.nhlp.org", description: "Legal resources for tenants and housing advocates.", type: "legal_aid" },
-    { name: "Eviction Lab", url: "https://evictionlab.org", description: "Eviction data and tenant resources by state.", type: "nonprofit" },
-  ],
-  consumer: [
-    { name: "Consumer Financial Protection Bureau", url: "https://www.consumerfinance.gov", description: "Submit complaints and access consumer protection tools.", type: "government" },
-    { name: "FTC Consumer Complaint", url: "https://reportfraud.ftc.gov", description: "Report fraud and unfair business practices.", type: "government" },
-    { name: "National Consumer Law Center", url: "https://www.nclc.org", description: "Consumer rights legal resources and advocacy.", type: "nonprofit" },
-  ],
-
-  // Government Benefits
-  disability: [
-    { name: "SSA Disability", url: "https://www.ssa.gov/disability/", description: "Apply for and manage disability benefits.", type: "government" },
-    { name: "Disability Rights Advocates", url: "https://dralegal.org", description: "Free legal advocacy for people with disabilities.", type: "legal_aid" },
-    { name: "National Organization of Social Security Claimants' Representatives", url: "https://www.nosscr.org", description: "Find a disability attorney.", type: "legal_aid" },
-  ],
-  medicaid: [
-    { name: "Medicaid.gov", url: "https://www.medicaid.gov", description: "Official Medicaid information and state contacts.", type: "government" },
-    { name: "National Health Law Program", url: "https://healthlaw.org", description: "Legal advocacy for health care access.", type: "legal_aid" },
-    { name: "Benefits.gov", url: "https://www.benefits.gov", description: "Find government benefits you may be eligible for.", type: "government" },
-  ],
-  snap: [
-    { name: "SNAP Information", url: "https://www.fns.usda.gov/snap/supplemental-nutrition-assistance-program", description: "Official SNAP program information.", type: "government" },
-    { name: "Food Research & Action Center", url: "https://frac.org", description: "Anti-hunger advocacy and SNAP resources.", type: "nonprofit" },
-    { name: "WIC Program", url: "https://www.fns.usda.gov/wic", description: "Women, Infants, and Children nutrition program.", type: "government" },
-  ],
-  veterans: [
-    { name: "VA Benefits", url: "https://www.va.gov/", description: "Apply for and manage VA benefits.", type: "government" },
-    { name: "National Veterans Legal Services Program", url: "https://www.nvlsp.org", description: "Free legal services for veterans.", type: "legal_aid" },
-    { name: "Veterans Crisis Line", url: "https://www.veteranscrisisline.net", description: "988 then press 1 — 24/7 crisis support.", type: "hotline" },
-    { name: "Disabled American Veterans", url: "https://www.dav.org", description: "Free claims assistance and advocacy.", type: "nonprofit" },
-  ],
-  unemployment: [
-    { name: "CareerOneStop", url: "https://www.careeronestop.org/LocalHelp/UnemploymentBenefits/unemployment-benefits.aspx", description: "Find your state unemployment office.", type: "government" },
-    { name: "National Employment Law Project", url: "https://www.nelp.org", description: "Unemployment insurance advocacy and resources.", type: "nonprofit" },
-  ],
-
-  // Elder Care
-  nursing: [
-    { name: "Long-Term Care Ombudsman", url: "https://theconsumervoice.org/get_help", description: "Find your local ombudsman for nursing home complaints.", type: "government" },
-    { name: "Medicare Nursing Home Compare", url: "https://www.medicare.gov/care-compare/", description: "Compare nursing home quality ratings.", type: "government" },
-    { name: "National Center on Elder Abuse", url: "https://ncea.acl.gov", description: "Resources for recognizing and reporting elder abuse.", type: "nonprofit" },
-  ],
-  guardianship: [
-    { name: "National Guardianship Association", url: "https://www.guardianship.org", description: "Standards and resources for guardianship.", type: "nonprofit" },
-    { name: "AARP Guardianship Resources", url: "https://www.aarp.org", description: "Information on guardianship rights and alternatives.", type: "nonprofit" },
-  ],
-  elderabuse: [
-    { name: "Eldercare Locator", url: "https://eldercare.acl.gov", description: "1-800-677-1116 — Connect to local aging services.", type: "hotline" },
-    { name: "National Center on Elder Abuse", url: "https://ncea.acl.gov", description: "Report abuse and find state resources.", type: "government" },
-    { name: "Adult Protective Services", url: "https://www.napsa-now.org/get-help/help-in-your-area/", description: "Find your local APS office.", type: "government" },
-  ],
-
-  // Vulnerable Populations
-  immigration: [
-    { name: "USCIS", url: "https://www.uscis.gov", description: "Official immigration services and case status.", type: "government" },
-    { name: "American Immigration Lawyers Association", url: "https://www.aila.org", description: "Find an immigration attorney.", type: "legal_aid" },
-    { name: "National Immigrant Justice Center", url: "https://immigrantjustice.org", description: "Free legal services for immigrants.", type: "legal_aid" },
-    { name: "RAICES", url: "https://www.raicestexas.org", description: "Free legal services for immigrant communities.", type: "nonprofit" },
-  ],
-  childwelfare: [
-    { name: "Child Welfare Information Gateway", url: "https://www.childwelfare.gov", description: "Federal resources and state contacts.", type: "government" },
-    { name: "National CASA/GAL Association", url: "https://nationalcasagal.org", description: "Court Appointed Special Advocates for children.", type: "nonprofit" },
-  ],
-  education: [
-    { name: "Wrightslaw", url: "https://www.wrightslaw.com", description: "Special education law and advocacy resources.", type: "legal_aid" },
-    { name: "Parent Center Hub", url: "https://www.parentcenterhub.org", description: "Find your state's parent training center.", type: "nonprofit" },
-    { name: "Office for Civil Rights", url: "https://www.ed.gov/about/offices/list/ocr/", description: "File disability discrimination complaints.", type: "government" },
-  ],
-  section8: [
-    { name: "HUD Section 8", url: "https://www.hud.gov/topics/housing_choice_voucher_program_section_8", description: "Official Section 8 program information.", type: "government" },
-    { name: "National Housing Law Project", url: "https://www.nhlp.org", description: "Legal resources for voucher holders.", type: "legal_aid" },
-  ],
-  juvenile: [
-    { name: "National Juvenile Defender Center", url: "https://njdc.info", description: "Resources for juvenile defense.", type: "legal_aid" },
-    { name: "Campaign for Youth Justice", url: "https://campaignforyouthjustice.org", description: "Advocacy for youth in the justice system.", type: "nonprofit" },
-  ],
-
-  // Tribal Law
-  icwa: [
-    { name: "National Indian Child Welfare Association", url: "https://www.nicwa.org", description: "ICWA resources, training, and advocacy.", type: "nonprofit" },
-    { name: "Native American Rights Fund (NARF)", url: "https://www.narf.org", description: "Free legal representation for tribes and Native people.", type: "legal_aid" },
-    { name: "BIA ICWA Resources", url: "https://www.bia.gov/bia/ois/dhs/icwa", description: "Federal ICWA guidelines and compliance resources.", type: "government" },
-  ],
-  mmiw: [
-    { name: "National Missing and Unidentified Persons System", url: "https://www.namus.gov", description: "Report and search for missing persons.", type: "government" },
-    { name: "Sovereign Bodies Institute", url: "https://www.sovereign-bodies.org", description: "MMIW data and advocacy.", type: "nonprofit" },
-    { name: "StrongHearts Native Helpline", url: "https://strongheartshelpline.org", description: "1-844-762-8483 — Support for Native victims.", type: "hotline" },
-    { name: "Urban Indian Health Institute", url: "https://www.uihi.org", description: "MMIW research and community health.", type: "nonprofit" },
-  ],
-  treatyrights: [
-    { name: "Native American Rights Fund", url: "https://www.narf.org", description: "Treaty rights litigation and advocacy.", type: "legal_aid" },
-    { name: "National Congress of American Indians", url: "https://www.ncai.org", description: "Policy advocacy for tribal sovereignty.", type: "nonprofit" },
-  ],
-  triballand: [
-    { name: "Bureau of Indian Affairs", url: "https://www.bia.gov", description: "Land, trust, and allotment services.", type: "government" },
-    { name: "Indian Land Tenure Foundation", url: "https://iltf.org", description: "Resources for Indian land recovery and management.", type: "nonprofit" },
-    { name: "National Archives — American Indian Records", url: "https://www.archives.gov/research/native-americans", description: "Historical records for land and enrollment research.", type: "government" },
-  ],
-  tribalenrollment: [
-    { name: "National Archives — Dawes Rolls", url: "https://www.archives.gov/research/native-americans/dawes", description: "Search Dawes Roll records online.", type: "government" },
-    { name: "Bureau of Indian Affairs", url: "https://www.bia.gov", description: "Tribal enrollment and recognition services.", type: "government" },
-  ],
-  tribalhousing: [
-    { name: "HUD Office of Native American Programs", url: "https://www.hud.gov/program_offices/public_indian_housing/ih", description: "NAHASDA and tribal housing resources.", type: "government" },
-    { name: "National American Indian Housing Council", url: "https://naihc.net", description: "Tribal housing advocacy and technical assistance.", type: "nonprofit" },
-  ],
-  tribalsovereignty: [
-    { name: "Tribal Law and Policy Institute", url: "https://www.home.tlpi.org", description: "Resources on tribal justice systems and sovereignty.", type: "nonprofit" },
-    { name: "National Congress of American Indians", url: "https://www.ncai.org", description: "Tribal sovereignty advocacy.", type: "nonprofit" },
-  ],
-
-  // Justice & Financial Defense
-  workerscomp: [
-    { name: "OSHA", url: "https://www.osha.gov", description: "File workplace safety complaints.", type: "government" },
-    { name: "Workers' Compensation State Directory", url: "https://www.dol.gov/agencies/owcp/wc", description: "Find your state workers' comp program.", type: "government" },
-  ],
-  wrongfulconviction: [
-    { name: "Innocence Project", url: "https://innocenceproject.org", description: "Free legal services for wrongful convictions.", type: "legal_aid" },
-    { name: "National Registry of Exonerations", url: "https://www.law.umich.edu/special/exoneration/Pages/about.aspx", description: "Database of exonerations and wrongful conviction data.", type: "nonprofit" },
-    { name: "Innocence Network", url: "https://innocencenetwork.org", description: "Find an innocence organization near you.", type: "legal_aid" },
-  ],
-  debtcollection: [
-    { name: "CFPB Debt Collection", url: "https://www.consumerfinance.gov/consumer-tools/debt-collection/", description: "Know your rights and file complaints.", type: "government" },
-    { name: "National Consumer Law Center", url: "https://www.nclc.org", description: "Consumer debt legal resources.", type: "legal_aid" },
-  ],
-  policemisconduct: [
-    { name: "ACLU", url: "https://www.aclu.org", description: "Civil liberties legal advocacy.", type: "legal_aid" },
-    { name: "DOJ Civil Rights Division", url: "https://www.justice.gov/crt/how-file-complaint", description: "File federal civil rights complaints.", type: "government" },
-    { name: "National Police Accountability Project", url: "https://www.nlg-npap.org", description: "Legal resources for police misconduct cases.", type: "legal_aid" },
-  ],
-  bankruptcy: [
-    { name: "US Courts Bankruptcy", url: "https://www.uscourts.gov/services-forms/bankruptcy", description: "Official bankruptcy court information.", type: "government" },
-    { name: "Legal Services Corporation", url: "https://www.lsc.gov/about-lsc/what-legal-aid/get-legal-help", description: "Find free legal aid for bankruptcy.", type: "legal_aid" },
-  ],
-
-  // Community & Institutional
-  environmental: [
-    { name: "EPA Environmental Justice", url: "https://www.epa.gov/environmentaljustice", description: "Environmental justice resources and complaints.", type: "government" },
-    { name: "Earthjustice", url: "https://earthjustice.org", description: "Free environmental law representation.", type: "legal_aid" },
-  ],
-  hoa: [
-    { name: "Community Associations Institute", url: "https://www.caionline.org", description: "HOA governance resources and dispute resolution.", type: "nonprofit" },
-  ],
-  taxdispute: [
-    { name: "IRS Taxpayer Advocate Service", url: "https://www.taxpayeradvocate.irs.gov", description: "Free help resolving IRS problems.", type: "government" },
-    { name: "Low Income Taxpayer Clinics", url: "https://www.taxpayeradvocate.irs.gov/about-us/low-income-taxpayer-clinics-litc/", description: "Free tax legal help for qualifying taxpayers.", type: "legal_aid" },
-  ],
-  fostercare: [
-    { name: "Foster Club", url: "https://www.fosterclub.com", description: "Resources and community for foster youth.", type: "nonprofit" },
-    { name: "National Center for Missing & Exploited Children", url: "https://www.missingkids.org", description: "1-800-843-5678 — Safety resources.", type: "hotline" },
-  ],
-  medmalpractice: [
-    { name: "State Medical Board Directory", url: "https://www.fsmb.org/contact-a-state-medical-board/", description: "File complaints with your state medical board.", type: "government" },
-  ],
-
-  // Systemic Accountability
-  predatorylending: [
-    { name: "CFPB Mortgage Help", url: "https://www.consumerfinance.gov/housing/", description: "Mortgage assistance and complaint filing.", type: "government" },
-    { name: "National Fair Housing Alliance", url: "https://nationalfairhousing.org", description: "Fair lending advocacy and complaints.", type: "nonprofit" },
-  ],
-  whistleblower: [
-    { name: "OSHA Whistleblower Protection", url: "https://www.osha.gov/whistleblower", description: "File whistleblower retaliation complaints.", type: "government" },
-    { name: "Government Accountability Project", url: "https://whistleblower.org", description: "Legal support for whistleblowers.", type: "legal_aid" },
-    { name: "SEC Whistleblower Program", url: "https://www.sec.gov/whistleblower", description: "Report securities violations.", type: "government" },
-  ],
-  nonprofitcompliance: [
-    { name: "IRS Tax Exempt Organizations", url: "https://www.irs.gov/charities-non-profits", description: "Nonprofit compliance information.", type: "government" },
-    { name: "National Council of Nonprofits", url: "https://www.councilofnonprofits.org", description: "Nonprofit governance resources.", type: "nonprofit" },
-  ],
-
-  // General
-  other: [
-    { name: "LawHelp.org", url: "https://www.lawhelp.org", description: "Find free legal aid in your area.", type: "legal_aid" },
-    { name: "Legal Services Corporation", url: "https://www.lsc.gov/about-lsc/what-legal-aid/get-legal-help", description: "Locate legal aid programs near you.", type: "legal_aid" },
-    { name: "211 Helpline", url: "https://www.211.org", description: "Dial 211 — Connect to local social services.", type: "hotline" },
-  ],
+type CompactSearchResponse = {
+  total: number;
+  items: CompactResource[];
 };
 
-export function ResourceDirectory({ pipelineType }: { pipelineType?: string | null }) {
+type DirectoryFilter = {
+  category?: string;
+  query?: string;
+};
+
+const PIPELINE_FILTERS: Record<string, DirectoryFilter> = {
+  insurance: { query: "insurance" },
+  custody: { category: "legal_civil_rights", query: "family" },
+  medical: { category: "healthcare" },
+  workplace: { category: "employment_labor" },
+  housing: { category: "housing" },
+  consumer: { category: "legal_civil_rights", query: "consumer" },
+  disability: { category: "disability" },
+  medicaid: { category: "healthcare", query: "Medicaid" },
+  snap: { category: "food_nutrition", query: "SNAP" },
+  veterans: { category: "veterans" },
+  unemployment: { category: "employment_labor", query: "unemployment" },
+  nursing: { category: "healthcare", query: "long-term care" },
+  guardianship: { category: "legal_civil_rights", query: "guardianship" },
+  elderabuse: { category: "safety_crisis", query: "elder" },
+  immigration: { category: "legal_civil_rights", query: "immigration" },
+  childwelfare: { category: "safety_crisis", query: "child welfare" },
+  education: { category: "general_resource", query: "education" },
+  section8: { category: "housing", query: "housing voucher" },
+  juvenile: { category: "legal_civil_rights", query: "juvenile" },
+  icwa: { category: "tribal", query: "Indian Child Welfare" },
+  mmiw: { category: "tribal", query: "missing" },
+  treatyrights: { category: "tribal", query: "treaty" },
+  triballand: { category: "tribal", query: "land" },
+  tribalenrollment: { category: "tribal", query: "enrollment" },
+  tribalhousing: { category: "tribal", query: "housing" },
+  tribalsovereignty: { category: "tribal", query: "sovereignty" },
+  workerscomp: { category: "employment_labor", query: "workers compensation" },
+  wrongfulconviction: {
+    category: "legal_civil_rights",
+    query: "wrongful conviction",
+  },
+  debtcollection: { category: "legal_civil_rights", query: "debt" },
+  policemisconduct: {
+    category: "legal_civil_rights",
+    query: "police misconduct",
+  },
+  bankruptcy: { category: "legal_civil_rights", query: "bankruptcy" },
+  environmental: { category: "general_resource", query: "environmental" },
+  hoa: { category: "housing", query: "homeowner" },
+  taxdispute: { category: "legal_civil_rights", query: "tax" },
+  fostercare: { category: "safety_crisis", query: "foster" },
+  medmalpractice: { category: "healthcare", query: "medical complaint" },
+  predatorylending: {
+    category: "legal_civil_rights",
+    query: "lending",
+  },
+  whistleblower: {
+    category: "legal_civil_rights",
+    query: "whistleblower",
+  },
+  nonprofitcompliance: {
+    category: "general_resource",
+    query: "nonprofit",
+  },
+};
+
+function phoneHref(value: string): string | null {
+  const digits = (value.split(/[·|]/)[0] || value).replace(/\D/g, "");
+  return digits.length >= 3 ? `tel:${digits}` : null;
+}
+
+function websiteHref(value: string): string | null {
+  const match = value.match(
+    /https?:\/\/[^\s·|]+|(?:www\.)?[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(?:\/[^\s·|]*)?/i
+  )?.[0];
+  if (!match) return null;
+  const candidate = /^https?:\/\//i.test(match) ? match : `https://${match}`;
+  try {
+    return new URL(candidate).href;
+  } catch {
+    return null;
+  }
+}
+
+export function ResourceDirectory({
+  pipelineType,
+}: {
+  pipelineType?: string | null;
+}) {
   const [expanded, setExpanded] = useState(false);
-  const resources = RESOURCES[pipelineType || "other"] || RESOURCES.other;
+  const filter = useMemo<DirectoryFilter>(() => {
+    if (!pipelineType) return {};
+    return (
+      PIPELINE_FILTERS[pipelineType] ?? {
+        query: pipelineType.replace(/[_-]+/g, " "),
+      }
+    );
+  }, [pipelineType]);
 
-  if (!resources || resources.length === 0) return null;
+  const directoryQuery = trpc.resourceDirectory.search.useQuery(
+    {
+      query: filter.query,
+      category: filter.category,
+      limit: 6,
+      offset: 0,
+    },
+    {
+      enabled: expanded,
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    }
+  );
+  const result = directoryQuery.data as CompactSearchResponse | undefined;
+
+  const directoryParams = new URLSearchParams();
+  if (filter.query) directoryParams.set("query", filter.query);
+  if (filter.category) directoryParams.set("category", filter.category);
+  const directoryHref = `/resources${
+    directoryParams.toString() ? `?${directoryParams.toString()}` : ""
+  }`;
 
   return (
-    <div className="rounded-lg border border-border/50 bg-card/50 overflow-hidden">
+    <div className="overflow-hidden rounded-lg border border-border/50 bg-card/50">
       <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
+        type="button"
+        onClick={() => setExpanded((current) => !current)}
+        className="flex w-full items-center justify-between p-4 transition-colors hover:bg-muted/30"
       >
         <div className="flex items-center gap-2">
           <BookOpen className="h-4 w-4 text-emerald-400" />
           <span className="text-sm font-semibold">Resource Directory</span>
-          <span className="text-xs text-muted-foreground">{resources.length} resources</span>
+          <span className="text-xs text-muted-foreground">
+            {expanded && result
+              ? `${result.total.toLocaleString()} matches`
+              : "v3.13 collection"}
+          </span>
         </div>
-        {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        {expanded ? (
+          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        )}
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-2">
-          {resources.map((resource, i) => {
-            const Icon = RESOURCE_ICON[resource.type];
+        <div className="space-y-2 px-4 pb-4">
+          {directoryQuery.isLoading && (
+            <div className="flex items-center gap-2 rounded-md border border-border/40 p-3 text-xs text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+              Loading canonical resources…
+            </div>
+          )}
+
+          {directoryQuery.error && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+              The canonical directory could not load.
+            </div>
+          )}
+
+          {result?.items.map((resource) => {
+            const phone = resource.contacts.find((contact) =>
+              ["phone", "hotline"].includes(contact.contact_type.toLowerCase())
+            );
+            const website = resource.contacts.find((contact) =>
+              ["website", "portal", "filing_portal"].includes(
+                contact.contact_type.toLowerCase()
+              )
+            );
+            const callHref = phone ? phoneHref(phone.contact_value) : null;
+            const visitHref = website
+              ? websiteHref(website.contact_value)
+              : null;
             return (
-              <a
-                key={i}
-                href={resource.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-start gap-3 p-2.5 rounded-md hover:bg-muted/30 transition-colors group"
+              <div
+                key={resource.resource_entity_id}
+                className="rounded-md border border-border/40 p-3"
               >
-                <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0 group-hover:text-primary" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-medium group-hover:text-primary transition-colors">{resource.name}</span>
-                    <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">
+                      {resource.resource_name}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
+                      {resource.description ||
+                        resource.apply_notes ||
+                        "Source-attached public resource."}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{resource.description}</p>
+                  {resource.state && (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-400/10 px-2 py-1 text-[10px] font-semibold text-emerald-300">
+                      <MapPin className="h-3 w-3" />
+                      {resource.state}
+                    </span>
+                  )}
                 </div>
-              </a>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {callHref && phone && (
+                    <a
+                      href={callHref}
+                      className="inline-flex items-center gap-1 rounded-full border border-emerald-400/20 px-2.5 py-1 text-[10px] font-semibold text-emerald-300"
+                    >
+                      <Phone className="h-3 w-3" />
+                      Call
+                    </a>
+                  )}
+                  {visitHref && (
+                    <a
+                      href={visitHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 rounded-full border border-cyan-400/20 px-2.5 py-1 text-[10px] font-semibold text-cyan-300"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Website
+                    </a>
+                  )}
+                </div>
+              </div>
             );
           })}
+
+          {result && result.items.length === 0 && (
+            <p className="rounded-md border border-border/40 p-3 text-xs text-muted-foreground">
+              No exact pipeline match. Open the full collection to search
+              across every category.
+            </p>
+          )}
+
+          <Link
+            href={directoryHref}
+            className="flex items-center justify-center gap-2 rounded-md border border-emerald-400/25 bg-emerald-400/10 p-2.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-400/15"
+          >
+            <Search className="h-3.5 w-3.5" />
+            Search the full Resource Directory
+          </Link>
         </div>
       )}
     </div>

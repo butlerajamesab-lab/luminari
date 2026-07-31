@@ -73,6 +73,8 @@ function initializePool(): Pool {
     connection_timeout_millis: 5000,
     max: 25,
     idle_timeout_millis: 10000,
+    query_timeout_millis: 8000,
+    application_name: "luminari-render",
   });
   console.log("[DB] runtime pool configuration", get_pool_runtime_configuration());
   return pgPool;
@@ -160,6 +162,26 @@ export function classify_db_error(error: unknown): "pool_acquire_timeout" | "que
 export async function connect_with_pool_timeout(timeout_ms: number, label = "db"): Promise<any> {
   const pool = getPool();
   const wait_started_at = Date.now();
+  const pool_max = Number((pool as any)?.options?.max ?? 10);
+  if (
+    pool.idleCount === 0 &&
+    pool.totalCount >= pool_max &&
+    pool.waitingCount > 0
+  ) {
+    console.warn("[DB] pool_acquire_rejected_saturated", {
+      label,
+      acquire_timeout_ms: timeout_ms,
+      pool_total_count: pool.totalCount,
+      pool_idle_count: pool.idleCount,
+      pool_waiting_count: pool.waitingCount,
+      pool_max,
+    });
+    throw new DbTimeoutDiagnosticError(
+      "pool_acquire_timeout",
+      `${label} pool is saturated`,
+      timeout_ms,
+    );
+  }
   let timed_out = false;
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const connect_promise = pool.connect().then((client) => {
@@ -214,6 +236,7 @@ export async function query_with_diagnostics<T = any>(
   const pool_acquire_timeout_ms = options.pool_acquire_timeout_ms ?? 1000;
   const query_timeout_ms = options.query_timeout_ms ?? 10000;
   const client = await connect_with_pool_timeout(pool_acquire_timeout_ms, label);
+  let release_error: Error | boolean | undefined;
   try {
     const query_started_at = Date.now();
     try {
@@ -226,11 +249,15 @@ export async function query_with_diagnostics<T = any>(
     }
   } catch (error) {
     if (is_query_timeout_error(error)) {
+      // A client-side query timeout can fire while PostgreSQL is still
+      // executing. Destroy this lease instead of returning a busy client to
+      // the pool, where it could poison the next request.
+      release_error = error instanceof Error ? error : true;
       throw new DbTimeoutDiagnosticError("query_timeout", `${label} query timed out after ${query_timeout_ms}ms`, query_timeout_ms, normalize_error_message(error));
     }
     throw error;
   } finally {
-    client.release();
+    client.release(release_error as any);
   }
 }
 

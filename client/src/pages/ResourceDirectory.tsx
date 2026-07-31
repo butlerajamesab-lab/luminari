@@ -1,497 +1,958 @@
-import { useState, useMemo } from "react";
-import { useAuth } from "@/core/hooks/useAuth";
-import { useLocation } from "wouter";
-import { useWorldIndex, type WorldObject } from "@/hooks/useWorldIndex";
-import { Button } from "@/components/ui/button";
 import {
-  ArrowLeft, Heart, Scale, Shield, Phone, Globe,
-  Building2, Users, BookOpen, ChevronRight, ArrowRight,
-  Landmark, Gavel, HelpCircle, MapPin, ExternalLink,
-  Briefcase, GraduationCap, Home, Baby, Accessibility,
-  Stethoscope, Banknote, FileText, Loader2, Filter,
+  Accessibility,
+  ArrowLeft,
+  BriefcaseBusiness,
+  ChevronLeft,
+  ChevronRight,
+  CircleDollarSign,
+  ExternalLink,
+  FileCheck2,
+  Globe2,
+  HandHeart,
+  HeartPulse,
+  Home,
+  Landmark,
+  Loader2,
+  Mail,
+  Map,
+  MapPin,
+  Phone,
+  PlugZap,
+  Scale,
+  Search,
+  ShieldAlert,
+  Soup,
+  Stethoscope,
+  Users,
+  X,
 } from "lucide-react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { trpc } from "@/lib/trpc";
+import { Link, useLocation } from "wouter";
 
-/* ═══════════════════════════════════════════════════════════════════════
-   RESOURCE DIRECTORY — Where You Find Help
-   
-   Now powered by the unified World Index (world.getIndex).
-   Displays programs (type='program') and agencies (type='agency')
-   from the single projection layer.
-   ═══════════════════════════════════════════════════════════════════════ */
-
-const rd = {
-  bg: "#0c0e14",
-  cardBg: "rgba(34,197,94,0.03)",
-  cardBorder: "rgba(34,197,94,0.12)",
-  green: "#22c55e",
-  emerald: "#10b981",
-  teal: "#14b8a6",
-  cream: "#f5edd6",
-  muted: "#8b8070",
-  purple: "#a855f7",
-  cyan: "#06b6d4",
-  gold: "#d4a017",
-  red: "#ef4444",
-  amber: "#f59e0b",
-};
-const fontSerif = "'Cormorant Garamond', serif";
-const fontSans = "'DM Sans', sans-serif";
-const fontMono = "'JetBrains Mono', monospace";
-
-// Map program categories to UI categories
-const CATEGORY_MAP: Record<string, string[]> = {
-  benefits: ["cash_assistance", "food_assistance", "childcare", "tanf", "snap", "wic"],
-  "legal-aid": ["legal_aid", "legal_services", "civil_rights"],
-  crisis: ["crisis", "mental_health", "domestic_violence", "emergency"],
-  housing: ["housing", "rental_assistance", "shelter", "eviction_prevention"],
-  government: ["government", "oversight", "regulatory", "enforcement"],
-  disability: ["disability", "ada", "vocational_rehabilitation", "ssi", "ssdi"],
-  elder: ["elder", "aging", "long_term_care", "nursing"],
-  children: ["child_welfare", "child_care", "education", "family_services"],
+type Contact = {
+  contact_point_id: string;
+  contact_type: string;
+  contact_value: string;
+  label?: string | null;
+  is_primary: boolean;
+  contact_quality: string;
+  manually_reviewed?: boolean;
+  manual_source_reference?: string | null;
 };
 
-interface ResourceCategory {
-  id: string;
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  color: string;
-  internalHref?: string;
+type ResourceLocation = {
+  location_id: string;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  city?: string | null;
+  county?: string | null;
+  state?: string | null;
+  postal_code?: string | null;
+  country?: string | null;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
+  manual_location_kind?: string | null;
+  manual_map_eligible?: boolean | null;
+  manual_source_reference?: string | null;
+  manual_review_version?: string | null;
+};
+
+type LocationResolution = {
+  disposition?: string | null;
+  location_kind?: string | null;
+  map_eligible?: boolean | null;
+  source_reference?: string | null;
+  review_note?: string | null;
+  review_version?: string | null;
+};
+
+type DirectoryResource = {
+  resource_entity_id: string;
+  canonical_id?: string | null;
+  resource_name: string;
+  source_resource_name: string;
+  resource_type?: string | null;
+  resource_category?: string | null;
+  jurisdiction?: string | null;
+  jurisdiction_scope?: string | null;
+  state?: string | null;
+  county?: string | null;
+  city?: string | null;
+  description?: string | null;
+  eligibility_summary?: string | null;
+  apply_notes?: string | null;
+  service_categories: string[];
+  verification_status: string;
+  promotion_status: string;
+  provenance_status: string;
+  publication_status: "active" | "inactive";
+  publication_source_reference?: string | null;
+  publication_review_note?: string | null;
+  contacts: Contact[];
+  locations: ResourceLocation[];
+  location_resolution?: LocationResolution | null;
+};
+
+type DirectorySummary = {
+  total_resources: number;
+  active_resources: number;
+  inactive_resources: number;
+  jurisdiction_count: number;
+  category_count: number;
+  contact_count: number;
+  resources_with_contacts: number;
+  location_count: number;
+  resources_with_locations: number;
+  verified_physical_sites: number;
+  exact_mappable_resources: number;
+  categories: Array<{ id: string; count: number }>;
+  jurisdictions: Array<{
+    code: string;
+    count: number;
+    categories?: Record<string, number>;
+  }>;
+};
+
+type SearchResponse = {
+  total: number;
+  limit: number;
+  offset: number;
+  items: DirectoryResource[];
+};
+
+const PAGE_SIZE = 24;
+
+const STATE_NAMES: Record<string, string> = {
+  AL: "Alabama",
+  AK: "Alaska",
+  AS: "American Samoa",
+  AZ: "Arizona",
+  AR: "Arkansas",
+  CA: "California",
+  CO: "Colorado",
+  CT: "Connecticut",
+  DE: "Delaware",
+  DC: "District of Columbia",
+  FL: "Florida",
+  GA: "Georgia",
+  GU: "Guam",
+  HI: "Hawaii",
+  ID: "Idaho",
+  IL: "Illinois",
+  IN: "Indiana",
+  IA: "Iowa",
+  KS: "Kansas",
+  KY: "Kentucky",
+  LA: "Louisiana",
+  ME: "Maine",
+  MD: "Maryland",
+  MA: "Massachusetts",
+  MI: "Michigan",
+  MN: "Minnesota",
+  MS: "Mississippi",
+  MO: "Missouri",
+  MT: "Montana",
+  NE: "Nebraska",
+  NV: "Nevada",
+  NH: "New Hampshire",
+  NJ: "New Jersey",
+  NM: "New Mexico",
+  NY: "New York",
+  NC: "North Carolina",
+  ND: "North Dakota",
+  MP: "Northern Mariana Islands",
+  OH: "Ohio",
+  OK: "Oklahoma",
+  OR: "Oregon",
+  PA: "Pennsylvania",
+  PR: "Puerto Rico",
+  RI: "Rhode Island",
+  SC: "South Carolina",
+  SD: "South Dakota",
+  TN: "Tennessee",
+  TX: "Texas",
+  UT: "Utah",
+  VT: "Vermont",
+  VI: "U.S. Virgin Islands",
+  VA: "Virginia",
+  WA: "Washington",
+  WV: "West Virginia",
+  WI: "Wisconsin",
+  WY: "Wyoming",
+};
+
+const CATEGORY_CONFIG = {
+  general_resource: {
+    label: "General Resources",
+    description: "Broad service navigation and community support",
+    icon: HandHeart,
+    color: "emerald",
+  },
+  legal_civil_rights: {
+    label: "Legal & Civil Rights",
+    description: "Legal aid, advocacy, complaints, and rights",
+    icon: Scale,
+    color: "violet",
+  },
+  safety_crisis: {
+    label: "Safety & Crisis",
+    description: "Crisis response, violence prevention, and hotlines",
+    icon: ShieldAlert,
+    color: "rose",
+  },
+  healthcare: {
+    label: "Healthcare",
+    description: "Health coverage, clinics, and care navigation",
+    icon: Stethoscope,
+    color: "cyan",
+  },
+  food_nutrition: {
+    label: "Food & Nutrition",
+    description: "Food access, nutrition support, and benefits",
+    icon: Soup,
+    color: "amber",
+  },
+  tribal: {
+    label: "Tribal Resources",
+    description: "Tribal governments, Native services, and programs",
+    icon: Users,
+    color: "orange",
+  },
+  employment_labor: {
+    label: "Employment & Labor",
+    description: "Jobs, workforce support, wages, and labor rights",
+    icon: BriefcaseBusiness,
+    color: "blue",
+  },
+  housing: {
+    label: "Housing",
+    description: "Housing access, shelter, utilities, and tenant support",
+    icon: Home,
+    color: "yellow",
+  },
+  disability: {
+    label: "Disability",
+    description: "Disability services, access, and civil rights",
+    icon: Accessibility,
+    color: "teal",
+  },
+  utilities: {
+    label: "Utilities",
+    description: "Energy, water, communications, and bill support",
+    icon: PlugZap,
+    color: "sky",
+  },
+  cash_assistance: {
+    label: "Cash Assistance",
+    description: "Direct aid and income-support programs",
+    icon: CircleDollarSign,
+    color: "lime",
+  },
+  veterans: {
+    label: "Veterans",
+    description: "Veterans benefits, services, and advocacy",
+    icon: Landmark,
+    color: "indigo",
+  },
+} satisfies Record<
+  string,
+  {
+    label: string;
+    description: string;
+    icon: React.ElementType;
+    color: string;
+  }
+>;
+
+function titleCase(value: string | null | undefined): string {
+  if (!value) return "Other";
+  return value
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
-const CATEGORY_CONFIG: ResourceCategory[] = [
-  {
-    id: "benefits",
-    icon: Heart,
-    title: "Benefits Navigator",
-    description: "Discover government benefits you may qualify for. Guided screening for federal, state, and local programs.",
-    color: rd.green,
-    internalHref: "/benefits",
-  },
-  {
-    id: "legal-aid",
-    icon: Scale,
-    title: "Legal Aid & Pro Bono",
-    description: "Free and low-cost legal assistance. Find legal aid organizations, pro bono attorneys, and law school clinics.",
-    color: rd.purple,
-  },
-  {
-    id: "crisis",
-    icon: Phone,
-    title: "Crisis & Emergency",
-    description: "Immediate help for emergencies. Hotlines for domestic violence, mental health, housing, and more.",
-    color: rd.red,
-  },
-  {
-    id: "housing",
-    icon: Home,
-    title: "Housing & Shelter",
-    description: "Housing assistance, tenant rights, eviction prevention, and emergency shelter resources.",
-    color: rd.amber,
-  },
-  {
-    id: "government",
-    icon: Landmark,
-    title: "Government Agencies & Oversight",
-    description: "File complaints and access services from federal and state oversight bodies.",
-    color: rd.cyan,
-  },
-  {
-    id: "disability",
-    icon: Accessibility,
-    title: "Disability Rights",
-    description: "Resources for disability benefits, accommodations, and civil rights protections.",
-    color: rd.teal,
-  },
-  {
-    id: "elder",
-    icon: Users,
-    title: "Elder Care & Protection",
-    description: "Resources for elder abuse prevention, long-term care advocacy, and senior services.",
-    color: rd.gold,
-  },
-  {
-    id: "children",
-    icon: Baby,
-    title: "Children & Family",
-    description: "Child welfare, custody, education rights, and family support services.",
-    color: rd.emerald,
-  },
-];
+function categoryLabel(category: string | null | undefined): string {
+  if (!category) return "Other";
+  return CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG]?.label ??
+    titleCase(category);
+}
 
-export default function ResourceDirectory() {
-  const { isAuthenticated } = useAuth();
-  const [, navigate] = useLocation();
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [jurisdictionFilter, setJurisdictionFilter] = useState<string | null>(null);
+function normalizeExternalUrl(value: string): string | null {
+  const cleaned = value.trim();
+  if (!cleaned || cleaned.toLowerCase().startsWith("n/a")) return null;
+  const candidate = /^https?:\/\//i.test(cleaned)
+    ? cleaned
+    : `https://${cleaned}`;
+  try {
+    const parsed = new URL(candidate);
+    return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : null;
+  } catch {
+    return null;
+  }
+}
 
-  // ── World Index: single source of truth ──
-  const { nodes, nodesByType, jurisdictions, isLoading, error } = useWorldIndex();
+function phoneHref(value: string): string | null {
+  const extensionless = value.split(/[·|]/)[0] ?? value;
+  const digits = extensionless.replace(/\D/g, "");
+  return digits.length >= 3 ? `tel:${digits}` : null;
+}
 
-  // Programs and agencies from the world index
-  const programs = useMemo(() => {
-    const all = nodesByType["program"] ?? [];
-    if (!jurisdictionFilter) return all;
-    return all.filter(n => n.jurisdiction === jurisdictionFilter);
-  }, [nodesByType, jurisdictionFilter]);
+function formatAddress(location: ResourceLocation | undefined): string | null {
+  if (!location) return null;
+  const locality = [
+    location.city,
+    location.state,
+    location.postal_code,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const parts = [
+    location.address_line1,
+    location.address_line2,
+    locality || location.county,
+  ].filter(Boolean);
+  return parts.length ? parts.join(", ") : null;
+}
 
-  const agencies = useMemo(() => {
-    const all = nodesByType["agency"] ?? [];
-    if (!jurisdictionFilter) return all;
-    return all.filter(n => n.jurisdiction === jurisdictionFilter);
-  }, [nodesByType, jurisdictionFilter]);
+function locationLabel(resource: DirectoryResource): string {
+  const current = resource.locations[0];
+  if (current?.manual_location_kind) {
+    return titleCase(current.manual_location_kind);
+  }
+  if (resource.location_resolution?.location_kind) {
+    return titleCase(resource.location_resolution.location_kind);
+  }
+  if (resource.jurisdiction_scope) {
+    return `${titleCase(resource.jurisdiction_scope)} coverage`;
+  }
+  return "Jurisdiction coverage";
+}
 
-  // Classify programs into categories
-  const getResourcesForCategory = (categoryId: string): WorldObject[] => {
-    if (categoryId === "government") {
-      // Government category shows agencies (oversight bodies)
-      return agencies;
-    }
-    const keywords = CATEGORY_MAP[categoryId] || [];
-    if (keywords.length === 0) return [];
-    return programs.filter(p => {
-      const cat = (p.metadata?.category || p.domain || "").toLowerCase();
-      const name = (p.metadata?.name || "").toLowerCase();
-      return keywords.some(kw => cat.includes(kw) || name.includes(kw));
-    });
-  };
+function ContactAction({ contact }: { contact: Contact }) {
+  const type = contact.contact_type.toLowerCase();
+  const commonClass =
+    "inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition hover:-translate-y-0.5";
 
-  // Count all uncategorized programs
-  const uncategorizedPrograms = useMemo(() => {
-    const allKeywords = Object.values(CATEGORY_MAP).flat();
-    return programs.filter(p => {
-      const cat = (p.metadata?.category || p.domain || "").toLowerCase();
-      const name = (p.metadata?.name || "").toLowerCase();
-      return !allKeywords.some(kw => cat.includes(kw) || name.includes(kw));
-    });
-  }, [programs]);
-
-  const renderWorldNode = (node: WorldObject) => {
-    const name = node.metadata?.name || node.metadata?.agency_name || node.id;
-    const description = node.metadata?.function || node.metadata?.category || node.domain || "";
-    const website = node.metadata?.website || node.metadata?.contact;
-    const contact = node.metadata?.contact;
-
+  if (type === "phone" || type === "hotline") {
+    const href = phoneHref(contact.contact_value);
+    if (!href) return null;
     return (
-      <div key={node.id} style={{
-        padding: "10px 12px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 12,
-      }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontFamily: fontSans, fontSize: 13, fontWeight: 500, color: rd.cream, marginBottom: 2 }}>
-            {name}
-          </p>
-          <p style={{ fontFamily: fontSans, fontSize: 11, color: rd.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {node.jurisdiction !== "unknown" && (
-              <span style={{ color: rd.green, marginRight: 6 }}>{node.jurisdiction}</span>
-            )}
-            {description}
-          </p>
-        </div>
-        <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-          {contact && typeof contact === "string" && contact.match(/\d{3}/) && (
+      <a
+        href={href}
+        className={`${commonClass} border-emerald-400/25 bg-emerald-400/10 text-emerald-200 hover:border-emerald-300/50`}
+        title={contact.contact_value}
+      >
+        <Phone className="h-3.5 w-3.5 shrink-0" />
+        <span className="truncate">{contact.contact_value}</span>
+      </a>
+    );
+  }
+
+  if (type === "email") {
+    return (
+      <a
+        href={`mailto:${contact.contact_value}`}
+        className={`${commonClass} border-sky-400/25 bg-sky-400/10 text-sky-200 hover:border-sky-300/50`}
+      >
+        <Mail className="h-3.5 w-3.5 shrink-0" />
+        <span className="truncate">{contact.label || "Email"}</span>
+      </a>
+    );
+  }
+
+  if (
+    type === "website" ||
+    type === "portal" ||
+    type === "filing_portal" ||
+    type === "application"
+  ) {
+    const candidates =
+      contact.contact_value.match(
+        /https?:\/\/[^\s·|]+|(?:www\.)?[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(?:\/[^\s·|]*)?/gi
+      ) ?? [contact.contact_value];
+    const links = candidates
+      .map(normalizeExternalUrl)
+      .filter((value): value is string => Boolean(value))
+      .slice(0, 4);
+    if (links.length === 0) return null;
+    return (
+      <>
+        {links.map((href) => {
+          const host = new URL(href).hostname.replace(/^www\./, "");
+          return (
             <a
-              href={`tel:${contact.replace(/[^0-9]/g, "")}`}
-              style={{
-                fontFamily: fontMono, fontSize: 10, color: rd.green,
-                background: `${rd.green}12`, padding: "3px 8px", borderRadius: 100,
-                textDecoration: "none", display: "flex", alignItems: "center", gap: 4,
-              }}
-            >
-              <Phone size={10} /> Call
-            </a>
-          )}
-          {website && typeof website === "string" && website.startsWith("http") && (
-            <a
-              href={website}
+              key={`${contact.contact_point_id}:${href}`}
+              href={href}
               target="_blank"
               rel="noopener noreferrer"
-              style={{
-                fontFamily: fontMono, fontSize: 10, color: rd.cyan,
-                background: `${rd.cyan}12`, padding: "3px 8px", borderRadius: 100,
-                textDecoration: "none", display: "flex", alignItems: "center", gap: 4,
-              }}
+              className={`${commonClass} border-cyan-400/25 bg-cyan-400/10 text-cyan-200 hover:border-cyan-300/50`}
             >
-              <ExternalLink size={10} /> Visit
+              <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">
+                {links.length === 1 && contact.label
+                  ? contact.label
+                  : type.includes("portal")
+                    ? `Portal · ${host}`
+                    : host}
+              </span>
             </a>
-          )}
-        </div>
-      </div>
+          );
+        })}
+      </>
     );
-  };
+  }
+
+  return null;
+}
+
+function ResourceCard({ resource }: { resource: DirectoryResource }) {
+  const stateName =
+    STATE_NAMES[resource.state ?? ""] || resource.state || "National";
+  const currentLocation = resource.locations[0];
+  const address = formatAddress(currentLocation);
+  const visibleContacts = resource.contacts
+    .filter((contact) =>
+      ["phone", "hotline", "email", "website", "portal", "filing_portal", "application"].includes(
+        contact.contact_type.toLowerCase()
+      )
+    )
+    .slice(0, 5);
+  const description =
+    resource.description ||
+    resource.apply_notes ||
+    resource.eligibility_summary ||
+    "Source-attached public service resource.";
+  const mapEligible = Boolean(
+    currentLocation?.manual_map_eligible &&
+      currentLocation.latitude != null &&
+      currentLocation.longitude != null
+  );
+  const mapParams = new URLSearchParams();
+  if (resource.state) mapParams.set("jurisdiction", resource.state);
+  if (mapEligible) mapParams.set("resource", resource.resource_entity_id);
 
   return (
-    <div className="min-h-screen" style={{ background: rd.bg, fontFamily: fontSans }}>
-      {/* ── Header ── */}
-      <header style={{
-        padding: "14px 24px",
-        borderBottom: `1px solid ${rd.cardBorder}`,
-        background: "rgba(12,14,20,0.9)",
-        backdropFilter: "blur(12px)",
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <button onClick={() => navigate("/lighthouse")} style={{
-            background: "none", border: "none", cursor: "pointer",
-            color: rd.muted, display: "flex", alignItems: "center", gap: 4,
-            fontFamily: fontMono, fontSize: 11,
-          }}>
-            <ArrowLeft size={14} /> Lighthouse
-          </button>
-          <div style={{ width: 1, height: 20, background: rd.cardBorder }} />
-          <Globe size={16} color={rd.green} />
-          <span style={{ fontFamily: fontSerif, fontSize: 18, fontWeight: 600, color: rd.cream }}>
-            Resource Directory
+    <article
+      className={`flex h-full flex-col rounded-2xl border bg-slate-950/70 p-5 shadow-xl shadow-black/10 transition hover:-translate-y-0.5 hover:border-emerald-400/30 ${
+        resource.publication_status === "inactive"
+          ? "border-amber-400/25"
+          : "border-white/10"
+      }`}
+    >
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-200">
+          {categoryLabel(resource.resource_category)}
+        </span>
+        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-slate-300">
+          {stateName}
+        </span>
+        {resource.publication_status === "inactive" ? (
+          <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200">
+            Historical · not operating
           </span>
-        </div>
-        {/* Jurisdiction filter */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <Filter size={12} color={rd.muted} />
-          <select
-            value={jurisdictionFilter || ""}
-            onChange={(e) => setJurisdictionFilter(e.target.value || null)}
-            style={{
-              background: "rgba(255,255,255,0.05)",
-              border: `1px solid ${rd.cardBorder}`,
-              borderRadius: 6,
-              padding: "4px 8px",
-              fontFamily: fontMono,
-              fontSize: 11,
-              color: rd.cream,
-              cursor: "pointer",
-            }}
-          >
-            <option value="">All States</option>
-            {jurisdictions.map(j => (
-              <option key={j.id} value={j.metadata?.abbreviation || j.jurisdiction}>
-                {j.metadata?.name || j.jurisdiction}
-              </option>
-            ))}
-          </select>
-        </div>
-      </header>
-
-      {/* ── Intro ── */}
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 24px 16px" }}>
-        <p style={{ fontFamily: fontSerif, fontSize: 22, color: "#86efac", fontWeight: 500, lineHeight: 1.4, marginBottom: 8 }}>
-          Where you find help.
-        </p>
-        <p style={{ fontFamily: fontSans, fontSize: 14, color: rd.muted, lineHeight: 1.6, maxWidth: 600 }}>
-          Legal aid, government benefits, crisis hotlines, and community resources.
-          Everything is free or low-cost. No login required to browse.
-        </p>
-        {!isLoading && !error && (
-          <p style={{ fontFamily: fontMono, fontSize: 11, color: rd.muted, marginTop: 8 }}>
-            {programs.length} programs · {agencies.length} agencies
-            {jurisdictionFilter && ` · filtered: ${jurisdictionFilter}`}
-          </p>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full border border-sky-400/20 bg-sky-400/10 px-2.5 py-1 text-[11px] font-medium text-sky-200">
+            <FileCheck2 className="h-3 w-3" />
+            Source attached
+          </span>
         )}
       </div>
 
-      {/* ── Loading State ── */}
-      {isLoading && (
-        <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 24px", textAlign: "center" }}>
-          <Loader2 size={24} style={{ animation: "spin 1s linear infinite", margin: "0 auto", color: rd.green }} />
-          <p style={{ fontFamily: fontSans, fontSize: 14, color: rd.muted, marginTop: 12 }}>
-            Loading resources...
+      <h2 className="text-lg font-semibold leading-snug text-slate-50">
+        {resource.resource_name}
+      </h2>
+      <p className="mt-2 line-clamp-4 text-sm leading-6 text-slate-300">
+        {description}
+      </p>
+
+      {resource.eligibility_summary && (
+        <div className="mt-4 rounded-xl border border-white/8 bg-white/[0.035] p-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+            Eligibility
+          </p>
+          <p className="mt-1 line-clamp-3 text-xs leading-5 text-slate-300">
+            {resource.eligibility_summary}
           </p>
         </div>
       )}
 
-      {/* ── Error State ── */}
-      {error && (
-        <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 24px" }}>
-          <div style={{
-            background: `${rd.red}12`,
-            border: `1px solid ${rd.red}30`,
-            borderRadius: 10,
-            padding: 16,
-          }}>
-            <p style={{ fontFamily: fontSans, fontSize: 14, color: rd.red }}>
-              Error loading resources. Please try again later.
-            </p>
-          </div>
+      <div className="mt-4 flex items-start gap-2 text-xs leading-5 text-slate-400">
+        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+        <div>
+          <span className="font-medium text-slate-200">
+            {address || locationLabel(resource)}
+          </span>
+          {!address && (
+            <span className="mt-0.5 block">
+              Coverage is shown by jurisdiction; no street marker is implied.
+            </span>
+          )}
+          {address && !currentLocation?.manual_review_version && (
+            <span className="mt-0.5 block">
+              Source address context; exact map placement is not yet reviewed.
+            </span>
+          )}
+          {address &&
+            currentLocation?.manual_review_version &&
+            !mapEligible && (
+              <span className="mt-0.5 block">
+                Manually reviewed; no exact marker until genuine coordinates
+                are added.
+              </span>
+            )}
         </div>
-      )}
+      </div>
 
-      {/* ── Category Grid ── */}
-      {!isLoading && !error && (
-        <div style={{ maxWidth: 900, margin: "0 auto", padding: "16px 24px 80px" }}>
-          {CATEGORY_CONFIG.map((cat) => {
-            const resources = getResourcesForCategory(cat.id);
-            const totalResources = resources.length;
+      {resource.publication_status === "inactive" &&
+        resource.publication_review_note && (
+          <p className="mt-3 rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 text-xs leading-5 text-amber-100/80">
+            {resource.publication_review_note}
+          </p>
+        )}
 
-            return (
-              <div key={cat.id} style={{ marginBottom: 12 }}>
-                <button
-                  onClick={() => {
-                    if (cat.internalHref) {
-                      navigate(cat.internalHref);
-                    } else {
-                      setExpanded(expanded === cat.id ? null : cat.id);
-                    }
-                  }}
-                  style={{
-                    width: "100%",
-                    background: rd.cardBg,
-                    border: `1px solid ${rd.cardBorder}`,
-                    borderRadius: expanded === cat.id ? "10px 10px 0 0" : 10,
-                    padding: "16px 20px",
-                    cursor: "pointer",
-                    textAlign: "left" as const,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 14,
-                    transition: "all 0.2s",
-                  }}
-                >
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                    background: `${cat.color}10`, border: `1px solid ${cat.color}20`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
-                    <cat.icon size={20} color={cat.color} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ fontFamily: fontSans, fontSize: 15, fontWeight: 600, color: rd.cream, marginBottom: 2 }}>
-                      {cat.title}
-                    </h3>
-                    <p style={{ fontFamily: fontSans, fontSize: 12, color: rd.muted, lineHeight: 1.4 }}>
-                      {cat.description}
-                    </p>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-                    {cat.internalHref ? (
-                      <ArrowRight size={16} color={cat.color} />
-                    ) : (
-                      <span style={{
-                        fontFamily: fontMono, fontSize: 10, color: rd.muted,
-                        background: "rgba(255,255,255,0.04)", padding: "2px 8px", borderRadius: 100,
-                      }}>
-                        {totalResources} resources
-                      </span>
-                    )}
-                    {!cat.internalHref && (
-                      <ChevronRight
-                        size={14}
-                        color={rd.muted}
-                        style={{
-                          transform: expanded === cat.id ? "rotate(90deg)" : "none",
-                          transition: "transform 0.2s",
-                        }}
-                      />
-                    )}
-                  </div>
-                </button>
-                {/* Expanded Resources */}
-                {expanded === cat.id && (
-                  <div style={{
-                    background: "rgba(255,255,255,0.01)",
-                    border: `1px solid ${rd.cardBorder}`,
-                    borderTop: "none",
-                    borderRadius: "0 0 10px 10px",
-                    padding: "8px 12px",
-                    maxHeight: 400,
-                    overflowY: "auto",
-                  }}>
-                    {resources.map((node, i) => (
-                      <div key={node.id} style={{ borderBottom: i < resources.length - 1 ? `1px solid rgba(255,255,255,0.04)` : "none" }}>
-                        {renderWorldNode(node)}
-                      </div>
-                    ))}
-                    {totalResources === 0 && (
-                      <div style={{ padding: "16px 12px", textAlign: "center" }}>
-                        <p style={{ fontFamily: fontSans, fontSize: 12, color: rd.muted }}>
-                          No resources available in this category yet.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
+      <div className="mt-auto pt-5">
+        {visibleContacts.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {visibleContacts.map((contact) => (
+              <ContactAction
+                key={contact.contact_point_id}
+                contact={contact}
+              />
+            ))}
+          </div>
+        )}
+
+        {resource.state && (
+          <Link
+            href={`/civic-map?${mapParams.toString()}`}
+            className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300 hover:text-emerald-200"
+          >
+            <Map className="h-3.5 w-3.5" />
+            {mapEligible ? "Show exact public site" : `Explore ${stateName}`}
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
+        )}
+      </div>
+    </article>
+  );
+}
+
+export default function ResourceDirectory() {
+  const [, navigate] = useLocation();
+  const initialParams = useMemo(
+    () => new URLSearchParams(window.location.search),
+    []
+  );
+  const [queryDraft, setQueryDraft] = useState(
+    initialParams.get("query") || ""
+  );
+  const [query, setQuery] = useState(initialParams.get("query") || "");
+  const [jurisdiction, setJurisdiction] = useState(
+    initialParams.get("jurisdiction") || ""
+  );
+  const [category, setCategory] = useState(
+    initialParams.get("category") || ""
+  );
+  const [page, setPage] = useState(0);
+
+  const summaryQuery = trpc.resourceDirectory.summary.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+  const directoryQuery = trpc.resourceDirectory.search.useQuery(
+    {
+      query: query || undefined,
+      jurisdiction: jurisdiction || undefined,
+      category: category || undefined,
+      limit: PAGE_SIZE,
+      offset: page * PAGE_SIZE,
+    },
+    {
+      staleTime: 60 * 1000,
+      refetchOnWindowFocus: false,
+    }
+  );
+
+  const summary = summaryQuery.data as DirectorySummary | undefined;
+  const searchResult = directoryQuery.data as SearchResponse | undefined;
+  const totalPages = Math.max(
+    1,
+    Math.ceil((searchResult?.total ?? 0) / PAGE_SIZE)
+  );
+  const jurisdictionOptions = summary?.jurisdictions ?? [];
+  const categoryOptions = summary?.categories ?? [];
+  const hasFilters = Boolean(query || jurisdiction || category);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (query) params.set("query", query);
+    if (jurisdiction) params.set("jurisdiction", jurisdiction);
+    if (category) params.set("category", category);
+    const suffix = params.toString() ? `?${params.toString()}` : "";
+    window.history.replaceState(
+      {},
+      "",
+      `${window.location.pathname}${suffix}`
+    );
+  }, [query, jurisdiction, category]);
+
+  function submitSearch(event: FormEvent) {
+    event.preventDefault();
+    setPage(0);
+    setQuery(queryDraft.trim());
+  }
+
+  function clearFilters() {
+    setQueryDraft("");
+    setQuery("");
+    setJurisdiction("");
+    setCategory("");
+    setPage(0);
+  }
+
+  function chooseCategory(nextCategory: string) {
+    setCategory((current) => (current === nextCategory ? "" : nextCategory));
+    setPage(0);
+  }
+
+  return (
+    <div className="min-h-screen bg-[#070b12] text-slate-100">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#070b12]/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate("/lighthouse")}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-slate-400 hover:bg-white/5 hover:text-slate-100"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Lighthouse</span>
+            </button>
+            <div className="h-6 w-px bg-white/10" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <Globe2 className="h-4 w-4 shrink-0 text-emerald-300" />
+                <h1 className="truncate font-serif text-lg font-semibold">
+                  Resource Directory
+                </h1>
               </div>
-            );
-          })}
+              <p className="hidden text-[11px] text-slate-500 sm:block">
+                The v3.13 civic resource collection
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/civic-map"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-xs font-semibold text-emerald-200 hover:border-emerald-300/50"
+          >
+            <Map className="h-4 w-4" />
+            Civic Map
+          </Link>
+        </div>
+      </header>
 
-          {/* Uncategorized programs */}
-          {uncategorizedPrograms.length > 0 && (
-            <div style={{ marginBottom: 12 }}>
-              <button
-                onClick={() => setExpanded(expanded === "other" ? null : "other")}
-                style={{
-                  width: "100%",
-                  background: rd.cardBg,
-                  border: `1px solid ${rd.cardBorder}`,
-                  borderRadius: expanded === "other" ? "10px 10px 0 0" : 10,
-                  padding: "16px 20px",
-                  cursor: "pointer",
-                  textAlign: "left" as const,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                  transition: "all 0.2s",
+      <main>
+        <section className="border-b border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.18),transparent_42%),radial-gradient(circle_at_80%_20%,rgba(14,165,233,0.11),transparent_34%)]">
+          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-300">
+              Find real help
+            </p>
+            <h2 className="mt-3 max-w-4xl font-serif text-4xl font-semibold leading-tight text-white sm:text-6xl">
+              Public resources, organized for people—not a graph.
+            </h2>
+            <p className="mt-5 max-w-3xl text-base leading-7 text-slate-300 sm:text-lg">
+              Search the complete promoted state and territory collection by
+              need, jurisdiction, service, or organization. Locations are
+              described honestly: exact public sites where known, coverage
+              areas everywhere else.
+            </p>
+
+            <form
+              onSubmit={submitSearch}
+              className="mt-8 flex max-w-4xl flex-col gap-3 rounded-2xl border border-white/10 bg-slate-950/70 p-3 shadow-2xl shadow-black/25 sm:flex-row"
+            >
+              <label className="flex min-w-0 flex-1 items-center gap-3 rounded-xl bg-white/[0.04] px-4">
+                <Search className="h-5 w-5 shrink-0 text-emerald-300" />
+                <span className="sr-only">Search resources</span>
+                <input
+                  value={queryDraft}
+                  onChange={(event) => setQueryDraft(event.target.value)}
+                  placeholder="Search housing, legal aid, food, disability…"
+                  className="h-12 w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+                />
+              </label>
+              <select
+                value={jurisdiction}
+                onChange={(event) => {
+                  setJurisdiction(event.target.value);
+                  setPage(0);
                 }}
+                aria-label="Filter by jurisdiction"
+                className="h-12 rounded-xl border border-white/10 bg-slate-900 px-4 text-sm text-slate-200 outline-none focus:border-emerald-400/50"
               >
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                  background: `${rd.muted}10`, border: `1px solid ${rd.muted}20`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                  <FileText size={20} color={rd.muted} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ fontFamily: fontSans, fontSize: 15, fontWeight: 600, color: rd.cream, marginBottom: 2 }}>
-                    All Other Programs
-                  </h3>
-                  <p style={{ fontFamily: fontSans, fontSize: 12, color: rd.muted, lineHeight: 1.4 }}>
-                    Additional programs and services across all jurisdictions.
+                <option value="">All jurisdictions</option>
+                {jurisdictionOptions.map((item) => (
+                  <option key={item.code} value={item.code}>
+                    {STATE_NAMES[item.code] || item.code} ({item.count})
+                  </option>
+                ))}
+              </select>
+              <button
+                type="submit"
+                className="h-12 rounded-xl bg-emerald-400 px-6 text-sm font-bold text-emerald-950 transition hover:bg-emerald-300"
+              >
+                Search
+              </button>
+            </form>
+
+            <div className="mt-7 grid max-w-4xl grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                {
+                  value: summary?.total_resources,
+                  label: "canonical resources",
+                },
+                {
+                  value: summary?.jurisdiction_count,
+                  label: "jurisdictions",
+                },
+                {
+                  value: summary?.category_count,
+                  label: "resource categories",
+                },
+                {
+                  value: summary?.resources_with_locations,
+                  label: "with reviewed location context",
+                },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3"
+                >
+                  <p className="font-mono text-xl font-bold text-white">
+                    {stat.value == null ? "—" : stat.value.toLocaleString()}
+                  </p>
+                  <p className="mt-1 text-[11px] leading-4 text-slate-400">
+                    {stat.label}
                   </p>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-                  <span style={{
-                    fontFamily: fontMono, fontSize: 10, color: rd.muted,
-                    background: "rgba(255,255,255,0.04)", padding: "2px 8px", borderRadius: 100,
-                  }}>
-                    {uncategorizedPrograms.length} resources
-                  </span>
-                  <ChevronRight
-                    size={14}
-                    color={rd.muted}
-                    style={{
-                      transform: expanded === "other" ? "rotate(90deg)" : "none",
-                      transition: "transform 0.2s",
-                    }}
-                  />
-                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+          <div className="mb-5 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+                Browse by need
+              </p>
+              <h2 className="mt-1 font-serif text-2xl font-semibold text-white">
+                Twelve resource categories
+              </h2>
+            </div>
+            {category && (
+              <button
+                type="button"
+                onClick={() => chooseCategory(category)}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-white"
+              >
+                <X className="h-3.5 w-3.5" />
+                Clear category
               </button>
-              {expanded === "other" && (
-                <div style={{
-                  background: "rgba(255,255,255,0.01)",
-                  border: `1px solid ${rd.cardBorder}`,
-                  borderTop: "none",
-                  borderRadius: "0 0 10px 10px",
-                  padding: "8px 12px",
-                  maxHeight: 400,
-                  overflowY: "auto",
-                }}>
-                  {uncategorizedPrograms.map((node, i) => (
-                    <div key={node.id} style={{ borderBottom: i < uncategorizedPrograms.length - 1 ? `1px solid rgba(255,255,255,0.04)` : "none" }}>
-                      {renderWorldNode(node)}
+            )}
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {categoryOptions.map((item) => {
+              const config =
+                CATEGORY_CONFIG[item.id as keyof typeof CATEGORY_CONFIG];
+              const Icon = config?.icon ?? HeartPulse;
+              const selected = category === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => chooseCategory(item.id)}
+                  aria-pressed={selected}
+                  className={`group rounded-2xl border p-4 text-left transition ${
+                    selected
+                      ? "border-emerald-300/60 bg-emerald-400/12"
+                      : "border-white/10 bg-white/[0.025] hover:border-white/20 hover:bg-white/[0.05]"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div
+                      className={`rounded-xl p-2.5 ${
+                        selected
+                          ? "bg-emerald-300 text-emerald-950"
+                          : "bg-white/5 text-emerald-300"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
                     </div>
-                  ))}
-                </div>
+                    <span className="font-mono text-sm font-bold text-slate-300">
+                      {item.count.toLocaleString()}
+                    </span>
+                  </div>
+                  <h3 className="mt-3 text-sm font-semibold text-white">
+                    {config?.label || titleCase(item.id)}
+                  </h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    {config?.description || "Public service resources"}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="border-t border-white/10 bg-slate-950/35">
+          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+            <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">
+                  Directory results
+                </p>
+                <h2 className="mt-1 font-serif text-3xl font-semibold text-white">
+                  {directoryQuery.isLoading
+                    ? "Searching the collection…"
+                    : `${(searchResult?.total ?? 0).toLocaleString()} resources`}
+                </h2>
+                {hasFilters && (
+                  <p className="mt-1 text-sm text-slate-400">
+                    {[
+                      query ? `“${query}”` : null,
+                      jurisdiction
+                        ? STATE_NAMES[jurisdiction] || jurisdiction
+                        : null,
+                      category ? categoryLabel(category) : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                )}
+              </div>
+              {hasFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="inline-flex items-center gap-2 self-start rounded-full border border-white/10 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-white/5 sm:self-auto"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  Clear all filters
+                </button>
               )}
             </div>
-          )}
-        </div>
-      )}
+
+            {directoryQuery.isLoading && (
+              <div className="flex min-h-64 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.025]">
+                <div className="text-center">
+                  <Loader2 className="mx-auto h-7 w-7 animate-spin text-emerald-300" />
+                  <p className="mt-3 text-sm text-slate-400">
+                    Loading canonical resources
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {directoryQuery.error && (
+              <div className="rounded-2xl border border-rose-400/25 bg-rose-400/5 p-6">
+                <h3 className="font-semibold text-rose-200">
+                  The directory could not load.
+                </h3>
+                <p className="mt-2 text-sm text-rose-100/70">
+                  {directoryQuery.error.message}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => directoryQuery.refetch()}
+                  className="mt-4 rounded-lg border border-rose-300/25 px-3 py-2 text-xs font-semibold text-rose-100 hover:bg-rose-300/10"
+                >
+                  Try again
+                </button>
+              </div>
+            )}
+
+            {!directoryQuery.isLoading &&
+              !directoryQuery.error &&
+              searchResult?.items.length === 0 && (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-10 text-center">
+                  <Search className="mx-auto h-8 w-8 text-slate-600" />
+                  <h3 className="mt-4 text-lg font-semibold text-white">
+                    No matching resources
+                  </h3>
+                  <p className="mt-2 text-sm text-slate-400">
+                    Try a broader term or clear one of the filters.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="mt-5 rounded-lg bg-emerald-400 px-4 py-2 text-sm font-bold text-emerald-950"
+                  >
+                    Show the full directory
+                  </button>
+                </div>
+              )}
+
+            {searchResult && searchResult.items.length > 0 && (
+              <>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {searchResult.items.map((resource) => (
+                    <ResourceCard
+                      key={resource.resource_entity_id}
+                      resource={resource}
+                    />
+                  ))}
+                </div>
+
+                <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 sm:flex-row">
+                  <p className="text-xs text-slate-500">
+                    Showing{" "}
+                    {(searchResult.offset + 1).toLocaleString()}–
+                    {Math.min(
+                      searchResult.offset + searchResult.items.length,
+                      searchResult.total
+                    ).toLocaleString()}{" "}
+                    of {searchResult.total.toLocaleString()}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={page === 0}
+                      onClick={() => {
+                        setPage((current) => Math.max(0, current - 1));
+                        window.scrollTo({ top: 1050, behavior: "smooth" });
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-slate-300 enabled:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </button>
+                    <span className="px-2 font-mono text-xs text-slate-500">
+                      {page + 1} / {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={page + 1 >= totalPages}
+                      onClick={() => {
+                        setPage((current) =>
+                          Math.min(totalPages - 1, current + 1)
+                        );
+                        window.scrollTo({ top: 1050, behavior: "smooth" });
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-slate-300 enabled:hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

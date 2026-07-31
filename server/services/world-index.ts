@@ -54,7 +54,13 @@ function firstArrayValue(value: unknown): string | null {
 async function loadJurisdictions(): Promise<WorldObject[]> {
   const [rows] = await pool.query(`
     select distinct jurisdiction from (
-      select state as jurisdiction from normalized_civic_resource where state is not null
+      select e.state as jurisdiction
+      from luminari_resource_entities e
+      left join luminari_resource_publication_resolutions p
+        on p.resource_entity_id = e.resource_entity_id
+      where e.source_table = 'state_directory_logical_record'
+        and coalesce(p.publication_status, 'active') = 'active'
+        and e.state is not null
       union
       select jurisdiction from national_resources where jurisdiction is not null
       union
@@ -86,63 +92,174 @@ async function loadJurisdictions(): Promise<WorldObject[]> {
 async function loadPrograms(): Promise<WorldObject[]> {
   const nodes: WorldObject[] = [];
 
-  const [civicRows] = await pool.query(`
+  const [directoryRows] = await pool.query(`
+    with preferred_contacts as (
+      select
+        cp.resource_entity_id,
+        (
+          array_agg(
+            cp.contact_value
+            order by
+              cp.is_primary desc nulls last,
+              cp.manually_reviewed desc,
+              cp.created_at desc,
+              cp.contact_point_id
+          ) filter (where cp.contact_type = 'phone')
+        )[1] as phone,
+        (
+          array_agg(
+            cp.contact_value
+            order by
+              cp.is_primary desc nulls last,
+              cp.manually_reviewed desc,
+              cp.created_at desc,
+              cp.contact_point_id
+          ) filter (where cp.contact_type = 'email')
+        )[1] as email,
+        (
+          array_agg(
+            cp.contact_value
+            order by
+              case when cp.contact_type = 'website' then 0 else 1 end,
+              cp.is_primary desc nulls last,
+              cp.manually_reviewed desc,
+              cp.created_at desc,
+              cp.contact_point_id
+          ) filter (where cp.contact_type in ('website', 'portal'))
+        )[1] as website
+      from v_luminari_resource_contact_points_current_v3_13 cp
+      group by cp.resource_entity_id
+    ),
+    preferred_locations as (
+      select distinct on (l.resource_entity_id)
+        l.resource_entity_id,
+        l.address_line1,
+        l.address_line2,
+        l.city,
+        l.county,
+        l.state,
+        l.postal_code,
+        l.country,
+        l.latitude,
+        l.longitude,
+        l.coordinate_quality,
+        l.geocode_source,
+        l.manual_location_kind,
+        l.manual_map_eligible,
+        l.manual_source_reference
+      from v_luminari_resource_locations_current_v3_13 l
+      order by
+        l.resource_entity_id,
+        (l.manual_map_eligible is true) desc,
+        (l.latitude is not null and l.longitude is not null) desc,
+        (l.manual_source_reference is not null) desc,
+        l.created_at desc,
+        l.location_id
+    )
     select
-      id,
-      name,
-      resource_type,
-      description,
-      organization_name,
-      agency_name,
-      address_line1,
-      address_line2,
-      city,
-      county,
-      state,
-      postal_code,
-      latitude,
-      longitude,
-      phone,
-      email,
-      website_url,
-      service_categories,
-      eligibility_summary,
-      normalized_payload,
-      normalization_confidence
-    from normalized_civic_resource
+      e.resource_entity_id,
+      e.canonical_id,
+      coalesce(
+        nullif(p.display_name_override, ''),
+        e.resource_name
+      ) as resource_name,
+      e.resource_type,
+      e.resource_category,
+      e.layer,
+      e.jurisdiction,
+      e.jurisdiction_scope,
+      e.state,
+      e.county,
+      e.city,
+      e.description,
+      e.eligibility_summary,
+      e.apply_notes,
+      e.service_categories,
+      e.domains,
+      e.verification_status,
+      e.promotion_status,
+      e.provenance_status,
+      e.source_table,
+      e.source_pk,
+      e.source_hash,
+      e.metadata,
+      c.phone,
+      c.email,
+      c.website,
+      l.address_line1,
+      l.address_line2,
+      coalesce(l.city, e.city) as location_city,
+      coalesce(l.county, e.county) as location_county,
+      coalesce(l.state, e.state) as location_state,
+      l.postal_code,
+      l.country,
+      l.latitude,
+      l.longitude,
+      l.coordinate_quality,
+      l.geocode_source,
+      l.manual_location_kind,
+      l.manual_map_eligible,
+      l.manual_source_reference
+    from luminari_resource_entities e
+    left join luminari_resource_publication_resolutions p
+      on p.resource_entity_id = e.resource_entity_id
+    left join preferred_contacts c
+      on c.resource_entity_id = e.resource_entity_id
+    left join preferred_locations l
+      on l.resource_entity_id = e.resource_entity_id
+    where e.source_table = 'state_directory_logical_record'
+      and coalesce(p.publication_status, 'active') = 'active'
   `) as any;
 
-  for (const r of civicRows) {
-    const category = firstArrayValue(r.service_categories) || r.resource_type || 'general';
+  for (const r of directoryRows) {
+    const category = r.resource_category ||
+      firstArrayValue(r.service_categories) ||
+      r.resource_type ||
+      'general';
     nodes.push({
-      id: `civic_resource_${r.id}`,
+      id: `directory_resource_${r.resource_entity_id}`,
       type: 'program',
-      jurisdiction: safeText(r.state, 'unknown'),
+      jurisdiction: safeText(r.location_state || r.state || r.jurisdiction, 'unknown'),
       domain: safeText(category, 'general'),
-      source_table: 'normalized_civic_resource',
-      source_id: String(r.id),
+      source_table: 'luminari_resource_entities',
+      source_id: String(r.resource_entity_id),
       metadata: {
-        name: r.name,
+        name: r.resource_name,
+        canonical_id: r.canonical_id,
         resource_type: r.resource_type,
         category,
         service_categories: r.service_categories,
-        city: r.city,
-        county: r.county,
-        state: r.state,
+        layer: r.layer,
+        jurisdiction: r.jurisdiction,
+        jurisdiction_scope: r.jurisdiction_scope,
+        city: r.location_city,
+        county: r.location_county,
+        state: r.location_state,
         address: [r.address_line1, r.address_line2].filter(Boolean).join(', '),
         postal_code: r.postal_code,
+        country: r.country,
         phone: r.phone,
         email: r.email,
-        website: r.website_url,
-        contact: r.phone || r.email || r.website_url,
+        website: r.website,
+        contact: r.phone || r.email || r.website,
         description: r.description,
         eligibility: r.eligibility_summary,
-        organization_name: r.organization_name,
-        agency_name: r.agency_name,
+        apply_notes: r.apply_notes,
+        domains: r.domains,
         latitude: r.latitude,
         longitude: r.longitude,
-        normalized_payload: r.normalized_payload,
-        normalization_confidence: r.normalization_confidence,
+        coordinate_quality: r.coordinate_quality,
+        geocode_source: r.geocode_source,
+        location_kind: r.manual_location_kind,
+        map_eligible: r.manual_map_eligible,
+        location_source_reference: r.manual_source_reference,
+        verification_status: r.verification_status,
+        promotion_status: r.promotion_status,
+        provenance_status: r.provenance_status,
+        canonical_source_table: r.source_table,
+        canonical_source_pk: r.source_pk,
+        source_hash: r.source_hash,
+        raw_metadata: r.metadata,
       },
     });
   }

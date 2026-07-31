@@ -94,8 +94,11 @@ async function discoverRouteInventory() {
 }
 
 async function buildDeepSnapshot(): Promise<DeepSnapshot> {
-  const [tables, views, foreign_keys, routes] = await Promise.all([
-    query_with_diagnostics<InventoryRow>(`
+  // Route discovery is local filesystem work and can overlap the database
+  // reads. Keep the database inventory queries sequential so a diagnostic
+  // refresh consumes at most one pool client at a time.
+  const routes_promise = discoverRouteInventory();
+  const tables = await query_with_diagnostics<InventoryRow>(`
       select
         t.table_name,
         count(c.column_name)::int as column_count
@@ -107,11 +110,18 @@ async function buildDeepSnapshot(): Promise<DeepSnapshot> {
         and t.table_type = 'BASE TABLE'
       group by t.table_name
       order by t.table_name
-    `, [], { label: "db_diagnostic_tables", pool_acquire_timeout_ms: DIAGNOSTIC_POOL_ACQUIRE_TIMEOUT_MS, query_timeout_ms: DIAGNOSTIC_QUERY_TIMEOUT_MS }).then((r) => r.rows),
-    query_with_diagnostics<InventoryRow>(`select table_name as view_name from information_schema.views where table_schema = 'public' order by table_name`, [], { label: "db_diagnostic_views", pool_acquire_timeout_ms: DIAGNOSTIC_POOL_ACQUIRE_TIMEOUT_MS, query_timeout_ms: DIAGNOSTIC_QUERY_TIMEOUT_MS }).then((r) => r.rows),
-    query_with_diagnostics<InventoryRow>(`select tc.table_name, kcu.column_name, ccu.table_name as foreign_table_name, ccu.column_name as foreign_column_name from information_schema.table_constraints tc join information_schema.key_column_usage kcu on tc.constraint_name = kcu.constraint_name and tc.table_schema = kcu.table_schema join information_schema.constraint_column_usage ccu on ccu.constraint_name = tc.constraint_name and ccu.table_schema = tc.table_schema where tc.table_schema = 'public' and tc.constraint_type = 'FOREIGN KEY' order by tc.table_name, kcu.column_name`, [], { label: "db_diagnostic_foreign_keys", pool_acquire_timeout_ms: DIAGNOSTIC_POOL_ACQUIRE_TIMEOUT_MS, query_timeout_ms: DIAGNOSTIC_QUERY_TIMEOUT_MS }).then((r) => r.rows),
-    discoverRouteInventory(),
-  ]);
+    `, [], { label: "db_diagnostic_tables", pool_acquire_timeout_ms: DIAGNOSTIC_POOL_ACQUIRE_TIMEOUT_MS, query_timeout_ms: DIAGNOSTIC_QUERY_TIMEOUT_MS }).then((r) => r.rows);
+  const views = await query_with_diagnostics<InventoryRow>(
+    `select table_name as view_name from information_schema.views where table_schema = 'public' order by table_name`,
+    [],
+    { label: "db_diagnostic_views", pool_acquire_timeout_ms: DIAGNOSTIC_POOL_ACQUIRE_TIMEOUT_MS, query_timeout_ms: DIAGNOSTIC_QUERY_TIMEOUT_MS },
+  ).then((r) => r.rows);
+  const foreign_keys = await query_with_diagnostics<InventoryRow>(
+    `select tc.table_name, kcu.column_name, ccu.table_name as foreign_table_name, ccu.column_name as foreign_column_name from information_schema.table_constraints tc join information_schema.key_column_usage kcu on tc.constraint_name = kcu.constraint_name and tc.table_schema = kcu.table_schema join information_schema.constraint_column_usage ccu on ccu.constraint_name = tc.constraint_name and ccu.table_schema = tc.table_schema where tc.table_schema = 'public' and tc.constraint_type = 'FOREIGN KEY' order by tc.table_name, kcu.column_name`,
+    [],
+    { label: "db_diagnostic_foreign_keys", pool_acquire_timeout_ms: DIAGNOSTIC_POOL_ACQUIRE_TIMEOUT_MS, query_timeout_ms: DIAGNOSTIC_QUERY_TIMEOUT_MS },
+  ).then((r) => r.rows);
+  const routes = await routes_promise;
   return { generated_at: new Date().toISOString(), tables, views, foreign_keys, routes };
 }
 

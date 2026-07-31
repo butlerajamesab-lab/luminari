@@ -3,84 +3,1608 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CivicMap v2 — Lighthouse</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <title>Civic Map — Resource Directory</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIINfQ3ynhRgTjoUU0Mi8o7fNh5RS1aWrmM="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
   <style>
-    :root { --bg:#0f172a; --panel:#1e293b; --text:#f1f5f9; --muted:#94a3b8; --accent:#38bdf8; --danger:#ef4444; --success:#22c55e; }
-    * { box-sizing: border-box; }
-    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); overflow:hidden; }
-    #map { width:100vw; height:100vh; }
-    .top-bar { position:fixed; top:0; left:0; right:0; height:56px; z-index:1000; display:flex; align-items:center; gap:12px; padding:0 16px; background:rgba(15,23,42,.95); border-bottom:1px solid rgba(255,255,255,.1); }
-    .logo { font-weight:700; color:var(--accent); display:flex; gap:8px; align-items:center; white-space:nowrap; }
-    .search-box { position:relative; flex:1; max-width:460px; }
-    .search-box input { width:100%; padding:8px 12px 8px 36px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:var(--panel); color:var(--text); }
-    .search-box i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); }
-    .btn { padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:var(--panel); color:var(--text); cursor:pointer; }
-    .layer-panel { position:fixed; top:72px; left:16px; z-index:1000; width:245px; padding:12px; border-radius:12px; background:rgba(15,23,42,.95); border:1px solid rgba(255,255,255,.1); }
-    .layer-title { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin-bottom:8px; }
-    .layer-item { display:flex; align-items:center; gap:8px; padding:6px 0; font-size:13px; }
-    .dot { width:10px; height:10px; border-radius:50%; }
-    .sidebar { position:fixed; top:56px; right:-430px; width:430px; bottom:0; z-index:1001; display:flex; flex-direction:column; background:rgba(15,23,42,.98); border-left:1px solid rgba(255,255,255,.1); transition:right .25s ease; }
-    .sidebar.open { right:0; }
-    .sidebar-header { padding:18px; display:flex; justify-content:space-between; gap:12px; border-bottom:1px solid rgba(255,255,255,.1); }
-    .sidebar-title { font-size:18px; font-weight:700; line-height:1.3; }
-    .sidebar-meta { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.05em; margin-top:5px; }
-    .close-btn { background:none; border:0; color:var(--muted); font-size:20px; cursor:pointer; }
-    .sidebar-body { overflow-y:auto; padding:18px; }
-    .section { margin-bottom:20px; }
-    .section-title { margin-bottom:10px; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.05em; font-weight:700; }
-    .info-row { display:flex; justify-content:space-between; gap:16px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.06); font-size:14px; }
-    .info-row span:last-child { text-align:right; overflow-wrap:anywhere; }
-    .info-label { color:var(--muted); flex-shrink:0; }
-    .tag { display:inline-block; padding:4px 10px; border-radius:20px; margin:0 6px 6px 0; font-size:11px; font-weight:700; background:rgba(56,189,248,.18); color:var(--accent); }
-    .action-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .action-btn { padding:10px; border:1px solid rgba(255,255,255,.12); border-radius:10px; color:var(--text); background:var(--panel); text-decoration:none; text-align:center; font-size:13px; }
-    .action-btn.primary { background:var(--accent); color:var(--bg); font-weight:700; }
-    .status-badge { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:1000; padding:10px 18px; border-radius:20px; background:rgba(15,23,42,.95); border:1px solid rgba(255,255,255,.1); font-size:13px; display:flex; gap:8px; align-items:center; }
-    .status-dot { width:8px; height:8px; border-radius:50%; background:var(--success); }
-    @media (max-width:768px) { .sidebar{width:100%;right:-100%;} .layer-panel{top:auto;left:10px;bottom:78px;} .btn span{display:none;} }
+    :root {
+      color-scheme: dark;
+      --bg: #070b12;
+      --panel: rgba(8, 15, 25, 0.95);
+      --panel-solid: #0b1320;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --quiet: #64748b;
+      --border: rgba(255, 255, 255, 0.11);
+      --green: #34d399;
+      --green-deep: #064e3b;
+      --cyan: #22d3ee;
+      --amber: #fbbf24;
+      --danger: #fb7185;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body,
+    #map {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family:
+        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button,
+    a {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #map {
+      background: #07101a;
+    }
+
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto;
+      z-index: 1000;
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(7, 11, 18, 0.94);
+      backdrop-filter: blur(16px);
+    }
+
+    .brand {
+      display: flex;
+      min-width: 205px;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      border-radius: 11px;
+      background: rgba(52, 211, 153, 0.1);
+      color: var(--green);
+      font-size: 18px;
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 14px;
+      letter-spacing: 0.01em;
+    }
+
+    .brand small {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .search {
+      position: relative;
+      flex: 1;
+      max-width: 440px;
+    }
+
+    .search input {
+      width: 100%;
+      height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      outline: none;
+      background: rgba(255, 255, 255, 0.055);
+      color: var(--text);
+      padding: 0 14px 0 38px;
+    }
+
+    .search input:focus {
+      border-color: rgba(52, 211, 153, 0.55);
+      box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.09);
+    }
+
+    .search::before {
+      position: absolute;
+      top: 9px;
+      left: 13px;
+      content: "⌕";
+      color: var(--green);
+      font-size: 21px;
+      line-height: 20px;
+    }
+
+    .topbar-actions {
+      display: flex;
+      margin-left: auto;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .button {
+      display: inline-flex;
+      min-height: 38px;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      cursor: pointer;
+      background: var(--panel-solid);
+      color: var(--text);
+      padding: 0 13px;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+      transition:
+        transform 120ms ease,
+        border-color 120ms ease,
+        background 120ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(52, 211, 153, 0.4);
+    }
+
+    .button.primary {
+      border-color: rgba(52, 211, 153, 0.35);
+      background: var(--green);
+      color: #03251b;
+    }
+
+    .map-panel {
+      position: fixed;
+      top: 74px;
+      left: 16px;
+      z-index: 900;
+      width: min(310px, calc(100vw - 32px));
+      max-height: calc(100vh - 104px);
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: 0 22px 60px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(18px);
+    }
+
+    .panel-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-section:last-child {
+      border-bottom: 0;
+    }
+
+    .eyebrow {
+      color: var(--green);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.17em;
+      text-transform: uppercase;
+    }
+
+    .panel-title {
+      margin: 5px 0 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 23px;
+      font-weight: 600;
+      line-height: 1.15;
+    }
+
+    .panel-copy {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .stat {
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .stat strong {
+      display: block;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 18px;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 3px;
+      color: var(--quiet);
+      font-size: 9px;
+      line-height: 1.3;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .field-label {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .category-select {
+      width: 100%;
+      height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      outline: none;
+      background: #111b2a;
+      color: var(--text);
+      padding: 0 10px;
+      font-size: 12px;
+    }
+
+    .legend {
+      display: grid;
+      gap: 9px;
+      margin-top: 13px;
+    }
+
+    .legend-row {
+      display: grid;
+      grid-template-columns: 26px 1fr auto;
+      align-items: center;
+      gap: 9px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .legend-coverage {
+      display: grid;
+      width: 25px;
+      height: 25px;
+      place-items: center;
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      background: rgba(16, 185, 129, 0.76);
+      color: white;
+      font-size: 8px;
+      font-weight: 900;
+    }
+
+    .legend-site {
+      width: 13px;
+      height: 13px;
+      margin-left: 6px;
+      transform: rotate(45deg);
+      border: 2px solid white;
+      border-radius: 50% 50% 50% 0;
+      background: var(--cyan);
+    }
+
+    .legend-count {
+      color: white;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .category-key {
+      display: grid;
+      max-height: 245px;
+      margin-top: 12px;
+      overflow-y: auto;
+      gap: 4px;
+      padding-right: 3px;
+    }
+
+    .category-key button {
+      display: grid;
+      width: 100%;
+      grid-template-columns: 10px 1fr auto;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      background: transparent;
+      color: var(--muted);
+      padding: 6px 7px;
+      text-align: left;
+      font-size: 10px;
+    }
+
+    .category-key button:hover,
+    .category-key button.active {
+      border-color: var(--border);
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+    }
+
+    .category-key-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--category-color, var(--green));
+      box-shadow: 0 0 0 3px color-mix(
+        in srgb,
+        var(--category-color, var(--green)) 18%,
+        transparent
+      );
+    }
+
+    .category-key strong {
+      color: white;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 10px;
+    }
+
+    .coverage-list {
+      display: grid;
+      max-height: 250px;
+      overflow-y: auto;
+      gap: 5px;
+      padding-right: 3px;
+    }
+
+    .coverage-list button {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      cursor: pointer;
+      background: transparent;
+      color: var(--muted);
+      padding: 7px 8px;
+      text-align: left;
+      font-size: 11px;
+    }
+
+    .coverage-list button:hover,
+    .coverage-list button.active {
+      border-color: var(--border);
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+    }
+
+    .coverage-list strong {
+      color: var(--green);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 58px;
+      right: -440px;
+      bottom: 0;
+      z-index: 1100;
+      display: flex;
+      width: min(440px, 100vw);
+      flex-direction: column;
+      border-left: 1px solid var(--border);
+      background: rgba(7, 11, 18, 0.98);
+      box-shadow: -22px 0 60px rgba(0, 0, 0, 0.32);
+      transition: right 180ms ease;
+    }
+
+    .sidebar.open {
+      right: 0;
+    }
+
+    .sidebar-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-title {
+      margin: 5px 0 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 25px;
+      line-height: 1.18;
+    }
+
+    .close {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      background: transparent;
+      color: var(--muted);
+      font-size: 19px;
+    }
+
+    .sidebar-body {
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .detail-section {
+      margin-bottom: 22px;
+    }
+
+    .detail-heading {
+      margin-bottom: 9px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .detail-copy {
+      margin: 0;
+      color: #cbd5e1;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .category-bars {
+      display: grid;
+      gap: 8px;
+    }
+
+    .category-bar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 9px;
+      align-items: center;
+    }
+
+    .category-bar label {
+      min-width: 0;
+      color: #cbd5e1;
+      font-size: 12px;
+    }
+
+    .category-bar span {
+      color: var(--green);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+    }
+
+    .bar-track {
+      grid-column: 1 / -1;
+      height: 4px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--green), var(--cyan));
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      border: 1px solid rgba(52, 211, 153, 0.2);
+      border-radius: 999px;
+      background: rgba(52, 211, 153, 0.08);
+      color: #a7f3d0;
+      padding: 5px 9px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .detail-row {
+      display: grid;
+      grid-template-columns: 94px minmax(0, 1fr);
+      gap: 12px;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .detail-row span:first-child {
+      color: var(--quiet);
+    }
+
+    .detail-row span:last-child {
+      overflow-wrap: anywhere;
+      color: #dbeafe;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .action {
+      display: inline-flex;
+      min-height: 39px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(34, 211, 238, 0.25);
+      border-radius: 10px;
+      background: rgba(34, 211, 238, 0.08);
+      color: #a5f3fc;
+      padding: 0 12px;
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .action.primary {
+      border-color: rgba(52, 211, 153, 0.35);
+      background: var(--green);
+      color: #03251b;
+    }
+
+    .honesty-note {
+      border: 1px solid rgba(251, 191, 36, 0.22);
+      border-radius: 12px;
+      background: rgba(251, 191, 36, 0.06);
+      color: #fde68a;
+      padding: 11px;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .status {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 850;
+      display: flex;
+      max-width: min(460px, calc(100vw - 36px));
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+      padding: 9px 14px;
+      color: #cbd5e1;
+      font-size: 11px;
+      backdrop-filter: blur(12px);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.12);
+    }
+
+    .status.error .status-dot {
+      background: var(--danger);
+      box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.12);
+    }
+
+    .leaflet-control-zoom {
+      margin-top: 72px !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 11px !important;
+      overflow: hidden;
+      box-shadow: none !important;
+    }
+
+    .leaflet-control-zoom a {
+      border: 0 !important;
+      border-bottom: 1px solid var(--border) !important;
+      background: var(--panel-solid) !important;
+      color: white !important;
+    }
+
+    .leaflet-control-attribution {
+      background: rgba(7, 11, 18, 0.78) !important;
+      color: var(--quiet) !important;
+    }
+
+    .leaflet-control-attribution a {
+      color: #a7f3d0 !important;
+    }
+
+    .coverage-icon {
+      border: 0 !important;
+      background: transparent !important;
+    }
+
+    .coverage-anchor {
+      display: grid;
+      place-items: center;
+      transform: translate(-50%, -50%);
+      border: 2px solid rgba(255, 255, 255, 0.82);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 35% 25%, rgba(110, 231, 183, 0.96), rgba(5, 150, 105, 0.92));
+      color: white;
+      box-shadow:
+        0 0 0 4px rgba(16, 185, 129, 0.12),
+        0 8px 20px rgba(0, 0, 0, 0.35);
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .coverage-anchor b {
+      display: block;
+      font-size: 9px;
+      line-height: 1;
+      letter-spacing: 0.05em;
+    }
+
+    .coverage-anchor span {
+      display: block;
+      margin-top: 2px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 8px;
+      line-height: 1;
+    }
+
+    .coverage-anchor.selected {
+      background:
+        radial-gradient(circle at 35% 25%, #fde68a, #f59e0b);
+      box-shadow:
+        0 0 0 5px rgba(251, 191, 36, 0.2),
+        0 8px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .exact-site-icon {
+      border: 0 !important;
+      background: transparent !important;
+    }
+
+    .exact-site-pin {
+      width: 18px;
+      height: 18px;
+      transform: translate(-50%, -100%) rotate(45deg);
+      border: 2px solid white;
+      border-radius: 50% 50% 50% 0;
+      background: var(--cyan);
+      box-shadow:
+        0 0 0 4px rgba(34, 211, 238, 0.13),
+        0 6px 14px rgba(0, 0, 0, 0.4);
+    }
+
+    .map-tooltip {
+      border: 1px solid var(--border) !important;
+      border-radius: 10px !important;
+      background: rgba(7, 11, 18, 0.94) !important;
+      color: white !important;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.28) !important;
+      font-size: 11px !important;
+    }
+
+    .map-tooltip::before {
+      border-top-color: rgba(7, 11, 18, 0.94) !important;
+    }
+
+    @media (max-width: 760px) {
+      .topbar {
+        min-height: 56px;
+      }
+
+      .brand {
+        min-width: auto;
+      }
+
+      .brand small,
+      .topbar-actions .button span {
+        display: none;
+      }
+
+      .search {
+        max-width: none;
+      }
+
+      .map-panel {
+        top: auto;
+        right: 10px;
+        bottom: 12px;
+        left: 10px;
+        width: auto;
+        max-height: 43vh;
+        border-radius: 16px;
+      }
+
+      .panel-section {
+        padding: 13px;
+      }
+
+      .panel-section:first-child .panel-copy,
+      .coverage-list {
+        display: none;
+      }
+
+      .stats {
+        margin-top: 9px;
+      }
+
+      .status {
+        display: none;
+      }
+
+      .leaflet-control-zoom {
+        margin-top: 68px !important;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="top-bar">
-    <div class="logo"><i class="fas fa-compass"></i> CivicMap v2 — Viewport</div>
-    <div class="search-box"><i class="fas fa-search"></i><input id="searchInput" type="text" placeholder="Filter visible points..." /></div>
-    <button class="btn" onclick="reloadViewportPoints(true)"><i class="fas fa-sync"></i> <span>Reload</span></button>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">⌖</div>
+      <div>
+        <strong>Civic Map</strong>
+        <small>Resource Directory geography</small>
+      </div>
+    </div>
+    <label class="search">
+      <span style="position:absolute;clip:rect(0 0 0 0);">Find a jurisdiction</span>
+      <input id="jurisdictionSearch" type="search" placeholder="Find a state or territory…" />
+    </label>
+    <div class="topbar-actions">
+      <button class="button" id="resetButton" type="button">
+        ↺ <span>Reset</span>
+      </button>
+      <a class="button primary" id="directoryButton" href="/resources">
+        ☰ <span>Open Directory</span>
+      </a>
+    </div>
+  </header>
+
+  <aside class="map-panel" aria-label="Civic Map controls">
+    <section class="panel-section">
+      <div class="eyebrow">Complete collection</div>
+      <h1 class="panel-title">Help across every jurisdiction</h1>
+      <p class="panel-copy">
+        Coverage circles are jurisdiction summaries, not resource addresses.
+        Exact-site pins appear only after a real public location has genuine
+        coordinates.
+      </p>
+      <div class="stats">
+        <div class="stat">
+          <strong id="resourceTotal">—</strong>
+          <span id="resourceTotalLabel">resources shown</span>
+        </div>
+        <div class="stat">
+          <strong id="jurisdictionTotal">—</strong>
+          <span>jurisdictions</span>
+        </div>
+        <div class="stat">
+          <strong id="locationTotal">—</strong>
+          <span>location-context resources</span>
+        </div>
+        <div class="stat">
+          <strong id="verifiedSiteTotal">—</strong>
+          <span>reviewed physical sites</span>
+        </div>
+        <div class="stat">
+          <strong id="exactTotal">—</strong>
+          <span>exact geocoded sites</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel-section">
+      <label class="field-label" for="categorySelect">View one need</label>
+      <select class="category-select" id="categorySelect">
+        <option value="">All resource categories</option>
+      </select>
+      <div class="legend">
+        <div class="legend-row">
+          <span class="legend-coverage">ST</span>
+          <span>Aggregate coverage and resource count</span>
+          <strong class="legend-count" id="coverageLegendCount">—</strong>
+        </div>
+        <div class="legend-row">
+          <span class="legend-site"></span>
+          <span>Genuine geocoded public site</span>
+          <strong class="legend-count" id="exactLegendCount">—</strong>
+        </div>
+      </div>
+      <span class="field-label" style="margin-top:14px;">Resource key</span>
+      <div class="category-key" id="categoryKey"></div>
+    </section>
+
+    <section class="panel-section">
+      <span class="field-label">Jurisdictions</span>
+      <div class="coverage-list" id="coverageList"></div>
+    </section>
+  </aside>
+
+  <main id="map" aria-label="Map of Resource Directory coverage"></main>
+
+  <aside class="sidebar" id="sidebar" aria-live="polite">
+    <div class="sidebar-head">
+      <div>
+        <div class="eyebrow" id="sidebarEyebrow">Jurisdiction coverage</div>
+        <h2 class="sidebar-title" id="sidebarTitle">Select a jurisdiction</h2>
+      </div>
+      <button class="close" id="sidebarClose" type="button" aria-label="Close details">×</button>
+    </div>
+    <div class="sidebar-body" id="sidebarBody">
+      <p class="detail-copy">
+        Choose a coverage circle to see the collection for that state or
+        territory.
+      </p>
+    </div>
+  </aside>
+
+  <div class="status" id="status">
+    <span class="status-dot"></span>
+    <span id="statusText">Loading Resource Directory coverage…</span>
   </div>
-  <div class="layer-panel" id="layerPanel"></div>
-  <div id="map"></div>
-  <div class="sidebar" id="sidebar"><div class="sidebar-header"><div><div class="sidebar-title" id="sbTitle">Select a point</div><div class="sidebar-meta" id="sbMeta">Viewport-loaded CivicMap</div></div><button class="close-btn" onclick="closeSidebar()"><i class="fas fa-times"></i></button></div><div class="sidebar-body" id="sbBody"><p style="color:var(--muted);text-align:center;padding:30px 10px;">Click a visible point to load details on demand.</p></div></div>
-  <div class="status-badge"><span class="status-dot"></span><span id="statusText">Initializing CivicMap...</span></div>
+
   <script>
-    const US_CENTER = [39.8283, -98.5795];
-    const VIEWPORT_LIMIT = 1200;
-    const CATEGORY_COLORS = { housing:'#f97316', food:'#84cc16', legal:'#06b6d4', health:'#ec4899', employment:'#eab308', government:'#10b981', civil:'#8b5cf6', enforcement:'#a855f7', other:'#64748b' };
-    const CATEGORY_MAP = { housing:['housing','shelter','tenant'], food:['food','nutrition'], legal:['legal','court','immigration_legal','record_clearing'], health:['health','clinic','hospital','mental','domestic_violence','hotline','crisis'], employment:['employment','unemployment','wage','worker','business'], government:['government','benefit','federal','program','tribal','utility','veteran','disability'], civil:['civil','advocacy','consumer','voter','rights','watchdog','transparency'], enforcement:['enforcement','oversight','fraud','agency_authority'], other:['resource','other'] };
-    let map;
-    let categoryLayers = {};
-    let loadedPoints = [];
-    let activeCategories = new Set(Object.keys(CATEGORY_COLORS));
-    let debounceTimer = null;
-    let requestSeq = 0;
-    function updateStatus(message) { document.getElementById('statusText').textContent = message; }
-    function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
-    function escapeAttribute(value) { return escapeHtml(value).replace(/`/g, '&#96;'); }
-    function toArray(value) { return Array.isArray(value) ? value : (value ? [value] : []); }
-    function classifyNodeType(resourceType) { const type = String(resourceType || '').toLowerCase(); for (const [category, terms] of Object.entries(CATEGORY_MAP)) if (terms.some(term => type.includes(term))) return category; return 'other'; }
-    function initLayerPanel() { document.getElementById('layerPanel').innerHTML = '<div class="layer-title">Visible layers</div>' + Object.entries(CATEGORY_COLORS).map(([cat, color]) => `<label class="layer-item"><input type="checkbox" checked onchange="toggleCategory('${cat}')"><span class="dot" style="background:${color}"></span><span>${cat.replace(/_/g, ' ')}</span></label>`).join(''); }
-    function init() { initLayerPanel(); map = L.map('map').setView(US_CENTER, 4); L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution:'&copy; OpenStreetMap contributors &copy; CARTO', subdomains:'abcd', maxZoom:20 }).addTo(map); for (const category of Object.keys(CATEGORY_COLORS)) categoryLayers[category] = L.layerGroup().addTo(map); map.on('moveend zoomend', scheduleViewportReload); setupSearch(); reloadViewportPoints(true); }
-    function scheduleViewportReload() { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => reloadViewportPoints(false), 300); }
-    async function reloadViewportPoints(force) { if (!map) return; const seq = ++requestSeq; const b = map.getBounds(); updateStatus('Loading visible CivicMap points...'); const url = `/api/civic-map/bounds?north=${encodeURIComponent(b.getNorth())}&south=${encodeURIComponent(b.getSouth())}&east=${encodeURIComponent(b.getEast())}&west=${encodeURIComponent(b.getWest())}&limit=${VIEWPORT_LIMIT}`; const response = await fetch(url); const payload = await response.json(); if (seq !== requestSeq) return; if (!response.ok || !payload.ok) { console.error('CivicMap bounds load failed', payload); updateStatus('CivicMap load failed — see console'); return; } loadedPoints = (payload.nodes || []).map(row => ({ ...row, id: row.node_id, name: row.name || 'Unnamed civic resource', resource_type: row.node_type || 'resource', category: classifyNodeType(row.node_type), latitude: Number(row.latitude), longitude: Number(row.longitude) })).filter(point => Number.isFinite(point.latitude) && Number.isFinite(point.longitude)); renderLoadedPoints(); updateStatus(`Loaded ${loadedPoints.length} visible points${loadedPoints.length >= VIEWPORT_LIMIT ? ' — zoom in for more precision' : ''}`); }
-    function renderLoadedPoints() { for (const layer of Object.values(categoryLayers)) layer.clearLayers(); const search = document.getElementById('searchInput').value.trim().toLowerCase(); const filtered = loadedPoints.filter(point => { if (!activeCategories.has(point.category)) return false; if (!search) return true; return [point.name, point.resource_type, point.city, point.county, point.state, point.source_key].some(v => String(v || '').toLowerCase().includes(search)); }); for (const point of filtered) { const color = CATEGORY_COLORS[point.category] || CATEGORY_COLORS.other; const size = point.category === 'enforcement' ? 14 : 12; const icon = L.divIcon({ className:'custom-marker', html:`<div style="background:${color};width:${size}px;height:${size}px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,.35);"></div>`, iconSize:[size,size], iconAnchor:[size/2,size/2] }); const marker = L.marker([point.latitude, point.longitude], { icon }); marker.on('click', () => loadPointDetail(point)); categoryLayers[point.category].addLayer(marker); } }
-    async function loadPointDetail(point) { document.getElementById('sidebar').classList.add('open'); document.getElementById('sbTitle').textContent = point.name; document.getElementById('sbMeta').textContent = `${point.resource_type.replace(/_/g, ' ').toUpperCase()} • loading detail`; document.getElementById('sbBody').innerHTML = '<p style="color:var(--muted);">Loading detail...</p>'; const response = await fetch(`/api/civic-map/detail/${encodeURIComponent(point.id)}`); const payload = await response.json(); if (!response.ok || !payload.ok) { console.error('CivicMap detail load failed', payload); renderDetail(point); return; } renderDetail(payload.node || point); }
-    function renderDetail(item) { const title = item.name || item.organization_name || item.agency_name || item.title || 'Unnamed resource'; const metaParts = [item.resource_type || item.node_type, item.city, item.state].filter(Boolean); document.getElementById('sbTitle').textContent = title; document.getElementById('sbMeta').textContent = metaParts.join(' • ') || 'CivicMap detail'; const website = item.website_url || item.website || ''; const categories = toArray(item.service_categories); const languages = toArray(item.languages); document.getElementById('sbBody').innerHTML = `<div class="section"><span class="tag">${escapeHtml(item.resource_type || item.node_type || 'resource')}</span>${item.geocode_precision ? `<span class="tag">${escapeHtml(item.geocode_precision)}</span>` : ''}</div><div class="section"><div class="section-title">Details</div>${row('Organization', item.organization_name || item.agency_name || title)}${row('Description', item.description)}${row('Address', [item.address_line1, item.address_line2, item.city, item.state, item.postal_code].filter(Boolean).join(', '))}${row('Phone', item.phone)}${row('Email', item.email)}${row('Source', item.source_key)}${row('Updated', item.updated_at)}</div>${categories.length ? `<div class="section"><div class="section-title">Service categories</div>${categories.map(c => `<span class="tag">${escapeHtml(c)}</span>`).join('')}</div>` : ''}${languages.length ? `<div class="section"><div class="section-title">Languages</div>${languages.map(l => `<span class="tag">${escapeHtml(l)}</span>`).join('')}</div>` : ''}${item.eligibility_summary ? `<div class="section"><div class="section-title">Eligibility</div><p>${escapeHtml(item.eligibility_summary)}</p></div>` : ''}<div class="section"><div class="section-title">Actions</div><div class="action-grid">${item.phone ? `<a class="action-btn primary" href="tel:${escapeAttribute(item.phone)}"><i class="fas fa-phone"></i> Call</a>` : `<button class="action-btn">No phone</button>`}${website ? `<a class="action-btn" href="${escapeAttribute(website)}" target="_blank" rel="noopener"><i class="fas fa-globe"></i> Website</a>` : `<button class="action-btn">No website</button>`}</div></div>`; }
-    function row(label, value) { if (value === undefined || value === null || value === '') return ''; return `<div class="info-row"><span class="info-label">${escapeHtml(label)}</span><span>${escapeHtml(value)}</span></div>`; }
-    function toggleCategory(category) { if (activeCategories.has(category)) { activeCategories.delete(category); map.removeLayer(categoryLayers[category]); } else { activeCategories.add(category); categoryLayers[category].addTo(map); } renderLoadedPoints(); }
-    function setupSearch() { document.getElementById('searchInput').addEventListener('input', renderLoadedPoints); }
-    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
-    document.addEventListener('DOMContentLoaded', init);
+    const CATEGORY_LABELS = {
+      general_resource: "General Resources",
+      legal_civil_rights: "Legal & Civil Rights",
+      safety_crisis: "Safety & Crisis",
+      healthcare: "Healthcare",
+      food_nutrition: "Food & Nutrition",
+      tribal: "Tribal Resources",
+      employment_labor: "Employment & Labor",
+      housing: "Housing",
+      disability: "Disability",
+      utilities: "Utilities",
+      cash_assistance: "Cash Assistance",
+      veterans: "Veterans",
+    };
+
+    const CATEGORY_COLORS = {
+      general_resource: "#34d399",
+      legal_civil_rights: "#a78bfa",
+      safety_crisis: "#fb7185",
+      healthcare: "#22d3ee",
+      food_nutrition: "#fbbf24",
+      tribal: "#fb923c",
+      employment_labor: "#60a5fa",
+      housing: "#facc15",
+      disability: "#2dd4bf",
+      utilities: "#38bdf8",
+      cash_assistance: "#a3e635",
+      veterans: "#818cf8",
+    };
+
+    const JURISDICTIONS = {
+      AL: { name: "Alabama", coordinates: [32.8, -86.8] },
+      AK: { name: "Alaska", coordinates: [64.2, -152.5] },
+      AS: { name: "American Samoa", coordinates: [-14.27, -170.7] },
+      AZ: { name: "Arizona", coordinates: [34.3, -111.7] },
+      AR: { name: "Arkansas", coordinates: [34.9, -92.4] },
+      CA: { name: "California", coordinates: [37.2, -119.7] },
+      CO: { name: "Colorado", coordinates: [39.0, -105.5] },
+      CT: { name: "Connecticut", coordinates: [41.6, -72.7] },
+      DE: { name: "Delaware", coordinates: [39.0, -75.5] },
+      DC: { name: "District of Columbia", coordinates: [38.907, -77.037] },
+      FL: { name: "Florida", coordinates: [28.5, -82.4] },
+      GA: { name: "Georgia", coordinates: [32.7, -83.3] },
+      GU: { name: "Guam", coordinates: [13.44, 144.79] },
+      HI: { name: "Hawaii", coordinates: [20.8, -157.5] },
+      ID: { name: "Idaho", coordinates: [44.2, -114.5] },
+      IL: { name: "Illinois", coordinates: [40.0, -89.2] },
+      IN: { name: "Indiana", coordinates: [39.9, -86.3] },
+      IA: { name: "Iowa", coordinates: [42.0, -93.5] },
+      KS: { name: "Kansas", coordinates: [38.5, -98.3] },
+      KY: { name: "Kentucky", coordinates: [37.5, -85.3] },
+      LA: { name: "Louisiana", coordinates: [31.0, -92.0] },
+      ME: { name: "Maine", coordinates: [45.2, -69.0] },
+      MD: { name: "Maryland", coordinates: [39.0, -76.7] },
+      MA: { name: "Massachusetts", coordinates: [42.3, -71.8] },
+      MI: { name: "Michigan", coordinates: [44.3, -85.6] },
+      MN: { name: "Minnesota", coordinates: [46.3, -94.2] },
+      MS: { name: "Mississippi", coordinates: [32.7, -89.7] },
+      MO: { name: "Missouri", coordinates: [38.5, -92.5] },
+      MT: { name: "Montana", coordinates: [47.0, -109.6] },
+      NE: { name: "Nebraska", coordinates: [41.5, -99.7] },
+      NV: { name: "Nevada", coordinates: [39.3, -116.6] },
+      NH: { name: "New Hampshire", coordinates: [43.7, -71.6] },
+      NJ: { name: "New Jersey", coordinates: [40.1, -74.5] },
+      NM: { name: "New Mexico", coordinates: [34.5, -106.0] },
+      NY: { name: "New York", coordinates: [42.9, -75.5] },
+      NC: { name: "North Carolina", coordinates: [35.5, -79.4] },
+      ND: { name: "North Dakota", coordinates: [47.5, -100.5] },
+      MP: { name: "Northern Mariana Islands", coordinates: [15.2, 145.75] },
+      OH: { name: "Ohio", coordinates: [40.4, -82.8] },
+      OK: { name: "Oklahoma", coordinates: [35.6, -97.5] },
+      OR: { name: "Oregon", coordinates: [44.0, -120.5] },
+      PA: { name: "Pennsylvania", coordinates: [40.9, -77.8] },
+      PR: { name: "Puerto Rico", coordinates: [18.2, -66.5] },
+      RI: { name: "Rhode Island", coordinates: [41.7, -71.5] },
+      SC: { name: "South Carolina", coordinates: [33.8, -80.9] },
+      SD: { name: "South Dakota", coordinates: [44.4, -100.2] },
+      TN: { name: "Tennessee", coordinates: [35.8, -86.4] },
+      TX: { name: "Texas", coordinates: [31.5, -99.3] },
+      UT: { name: "Utah", coordinates: [39.3, -111.7] },
+      VT: { name: "Vermont", coordinates: [44.1, -72.7] },
+      VI: { name: "U.S. Virgin Islands", coordinates: [18.34, -64.9] },
+      VA: { name: "Virginia", coordinates: [37.5, -78.8] },
+      WA: { name: "Washington", coordinates: [47.4, -120.7] },
+      WV: { name: "West Virginia", coordinates: [38.6, -80.6] },
+      WI: { name: "Wisconsin", coordinates: [44.6, -89.7] },
+      WY: { name: "Wyoming", coordinates: [43.0, -107.5] },
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    let activeCategory = params.get("category") || "";
+    let selectedJurisdiction = params.get("jurisdiction") || "";
+    let selectedResource = params.get("resource") || "";
+    let coverage = null;
+    let coverageRows = [];
+    let exactPoints = [];
+    let exactRequestSequence = 0;
+    let exactReloadTimer = null;
+
+    const map = L.map("map", {
+      zoomControl: true,
+      minZoom: 2,
+      worldCopyJump: true,
+    }).setView([38.5, -96.5], 4);
+
+    L.tileLayer(
+      "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+      {
+        attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+        subdomains: "abcd",
+        maxZoom: 19,
+      }
+    ).addTo(map);
+
+    const coverageLayer = L.layerGroup().addTo(map);
+    const exactLayer = L.layerGroup().addTo(map);
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>'"]/g, (character) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        '"': "&quot;",
+      })[character]);
+    }
+
+    function safeExternalUrl(value) {
+      const cleaned = String(value || "").trim();
+      if (!cleaned || cleaned.toLowerCase().startsWith("n/a")) return null;
+      const candidate = /^https?:\/\//i.test(cleaned)
+        ? cleaned
+        : `https://${cleaned}`;
+      try {
+        const parsed = new URL(candidate);
+        return ["http:", "https:"].includes(parsed.protocol)
+          ? parsed.href
+          : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function setStatus(message, isError = false) {
+      document.getElementById("statusText").textContent = message;
+      document.getElementById("status").classList.toggle("error", isError);
+    }
+
+    function categoryLabel(value) {
+      return CATEGORY_LABELS[value] ||
+        String(value || "Other")
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (character) => character.toUpperCase());
+    }
+
+    function formatCount(value) {
+      return Number(value || 0).toLocaleString();
+    }
+
+    function visibleCount(row) {
+      if (!activeCategory) return Number(row.count || 0);
+      return Number(row.categories?.[activeCategory] || 0);
+    }
+
+    function selectCategory(category) {
+      activeCategory = category || "";
+      selectedResource = "";
+      document.getElementById("categorySelect").value = activeCategory;
+      updateBrowserState();
+      updateDirectoryLink(selectedJurisdiction);
+      renderCategoryKey();
+      renderCoverage();
+      if (selectedJurisdiction) {
+        openJurisdiction(selectedJurisdiction);
+      }
+      loadExactPoints();
+    }
+
+    function renderCategoryKey() {
+      const rows = Array.isArray(coverage?.categories)
+        ? coverage.categories
+        : [];
+      const allCount = Number(coverage?.active_resources || 0);
+      const entries = [
+        {
+          id: "",
+          label: "All active resources",
+          count: allCount,
+          color: "#e2e8f0",
+        },
+        ...rows.map((row) => ({
+          id: row.id,
+          label: categoryLabel(row.id),
+          count: Number(row.count || 0),
+          color: CATEGORY_COLORS[row.id] || "#94a3b8",
+        })),
+      ];
+
+      document.getElementById("categoryKey").innerHTML = entries
+        .map((entry) => {
+          const active = entry.id === activeCategory ? " active" : "";
+          return `
+            <button type="button" class="${active}" data-category="${escapeHtml(entry.id)}">
+              <span class="category-key-dot" style="--category-color:${escapeHtml(entry.color)}"></span>
+              <span>${escapeHtml(entry.label)}</span>
+              <strong>${formatCount(entry.count)}</strong>
+            </button>
+          `;
+        })
+        .join("");
+
+      document.querySelectorAll("#categoryKey button").forEach((button) => {
+        button.addEventListener("click", () => {
+          selectCategory(button.dataset.category || "");
+        });
+      });
+    }
+
+    function updateDirectoryLink(jurisdiction) {
+      const directoryParams = new URLSearchParams();
+      if (jurisdiction) {
+        directoryParams.set("jurisdiction", jurisdiction);
+      }
+      if (activeCategory) {
+        directoryParams.set("category", activeCategory);
+      }
+      const suffix = directoryParams.toString()
+        ? `?${directoryParams.toString()}`
+        : "";
+      document.getElementById("directoryButton").href = `/resources${suffix}`;
+    }
+
+    function updateBrowserState() {
+      const next = new URLSearchParams();
+      if (selectedJurisdiction) {
+        next.set("jurisdiction", selectedJurisdiction);
+      }
+      if (activeCategory) {
+        next.set("category", activeCategory);
+      }
+      if (selectedResource) {
+        next.set("resource", selectedResource);
+      }
+      const suffix = next.toString() ? `?${next.toString()}` : "";
+      window.history.replaceState({}, "", `/civicmap.html${suffix}`);
+    }
+
+    function markerSize(count) {
+      return Math.max(30, Math.min(52, 27 + Math.log2(Math.max(2, count)) * 2.4));
+    }
+
+    function renderCoverage() {
+      coverageLayer.clearLayers();
+      const query = document
+        .getElementById("jurisdictionSearch")
+        .value.trim()
+        .toLowerCase();
+      let shownResources = 0;
+      let shownJurisdictions = 0;
+
+      for (const row of coverageRows) {
+        const meta = JURISDICTIONS[row.code];
+        const count = visibleCount(row);
+        if (!meta || count <= 0) continue;
+        if (
+          query &&
+          !row.code.toLowerCase().includes(query) &&
+          !meta.name.toLowerCase().includes(query)
+        ) {
+          continue;
+        }
+
+        shownResources += count;
+        shownJurisdictions += 1;
+        const size = markerSize(count);
+        const selected = row.code === selectedJurisdiction ? " selected" : "";
+        const icon = L.divIcon({
+          className: "coverage-icon",
+          html: `<div class="coverage-anchor${selected}" style="width:${size}px;height:${size}px"><b>${escapeHtml(row.code)}</b><span>${formatCount(count)}</span></div>`,
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+        });
+        const marker = L.marker(meta.coordinates, {
+          icon,
+          keyboard: true,
+          title: `${meta.name}: ${formatCount(count)} resources`,
+          zIndexOffset: row.code === selectedJurisdiction ? 500 : 0,
+        });
+        marker.bindTooltip(
+          `<strong>${escapeHtml(meta.name)}</strong><br>${formatCount(count)} ${activeCategory ? escapeHtml(categoryLabel(activeCategory).toLowerCase()) : "resources"}`,
+          { className: "map-tooltip", direction: "top", offset: [0, -12] }
+        );
+        marker.on("click", () => openJurisdiction(row.code));
+        marker.addTo(coverageLayer);
+      }
+
+      document.getElementById("resourceTotal").textContent =
+        formatCount(shownResources);
+      document.getElementById("resourceTotalLabel").textContent =
+        activeCategory
+          ? `${categoryLabel(activeCategory)} shown`
+          : "resources shown";
+      document.getElementById("jurisdictionTotal").textContent =
+        formatCount(shownJurisdictions);
+      renderCoverageList(query);
+    }
+
+    function renderCoverageList(query = "") {
+      const list = coverageRows
+        .filter((row) => {
+          const meta = JURISDICTIONS[row.code];
+          const count = visibleCount(row);
+          return (
+            meta &&
+            count > 0 &&
+            (!query ||
+              row.code.toLowerCase().includes(query) ||
+              meta.name.toLowerCase().includes(query))
+          );
+        })
+        .sort((left, right) => visibleCount(right) - visibleCount(left));
+
+      document.getElementById("coverageList").innerHTML = list
+        .map((row) => {
+          const active = row.code === selectedJurisdiction ? " active" : "";
+          return `<button type="button" class="${active}" data-code="${escapeHtml(row.code)}"><span>${escapeHtml(JURISDICTIONS[row.code].name)}</span><strong>${formatCount(visibleCount(row))}</strong></button>`;
+        })
+        .join("");
+
+      document.querySelectorAll("#coverageList button").forEach((button) => {
+        button.addEventListener("click", () => {
+          openJurisdiction(button.dataset.code);
+        });
+      });
+    }
+
+    function openJurisdiction(code, preserveResource = false) {
+      const row = coverageRows.find((item) => item.code === code);
+      const meta = JURISDICTIONS[code];
+      if (!row || !meta) return;
+      selectedJurisdiction = code;
+      if (!preserveResource) {
+        selectedResource = "";
+      }
+      updateBrowserState();
+      updateDirectoryLink(code);
+      renderCoverage();
+      map.flyTo(meta.coordinates, code === "AK" ? 4 : 6, {
+        duration: 0.8,
+      });
+
+      const count = visibleCount(row);
+      const categoryRows = Object.entries(row.categories || {})
+        .map(([category, categoryCount]) => ({
+          category,
+          count: Number(categoryCount || 0),
+        }))
+        .filter((item) => item.count > 0)
+        .sort((left, right) => right.count - left.count);
+      const maxCategoryCount = Math.max(
+        1,
+        ...categoryRows.map((item) => item.count)
+      );
+      const directoryParams = new URLSearchParams({ jurisdiction: code });
+      if (activeCategory) {
+        directoryParams.set("category", activeCategory);
+      }
+
+      document.getElementById("sidebarEyebrow").textContent =
+        "Jurisdiction coverage";
+      document.getElementById("sidebarTitle").textContent = meta.name;
+      document.getElementById("sidebarBody").innerHTML = `
+        <section class="detail-section">
+          <div class="stat" style="display:inline-block;min-width:138px;">
+            <strong>${formatCount(count)}</strong>
+            <span>${activeCategory ? escapeHtml(categoryLabel(activeCategory)) : "directory resources"}</span>
+          </div>
+        </section>
+        <section class="detail-section">
+          <div class="detail-heading">What this map means</div>
+          <p class="detail-copy">
+            This circle represents the Resource Directory collection for
+            ${escapeHtml(meta.name)}. It is a coverage summary, not a street
+            address or a bundle of duplicated points.
+          </p>
+        </section>
+        <section class="detail-section">
+          <div class="detail-heading">Resources by need</div>
+          <div class="category-bars">
+            ${categoryRows
+              .map(
+                (item) => `
+                  <div class="category-bar">
+                    <label>${escapeHtml(categoryLabel(item.category))}</label>
+                    <span>${formatCount(item.count)}</span>
+                    <div class="bar-track">
+                      <div class="bar-fill" style="width:${Math.max(3, (item.count / maxCategoryCount) * 100)}%"></div>
+                    </div>
+                  </div>
+                `
+              )
+              .join("")}
+          </div>
+        </section>
+        <section class="detail-section">
+          <div class="actions">
+            <a class="action primary" href="/resources?${directoryParams.toString()}">
+              Open ${escapeHtml(meta.name)} resources
+            </a>
+          </div>
+        </section>
+        <div class="honesty-note">
+          Exact-site pins are shown separately and only when a genuine public
+          address has real coordinates.
+        </div>
+      `;
+      document.getElementById("sidebar").classList.add("open");
+    }
+
+    function renderExactPoints() {
+      exactLayer.clearLayers();
+      for (const point of exactPoints) {
+        const latitude = Number(point.latitude);
+        const longitude = Number(point.longitude);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+          continue;
+        }
+        const icon = L.divIcon({
+          className: "exact-site-icon",
+          html: '<div class="exact-site-pin"></div>',
+          iconSize: [20, 24],
+          iconAnchor: [10, 24],
+        });
+        const marker = L.marker([latitude, longitude], {
+          icon,
+          title: point.resource_name,
+          keyboard: true,
+        });
+        marker.bindTooltip(
+          `<strong>${escapeHtml(point.resource_name)}</strong><br>Exact public site`,
+          { className: "map-tooltip", direction: "top", offset: [0, -18] }
+        );
+        marker.on("click", () => openResource(point.resource_entity_id));
+        marker.addTo(exactLayer);
+      }
+
+    }
+
+    async function loadExactPoints() {
+      const sequence = ++exactRequestSequence;
+      const bounds = map.getBounds();
+      try {
+        const response = await fetch(
+          `/api/civic-map/bounds?north=${encodeURIComponent(bounds.getNorth())}` +
+          `&south=${encodeURIComponent(bounds.getSouth())}` +
+          `&east=${encodeURIComponent(bounds.getEast())}` +
+          `&west=${encodeURIComponent(bounds.getWest())}` +
+          "&limit=1200"
+        );
+        const payload = await response.json();
+        if (sequence !== exactRequestSequence) return;
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || "Exact-site request failed");
+        }
+        exactPoints = Array.isArray(payload.points) ? payload.points : [];
+        renderExactPoints();
+        setStatus(
+          `${formatCount(coverage?.total_resources)} directory resources · ` +
+          `${formatCount(coverage?.exact_mappable_resources)} exact geocoded sites`
+        );
+      } catch (error) {
+        console.error("Civic Map exact-site load failed", error);
+        setStatus(
+          "Coverage is available; exact public sites could not be refreshed.",
+          true
+        );
+      }
+    }
+
+    function scheduleExactReload() {
+      window.clearTimeout(exactReloadTimer);
+      exactReloadTimer = window.setTimeout(loadExactPoints, 260);
+    }
+
+    function contactAction(contact) {
+      const type = String(contact.contact_type || "").toLowerCase();
+      const value = String(contact.contact_value || "");
+      if (type === "phone" || type === "hotline") {
+        const digits = value.split(/[·|]/)[0].replace(/\D/g, "");
+        if (digits.length < 3) return "";
+        return `<a class="action primary" href="tel:${digits}">Call ${escapeHtml(value)}</a>`;
+      }
+      if (type === "email") {
+        return `<a class="action" href="mailto:${encodeURIComponent(value)}">Email</a>`;
+      }
+      if (
+        ["website", "portal", "filing_portal", "application"].includes(type)
+      ) {
+        const candidates =
+          value.match(
+            /https?:\/\/[^\s·|]+|(?:www\.)?[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(?:\/[^\s·|]*)?/gi
+          ) || [value];
+        return candidates
+          .map(safeExternalUrl)
+          .filter(Boolean)
+          .slice(0, 4)
+          .map((url) => {
+            const host = new URL(url).hostname.replace(/^www\./, "");
+            return `<a class="action" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${type.includes("portal") ? "Portal" : escapeHtml(host)}</a>`;
+          })
+          .join("");
+      }
+      return "";
+    }
+
+    function formatAddress(location) {
+      if (!location) return "";
+      const locality = [
+        location.city,
+        location.state,
+        location.postal_code,
+      ].filter(Boolean).join(" ");
+      return [
+        location.address_line1,
+        location.address_line2,
+        locality || location.county,
+      ].filter(Boolean).join(", ");
+    }
+
+    async function openResource(resourceEntityId) {
+      selectedResource = resourceEntityId;
+      updateBrowserState();
+      document.getElementById("sidebarEyebrow").textContent =
+        "Exact public site";
+      document.getElementById("sidebarTitle").textContent =
+        "Loading resource…";
+      document.getElementById("sidebarBody").innerHTML =
+        '<p class="detail-copy">Loading the Resource Directory record…</p>';
+      document.getElementById("sidebar").classList.add("open");
+
+      try {
+        const response = await fetch(
+          `/api/civic-map/detail/${encodeURIComponent(resourceEntityId)}`
+        );
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || "Resource detail failed");
+        }
+        renderResource(payload.resource);
+      } catch (error) {
+        console.error("Civic Map resource detail failed", error);
+        document.getElementById("sidebarTitle").textContent =
+          "Resource unavailable";
+        document.getElementById("sidebarBody").innerHTML =
+          '<p class="detail-copy">This Resource Directory record could not be loaded.</p>';
+      }
+    }
+
+    function renderResource(resource) {
+      const location = Array.isArray(resource.locations)
+        ? resource.locations[0]
+        : null;
+      const address = formatAddress(location);
+      const contacts = Array.isArray(resource.contacts)
+        ? resource.contacts
+        : [];
+      const actions = contacts.map(contactAction).filter(Boolean);
+      const categories = Array.isArray(resource.service_categories)
+        ? resource.service_categories
+        : [];
+      const state = resource.state || location?.state || "";
+      const directoryParams = new URLSearchParams();
+      if (state) directoryParams.set("jurisdiction", state);
+      directoryParams.set("query", resource.resource_name);
+
+      document.getElementById("sidebarEyebrow").textContent =
+        "Exact public site";
+      document.getElementById("sidebarTitle").textContent =
+        resource.resource_name || "Directory resource";
+      document.getElementById("sidebarBody").innerHTML = `
+        <section class="detail-section">
+          <div class="tag-row">
+            <span class="tag">${escapeHtml(categoryLabel(resource.resource_category))}</span>
+            ${state ? `<span class="tag">${escapeHtml(JURISDICTIONS[state]?.name || state)}</span>` : ""}
+            <span class="tag">Source attached</span>
+          </div>
+        </section>
+        ${resource.description ? `
+          <section class="detail-section">
+            <div class="detail-heading">About</div>
+            <p class="detail-copy">${escapeHtml(resource.description)}</p>
+          </section>
+        ` : ""}
+        <section class="detail-section">
+          <div class="detail-heading">Public location</div>
+          ${detailRow("Address", address || "Jurisdiction coverage only")}
+          ${detailRow("Location type", location?.manual_location_kind || resource.location_resolution?.location_kind)}
+          ${detailRow("Coordinate quality", location?.coordinate_quality)}
+        </section>
+        ${resource.eligibility_summary ? `
+          <section class="detail-section">
+            <div class="detail-heading">Eligibility</div>
+            <p class="detail-copy">${escapeHtml(resource.eligibility_summary)}</p>
+          </section>
+        ` : ""}
+        ${categories.length ? `
+          <section class="detail-section">
+            <div class="detail-heading">Services</div>
+            <div class="tag-row">
+              ${categories.map((category) => `<span class="tag">${escapeHtml(categoryLabel(category))}</span>`).join("")}
+            </div>
+          </section>
+        ` : ""}
+        <section class="detail-section">
+          <div class="detail-heading">Actions</div>
+          <div class="actions">
+            ${actions.join("")}
+            <a class="action" href="/resources?${directoryParams.toString()}">Open in Directory</a>
+          </div>
+        </section>
+      `;
+    }
+
+    function detailRow(label, value) {
+      if (value === null || value === undefined || value === "") return "";
+      return `<div class="detail-row"><span>${escapeHtml(label)}</span><span>${escapeHtml(String(value).replace(/_/g, " "))}</span></div>`;
+    }
+
+    async function loadCoverage() {
+      try {
+        const response = await fetch("/api/civic-map/coverage");
+        const payload = await response.json();
+        if (!response.ok || !payload.ok || !payload.coverage) {
+          throw new Error(payload.error || "Coverage request failed");
+        }
+        coverage = payload.coverage;
+        coverageRows = Array.isArray(coverage.jurisdictions)
+          ? coverage.jurisdictions
+          : [];
+
+        document.getElementById("locationTotal").textContent =
+          formatCount(coverage.resources_with_locations);
+        document.getElementById("verifiedSiteTotal").textContent =
+          formatCount(coverage.verified_physical_sites);
+        document.getElementById("exactTotal").textContent =
+          formatCount(coverage.exact_mappable_resources);
+        document.getElementById("coverageLegendCount").textContent =
+          formatCount(coverage.active_resources);
+        document.getElementById("exactLegendCount").textContent =
+          formatCount(coverage.exact_mappable_resources);
+
+        const categorySelect = document.getElementById("categorySelect");
+        const categoryRows = Array.isArray(coverage.categories)
+          ? coverage.categories
+          : [];
+        for (const row of categoryRows) {
+          const option = document.createElement("option");
+          option.value = row.id;
+          option.textContent =
+            `${categoryLabel(row.id)} (${formatCount(row.count)})`;
+          categorySelect.appendChild(option);
+        }
+        categorySelect.value = activeCategory;
+        renderCategoryKey();
+
+        renderCoverage();
+        updateDirectoryLink(selectedJurisdiction);
+        const requestedResource = selectedResource;
+        if (
+          selectedJurisdiction &&
+          coverageRows.some((row) => row.code === selectedJurisdiction)
+        ) {
+          openJurisdiction(selectedJurisdiction, Boolean(requestedResource));
+        }
+        await loadExactPoints();
+        if (requestedResource) {
+          openResource(requestedResource);
+        }
+      } catch (error) {
+        console.error("Civic Map coverage load failed", error);
+        setStatus("Resource Directory coverage could not be loaded.", true);
+      }
+    }
+
+    document
+      .getElementById("jurisdictionSearch")
+      .addEventListener("input", renderCoverage);
+
+    document
+      .getElementById("categorySelect")
+      .addEventListener("change", (event) => {
+        selectCategory(event.target.value);
+      });
+
+    document.getElementById("resetButton").addEventListener("click", () => {
+      activeCategory = "";
+      selectedJurisdiction = "";
+      selectedResource = "";
+      document.getElementById("categorySelect").value = "";
+      document.getElementById("jurisdictionSearch").value = "";
+      document.getElementById("sidebar").classList.remove("open");
+      updateBrowserState();
+      updateDirectoryLink("");
+      renderCategoryKey();
+      renderCoverage();
+      loadExactPoints();
+      map.flyTo([38.5, -96.5], 4, { duration: 0.8 });
+    });
+
+    document.getElementById("sidebarClose").addEventListener("click", () => {
+      document.getElementById("sidebar").classList.remove("open");
+    });
+
+    map.on("moveend zoomend", scheduleExactReload);
+    loadCoverage();
   </script>
 </body>
 </html>

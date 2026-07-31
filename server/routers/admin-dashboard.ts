@@ -30,21 +30,21 @@ export const adminDashboardRouter = router({
   systemHealth: publicProcedure.query(async () => {
     const oneDayAgo = oneDayAgoIso();
 
-    const [totalRuns, recentRuns, failedRuns, completedRuns, runningNow, engineBreakdownRows] = await Promise.all([
-      getCount(`SELECT COUNT(*)::int AS cnt FROM pipeline_runs`),
-      getCount(`SELECT COUNT(*)::int AS cnt FROM pipeline_runs WHERE started_at >= $1`, [oneDayAgo]),
-      getCount(`SELECT COUNT(*)::int AS cnt FROM pipeline_runs WHERE status = 'failed' AND started_at >= $1`, [oneDayAgo]),
-      getCount(`SELECT COUNT(*)::int AS cnt FROM pipeline_runs WHERE status = 'completed' AND started_at >= $1`, [oneDayAgo]),
-      getCount(`SELECT COUNT(*)::int AS cnt FROM pipeline_runs WHERE status IN ('running', 'pending')`),
-      getPool().query(
-        `SELECT COALESCE(ruleset_version, status::text, 'pipeline_run') AS run_type, COUNT(*)::int AS cnt
-         FROM pipeline_runs
-         WHERE started_at >= $1
-         GROUP BY COALESCE(ruleset_version, status::text, 'pipeline_run')
-         ORDER BY cnt DESC`,
-        [oneDayAgo]
-      ),
-    ]);
+    // Mission Control mounts several read models together. Keep each model's
+    // internal reads sequential so first paint cannot consume the entire pool.
+    const totalRuns = await getCount(`SELECT COUNT(*)::int AS cnt FROM pipeline_runs`);
+    const recentRuns = await getCount(`SELECT COUNT(*)::int AS cnt FROM pipeline_runs WHERE started_at >= $1`, [oneDayAgo]);
+    const failedRuns = await getCount(`SELECT COUNT(*)::int AS cnt FROM pipeline_runs WHERE status = 'failed' AND started_at >= $1`, [oneDayAgo]);
+    const completedRuns = await getCount(`SELECT COUNT(*)::int AS cnt FROM pipeline_runs WHERE status = 'completed' AND started_at >= $1`, [oneDayAgo]);
+    const runningNow = await getCount(`SELECT COUNT(*)::int AS cnt FROM pipeline_runs WHERE status IN ('running', 'pending')`);
+    const engineBreakdownRows = await getPool().query(
+      `SELECT COALESCE(ruleset_version, status::text, 'pipeline_run') AS run_type, COUNT(*)::int AS cnt
+       FROM pipeline_runs
+       WHERE started_at >= $1
+       GROUP BY COALESCE(ruleset_version, status::text, 'pipeline_run')
+       ORDER BY cnt DESC`,
+      [oneDayAgo]
+    );
 
     const memoryUsage = process.memoryUsage();
     const engineBreakdown = engineBreakdownRows.rows.map((row: any) => ({
@@ -80,23 +80,21 @@ export const adminDashboardRouter = router({
     const oneDayAgo = oneDayAgoMillis();
     const oneWeekAgo = oneWeekAgoMillis();
 
-    const [totalCases, casesToday, casesThisWeek, totalDocs, docsToday, totalFindings, findingsToday, totalUsers, usersToday, recentCasesRows] = await Promise.all([
-      getCount(`SELECT COUNT(*)::int AS cnt FROM cases`),
-      getCount(`SELECT COUNT(*)::int AS cnt FROM cases WHERE created_at >= $1`, [oneDayAgo]),
-      getCount(`SELECT COUNT(*)::int AS cnt FROM cases WHERE created_at >= $1`, [oneWeekAgo]),
-      getCount(`SELECT COUNT(*)::int AS cnt FROM documents`),
-      getCount(`SELECT COUNT(*)::int AS cnt FROM documents WHERE created_at >= $1`, [oneDayAgo]),
-      getCount(`SELECT COUNT(*)::int AS cnt FROM findings`),
-      getCount(`SELECT COUNT(*)::int AS cnt FROM findings WHERE created_at >= $1`, [oneDayAgo]),
-      getCount(`SELECT COUNT(*)::int AS cnt FROM users`),
-      getCount(`SELECT COUNT(*)::int AS cnt FROM users WHERE created_at >= $1`, [oneDayAgo]),
-      getPool().query(
-        `SELECT id::text, COALESCE(name, description, id::text) AS name, created_at
-         FROM cases
-         ORDER BY created_at DESC
-         LIMIT 10`
-      ),
-    ]);
+    const totalCases = await getCount(`SELECT COUNT(*)::int AS cnt FROM cases`);
+    const casesToday = await getCount(`SELECT COUNT(*)::int AS cnt FROM cases WHERE created_at >= $1`, [oneDayAgo]);
+    const casesThisWeek = await getCount(`SELECT COUNT(*)::int AS cnt FROM cases WHERE created_at >= $1`, [oneWeekAgo]);
+    const totalDocs = await getCount(`SELECT COUNT(*)::int AS cnt FROM documents`);
+    const docsToday = await getCount(`SELECT COUNT(*)::int AS cnt FROM documents WHERE created_at >= $1`, [oneDayAgo]);
+    const totalFindings = await getCount(`SELECT COUNT(*)::int AS cnt FROM findings`);
+    const findingsToday = await getCount(`SELECT COUNT(*)::int AS cnt FROM findings WHERE created_at >= $1`, [oneDayAgo]);
+    const totalUsers = await getCount(`SELECT COUNT(*)::int AS cnt FROM users`);
+    const usersToday = await getCount(`SELECT COUNT(*)::int AS cnt FROM users WHERE created_at >= $1`, [oneDayAgo]);
+    const recentCasesRows = await getPool().query(
+      `SELECT id::text, COALESCE(name, description, id::text) AS name, created_at
+       FROM cases
+       ORDER BY created_at DESC
+       LIMIT 10`
+    );
 
     const recentCases = recentCasesRows.rows.map((row: any) => ({
       id: row.id,
@@ -117,29 +115,27 @@ export const adminDashboardRouter = router({
 
   /* ── Panel 4: Structural Signals (aggregated) ── */
   structuralSignals: publicProcedure.query(async () => {
-    const [severityRows, categoryRows, criticalRows, totalSignals] = await Promise.all([
-      getPool().query(
-        `SELECT severity::text AS severity, COUNT(*)::int AS cnt
-         FROM detected_signals
-         GROUP BY severity::text
-         ORDER BY cnt DESC`
-      ),
-      getPool().query(
-        `SELECT ${NORMALIZED_SIGNAL_CATEGORY_SQL} AS category, COUNT(*)::int AS cnt
-         FROM detected_signals
-         GROUP BY ${NORMALIZED_SIGNAL_CATEGORY_SQL}
-         ORDER BY cnt DESC, category`
-      ),
-      getPool().query(
-        `SELECT id::text, case_id::text, COALESCE(signal_description, signal_type, 'Detected signal') AS title,
-                severity::text AS severity, ${NORMALIZED_SIGNAL_CATEGORY_SQL} AS category, created_at
-         FROM detected_signals
-         WHERE severity::text IN ('high', 'critical')
-         ORDER BY created_at DESC
-         LIMIT 10`
-      ),
-      getCount(`SELECT COUNT(*)::int AS cnt FROM detected_signals`),
-    ]);
+    const severityRows = await getPool().query(
+      `SELECT severity::text AS severity, COUNT(*)::int AS cnt
+       FROM detected_signals
+       GROUP BY severity::text
+       ORDER BY cnt DESC`
+    );
+    const categoryRows = await getPool().query(
+      `SELECT ${NORMALIZED_SIGNAL_CATEGORY_SQL} AS category, COUNT(*)::int AS cnt
+       FROM detected_signals
+       GROUP BY ${NORMALIZED_SIGNAL_CATEGORY_SQL}
+       ORDER BY cnt DESC, category`
+    );
+    const criticalRows = await getPool().query(
+      `SELECT id::text, case_id::text, COALESCE(signal_description, signal_type, 'Detected signal') AS title,
+              severity::text AS severity, ${NORMALIZED_SIGNAL_CATEGORY_SQL} AS category, created_at
+       FROM detected_signals
+       WHERE severity::text IN ('high', 'critical')
+       ORDER BY created_at DESC
+       LIMIT 10`
+    );
+    const totalSignals = await getCount(`SELECT COUNT(*)::int AS cnt FROM detected_signals`);
 
     const bySeverity = severityRows.rows.map((row: any) => ({ severity: row.severity, count: Number(row.cnt ?? 0) }));
     const byCategory = categoryRows.rows.map((row: any) => ({ category: row.category, count: Number(row.cnt ?? 0) }));
@@ -171,32 +167,30 @@ export const adminDashboardRouter = router({
 
   /* ── Panel 5: Work Queue ── */
   workQueue: publicProcedure.query(async () => {
-    const [runningRows, failedRows, completedRows] = await Promise.all([
-      getPool().query(
-        `SELECT id::text, case_id::text, COALESCE(ruleset_version, 'pipeline_run') AS run_type,
-                status::text AS run_status, started_at
-         FROM pipeline_runs
-         WHERE status::text IN ('running', 'pending')
-         ORDER BY started_at DESC
-         LIMIT 20`
-      ),
-      getPool().query(
-        `SELECT id::text, case_id::text, COALESCE(ruleset_version, 'pipeline_run') AS run_type,
-                status::text AS run_status, error_message, started_at
-         FROM pipeline_runs
-         WHERE status::text = 'failed'
-         ORDER BY started_at DESC
-         LIMIT 10`
-      ),
-      getPool().query(
-        `SELECT id::text, case_id::text, COALESCE(ruleset_version, 'pipeline_run') AS run_type,
-                completed_at, started_at
-         FROM pipeline_runs
-         WHERE status::text = 'completed'
-         ORDER BY COALESCE(completed_at, started_at) DESC
-         LIMIT 10`
-      ),
-    ]);
+    const runningRows = await getPool().query(
+      `SELECT id::text, case_id::text, COALESCE(ruleset_version, 'pipeline_run') AS run_type,
+              status::text AS run_status, started_at
+       FROM pipeline_runs
+       WHERE status::text IN ('running', 'pending')
+       ORDER BY started_at DESC
+       LIMIT 20`
+    );
+    const failedRows = await getPool().query(
+      `SELECT id::text, case_id::text, COALESCE(ruleset_version, 'pipeline_run') AS run_type,
+              status::text AS run_status, error_message, started_at
+       FROM pipeline_runs
+       WHERE status::text = 'failed'
+       ORDER BY started_at DESC
+       LIMIT 10`
+    );
+    const completedRows = await getPool().query(
+      `SELECT id::text, case_id::text, COALESCE(ruleset_version, 'pipeline_run') AS run_type,
+              completed_at, started_at
+       FROM pipeline_runs
+       WHERE status::text = 'completed'
+       ORDER BY COALESCE(completed_at, started_at) DESC
+       LIMIT 10`
+    );
 
     const running = runningRows.rows.map((row: any) => {
       const createdAt = toMillis(row.started_at) ?? Date.now();

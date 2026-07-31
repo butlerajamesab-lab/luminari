@@ -19,6 +19,8 @@ type database_pool_options = {
   idle_timeout_millis?: number;
   max_uses?: number;
   keep_alive?: boolean;
+  query_timeout_millis?: number;
+  application_name?: string;
 };
 
 export function get_database_url(): string | undefined {
@@ -75,6 +77,7 @@ export function create_database_pool(options: database_pool_options = {}): Pool 
   const idle_timeout_millis = options.idle_timeout_millis ?? 30000;
   const max_uses = options.max_uses ?? 7500;
   const keep_alive = options.keep_alive ?? true;
+  const query_timeout_millis = options.query_timeout_millis;
 
   const pool = new Pool({
     connectionString: sanitized_connection_string,
@@ -84,19 +87,17 @@ export function create_database_pool(options: database_pool_options = {}): Pool 
     maxUses: max_uses,
     keepAlive: keep_alive,
     ...(options.max !== undefined ? { max: options.max } : {}),
+    ...(query_timeout_millis !== undefined ? { query_timeout: query_timeout_millis } : {}),
+    ...(options.application_name ? { application_name: options.application_name } : {}),
   });
   pool.on("error", (err) => {
     console.error(`[${label}] Unexpected PostgreSQL pool error:`, err);
   });
-  // Per-connection statement_timeout — runaway queries (like the civic_genome
-  // projection that regularly hits 10s+) release their pool slot at 8s instead
-  // of holding it hostage for the full connection_timeout_millis window. This
-  // is what unblocks concurrent requests waiting behind a stuck query.
-  pool.on("connect", (client) => {
-    client.query("SET statement_timeout = '8000ms'").catch((err) => {
-      console.warn(`[${label}] Failed to set statement_timeout on new connection:`, err);
-    });
-  });
+  // Do not issue session-level SET commands from the pool connect event. The
+  // canonical DATABASE_URL uses Supavisor transaction mode, where session
+  // settings are unsupported, and EventEmitter listeners are not awaited.
+  // A fire-and-forget setup query can therefore race the caller's first query.
+  // query_timeout is enforced by node-postgres on each client instead.
   console.log(`[${label}] PostgreSQL pool initialized via sanitized DATABASE_URL with SSL. Host: ${get_database_host_label(connection_string)}`);
   return pool;
 }

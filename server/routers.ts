@@ -4290,6 +4290,7 @@ import { constitutionalTestsRouter } from "./routers/constitutional-tests";
 import { luminariRouter } from "./routers/luminari-router";
 import { extractionRouter } from "./routers/extraction";
 import { worldRouter } from "./routers/world";
+import { resourceDirectoryRouter } from "./routers/resource-directory";
 import { canonicalCoreRouter } from "./routers/canonical-core-router";
 import { canonicalSpineRouter } from "./routers/canonical-spine-router";
 
@@ -5056,6 +5057,7 @@ export const appRouter = router({
   canonicalRegistry: canonical_registry_router,
   issueReports: issueReportsRouter,
   world: worldRouter,
+  resourceDirectory: resourceDirectoryRouter,
   canonicalCore: canonicalCoreRouter,
   canonicalSpine: canonicalSpineRouter,
   conduit: conduitRouter,
