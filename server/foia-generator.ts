@@ -9,7 +9,7 @@
  * T1. Case-stage gating: evaluateCaseReadiness(caseId) → { ready, criteria, warmHandoff }
  * T2. Fingerprint generation: generateFingerprint(domain, recordType, agencyId, stateCode) → hash
  * T3. Agency resolution: resolve AKB data for the missing record
- * T4. Letter generation: single targeted LLM call → formal FOIA request letter
+ * T4. Letter generation: template-based FOIA request letter
  * T5. Persistence: insert into foia_requests, update missing_records status
  *
  * Gating criteria (ALL must be met):
@@ -33,7 +33,6 @@ import {
 } from "../drizzle/schema";
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { getAgenciesForRecord, normalizeDomainKey } from "./akb-lookup";
-import { invokeLLMInteractive } from "./_core/llm";
 
 // ─── Types ───
 
@@ -277,19 +276,11 @@ function assessWarmHandoff(
   };
 }
 
-// ─── T4. Letter Generation ───
+// ─── T4. Letter Generation (Template-Based) ───
 
 /**
- * Generate a FOIA request letter using a single targeted LLM call.
- *
- * The prompt is tightly scoped:
- * - Formal, professional tone
- * - Specific record description
- * - Applicable statute reference
- * - Fee waiver request if available
- * - No adversarial language
- * - No legal conclusions
- * - Placeholder brackets for requester info
+ * Generate a FOIA request letter using template-based string interpolation.
+ * Produces a formal, professional public records request letter.
  */
 async function generateFoiaLetter(params: {
   domain: string;
@@ -306,49 +297,55 @@ async function generateFoiaLetter(params: {
   requesterEmail: string | null;
   caseDescription: string | null;
 }): Promise<string> {
-  const systemPrompt = `You are a public records request letter drafter. Generate a formal FOIA/public records request letter.
-
-RULES:
-1. Professional, neutral tone. No adversarial language. No accusations.
-2. Cite the specific statute by name and reference number.
-3. Describe the requested records precisely — what they are, not why they matter.
-4. If fee waiver is available, include a fee waiver request paragraph.
-5. Include the statutory response deadline if known.
-6. Use [REQUESTER_NAME], [REQUESTER_ADDRESS], [REQUESTER_EMAIL], [REQUESTER_PHONE] as placeholders for any requester information not provided.
-7. Use today's date.
-8. Do NOT include any legal analysis, case theory, or conclusions about what the records will show.
-9. Do NOT use emotional language or describe the requester's situation beyond what is necessary to identify the records.
-10. Format as a standard business letter with proper salutation and closing.
-
-OUTPUT: Return ONLY the letter text. No preamble, no explanation, no markdown code blocks.`;
-
-  const userPrompt = `Generate a public records request letter with these details:
-
-AGENCY: ${params.agencyName}
-${params.agencyAddress ? `AGENCY ADDRESS: ${params.agencyAddress}` : ""}
-${params.agencyEmail ? `AGENCY EMAIL: ${params.agencyEmail}` : ""}
-
-STATUTE: ${params.statuteName} (${params.statuteReference})
-${params.responseDeadlineDays ? `RESPONSE DEADLINE: ${params.responseDeadlineDays} business days` : ""}
-FEE WAIVER AVAILABLE: ${params.feeWaiverAvailable ? "Yes — include fee waiver request" : "No"}
-
-RECORDS REQUESTED: ${params.recordDescription}
-RECORD TYPE: ${params.recordType}
-
-${params.requesterName ? `REQUESTER NAME: ${params.requesterName}` : ""}
-${params.requesterEmail ? `REQUESTER EMAIL: ${params.requesterEmail}` : ""}
-
-${params.caseDescription ? `CONTEXT (for record identification only): ${params.caseDescription}` : ""}`;
-
-  const response = await invokeLLMInteractive({
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
+  const today = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 
-  const content = response.choices[0]?.message?.content;
-  return typeof content === "string" ? content : "";
+  const requesterName = params.requesterName || "[REQUESTER_NAME]";
+  const requesterEmail = params.requesterEmail || "[REQUESTER_EMAIL]";
+  const agencyAddress = params.agencyAddress || "[AGENCY_ADDRESS]";
+
+  const deadlineParagraph = params.responseDeadlineDays
+    ? `\nPursuant to ${params.statuteName}, I expect a response within ${params.responseDeadlineDays} business days. If you anticipate a delay, please notify me in writing of the reason for the delay and the expected date of response.\n`
+    : `\nPlease respond to this request at your earliest convenience. If you anticipate a delay, please notify me in writing of the reason for the delay and the expected date of response.\n`;
+
+  const feeWaiverParagraph = params.feeWaiverAvailable
+    ? `\nI request a waiver of all fees associated with this request. Disclosure of the requested information is in the public interest because it is likely to contribute significantly to public understanding of the operations or activities of the government and is not primarily in my commercial interest.\n\nIf a fee waiver is not granted, please notify me of the estimated cost before processing this request. I am willing to pay reasonable fees up to $25.00. If estimated fees exceed this amount, please contact me for authorization.\n`
+    : `\nIf there are any fees associated with processing this request, please notify me of the estimated cost before proceeding. I am willing to pay reasonable fees up to $25.00. If estimated fees exceed this amount, please contact me for authorization.\n`;
+
+  const letter = `${today}
+
+FOIA Officer / Public Records Officer
+${params.agencyName}
+${agencyAddress}
+${params.agencyEmail ? `Email: ${params.agencyEmail}` : ""}
+
+RE: Public Records Request Pursuant to ${params.statuteName}
+
+Dear FOIA Officer:
+
+Pursuant to ${params.statuteName} (${params.statuteReference}), I hereby request copies of the following records:
+
+${params.recordDescription}
+
+Record Type: ${params.recordType}
+${params.caseDescription ? `\nContext for record identification: ${params.caseDescription}\n` : ""}
+I request that responsive records be provided in electronic format where available. If any portion of this request is denied, please cite the specific exemption(s) that justify the withholding and release any reasonably segregable non-exempt portions.
+${feeWaiverParagraph}${deadlineParagraph}
+If you have any questions regarding this request, or if I can provide clarification to assist in the identification of responsive records, please contact me at the information below.
+
+Thank you for your prompt attention to this matter.
+
+Sincerely,
+
+${requesterName}
+[REQUESTER_ADDRESS]
+${requesterEmail}
+[REQUESTER_PHONE]`;
+
+  return letter;
 }
 
 // ─── T5. Full Generation Pipeline ───
@@ -362,7 +359,7 @@ ${params.caseDescription ? `CONTEXT (for record identification only): ${params.c
  * 3. Generate fingerprint
  * 4. Check for duplicate (unique constraint)
  * 5. Assess warm handoff
- * 6. Generate letter via LLM
+ * 6. Generate letter via template
  * 7. Persist to foia_requests
  * 8. Update missing_records status to "requested"
  */
