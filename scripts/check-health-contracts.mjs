@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 
 const index = readFileSync('server/_core/index.ts', 'utf8');
 const diagnostic = readFileSync('server/_core/health-diagnostics.ts', 'utf8');
+const systemRouter = readFileSync('server/_core/systemRouter.ts', 'utf8');
 
 const required_liveness = ['ok', 'runtime', 'service', 'supabase_project', 'timestamp'];
 const forbidden_liveness = ['supabaseProject', 'publicTables', 'databaseUrl', 'dbDiagnostic', 'database_version', 'public_tables', 'database', 'db_diagnostic'];
@@ -18,6 +19,9 @@ for (const field of forbidden_liveness) {
 }
 if (diagnostic.includes('supabaseProject')) fail('stub camelCase supabaseProject must fail contract check');
 for (const field of required_diagnostic) if (!diagnostic.includes(field)) fail(`diagnostic field missing: ${field}`);
-if (!index.includes('app.get("/api/db-diagnostic"') || !index.includes('sendDatabaseDiagnostic(res)')) fail('/api/db-diagnostic must use shared diagnostic sender');
-if (!index.includes('app.get("/api/system/health"') || !index.includes('sendDatabaseDiagnostic(res)')) fail('/api/system/health must use shared diagnostic sender');
+if (!index.includes('app.get(["/api/db-diagnostic", "/api/system/health"]')) fail('legacy deep diagnostic routes must be explicitly closed');
+if (!index.includes('diagnostic_not_public')) fail('closed diagnostic routes must return a bounded public-safe error');
+if (index.includes('sendDatabaseDiagnostic')) fail('Express entrypoint must not expose the deep diagnostic sender');
+if (!systemRouter.includes('health: adminProcedure.query(() => getDatabaseDiagnostic())')) fail('deep tRPC diagnostic must require adminProcedure');
+if (systemRouter.includes('health: publicProcedure.query(() => getDatabaseDiagnostic())')) fail('deep tRPC diagnostic must not use publicProcedure');
 console.log('health diagnostic contracts passed');

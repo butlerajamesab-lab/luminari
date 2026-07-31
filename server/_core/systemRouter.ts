@@ -15,7 +15,9 @@ const countTable = async (tableName: string): Promise<number> => {
 };
 
 export const systemRouter = router({
-  health: publicProcedure.query(() => getDatabaseDiagnostic()),
+  // Full table/view/FK inventories and pool diagnostics are administrative
+  // operational data. Public liveness remains available at GET /api/health.
+  health: adminProcedure.query(() => getDatabaseDiagnostic()),
 
   notifyOwner: adminProcedure
     .input(

@@ -22,7 +22,7 @@ import { registerExecutorRoutes } from "../executor-routes";
 import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";
 import { serveStatic, setupVite } from "./vite";
-import { livenessPayload, sendDatabaseDiagnostic, SUPABASE_PROJECT } from "./health-diagnostics";
+import { livenessPayload, SUPABASE_PROJECT } from "./health-diagnostics";
 import { initializeScheduler } from "../ingestion/scheduler";
 import { run_with_database_request_context } from "../db-request-context";
 
@@ -145,16 +145,16 @@ async function startServer() {
     res.json({ ok: true, ...runtime_fingerprint });
   });
 
-  app.get("/api/db-diagnostic", async (req, res) => {
-    const force_refresh = req.query.force === "1" || req.query.refresh === "1";
-    if (force_refresh) await sendDatabaseDiagnostic(res, true);
-    else await sendDatabaseDiagnostic(res);
-  });
-
-  app.get("/api/system/health", async (req, res) => {
-    const force_refresh = req.query.force === "1" || req.query.refresh === "1";
-    if (force_refresh) await sendDatabaseDiagnostic(res, true);
-    else await sendDatabaseDiagnostic(res);
+  // Deep schema inventories and pool diagnostics previously exposed table,
+  // view, foreign-key, route, and connection-state data without authentication.
+  // The administrative diagnostic remains available through the admin-only
+  // tRPC `system.health` procedure. Legacy public endpoints fail closed.
+  app.get(["/api/db-diagnostic", "/api/system/health"], (_req, res) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.status(404).json({
+      ok: false,
+      error: "diagnostic_not_public",
+    });
   });
 
   app.use("/api/ai", aiInspectRouter);
