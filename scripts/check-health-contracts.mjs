@@ -7,6 +7,11 @@ const systemRouter = readFileSync('server/_core/systemRouter.ts', 'utf8');
 const context = readFileSync('server/_core/context.ts', 'utf8');
 const userCache = readFileSync('server/_core/user-cache.ts', 'utf8');
 const expressAdmin = readFileSync('server/_core/express-admin-middleware.ts', 'utf8');
+const trpcServiceAdmin = readFileSync('server/_core/trpc-service-admin-middleware.ts', 'utf8');
+const routers = readFileSync('server/routers.ts', 'utf8');
+const publicAdminMaintenance = readFileSync('server/routers/public-admin-maintenance.ts', 'utf8');
+const debugDb = readFileSync('server/routers/debug-db.ts', 'utf8');
+const sunam = readFileSync('server/routers/sunam.ts', 'utf8');
 
 const required_liveness = ['ok', 'runtime', 'service', 'supabase_project', 'timestamp'];
 const forbidden_liveness = ['supabaseProject', 'publicTables', 'databaseUrl', 'dbDiagnostic', 'database_version', 'public_tables', 'database', 'db_diagnostic'];
@@ -48,5 +53,47 @@ if (!expressAdmin.includes('resolve_user_for_procedure')) fail('Express administ
 if (!expressAdmin.includes('user.role !== "admin"')) fail('Express administrator gate must enforce the admin role');
 if (!expressAdmin.includes('status(401)') || !expressAdmin.includes('status(403)') || !expressAdmin.includes('status(503)')) fail('Express administrator gate must fail closed for missing, forbidden, and unavailable auth states');
 if (expressAdmin.includes('supabase_user_id') || expressAdmin.includes('supabase_email')) fail('Express administrator gate must not log or return account identifiers');
+
+if (!index.includes('import { requireAdminForServiceTrpcOperations } from "./trpc-service-admin-middleware"')) fail('service tRPC administrator middleware must be imported');
+const trpcMount = index.indexOf('app.use(\n    "/api/trpc"');
+const trpcGate = index.indexOf('requireAdminForServiceTrpcOperations', trpcMount);
+const trpcAdapter = index.indexOf('createExpressMiddleware({ router: appRouter, createContext })', trpcMount);
+if (trpcMount < 0 || trpcGate < 0 || trpcAdapter < 0 || !(trpcMount < trpcGate && trpcGate < trpcAdapter)) fail('/api/trpc service administrator gate must run before the tRPC adapter');
+if (!trpcServiceAdmin.includes('return requireExpressAdmin(req, res, next)')) fail('service tRPC boundary must reuse the canonical Express administrator gate');
+if (!trpcServiceAdmin.includes('decodeProcedurePath(rawPath)') || !trpcServiceAdmin.includes('.split(",")')) fail('service tRPC boundary must decode and inspect every batched procedure path');
+
+const requiredServiceNamespaces = [
+  'activation',
+  'debugDb',
+  'fullRegistryIngest',
+  'integrationTest',
+  'phase2CleanPacket',
+  'phase2PacketLoader',
+  'registryCanonicalIngest',
+  'resourceVerification',
+  'scaledRegistryIngest',
+  'setup',
+  'spineVerification',
+  'sunam',
+  'sunamGatedIngest',
+];
+for (const namespace of requiredServiceNamespaces) {
+  if (!trpcServiceAdmin.includes(`"${namespace}"`)) fail(`service tRPC administrator namespace missing: ${namespace}`);
+}
+
+const legacyServiceOperations = [
+  [routers, 'spineVerification: router({', 'spine verification'],
+  [routers, 'phase2PacketLoader: router({', 'phase 2 packet load'],
+  [routers, 'sunamGatedIngest: router({', 'Sunam-gated ingestion'],
+  [routers, 'fullRegistryIngest: router({', 'full registry ingestion'],
+  [routers, 'scaledRegistryIngest: router({', 'scaled registry ingestion'],
+  [routers, 'integrationTest: router({', 'integration test execution'],
+  [publicAdminMaintenance, 'backfillConfidenceScores: publicProcedure', 'database maintenance backfill'],
+  [debugDb, 'connectionStatus: publicProcedure', 'database connection diagnostics'],
+  [sunam, 'enrichForm: publicProcedure', 'Sunam signal enrichment'],
+];
+for (const [source, marker, label] of legacyServiceOperations) {
+  if (!source.includes(marker)) fail(`expected legacy service operation disappeared without contract review: ${label}`);
+}
 
 console.log('health diagnostic and authentication runtime security contracts passed');
