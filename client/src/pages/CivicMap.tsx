@@ -25,8 +25,8 @@ export default function CivicMap() {
           <div className="flex min-w-0 items-center gap-2">
             <MapPinned className="h-4 w-4 text-cyan-400" />
             <div className="min-w-0">
-              <h1 className="truncate text-sm font-semibold">CivicMap v2</h1>
-              <p className="truncate text-[11px] text-muted-foreground">Lighthouse resources, signals, and national references</p>
+              <h1 className="truncate text-sm font-semibold">Civic Map</h1>
+              <p className="truncate text-[11px] text-muted-foreground">Geographic view of the v3.13 Resource Directory</p>
             </div>
           </div>
         </div>
@@ -46,9 +46,9 @@ export default function CivicMap() {
       </header>
 
       <iframe
-        src="/civicmap.html"
+        src={`/civicmap.html${window.location.search}`}
         className="min-h-0 flex-1 border-0"
-        title="CivicMap v2"
+        title="Civic Map — Resource Directory geography"
       />
     </div>
   );

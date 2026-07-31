@@ -284,6 +284,7 @@ function App() {
                 <Route path="/evidence-lab" component={EvidenceLab} />
                 <Route path="/shop-office" component={ShopOffice} />
                 <Route path="/resources" component={ResourceDirectory} />
+                <Route path="/resource-directory" component={ResourceDirectory} />
                 <Route path="/mission-control/governance" component={GovernanceDashboard} />
                 <Route path="/verify" component={Verify} />
                 <Route path="/business-analytics" component={BusinessAnalytics} />

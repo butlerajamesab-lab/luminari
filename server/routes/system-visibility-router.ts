@@ -396,7 +396,8 @@ router.get("/ui-bindings", async (_req: Request, res: Response) => {
   const bindings = [
     { page: "/mission-control", component_slug: "mission_control", queries: ["canonicalCore.health", "canonicalCore.knowledgeBackbone", "canonicalCore.populationStats", "canonicalCore.legalLibrary", "canonicalCore.enforcementAgencies", "system.stats"], tables: ["knowledge_entries", "registry_programs", "legal_enforcement_records", "detected_signals", "forms_registry", "resources"] },
     { page: "/lighthouse", component_slug: "lighthouse", queries: ["lighthouse.gateReview", "lighthouse.liveIntakeOps", "lighthouse.patternRegistry", "lighthouse.pipelineHealth", "lighthouse.signalLineage", "lighthouse.strategyProjection", "lighthouse.trendPressure"], tables: ["raw_live_signals", "ingested_records", "detected_signals", "pipeline_runs", "activation_outputs", "strategy_outputs"] },
-    { page: "/civic-map", component_slug: "civic_map", queries: ["(standalone HTML — direct Supabase REST)"], tables: ["normalized_civic_resource", "registry_programs", "legal_enforcement_records", "coalition_advocacy_orgs", "advocacy_coalition_network", "legislator_registry", "knowledge_entries"] },
+    { page: "/civic-map", component_slug: "civic_map", queries: ["/api/civic-map/coverage", "/api/civic-map/bounds", "/api/civic-map/detail/:resource_entity_id"], tables: ["luminari_resource_entities", "luminari_resource_locations", "luminari_resource_location_resolutions", "luminari_resource_contact_points", "luminari_resource_contact_resolutions"] },
+    { page: "/resources", component_slug: "resource_directory", queries: ["resourceDirectory.summary", "resourceDirectory.search", "resourceDirectory.detail"], tables: ["luminari_resource_entities", "luminari_resource_contact_points", "luminari_resource_contact_resolutions", "luminari_resource_locations", "luminari_resource_location_resolutions"] },
     { page: "/legal-library", component_slug: "legal_library", queries: ["canonicalCore.legalLibrary"], tables: ["legal_enforcement_records", "claim_validation_rules_v2", "remedy_feasibility_rules_v2"] },
     { page: "/signal-registry", component_slug: "signal_registry", queries: ["signalExtraction.list", "signalExtraction.stats"], tables: ["detected_signals", "signal_flags", "signal_registry"] },
     { page: "/enforcement-intel", component_slug: "enforcement_intel", queries: ["canonicalCore.enforcementAgencies"], tables: ["legal_enforcement_records"] },
@@ -462,9 +463,9 @@ router.get("/runtime-map", async (_req: Request, res: Response) => {
       engine_outputs: ["activation_outputs", "signal_flags", "pattern_occurrences", "strategy_outputs", "procedural_outputs"],
     },
     projection: {
-      views: ["v_unified_civic_infrastructure (CivicMap aggregation)"],
-      tRPC: "appRouter → lighthouse-gate-router.ts (restSelect queries)",
-      static_pages: ["civicmap.html (standalone, hardcoded Supabase anon key)"],
+      views: ["v_luminari_resource_contact_points_current_v3_13", "v_luminari_resource_locations_current_v3_13"],
+      tRPC: "appRouter → resourceDirectory router → canonical resource tables",
+      static_pages: ["civicmap.html (same-origin Resource Directory API)"],
     },
     frontend: {
       framework: "React 19 + Wouter routing",
@@ -479,8 +480,7 @@ router.get("/runtime-map", async (_req: Request, res: Response) => {
     hydration_chain,
     known_issues: [
       "restSelect() in lighthouse-gate-router.ts uses camelCase column names but DB is snake_case — causes 400 errors",
-      "civicmap.html has hardcoded anon key — does not read from env vars",
-      "v_unified_civic_infrastructure view may not include all 12 source tables",
+      "Resource Directory exact-site pins remain unavailable until reviewed public addresses receive genuine coordinates",
     ],
   });
 });

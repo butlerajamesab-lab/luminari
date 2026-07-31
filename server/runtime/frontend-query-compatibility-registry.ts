@@ -21,8 +21,8 @@ export const frontendQueryCompatibilityRegistry = {
   },
   resourceDirectory: {
     legacyQuery: 'trpc.resources.*',
-    runtimeRouter: 'activationAwareOperationalVisibilityRouter',
-    status: 'runtime_reconciliation_pending',
+    runtimeRouter: 'resourceDirectoryRouter',
+    status: 'canonical_directory_active',
   },
   guidedIntake: {
     legacyQuery: 'trpc.intake.*',
@@ -31,8 +31,8 @@ export const frontendQueryCompatibilityRegistry = {
   },
   civicMap: {
     legacyQuery: 'trpc.civicMap.*',
-    runtimeRouter: 'activationAwareOperationalVisibilityRouter',
-    status: 'runtime_reconciliation_pending',
+    runtimeRouter: 'civicMapRouter',
+    status: 'directory_geography_active',
   },
   signalRegistry: {
     legacyQuery: 'trpc.signal.*',

@@ -39,6 +39,27 @@ describe("health diagnostics cache and semantics", () => {
     expect(dbMock.query_with_diagnostics.mock.calls.filter(([text]) => String(text).includes("information_schema.tables"))).toHaveLength(1);
   });
 
+  it("uses at most one database lease during a deep diagnostic refresh", async () => {
+    let active_queries = 0;
+    let maximum_active_queries = 0;
+    dbMock.query_with_diagnostics.mockImplementation(async (text: string) => {
+      active_queries += 1;
+      maximum_active_queries = Math.max(maximum_active_queries, active_queries);
+      await new Promise<void>((resolve) => setTimeout(resolve, 1));
+      active_queries -= 1;
+
+      if (text.includes("version()")) return { rows: [{ version: "PostgreSQL test" }], rowCount: 1 };
+      if (text.includes("information_schema.tables")) return { rows: [{ table_name: "alpha", column_count: 2 }], rowCount: 1 };
+      if (text.includes("information_schema.views")) return { rows: [{ view_name: "alpha_view" }], rowCount: 1 };
+      return { rows: [{ table_name: "alpha", column_name: "beta", foreign_table_name: "gamma", foreign_column_name: "id" }], rowCount: 1 };
+    });
+
+    await getDatabaseDiagnostic({ force: true });
+
+    expect(maximum_active_queries).toBe(1);
+    expect(active_queries).toBe(0);
+  });
+
   it("keeps base-table and view totals separate", async () => {
     const response = await getDatabaseDiagnostic({ force: true });
 
