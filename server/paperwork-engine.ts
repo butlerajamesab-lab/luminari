@@ -9,11 +9,11 @@
  * - Grievances
  * - Cease & desist letters
  * 
- * Uses LLM to populate templates with case-specific data,
+ * Uses template-based generation with placeholder substitution
+ * to populate documents with case-specific data,
  * then stores generated documents for review/editing/sending.
  */
 import { db } from "./db";
-import { invokeLLM } from "./_core/llm";
 import {
   paperworkTemplates, generatedDocuments,
   cases, claims, findings, events, documents,
@@ -109,6 +109,12 @@ export async function generateDocument(input: GenerateDocInput): Promise<number>
 
   const docLabel = docTypeLabels[input.documentType] || input.documentType;
 
+  const today = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   const claimsSummary = caseClaims.map((c: any) =>
     `- ${c.claimType}: ${c.description?.slice(0, 120) || "No description"}`
   ).join("\n");
@@ -121,44 +127,81 @@ export async function generateDocument(input: GenerateDocInput): Promise<number>
     `- ${e.eventDate ? new Date(e.eventDate).toLocaleDateString() : "Date unknown"}: ${e.description?.slice(0, 100) || "Event"}`
   ).join("\n");
 
-  const prompt = `Generate a professional ${docLabel} based on the following case information. The document should be formal, clear, and suitable for submission to a government agency, court, or organization.
+  // Generate content using template substitution or generic structure
+  let content: string;
 
-CASE: ${caseRow.name}
-${input.recipientName ? `RECIPIENT: ${input.recipientName}` : ""}
-${input.recipientAddress ? `ADDRESS: ${input.recipientAddress}` : ""}
+  if (templateBody) {
+    // Substitute placeholders in the template
+    content = templateBody
+      .replace(/\[CLAIMANT_NAME\]/g, "[YOUR NAME]")
+      .replace(/\[DATE\]/g, today)
+      .replace(/\[CASE_NAME\]/g, caseRow.name)
+      .replace(/\[CASE_HISTORY\]/g, eventsSummary || "No events documented yet.")
+      .replace(/\[CLAIMS\]/g, claimsSummary || "No specific claims identified yet.")
+      .replace(/\[FACTS\]/g, findingsSummary || "No findings documented yet.")
+      .replace(/\[FINDINGS\]/g, findingsSummary || "No findings documented yet.")
+      .replace(/\[EVENTS\]/g, eventsSummary || "No events documented yet.")
+      .replace(/\[RECIPIENT_NAME\]/g, input.recipientName || "[RECIPIENT NAME]")
+      .replace(/\[RECIPIENT_ADDRESS\]/g, input.recipientAddress || "[RECIPIENT ADDRESS]")
+      .replace(/\[DOCUMENT_TYPE\]/g, docLabel)
+      .replace(/\[CASE_DESCRIPTION\]/g, (caseRow as any).description || "")
+      .replace(/\[SENDER_NAME\]/g, "[YOUR NAME]")
+      .replace(/\[SENDER_ADDRESS\]/g, "[YOUR ADDRESS]")
+      .replace(/\[SENDER_EMAIL\]/g, "[YOUR EMAIL]")
+      .replace(/\[SENDER_PHONE\]/g, "[YOUR PHONE]");
+  } else {
+    // Generic document structure
+    content = `# ${docLabel}
 
-CLAIMS:
-${claimsSummary || "No specific claims identified yet"}
+**Date:** ${today}
 
-KEY FINDINGS:
-${findingsSummary || "No findings yet"}
+**To:**
+${input.recipientName || "[RECIPIENT NAME]"}
+${input.recipientAddress || "[RECIPIENT ADDRESS]"}
 
-KEY EVENTS (CHRONOLOGICAL):
-${eventsSummary || "No events extracted yet"}
+**From:**
+[YOUR NAME]
+[YOUR ADDRESS]
+[YOUR EMAIL]
+[YOUR PHONE]
 
-${templateBody ? `TEMPLATE TO FOLLOW:\n${templateBody}\n` : ""}
-${input.customInstructions ? `ADDITIONAL INSTRUCTIONS:\n${input.customInstructions}\n` : ""}
+**RE:** ${docLabel} — ${caseRow.name}
 
-Generate the complete document in Markdown format. Include:
-1. Proper header with date, recipient, and sender placeholders
-2. Clear subject line
-3. Professional opening
-4. Factual body referencing specific claims and events
-5. Clear request or demand
-6. Professional closing
-7. Signature block with [YOUR NAME], [YOUR ADDRESS], [YOUR PHONE], [YOUR EMAIL] placeholders
+---
 
-Use formal but accessible language. The person filing this may not be a lawyer.`;
+## Introduction
 
-  const response = await invokeLLM({
-    messages: [
-      { role: "system", content: "You are a legal document drafting assistant. Generate professional, formal documents suitable for official submission. Use Markdown formatting. Be specific and reference the case facts provided." },
-      { role: "user", content: prompt },
-    ],
-  });
+This ${docLabel.toLowerCase()} is submitted regarding the matter of **${caseRow.name}**.${(caseRow as any).description ? ` ${(caseRow as any).description}` : ""}
 
-  const content = response.choices?.[0]?.message?.content;
-  if (!content) throw new Error("No response from LLM");
+## Claims
+
+${claimsSummary || "No specific claims have been identified at this time."}
+
+## Key Findings
+
+${findingsSummary || "No findings have been documented at this time."}
+
+## Chronology of Events
+
+${eventsSummary || "No events have been extracted at this time."}
+${input.customInstructions ? `\n## Additional Notes\n\n${input.customInstructions}\n` : ""}
+## Request
+
+Based on the foregoing facts and circumstances, I respectfully request that this matter be reviewed and that appropriate action be taken.
+
+## Closing
+
+I request written confirmation of receipt of this ${docLabel.toLowerCase()}. Please respond within 30 days of receipt. If additional information is needed, please contact me at the information provided above.
+
+Thank you for your prompt attention to this matter.
+
+Sincerely,
+
+[YOUR NAME]
+[YOUR ADDRESS]
+[YOUR PHONE]
+[YOUR EMAIL]`;
+  }
 
   const title = templateTitle || `${docLabel} — ${caseRow.name}`;
   const now = Date.now();
