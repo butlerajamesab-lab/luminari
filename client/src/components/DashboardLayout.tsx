@@ -152,6 +152,7 @@ const observeItems: NavItem[] = [
   { icon: Network, label: "Cross-Case Patterns", path: "/patterns" },
   { icon: BarChart3, label: "Agency Metrics", path: "/agency-metrics" },
   { icon: Gavel, label: "Docket Room", path: "/docket" },
+  { icon: GitBranch, label: "Living Civic Genome", path: "/civic-genome" },
 ];
 
 const platformItems: NavItem[] = [

@@ -263,17 +263,25 @@ const project_bill = async (
   const family_key = build_family_key(bill);
   const family_id = await upsert_family(family_key, bill);
   const current_state_position = infer_state_position(bill);
-  const structural_dna_json = build_structural_dna_json(state_row, bill);
-  const structural_dna_hash = sha256(JSON.stringify(structural_dna_json));
+  const docket_observation = build_structural_dna_json(state_row, bill);
+  const docket_observation_hash = sha256(JSON.stringify(docket_observation));
+  const structural_dna_json = {
+    ...docket_observation,
+    docket_observation_hash,
+  };
   const bill_status = bill.status === undefined || bill.status === null ? null : `legiscan_status_${bill.status}`;
 
   const { rows: existing_rows } = await pool.query<{
     genome_bill_id: string;
+    family_id: string;
     structural_dna_hash: string;
+    structural_dna_json: Record<string, unknown>;
+    rosetta_extraction_run_id: string | null;
     current_state_position: string;
     bill_status: string | null;
   }>(
-    `select genome_bill_id, structural_dna_hash, current_state_position, bill_status
+    `select genome_bill_id, family_id, structural_dna_hash, structural_dna_json,
+            rosetta_extraction_run_id, current_state_position, bill_status
      from public.civic_genome_bill
      where bill_id = $1
      limit 1`,
@@ -281,9 +289,17 @@ const project_bill = async (
   );
 
   const existing = existing_rows[0] ?? null;
-  const should_append_event = should_append_change_event(existing?.structural_dna_hash ?? null, structural_dna_hash);
+  const existing_docket_observation_hash = typeof existing?.structural_dna_json?.docket_observation_hash === "string"
+    ? existing.structural_dna_json.docket_observation_hash
+    : existing?.rosetta_extraction_run_id
+      ? null
+      : existing?.structural_dna_hash ?? null;
+  const should_append_event = should_append_change_event(
+    existing_docket_observation_hash,
+    docket_observation_hash,
+  );
 
-  const { rows } = await pool.query<{ genome_bill_id: string }>(
+  const { rows } = await pool.query<{ genome_bill_id: string; family_id: string }>(
     `insert into public.civic_genome_bill (
        family_id,
        bill_id,
@@ -310,7 +326,11 @@ const project_bill = async (
        $13::jsonb, $14::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, $15
      )
      on conflict (bill_id) do update set
-       family_id = excluded.family_id,
+       family_id = case
+         when public.civic_genome_bill.rosetta_extraction_run_id is null
+           then excluded.family_id
+         else public.civic_genome_bill.family_id
+       end,
        state_code = excluded.state_code,
        session_key = excluded.session_key,
        source_bill_number = excluded.source_bill_number,
@@ -318,13 +338,18 @@ const project_bill = async (
        source_bill_url = excluded.source_bill_url,
        bill_status = excluded.bill_status,
        last_action_at = excluded.last_action_at,
-       structural_dna_hash = excluded.structural_dna_hash,
-       structural_dna_json = excluded.structural_dna_json,
+       structural_dna_hash = case
+         when public.civic_genome_bill.rosetta_extraction_run_id is null
+           then excluded.structural_dna_hash
+         else public.civic_genome_bill.structural_dna_hash
+       end,
+       structural_dna_json = coalesce(public.civic_genome_bill.structural_dna_json, '{}'::jsonb)
+         || excluded.structural_dna_json,
        procedural_lifecycle_json = excluded.procedural_lifecycle_json,
        jurisdiction_lineage_json = excluded.jurisdiction_lineage_json,
        current_state_position = excluded.current_state_position,
        updated_at = now()
-     returning genome_bill_id`,
+     returning genome_bill_id, family_id`,
     [
       family_id,
       bill_id,
@@ -336,7 +361,7 @@ const project_bill = async (
       bill_status,
       bill.status_date ?? bill.last_action_date ?? null,
       bill.last_action_date ?? bill.status_date ?? null,
-      structural_dna_hash,
+      docket_observation_hash,
       JSON.stringify(structural_dna_json),
       JSON.stringify({
         source_status: bill.status ?? null,
@@ -354,6 +379,7 @@ const project_bill = async (
   );
 
   const genome_bill_id = rows[0].genome_bill_id;
+  const persisted_family_id = rows[0].family_id;
   const classification = classify_docket_event(bill, existing);
   const event_type = classification.event_type;
 
@@ -373,7 +399,7 @@ const project_bill = async (
          event_payload_json
        ) values ($1, $2, $3, $4, $5, coalesce($6::timestamptz, now()), $7, $8, $9, $10::jsonb, $11::jsonb)`,
       [
-        family_id,
+        persisted_family_id,
         genome_bill_id,
         bill_id,
         state_code,
@@ -397,14 +423,14 @@ const project_bill = async (
           event_summary: classification.event_summary,
           prior_state_position: existing?.current_state_position ?? null,
           next_state_position: current_state_position,
-          structural_dna_hash,
+          docket_observation_hash,
           source_change_hash: bill.change_hash ?? null,
         }),
       ],
     );
   }
 
-  await refresh_family_rollups(family_id);
+  await refresh_family_rollups(persisted_family_id);
 
   return {
     state_code,
@@ -412,7 +438,7 @@ const project_bill = async (
     source_bill_number,
     source_offset,
     bill_id,
-    family_id,
+    family_id: persisted_family_id,
     genome_bill_id,
     event_type,
     action: existing ? (should_append_event ? "updated" : "unchanged") : "inserted",

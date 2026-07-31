@@ -50,6 +50,15 @@ function assert_view_identity(
   if (view.law_view.objects.some(object => object.extractionRunId !== expected_run_id)) {
     throw new Error("rosetta_object_extraction_run_mismatch");
   }
+  if (view.run_status?.toLowerCase() !== "completed") {
+    throw new Error("rosetta_extraction_not_completed");
+  }
+  if (view.law_view.provenanceState === "failed") {
+    throw new Error("rosetta_provenance_failed");
+  }
+  if (view.law_view.objects.length === 0) {
+    throw new Error("rosetta_completed_run_has_no_objects");
+  }
 }
 
 async function load_view(
@@ -254,17 +263,21 @@ export async function assemble_rosetta_structural_dna(
       `update public.civic_genome_bill
           set rosetta_extraction_run_id = $2,
               structural_dna_hash = $3,
-              structural_dna_json = jsonb_build_object(
-                'engine_version', $4,
-                'rule_version', $5,
-                'source_document_id', $6,
-                'extraction_run_id', $2,
-                'input_hash', $7,
-                'output_hash', $3,
-                'verification_state', $8,
-                'coverage', $9::jsonb,
-                'trait_count', $10
-              ),
+              structural_dna_json = coalesce(structural_dna_json, '{}'::jsonb)
+                || jsonb_build_object(
+                  'rosetta_assembly',
+                  jsonb_build_object(
+                    'engine_version', $4,
+                    'rule_version', $5,
+                    'source_document_id', $6,
+                    'extraction_run_id', $2,
+                    'input_hash', $7,
+                    'output_hash', $3,
+                    'verification_state', $8,
+                    'coverage', $9::jsonb,
+                    'trait_count', $10
+                  )
+                ),
               updated_at = now()
         where genome_bill_id = $1`,
       [
