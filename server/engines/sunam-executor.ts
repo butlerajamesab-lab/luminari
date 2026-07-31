@@ -26,7 +26,6 @@ import {
   engineRegistry,
   dataStreamRegistry,
 } from "../../drizzle/schema";
-import { invokeLLM } from "../_core/llm";
 import {
   applyEnginePatch,
   applyStreamPatch,
@@ -1044,18 +1043,16 @@ export interface SunamExecuteResult {
 
 // ─── Natural Language Parser ───
 // Translates plain English into a structured execution plan before the tool-call loop.
-// This allows Sunam to accept conversational prompts like "Fix the failing tests" or
-// "Check if detected_signals has data and backfill if empty".
+// Fully deterministic: keyword matching maps intent to specific tool calls.
 
-async function parseNaturalLanguage(
+function parseNaturalLanguage(
   instruction: string,
-  systemContext: string,
-): Promise<{ parsedInstruction: string; isDirectToolCall: boolean }> {
+  _systemContext: string,
+): { parsedInstruction: string; isDirectToolCall: boolean } {
   // Check if instruction already names a tool directly (backward compatible)
-  // Use the canonical operational tool registry
   const visibleToolNames = getSunamVisibleToolNames();
   const lowerInstruction = instruction.toLowerCase().trim();
-  
+
   // If the instruction starts with a tool name or "tool:" prefix, pass through directly
   for (const tn of visibleToolNames) {
     if (lowerInstruction.startsWith(tn) || lowerInstruction.startsWith(`tool: ${tn}`)) {
@@ -1063,47 +1060,53 @@ async function parseNaturalLanguage(
     }
   }
 
-  // Build a tool summary for the NL parser
-  // Use the canonical operational tool registry
-  const toolSummary = SUNAM_TOOLS.map(t => 
-    `- ${t.function.name}: ${t.function.description}`
-  ).join("\n");
+  // Keyword-to-plan mapping: most specific patterns first
+  const patterns: Array<{ keywords: string[]; plan: string }> = [
+    // Backfill / signals
+    { keywords: ["backfill", "process signals", "fill detected"], plan: "1. Call backfill_stream to process pending signals.\n2. Call inspect_table with table=detected_signals to verify results." },
+    { keywords: ["process_signals_batch", "signals batch"], plan: "1. Call process_signals_batch to process pending signals from live_signals." },
+    // Stream operations
+    { keywords: ["run all streams", "run every stream", "ingest all"], plan: "1. Call get_system_state to list all streams.\n2. Call run_stream for each enabled stream.\n3. Call get_stream_diagnostics to verify results." },
+    { keywords: ["retry failed", "retry failing", "re-run failed"], plan: "1. Call get_stream_diagnostics to identify failing streams.\n2. Call retry_stream for each failing stream.\n3. Call get_stream_diagnostics to verify recovery." },
+    { keywords: ["run stream", "ingest stream", "trigger stream"], plan: `1. Call run_stream with the stream_id from the instruction: "${instruction}".\n2. Call get_stream_diagnostics to verify result.` },
+    { keywords: ["enable stream", "activate stream"], plan: `1. Call enable_stream with the stream_id from the instruction: "${instruction}".` },
+    { keywords: ["disable stream", "deactivate stream"], plan: `1. Call disable_stream with the stream_id from the instruction: "${instruction}".` },
+    { keywords: ["reset checkpoint", "reset stream"], plan: `1. Call reset_stream_checkpoint with the stream_id from the instruction: "${instruction}".` },
+    // Engine operations
+    { keywords: ["enable engine", "activate engine"], plan: `1. Call enable_engine with the engine_id from the instruction: "${instruction}".` },
+    { keywords: ["disable engine", "deactivate engine"], plan: `1. Call disable_engine with the engine_id from the instruction: "${instruction}".` },
+    { keywords: ["patch engine", "update engine config", "modify engine"], plan: `1. Call apply_engine_patch with the engine_id and patch from the instruction: "${instruction}".` },
+    // SQL
+    { keywords: ["execute sql", "run sql", "run query", "select ", "insert ", "update ", "delete ", "create table"], plan: `1. Call execute_sql with the SQL statement from the instruction: "${instruction}".` },
+    { keywords: ["apply migration", "run migration", "schema migration"], plan: `1. Call apply_schema_patch with the migration from the instruction: "${instruction}".` },
+    // Diagnostics / inspection
+    { keywords: ["inspect table", "check table", "count rows", "how many rows", "table contents"], plan: `1. Call inspect_table with the table name from the instruction: "${instruction}".\n2. Report the results.` },
+    { keywords: ["system state", "get state", "current state", "system status", "check status"], plan: "1. Call get_system_state to retrieve current system status.\n2. Report the results." },
+    { keywords: ["stream diagnostics", "stream health", "failing streams", "stream errors"], plan: "1. Call get_stream_diagnostics to retrieve stream health.\n2. Report the results." },
+    { keywords: ["execution log", "recent actions", "change log", "audit log"], plan: "1. Call get_execution_log to retrieve recent execution history.\n2. Report the results." },
+    // UI / file operations
+    { keywords: ["read file", "view file", "show file", "check file"], plan: `1. Call ui_read_file with the path from the instruction: "${instruction}".` },
+    { keywords: ["write file", "create file", "save file"], plan: `1. Call ui_write_file with the path and content from the instruction: "${instruction}".` },
+    { keywords: ["patch file", "edit file", "modify file", "update file", "fix file"], plan: `1. Call ui_read_file first to check current content.\n2. Call ui_patch_file with the changes from the instruction: "${instruction}".\n3. Call ui_read_file to verify the change.` },
+    { keywords: ["list files", "show files", "files in"], plan: `1. Call ui_list_files with the directory from the instruction: "${instruction}".` },
+    // Config / signals
+    { keywords: ["update config", "modify config", "change config", "patch config"], plan: `1. Call apply_stream_patch or apply_engine_patch with the config change from the instruction: "${instruction}".` },
+    { keywords: ["adjust weight", "signal weight", "threshold"], plan: `1. Call apply_stream_patch with the weight/threshold change from the instruction: "${instruction}".` },
+    // Scheduler
+    { keywords: ["refresh scheduler", "restart scheduler", "scheduler status"], plan: "1. Call get_system_state to check scheduler status.\n2. Report scheduler health." },
+  ];
 
-  // Use LLM to translate natural language into a structured execution plan
-  const planResponse = await invokeLLM({
-    messages: [
-      {
-        role: "system",
-        content: `You are Sunam's instruction parser. Your job is to translate natural language instructions into clear, step-by-step execution plans that reference specific tools.
+  for (const { keywords, plan } of patterns) {
+    if (keywords.some(k => lowerInstruction.includes(k.toLowerCase()))) {
+      return { parsedInstruction: plan, isDirectToolCall: false };
+    }
+  }
 
-Available tools:
-${toolSummary}
-
-System context (abbreviated):
-${systemContext.substring(0, 1500)}
-
-RULES:
-1. Output a clear, imperative execution plan that the tool-calling LLM can follow
-2. Reference specific tool names when the mapping is clear
-3. For multi-step tasks, number the steps in order
-4. If the instruction is ambiguous, make the most reasonable interpretation and proceed
-5. If the instruction mentions tests or source files, use ui_read_file before ui_patch_file or ui_write_file
-6. If the instruction mentions data counts, use inspect_table or get_system_state
-7. If the instruction mentions backfill, use backfill_stream
-8. Always end with a verification step using get_system_state, get_stream_diagnostics, or inspect_table
-9. Keep the plan concise — no explanations, just steps
-10. For file modifications, always use ui_read_file first to check current content, then ui_patch_file to make changes`,
-      },
-      {
-        role: "user",
-        content: `Translate this instruction into an execution plan:\n\n"${instruction}"`,
-      },
-    ],
-  });
-
-  const rawContent = planResponse.choices?.[0]?.message?.content;
-  const plan = (typeof rawContent === "string" ? rawContent : JSON.stringify(rawContent)) || instruction;
-  return { parsedInstruction: plan, isDirectToolCall: false };
+  // Default: treat as a diagnostics request
+  return {
+    parsedInstruction: `1. Call get_system_state to understand current system state.\n2. Based on the result, take the most appropriate action for: "${instruction}".\n3. Verify the result.`,
+    isDirectToolCall: false,
+  };
 }
 
 // ─── Error Recovery ───
@@ -1254,149 +1257,101 @@ export async function sunamExecute(
     };
   }
 
-  // Build system context
-  const { buildSystemContext } = await import("./system-copilot-sunam");
-  const systemContext = await buildSystemContext();
-
   // ─── Phase 1: Natural Language Parsing ───
-  // Translate plain English into a structured plan if needed
-  const { parsedInstruction, isDirectToolCall } = await parseNaturalLanguage(instruction, systemContext);
+  // Translate plain English into a structured plan (deterministic, no LLM)
+  const { parsedInstruction, isDirectToolCall } = parseNaturalLanguage(instruction, "");
 
-  // Build the effective instruction — use parsed plan for NL, original for direct tool calls
-  const effectiveInstruction = isDirectToolCall ? instruction : 
-    `ORIGINAL REQUEST: ${instruction}\n\nEXECUTION PLAN:\n${parsedInstruction}\n\nFollow the execution plan above. Call tools in the order specified. If a step fails, try an alternative approach before giving up.`;
-
-  const messages: Array<{ role: "system" | "user" | "assistant" | "tool"; content: string; tool_call_id?: string; name?: string }> = [
-    {
-      role: "system",
-      content: `You are Sunam, the autonomous system operator for the Luminari Forensic Engine.
-
-You have FULL execution authority. You execute actions DIRECTLY — no proposals, no approval flow, no artifacts.
-When you call a tool, it executes immediately and returns the real result.
-
-${systemContext}
-
-EXECUTION RULES:
-1. When given an instruction, call the appropriate tool(s) immediately
-2. After each tool call, review the result and decide if more steps are needed
-3. Chain tool calls as needed (e.g. diagnose → fix → verify)
-4. Always call get_system_state or get_stream_diagnostics first if you need to understand current state
-5. After making changes, verify them with a follow-up tool call
-6. When done, provide a concise summary of what was done and the result
-7. If a tool call fails, try an alternative approach (different tool, adjusted parameters) before reporting failure
-8. For multi-step instructions, complete ALL steps before providing the final summary
-9. Accept both exact tool syntax AND natural language — parse intent and act accordingly
-
-You are operating as: ${executedByName ?? executedBy}
-Timestamp: ${new Date(executedAt).toISOString()}`,
-    },
-    { role: "user", content: effectiveInstruction },
-  ];
-
-  let stepCount = 0;
+  // ─── Phase 2: Deterministic Plan Execution ───
+  // Parse the plan into ordered steps and dispatch each tool call directly.
+  // Plan lines look like: "1. Call <tool_name> [with ...]" or just a tool name.
   let finalResponse = "";
   let consecutiveFailures = 0;
   const MAX_CONSECUTIVE_FAILURES = 3;
 
-  // ─── Phase 2: Tool-Call Loop with Error Recovery ───
-  while (stepCount < maxSteps) {
-    let llmResponse;
-    try {
-      llmResponse = await invokeLLM({
-        messages: messages as any,
-        tools: SUNAM_TOOLS,
-        // Use "auto" always — let the LLM decide when to call tools
-        // The LLM sees the same governed tools shown in Sovereign Control
-        tool_choice: "auto",
-      });
-    } catch (llmError: any) {
-      // If LLM call itself fails, retry once with simplified context
-      try {
-        const trimmedMessages = messages.slice(0, 2).concat(messages.slice(-4));
-        llmResponse = await invokeLLM({
-          messages: trimmedMessages as any,
-          tools: SUNAM_TOOLS,
-          tool_choice: "auto",
-        });
-      } catch {
-        finalResponse = `LLM error after retry: ${llmError.message}`;
-        break;
+  // Extract tool calls from the parsed plan
+  const planLines = (isDirectToolCall ? instruction : parsedInstruction).split("\n");
+  const plannedCalls: Array<{ toolName: string; rawLine: string }> = [];
+
+  for (const line of planLines) {
+    const trimmed = line.trim().replace(/^\d+\.\s*/, ""); // strip leading "1. "
+    // Match "Call <tool_name>" or a bare tool name
+    const callMatch = trimmed.match(/^(?:call\s+)?([a-z_]+)/i);
+    if (callMatch) {
+      const candidate = callMatch[1].toLowerCase();
+      if (isSunamToolAllowed(candidate)) {
+        plannedCalls.push({ toolName: candidate, rawLine: trimmed });
+      }
+    }
+  }
+
+  // If no tool calls were parsed from the plan, fall back to get_system_state
+  if (plannedCalls.length === 0) {
+    plannedCalls.push({ toolName: "get_system_state", rawLine: "get_system_state" });
+  }
+
+  // Execute each planned tool call in order
+  for (const { toolName, rawLine } of plannedCalls) {
+    if (steps.length >= maxSteps) {
+      finalResponse = "Maximum steps reached. Partial execution completed.";
+      break;
+    }
+
+    // Extract args from the raw instruction line (best-effort key=value / JSON parsing)
+    const toolArgs: Record<string, any> = {};
+    // Try JSON block in the line
+    const jsonMatch = rawLine.match(/\{[^}]+\}/);
+    if (jsonMatch) {
+      try { Object.assign(toolArgs, JSON.parse(jsonMatch[0])); } catch {}
+    }
+    // Try key=value pairs
+    const kvMatches = rawLine.matchAll(/(\w+)\s*[=:]\s*([\w-]+)/g);
+    for (const [, k, v] of kvMatches) {
+      if (k !== toolName) toolArgs[k] = isNaN(Number(v)) ? v : Number(v);
+    }
+    // For stream/engine tools, try to extract an ID from the original instruction
+    if ((toolName.includes("stream") || toolName.includes("engine")) && !toolArgs.stream_id && !toolArgs.engine_id) {
+      const idMatch = instruction.match(/([a-z0-9][-a-z0-9]{2,})/i);
+      if (idMatch) {
+        if (toolName.includes("stream")) toolArgs.stream_id = idMatch[1];
+        else toolArgs.engine_id = idMatch[1];
       }
     }
 
-    const choice = llmResponse?.choices?.[0];
-    if (!choice) {
-      finalResponse = "No response from LLM. Execution halted.";
-      break;
-    }
+    let toolResult = await dispatchTool(toolName, toolArgs, executedBy);
 
-    const msg = choice.message;
-
-    // If no tool calls, we're done — LLM is providing its final summary
-    if (!msg.tool_calls || msg.tool_calls.length === 0) {
-      finalResponse = (typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content)) || "Execution complete.";
-      break;
-    }
-
-    // Process tool calls
-    const toolResultMessages: any[] = [];
-
-    for (const tc of msg.tool_calls) {
-      stepCount++;
-      const toolName = tc.function.name;
-      let toolArgs: Record<string, any> = {};
-      try {
-        toolArgs = JSON.parse(tc.function.arguments);
-      } catch {}
-
-      let toolResult = await dispatchTool(toolName, toolArgs, executedBy);
-
-      // ─── Error Recovery: retry with adjusted parameters ───
-      if (!toolResult.success && toolResult.error && consecutiveFailures < MAX_CONSECUTIVE_FAILURES) {
-        consecutiveFailures++;
-        const recoveryResult = await retryWithRecovery(toolName, toolArgs, executedBy, toolResult.error);
-        if (recoveryResult.success) {
-          toolResult = recoveryResult;
-          consecutiveFailures = 0; // Reset on success
-        }
-      } else if (toolResult.success) {
+    // Error recovery: retry with adjusted parameters
+    if (!toolResult.success && toolResult.error && consecutiveFailures < MAX_CONSECUTIVE_FAILURES) {
+      consecutiveFailures++;
+      const recoveryResult = await retryWithRecovery(toolName, toolArgs, executedBy, toolResult.error);
+      if (recoveryResult.success) {
+        toolResult = recoveryResult;
         consecutiveFailures = 0;
       }
-
-      steps.push({
-        step: stepCount,
-        tool: toolName,
-        args: toolArgs,
-        result: toolResult.result,
-        success: toolResult.success,
-        error: toolResult.error,
-      });
-
-      toolResultMessages.push({
-        role: "tool",
-        tool_call_id: tc.id,
-        name: toolName,
-        content: JSON.stringify(toolResult.success ? toolResult.result : { error: toolResult.error, recovery_attempted: consecutiveFailures > 0 }),
-      });
+    } else if (toolResult.success) {
+      consecutiveFailures = 0;
     }
 
-    // Add assistant message with tool calls
-    messages.push({ role: "assistant", content: msg.content || "", ...(msg.tool_calls ? { tool_calls: msg.tool_calls } : {}) } as any);
+    steps.push({
+      step: steps.length + 1,
+      tool: toolName,
+      args: toolArgs,
+      result: toolResult.result,
+      success: toolResult.success,
+      error: toolResult.error,
+    });
 
-    // Add tool results
-    for (const tr of toolResultMessages) {
-      messages.push(tr as any);
-    }
-
-    // If too many consecutive failures, stop and report
     if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
       finalResponse = `Stopped after ${MAX_CONSECUTIVE_FAILURES} consecutive failures. Last error: ${steps[steps.length - 1]?.error || "unknown"}`;
       break;
     }
+  }
 
-    if (stepCount >= maxSteps) {
-      finalResponse = "Maximum steps reached. Partial execution completed.";
-      break;
+  if (!finalResponse) {
+    const successCount = steps.filter(s => s.success).length;
+    const failCount = steps.filter(s => !s.success).length;
+    finalResponse = `Execution complete. ${successCount} step(s) succeeded${failCount > 0 ? `, ${failCount} failed` : ""}.`;
+    if (steps.length > 0 && steps[steps.length - 1].result) {
+      finalResponse += `\nLast result: ${JSON.stringify(steps[steps.length - 1].result).substring(0, 500)}`;
     }
   }
 
