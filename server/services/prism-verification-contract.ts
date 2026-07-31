@@ -1,6 +1,11 @@
 import { createHash, createHmac, timingSafeEqual } from "crypto";
 import { z } from "zod";
 
+export const PRISM_ENGINE_VERSION = "1.0.0";
+export const PRISM_RULE_SET_ID = "prism-core-assertion";
+export const PRISM_RULE_SET_VERSION = "1.0.0";
+export const PRISM_RULE_SET_HASH = "298eaf14df23f17c07dbc253fb6a2abe2f55ac9425942a46ab08f6bdd05401b0";
+
 export const verification_status_schema = z.enum([
   "user_reported",
   "document_stated",
@@ -29,8 +34,8 @@ export const verification_request_schema = z.object({
   evidence_fingerprint: z.string().regex(/^[a-f0-9]{64}$/i),
   source_content_hash: z.string().regex(/^[a-f0-9]{64}$/i),
   claim_assertion_id: z.string().min(1).max(256),
-  rule_set_id: z.literal("prism-core-assertion"),
-  rule_set_version: z.literal("1.0.0"),
+  rule_set_id: z.literal(PRISM_RULE_SET_ID),
+  rule_set_version: z.literal(PRISM_RULE_SET_VERSION),
   requested_checks: z.array(z.enum([
     "classify_support_state",
     "detect_contradictions",
@@ -45,10 +50,10 @@ export const verification_request_schema = z.object({
 export const prism_receipt_schema = z.object({
   verification_receipt_id: z.string().uuid(),
   request_id: z.string().min(1),
-  prism_engine_version: z.string().min(1),
-  rule_set_id: z.string().min(1),
-  rule_set_version: z.string().min(1),
-  rule_set_hash: z.string().regex(/^[a-f0-9]{64}$/i),
+  prism_engine_version: z.literal(PRISM_ENGINE_VERSION),
+  rule_set_id: z.literal(PRISM_RULE_SET_ID),
+  rule_set_version: z.literal(PRISM_RULE_SET_VERSION),
+  rule_set_hash: z.literal(PRISM_RULE_SET_HASH),
   input_hash: z.string().regex(/^[a-f0-9]{64}$/i),
   output_hash: z.string().regex(/^[a-f0-9]{64}$/i),
   status: verification_status_schema,
