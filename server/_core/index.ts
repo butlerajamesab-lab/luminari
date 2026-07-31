@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { requireExpressAdmin } from "./express-admin-middleware";
+import { requireAdminForServiceTrpcOperations } from "./trpc-service-admin-middleware";
 import { sessionMiddleware } from "./session-middleware";
 import { aiInspectRouter } from "../routes/ai-inspect-router";
 import { systemVisibilityRouter } from "../routes/system-visibility-router";
@@ -133,6 +134,7 @@ async function startServer() {
   app.use("/api/invites", invite_redemption_router);
   app.use(
     "/api/trpc",
+    requireAdminForServiceTrpcOperations,
     createExpressMiddleware({ router: appRouter, createContext }),
   );
 
