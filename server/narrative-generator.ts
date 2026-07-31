@@ -2,20 +2,20 @@
  * Narrative Generator — Session 6
  *
  * Assembles a chronological Statement of Facts from structured evidence
- * (events, quotes, claims, findings, FOIA requests) using a single targeted
- * LLM call. Each paragraph in the output is anchored to source evidence
- * via a sourceMap.
+ * (events, quotes, claims, findings, FOIA requests) using deterministic
+ * chronological assembly. Each paragraph in the output is anchored to
+ * source evidence via a sourceMap.
  *
  * Architecture:
  * T1. Timeline assembly: getCaseTimelineData(caseId) → TimelineItem[]
  * T2. Timeline grouping: groupByDateRange(items) → DateGroup[]
- * T3. Prompt construction: buildNarrativePrompt(case, groups) → messages[]
- * T4. LLM generation: invokeLLMInteractive(messages) → structured JSON
- * T5. Source map construction: mapParagraphsToSources(llmOutput, items) → NarrativeSourceMap
+ * T3. (removed — was LLM prompt construction)
+ * T4. Deterministic paragraph generation from grouped timeline data
+ * T5. Source map construction: mapParagraphsToSources(paragraphs, items) → NarrativeSourceMap
  * T6. Persistence: upsertCaseNarrative(caseId, content, sourceMap)
  *
  * Constraints:
- * - One LLM call per generation (no chaining)
+ * - No LLM calls — purely mechanical chronological assembly
  * - Source map must reference actual evidence IDs
  * - Undated items grouped separately at end
  * - Staleness detection via timelineItemCount comparison
@@ -24,7 +24,6 @@
 import { getCaseTimelineData, upsertCaseNarrative, getCaseNarrative, parseDateToSortKey, listSignalFlags, getCaseInternal } from "./db";
 import type { TimelineItem, TimelineItemType } from "./db";
 import type { NarrativeSourceMap, NarrativeSourceEntry } from "../drizzle/schema";
-import { invokeLLMInteractive } from "./_core/llm";
 import { db } from "./db";
 import { cases } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
@@ -111,12 +110,11 @@ export function groupByDateRange(items: TimelineItem[]): DateGroup[] {
   return sorted;
 }
 
-// ─── T3. Prompt Construction ───
+// ─── T3. Prompt Construction (legacy — retained but unused) ───
 
 /**
  * Build the LLM prompt for narrative generation.
- * The prompt instructs the LLM to produce a structured JSON response
- * with paragraphs and source references.
+ * Retained for backward compatibility but no longer called.
  */
 export function buildNarrativePrompt(
   caseName: string,
@@ -126,7 +124,6 @@ export function buildNarrativePrompt(
   items: TimelineItem[],
   lensContext?: LensContext | null,
 ): { systemPrompt: string; userPrompt: string } {
-  // Build the evidence inventory
   const inventory = items.map((item, idx) => {
     const parts = [`[${idx}] (${item.type}) "${item.label}"`];
     if (item.date) parts.push(`Date: ${item.date}`);
@@ -137,7 +134,6 @@ export function buildNarrativePrompt(
     return parts.join(" | ");
   }).join("\n");
 
-  // Build the chronological outline
   const outline = groups.map(g => {
     const itemSummaries = g.items.map(item => {
       const idx = items.indexOf(item);
@@ -146,82 +142,76 @@ export function buildNarrativePrompt(
     return `### ${g.label}\n${itemSummaries}`;
   }).join("\n\n");
 
-  const domainContext = pipelineType
-    ? `This case involves ${pipelineType.replace(/_/g, " ")} matters.`
-    : "The domain of this case should be inferred from the evidence.";
-
-  const systemPrompt = `You are a forensic analyst writing a Statement of Facts for a legal case. Your task is to synthesize evidence into a clear, chronological narrative.
-
-Rules:
-1. Write in third person, past tense, formal legal style.
-2. Every factual assertion MUST reference at least one source item by its index number.
-3. Organize the narrative chronologically using the date groups provided.
-4. Do NOT speculate or add information not present in the evidence.
-5. Do NOT use emotional language or advocacy framing.
-6. Note contradictions or gaps when the evidence shows them.
-7. For undated items, group them in a "Background and Context" section.
-8. Use precise language: "According to [source]..." or "The record indicates..."
-9. Each paragraph should reference 1-4 source items.
-10. For longer narratives (8 or more paragraphs), organize the text under section headings. Use headings such as "Background", "Incident", "Investigation", "Records Requests", "Aftermath", or other headings appropriate to the evidence. Insert headings as standalone paragraphs with the text formatted as "## Heading Name" and an empty sourceRefs array.
-
-Output format: Return a JSON object with this exact structure:
-{
-  "paragraphs": [
-    {
-      "text": "The narrative paragraph text with factual assertions.",
-      "sourceRefs": [0, 3, 7]
-    }
-  ]
+  return { systemPrompt: "", userPrompt: `${inventory}\n\n${outline}` };
 }
 
-The sourceRefs array contains the index numbers from the evidence inventory. Every paragraph MUST have at least one sourceRef.`;
+// ─── T4. Deterministic Paragraph Generation ───
 
-  // Build lens overlay section (Option C — supplementary context, does not modify extraction)
-  let lensSection = "";
-  if (lensContext && lensContext.active_lenses.length > 0) {
-    const lensDescriptions = lensContext.active_lenses.map(l => {
-      const hooks = l.analysis_hooks.length > 0 ? ` (focus areas: ${l.analysis_hooks.join(", ")})` : "";
-      return `- **${l.label}** [${l.category}]${hooks}`;
-    }).join("\n");
+/**
+ * Generate paragraphs mechanically from grouped timeline data.
+ * Each DateGroup becomes one paragraph combining all items in that group.
+ * Undated items become a "Background" paragraph.
+ */
+function generateParagraphsFromGroups(
+  groups: DateGroup[],
+  items: TimelineItem[],
+): NarrativeParagraph[] {
+  const paragraphs: NarrativeParagraph[] = [];
 
-    const allHooks = Array.from(new Set(lensContext.active_lenses.flatMap(l => l.analysis_hooks)));
-    const hookGuidance = allHooks.length > 0
-      ? `\n\nWhen the evidence supports it, pay particular attention to: ${allHooks.join(", ")}. Do not force these perspectives — only apply them where the evidence naturally supports the observation.`
-      : "";
+  // If there are enough groups, add section headings
+  const useHeadings = groups.length >= 4;
 
-    lensSection = `\n\n## Active Analysis Lenses\nThe following analytical perspectives have been activated for this case based on its domain and evidence signals:\n${lensDescriptions}${hookGuidance}\n\nThese lenses provide supplementary framing. Continue to follow all rules above — especially: no speculation, no advocacy, every assertion must cite evidence.`;
+  for (const group of groups) {
+    const isUndated = group.sortKey === Infinity;
+
+    // Add heading paragraph for undated section
+    if (isUndated && useHeadings) {
+      paragraphs.push({ text: "## Background and Context", sourceRefs: [] });
+    } else if (useHeadings && paragraphs.length === 0) {
+      paragraphs.push({ text: "## Chronological Record", sourceRefs: [] });
+    }
+
+    // Build paragraph text from items in this group
+    const sentences: string[] = [];
+    const sourceRefs: number[] = [];
+
+    for (const item of group.items) {
+      const idx = items.indexOf(item);
+      if (idx >= 0) sourceRefs.push(idx);
+
+      // Build sentence for this item
+      const sourcePart = item.documentName
+        ? ` (Source: ${item.documentName}, ${item.type} #${idx})`
+        : ` (${item.type} #${idx})`;
+
+      sentences.push(`${item.label}.${sourcePart}`);
+    }
+
+    // Combine into paragraph
+    const prefix = isUndated
+      ? "The following background information was identified: "
+      : `During ${group.label}, the record indicates the following: `;
+
+    const text = prefix + sentences.join(" ");
+    paragraphs.push({ text, sourceRefs });
   }
 
-  const userPrompt = `Case: "${caseName}"
-${caseDescription ? `Description: ${caseDescription}` : ""}
-${domainContext}
-
-## Evidence Inventory (${items.length} items)
-${inventory}
-
-## Chronological Outline
-${outline}${lensSection}
-
-Generate a Statement of Facts narrative. Reference evidence items by their [index] numbers in sourceRefs.`;
-
-  return { systemPrompt, userPrompt };
+  return paragraphs;
 }
 
-// ─── T4-T5. Generation Pipeline ───
+// ─── T5. Source Map Construction ───
 
 /**
  * Parse the LLM response into paragraphs with source references.
- * Handles both well-formed JSON and fallback text extraction.
+ * Retained for backward compatibility.
  */
 export function parseLLMResponse(
   responseContent: string,
   itemCount: number,
 ): NarrativeParagraph[] {
   try {
-    // Try to extract JSON from the response
     const jsonMatch = responseContent.match(/\{[\s\S]*"paragraphs"[\s\S]*\}/);
     if (!jsonMatch) {
-      // Fallback: treat entire response as a single paragraph
       return [{
         text: responseContent.trim(),
         sourceRefs: [],
@@ -236,7 +226,6 @@ export function parseLLMResponse(
       }];
     }
 
-    // Validate and clean source refs
     return parsed.paragraphs.map((p: any) => ({
       text: typeof p.text === "string" ? p.text.trim() : String(p.text || "").trim(),
       sourceRefs: Array.isArray(p.sourceRefs)
@@ -244,7 +233,6 @@ export function parseLLMResponse(
         : [],
     })).filter((p: NarrativeParagraph) => p.text.length > 0);
   } catch {
-    // JSON parse failed — treat as plain text
     const paragraphs = responseContent.split(/\n\n+/).filter(p => p.trim().length > 0);
     return paragraphs.map(text => ({
       text: text.trim(),
@@ -286,9 +274,9 @@ export function buildSourceMap(
  *
  * 1. Load timeline data for the case
  * 2. Group by date range
- * 3. Build LLM prompt
- * 4. Call LLM (single call)
- * 5. Parse response and build source map
+ * 3. (skipped — no LLM prompt needed)
+ * 4. Generate paragraphs deterministically from grouped data
+ * 5. Build source map
  * 6. Persist to case_narratives
  */
 export async function generateNarrative(
@@ -319,97 +307,10 @@ export async function generateNarrative(
   // T2. Group by date range
   const groups = groupByDateRange(items);
 
-  // T2b. Build LensContext (Option C overlay — supplementary, not modifying extraction)
-  let lensContext: LensContext | null = null;
-  try {
-    const { activateLensesWithResolution, mapSignalFlags, getCachedRegistry } = await import("./lens-engine");
-    const { resolveCanonical } = await import("./pipeline-resolver");
-    const cached = getCachedRegistry();
-    if (cached) {
-      const fullCase = await getCaseInternal(caseId);
-      const flags = await listSignalFlags(caseId);
-      const flagTypes = flags.map((f: any) => f.flagType);
-      const evidenceSignals = mapSignalFlags(flagTypes);
-      lensContext = activateLensesWithResolution(
-        {
-          caseId,
-          primaryDomain: caseRow.pipelineType,
-          manualLensIds: (fullCase?.manualLensOverrides as string[] | null) || undefined,
-        },
-        evidenceSignals,
-        resolveCanonical,
-      );
-    }
-  } catch {
-    // Non-fatal: narrative generation works without lenses
-    lensContext = null;
-  }
+  // T4. Generate paragraphs deterministically
+  const paragraphs = generateParagraphsFromGroups(groups, items);
 
-  // T3. Build prompt
-  const { systemPrompt, userPrompt } = buildNarrativePrompt(
-    caseRow.name,
-    caseRow.description,
-    caseRow.pipelineType,
-    groups,
-    items,
-    lensContext,
-  );
-
-  // T4. Call LLM (single call)
-  let llmResponse: string;
-  try {
-    const result = await invokeLLMInteractive({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      responseFormat: {
-        type: "json_schema",
-        json_schema: {
-          name: "narrative_output",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              paragraphs: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    text: { type: "string", description: "Narrative paragraph text" },
-                    sourceRefs: {
-                      type: "array",
-                      items: { type: "integer" },
-                      description: "Indices into the evidence inventory",
-                    },
-                  },
-                  required: ["text", "sourceRefs"],
-                  additionalProperties: false,
-                },
-              },
-            },
-            required: ["paragraphs"],
-            additionalProperties: false,
-          },
-        },
-      },
-    });
-
-    const rawContent = result.choices?.[0]?.message?.content;
-    llmResponse = typeof rawContent === "string" ? rawContent : "";
-  } catch (err: any) {
-    return {
-      success: false,
-      error: `LLM generation failed: ${err.message || "Unknown error"}`,
-    };
-  }
-
-  if (!llmResponse) {
-    return { success: false, error: "LLM returned empty response." };
-  }
-
-  // T5. Parse response and build source map
-  const paragraphs = parseLLMResponse(llmResponse, items.length);
+  // T5. Build source map
   const sourceMap = buildSourceMap(paragraphs, items);
   const content = paragraphs.map(p => p.text).join("\n\n");
 
