@@ -1,0 +1,23 @@
+name: Lighthouse Prism bridge
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  prism-bridge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm run check
+      - run: pnpm exec vitest run server/routes/prism-verification-router.test.ts
+      - run: pnpm run build
