@@ -16,7 +16,7 @@ describe("deterministic Docket -> Rosetta extraction boundary", () => {
   it("normalizes official Washington HTML without semantic rewriting", () => {
     const source = "\uFEFF<html>\r\n<body><p>Sec. 1.&nbsp;There shall be a license &amp; review.</p>\n<p>\"Board\" means the agency.</p></body></html>";
     expect(normalize_wa_official_html(source)).toBe(
-      "\uFEFF Sec. 1. There shall be a license & review. \"Board\" means the agency. ",
+      "\uFEFFSec. 1. There shall be a license & review. \"Board\" means the agency.",
     );
   });
 
