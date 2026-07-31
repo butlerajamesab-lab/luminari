@@ -17,6 +17,7 @@ import { substrate_readiness_router } from "../routes/substrate_readiness_router
 import { docket_router } from "../routes/docket";
 import { prism_verification_router } from "../routes/prism-verification-router";
 import { invite_redemption_router } from "../routes/invite-redemption-router";
+import { registerUploadRoute } from "../upload-route";
 import { registerExecutorRoutes } from "../executor-routes";
 import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";
@@ -112,6 +113,8 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
+  // Start timing before any route-specific or body-parsing work so slow uploads,
+  // parse failures, and prematurely closed requests remain observable.
   registerSlowRequestDiagnostics(app);
   app.use((req, _res, next) => {
     run_with_database_request_context({
@@ -164,6 +167,7 @@ async function startServer() {
   app.use("/api/ingestion-control", ingestion_control_rest_router);
   app.use("/api/docket", docket_router);
   app.use("/api/prism", prism_verification_router);
+  registerUploadRoute(app);
   registerExecutorRoutes(app);
 
   if (process.env.NODE_ENV === "development") await setupVite(app, server);
