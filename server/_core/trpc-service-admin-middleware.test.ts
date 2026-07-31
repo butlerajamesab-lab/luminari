@@ -37,7 +37,8 @@ describe("service tRPC administrator boundary", () => {
         path: "/system.stats%2Cactivation.start,setup.backfillConfidenceScores",
       } as any)
     ).toEqual([
-      "system.stats,activation.start",
+      "system.stats",
+      "activation.start",
       "setup.backfillConfidenceScores",
     ]);
 
