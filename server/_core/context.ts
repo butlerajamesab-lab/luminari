@@ -204,9 +204,11 @@ function getSupabaseConfig(): { url: string; key: string } | null {
   return { url: url.replace(/\/$/, ""), key };
 }
 
-function isLighthouseInspectionMode(req?: CreateExpressContextOptions["req"]): boolean {
-  const headerFlag = req?.headers?.["x-lighthouse-inspection-mode"];
-  return process.env.LIGHTHOUSE_INSPECTION_MODE === "true" || process.env.VITE_LIGHTHOUSE_INSPECTION_MODE === "true" || headerFlag === "true" || headerFlag === "1";
+function isLighthouseInspectionMode(): boolean {
+  return (
+    process.env.NODE_ENV !== "production" &&
+    process.env.LIGHTHOUSE_INSPECTION_MODE === "true"
+  );
 }
 
 function createInspectionUser(): RuntimeUser {
@@ -344,7 +346,7 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
   let auth = createUnauthenticatedAuth();
   const phases: ContextLookupPhase[] = [];
   const started = Date.now();
-  const isInspectionMode = isLighthouseInspectionMode(opts.req);
+  const isInspectionMode = isLighthouseInspectionMode();
   if (isInspectionMode) {
     return { req: opts.req, res: opts.res, user: createInspectionUser(), auth: createInspectionAuth(), isSystem: false, isInspectionMode: true };
   }
@@ -371,4 +373,5 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
 export const __testing = {
   resolveProfileFromSupabaseAuthUser,
   sanitizeAuthLogDetails,
+  isLighthouseInspectionMode,
 };
