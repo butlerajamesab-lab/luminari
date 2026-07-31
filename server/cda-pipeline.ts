@@ -7,13 +7,12 @@
  * T4: Denial Reason Parsing
  * T5: Policy Clause Parsing
  * T6: Policy-to-Denial Linking
- * T7: Semantic Comparison (deterministic first-pass + LLM escape hatch)
+ * T7: Semantic Comparison (fully deterministic text-overlap analysis)
  * T8: Contradiction Detection
  * T9: Artifact Generation
  *
- * T7 Architecture: Option C (Hybrid)
- * - Deterministic first-pass resolves not_assessable, supported, partially_supported
- * - LLM invoked ONLY on rows that remain ambiguous after deterministic pass
+ * T7 Architecture: Fully Deterministic
+ * - All rows resolved via text-overlap scoring and pattern matching
  * - Write boundary: T7 may only write to S6 fields (matchType, mismatchType, evidence, supportingQuoteIds)
  * - T7 does NOT use normalized_reason_code (keyword taxonomy, can be wrong)
  * - T8 conflict does NOT forbid supported — it requires conflict_evidence + missing_evidence
@@ -40,8 +39,6 @@ import {
   HEADING_OVERLAP_MAP,
 } from "./cda-patterns";
 import type { CdaRunInput, CdaInputDocument } from "./cda-orchestrator";
-import { invokeLLMDeterministic } from "./_core/llm";
-import { createHash } from "crypto";
 
 // ═══════════════════════════════════════════════════════════════════════
 // Shared Utilities
@@ -1474,11 +1471,8 @@ export interface T7Transcript {
   rowId: string;
   reasonId: string | null;
   clauseId: string | null;
-  resolutionMethod: "deterministic" | "llm_assisted" | "fallback_ambiguous";
+  resolutionMethod: "deterministic";
   deterministicRule?: string;
-  llmPrompt?: string;
-  llmResponse?: string;
-  llmValidationResult?: "accepted" | "rejected_schema" | "rejected_quotes" | "rejected_new_facts";
   finalMatchType: string;
   finalMismatchType: string | null;
   timestamp: number;
@@ -1498,9 +1492,7 @@ type MismatchType = typeof VALID_MISMATCH_TYPES[number];
 
 export interface T7Result {
   transcripts: T7Transcript[];
-  llmInvokedCount: number;
   deterministicResolvedCount: number;
-  fallbackAmbiguousCount: number;
 }
 
 export async function executeT7(runId: string): Promise<T7Result> {
@@ -1510,20 +1502,12 @@ export async function executeT7(runId: string): Promise<T7Result> {
   const contradictions = await cdaDb.getContradictions(runId);
   const quotes = await cdaDb.getQuotes(runId);
 
-  // Derive deterministic hash from CDA run documents
-  const cdaDocs = await cdaDb.getDocuments(runId);
-  const cdaHash = createHash("sha256")
-    .update(`cda-t7:${runId}:${cdaDocs.map(d => d.hash).sort().join("|")}`)
-    .digest("hex");
-
   // Build lookup maps
   const reasonMap = new Map(reasons.map((r) => [r.id, r]));
   const clauseMap = new Map(clauses.map((c) => [c.id, c]));
 
   const transcripts: T7Transcript[] = [];
-  let llmInvokedCount = 0;
   let deterministicResolvedCount = 0;
-  let fallbackAmbiguousCount = 0;
 
   // Sort S6 rows deterministically: by reasonId ASC, then clauseId ASC (nulls last)
   const sortedRows = [...s6Rows].sort((a, b) => {
@@ -1705,7 +1689,7 @@ export async function executeT7(runId: string): Promise<T7Result> {
       }
     }
 
-    // ─── Ambiguous after deterministic pass → queue for LLM ───
+    // ─── Ambiguous after deterministic pass → resolve with text-overlap analysis ───
     // Heading overlap and defined_term_overlap with no verbatim match land here
 
     // Collect valid supporting quote IDs for this row
@@ -1713,165 +1697,91 @@ export async function executeT7(runId: string): Promise<T7Result> {
       (qid) => quotes.some((q) => q.id === qid)
     );
 
-    // Build LLM prompt envelope (no normalized_reason_code included)
-    const llmPrompt = buildT7LlmPrompt({
-      reasonText,
-      clauseText,
-      clauseType: clause?.clauseType ?? "unknown",
-      sectionHeading: clauseHeading,
-      definedTerms,
-      supportingQuoteSpans: validQuoteIds.map((qid) => {
-        const q = quotes.find((qq) => qq.id === qid);
-        return { quoteId: qid, text: q?.quoteText ?? "" };
-      }),
-      relevantConflicts: relevantConflicts.map((c) => ({
-        conflictType: c.conflictType,
-        explanation: c.explanation,
-      })),
+    // Deterministic text-overlap comparison
+    const reasonWords = toWords(reasonText);
+    const clauseWords = toWords(clauseText);
+
+    // Calculate keyword overlap (Jaccard-like on content words > 3 chars)
+    const significantReasonWords = reasonWords.filter(w => w.length > 3);
+    const significantClauseWords = clauseWords.filter(w => w.length > 3);
+    const significantReasonSet = new Set(significantReasonWords);
+    const significantClauseSet = new Set(significantClauseWords);
+    const intersection = significantReasonWords.filter(w => significantClauseSet.has(w));
+    const unionSize = new Set([...significantReasonWords, ...significantClauseWords]).size;
+    const overlap = unionSize > 0 ? intersection.length / unionSize : 0;
+
+    // Determine match_type from overlap score
+    let matchType: MatchType;
+    let mismatchType: MismatchType | null = null;
+    let deterministicRule: string;
+
+    if (overlap > 0.5) {
+      matchType = "supported";
+      deterministicRule = "rule_overlap_high";
+    } else if (overlap >= 0.3) {
+      matchType = "partially_supported";
+      mismatchType = "insufficient_reason_detail";
+      deterministicRule = "rule_overlap_medium";
+    } else if (overlap >= 0.1) {
+      matchType = "ambiguous";
+      mismatchType = "insufficient_reason_detail";
+      deterministicRule = "rule_overlap_low";
+    } else {
+      matchType = "unsupported";
+      // Check mismatch_type: does reason cite terms not in clause?
+      const reasonOnlyTerms = significantReasonWords.filter(w => !significantClauseSet.has(w));
+      if (reasonOnlyTerms.length > significantReasonWords.length * 0.7) {
+        mismatchType = "reason_cites_inapplicable_clause";
+      } else {
+        mismatchType = "reason_contradicts_clause";
+      }
+      deterministicRule = "rule_overlap_none";
+    }
+
+    // Check for unaddressed exceptions (can downgrade supported → partially_supported)
+    if (matchType === "supported" && hasUnaddressedExceptions(clauseText, reasonText)) {
+      matchType = "partially_supported";
+      mismatchType = "insufficient_reason_detail";
+      deterministicRule = "rule_overlap_high_with_exceptions";
+    }
+
+    // Rule 5: If T8 conflict exists, populate conflict_evidence
+    let conflictEvidence: string | null = null;
+    let missingEvidence: string | null = null;
+    if (relevantConflicts.length > 0) {
+      conflictEvidence = relevantConflicts
+        .map((c) => `[${c.conflictType}] ${c.explanation}`)
+        .join("; ");
+      missingEvidence = "Basis fact disputed; additional evidence required to resolve factual dispute.";
+    }
+
+    const transcriptId = `t7-det-${runId}-${row.id}-${Date.now()}`;
+    const transcript: T7Transcript = {
+      rowId: row.id,
+      reasonId: row.reasonId,
+      clauseId: row.clauseId,
+      resolutionMethod: "deterministic",
+      deterministicRule,
+      finalMatchType: matchType,
+      finalMismatchType: mismatchType,
+      timestamp: Date.now(),
+    };
+
+    await cdaDb.updateComparisonRow(row.id, {
+      matchType,
+      mismatchType,
+      missingEvidence,
+      conflictEvidence,
+      supportingQuoteIds: validQuoteIds,
+      resolutionMethod: "deterministic",
+      t7TranscriptId: transcriptId,
     });
 
-    try {
-      const llmResult = await invokeLLMDeterministic({
-        documentHash: cdaHash,
-        pass: "cda-t7",
-        messages: [
-          {
-            role: "system",
-            content: T7_SYSTEM_PROMPT,
-          },
-          {
-            role: "user",
-            content: llmPrompt,
-          },
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: T7_OUTPUT_SCHEMA,
-        },
-      });
-
-      const rawContent = typeof llmResult.choices[0]?.message?.content === "string"
-        ? llmResult.choices[0].message.content
-        : "";
-
-      // Validate LLM output
-      const validation = validateT7LlmOutput(rawContent, validQuoteIds);
-
-      if (validation.valid && validation.parsed) {
-        const parsed = validation.parsed;
-
-        // Rule 5: If T8 conflict exists, ensure conflict_evidence is populated
-        let conflictEvidence = parsed.conflict_evidence || null;
-        let missingEvidence = parsed.missing_evidence || null;
-        if (relevantConflicts.length > 0 && !conflictEvidence) {
-          conflictEvidence = relevantConflicts
-            .map((c) => `[${c.conflictType}] ${c.explanation}`)
-            .join("; ");
-        }
-        if (relevantConflicts.length > 0 && !missingEvidence) {
-          missingEvidence = "Basis fact disputed; additional evidence required to resolve factual dispute.";
-        }
-
-        const transcriptId = `t7-llm-${runId}-${row.id}-${Date.now()}`;
-        const transcript: T7Transcript = {
-          rowId: row.id,
-          reasonId: row.reasonId,
-          clauseId: row.clauseId,
-          resolutionMethod: "llm_assisted",
-          llmPrompt,
-          llmResponse: rawContent,
-          llmValidationResult: "accepted",
-          finalMatchType: parsed.match_type,
-          finalMismatchType: parsed.mismatch_type || null,
-          timestamp: Date.now(),
-        };
-
-        await cdaDb.updateComparisonRow(row.id, {
-          matchType: parsed.match_type,
-          mismatchType: parsed.mismatch_type || null,
-          requiredEvidence: parsed.required_evidence || null,
-          missingEvidence,
-          conflictEvidence,
-          supportingQuoteIds: parsed.supporting_quote_ids,
-          resolutionMethod: "llm_assisted",
-          t7TranscriptId: transcriptId,
-        });
-
-        transcripts.push(transcript);
-        llmInvokedCount++;
-      } else {
-        // Validation failed → fallback to ambiguous
-        const transcriptId = `t7-fallback-${runId}-${row.id}-${Date.now()}`;
-        const transcript: T7Transcript = {
-          rowId: row.id,
-          reasonId: row.reasonId,
-          clauseId: row.clauseId,
-          resolutionMethod: "fallback_ambiguous",
-          llmPrompt,
-          llmResponse: rawContent,
-          llmValidationResult: validation.rejectionReason as any,
-          finalMatchType: "ambiguous",
-          finalMismatchType: "insufficient_reason_detail",
-          timestamp: Date.now(),
-        };
-
-        let conflictEvidence: string | null = null;
-        if (relevantConflicts.length > 0) {
-          conflictEvidence = relevantConflicts
-            .map((c) => `[${c.conflictType}] ${c.explanation}`)
-            .join("; ");
-        }
-
-        await cdaDb.updateComparisonRow(row.id, {
-          matchType: "ambiguous",
-          mismatchType: "insufficient_reason_detail",
-          conflictEvidence,
-          missingEvidence: "LLM output validation failed; manual review required.",
-          resolutionMethod: "fallback_ambiguous",
-          t7TranscriptId: transcriptId,
-        });
-
-        transcripts.push(transcript);
-        fallbackAmbiguousCount++;
-      }
-    } catch (err) {
-      // LLM call failed entirely → fallback to ambiguous
-      const transcriptId = `t7-error-${runId}-${row.id}-${Date.now()}`;
-      const transcript: T7Transcript = {
-        rowId: row.id,
-        reasonId: row.reasonId,
-        clauseId: row.clauseId,
-        resolutionMethod: "fallback_ambiguous",
-        llmPrompt: llmPrompt,
-        llmResponse: String(err),
-        llmValidationResult: "rejected_schema",
-        finalMatchType: "ambiguous",
-        finalMismatchType: "insufficient_reason_detail",
-        timestamp: Date.now(),
-      };
-
-      let conflictEvidence: string | null = null;
-      if (relevantConflicts.length > 0) {
-        conflictEvidence = relevantConflicts
-          .map((c) => `[${c.conflictType}] ${c.explanation}`)
-          .join("; ");
-      }
-
-      await cdaDb.updateComparisonRow(row.id, {
-        matchType: "ambiguous",
-        mismatchType: "insufficient_reason_detail",
-        conflictEvidence,
-        missingEvidence: `LLM invocation failed: ${String(err)}. Manual review required.`,
-        resolutionMethod: "fallback_ambiguous",
-        t7TranscriptId: transcriptId,
-      });
-
-      transcripts.push(transcript);
-      fallbackAmbiguousCount++;
-    }
+    transcripts.push(transcript);
+    deterministicResolvedCount++;
   }
 
-  return { transcripts, llmInvokedCount, deterministicResolvedCount, fallbackAmbiguousCount };
+  return { transcripts, deterministicResolvedCount };
 }
 
 // ─── T7 Helpers ───
@@ -1906,164 +1816,13 @@ function hasUnaddressedExceptions(clauseText: string, reasonText: string): boole
   return false;
 }
 
-/** Build the LLM prompt for T7 comparison */
-function buildT7LlmPrompt(input: {
-  reasonText: string;
-  clauseText: string;
-  clauseType: string;
-  sectionHeading: string;
-  definedTerms: string[];
-  supportingQuoteSpans: Array<{ quoteId: string; text: string }>;
-  relevantConflicts: Array<{ conflictType: string; explanation: string }>;
-}): string {
-  let prompt = `You are analyzing a claim denial. Compare the denial reason against the policy clause and determine if the clause supports the insurer's stated denial reason.
 
-## Denial Reason (verbatim from insurer's letter)
-${input.reasonText}
 
-## Policy Clause (verbatim from policy document)
-Section: ${input.sectionHeading}
-Clause Type: ${input.clauseType}
-${input.clauseText}`;
 
-  if (input.definedTerms.length > 0) {
-    prompt += `\n\n## Defined Terms in This Clause\n${input.definedTerms.join(", ")}`;
-  }
 
-  if (input.supportingQuoteSpans.length > 0) {
-    prompt += `\n\n## Supporting Quotes (use these quote IDs in your response)\n`;
-    for (const q of input.supportingQuoteSpans) {
-      prompt += `- Quote ${q.quoteId}: "${q.text}"\n`;
-    }
-  }
 
-  if (input.relevantConflicts.length > 0) {
-    prompt += `\n\n## Known Factual Disputes\n`;
-    for (const c of input.relevantConflicts) {
-      prompt += `- [${c.conflictType}] ${c.explanation}\n`;
-    }
-  }
 
-  prompt += `\n\n## Instructions
-Determine whether the policy clause supports the insurer's denial reason.
-- "supported": The clause directly supports the denial as stated.
-- "partially_supported": The clause is relevant but has exceptions, conditions, or alternative paths not addressed.
-- "unsupported": The clause does not support the denial reason; the insurer's reasoning is inconsistent with the clause text.
-- "ambiguous": Insufficient information to determine support; the relationship is unclear.
 
-If the match is not "supported", provide a mismatch_type.
-If there are factual disputes, note them in conflict_evidence but do NOT let them override your clause-text analysis.
-You MUST cite supporting_quote_ids from the provided quotes. Do not invent new facts.
-
-Respond with JSON only.`;
-
-  return prompt;
-}
-
-/** T7 system prompt — constrains the LLM's behavior */
-const T7_SYSTEM_PROMPT = `You are a forensic insurance analyst. Your task is to compare a denial reason against a policy clause and assess whether the clause supports the insurer's stated basis for denial.
-
-Rules:
-1. You may ONLY assess the relationship between the denial reason text and the clause text provided.
-2. You must NOT introduce facts, legal interpretations, or policy provisions not present in the provided materials.
-3. You must cite supporting_quote_ids from the provided quotes. Every quote ID you cite must be from the provided list.
-4. If factual disputes exist, note them in conflict_evidence but still assess the clause-reason relationship on its own terms.
-5. When in doubt, return "ambiguous" — do not guess.
-6. Respond with valid JSON matching the required schema. No additional text.`;
-
-/** T7 output JSON schema for structured response */
-const T7_OUTPUT_SCHEMA = {
-  name: "t7_comparison_result",
-  strict: true,
-  schema: {
-    type: "object" as const,
-    properties: {
-      match_type: {
-        type: "string" as const,
-        enum: ["supported", "partially_supported", "unsupported", "ambiguous"],
-        description: "Assessment of whether the clause supports the denial reason",
-      },
-      mismatch_type: {
-        type: ["string", "null"] as any,
-        enum: [
-          "reason_contradicts_clause", "reason_misquotes_clause",
-          "reason_cites_inapplicable_clause", "clause_supports_coverage",
-          "insufficient_reason_detail", null,
-        ],
-        description: "Type of mismatch if match_type is not supported",
-      },
-      required_evidence: {
-        type: ["string", "null"] as any,
-        description: "Evidence that would be needed to fully resolve the comparison",
-      },
-      missing_evidence: {
-        type: ["string", "null"] as any,
-        description: "Evidence that is missing from the provided materials",
-      },
-      conflict_evidence: {
-        type: ["string", "null"] as any,
-        description: "Description of any factual disputes relevant to this comparison",
-      },
-      supporting_quote_ids: {
-        type: "array" as const,
-        items: { type: "string" as const },
-        description: "Quote IDs from the provided quotes that support this assessment",
-      },
-    },
-    required: ["match_type", "mismatch_type", "required_evidence", "missing_evidence", "conflict_evidence", "supporting_quote_ids"],
-    additionalProperties: false,
-  },
-};
-
-/** Validate LLM output against schema and constraints */
-function validateT7LlmOutput(
-  rawContent: string,
-  validQuoteIds: string[],
-): { valid: boolean; parsed?: any; rejectionReason?: string } {
-  // Parse JSON
-  let parsed: any;
-  try {
-    parsed = JSON.parse(rawContent);
-  } catch {
-    return { valid: false, rejectionReason: "rejected_schema" };
-  }
-
-  // Check required fields
-  if (!parsed || typeof parsed !== "object") {
-    return { valid: false, rejectionReason: "rejected_schema" };
-  }
-
-  // Validate match_type enum
-  const validMatchTypes = ["supported", "partially_supported", "unsupported", "ambiguous"];
-  if (!validMatchTypes.includes(parsed.match_type)) {
-    return { valid: false, rejectionReason: "rejected_schema" };
-  }
-
-  // Validate mismatch_type enum (null is allowed)
-  const validMismatchTypes = [
-    "reason_contradicts_clause", "reason_misquotes_clause",
-    "reason_cites_inapplicable_clause", "clause_supports_coverage",
-    "insufficient_reason_detail", null,
-  ];
-  if (parsed.mismatch_type !== undefined && !validMismatchTypes.includes(parsed.mismatch_type)) {
-    return { valid: false, rejectionReason: "rejected_schema" };
-  }
-
-  // Validate supporting_quote_ids is non-empty array
-  if (!Array.isArray(parsed.supporting_quote_ids) || parsed.supporting_quote_ids.length === 0) {
-    return { valid: false, rejectionReason: "rejected_quotes" };
-  }
-
-  // Validate all quote IDs are from the provided set
-  const invalidQuotes = parsed.supporting_quote_ids.filter(
-    (qid: string) => !validQuoteIds.includes(qid)
-  );
-  if (invalidQuotes.length > 0) {
-    return { valid: false, rejectionReason: "rejected_quotes" };
-  }
-
-  return { valid: true, parsed };
-}
 
 // ═══════════════════════════════════════════════════════════════════════
 // T8: Contradiction Detection
