@@ -1,5 +1,6 @@
 import { query_with_diagnostics } from "../db";
 import {
+  PRISM_RULE_SET_HASH,
   canonical_json,
   prism_receipt_schema,
   sha256_hex,
@@ -13,6 +14,7 @@ export const PRISM_BASE_URL =
   process.env.PRISM_BASE_URL ?? "https://prism-14wm.onrender.com";
 const PRISM_REQUEST_TIMEOUT_MS = 5_000;
 const PRISM_MAX_ATTEMPTS = 3;
+const PRISM_MAX_REQUEST_BYTES = 256 * 1024;
 
 export class PrismBoundaryError extends Error {
   constructor(
@@ -40,6 +42,42 @@ function classify_http_failure(status: number): PrismBoundaryError["failure_clas
   return "permanent_upstream";
 }
 
+function validate_receipt_integrity(
+  request: VerificationRequest,
+  receipt: PrismReceipt,
+): PrismReceipt {
+  const expected_input_hash = sha256_hex(canonical_json(request));
+  const semantic_output = {
+    prism_engine_version: receipt.prism_engine_version,
+    rule_set_id: receipt.rule_set_id,
+    rule_set_version: receipt.rule_set_version,
+    status: receipt.status,
+    supported_findings: receipt.supported_findings,
+    contradictions: receipt.contradictions,
+    missing_evidence: receipt.missing_evidence,
+    unresolved_conditions: receipt.unresolved_conditions,
+    cited_evidence_identifiers: receipt.cited_evidence_identifiers,
+  };
+  const expected_output_hash = sha256_hex(canonical_json(semantic_output));
+  const expected_replay_key = sha256_hex(
+    `${PRISM_RULE_SET_HASH}:${expected_input_hash}`,
+  );
+
+  if (
+    receipt.request_id !== request.request_id ||
+    receipt.input_hash !== expected_input_hash ||
+    receipt.output_hash !== expected_output_hash ||
+    receipt.deterministic_replay_key !== expected_replay_key
+  ) {
+    throw new PrismBoundaryError(
+      "validation",
+      502,
+      "prism_receipt_integrity_failure",
+    );
+  }
+  return receipt;
+}
+
 async function call_prism(
   request: VerificationRequest,
   options: { base_url?: string; timeout_ms?: number } = {},
@@ -51,6 +89,9 @@ async function call_prism(
 
   const path = "/api/v1/verification-requests";
   const body = canonical_json(request);
+  if (Buffer.byteLength(body, "utf8") > PRISM_MAX_REQUEST_BYTES) {
+    throw new PrismBoundaryError("validation", 413, "prism_request_too_large");
+  }
   const base_url = options.base_url ?? PRISM_BASE_URL;
   const timeout_ms = options.timeout_ms ?? PRISM_REQUEST_TIMEOUT_MS;
   let last_error: PrismBoundaryError | null = null;
@@ -79,8 +120,12 @@ async function call_prism(
       });
       const response_body = await response.json().catch(() => ({})) as Record<string, unknown>;
       if (response.ok) {
+        const receipt = validate_receipt_integrity(
+          request,
+          prism_receipt_schema.parse(response_body),
+        );
         return {
-          receipt: prism_receipt_schema.parse(response_body),
+          receipt,
           http_status: response.status,
           attempts: attempt,
         };
@@ -104,6 +149,8 @@ async function call_prism(
       } else if (error instanceof Error && error.name === "AbortError") {
         last_error = new PrismBoundaryError("timeout", 503, "prism_request_timed_out");
         if (attempt === PRISM_MAX_ATTEMPTS) throw last_error;
+      } else if (error instanceof Error && error.name === "ZodError") {
+        throw new PrismBoundaryError("validation", 502, "invalid_prism_receipt");
       } else {
         last_error = new PrismBoundaryError("network", 503, "prism_network_failure");
         if (attempt === PRISM_MAX_ATTEMPTS) throw last_error;
@@ -117,15 +164,24 @@ async function call_prism(
 
 async function record_request(request: VerificationRequest): Promise<string> {
   const input_hash = sha256_hex(canonical_json(request));
-  await query_with_diagnostics(
-    `insert into public.lighthouse_prism_verification_requests (
-       request_id, lighthouse_case_id, evidence_document_id,
-       evidence_fingerprint, source_content_hash, claim_assertion_id,
-       rule_set_id, rule_set_version, requested_checks,
-       originating_lighthouse_commit, originating_lighthouse_runtime_version,
-       input_hash, bridge_state
-     ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12,'pending')
-     on conflict (request_id) do nothing`,
+  const result = await query_with_diagnostics<{ input_hash: string }>(
+    `with inserted as (
+       insert into public.lighthouse_prism_verification_requests (
+         request_id, lighthouse_case_id, evidence_document_id,
+         evidence_fingerprint, source_content_hash, claim_assertion_id,
+         rule_set_id, rule_set_version, requested_checks,
+         originating_lighthouse_commit, originating_lighthouse_runtime_version,
+         input_hash, bridge_state
+       ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12,'pending')
+       on conflict (request_id) do nothing
+       returning input_hash
+     )
+     select input_hash from inserted
+     union all
+     select input_hash
+     from public.lighthouse_prism_verification_requests
+     where request_id = $1
+     limit 1`,
     [
       request.request_id,
       request.lighthouse_case_id,
@@ -142,6 +198,9 @@ async function record_request(request: VerificationRequest): Promise<string> {
     ],
     { label: "prism_record_request", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 5_000 },
   );
+  if (result.rows[0]?.input_hash !== input_hash) {
+    throw new PrismBoundaryError("request_id_conflict", 409, "request_id_conflict");
+  }
   return input_hash;
 }
 
@@ -201,6 +260,26 @@ async function mirror_receipt(receipt: PrismReceipt) {
     ],
     { label: "prism_mirror_receipt", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 5_000 },
   );
+  const mirror = await query_with_diagnostics<{
+    prism_verification_receipt_id: string;
+    input_hash: string;
+    output_hash: string;
+  }>(
+    `select prism_verification_receipt_id::text, input_hash, output_hash
+     from public.lighthouse_prism_verification_receipts
+     where request_id = $1`,
+    [receipt.request_id],
+    { label: "prism_verify_mirror", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 5_000 },
+  );
+  const mirrored = mirror.rows[0];
+  if (
+    !mirrored ||
+    mirrored.prism_verification_receipt_id !== receipt.verification_receipt_id ||
+    mirrored.input_hash !== receipt.input_hash ||
+    mirrored.output_hash !== receipt.output_hash
+  ) {
+    throw new PrismBoundaryError("validation", 502, "prism_receipt_mirror_conflict");
+  }
   await query_with_diagnostics(
     `update public.lighthouse_prism_verification_requests
      set bridge_state = 'completed', failure_class = null, updated_at = now()
