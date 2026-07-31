@@ -153,9 +153,11 @@ export default function SignalRegistry() {
         <div style={metric_card_style}>
           <Database size={18} color={palette.live} />
           <div>
-            <div style={metric_value_style}>{format_number(integrity.atlas_raw_observation_count)}</div>
-            <div style={metric_label_style}>Raw Atlas observations</div>
-            <div style={metric_note_style}>Evidence ledger—not Domain 3 signal cards</div>
+            <div style={metric_value_style}>{format_number(integrity.atlas_unique_observation_count)}</div>
+            <div style={metric_label_style}>Unique Atlas observations</div>
+            <div style={metric_note_style}>
+              {format_number(integrity.atlas_raw_observation_count)} historical rows; {format_number(integrity.atlas_replay_observation_count)} replay rows preserved
+            </div>
           </div>
         </div>
         <div style={metric_card_style}>
