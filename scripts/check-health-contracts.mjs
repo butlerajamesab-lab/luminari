@@ -34,4 +34,10 @@ if (context.includes('console.warn("[CONTEXT] auth_context_event", { event, ...d
 if (userCache.includes('cache_key: normalized')) fail('authentication cache keys must not be logged');
 if (!userCache.includes('lookup_key_kind')) fail('authentication cache diagnostics must retain only key classification');
 
-console.log('health diagnostic and authentication log privacy contracts passed');
+if (context.includes('x-lighthouse-inspection-mode')) fail('request headers must never activate an inspection administrator identity');
+if (context.includes('VITE_LIGHTHOUSE_INSPECTION_MODE')) fail('client-exposed environment variables must never activate inspection identity');
+if (context.includes('isLighthouseInspectionMode(opts.req)')) fail('request state must not participate in inspection identity activation');
+if (!context.includes('process.env.NODE_ENV !== "production"')) fail('inspection identity must fail closed in production');
+if (!context.includes('process.env.LIGHTHOUSE_INSPECTION_MODE === "true"')) fail('non-production inspection identity requires an explicit server-only flag');
+
+console.log('health diagnostic and authentication runtime security contracts passed');
