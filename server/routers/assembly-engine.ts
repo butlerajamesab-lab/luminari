@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
-import { invokeLLMInteractive } from "../_core/llm";
 import { db } from "../db";
 import { eq, and, desc } from "drizzle-orm";
 import {
@@ -81,36 +80,64 @@ export const assemblyEngineRouter = router({
 
       if (caseEntities.length === 0) return { parties_designated: 0, message: "No entities found." };
 
-      const entitySummary = caseEntities.slice(0, 30).map((e: any) =>
-        `${e.id}. ${e.name} (type: ${e.type}, desc: ${e.description?.slice(0, 80) ?? "none"})`
-      ).join("\n");
+      // Deterministic party designation — rule-based from entity type + description
+      const descContains = (desc: string | null | undefined, ...words: string[]) =>
+        words.some(w => (desc ?? "").toLowerCase().includes(w));
 
-      const response = await invokeLLMInteractive({
-        messages: [
-          {
-            role: "system",
-            content: `You are a legal document drafter. Given case entities, designate parties for a legal filing. Return JSON:
-{"parties":[{
-  "entityId": number,
-  "partyRole": "plaintiff|defendant|respondent|complainant|third_party|witness|agency",
-  "partyName": "formal name for filing",
-  "partyType": "individual|corporation|government_agency|organization",
-  "notes": "brief note on role"
-}]}
-Identify at least a plaintiff/complainant and defendant/respondent.`
-          },
-          { role: "user", content: `Entities:\n${entitySummary}` }
-        ],
-        response_format: { type: "json_object" },
+      const ENTITY_TYPE_TO_PARTY_TYPE: Record<string, string> = {
+        person: "individual",
+        organization: "organization",
+        corporation: "corporation",
+        government_agency: "government_agency",
+      };
+
+      const personEntities = caseEntities.filter((e: any) => e.type === "person");
+
+      const parties: any[] = caseEntities.slice(0, 30).map((e: any) => {
+        let partyRole: string;
+        const desc = e.description ?? "";
+
+        if (e.type === "person") {
+          if (descContains(desc, "plaintiff", "complainant", "victim")) {
+            partyRole = "plaintiff";
+          } else if (descContains(desc, "witness")) {
+            partyRole = "witness";
+          } else if (personEntities.length === 1) {
+            // Only one person — assume plaintiff
+            partyRole = "plaintiff";
+          } else {
+            partyRole = "third_party";
+          }
+        } else if (e.type === "organization" || e.type === "corporation") {
+          partyRole = "defendant";
+        } else if (e.type === "government_agency") {
+          partyRole = descContains(desc, "respondent") ? "respondent" : "agency";
+        } else {
+          partyRole = "third_party";
+        }
+
+        // If no plaintiff yet and this is the first person, make them plaintiff
+        return {
+          entityId: e.id,
+          partyRole,
+          partyName: e.name ?? "Unknown",
+          partyType: ENTITY_TYPE_TO_PARTY_TYPE[e.type] ?? "organization",
+          notes: null,
+        };
       });
 
-      const content = typeof response.choices[0]?.message?.content === "string"
-        ? response.choices[0].message.content : "";
-      let parties: any[];
-      try {
-        const parsed = JSON.parse(content);
-        parties = Array.isArray(parsed) ? parsed : (parsed.parties ?? []);
-      } catch { parties = []; }
+      // Ensure at least one plaintiff: if none assigned, first person becomes plaintiff
+      const hasPlaintiff = parties.some(p => p.partyRole === "plaintiff" || p.partyRole === "complainant");
+      if (!hasPlaintiff) {
+        const firstPerson = parties.find(p => p.partyType === "individual");
+        if (firstPerson) firstPerson.partyRole = "plaintiff";
+      }
+      // Ensure at least one defendant: if none, first org becomes defendant
+      const hasDefendant = parties.some(p => p.partyRole === "defendant" || p.partyRole === "respondent");
+      if (!hasDefendant) {
+        const firstOrg = parties.find(p => p.partyType === "organization" || p.partyType === "corporation");
+        if (firstOrg) firstOrg.partyRole = "defendant";
+      }
 
       let designated = 0;
       for (const p of parties) {
@@ -140,38 +167,25 @@ Identify at least a plaintiff/complainant and defendant/respondent.`
 
       if (caseDocs.length === 0) return { exhibits_created: 0, message: "No documents found." };
 
-      const docSummary = caseDocs.slice(0, 30).map((d: any) =>
-        `${d.id}. ${d.filename} (type: ${d.documentType ?? "unknown"})`
-      ).join("\n");
+      // Deterministic exhibit index — assign alphabetically by document ID
+      const sortedDocs = [...caseDocs].sort((a: any, b: any) => a.id - b.id);
 
-      const response = await invokeLLMInteractive({
-        messages: [
-          {
-            role: "system",
-            content: `You are a legal document organizer. Create an exhibit index for a legal filing. Return JSON:
-{"exhibits":[{
-  "exhibitLabel": "A|B|C|1|2|3 etc.",
-  "exhibitTitle": "descriptive title",
-  "documentId": number,
-  "quoteIds": [relevant quote IDs],
-  "description": "brief description of exhibit",
-  "relevantClaims": ["claim types this supports"],
-  "orderIndex": number
-}]}
-Label exhibits sequentially. Include only relevant documents.`
-          },
-          { role: "user", content: `Documents:\n${docSummary}\n\nQuotes available: ${caseQuotes.length}` }
-        ],
-        response_format: { type: "json_object" },
+      const exhibits: any[] = sortedDocs.slice(0, 26).map((doc: any, idx: number) => {
+        const label = String.fromCharCode(65 + idx); // A, B, C...
+        // Collect all quotes from this document
+        const docQuoteIds = caseQuotes
+          .filter((q: any) => q.documentId === doc.id || q.document_id === doc.id)
+          .map((q: any) => q.id);
+        return {
+          exhibitLabel: label,
+          exhibitTitle: doc.filename ?? `Document ${doc.id}`,
+          documentId: doc.id,
+          quoteIds: docQuoteIds,
+          description: doc.documentType ?? "Supporting document",
+          relevantClaims: [], // requires analysis — leave empty
+          orderIndex: idx,
+        };
       });
-
-      const content = typeof response.choices[0]?.message?.content === "string"
-        ? response.choices[0].message.content : "";
-      let exhibits: any[];
-      try {
-        const parsed = JSON.parse(content);
-        exhibits = Array.isArray(parsed) ? parsed : (parsed.exhibits ?? []);
-      } catch { exhibits = []; }
 
       let created = 0;
       for (const ex of exhibits) {
@@ -214,42 +228,71 @@ Label exhibits sequentially. Include only relevant documents.`
 
       if (facts.length === 0) return { blocks_created: 0, message: "No facts found. Run Strategy Engine first." };
 
-      const factText = facts.slice(0, 40).map((f: any) =>
-        `[${f.id}] (${f.factType}) ${f.factText} — Actor: ${f.actor ?? "?"}, Date: ${f.dateOccurred ?? "?"}`
-      ).join("\n");
+      // Deterministic fact narrative — mechanical assembly grouped by factType
+      const FACT_TYPE_TO_BLOCK_TYPE: Record<string, string> = {
+        temporal: "background",
+        action: "incident",
+        procedural: "procedural",
+        event: "incident",
+        statement: "background",
+        condition: "background",
+        relationship: "background",
+        financial: "incident",
+      };
 
-      const exhibitRef = exhibits.map((e: any) => `Exhibit ${e.exhibitLabel}: ${e.exhibitTitle}`).join(", ");
+      // Build a map from sourceQuoteId/sourceDocumentId to exhibit label
+      const exhibitByDocId = new Map<number, string>();
+      for (const ex of exhibits) {
+        if (ex.documentId) exhibitByDocId.set(ex.documentId, ex.exhibitLabel);
+      }
 
-      const response = await invokeLLMInteractive({
-        messages: [
-          {
-            role: "system",
-            content: `You are a legal narrative writer. Create fact narrative blocks for a legal filing's statement of facts. Return JSON:
-{"blocks":[{
-  "blockType": "background|incident|aftermath|pattern|procedural",
-  "orderIndex": number,
-  "narrativeText": "formal legal narrative paragraph",
-  "factMatrixIds": [IDs of facts used],
-  "exhibitRefs": ["Exhibit A", "Exhibit B"],
-  "timelinePosition": "YYYY-MM or descriptive"
-}]}
-Write in formal legal style. Reference exhibits where applicable. Maintain chronological order.`
-          },
-          {
-            role: "user",
-            content: `Facts:\n${factText}\n\nAvailable Exhibits: ${exhibitRef}`
+      // Group facts by factType
+      const groupedFacts = new Map<string, typeof facts>();
+      for (const f of facts) {
+        const ft = f.factType ?? "statement";
+        if (!groupedFacts.has(ft)) groupedFacts.set(ft, []);
+        groupedFacts.get(ft)!.push(f);
+      }
+
+      const blocks: any[] = [];
+      let blockIdx = 0;
+      for (const [factType, groupFacts] of groupedFacts) {
+        const blockType = FACT_TYPE_TO_BLOCK_TYPE[factType] ?? "background";
+        const factMatrixIds = groupFacts.map((f: any) => f.id).filter(Boolean);
+
+        // Collect exhibit refs for this group
+        const exhibitRefs: string[] = [];
+        for (const f of groupFacts) {
+          const docId = f.sourceDocumentId ?? f.sourceQuoteId;
+          if (docId && exhibitByDocId.has(docId)) {
+            const label = `Exhibit ${exhibitByDocId.get(docId)}`;
+            if (!exhibitRefs.includes(label)) exhibitRefs.push(label);
           }
-        ],
-        response_format: { type: "json_object" },
-      });
+        }
 
-      const content = typeof response.choices[0]?.message?.content === "string"
-        ? response.choices[0].message.content : "";
-      let blocks: any[];
-      try {
-        const parsed = JSON.parse(content);
-        blocks = Array.isArray(parsed) ? parsed : (parsed.blocks ?? []);
-      } catch { blocks = []; }
+        // Build narrative text by assembling fact sentences
+        const sentences = groupFacts.map((f: any) => {
+          const date = f.dateOccurred ? `On ${f.dateOccurred}, ` : "";
+          const actor = f.actor ? `${f.actor} ` : "";
+          const ref = exhibitRefs.length > 0 ? ` (See ${exhibitRefs.join(", ")}.)` : "";
+          return `${date}${actor}${f.factText}${ref}`;
+        });
+        const narrativeText = sentences.join(" ");
+
+        // Timeline position: use first date found in the group
+        const firstDateFact = groupFacts.find((f: any) => f.dateOccurred);
+        const timelinePosition = firstDateFact?.dateOccurred ?? null;
+
+        blocks.push({
+          blockType,
+          orderIndex: blockIdx,
+          narrativeText,
+          factMatrixIds,
+          exhibitRefs,
+          timelinePosition,
+        });
+        blockIdx++;
+      }
 
       let created = 0;
       for (const block of blocks) {
@@ -284,34 +327,39 @@ Write in formal legal style. Reference exhibits where applicable. Maintain chron
 
       if (candidates.length === 0) return { arguments_created: 0, message: "No claim candidates found." };
 
+      // Fetch claim catalog for legal standards
+      const { strategyClaimCatalog } = await import("../../drizzle/schema");
+      const catalog = await db.select().from(strategyClaimCatalog);
+
+      // Fetch exhibits for this packet for exhibit refs
+      const packetExhibits = await db.select().from(assemblyExhibitIndex)
+        .where(and(
+          eq(assemblyExhibitIndex.caseId, input.caseId),
+          eq(assemblyExhibitIndex.packetId, input.packetId),
+        ));
+      const exhibitLabels = packetExhibits.map((e: any) => `Exhibit ${e.exhibitLabel}`).join(", ") || "none";
+
       let argumentsCreated = 0;
       for (const cand of candidates) {
-        const response = await invokeLLMInteractive({
-          messages: [
-            {
-              role: "system",
-              content: `You are a legal argument drafter. Draft a legal argument block for this claim. Return JSON:
-{
-  "argumentHeading": "formal heading for this argument section",
-  "argumentText": "formal legal argument paragraph(s)",
-  "supportingCitations": ["case law or statute citations"],
-  "supportingFacts": ["fact references"],
-  "elementsCovered": ["legal elements addressed"],
-  "counterarguments": ["anticipated opposing arguments with rebuttals"]
-}`
-            },
-            {
-              role: "user",
-              content: `Claim: ${cand.claimType}\nElements Satisfied: ${JSON.stringify(cand.elementsSatisfied)}\nElements Missing: ${JSON.stringify(cand.elementsMissing)}\nSOL Status: ${cand.solStatus}`
-            }
-          ],
-          response_format: { type: "json_object" },
-        });
+        // Deterministic legal argument — template-based
+        const catalogEntry = catalog.find((c: any) =>
+          c.claimType?.toLowerCase() === cand.claimType?.toLowerCase()
+        );
+        const legalStandard = (catalogEntry as any)?.legalStandard ?? (catalogEntry as any)?.description ?? "applicable law";
+        const viabilityScore = parseFloat(String(cand.viabilityScore ?? 0.5));
+        const strength = viabilityScore >= 0.7 ? "strong" : viabilityScore >= 0.4 ? "moderate" : "weak";
 
-        const content = typeof response.choices[0]?.message?.content === "string"
-          ? response.choices[0].message.content : "";
-        let arg: any;
-        try { arg = JSON.parse(content); } catch { arg = {}; }
+        const elementsSatisfied = (cand.elementsSatisfied as string[]) ?? [];
+        const elementsMissing = (cand.elementsMissing as string[]) ?? [];
+
+        const arg = {
+          argumentHeading: `Argument: ${cand.claimType}`,
+          argumentText: `${cand.claimType}: Based on the facts established above, the respondent violated ${legalStandard}. Supporting evidence includes ${exhibitLabels}.`,
+          supportingCitations: [],
+          supportingFacts: elementsSatisfied,
+          elementsCovered: elementsSatisfied,
+          counterarguments: [],
+        };
 
         await db.insert(assemblyLegalArgumentBlocks).values({
           caseId: input.caseId,
@@ -382,33 +430,31 @@ Write in formal legal style. Reference exhibits where applicable. Maintain chron
           eq(strategyClaimCandidates.matterProfileId, input.matterProfileId),
         ));
 
-      const claimSummary = candidates.map((c: any) => `${c.claimType} (viability: ${c.viabilityScore})`).join(", ");
+      // Deterministic relief requests — standard templates by domain
+      const [profile] = await db.select().from(strategyMatterProfile)
+        .where(eq(strategyMatterProfile.caseId, input.caseId));
+      const domain = (profile?.domain ?? "general").toLowerCase();
 
-      const response = await invokeLLMInteractive({
-        messages: [
-          {
-            role: "system",
-            content: `You are a legal relief drafter. Generate appropriate relief requests for these claims. Return JSON:
-{"reliefs":[{
-  "reliefType": "compensatory_damages|punitive_damages|injunctive_relief|declaratory_relief|reinstatement|back_pay|front_pay|attorneys_fees|costs|equitable_relief",
-  "reliefDescription": "formal description of relief sought",
-  "legalBasis": "statutory or case law basis",
-  "estimatedValue": "dollar range or N/A",
-  "claimTypes": ["which claims support this relief"]
-}]}`
-          },
-          { role: "user", content: `Claims: ${claimSummary}` }
-        ],
-        response_format: { type: "json_object" },
-      });
+      const DOMAIN_RELIEF: Record<string, string> = {
+        employment: "Reinstatement, back pay, compensatory damages, attorney's fees",
+        employment_discrimination: "Reinstatement, back pay, compensatory damages, attorney's fees",
+        wage_theft: "Back pay, liquidated damages, attorney's fees, costs",
+        retaliation: "Reinstatement, back pay, compensatory damages, attorney's fees",
+        harassment: "Compensatory damages, injunctive relief, attorney's fees",
+        wrongful_termination: "Reinstatement, back pay, compensatory damages, attorney's fees",
+        housing: "Injunctive relief, damages, relocation costs",
+        consumer: "Actual damages, statutory damages, attorney's fees",
+      };
+      const reliefText = DOMAIN_RELIEF[domain] ?? "Compensatory damages, injunctive relief, attorney's fees, costs";
 
-      const content = typeof response.choices[0]?.message?.content === "string"
-        ? response.choices[0].message.content : "";
-      let reliefs: any[];
-      try {
-        const parsed = JSON.parse(content);
-        reliefs = Array.isArray(parsed) ? parsed : (parsed.reliefs ?? []);
-      } catch { reliefs = []; }
+      // One relief request per candidate
+      const reliefs: any[] = candidates.map((cand: any) => ({
+        reliefType: "compensatory_damages",
+        reliefDescription: reliefText,
+        legalBasis: null,
+        estimatedValue: null,
+        claimTypes: [cand.claimType],
+      }));
 
       let created = 0;
       for (const r of reliefs) {
