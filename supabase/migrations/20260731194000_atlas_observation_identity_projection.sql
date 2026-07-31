@@ -1,6 +1,7 @@
 -- Lighthouse projection of Atlas canonical observation identity.
 -- Historical mirrored rows remain preserved; current counts deduplicate the
 -- stable event content while excluding transport-only provenance timestamps.
+-- Existing view columns retain their original order; new identity counts append.
 
 create extension if not exists pgcrypto with schema extensions;
 
@@ -72,11 +73,6 @@ with atlas_counts as (
 )
 select
   atlas_counts.raw_observation_count as atlas_raw_observation_count,
-  atlas_counts.unique_observation_count as atlas_unique_observation_count,
-  greatest(
-    atlas_counts.raw_observation_count - atlas_counts.unique_observation_count,
-    0
-  )::bigint as atlas_replay_observation_count,
   (select count(*) from public.detected_signals)::bigint as legacy_detected_signals_count,
   (select count(*) from public.live_signals)::bigint as legacy_live_signals_count,
   (select count(*) from public.detected_signals_v2)::bigint as prior_v2_signal_count,
@@ -86,7 +82,12 @@ select
   (select count(*) from public.signal_convergences where is_current)::bigint as convergence_count,
   atlas_counts.latest_observation_at as latest_atlas_observation_at,
   'legacy_detected_signals_are_unclassified_evidence'::text as legacy_status,
-  'raw_atlas_observations_are_not_live_data_signals'::text as atlas_status
+  'raw_atlas_observations_are_not_live_data_signals'::text as atlas_status,
+  atlas_counts.unique_observation_count as atlas_unique_observation_count,
+  greatest(
+    atlas_counts.raw_observation_count - atlas_counts.unique_observation_count,
+    0
+  )::bigint as atlas_replay_observation_count
 from atlas_counts;
 
 revoke all on table public.v_signal_architecture_integrity
