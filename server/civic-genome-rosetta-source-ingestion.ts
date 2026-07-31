@@ -5,7 +5,6 @@ import { resolve_or_assemble_docket_bill } from "./civic-genome-single-bill-asse
 
 const ROSETTA_CORPUS_NAME = "Lighthouse Docket";
 const ROSETTA_CORPUS_TYPE = "legislative";
-const reusable_run_statuses = new Set(["in_progress", "pending", "queued"]);
 
 export type rosetta_source_ingestion_result = {
   source_bill_id: number;
@@ -131,7 +130,12 @@ async function ensure_source_document(
   return { id: Number(created[0].id), status: "created" };
 }
 
-async function ensure_pending_extraction_run(
+/**
+ * Return the latest Rosetta run when one already exists. The deterministic
+ * extractor owns replay identity and decides whether a new run is necessary;
+ * the Docket handoff must not manufacture a blank run after a completed one.
+ */
+async function ensure_extraction_run(
   source_document_id: number,
 ): Promise<{ id: number; status: "existing" | "created"; run_status: string }> {
   const query = new URLSearchParams({
@@ -142,19 +146,13 @@ async function ensure_pending_extraction_run(
   });
   const existing = await rosetta_request(`extraction_run?${query.toString()}`, { method: "GET" });
   const latest = existing[0];
-  const latest_status = String(latest?.run_status ?? "").toLowerCase();
 
-  if (latest?.id !== undefined && reusable_run_statuses.has(latest_status)) {
+  if (latest?.id !== undefined) {
     return {
       id: Number(latest.id),
       status: "existing",
-      run_status: latest_status,
+      run_status: String(latest.run_status ?? "unknown").toLowerCase(),
     };
-  }
-
-  const latest_version = Number(latest?.run_version ?? 0);
-  if (!Number.isInteger(latest_version) || latest_version < 0) {
-    throw new Error("invalid_rosetta_extraction_run_version");
   }
 
   const created = await rosetta_request("extraction_run", {
@@ -162,7 +160,7 @@ async function ensure_pending_extraction_run(
     headers: { prefer: "return=representation" },
     body: JSON.stringify({
       source_document_id,
-      run_version: latest_version + 1,
+      run_version: 1,
       run_status: "in_progress",
     }),
   });
@@ -177,8 +175,8 @@ async function ensure_pending_extraction_run(
 /**
  * Creates the authoritative cross-platform source identity for one cached Docket
  * bill. It does not fabricate Rosetta layer objects and does not mark extraction
- * completed. The returned in-progress run is the bounded handoff to Rosetta's
- * deterministic extractor.
+ * completed. The returned run is the bounded handoff to Rosetta's deterministic
+ * extractor; completed runs remain reusable rather than spawning blank successors.
  */
 export async function ingest_docket_bill_to_rosetta_source(
   source_bill_id: number,
@@ -189,7 +187,7 @@ export async function ingest_docket_bill_to_rosetta_source(
   const bill = await load_genome_bill(source_bill_id);
   const corpus_id = await ensure_rosetta_corpus();
   const source_document = await ensure_source_document(corpus_id, source_bill_id, bill);
-  const extraction_run = await ensure_pending_extraction_run(source_document.id);
+  const extraction_run = await ensure_extraction_run(source_document.id);
   const source_hash = stable_hash({
     source_bill_id,
     genome_bill_id: bill.genome_bill_id,
