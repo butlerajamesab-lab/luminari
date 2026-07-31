@@ -135,7 +135,7 @@ Identify at least a plaintiff/complainant and defendant/respondent.`
     .input(z.object({ caseId: z.number(), packetId: z.number() }))
     .mutation(async ({ input }) => {
       const now = Date.now();
-      const caseDocs = await db.select().from(documents).where(eq(documents.caseId, String(input.caseId)));
+      const caseDocs = await db.select().from(documents).where(eq(documents.caseId, input.caseId));
       const caseQuotes = await db.select().from(quotes).where(eq(quotes.caseId, String(input.caseId)));
 
       if (caseDocs.length === 0) return { exhibits_created: 0, message: "No documents found." };

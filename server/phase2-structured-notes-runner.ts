@@ -44,7 +44,7 @@ async function loadSnapshotData(snapshotId: number): Promise<SnapshotData> {
     snapshotClaims, snapshotEvents, snapshotSignalFlags] = await Promise.all([
     db.select({
       id: documents.id,
-      fileName: documents.fileName,
+      fileName: documents.filename,
       textContent: documents.textContent,
       documentType: documents.documentType,
     }).from(documents).where(eq(documents.snapshotId, snapshotId as any)),

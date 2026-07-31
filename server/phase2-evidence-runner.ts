@@ -36,7 +36,7 @@ async function getSnapshotDocumentsWithText(snapshotId: number) {
   return db.select({
     id: documents.id,
     caseId: documents.caseId,
-    fileName: documents.fileName,
+    fileName: documents.filename,
     textContent: documents.textContent,
     documentType: documents.documentType,
     snapshotId: documents.snapshotId,

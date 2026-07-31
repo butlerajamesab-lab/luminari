@@ -268,7 +268,7 @@ const purgeEntities = adminProcedure
 
     // Purge guardrail: doc_count must be 0
     const [docCount] = await db.select({ c: sql<number>`COUNT(*)` })
-      .from(documents).where(eq(documents.caseId, String(caseId)));
+      .from(documents).where(eq(documents.caseId, caseId));
     if (docCount.c > 0) {
       throw new Error(`Cannot purge: case has ${docCount.c} documents. Purge is only allowed on cases with 0 documents.`);
     }
