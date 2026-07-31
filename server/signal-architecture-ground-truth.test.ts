@@ -10,6 +10,9 @@ describe("canonical three-domain signal architecture", () => {
   const migration = read_repo_file(
     "../supabase/migrations/20260731190500_signal_architecture_ground_truth.sql",
   );
+  const identity_projection = read_repo_file(
+    "../supabase/migrations/20260731194000_atlas_observation_identity_projection.sql",
+  );
   const router = read_repo_file("./routers/enforcement-intel.ts");
   const page = read_repo_file("../client/src/pages/SignalRegistry.tsx");
 
@@ -66,6 +69,16 @@ describe("canonical three-domain signal architecture", () => {
     expect(migration).not.toMatch(/drop\s+(table|view)\s+.*detected_signals/i);
   });
 
+  it("separates unique Atlas identities from historical replay volume", () => {
+    expect(identity_projection).toContain("atlas_unique_observation_count");
+    expect(identity_projection).toContain("atlas_replay_observation_count");
+    expect(identity_projection).toContain(
+      "count(distinct public.lighthouse_atlas_event_identity_hash_v1",
+    );
+    expect(router).toContain("atlas_unique_observation_count");
+    expect(router).toContain("atlas_replay_observation_count");
+  });
+
   it("protects intake detail on the cross-system runtime surface", () => {
     expect(router).toContain("get_signal_architecture: protectedProcedure");
     expect(router).toContain('const is_intake = row.domain_code === "case_intake"');
@@ -76,8 +89,9 @@ describe("canonical three-domain signal architecture", () => {
   it("renders the canonical architecture instead of the mixed legacy registry", () => {
     expect(page).toContain("get_signal_architecture.useQuery");
     expect(page).toContain("Three independent source domains");
-    expect(page).toContain("Raw Atlas observations");
-    expect(page).toContain("Evidence ledger—not Domain 3 signal cards");
+    expect(page).toContain("Unique Atlas observations");
+    expect(page).toContain("historical rows");
+    expect(page).toContain("replay rows preserved");
     expect(page).toContain("Legacy mixed rows quarantined");
   });
 });
