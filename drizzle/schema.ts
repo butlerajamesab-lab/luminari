@@ -3292,14 +3292,14 @@ export type EntityMergeSuggestion = typeof entityMergeSuggestions.$inferSelect;
 
 export const auditTrail = pgTable("audit_trail", {
   id: serial("id").primaryKey(),
-  caseId: integer("caseId"),
-  userId: integer("userId"),
-  action: varchar("action", { length: 128 }).notNull(), // upload, extract, analyze, export, view, edit, delete
-  targetType: varchar("targetType", { length: 64 }), // document, entity, finding, presentation, export
-  targetId: integer("targetId"),
-  details: jsonb("details"),
-  hash: varchar("hash", { length: 64 }).notNull(), // SHA-256 of this entry + previous hash
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  caseId: integer("case_id"),
+  userId: integer("user_id"),
+  action: text("action").notNull(), // upload, extract, analyze, export, view, edit, delete
+  targetType: text("target_type"), // document, entity, finding, presentation, export
+  targetId: integer("target_id"),
+  details: json_text("details").$type<Record<string, unknown>>(),
+  hash: text("hash").notNull(), // SHA-256 of this entry + previous hash
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
 }, (table) => [
   index("idx_audit_case").on(table.caseId),
   index("idx_audit_action").on(table.action),
@@ -3493,11 +3493,11 @@ export type UserFeedback = typeof userFeedback.$inferSelect;
 
 export const pipelineEvents = pgTable("pipeline_events", {
   id: serial("id").primaryKey(),
-  userId: integer("userId").notNull(),
-  pipelineType: varchar("pipelineType", { length: 64 }).notNull(),
-  eventType: pgEnum("pipeline_events_event_type_enum", ["intake_start", "intake_complete", "direct_create", "document_uploaded", "extraction_complete", "analysis_started", "analysis_complete", "findings_generated", "export_created", "case_completed", "guided_intake_complete", "guided_to_conversation"])("eventType").default("direct_create").notNull(),
-  stateCode: varchar("stateCode", { length: 2 }), // geographic scope for map clustering
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+  userId: integer("user_id").notNull(),
+  pipelineType: text("pipeline_type").notNull(),
+  eventType: text("event_type").$type<"intake_start" | "intake_complete" | "direct_create" | "document_uploaded" | "extraction_complete" | "analysis_started" | "analysis_complete" | "findings_generated" | "export_created" | "case_completed" | "guided_intake_complete" | "guided_to_conversation">().default("direct_create").notNull(),
+  stateCode: text("state_code"), // geographic scope for map clustering
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
 }, (table) => [
   index("idx_pe_pipeline").on(table.pipelineType),
   index("idx_pe_event").on(table.eventType),

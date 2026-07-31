@@ -16,6 +16,7 @@ import { ingestion_control_rest_router } from "../routes/ingestion_control_route
 import { substrate_readiness_router } from "../routes/substrate_readiness_router";
 import { docket_router } from "../routes/docket";
 import { invite_redemption_router } from "../routes/invite-redemption-router";
+import { registerUploadRoute } from "../upload-route";
 import { registerExecutorRoutes } from "../executor-routes";
 import { loadPipelineRegistry } from "../pipeline-resolver";
 import { loadLensRegistry } from "../lens-engine";
@@ -164,6 +165,7 @@ async function startServer() {
   app.use("/api/ingestion-control", substrate_readiness_router);
   app.use("/api/ingestion-control", ingestion_control_rest_router);
   app.use("/api/docket", docket_router);
+  registerUploadRoute(app);
   registerExecutorRoutes(app);
 
   if (process.env.NODE_ENV === "development") await setupVite(app, server);
