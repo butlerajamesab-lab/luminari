@@ -407,7 +407,7 @@ export async function createCorpusSnapshot(data: {
     .where(eq(corpusSnapshots.caseId, data.caseId));
   const nextVersion = (latest?.maxVersion ?? -1) + 1;
   const now = Date.now();
-  const [result] = await db.insert(corpusSnapshots).values({
+  const [inserted] = await db.insert(corpusSnapshots).values({
     caseId: data.caseId,
     version: nextVersion,
     engineVersion: data.engineVersion,
@@ -415,8 +415,11 @@ export async function createCorpusSnapshot(data: {
     documentHashes: data.documentHashes,
     createdAt: now,
     status: 'open',
-  });
-  return { id: result.insertId, version: nextVersion };
+  }).returning({ id: corpusSnapshots.id });
+  if (!inserted) {
+    throw new Error("Corpus snapshot insert did not return an id");
+  }
+  return { id: inserted.id, version: nextVersion };
 }
 
 /**
@@ -756,8 +759,17 @@ export async function createDocument(doc: {
   sha256Hash: string;
   snapshotId: number;
 }) {
-  const [result] = await db.insert(documents).values({ ...doc, createdAt: Date.now() });
-  return result.insertId;
+  const [inserted] = await db.insert(documents).values({
+    ...doc,
+    status: "uploaded",
+    retryCount: 0,
+    documentResolution: "active",
+    createdAt: Date.now(),
+  }).returning({ id: documents.id });
+  if (!inserted) {
+    throw new Error("Document insert did not return an id");
+  }
+  return inserted.id;
 }
 
 export async function listDocuments(caseId: number) {
@@ -1915,7 +1927,7 @@ export async function createUploadSession(data: {
   totalFiles: number;
 }): Promise<number> {
   const now = Date.now();
-  const [result] = await db.insert(uploadSessions).values({
+  const [inserted] = await db.insert(uploadSessions).values({
     caseId: data.caseId,
     userId: data.userId,
     totalFiles: data.totalFiles,
@@ -1925,8 +1937,11 @@ export async function createUploadSession(data: {
     status: "uploading",
     createdAt: now,
     updatedAt: now,
-  }).$returningId();
-  return result.id;
+  }).returning({ id: uploadSessions.id });
+  if (!inserted) {
+    throw new Error("Upload session insert did not return an id");
+  }
+  return inserted.id;
 }
 
 export async function getUploadSession(sessionId: number): Promise<UploadSession | null> {
@@ -2020,7 +2035,7 @@ export async function expireStaleUploadSessions(
       lt(uploadSessions.updatedAt, cutoff),
     ),
   );
-  const expiredCount = (result as any)[0]?.affectedRows ?? 0;
+  const expiredCount = Number((result as any).rowCount ?? 0);
   if (expiredCount > 0) {
     console.log(`[Upload Lifecycle] Expired ${expiredCount} stale upload session(s) (threshold: ${thresholdMs}ms)`);
   }

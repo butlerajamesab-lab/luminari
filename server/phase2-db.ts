@@ -279,7 +279,7 @@ export async function getSnapshotDocuments(snapshotId: number) {
   return db.select({
     id: documents.id,
     caseId: documents.caseId,
-    fileName: documents.fileName,
+    fileName: documents.filename,
     fileType: documents.fileType,
     sha256Hash: documents.sha256Hash,
     status: documents.status,

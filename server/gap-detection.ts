@@ -51,7 +51,7 @@ async function buildEvidenceCorpus(caseId: number): Promise<string> {
       textContent: documents.textContent,
       documentType: documents.documentType,
       documentPurpose: documents.documentPurpose,
-      fileName: documents.fileName,
+      fileName: documents.filename,
     }).from(documents).where(eq(documents.caseId, caseId as any)),
 
     db.select({

@@ -482,7 +482,7 @@ async function generateFindingsFromExtraction(caseId: number, documentId: number
 export async function runCrossDocumentCorrelation(caseId: number): Promise<void> {
   console.log("[Pipeline] Cross-document correlation for case:", caseId);
   // Fetch all documents for this case and run findings generation for each
-  const caseDocs = await db.select().from(documents).where(eq(documents.caseId, String(caseId)));
+  const caseDocs = await db.select().from(documents).where(eq(documents.caseId, caseId));
   for (const doc of caseDocs) {
     await generateFindingsFromExtraction(caseId, doc.id);
   }

@@ -1,5 +1,29 @@
 import { sql } from "drizzle-orm";
-import { pgTable, pgEnum, serial, bigserial, uuid, varchar, text, integer, bigint, boolean, jsonb, numeric, timestamp, date, doublePrecision, real, smallint, char, index, uniqueIndex, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, serial, bigserial, uuid, varchar, text, integer, bigint, boolean, jsonb, numeric, timestamp, date, doublePrecision, real, smallint, char, index, uniqueIndex, primaryKey, customType } from "drizzle-orm/pg-core";
+
+const json_text = customType<{ data: unknown; driverData: string }>({
+  dataType() {
+    return "text";
+  },
+  toDriver(value) {
+    return JSON.stringify(value);
+  },
+  fromDriver(value) {
+    return JSON.parse(value);
+  },
+});
+
+const integer_text = customType<{ data: number; driverData: string }>({
+  dataType() {
+    return "text";
+  },
+  toDriver(value) {
+    return String(value);
+  },
+  fromDriver(value) {
+    return Number(value);
+  },
+});
 
 // -----------------------------------------------------------------------------
 // Auto-generated Drizzle schema for the Luminari Lighthouse Supabase Postgres DB.
@@ -1717,26 +1741,29 @@ export type DoctrineRegistryEntry = typeof doctrineRegistry.$inferSelect;
 export type InsertDoctrineRegistryEntry = typeof doctrineRegistry.$inferInsert;
 
 export const documents = pgTable("documents", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  caseId: uuid("case_id").notNull(),
-  snapshotId: uuid("snapshot_id"),
-  normalizedRecordId: uuid("normalized_record_id"),
-  documentType: text("document_type"),
-  documentPurpose: text("document_purpose"),
-  title: text("title"),
-  fileName: text("file_name"),
+  id: serial("id").primaryKey(),
+  caseId: integer("case_id"),
+  filename: text("filename"),
   fileType: text("file_type"),
   mimeType: text("mime_type"),
-  storagePath: text("storage_path"),
+  fileSize: integer("file_size"),
   s3Key: text("s3_key"),
-  sourceHash: text("source_hash"),
+  s3Url: text("s3_url"),
   sha256Hash: text("sha256_hash"),
-  rawText: text("raw_text"),
-  extractedText: text("extracted_text"),
-  textContent: text("text_content"),
   status: text("status"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  errorMessage: text("error_message"),
+  retryCount: integer("retry_count"),
+  textContent: text("text_content"),
+  pageCount: integer_text("page_count"),
+  durationSeconds: integer_text("duration_seconds"),
+  documentType: text("document_type"),
+  documentPurpose: text("document_purpose"),
+  aiMetadata: json_text("ai_metadata").$type<Record<string, unknown>>(),
+  createdAt: bigint("created_at", { mode: "number" }),
+  snapshotId: integer("snapshot_id"),
+  documentResolution: text("document_resolution"),
+  replacedByDocumentId: integer_text("replaced_by_document_id"),
+  resolutionReason: text("resolution_reason"),
 });
 
 export type Document = typeof documents.$inferSelect;
@@ -3031,18 +3058,18 @@ export type InsertUser = typeof users.$inferInsert;
 
 export const corpusSnapshots = pgTable("corpus_snapshots", {
   id: serial("id").primaryKey(),
-  caseId: integer("caseId").notNull(),
+  caseId: integer("case_id").notNull(),
   version: integer("version").notNull(),
-  engineVersion: varchar("engineVersion", { length: 256 }).notNull(),
-  documentIds: jsonb("documentIds").notNull().$type<number[]>(),
-  documentHashes: jsonb("documentHashes").notNull().$type<Record<string, string>>(),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
-  sealedAt: bigint("sealedAt", { mode: "number" }),
-  status: pgEnum("corpus_snapshots_snapshot_status_enum", ["open", "sealed"])("snapshotStatus").default("open").notNull(),
+  engineVersion: text("engine_version").notNull(),
+  documentIds: json_text("document_ids").$type<number[]>().notNull(),
+  documentHashes: json_text("document_hashes").$type<Record<string, string>>().notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  sealedAt: integer_text("sealed_at"),
+  status: text("snapshot_status").$type<"open" | "sealed">().default("open").notNull(),
   // Cryptographic signing (Gate 9)
   signature: text("signature"),
-  signatureAlgorithm: varchar("signatureAlgorithm", { length: 64 }),
-  publicKeyFingerprint: varchar("publicKeyFingerprint", { length: 128 }),
+  signatureAlgorithm: text("signature_algorithm"),
+  publicKeyFingerprint: text("public_key_fingerprint"),
 }, (table) => [
   uniqueIndex("idx_snapshot_case_version").on(table.caseId, table.version),
   index("idx_snapshot_case").on(table.caseId),
@@ -3296,15 +3323,15 @@ export type ChatMessage = typeof chatMessages.$inferSelect;
 
 export const uploadSessions = pgTable("upload_sessions", {
   id: serial("id").primaryKey(),
-  caseId: integer("caseId").notNull(),
-  userId: integer("userId").notNull(),
-  totalFiles: integer("totalFiles").notNull().default(0),
-  completedFiles: integer("completedFiles").notNull().default(0),
-  failedFiles: integer("failedFiles").notNull().default(0),
-  duplicateFiles: integer("duplicateFiles").notNull().default(0),
-  status: pgEnum("upload_sessions_session_status_enum", ["uploading", "processing", "complete", "failed", "expired"])("session_status").default("uploading").notNull(),
-  createdAt: bigint("createdAt", { mode: "number" }).notNull(),
-  updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  caseId: integer("case_id").notNull(),
+  userId: integer("user_id").notNull(),
+  totalFiles: integer("total_files").notNull().default(0),
+  completedFiles: integer("completed_files").notNull().default(0),
+  failedFiles: integer("failed_files").notNull().default(0),
+  duplicateFiles: integer("duplicate_files").notNull().default(0),
+  status: text("session_status").$type<"uploading" | "processing" | "complete" | "completed" | "failed" | "expired">().default("uploading").notNull(),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
 }, (table) => [
   index("idx_upload_session_user").on(table.userId),
   index("idx_upload_session_case").on(table.caseId),

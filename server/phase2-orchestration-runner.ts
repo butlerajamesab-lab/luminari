@@ -56,7 +56,7 @@ async function getSnapshotDocumentsWithText(snapshotId: number) {
   return db.select({
     id: documents.id,
     caseId: documents.caseId,
-    fileName: documents.fileName,
+    fileName: documents.filename,
     textContent: documents.textContent,
     documentType: documents.documentType,
     snapshotId: documents.snapshotId,
@@ -87,7 +87,7 @@ async function loadSnapshotDataForNotes(snapshotId: number, runId: number): Prom
     snapshotClaims, snapshotEvents, snapshotSignalFlags] = await Promise.all([
     db.select({
       id: documents.id,
-      fileName: documents.fileName,
+      fileName: documents.filename,
       textContent: documents.textContent,
       documentType: documents.documentType,
     }).from(documents).where(eq(documents.snapshotId, snapshotId as any)),
