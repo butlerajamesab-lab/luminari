@@ -37,6 +37,6 @@ jobs:
           node-version: 20
           cache: npm
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       - name: Run Prism V2 contract tests
         run: npx vitest run client/src/pages/prism-v2-data.test.ts
