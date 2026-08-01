@@ -11,12 +11,15 @@ import {
   type PrismBatch,
 } from "./prism-v2-data";
 
-const encodedBatch = fs.readFileSync(
-  path.resolve(process.cwd(), "client/public/data/prism-v2-batch.json.gz.b64"),
-  "utf8",
-);
+const encodedBatch = Array.from({ length: 10 }, (_, part) =>
+  fs.readFileSync(
+    path.resolve(process.cwd(), `client/public/data/prism-v2-batch.${part}.b64`),
+    "utf8",
+  ).trim(),
+).join("");
+
 const batch = JSON.parse(
-  gunzipSync(Buffer.from(encodedBatch.trim(), "base64")).toString("utf8"),
+  gunzipSync(Buffer.from(encodedBatch, "base64")).toString("utf8"),
 ) as PrismBatch;
 
 describe("Prism V2 frontend data contract", () => {
