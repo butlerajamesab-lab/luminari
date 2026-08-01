@@ -23,9 +23,9 @@ import {
 } from "./atlas-engine";
 
 export interface ConvergenceConfig {
-  as_of: number;
+  as_of?: number;
   time_window_ms: number;
-  geography_registry_version: string;
+  geography_registry_version?: string;
   temporal_bucket_ms?: number;
   min_signals_for_analysis?: number;
   z_score_threshold?: number;
@@ -57,9 +57,9 @@ export interface ConvergenceRunResult {
 
 export async function runConvergenceAnalysis(config: ConvergenceConfig): Promise<ConvergenceRunResult> {
   const resolved: Required<ConvergenceConfig> = {
-    as_of: config.as_of,
+    as_of: config.as_of ?? Number.NaN,
     time_window_ms: config.time_window_ms,
-    geography_registry_version: config.geography_registry_version,
+    geography_registry_version: config.geography_registry_version ?? "",
     temporal_bucket_ms: config.temporal_bucket_ms ?? 86_400_000,
     min_signals_for_analysis: config.min_signals_for_analysis ?? 2,
     z_score_threshold: config.z_score_threshold ?? 2,
@@ -86,7 +86,7 @@ export async function runConvergenceAnalysis(config: ConvergenceConfig): Promise
     }
 
     const registry = await loadRegistrySnapshot(tx, resolved.geography_registry_version);
-    const rawSignals = await loadSignalSnapshot(resolved);
+    const rawSignals = await loadSignalSnapshot(tx, resolved);
     const deduplicatedPopulation = deduplicateSignals(rawSignals, resolved.temporal_bucket_ms);
     const result = computeRunResult(runKey, resolved, registry, rawSignals, deduplicatedPopulation);
 
@@ -139,9 +139,9 @@ export async function runConvergenceAnalysis(config: ConvergenceConfig): Promise
   });
 }
 
-async function loadSignalSnapshot(config: Required<ConvergenceConfig>): Promise<Signal[]> {
+async function loadSignalSnapshot(tx: any, config: Required<ConvergenceConfig>): Promise<Signal[]> {
   const cutoff = config.as_of - config.time_window_ms;
-  const rows = await db.select().from(liveSignals).where(and(
+  const rows = await tx.select().from(liveSignals).where(and(
     gte(liveSignals.detectedAt, cutoff),
     lte(liveSignals.detectedAt, config.as_of),
   ));
