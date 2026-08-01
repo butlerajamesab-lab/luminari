@@ -10,6 +10,7 @@ import {
   assemble_rosetta_and_resolve_family,
   type rosetta_family_orchestration_result,
 } from "./civic-genome-rosetta-family-orchestration";
+import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 
 const PDF_PARSE_VERSION = "2.4.5";
 const WA_HTML_EXTRACTOR_VERSION = "wa-official-session-law-html-strip-v1";
@@ -281,14 +282,13 @@ async function invoke_rosetta_extraction(
 ): Promise<rosetta_extraction_receipt> {
   const base_url = required_environment("ROSETTA_SUPABASE_URL");
   const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
+  const headers = create_rosetta_supabase_headers(service_role_key, {
+    accept: "application/json",
+    "content-type": "application/json",
+  });
   const response = await fetch(`${base_url}/rest/v1/rpc/run_rosetta_v3_extraction`, {
     method: "POST",
-    headers: {
-      apikey: service_role_key,
-      authorization: `Bearer ${service_role_key}`,
-      accept: "application/json",
-      "content-type": "application/json",
-    },
+    headers,
     body: JSON.stringify({
       p_source_document_id: source_document_id,
       p_source_text: source.source_text,
