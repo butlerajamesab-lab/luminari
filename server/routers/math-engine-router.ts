@@ -1,254 +1,95 @@
 /**
- * MATH ENGINE ROUTER
- * 
- * tRPC endpoints exposing the Atlas Mathematical Engine.
- * These are the API surfaces that the frontend (Sovereign Control, Data Streams tab)
- * and Sunam can call to get convergence analysis and viability scoring.
- * 
- * All endpoints return deterministic results. No LLM.
+ * MATH ENGINE ROUTER v2.1.0
+ *
+ * Administrator-only governed runtime surface. Legal and priority scoring
+ * accept record identifiers only; arbitrary caller-defined analytical inputs
+ * are not exposed.
  */
-
 import { z } from "zod";
-import { protectedProcedure, router } from "../_core/trpc";
+import { adminProcedure, router } from "../_core/trpc";
+import { db } from "../db";
+import { sql } from "drizzle-orm";
 import { runConvergenceAnalysis } from "../math/convergence-runner";
 import {
-  scoreViability,
-  compareClaimViability,
-  identifyEvidenceGaps,
-  computeSOL,
-  type ClaimDefinition,
-  type EvidenceItem,
-} from "../math/viability-engine";
-import {
-  detectConvergence,
-  priorityScore,
-  signalFingerprint,
   ENGINE_VERSION,
+  priorityScoreFromDeclared,
+  signalFingerprint,
   type Signal,
 } from "../math/atlas-engine";
+import {
+  VIABILITY_ENGINE_VERSION,
+  scoreViability,
+  identifyEvidenceGaps,
+  type ClaimDefinition,
+  type ElementEvaluation,
+  type ViabilityResult,
+} from "../math/viability-engine";
 
 export const mathEngineRouter = router({
-  // ═══════════════════════════════════════════════════════════════
-  // CONVERGENCE ANALYSIS
-  // ═══════════════════════════════════════════════════════════════
-
-  /**
-   * Run full convergence analysis across all geographies.
-   * Returns statistically significant convergence zones with priority scores.
-   */
-  runConvergence: protectedProcedure
+  runConvergence: adminProcedure
     .input(z.object({
-      time_window_days: z.number().min(1).max(365).default(7),
-      min_signals: z.number().min(1).max(100).default(2),
-      significance_threshold: z.number().min(0).max(10).default(2.0),
-    }).optional())
+      as_of: z.number(),
+      time_window_ms: z.number().positive(),
+      geography_registry_version: z.string().min(1),
+      temporal_bucket_ms: z.number().positive().default(86_400_000),
+      min_signals_for_analysis: z.number().int().positive().default(2),
+      z_score_threshold: z.number().default(2),
+    }))
+    .query(({ input }) => runConvergenceAnalysis(input)),
+
+  scorePriorityBySnapshot: adminProcedure
+    .input(z.object({ priority_utility_snapshot_id: z.string().uuid() }))
     .query(async ({ input }) => {
-      const config = input ? {
-        time_window_ms: input.time_window_days * 86_400_000,
-        min_signals_for_convergence: input.min_signals,
-        significance_threshold: input.significance_threshold,
-      } : undefined;
-
-      return await runConvergenceAnalysis(config);
-    }),
-
-  /**
-   * Compute convergence for a specific set of signals (ad-hoc analysis).
-   * Useful for Sunam: "check convergence in WA for the last 30 days"
-   */
-  computeConvergenceManual: protectedProcedure
-    .input(z.object({
-      geography: z.string(),
-      signals: z.array(z.object({
-        temporal_coordinate: z.number(),
-        spatial_coordinate: z.string(),
-        signal_type: z.string(),
-        confidence: z.number().min(0).max(1),
-        characteristics: z.record(z.union([z.string(), z.number(), z.boolean()])),
-      })),
-      time_window_ms: z.number().default(7 * 86_400_000),
-      total_signals_all_geographies: z.number().default(100),
-      total_geographies: z.number().default(50),
-    }))
-    .query(({ input }) => {
-      return detectConvergence({
-        geography: input.geography,
-        signals: input.signals as Signal[],
-        time_window_ms: input.time_window_ms,
-        total_signals_all_geographies: input.total_signals_all_geographies,
-        total_geographies: input.total_geographies,
+      const rows = await db.execute(sql`
+        select id, version, as_of, urgency, equity, feasibility, confidence,
+               urgency_source_record_id, equity_source_record_id,
+               feasibility_source_record_id, confidence_source_record_id,
+               rule_manifest_hash
+        from priority_utility_snapshot
+        where id = ${input.priority_utility_snapshot_id}
+        limit 1
+      `);
+      if (!rows.rows?.length) {
+        throw new Error(`governed priority utility snapshot '${input.priority_utility_snapshot_id}' not found`);
+      }
+      const row = rows.rows[0] as any;
+      const calculation = priorityScoreFromDeclared({
+        version: String(row.version),
+        urgency: { value: Number(row.urgency), source_record_id: String(row.urgency_source_record_id) },
+        equity: { value: Number(row.equity), source_record_id: String(row.equity_source_record_id) },
+        feasibility: { value: Number(row.feasibility), source_record_id: String(row.feasibility_source_record_id) },
+        confidence: { value: Number(row.confidence), source_record_id: String(row.confidence_source_record_id) },
       });
-    }),
-
-  /**
-   * Compute priority score for an action.
-   * Used by action queue to rank items.
-   */
-  computePriority: protectedProcedure
-    .input(z.object({
-      urgency: z.number().min(0).max(1),
-      equity: z.number().min(0).max(1),
-      feasibility: z.number().min(0).max(1),
-      confidence: z.number().min(0).max(1),
-    }))
-    .query(({ input }) => {
-      const score = priorityScore(input);
       return {
-        priority_score: score,
-        inputs: input,
+        priority_utility_snapshot_id: String(row.id),
+        as_of: Number(row.as_of),
+        rule_manifest_hash: String(row.rule_manifest_hash),
         engine_version: ENGINE_VERSION,
+        ...calculation,
       };
     }),
 
-  // ═══════════════════════════════════════════════════════════════
-  // VIABILITY SCORING
-  // ═══════════════════════════════════════════════════════════════
+  scoreViabilityByContext: adminProcedure
+    .input(z.object({ viability_context_id: z.string().uuid() }))
+    .query(({ input }) => loadViabilityResult(input.viability_context_id)),
 
-  /**
-   * Score a single claim's viability against evidence.
-   */
-  scoreClaimViability: protectedProcedure
+  getViabilityGapsByContext: adminProcedure
+    .input(z.object({ viability_context_id: z.string().uuid() }))
+    .query(async ({ input }) => identifyEvidenceGaps(await loadViabilityResult(input.viability_context_id))),
+
+  computeFingerprint: adminProcedure
     .input(z.object({
-      claim: z.object({
-        claim_type: z.string(),
-        jurisdiction: z.string(),
-        elements: z.array(z.object({
-          id: z.string(),
-          name: z.string(),
-          description: z.string(),
-          mandatory: z.boolean(),
-          weight: z.number().min(0).max(1),
-        })),
-        statute_of_limitations_days: z.number(),
-      }),
-      evidence: z.array(z.object({
-        id: z.string(),
-        element_id: z.string(),
-        strength: z.number().min(0).max(1),
-        source_verified: z.boolean(),
-        document_type: z.string(),
-      })),
-      incident_date: z.number(),
-      filing_date: z.number().optional(),
-    }))
-    .query(({ input }) => {
-      return scoreViability({
-        claim: input.claim as ClaimDefinition,
-        evidence: input.evidence as EvidenceItem[],
-        incident_date: input.incident_date,
-        filing_date: input.filing_date ?? Date.now(),
-      });
-    }),
-
-  /**
-   * Compare multiple claim types against the same evidence.
-   * Returns claims sorted by viability (highest first).
-   */
-  compareClaimTypes: protectedProcedure
-    .input(z.object({
-      claims: z.array(z.object({
-        claim_type: z.string(),
-        jurisdiction: z.string(),
-        elements: z.array(z.object({
-          id: z.string(),
-          name: z.string(),
-          description: z.string(),
-          mandatory: z.boolean(),
-          weight: z.number().min(0).max(1),
-        })),
-        statute_of_limitations_days: z.number(),
-      })),
-      evidence: z.array(z.object({
-        id: z.string(),
-        element_id: z.string(),
-        strength: z.number().min(0).max(1),
-        source_verified: z.boolean(),
-        document_type: z.string(),
-      })),
-      incident_date: z.number(),
-      filing_date: z.number().optional(),
-    }))
-    .query(({ input }) => {
-      return compareClaimViability(
-        input.claims as ClaimDefinition[],
-        input.evidence as EvidenceItem[],
-        input.incident_date,
-        input.filing_date ?? Date.now()
-      );
-    }),
-
-  /**
-   * Get evidence gaps for a viability result.
-   */
-  getEvidenceGaps: protectedProcedure
-    .input(z.object({
-      claim: z.object({
-        claim_type: z.string(),
-        jurisdiction: z.string(),
-        elements: z.array(z.object({
-          id: z.string(),
-          name: z.string(),
-          description: z.string(),
-          mandatory: z.boolean(),
-          weight: z.number().min(0).max(1),
-        })),
-        statute_of_limitations_days: z.number(),
-      }),
-      evidence: z.array(z.object({
-        id: z.string(),
-        element_id: z.string(),
-        strength: z.number().min(0).max(1),
-        source_verified: z.boolean(),
-        document_type: z.string(),
-      })),
-      incident_date: z.number(),
-      filing_date: z.number().optional(),
-    }))
-    .query(({ input }) => {
-      const result = scoreViability({
-        claim: input.claim as ClaimDefinition,
-        evidence: input.evidence as EvidenceItem[],
-        incident_date: input.incident_date,
-        filing_date: input.filing_date ?? Date.now(),
-      });
-      return identifyEvidenceGaps(result);
-    }),
-
-  /**
-   * Check statute of limitations for a claim.
-   */
-  checkSOL: protectedProcedure
-    .input(z.object({
-      incident_date: z.number(),
-      filing_date: z.number().optional(),
-      limit_days: z.number(),
-    }))
-    .query(({ input }) => {
-      return computeSOL(
-        input.incident_date,
-        input.filing_date ?? Date.now(),
-        input.limit_days
-      );
-    }),
-
-  // ═══════════════════════════════════════════════════════════════
-  // SIGNAL UTILITIES
-  // ═══════════════════════════════════════════════════════════════
-
-  /**
-   * Compute a signal fingerprint (for dedup verification).
-   */
-  computeFingerprint: protectedProcedure
-    .input(z.object({
+      id: z.string().min(1),
       temporal_coordinate: z.number(),
-      spatial_coordinate: z.string(),
-      signal_type: z.string(),
-      confidence: z.number(),
-      characteristics: z.record(z.union([z.string(), z.number(), z.boolean()])),
-      temporal_bucket_ms: z.number().optional(),
+      spatial_coordinate: z.string().min(1),
+      signal_type: z.string().min(1),
+      confidence: z.number().min(0).max(1).nullable(),
+      characteristics: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])),
+      temporal_bucket_ms: z.number().positive().default(86_400_000),
     }))
     .query(({ input }) => {
       const signal: Signal = {
+        id: input.id,
         temporal_coordinate: input.temporal_coordinate,
         spatial_coordinate: input.spatial_coordinate,
         signal_type: input.signal_type,
@@ -261,25 +102,74 @@ export const mathEngineRouter = router({
       };
     }),
 
-  /**
-   * Get engine version and capabilities.
-   */
-  getEngineInfo: protectedProcedure
-    .query(() => ({
-      atlas_engine_version: ENGINE_VERSION,
-      capabilities: [
-        "convergence_detection",
-        "priority_scoring",
-        "signal_fingerprinting",
-        "signal_linking",
-        "geographic_normalization",
-        "viability_scoring",
-        "element_satisfaction",
-        "sol_computation",
-        "evidence_gap_analysis",
-        "claim_comparison",
-      ],
-      deterministic: true,
-      llm_free: true,
-    })),
+  getEngineInfo: adminProcedure.query(() => ({
+    atlas_engine_version: ENGINE_VERSION,
+    viability_engine_version: VIABILITY_ENGINE_VERSION,
+    deterministic: true,
+    llm_free: true,
+    governed_legal_inputs_only: true,
+    governed_priority_inputs_only: true,
+  })),
 });
+
+async function loadViabilityResult(contextId: string): Promise<ViabilityResult> {
+  const contextRows = await db.execute(sql`
+    select vc.id, vc.case_id, vc.claim_definition_id, vc.incident_date,
+           vc.filing_date, vc.as_of, vc.rule_manifest_hash,
+           cd.claim_type, cd.jurisdiction, cd.elements,
+           cd.statute_of_limitations_days,
+           cd.rule_manifest_hash as claim_rule_manifest_hash
+    from case_viability_context vc
+    join claim_definitions cd on cd.id = vc.claim_definition_id
+    where vc.id = ${contextId}
+      and cd.active = true
+    limit 1
+  `);
+  if (!contextRows.rows?.length) {
+    throw new Error(`governed viability context '${contextId}' not found`);
+  }
+  const row = contextRows.rows[0] as any;
+  const contextManifestHash = String(row.rule_manifest_hash);
+  const claimManifestHash = String(row.claim_rule_manifest_hash);
+  if (contextManifestHash !== claimManifestHash) {
+    throw new Error(`viability context '${contextId}' does not match its claim rule manifest`);
+  }
+  const claim: ClaimDefinition = {
+    claim_type: String(row.claim_type),
+    jurisdiction: String(row.jurisdiction),
+    elements: parseJson(row.elements),
+    statute_of_limitations_days:
+      row.statute_of_limitations_days === null
+        ? null
+        : Number(row.statute_of_limitations_days),
+    source_id: String(row.claim_definition_id),
+    rule_manifest_hash: claimManifestHash,
+  };
+
+  const evaluationRows = await db.execute(sql`
+    select element_id, evaluation_status, prism_verification_id,
+           rule_manifest_hash, source_evidence_ids
+    from claim_element_evaluations
+    where viability_context_id = ${contextId}
+    order by element_id
+  `);
+  const evaluations: ElementEvaluation[] = (evaluationRows.rows ?? []).map((evaluation: any) => ({
+    element_id: String(evaluation.element_id),
+    status: evaluation.evaluation_status,
+    prism_verification_id: String(evaluation.prism_verification_id),
+    rule_manifest_hash: String(evaluation.rule_manifest_hash),
+    source_evidence_ids: parseJson(evaluation.source_evidence_ids),
+  }));
+
+  return scoreViability({
+    claim,
+    evaluations,
+    incident_date: row.incident_date === null ? null : Number(row.incident_date),
+    filing_date: row.filing_date === null ? null : Number(row.filing_date),
+    as_of: Number(row.as_of),
+  });
+}
+
+function parseJson(value: unknown): any {
+  return typeof value === "string" ? JSON.parse(value) : value;
+}

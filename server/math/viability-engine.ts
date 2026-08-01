@@ -1,293 +1,185 @@
 /**
- * VIABILITY ENGINE — Legal Claim Scoring
- * 
- * Pure deterministic math for evaluating legal claim viability.
- * Implements element-satisfaction scoring from the Luminari architecture.
- * 
- * Core principle: A legal claim is viable if and only if its required
- * elements are satisfied by the available evidence. This is binary per
- * element (satisfied/not), with a weighted completeness score.
- * 
- * No LLM. No inference. No prediction.
- * observation ≠ interpretation. evidence support ≠ prediction.
- * 
- * Constitutional contract: Y = F_v(X, R)
+ * VIABILITY ENGINE v2.1.0
+ *
+ * Deterministic legal-element aggregation over governed Prism evaluations.
+ * This module does not infer element satisfaction from raw evidence strength.
+ * Satisfaction status must already be source-bound and versioned upstream.
  */
 
-// ============================================================
-// TYPES
-// ============================================================
+export const VIABILITY_ENGINE_VERSION = "2.1.0";
 
-export interface LegalElement {
+export type ElementEvaluationStatus = "satisfied" | "unsatisfied" | "contradicted" | "unresolved";
+
+export interface ClaimElement {
   id: string;
   name: string;
   description: string;
-  mandatory: boolean;         // If true, claim fails without this element
-  weight: number;             // Relative importance [0,1]
-}
-
-export interface EvidenceItem {
-  id: string;
-  element_id: string;         // Which element this evidence supports
-  strength: number;           // [0,1] — how strongly it supports the element
-  source_verified: boolean;   // Has a verifiable sourceUrl
-  document_type: string;      // "testimony" | "document" | "record" | "correspondence"
+  mandatory: boolean;
+  weight: number;
 }
 
 export interface ClaimDefinition {
-  claim_type: string;         // e.g. "Title_VII_discrimination"
-  jurisdiction: string;
-  elements: LegalElement[];
-  statute_of_limitations_days: number;
-}
-
-export interface ClaimInput {
-  claim: ClaimDefinition;
-  evidence: EvidenceItem[];
-  incident_date: number;      // Unix timestamp ms
-  filing_date: number;        // When the claim would be filed (ms)
-}
-
-export interface ViabilityResult {
   claim_type: string;
   jurisdiction: string;
-  overall_score: number;                // [0, 10]
-  element_satisfaction: ElementScore[];
-  mandatory_elements_met: boolean;
-  sol_status: SOLStatus;
-  completeness_ratio: number;           // [0, 1] — elements satisfied / total
-  weighted_completeness: number;        // [0, 1] — weighted satisfaction
-  blocking_elements: string[];          // Mandatory elements NOT satisfied
-  strongest_elements: string[];         // Elements with highest evidence strength
-  weakest_elements: string[];           // Elements with lowest/no evidence
+  elements: ClaimElement[];
+  statute_of_limitations_days: number | null;
+  source_id: string;
+  rule_manifest_hash: string;
+}
+
+export interface ElementEvaluation {
+  element_id: string;
+  status: ElementEvaluationStatus;
+  prism_verification_id: string;
+  rule_manifest_hash: string;
+  source_evidence_ids: string[];
+}
+
+export interface ViabilityInput {
+  claim: ClaimDefinition;
+  evaluations: ElementEvaluation[];
+  incident_date: number | null;
+  filing_date: number | null;
+  as_of: number;
+}
+
+export interface SOLStatus {
+  status: "resolved" | "unresolved";
+  expired: boolean | null;
+  days_remaining: number | null;
+  total_window_days: number | null;
+  reason_unresolved?: string;
 }
 
 export interface ElementScore {
   element_id: string;
   element_name: string;
   mandatory: boolean;
-  satisfied: boolean;
-  evidence_count: number;
-  max_strength: number;       // Strongest piece of evidence for this element
-  avg_strength: number;       // Average evidence strength
-  verified_count: number;     // How many evidence items have verified sources
+  weight: number;
+  status: ElementEvaluationStatus;
+  prism_verification_id: string | null;
+  source_evidence_ids: string[];
 }
 
-export interface SOLStatus {
-  expired: boolean;
-  days_remaining: number;
-  urgency: number;            // [0, 1] — 1 = about to expire
-  total_window_days: number;
+export interface ViabilityResult {
+  status: "supported" | "blocked" | "unresolved";
+  claim_type: string;
+  jurisdiction: string;
+  completeness_score: number | null;
+  weighted_completeness: number | null;
+  mandatory_elements_met: boolean | null;
+  element_satisfaction: ElementScore[];
+  blocking_elements: string[];
+  unresolved_elements: string[];
+  contradicted_elements: string[];
+  sol_status: SOLStatus;
+  source_claim_id: string;
+  rule_manifest_hash: string;
+  as_of: number;
 }
 
-// ============================================================
-// ENGINE VERSION
-// ============================================================
-
-export const VIABILITY_ENGINE_VERSION = "1.0.0";
-
-// ============================================================
-// CONFIGURATION
-// ============================================================
-
-/** Minimum evidence strength to consider an element "satisfied" */
-const SATISFACTION_THRESHOLD = 0.3;
-
-/** Minimum number of verified sources to consider element strongly supported */
-const STRONG_SUPPORT_MIN_SOURCES = 2;
-
-// ============================================================
-// MAIN SCORING FUNCTION
-// ============================================================
-
-/**
- * Compute viability score for a legal claim.
- * 
- * Algorithm:
- * 1. For each element, find supporting evidence
- * 2. Determine if element is satisfied (max_strength >= threshold)
- * 3. Check mandatory elements — any unsatisfied = claim blocked
- * 4. Compute weighted completeness
- * 5. Check statute of limitations
- * 6. Combine into overall score [0, 10]
- * 
- * Overall = 10 × (0.5 × weighted_completeness + 0.3 × mandatory_factor + 0.2 × sol_factor)
- */
-export function scoreViability(input: ClaimInput): ViabilityResult {
-  const { claim, evidence, incident_date, filing_date } = input;
-
-  // Step 1: Score each element
-  const elementScores: ElementScore[] = claim.elements.map(element => {
-    const supporting = evidence.filter(e => e.element_id === element.id);
-    const strengths = supporting.map(e => e.strength);
-    const maxStrength = strengths.length > 0 ? Math.max(...strengths) : 0;
-    const avgStrength = strengths.length > 0 
-      ? strengths.reduce((a, b) => a + b, 0) / strengths.length 
-      : 0;
-    const verifiedCount = supporting.filter(e => e.source_verified).length;
-
+export function scoreViability(input: ViabilityInput): ViabilityResult {
+  validateInput(input);
+  const evaluationByElement = new Map(input.evaluations.map(e => [e.element_id, e]));
+  const elementScores: ElementScore[] = input.claim.elements.map(element => {
+    const evaluation = evaluationByElement.get(element.id);
     return {
       element_id: element.id,
       element_name: element.name,
       mandatory: element.mandatory,
-      satisfied: maxStrength >= SATISFACTION_THRESHOLD,
-      evidence_count: supporting.length,
-      max_strength: Math.round(maxStrength * 10000) / 10000,
-      avg_strength: Math.round(avgStrength * 10000) / 10000,
-      verified_count: verifiedCount,
+      weight: element.weight,
+      status: evaluation?.status ?? "unresolved",
+      prism_verification_id: evaluation?.prism_verification_id ?? null,
+      source_evidence_ids: [...(evaluation?.source_evidence_ids ?? [])].sort(),
     };
   });
 
-  // Step 2: Check mandatory elements
-  const mandatoryElements = elementScores.filter(e => e.mandatory);
-  const mandatoryMet = mandatoryElements.every(e => e.satisfied);
-  const blockingElements = mandatoryElements
-    .filter(e => !e.satisfied)
-    .map(e => e.element_name);
+  const mandatory = elementScores.filter(e => e.mandatory);
+  const blocking = mandatory.filter(e => e.status === "unsatisfied" || e.status === "contradicted");
+  const unresolved = elementScores.filter(e => e.status === "unresolved");
+  const contradicted = elementScores.filter(e => e.status === "contradicted");
+  const mandatoryUnresolved = mandatory.some(e => e.status === "unresolved");
+  const mandatoryMet = mandatoryUnresolved ? null : blocking.length === 0;
 
-  // Step 3: Compute completeness
-  const satisfiedCount = elementScores.filter(e => e.satisfied).length;
-  const completenessRatio = claim.elements.length > 0 
-    ? satisfiedCount / claim.elements.length 
-    : 0;
+  const totalWeight = elementScores.reduce((sum, e) => sum + e.weight, 0);
+  const hasUnresolved = unresolved.length > 0;
+  const weightedCompleteness = hasUnresolved
+    ? null
+    : elementScores.reduce((sum, e) => sum + (e.status === "satisfied" ? e.weight : 0), 0) / totalWeight;
 
-  // Weighted completeness: Σ(satisfied_i × weight_i) / Σ(weight_i)
-  const totalWeight = claim.elements.reduce((sum, e) => sum + e.weight, 0);
-  const weightedSum = claim.elements.reduce((sum, element, i) => {
-    return sum + (elementScores[i].satisfied ? element.weight : 0);
-  }, 0);
-  const weightedCompleteness = totalWeight > 0 ? weightedSum / totalWeight : 0;
-
-  // Step 4: Statute of limitations
-  const solStatus = computeSOL(incident_date, filing_date, claim.statute_of_limitations_days);
-
-  // Step 5: Identify strongest and weakest elements
-  const sorted = [...elementScores].sort((a, b) => b.max_strength - a.max_strength);
-  const strongest = sorted
-    .filter(e => e.satisfied)
-    .slice(0, 3)
-    .map(e => e.element_name);
-  const weakest = sorted
-    .filter(e => !e.satisfied)
-    .slice(-3)
-    .map(e => e.element_name);
-
-  // Step 6: Overall score
-  // mandatory_factor: 1 if all mandatory met, 0 if any blocked
-  const mandatoryFactor = mandatoryMet ? 1 : 0;
-  // sol_factor: 1 if not expired, scaled by remaining time
-  const solFactor = solStatus.expired ? 0 : (1 - solStatus.urgency * 0.5);
-
-  const overall = 10 * (
-    0.5 * weightedCompleteness +
-    0.3 * mandatoryFactor +
-    0.2 * solFactor
-  );
+  let status: ViabilityResult["status"];
+  let completenessScore: number | null;
+  if (blocking.length > 0) {
+    status = "blocked";
+    completenessScore = 0;
+  } else if (hasUnresolved || mandatoryMet === null) {
+    status = "unresolved";
+    completenessScore = null;
+  } else {
+    status = "supported";
+    completenessScore = round4(10 * (weightedCompleteness ?? 0));
+  }
 
   return {
-    claim_type: claim.claim_type,
-    jurisdiction: claim.jurisdiction,
-    overall_score: Math.round(clamp(overall, 0, 10) * 100) / 100,
-    element_satisfaction: elementScores,
+    status,
+    claim_type: input.claim.claim_type,
+    jurisdiction: input.claim.jurisdiction,
+    completeness_score: completenessScore,
+    weighted_completeness: weightedCompleteness === null ? null : round4(weightedCompleteness),
     mandatory_elements_met: mandatoryMet,
-    sol_status: solStatus,
-    completeness_ratio: Math.round(completenessRatio * 10000) / 10000,
-    weighted_completeness: Math.round(weightedCompleteness * 10000) / 10000,
-    blocking_elements: blockingElements,
-    strongest_elements: strongest,
-    weakest_elements: weakest,
+    element_satisfaction: elementScores,
+    blocking_elements: blocking.map(e => e.element_name),
+    unresolved_elements: unresolved.map(e => e.element_name),
+    contradicted_elements: contradicted.map(e => e.element_name),
+    sol_status: computeSOL(input.incident_date, input.filing_date, input.claim.statute_of_limitations_days),
+    source_claim_id: input.claim.source_id,
+    rule_manifest_hash: input.claim.rule_manifest_hash,
+    as_of: input.as_of,
   };
 }
 
-// ============================================================
-// STATUTE OF LIMITATIONS
-// ============================================================
+export function computeSOL(incidentDate: number | null, filingDate: number | null, limitDays: number | null): SOLStatus {
+  if (incidentDate === null || filingDate === null || limitDays === null) {
+    return { status: "unresolved", expired: null, days_remaining: null, total_window_days: limitDays, reason_unresolved: "Governed incident date, filing date, or limitations period is missing" };
+  }
+  if (!Number.isFinite(incidentDate) || !Number.isFinite(filingDate) || !Number.isInteger(limitDays) || limitDays <= 0) {
+    return { status: "unresolved", expired: null, days_remaining: null, total_window_days: limitDays, reason_unresolved: "Invalid governed limitations inputs" };
+  }
+  const remainingDays = Math.floor((incidentDate + limitDays * 86_400_000 - filingDate) / 86_400_000);
+  return { status: "resolved", expired: remainingDays < 0, days_remaining: Math.max(0, remainingDays), total_window_days: limitDays };
+}
 
-/**
- * Compute statute of limitations status.
- * Pure date math — no interpretation.
- */
-export function computeSOL(
-  incidentDate: number,
-  filingDate: number,
-  limitDays: number
-): SOLStatus {
-  const deadlineMs = incidentDate + (limitDays * 86_400_000);
-  const remainingMs = deadlineMs - filingDate;
-  const remainingDays = Math.floor(remainingMs / 86_400_000);
-  
+export function identifyEvidenceGaps(result: ViabilityResult) {
   return {
-    expired: remainingDays < 0,
-    days_remaining: Math.max(0, remainingDays),
-    urgency: clamp(1 - remainingDays / limitDays, 0, 1),
-    total_window_days: limitDays,
+    unresolved_elements: [...result.unresolved_elements],
+    blocked_elements: [...result.blocking_elements],
+    contradicted_elements: [...result.contradicted_elements],
+    requires_review: result.status !== "supported",
   };
 }
 
-// ============================================================
-// CLAIM COMPARISON
-// ============================================================
-
-/**
- * Compare multiple claim types against the same evidence set.
- * Returns claims sorted by viability score (highest first).
- * 
- * This is the "which claims does this fact pattern support?" function.
- */
-export function compareClaimViability(
-  claims: ClaimDefinition[],
-  evidence: EvidenceItem[],
-  incidentDate: number,
-  filingDate: number
-): ViabilityResult[] {
-  return claims
-    .map(claim => scoreViability({ claim, evidence, incident_date: incidentDate, filing_date: filingDate }))
-    .sort((a, b) => b.overall_score - a.overall_score);
+function validateInput(input: ViabilityInput) {
+  if (!Number.isFinite(input.as_of)) throw new Error("as_of must be finite");
+  if (!input.claim.source_id.trim()) throw new Error("source_claim_id is required");
+  if (!input.claim.rule_manifest_hash.trim()) throw new Error("claim rule_manifest_hash is required");
+  if (!input.claim.elements.length) throw new Error("claim must contain at least one governed element");
+  if (!input.claim.elements.some(e => e.mandatory)) throw new Error("claim must contain at least one mandatory element");
+  const ids = new Set<string>();
+  for (const element of input.claim.elements) {
+    if (!element.id.trim()) throw new Error("element id is required");
+    if (ids.has(element.id)) throw new Error(`duplicate element id '${element.id}'`);
+    ids.add(element.id);
+    if (!Number.isFinite(element.weight) || element.weight <= 0) throw new Error(`element '${element.id}' weight must be positive`);
+  }
+  const evaluationIds = new Set<string>();
+  for (const evaluation of input.evaluations) {
+    if (!ids.has(evaluation.element_id)) throw new Error(`evaluation references unknown element '${evaluation.element_id}'`);
+    if (evaluationIds.has(evaluation.element_id)) throw new Error(`multiple evaluations supplied for element '${evaluation.element_id}'`);
+    evaluationIds.add(evaluation.element_id);
+    if (!evaluation.prism_verification_id.trim()) throw new Error(`evaluation '${evaluation.element_id}' lacks Prism verification id`);
+    if (!evaluation.rule_manifest_hash.trim()) throw new Error(`evaluation '${evaluation.element_id}' lacks rule manifest hash`);
+    if (evaluation.status === "satisfied" && evaluation.source_evidence_ids.length === 0) throw new Error(`satisfied evaluation '${evaluation.element_id}' requires source evidence`);
+  }
 }
 
-// ============================================================
-// ELEMENT GAP ANALYSIS
-// ============================================================
-
-/**
- * Identify what evidence is missing for a claim to be viable.
- * Returns unsatisfied elements with their requirements.
- */
-export function identifyEvidenceGaps(result: ViabilityResult): {
-  gaps: Array<{
-    element_name: string;
-    mandatory: boolean;
-    current_strength: number;
-    needed_strength: number;
-    suggestion: string;
-  }>;
-  claim_salvageable: boolean;
-} {
-  const gaps = result.element_satisfaction
-    .filter(e => !e.satisfied)
-    .map(e => ({
-      element_name: e.element_name,
-      mandatory: e.mandatory,
-      current_strength: e.max_strength,
-      needed_strength: SATISFACTION_THRESHOLD,
-      suggestion: e.evidence_count === 0
-        ? `No evidence found for "${e.element_name}". Need documentation supporting this element.`
-        : `Evidence exists (${e.evidence_count} items) but strength is ${(e.max_strength * 100).toFixed(0)}% — below ${(SATISFACTION_THRESHOLD * 100).toFixed(0)}% threshold.`,
-    }));
-
-  // Claim is salvageable if no mandatory elements are in the gaps
-  // OR if mandatory gaps have SOME evidence (just below threshold)
-  const mandatoryGaps = gaps.filter(g => g.mandatory);
-  const salvageable = mandatoryGaps.length === 0 || 
-    mandatoryGaps.every(g => g.current_strength > 0);
-
-  return { gaps, claim_salvageable: salvageable };
-}
-
-// ============================================================
-// UTILITIES
-// ============================================================
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
+function round4(value: number) { return Math.round(value * 10000) / 10000; }
