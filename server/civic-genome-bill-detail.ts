@@ -15,6 +15,16 @@ export type persisted_genome_trait = {
   confidence_score: number;
   signal_status: string;
   verification_state: string;
+  rosetta_verification_state: string;
+  prism_verification_status: string | null;
+  prism_verification_receipt_id: string | null;
+  prism_engine_version: string | null;
+  prism_rule_set_version: string | null;
+  prism_rule_set_hash: string | null;
+  prism_input_hash: string | null;
+  prism_output_hash: string | null;
+  prism_deterministic_replay_key: string | null;
+  prism_bound_at: string | null;
   trait_fingerprint: string;
   engine_version: string;
   rule_version: string;
@@ -85,10 +95,51 @@ export async function get_civic_genome_bill_detail(
 
   const [traits_result, runs_result, family_result, resolution_result] = await Promise.all([
     pool.query<persisted_genome_trait>(
-      `select *
-         from public.civic_genome_trait
-        where genome_bill_id = $1
-        order by trait_class, trait_key, trait_fingerprint`,
+      `select
+         trait.trait_id,
+         trait.genome_bill_id,
+         trait.trait_class,
+         trait.trait_key,
+         trait.normalized_value_json,
+         trait.source_object_type,
+         trait.source_object_id,
+         trait.source_block_id,
+         trait.source_document_id,
+         trait.extraction_run_id,
+         trait.confidence_score,
+         trait.signal_status,
+         case
+           when prism.binding_id is null
+             then 'Rosetta ' || trait.verification_state || ' · Prism not_observed'
+           else 'Rosetta ' || trait.verification_state || ' · Prism ' || prism.verification_status
+         end as verification_state,
+         trait.verification_state as rosetta_verification_state,
+         prism.verification_status as prism_verification_status,
+         prism.prism_verification_receipt_id::text as prism_verification_receipt_id,
+         prism.prism_engine_version,
+         prism.prism_rule_set_version,
+         prism.prism_rule_set_hash,
+         prism.input_hash as prism_input_hash,
+         prism.output_hash as prism_output_hash,
+         prism.deterministic_replay_key as prism_deterministic_replay_key,
+         prism.created_at::text as prism_bound_at,
+         trait.trait_fingerprint,
+         trait.engine_version,
+         trait.rule_version,
+         trait.content_hash,
+         trait.source_trace,
+         trait.created_at,
+         trait.updated_at
+       from public.civic_genome_trait trait
+       left join lateral (
+         select binding.*
+           from public.civic_genome_prism_verification_binding binding
+          where binding.trait_id = trait.trait_id
+          order by binding.created_at desc, binding.binding_id desc
+          limit 1
+       ) prism on true
+       where trait.genome_bill_id = $1
+       order by trait.trait_class, trait.trait_key, trait.trait_fingerprint`,
       [genome_bill_id],
     ),
     pool.query<persisted_genome_assembly_run>(
