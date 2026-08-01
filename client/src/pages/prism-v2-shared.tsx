@@ -105,7 +105,7 @@ export function usePrismBatch(): {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([0, 1, 2, 3].map(async (part) => {
+    Promise.all(Array.from({ length: 10 }, (_, part) => part).map(async (part) => {
       const response = await fetch(`/data/prism-v2-batch.${part}.b64`, { cache: "no-store" });
       if (!response.ok) throw new Error(`batch_fetch_${part}_${response.status}`);
       return (await response.text()).trim();
