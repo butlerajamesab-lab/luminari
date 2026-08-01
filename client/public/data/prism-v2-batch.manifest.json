@@ -1,0 +1,16 @@
+{
+  "format": "gzip+base64-segments",
+  "compact_json_sha256": "fe7123988407f46b7a5300336ce4daf44b9d863d38d69732afd516e5191cd595",
+  "parts": [
+    { "part": 0, "filename": "prism-v2-batch.0.b64", "length": 22852, "sha256": "a20c5e41b1ab0e8e6eba666afa655bc59d67f986308da034e003e2d4df6b22d3" },
+    { "part": 1, "filename": "prism-v2-batch.1.b64", "length": 7618, "sha256": "0c0bf089e6ba4aab00f4afa9a2b01a3e766aecf3b5210f1340ab67bbf23d7fc3" },
+    { "part": 2, "filename": "prism-v2-batch.2.b64", "length": 7618, "sha256": "0440309b0cb7d33f9ef39242ae3e36b3c28ebc2944a9786be18389e87854e4df" },
+    { "part": 3, "filename": "prism-v2-batch.3.b64", "length": 7618, "sha256": "a277609b97da8ef26baf8c84ced4786bdadfe8ca96243ef125a9ed71e0d4decc" },
+    { "part": 4, "filename": "prism-v2-batch.4.b64", "length": 7618, "sha256": "11cb9ae678127f8a2027ab3d37d93dce695783a0eef3123bddad5331c4ab250e" },
+    { "part": 5, "filename": "prism-v2-batch.5.b64", "length": 7618, "sha256": "2759a35a08a19d559613a474a7b2f90f2b4635f93647f2bbaf9c1ecbb257873a" },
+    { "part": 6, "filename": "prism-v2-batch.6.b64", "length": 7618, "sha256": "22b4feb1ccd667365430ae1ad2f20636f00d3f5e2368c281a44b6c4c9219da37" },
+    { "part": 7, "filename": "prism-v2-batch.7.b64", "length": 7618, "sha256": "bbd21d28772d239ef5cb33497aa2fa99d80c1a28c37865ba9c5cd312498a13d9" },
+    { "part": 8, "filename": "prism-v2-batch.8.b64", "length": 7618, "sha256": "e3aaccc535806615954789f75cea7225441c14e0524ba2dbbbfa5132135e247d" },
+    { "part": 9, "filename": "prism-v2-batch.9.b64", "length": 7612, "sha256": "470ea15322684d8b4ead4fbde9fc4b9b3977e78f2e7604c4eea906753d9214a6" }
+  ]
+}
