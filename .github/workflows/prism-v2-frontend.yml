@@ -1,0 +1,42 @@
+name: Prism V2 frontend contract
+
+on:
+  pull_request:
+    paths:
+      - "client/src/pages/PrismV2.tsx"
+      - "client/src/pages/prism-v2-*.ts"
+      - "client/src/pages/prism-v2-*.tsx"
+      - "client/public/data/prism-v2-batch.*.b64"
+      - "docs/prism-v2-frontend-receipt.md"
+      - ".github/workflows/prism-v2-frontend.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "client/src/pages/PrismV2.tsx"
+      - "client/src/pages/prism-v2-*.ts"
+      - "client/src/pages/prism-v2-*.tsx"
+      - "client/public/data/prism-v2-batch.*.b64"
+      - "docs/prism-v2-frontend-receipt.md"
+      - ".github/workflows/prism-v2-frontend.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: Verify payload and deterministic graph
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run Prism V2 contract tests
+        run: npx vitest run client/src/pages/prism-v2-data.test.ts
