@@ -1,15 +1,21 @@
 /**
  * MATH ENGINE ROUTER v2.1.0
  *
- * Administrator-only governed runtime surface. Legal scoring accepts record
- * identifiers only; arbitrary caller-defined claims/evidence are not exposed.
+ * Administrator-only governed runtime surface. Legal and priority scoring
+ * accept record identifiers only; arbitrary caller-defined analytical inputs
+ * are not exposed.
  */
 import { z } from "zod";
 import { adminProcedure, router } from "../_core/trpc";
 import { db } from "../db";
 import { sql } from "drizzle-orm";
 import { runConvergenceAnalysis } from "../math/convergence-runner";
-import { ENGINE_VERSION, signalFingerprint, type Signal } from "../math/atlas-engine";
+import {
+  ENGINE_VERSION,
+  priorityScoreFromDeclared,
+  signalFingerprint,
+  type Signal,
+} from "../math/atlas-engine";
 import {
   VIABILITY_ENGINE_VERSION,
   scoreViability,
@@ -30,6 +36,38 @@ export const mathEngineRouter = router({
       z_score_threshold: z.number().default(2),
     }))
     .query(({ input }) => runConvergenceAnalysis(input)),
+
+  scorePriorityBySnapshot: adminProcedure
+    .input(z.object({ priority_utility_snapshot_id: z.string().uuid() }))
+    .query(async ({ input }) => {
+      const rows = await db.execute(sql`
+        select id, version, as_of, urgency, equity, feasibility, confidence,
+               urgency_source_record_id, equity_source_record_id,
+               feasibility_source_record_id, confidence_source_record_id,
+               rule_manifest_hash
+        from priority_utility_snapshot
+        where id = ${input.priority_utility_snapshot_id}
+        limit 1
+      `);
+      if (!rows.rows?.length) {
+        throw new Error(`governed priority utility snapshot '${input.priority_utility_snapshot_id}' not found`);
+      }
+      const row = rows.rows[0] as any;
+      const calculation = priorityScoreFromDeclared({
+        version: String(row.version),
+        urgency: { value: Number(row.urgency), source_record_id: String(row.urgency_source_record_id) },
+        equity: { value: Number(row.equity), source_record_id: String(row.equity_source_record_id) },
+        feasibility: { value: Number(row.feasibility), source_record_id: String(row.feasibility_source_record_id) },
+        confidence: { value: Number(row.confidence), source_record_id: String(row.confidence_source_record_id) },
+      });
+      return {
+        priority_utility_snapshot_id: String(row.id),
+        as_of: Number(row.as_of),
+        rule_manifest_hash: String(row.rule_manifest_hash),
+        engine_version: ENGINE_VERSION,
+        ...calculation,
+      };
+    }),
 
   scoreViabilityByContext: adminProcedure
     .input(z.object({ viability_context_id: z.string().uuid() }))
@@ -58,7 +96,10 @@ export const mathEngineRouter = router({
         confidence: input.confidence,
         characteristics: input.characteristics,
       };
-      return { fingerprint: signalFingerprint(signal, input.temporal_bucket_ms), engine_version: ENGINE_VERSION };
+      return {
+        fingerprint: signalFingerprint(signal, input.temporal_bucket_ms),
+        engine_version: ENGINE_VERSION,
+      };
     }),
 
   getEngineInfo: adminProcedure.query(() => ({
@@ -67,6 +108,7 @@ export const mathEngineRouter = router({
     deterministic: true,
     llm_free: true,
     governed_legal_inputs_only: true,
+    governed_priority_inputs_only: true,
   })),
 });
 
@@ -75,22 +117,33 @@ async function loadViabilityResult(contextId: string): Promise<ViabilityResult> 
     select vc.id, vc.case_id, vc.claim_definition_id, vc.incident_date,
            vc.filing_date, vc.as_of, vc.rule_manifest_hash,
            cd.claim_type, cd.jurisdiction, cd.elements,
-           cd.statute_of_limitations_days, cd.rule_manifest_hash as claim_rule_manifest_hash
+           cd.statute_of_limitations_days,
+           cd.rule_manifest_hash as claim_rule_manifest_hash
     from case_viability_context vc
     join claim_definitions cd on cd.id = vc.claim_definition_id
     where vc.id = ${contextId}
       and cd.active = true
     limit 1
   `);
-  if (!contextRows.rows?.length) throw new Error(`governed viability context '${contextId}' not found`);
+  if (!contextRows.rows?.length) {
+    throw new Error(`governed viability context '${contextId}' not found`);
+  }
   const row = contextRows.rows[0] as any;
+  const contextManifestHash = String(row.rule_manifest_hash);
+  const claimManifestHash = String(row.claim_rule_manifest_hash);
+  if (contextManifestHash !== claimManifestHash) {
+    throw new Error(`viability context '${contextId}' does not match its claim rule manifest`);
+  }
   const claim: ClaimDefinition = {
     claim_type: String(row.claim_type),
     jurisdiction: String(row.jurisdiction),
     elements: parseJson(row.elements),
-    statute_of_limitations_days: row.statute_of_limitations_days === null ? null : Number(row.statute_of_limitations_days),
+    statute_of_limitations_days:
+      row.statute_of_limitations_days === null
+        ? null
+        : Number(row.statute_of_limitations_days),
     source_id: String(row.claim_definition_id),
-    rule_manifest_hash: String(row.claim_rule_manifest_hash),
+    rule_manifest_hash: claimManifestHash,
   };
 
   const evaluationRows = await db.execute(sql`
@@ -117,4 +170,6 @@ async function loadViabilityResult(contextId: string): Promise<ViabilityResult> 
   });
 }
 
-function parseJson(value: unknown): any { return typeof value === "string" ? JSON.parse(value) : value; }
+function parseJson(value: unknown): any {
+  return typeof value === "string" ? JSON.parse(value) : value;
+}
