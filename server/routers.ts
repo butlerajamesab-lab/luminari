@@ -18,6 +18,7 @@ import { buildGateStageInput, getGateStage, assertActionAllowed, assertSnapshotM
 import { hardDeleteCase as canonical_hard_delete_case, hardDeleteDocument as canonical_hard_delete_document } from "./hard-delete-canonical";
 import { getDailySpotlight, getCategorySpotlight, getContextualSpotlights, getDiscoveryCategories, getAllSpotlights, generateShareText } from "./benefits-discovery";
 import { coalitionIntelligenceRouter } from "./routers/coalition-intelligence-router";
+import { mathEngineRouter } from "./routers/math-engine-router";
 import { campaignEngineRouter } from "./routers/campaign-engine-router";
 import { datasetConnectorRouter } from "./routers/dataset-connector-router";
 import { sunamGateRouter } from "./routers/sunam-gate-router";
@@ -4759,6 +4760,7 @@ export const appRouter = router({
   architectureMap: architectureMapRouter,
   proceduralEngine: proceduralEngineRouter,
   viabilityEngine: viabilityEngineRouter,
+  mathEngine: mathEngineRouter,
   strategyEngine: strategyEngineRouter,
   assemblyEngine: assemblyEngineRouter,
   patternEngine: patternEngineRouter,

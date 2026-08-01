@@ -18,6 +18,7 @@ import { ingestDataset, classifyError, type IngestionResult } from "./socrata-ad
 import { ingestCfpbDataset } from "./cfpb-adapter";
 import { ingest_atlas_stream } from "./atlas-stream-adapter";
 import { detectSignals } from "./signal-detector";
+import { runConvergenceAnalysis } from "../math/convergence-runner";
 import { emitSignal, resolveSignalsForTarget } from "../live-signal-emitter";
 
 // ─── Constants ───
@@ -419,6 +420,16 @@ export async function runIngestionPipeline(
       } catch (signalErr) {
         console.error(`[Scheduler] Signal detection failed for ${datasetId}:`, signalErr);
         result.errors.push(`Signal detection: ${signalErr instanceof Error ? signalErr.message : String(signalErr)}`);
+      }
+    }
+
+    // Step 2b: Run convergence analysis after new signals are stored
+    if (signalsGenerated > 0) {
+      try {
+        const convergence = await runConvergenceAnalysis({ time_window_ms: 7 * 86_400_000 });
+        console.log(`[Scheduler] Convergence: ${convergence.convergence_zones.length} zones, ${convergence.prioritized_actions.length} actions (engine v${convergence.engine_version})`);
+      } catch (convErr) {
+        console.error(`[Scheduler] Convergence analysis failed (non-fatal):`, convErr);
       }
     }
 
