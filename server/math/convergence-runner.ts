@@ -1,328 +1,317 @@
 /**
- * CONVERGENCE RUNNER v2.0.0
+ * CONVERGENCE RUNNER v2.1.0
  *
- * Applies the Atlas Mathematical Engine to live signal data.
- * Reads from live_signals, loads geography_registry, computes convergence
- * per geography using area-weighted Poisson, and persists provenance receipts.
- *
- * REPAIR NOTES:
- *   - as_of is explicit input (no Date.now() in math paths)
- *   - Geography registry loaded from canonical source (no equal-geography fallback)
- *   - Priority scoring does NOT manufacture utility values — removed from runner
- *   - Missing confidence propagated as null (never 0.5)
- *   - Dominant type from raw frequency distribution (in atlas-engine)
- *   - Provenance receipts persisted to convergence_receipts table
- *   - No p-value language in outputs
+ * Creates an immutable, idempotent database snapshot for each declared run.
+ * Historical replays load the stored snapshot/result instead of current mutable
+ * signal or geography state.
  */
-
 import { db } from "../db";
 import { liveSignals } from "../../drizzle/schema";
-import { eq, and, gte, lte, sql } from "drizzle-orm";
+import { and, gte, lte, sql } from "drizzle-orm";
 import {
-  detectConvergence,
+  ENGINE_VERSION,
+  NULL_MODEL_ASSUMPTIONS,
+  NULL_MODEL_ID,
+  computeRunKey,
   deduplicateSignals,
+  detectConvergence,
   generateProvenanceReceipt,
-  type Signal,
-  type ConvergenceInput,
   type ConvergenceResult,
   type GeographyRegistry,
   type ProvenanceReceipt,
-  ENGINE_VERSION,
+  type Signal,
 } from "./atlas-engine";
 
-// ============================================================
-// TYPES
-// ============================================================
-
 export interface ConvergenceConfig {
-  as_of: number;                      // REQUIRED — explicit timestamp
-  time_window_ms: number;             // Analysis window (default 7 days)
-  temporal_bucket_ms?: number;        // Fingerprint bucket (default 1 day)
-  min_signals_for_analysis?: number;  // Minimum signals in a geography to analyze
-  z_score_threshold?: number;         // Minimum Z-score to report (default 2.0)
+  as_of: number;
+  time_window_ms: number;
+  geography_registry_version: string;
+  temporal_bucket_ms?: number;
+  min_signals_for_analysis?: number;
+  z_score_threshold?: number;
 }
 
 export interface ConvergenceZone {
   geography: string;
   convergence: ConvergenceResult;
   provenance: ProvenanceReceipt;
+  reportable: boolean;
+  reason_not_reportable: string | null;
 }
 
 export interface ConvergenceRunResult {
+  run_key: string;
   engine_version: string;
   as_of: number;
-  config: ConvergenceConfig;
+  config: Required<ConvergenceConfig>;
   geography_registry_version: string;
   total_signals_analyzed: number;
   total_signals_after_dedup: number;
   geographies_evaluated: number;
   convergence_zones: ConvergenceZone[];
-  unresolved_geographies: Array<{
-    geography: string;
-    reason: string;
-  }>;
-  receipt_ids?: string[];
+  reported_zones: ConvergenceZone[];
+  unresolved_geographies: Array<{ geography: string; reason: string }>;
+  receipt_ids: string[];
+  replayed_from_snapshot: boolean;
 }
 
-// ============================================================
-// GEOGRAPHY REGISTRY LOADER
-//
-// Loads from the canonical geography_registry table.
-// If the table doesn't exist or is empty, returns an error —
-// it does NOT fall back to equal-geography assumptions.
-// ============================================================
-
-async function loadGeographyRegistry(): Promise<GeographyRegistry | { error: string }> {
-  try {
-    const rows = await db.execute(sql`
-      SELECT id, area_sq_km, centroid_lat, centroid_lon, adjacency, version
-      FROM geography_registry
-      WHERE active = true
-      ORDER BY id
-    `);
-
-    if (!rows.rows || rows.rows.length === 0) {
-      return { error: "geography_registry table is empty or does not exist. Cannot compute area-weighted convergence without canonical geography data." };
-    }
-
-    const version = (rows.rows[0] as any).version ?? "unknown";
-    const entries = rows.rows.map((r: any) => ({
-      id: r.id as string,
-      area_sq_km: parseFloat(r.area_sq_km),
-      centroid_lat: r.centroid_lat !== null && r.centroid_lat !== undefined ? parseFloat(r.centroid_lat) : undefined,
-      centroid_lon: r.centroid_lon !== null && r.centroid_lon !== undefined ? parseFloat(r.centroid_lon) : undefined,
-      adjacency: r.adjacency ? (Array.isArray(r.adjacency) ? r.adjacency : JSON.parse(r.adjacency)) : undefined,
-    }));
-
-    // Validate: all entries must have positive area
-    const invalidAreas = entries.filter((e: any) => !e.area_sq_km || e.area_sq_km <= 0);
-    if (invalidAreas.length > 0) {
-      return { error: `${invalidAreas.length} geography entries have invalid area_sq_km: ${invalidAreas.map((e: any) => e.id).join(", ")}` };
-    }
-
-    return { version, entries };
-  } catch (err: any) {
-    return { error: `Failed to load geography_registry: ${err.message}` };
-  }
-}
-
-// ============================================================
-// MAIN RUNNER
-// ============================================================
-
-export async function runConvergenceAnalysis(
-  config: ConvergenceConfig
-): Promise<ConvergenceRunResult> {
-  const {
-    as_of,
-    time_window_ms,
-    temporal_bucket_ms = 86_400_000,
-    min_signals_for_analysis = 2,
-    z_score_threshold = 2.0,
-  } = config;
-
-  // Step 1: Load geography registry (canonical, no fallback)
-  const registryResult = await loadGeographyRegistry();
-  if ("error" in registryResult) {
-    return {
-      engine_version: ENGINE_VERSION,
-      as_of,
-      config,
-      geography_registry_version: "unavailable",
-      total_signals_analyzed: 0,
-      total_signals_after_dedup: 0,
-      geographies_evaluated: 0,
-      convergence_zones: [],
-      unresolved_geographies: [{
-        geography: "*",
-        reason: registryResult.error,
-      }],
-    };
-  }
-
-  const registry: GeographyRegistry = registryResult;
-
-  // Step 2: Load signals within time window [cutoff, as_of]
-  // BOTH lower AND upper bounds enforced for deterministic replay.
-  // Signals created after as_of cannot enter a historical run.
-  const cutoff = as_of - time_window_ms;
-  const rawSignals = await db
-    .select()
-    .from(liveSignals)
-    .where(
-      and(
-        eq(liveSignals.active, true),
-        gte(liveSignals.detectedAt, cutoff),
-        lte(liveSignals.detectedAt, as_of)
-      )
-    );
-
-  if (rawSignals.length === 0) {
-    // Persist empty-run receipt for audit trail
-    const emptyReceipt = generateProvenanceReceipt({
-      equation_id: "poisson_z_score",
-      as_of,
-      config: { time_window_ms, temporal_bucket_ms, min_signals_for_analysis, z_score_threshold },
-      input_signals: [],
-      geography_registry_version: registry.version,
-      expected_count: null,
-      observed_count: 0,
-      computed_outputs: { status: "empty_run", reason: "no_signals_in_window" },
-    });
-    const emptyReceiptIds = await persistProvenanceReceipts([emptyReceipt]);
-    return {
-      engine_version: ENGINE_VERSION,
-      as_of,
-      config,
-      geography_registry_version: registry.version,
-      total_signals_analyzed: 0,
-      total_signals_after_dedup: 0,
-      geographies_evaluated: 0,
-      convergence_zones: [],
-      unresolved_geographies: [],
-      receipt_ids: emptyReceiptIds,
-    };
-  }
-
-  // Step 3: Convert to math engine Signal type
-  // confidence: null if not present — NEVER fabricate 0.5
-  const signals: Signal[] = rawSignals.map((r: any) => ({
-    id: String(r.id),
-    temporal_coordinate: Number(r.detectedAt),
-    spatial_coordinate: r.jurisdiction,
-    signal_type: r.signalType,
-    confidence: r.confidenceScore !== null && r.confidenceScore !== undefined
-      ? parseFloat(String(r.confidenceScore))
-      : null,
-    characteristics: {
-      domain: r.domain,
-      severity: r.severity,
-      dataset: r.datasetId,
-      ...(typeof r.supportingStatistics === "object" && r.supportingStatistics !== null
-        ? r.supportingStatistics as Record<string, any>
-        : {}),
-    },
-  }));
-
-  const totalSignals = signals.length;
-
-  // Step 4: Deduplicate using declared temporal bucket
-  const uniqueSignals = deduplicateSignals(signals, temporal_bucket_ms);
-
-  // Step 5: Group by geography
-  const byGeography = new Map<string, Signal[]>();
-  for (const s of uniqueSignals) {
-    const geo = s.spatial_coordinate;
-    if (!byGeography.has(geo)) byGeography.set(geo, []);
-    byGeography.get(geo)!.push(s);
-  }
-
-  // Step 6: Run convergence detection per geography
-  const convergenceZones: ConvergenceZone[] = [];
-  const unresolvedGeographies: Array<{ geography: string; reason: string }> = [];
-
-  for (const [geography, geoSignals] of Array.from(byGeography.entries())) {
-    if (geoSignals.length < min_signals_for_analysis) continue;
-
-    const input: ConvergenceInput = {
-      geography,
-      signals: geoSignals,
-      as_of,
-      time_window_ms,
-      total_signals_all_geographies: uniqueSignals.length,
-      geography_registry: registry,
-    };
-
-    const result = detectConvergence(input);
-
-    // Track unresolved geographies
-    if (result.poisson.status === "unresolved") {
-      unresolvedGeographies.push({
-        geography,
-        reason: result.poisson.reason_unresolved ?? "unknown",
-      });
-    }
-
-    // Generate provenance receipt for EVERY evaluated geography (resolved or not)
-    const provenance = generateProvenanceReceipt({
-      equation_id: "poisson_z_score",
-      as_of,
-      config: { time_window_ms, temporal_bucket_ms, min_signals_for_analysis, z_score_threshold },
-      input_signals: geoSignals,
-      geography_registry_version: registry.version,
-      expected_count: result.poisson.expected_count,
-      observed_count: result.poisson.observed_count,
-      computed_outputs: {
-        status: result.poisson.status,
-        z_score: result.poisson.z_score,
-        multiplicative_score: result.multiplicative_score,
-        recency_factor: result.recency_factor,
-        dominant_type: result.dominant_type,
-        reason_unresolved: result.poisson.reason_unresolved ?? null,
-      },
-    });
-
-    // Include ALL zones with provenance (not just threshold-exceeding)
-    convergenceZones.push({ geography, convergence: result, provenance });
-  }
-
-  // Sort by Z-score descending
-  convergenceZones.sort((a, b) => {
-    const zA = a.convergence.poisson.z_score ?? 0;
-    const zB = b.convergence.poisson.z_score ?? 0;
-    return zB - zA;
+export async function runConvergenceAnalysis(config: ConvergenceConfig): Promise<ConvergenceRunResult> {
+  const resolved: Required<ConvergenceConfig> = {
+    as_of: config.as_of,
+    time_window_ms: config.time_window_ms,
+    geography_registry_version: config.geography_registry_version,
+    temporal_bucket_ms: config.temporal_bucket_ms ?? 86_400_000,
+    min_signals_for_analysis: config.min_signals_for_analysis ?? 2,
+    z_score_threshold: config.z_score_threshold ?? 2,
+  };
+  validateConfig(resolved);
+  const runKey = computeRunKey({
+    as_of: resolved.as_of,
+    config: resolved,
+    geography_registry_version: resolved.geography_registry_version,
   });
 
-  // Step 7: Persist ALL provenance receipts (resolved, unresolved, below-threshold)
-  const receiptIds = await persistProvenanceReceipts(convergenceZones.map(z => z.provenance));
+  return db.transaction(async (tx: any) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${runKey}, 0))`);
 
+    const existing = await tx.execute(sql`
+      select result_payload
+      from convergence_run_snapshot
+      where run_key = ${runKey}
+      limit 1
+    `);
+    if (existing.rows?.length) {
+      const payload = parseJson(existing.rows[0].result_payload) as ConvergenceRunResult;
+      return { ...payload, replayed_from_snapshot: true };
+    }
+
+    const registry = await loadRegistrySnapshot(tx, resolved.geography_registry_version);
+    const rawSignals = await loadSignalSnapshot(resolved);
+    const deduplicatedPopulation = deduplicateSignals(rawSignals, resolved.temporal_bucket_ms);
+    const result = computeRunResult(runKey, resolved, registry, rawSignals, deduplicatedPopulation);
+
+    const receiptIds: string[] = [];
+    for (const zone of result.convergence_zones) {
+      const inserted = await tx.execute(sql`
+        insert into convergence_receipts (
+          run_key, geography_id, equation_id, engine_version,
+          rule_manifest_hash, as_of, configuration_hash, input_hash,
+          source_signal_ids, geography_registry_version, expected_count,
+          observed_count, computed_outputs, timestamp_computed
+        ) values (
+          ${zone.provenance.run_key}, ${zone.provenance.geography_id},
+          ${zone.provenance.equation_id}, ${zone.provenance.engine_version},
+          ${zone.provenance.rule_manifest_hash}, ${zone.provenance.as_of},
+          ${zone.provenance.configuration_hash}, ${zone.provenance.input_hash},
+          ${JSON.stringify(zone.provenance.source_signal_ids)}::jsonb,
+          ${zone.provenance.geography_registry_version},
+          ${zone.provenance.expected_count}, ${zone.provenance.observed_count},
+          ${JSON.stringify(zone.provenance.computed_outputs)}::jsonb,
+          ${zone.provenance.timestamp_computed}
+        )
+        returning id
+      `);
+      const id = String(inserted.rows?.[0]?.id ?? "");
+      if (!id) throw new Error(`receipt insert returned no id for ${zone.geography}`);
+      receiptIds.push(id);
+    }
+
+    const finalResult: ConvergenceRunResult = { ...result, receipt_ids: receiptIds, replayed_from_snapshot: false };
+    await tx.execute(sql`
+      insert into convergence_run_snapshot (
+        run_key, engine_version, as_of, configuration,
+        configuration_hash, geography_registry_version,
+        raw_signal_snapshot, deduplicated_signal_snapshot,
+        geography_registry_snapshot, input_hash, result_payload
+      ) values (
+        ${runKey}, ${ENGINE_VERSION}, ${resolved.as_of},
+        ${JSON.stringify(resolved)}::jsonb,
+        ${result.convergence_zones[0]?.provenance.configuration_hash ?? ""},
+        ${resolved.geography_registry_version},
+        ${JSON.stringify(rawSignals)}::jsonb,
+        ${JSON.stringify(deduplicatedPopulation)}::jsonb,
+        ${JSON.stringify(registry)}::jsonb,
+        ${result.convergence_zones[0]?.provenance.input_hash ?? ""},
+        ${JSON.stringify(finalResult)}::jsonb
+      )
+    `);
+    return finalResult;
+  });
+}
+
+async function loadSignalSnapshot(config: Required<ConvergenceConfig>): Promise<Signal[]> {
+  const cutoff = config.as_of - config.time_window_ms;
+  const rows = await db.select().from(liveSignals).where(and(
+    gte(liveSignals.detectedAt, cutoff),
+    lte(liveSignals.detectedAt, config.as_of),
+  ));
+  return rows.map((row: any) => ({
+    id: String(row.id),
+    temporal_coordinate: Number(row.detectedAt),
+    spatial_coordinate: normalizeGeographyId(row.jurisdiction),
+    signal_type: String(row.signalType),
+    confidence: parseNullableUnit(row.confidenceScore),
+    characteristics: {
+      domain: row.domain ?? null,
+      severity: row.severity ?? null,
+      dataset: row.datasetId ?? null,
+      supporting_statistics: normalizeSupportingStatistics(row.supportingStatistics),
+    },
+  })).sort((a, b) => a.id.localeCompare(b.id));
+}
+
+async function loadRegistrySnapshot(tx: any, version: string): Promise<GeographyRegistry> {
+  const rows = await tx.execute(sql`
+    select id, area_sq_km, centroid_lat, centroid_lon, adjacency
+    from geography_registry
+    where version = ${version}
+    order by id
+  `);
   return {
-    engine_version: ENGINE_VERSION,
-    as_of,
-    config,
-    geography_registry_version: registry.version,
-    total_signals_analyzed: totalSignals,
-    total_signals_after_dedup: uniqueSignals.length,
-    geographies_evaluated: byGeography.size,
-    convergence_zones: convergenceZones,
-    unresolved_geographies: unresolvedGeographies,
-    receipt_ids: receiptIds,
+    version,
+    entries: (rows.rows ?? []).map((row: any) => ({
+      id: normalizeGeographyId(row.id),
+      area_sq_km: Number(row.area_sq_km),
+      centroid_lat: row.centroid_lat === null ? null : Number(row.centroid_lat),
+      centroid_lon: row.centroid_lon === null ? null : Number(row.centroid_lon),
+      adjacency: Array.isArray(row.adjacency) ? row.adjacency.map(normalizeGeographyId) : [],
+    })),
   };
 }
 
-// ============================================================
-// PROVENANCE PERSISTENCE
-// ============================================================
-
-async function persistProvenanceReceipts(receipts: ProvenanceReceipt[]): Promise<string[]> {
-  if (receipts.length === 0) return [];
-  // FAIL-CLOSED: if persistence fails, the entire run fails.
-  // No silent discard of provenance data.
-  const ids: string[] = [];
-  for (const receipt of receipts) {
-    const result = await db.execute(sql`
-      INSERT INTO convergence_receipts (
-        equation_id, engine_version, rule_manifest_hash, as_of,
-        configuration_hash, input_hash, source_signal_ids,
-        geography_registry_version, expected_count, observed_count,
-        computed_outputs, timestamp_computed
-      ) VALUES (
-        ${receipt.equation_id},
-        ${receipt.engine_version},
-        ${receipt.rule_manifest_hash},
-        ${receipt.as_of},
-        ${receipt.configuration_hash},
-        ${receipt.input_hash},
-        ${JSON.stringify(receipt.source_signal_ids)},
-        ${receipt.geography_registry_version},
-        ${receipt.expected_count},
-        ${receipt.observed_count},
-        ${JSON.stringify(receipt.computed_outputs)}::jsonb,
-        ${receipt.timestamp_computed}
-      ) RETURNING id
-    `);
-    const id = (result.rows?.[0] as any)?.id;
-    if (id) ids.push(id);
+function computeRunResult(
+  runKey: string,
+  config: Required<ConvergenceConfig>,
+  registry: GeographyRegistry,
+  rawPopulation: Signal[],
+  deduplicatedPopulation: Signal[],
+): ConvergenceRunResult {
+  const grouped = new Map<string, Signal[]>();
+  for (const signal of rawPopulation) {
+    const group = grouped.get(signal.spatial_coordinate) ?? [];
+    group.push(signal);
+    grouped.set(signal.spatial_coordinate, group);
   }
-  return ids;
+
+  const zones: ConvergenceZone[] = [];
+  const unresolved: Array<{ geography: string; reason: string }> = [];
+  const configForReceipt = { ...config, null_model_id: NULL_MODEL_ID, null_model_assumptions: NULL_MODEL_ASSUMPTIONS };
+
+  if (!registry.entries.length || !rawPopulation.length) {
+    const reason = !registry.entries.length ? `No geography rows for registry version '${registry.version}'` : "No signals in declared time window";
+    const receipt = generateProvenanceReceipt({
+      run_key: runKey,
+      geography_id: "*",
+      equation_id: "poisson_z_score",
+      as_of: config.as_of,
+      config: configForReceipt,
+      raw_population: rawPopulation,
+      deduplicated_population: deduplicatedPopulation,
+      geography_registry: registry,
+      expected_count: null,
+      observed_count: 0,
+      computed_outputs: { status: "unresolved", reason },
+    });
+    zones.push({
+      geography: "*",
+      convergence: unresolvedResult("*", registry, rawPopulation.length, reason),
+      provenance: receipt,
+      reportable: false,
+      reason_not_reportable: reason,
+    });
+    unresolved.push({ geography: "*", reason });
+  } else {
+    for (const geography of [...grouped.keys()].sort()) {
+      const rawSignals = grouped.get(geography) ?? [];
+      const convergence = detectConvergence({
+        geography,
+        raw_signals: rawSignals,
+        as_of: config.as_of,
+        time_window_ms: config.time_window_ms,
+        temporal_bucket_ms: config.temporal_bucket_ms,
+        total_signals_all_geographies: deduplicatedPopulation.length,
+        geography_registry: registry,
+      });
+      const enoughSignals = convergence.signal_count >= config.min_signals_for_analysis;
+      const thresholdMet = convergence.poisson.status === "resolved" &&
+        convergence.poisson.z_score !== null && convergence.poisson.z_score >= config.z_score_threshold;
+      const reasonNotReportable = !enoughSignals
+        ? `deduplicated signal count ${convergence.signal_count} is below minimum ${config.min_signals_for_analysis}`
+        : !thresholdMet ? `Z-score does not meet reporting threshold ${config.z_score_threshold}` : null;
+      if (convergence.poisson.status === "unresolved") {
+        unresolved.push({ geography, reason: convergence.poisson.reason_unresolved ?? "unresolved" });
+      }
+      const receipt = generateProvenanceReceipt({
+        run_key: runKey,
+        geography_id: geography,
+        equation_id: "poisson_z_score",
+        as_of: config.as_of,
+        config: configForReceipt,
+        raw_population: rawPopulation,
+        deduplicated_population: deduplicatedPopulation,
+        geography_registry: registry,
+        expected_count: convergence.poisson.expected_count,
+        observed_count: convergence.poisson.observed_count,
+        computed_outputs: { ...convergence, reportable: enoughSignals && thresholdMet, reason_not_reportable: reasonNotReportable },
+      });
+      zones.push({ geography, convergence, provenance: receipt, reportable: enoughSignals && thresholdMet, reason_not_reportable: reasonNotReportable });
+    }
+  }
+
+  zones.sort((a, b) => (b.convergence.poisson.z_score ?? Number.NEGATIVE_INFINITY) - (a.convergence.poisson.z_score ?? Number.NEGATIVE_INFINITY));
+  return {
+    run_key: runKey,
+    engine_version: ENGINE_VERSION,
+    as_of: config.as_of,
+    config,
+    geography_registry_version: registry.version,
+    total_signals_analyzed: rawPopulation.length,
+    total_signals_after_dedup: deduplicatedPopulation.length,
+    geographies_evaluated: zones.length,
+    convergence_zones: zones,
+    reported_zones: zones.filter(z => z.reportable),
+    unresolved_geographies: unresolved,
+    receipt_ids: [],
+    replayed_from_snapshot: false,
+  };
 }
+
+function unresolvedResult(geography: string, registry: GeographyRegistry, rawCount: number, reason: string): ConvergenceResult {
+  return {
+    geography,
+    raw_signal_count: rawCount,
+    signal_count: 0,
+    distinct_types: 0,
+    mean_confidence: null,
+    recency_factor: 0,
+    multiplicative_score: null,
+    dominant_type: "none",
+    poisson: { status: "unresolved", expected_count: null, observed_count: 0, z_score: null, reason_unresolved: reason },
+    source_signal_ids: [],
+    deduplicated_signal_ids: [],
+    null_model: { model_id: NULL_MODEL_ID, assumptions: NULL_MODEL_ASSUMPTIONS, geography_registry_version: registry.version, total_area_sq_km: registry.entries.reduce((s, e) => s + e.area_sq_km, 0), geography_area_sq_km: null, total_signals: 0 },
+  };
+}
+
+function validateConfig(config: Required<ConvergenceConfig>) {
+  if (!Number.isFinite(config.as_of)) throw new Error("as_of is required and must be finite");
+  if (!Number.isFinite(config.time_window_ms) || config.time_window_ms <= 0) throw new Error("time_window_ms must be positive");
+  if (!Number.isFinite(config.temporal_bucket_ms) || config.temporal_bucket_ms <= 0) throw new Error("temporal_bucket_ms must be positive");
+  if (!Number.isInteger(config.min_signals_for_analysis) || config.min_signals_for_analysis < 1) throw new Error("min_signals_for_analysis must be a positive integer");
+  if (!Number.isFinite(config.z_score_threshold)) throw new Error("z_score_threshold must be finite");
+  if (!config.geography_registry_version.trim()) throw new Error("geography_registry_version is required");
+}
+
+function parseNullableUnit(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) throw new Error(`invalid confidence '${String(value)}'`);
+  return parsed;
+}
+function normalizeSupportingStatistics(value: unknown): string | number | boolean | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return value;
+  return JSON.stringify(value);
+}
+function normalizeGeographyId(value: unknown): string { return String(value ?? "").trim().toUpperCase(); }
+function parseJson(value: unknown): unknown { return typeof value === "string" ? JSON.parse(value) : value; }
