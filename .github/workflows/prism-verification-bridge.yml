@@ -16,5 +16,9 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --no-frozen-lockfile
-      - run: pnpm exec vitest run server/routes/prism-verification-router.test.ts server/services/prism-verification-contract.test.ts
+      - run: >-
+          pnpm exec vitest run
+          server/routes/prism-verification-router.test.ts
+          server/services/prism-verification-contract.test.ts
+          server/services/prism-rosetta-activation.test.ts
       - run: pnpm run build
