@@ -1,0 +1,68 @@
+name: Patch Rosetta UI transition
+
+on:
+  push:
+    branches:
+      - fix/rosetta-secret-key-auth-header
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/rosetta-secret-key-auth-header
+          fetch-depth: 0
+
+      - name: Patch the bound-source extraction transition
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("client/src/pages/CivicGenome.tsx")
+          text = path.read_text()
+
+          text = text.replace(
+              'set_operation_message("Rosetta accepted the exact Docket source handoff. Extraction status is shown below.");',
+              'set_operation_message("Rosetta completed deterministic extraction and Civic Genome assembly for this exact Docket source.");',
+          )
+
+          button_pattern = re.compile(
+              r'''            <button onClick=\{ingest_selected_to_rosetta\} disabled=\{ingest_rosetta_source\.isPending \|\| Boolean\(rosetta_pipeline\.data\.source_document_id\)\} style=\{\{ background: p\.green_soft, border: `1px solid \$\{rosetta_pipeline\.data\.source_document_id \? p\.border : p\.green\}`, color: rosetta_pipeline\.data\.source_document_id \? p\.muted : p\.green, borderRadius: 8, padding: "\.6rem \.85rem", fontFamily: mono, fontSize: "\.67rem", cursor: ingest_rosetta_source\.isPending \? "wait" : rosetta_pipeline\.data\.source_document_id \? "not-allowed" : "pointer" \}\}>
+              \{ingest_rosetta_source\.isPending \? "Creating exact handoff…" : rosetta_pipeline\.data\.source_document_id \? "Rosetta source already bound" : "Create Rosetta source handoff"\}
+            </button>'''
+          )
+          button_replacement = '''            <button onClick={ingest_selected_to_rosetta} disabled={ingest_rosetta_source.isPending || rosetta_pipeline.data.can_assemble} style={{ background: p.green_soft, border: `1px solid ${rosetta_pipeline.data.can_assemble ? p.border : p.green}`, color: rosetta_pipeline.data.can_assemble ? p.muted : p.green, borderRadius: 8, padding: ".6rem .85rem", fontFamily: mono, fontSize: ".67rem", cursor: ingest_rosetta_source.isPending ? "wait" : rosetta_pipeline.data.can_assemble ? "not-allowed" : "pointer" }}>
+              {ingest_rosetta_source.isPending
+                ? "Running deterministic Rosetta pipeline…"
+                : rosetta_pipeline.data.can_assemble
+                  ? "Rosetta extraction complete"
+                  : rosetta_pipeline.data.source_document_id
+                    ? "Run deterministic Rosetta extraction"
+                    : "Create Rosetta source handoff and extract"}
+            </button>'''
+          text, button_count = button_pattern.subn(button_replacement, text)
+          if button_count != 1:
+              raise SystemExit(f"expected one Rosetta action button, found {button_count}")
+
+          text = text.replace(
+              'Rosetta handoff failed: {ingest_rosetta_source.error.message}',
+              'Rosetta pipeline failed: {ingest_rosetta_source.error.message}',
+          )
+
+          path.write_text(text)
+          Path(".github/workflows/patch-rosetta-ui-transition.yml").unlink()
+          PY
+
+      - name: Commit the source-controlled UI repair
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Enable deterministic extraction for bound Rosetta sources"
+          git push origin HEAD:fix/rosetta-secret-key-auth-header
