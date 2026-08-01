@@ -20,7 +20,7 @@ alter table public.geography_registry add constraint geography_registry_adjacenc
 alter table public.convergence_receipts add column if not exists run_key text;
 alter table public.convergence_receipts add column if not exists geography_id text;
 update public.convergence_receipts
-set run_key = coalesce(run_key, extensions.encode(extensions.digest(id::text, 'sha256'), 'hex')),
+set run_key = coalesce(run_key, encode(extensions.digest(id::text, 'sha256'), 'hex')),
     geography_id = coalesce(geography_id, '*')
 where run_key is null or geography_id is null;
 alter table public.convergence_receipts alter column run_key set not null;
