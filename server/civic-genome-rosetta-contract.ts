@@ -24,6 +24,19 @@ type rosetta_export_row = {
   objects: unknown;
   coverage: unknown;
   provenance_state: ProvenanceState;
+  engine_version?: unknown;
+  rule_set_version?: unknown;
+  rule_manifest_hash?: unknown;
+  configuration_hash?: unknown;
+  source_identity_hash?: unknown;
+  source_content_hash?: unknown;
+  output_content_hash?: unknown;
+  admissibility_state?: unknown;
+  source_url?: unknown;
+  source_version?: unknown;
+  media_type?: unknown;
+  source_byte_hash?: unknown;
+  source_provider_hash?: unknown;
 };
 
 export type civic_genome_rosetta_law_view = {
@@ -38,6 +51,19 @@ export type civic_genome_rosetta_law_view = {
   confidence_threshold: number;
   created_at: string | null;
   completed_at: string | null;
+  engine_version: string | null;
+  rule_set_version: string | null;
+  rule_manifest_hash: string | null;
+  configuration_hash: string | null;
+  source_identity_hash: string | null;
+  source_content_hash: string | null;
+  output_content_hash: string | null;
+  admissibility_state: string | null;
+  source_url: string | null;
+  source_version: string | null;
+  media_type: string | null;
+  source_byte_hash: string | null;
+  source_provider_hash: string | null;
   law_view: RosettaLawView;
 };
 
@@ -51,6 +77,10 @@ function get_required_environment(name: string): string {
 
 function is_record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function nullable_string(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
 }
 
 function is_rosetta_layer(value: unknown): value is RosettaLayer {
@@ -134,6 +164,19 @@ function normalize_export_row(row: rosetta_export_row): civic_genome_rosetta_law
     confidence_threshold: Number(row.confidence_threshold),
     created_at: row.created_at,
     completed_at: row.completed_at,
+    engine_version: nullable_string(row.engine_version),
+    rule_set_version: nullable_string(row.rule_set_version),
+    rule_manifest_hash: nullable_string(row.rule_manifest_hash),
+    configuration_hash: nullable_string(row.configuration_hash),
+    source_identity_hash: nullable_string(row.source_identity_hash),
+    source_content_hash: nullable_string(row.source_content_hash),
+    output_content_hash: nullable_string(row.output_content_hash),
+    admissibility_state: nullable_string(row.admissibility_state),
+    source_url: nullable_string(row.source_url),
+    source_version: nullable_string(row.source_version),
+    media_type: nullable_string(row.media_type),
+    source_byte_hash: nullable_string(row.source_byte_hash),
+    source_provider_hash: nullable_string(row.source_provider_hash),
     law_view: {
       objects,
       coverage,

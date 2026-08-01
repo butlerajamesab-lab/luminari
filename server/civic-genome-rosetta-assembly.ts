@@ -28,6 +28,10 @@ export type rosetta_genome_assembly_result = {
   replayed: boolean;
 };
 
+function is_record(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function verification_state(view: civic_genome_rosetta_law_view): "complete" | "partial" {
   const covered = Object.values(view.law_view.coverage).filter(value => value === 1).length;
   return view.law_view.provenanceState === "complete" && covered === 5 ? "complete" : "partial";
@@ -53,11 +57,45 @@ function assert_view_identity(
   if (view.run_status?.toLowerCase() !== "completed") {
     throw new Error("rosetta_extraction_not_completed");
   }
-  if (view.law_view.provenanceState === "failed") {
-    throw new Error("rosetta_provenance_failed");
+  if (view.admissibility_state !== "admissible") {
+    throw new Error("rosetta_extraction_not_admissible");
+  }
+  if (view.law_view.provenanceState !== "complete") {
+    throw new Error("rosetta_provenance_not_complete");
+  }
+  if (verification_state(view) !== "complete") {
+    throw new Error("rosetta_five_layer_coverage_not_terminal");
   }
   if (view.law_view.objects.length === 0) {
     throw new Error("rosetta_completed_run_has_no_objects");
+  }
+
+  const required_receipts = [
+    view.engine_version,
+    view.rule_set_version,
+    view.rule_manifest_hash,
+    view.configuration_hash,
+    view.source_identity_hash,
+    view.source_content_hash,
+    view.output_content_hash,
+    view.source_url,
+    view.source_version,
+  ];
+  if (required_receipts.some(value => !value)) {
+    throw new Error("rosetta_admissible_run_missing_receipt");
+  }
+
+  for (const object of view.law_view.objects) {
+    if (!object.sourceBlockId) throw new Error("rosetta_object_source_block_missing");
+    const source_span = object.metadata?.source_span;
+    if (!is_record(source_span)) throw new Error("rosetta_object_source_span_missing");
+    if (
+      typeof source_span.char_offset_start !== "number"
+      || typeof source_span.char_offset_end !== "number"
+      || typeof source_span.block_content_hash !== "string"
+    ) {
+      throw new Error("rosetta_object_source_span_invalid");
+    }
   }
 }
 
@@ -75,28 +113,79 @@ async function load_view(
 async function bind_source_identity(
   client: PoolClient,
   genome_bill_id: string,
-  source_document_id: number,
-  source_identity_hash: string,
+  view: civic_genome_rosetta_law_view,
 ): Promise<void> {
   await client.query(
     `insert into public.civic_genome_rosetta_source_binding (
-       source_document_id, genome_bill_id, source_identity_hash
-     ) values ($1, $2, $3)
+       source_document_id, genome_bill_id, source_identity_hash,
+       source_content_hash, source_url, source_version,
+       rosetta_engine_version, rosetta_rule_set_version,
+       rosetta_rule_manifest_hash, rosetta_configuration_hash,
+       rosetta_output_content_hash
+     ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
      on conflict (source_document_id) do nothing`,
-    [source_document_id, genome_bill_id, source_identity_hash],
+    [
+      view.source_document_id,
+      genome_bill_id,
+      view.source_identity_hash,
+      view.source_content_hash,
+      view.source_url,
+      view.source_version,
+      view.engine_version,
+      view.rule_set_version,
+      view.rule_manifest_hash,
+      view.configuration_hash,
+      view.output_content_hash,
+    ],
   );
-  const { rows } = await client.query<{ genome_bill_id: string; source_identity_hash: string }>(
-    `select genome_bill_id, source_identity_hash
+  const { rows } = await client.query<{
+    genome_bill_id: string;
+    source_identity_hash: string;
+    source_content_hash: string | null;
+    source_url: string | null;
+    source_version: string | null;
+    rosetta_engine_version: string | null;
+    rosetta_rule_set_version: string | null;
+    rosetta_rule_manifest_hash: string | null;
+    rosetta_configuration_hash: string | null;
+    rosetta_output_content_hash: string | null;
+  }>(
+    `select genome_bill_id, source_identity_hash, source_content_hash,
+            source_url, source_version, rosetta_engine_version,
+            rosetta_rule_set_version, rosetta_rule_manifest_hash,
+            rosetta_configuration_hash, rosetta_output_content_hash
        from public.civic_genome_rosetta_source_binding
       where source_document_id = $1`,
-    [source_document_id],
+    [view.source_document_id],
   );
   const binding = rows[0];
   if (!binding || binding.genome_bill_id !== genome_bill_id) {
     throw new Error("rosetta_source_document_already_bound_to_other_bill");
   }
-  if (binding.source_identity_hash !== source_identity_hash) {
-    throw new Error("rosetta_source_identity_hash_changed");
+  const observed_receipt = {
+    source_identity_hash: binding.source_identity_hash,
+    source_content_hash: binding.source_content_hash,
+    source_url: binding.source_url,
+    source_version: binding.source_version,
+    rosetta_engine_version: binding.rosetta_engine_version,
+    rosetta_rule_set_version: binding.rosetta_rule_set_version,
+    rosetta_rule_manifest_hash: binding.rosetta_rule_manifest_hash,
+    rosetta_configuration_hash: binding.rosetta_configuration_hash,
+    rosetta_output_content_hash: binding.rosetta_output_content_hash,
+  };
+  const expected_receipt = {
+    source_identity_hash: view.source_identity_hash,
+    source_content_hash: view.source_content_hash,
+    source_url: view.source_url,
+    source_version: view.source_version,
+    rosetta_engine_version: view.engine_version,
+    rosetta_rule_set_version: view.rule_set_version,
+    rosetta_rule_manifest_hash: view.rule_manifest_hash,
+    rosetta_configuration_hash: view.configuration_hash,
+    rosetta_output_content_hash: view.output_content_hash,
+  };
+  if (hashValue(observed_receipt) !== hashValue(expected_receipt)) {
+    throw new Error("rosetta_source_binding_receipt_changed");
   }
 }
 
@@ -110,30 +199,78 @@ export async function assemble_rosetta_structural_dna(
     document_identifier: view.document_identifier,
     document_name: view.document_name,
     document_type: view.document_type,
+    source_identity_hash: view.source_identity_hash,
+    source_content_hash: view.source_content_hash,
+    source_byte_hash: view.source_byte_hash,
+    source_url: view.source_url,
+    source_version: view.source_version,
+    media_type: view.media_type,
   };
-  const source_identity_hash = hashValue(source_identity);
+  const source_identity_hash = view.source_identity_hash as string;
+  const source_receipt = {
+    engine_version: view.engine_version,
+    rule_set_version: view.rule_set_version,
+    rule_manifest_hash: view.rule_manifest_hash,
+    configuration_hash: view.configuration_hash,
+    source_identity_hash,
+    source_content_hash: view.source_content_hash,
+    source_byte_hash: view.source_byte_hash,
+    source_provider_hash: view.source_provider_hash,
+    output_content_hash: view.output_content_hash,
+    source_url: view.source_url,
+    source_version: view.source_version,
+  };
+  const objects_by_id = new Map(
+    view.law_view.objects.map(object => [object.sourceObjectId, object]),
+  );
   const traits = adaptRosettaToGenomeTraits(request.genome_bill_id, view.law_view.objects);
   const input_hash = hashValue({
     genome_bill_id: request.genome_bill_id,
     source_identity,
+    source_receipt,
     extraction_run_id: view.extraction_run_id,
     run_version: view.run_version,
     law_view: view.law_view,
     engine_version: ROSETTA_GENOME_ENGINE_VERSION,
     rule_version: ROSETTA_GENOME_RULE_VERSION,
   });
-  const persisted_traits = traits.map(trait => ({
-    ...trait,
-    content_hash: hashValue({
-      trait_class: trait.traitClass,
-      trait_key: trait.traitKey,
-      normalized_value: trait.normalizedValue,
+  const persisted_traits = traits.map(trait => {
+    const source_object = objects_by_id.get(trait.sourceObjectId);
+    const source_trace = [{
+      source_document_id: request.source_document_id,
       source_object_type: trait.sourceObjectType,
       source_object_id: trait.sourceObjectId,
       source_block_id: trait.sourceBlockId,
       extraction_run_id: trait.extractionRunId,
-    }),
-  }));
+      source_span: source_object?.metadata?.source_span ?? null,
+      rosetta_engine_version: view.engine_version,
+      rosetta_rule_set_version: view.rule_set_version,
+      rosetta_rule_manifest_hash: view.rule_manifest_hash,
+      rosetta_configuration_hash: view.configuration_hash,
+      rosetta_source_identity_hash: source_identity_hash,
+      rosetta_source_content_hash: view.source_content_hash,
+      rosetta_source_byte_hash: view.source_byte_hash,
+      rosetta_output_content_hash: view.output_content_hash,
+      source_url: view.source_url,
+      source_version: view.source_version,
+      assembly_engine_version: ROSETTA_GENOME_ENGINE_VERSION,
+      trait_map_version: ROSETTA_GENOME_RULE_VERSION,
+    }];
+    return {
+      ...trait,
+      source_trace,
+      content_hash: hashValue({
+        trait_class: trait.traitClass,
+        trait_key: trait.traitKey,
+        normalized_value: trait.normalizedValue,
+        source_object_type: trait.sourceObjectType,
+        source_object_id: trait.sourceObjectId,
+        source_block_id: trait.sourceBlockId,
+        extraction_run_id: trait.extractionRunId,
+        source_trace,
+      }),
+    };
+  });
   const output_hash = hashValue(persisted_traits);
   const state = verification_state(view);
   const pool = getPool();
@@ -147,12 +284,7 @@ export async function assemble_rosetta_structural_dna(
     );
     if (!bill.rows[0]) throw new Error("civic_genome_bill_not_found");
 
-    await bind_source_identity(
-      client,
-      request.genome_bill_id,
-      request.source_document_id,
-      source_identity_hash,
-    );
+    await bind_source_identity(client, request.genome_bill_id, view);
 
     const replay = await client.query<{ assembly_run_id: string }>(
       `select assembly_run_id
@@ -206,7 +338,12 @@ export async function assemble_rosetta_structural_dna(
            normalized_value_json = excluded.normalized_value_json,
            confidence_score = excluded.confidence_score,
            signal_status = excluded.signal_status,
+           methodology_version = excluded.methodology_version,
+           source_trace = excluded.source_trace,
+           source_document_id = excluded.source_document_id,
            verification_state = excluded.verification_state,
+           engine_version = excluded.engine_version,
+           rule_version = excluded.rule_version,
            content_hash = excluded.content_hash,
            updated_at = now()`,
         [
@@ -222,16 +359,11 @@ export async function assemble_rosetta_structural_dna(
           trait.signalStatus,
           trait.traitFingerprint,
           ROSETTA_GENOME_RULE_VERSION,
-          JSON.stringify([{
-            source_document_id: request.source_document_id,
-            source_object_id: trait.sourceObjectId,
-            source_block_id: trait.sourceBlockId,
-            extraction_run_id: trait.extractionRunId,
-          }]),
+          JSON.stringify(trait.source_trace),
           request.source_document_id,
           trait.signalStatus,
-          ROSETTA_GENOME_ENGINE_VERSION,
-          ROSETTA_GENOME_RULE_VERSION,
+          view.engine_version,
+          view.rule_set_version,
           trait.content_hash,
         ],
       );
@@ -242,8 +374,16 @@ export async function assemble_rosetta_structural_dna(
          genome_bill_id, source_document_id, extraction_run_id,
          engine_version, rule_version, input_hash, output_hash,
          verification_state, coverage_json, trait_count,
-         malformed_object_count, run_status, completed_at
-       ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,0,'completed',now())
+         malformed_object_count, run_status, completed_at,
+         rosetta_engine_version, rosetta_rule_set_version,
+         rosetta_rule_manifest_hash, rosetta_configuration_hash,
+         rosetta_source_identity_hash, rosetta_source_content_hash,
+         rosetta_output_content_hash, rosetta_source_url,
+         rosetta_source_version
+       ) values (
+         $1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,0,'completed',now(),
+         $11,$12,$13,$14,$15,$16,$17,$18,$19
+       )
        returning assembly_run_id`,
       [
         request.genome_bill_id,
@@ -256,6 +396,15 @@ export async function assemble_rosetta_structural_dna(
         state,
         JSON.stringify(view.law_view.coverage),
         persisted_traits.length,
+        view.engine_version,
+        view.rule_set_version,
+        view.rule_manifest_hash,
+        view.configuration_hash,
+        source_identity_hash,
+        view.source_content_hash,
+        view.output_content_hash,
+        view.source_url,
+        view.source_version,
       ],
     );
 
@@ -265,6 +414,7 @@ export async function assemble_rosetta_structural_dna(
               structural_dna_hash = $3,
               structural_dna_json = coalesce(structural_dna_json, '{}'::jsonb)
                 || jsonb_build_object(
+                  'rosetta_source_receipt', $11::jsonb,
                   'rosetta_assembly',
                   jsonb_build_object(
                     'engine_version', $4,
@@ -275,7 +425,13 @@ export async function assemble_rosetta_structural_dna(
                     'output_hash', $3,
                     'verification_state', $8,
                     'coverage', $9::jsonb,
-                    'trait_count', $10
+                    'trait_count', $10,
+                    'rosetta_engine_version', $12,
+                    'rosetta_rule_set_version', $13,
+                    'rosetta_rule_manifest_hash', $14,
+                    'rosetta_configuration_hash', $15,
+                    'rosetta_source_content_hash', $16,
+                    'rosetta_output_content_hash', $17
                   )
                 ),
               updated_at = now()
@@ -291,6 +447,13 @@ export async function assemble_rosetta_structural_dna(
         state,
         JSON.stringify(view.law_view.coverage),
         persisted_traits.length,
+        JSON.stringify(source_receipt),
+        view.engine_version,
+        view.rule_set_version,
+        view.rule_manifest_hash,
+        view.configuration_hash,
+        view.source_content_hash,
+        view.output_content_hash,
       ],
     );
 

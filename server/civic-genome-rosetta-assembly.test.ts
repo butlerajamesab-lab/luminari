@@ -28,6 +28,14 @@ import {
 } from "./civic-genome-rosetta-assembly";
 
 const genome_bill_id = "11111111-1111-4111-8111-111111111111";
+const rosetta_engine_version = "rosetta-v3-deterministic-sql-1.0.0";
+const rosetta_rule_set_version = "rosetta-five-layer-exact-patterns-1.0.0";
+const source_identity_hash = "1".repeat(64);
+const source_content_hash = "2".repeat(64);
+const source_byte_hash = "3".repeat(64);
+const output_content_hash = "4".repeat(64);
+const rule_manifest_hash = "5".repeat(64);
+const configuration_hash = "6".repeat(64);
 
 function law_view() {
   return {
@@ -39,9 +47,22 @@ function law_view() {
     document_identifier: "WA-HB-100",
     run_version: 1,
     run_status: "completed",
-    confidence_threshold: 0.75,
+    confidence_threshold: 1,
     created_at: "2026-07-23T00:00:00.000Z",
     completed_at: "2026-07-23T00:01:00.000Z",
+    engine_version: rosetta_engine_version,
+    rule_set_version: rosetta_rule_set_version,
+    rule_manifest_hash,
+    configuration_hash,
+    source_identity_hash,
+    source_content_hash,
+    output_content_hash,
+    admissibility_state: "admissible",
+    source_url: "https://example.gov/wa/hb100.pdf",
+    source_version: "official:1",
+    media_type: "application/pdf",
+    source_byte_hash,
+    source_provider_hash: "provider-receipt",
     law_view: {
       provenanceState: "complete" as "complete" | "partial" | "failed",
       coverage: { help: 1, workflow: 1, accountability: 1, override: 1, definition: 1 },
@@ -53,26 +74,45 @@ function law_view() {
         sourceObjectId: "object-1",
         sourceBlockId: "block-1",
         extractionRunId: "42",
-        confidence: 0.95,
+        confidence: 1,
         confirmed: true,
+        metadata: {
+          source_span: {
+            char_offset_start: 100,
+            char_offset_end: 240,
+            block_content_hash: "7".repeat(64),
+            section_number: "Sec. 1",
+          },
+        },
       }],
     },
   };
 }
 
 function successful_queries(replayed = false) {
-  let source_identity_hash = "";
+  let binding: Record<string, unknown> = {};
   query.mockImplementation(async (sql: string, params?: unknown[]) => {
     if (sql === "begin" || sql === "commit" || sql === "rollback") return { rows: [] };
-    if (sql.includes("insert into public.civic_genome_rosetta_source_binding")) {
-      source_identity_hash = String(params?.[2] ?? "");
-      return { rows: [] };
-    }
     if (sql.includes("from public.civic_genome_bill") && sql.includes("for update")) {
       return { rows: [{ genome_bill_id }] };
     }
+    if (sql.includes("insert into public.civic_genome_rosetta_source_binding")) {
+      binding = {
+        genome_bill_id,
+        source_identity_hash: params?.[2],
+        source_content_hash: params?.[3],
+        source_url: params?.[4],
+        source_version: params?.[5],
+        rosetta_engine_version: params?.[6],
+        rosetta_rule_set_version: params?.[7],
+        rosetta_rule_manifest_hash: params?.[8],
+        rosetta_configuration_hash: params?.[9],
+        rosetta_output_content_hash: params?.[10],
+      };
+      return { rows: [] };
+    }
     if (sql.includes("from public.civic_genome_rosetta_source_binding")) {
-      return { rows: [{ genome_bill_id, source_identity_hash }] };
+      return { rows: [binding] };
     }
     if (sql.includes("from public.civic_genome_assembly_run") && sql.includes("limit 1")) {
       return { rows: replayed ? [{ assembly_run_id: "22222222-2222-4222-8222-222222222222" }] : [] };
@@ -112,17 +152,34 @@ describe("Rosetta -> Civic Genome assembly activation", () => {
     expect(query.mock.calls.some(([sql]) => String(sql).includes("insert into public.civic_genome_trait"))).toBe(false);
   });
 
-  it("persists complete object and block provenance plus engine and rule versions", async () => {
+  it("persists exact Rosetta run receipts and source spans on each trait", async () => {
     successful_queries(false);
     await assemble_rosetta_structural_dna({ genome_bill_id, source_document_id: 7, extraction_run_id: 42 });
     const trait_insert = query.mock.calls.find(([sql]) => String(sql).includes("insert into public.civic_genome_trait"));
     expect(trait_insert).toBeDefined();
     const params = trait_insert?.[1] as unknown[];
-    expect(params).toContain("object-1");
-    expect(params).toContain("block-1");
-    expect(params).toContain("42");
-    expect(params).toContain(ROSETTA_GENOME_ENGINE_VERSION);
-    expect(params).toContain(ROSETTA_GENOME_RULE_VERSION);
+    const trace = JSON.parse(String(params[12])) as Array<Record<string, unknown>>;
+    expect(params[5]).toBe("object-1");
+    expect(params[6]).toBe("block-1");
+    expect(params[7]).toBe("42");
+    expect(params[15]).toBe(rosetta_engine_version);
+    expect(params[16]).toBe(rosetta_rule_set_version);
+    expect(trace[0]).toMatchObject({
+      source_document_id: 7,
+      source_object_id: "object-1",
+      source_block_id: "block-1",
+      extraction_run_id: "42",
+      rosetta_rule_manifest_hash: rule_manifest_hash,
+      rosetta_source_content_hash: source_content_hash,
+      rosetta_output_content_hash: output_content_hash,
+      assembly_engine_version: ROSETTA_GENOME_ENGINE_VERSION,
+      trait_map_version: ROSETTA_GENOME_RULE_VERSION,
+      source_span: {
+        char_offset_start: 100,
+        char_offset_end: 240,
+        block_content_hash: "7".repeat(64),
+      },
+    });
   });
 
   it("rejects malformed cross-run object provenance before persistence", async () => {
@@ -134,42 +191,60 @@ describe("Rosetta -> Civic Genome assembly activation", () => {
     expect(query).not.toHaveBeenCalled();
   });
 
-  it("rejects an in-progress Rosetta extraction before persistence", async () => {
+  it("rejects an in-progress or non-admissible extraction before persistence", async () => {
     const in_progress = law_view();
     in_progress.run_status = "in_progress";
     in_progress.completed_at = null;
     get_view_by_run.mockResolvedValue(in_progress);
-
     await expect(assemble_rosetta_structural_dna({
       genome_bill_id,
       source_document_id: 7,
       extraction_run_id: 42,
     })).rejects.toThrow("rosetta_extraction_not_completed");
-    expect(query).not.toHaveBeenCalled();
-  });
 
-  it("rejects failed provenance and completed empty runs", async () => {
-    const failed = law_view();
-    failed.law_view.provenanceState = "failed";
-    get_view_by_run.mockResolvedValue(failed);
+    const rejected = law_view();
+    rejected.admissibility_state = "rejected";
+    get_view_by_run.mockResolvedValue(rejected);
     await expect(assemble_rosetta_structural_dna({
       genome_bill_id,
       source_document_id: 7,
       extraction_run_id: 42,
-    })).rejects.toThrow("rosetta_provenance_failed");
+    })).rejects.toThrow("rosetta_extraction_not_admissible");
+    expect(query).not.toHaveBeenCalled();
+  });
 
-    const empty = law_view();
-    empty.law_view.objects = [];
-    get_view_by_run.mockResolvedValue(empty);
+  it("rejects partial provenance, missing receipts, and missing source spans", async () => {
+    const partial = law_view();
+    partial.law_view.provenanceState = "partial";
+    partial.law_view.coverage.override = 0;
+    get_view_by_run.mockResolvedValue(partial);
     await expect(assemble_rosetta_structural_dna({
       genome_bill_id,
       source_document_id: 7,
       extraction_run_id: 42,
-    })).rejects.toThrow("rosetta_completed_run_has_no_objects");
+    })).rejects.toThrow("rosetta_provenance_not_complete");
+
+    const missing_receipt = law_view();
+    missing_receipt.output_content_hash = null;
+    get_view_by_run.mockResolvedValue(missing_receipt);
+    await expect(assemble_rosetta_structural_dna({
+      genome_bill_id,
+      source_document_id: 7,
+      extraction_run_id: 42,
+    })).rejects.toThrow("rosetta_admissible_run_missing_receipt");
+
+    const missing_span = law_view();
+    missing_span.law_view.objects[0].metadata = {};
+    get_view_by_run.mockResolvedValue(missing_span);
+    await expect(assemble_rosetta_structural_dna({
+      genome_bill_id,
+      source_document_id: 7,
+      extraction_run_id: 42,
+    })).rejects.toThrow("rosetta_object_source_span_missing");
     expect(query).not.toHaveBeenCalled();
   });
 
-  it("merges Rosetta output without deleting Docket source identity", async () => {
+  it("merges Rosetta output without replacing Docket source identity", async () => {
     successful_queries(false);
     await assemble_rosetta_structural_dna({
       genome_bill_id,
@@ -181,16 +256,6 @@ describe("Rosetta -> Civic Genome assembly activation", () => {
       && String(sql).includes("'rosetta_assembly'"));
     expect(bill_update).toBeDefined();
     expect(String(bill_update?.[0])).toContain("coalesce(structural_dna_json, '{}'::jsonb)");
-  });
-
-  it("preserves partial five-layer coverage without inventing missing traits", async () => {
-    const partial = law_view();
-    partial.law_view.provenanceState = "partial";
-    partial.law_view.coverage.override = 0;
-    get_view_by_run.mockResolvedValue(partial);
-    successful_queries(false);
-    const result = await assemble_rosetta_structural_dna({ genome_bill_id, source_document_id: 7, extraction_run_id: 42 });
-    expect(result.verification_state).toBe("partial");
-    expect(result.trait_count).toBe(1);
+    expect(String(bill_update?.[0])).not.toContain("source_bill_id =");
   });
 });
