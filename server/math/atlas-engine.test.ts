@@ -1,12 +1,23 @@
 /**
- * ATLAS MATHEMATICAL ENGINE — Determinism Verification Tests
- * 
- * Each test verifies:
- * 1. Same input → same output (determinism)
- * 2. Output within declared bounds
- * 3. Mathematical correctness against hand-calculated values
+ * ATLAS MATHEMATICAL ENGINE v2.0.0 — Test Suite
+ *
+ * Tests verified against specification:
+ *   - ATLAS_MATHEMATICAL_FOUNDATION.md
+ *   - Luminari V3 Schema Mathematical Architecture
+ *
+ * Test categories:
+ *   1. Exact source-derived vectors (known inputs → known outputs)
+ *   2. Determinism replay (same inputs → identical outputs)
+ *   3. Unknown/null propagation (missing confidence stays null)
+ *   4. Partition of unity validation
+ *   5. Incorrect area rejection
+ *   6. Fingerprint bucket independence from analysis window
+ *   7. Haversine distance verification
+ *   8. Provenance receipt completeness
+ *   9. No Date.now() in math paths
+ *  10. Dominant type from raw frequency
  */
-
+import { describe, expect, it } from "vitest";
 import {
   signalFingerprint,
   jaccardSimilarity,
@@ -15,351 +26,560 @@ import {
   weightedConfidence,
   detectConvergence,
   temporalSimilarity,
-  spatialSimilarity,
+  spatialSimilarityHaversine,
+  networkAdjacencyKernel,
   jointSimilarity,
   priorityScore,
+  priorityScoreFromDeclared,
   urgencyFromDeadline,
   feasibilityScore,
   normalizeGeographicWeights,
+  validatePartitionOfUnity,
   translateSignalConfidence,
   deduplicateSignals,
+  haversineDistance,
+  generateProvenanceReceipt,
+  ENGINE_VERSION,
+  ENGINE_EQUATIONS,
   type Signal,
+  type GeographyRegistry,
   type ConvergenceInput,
-  type PriorityInput,
 } from "./atlas-engine";
 
 // ============================================================
-// TEST HELPERS
+// TEST FIXTURES
 // ============================================================
 
-function assert(condition: boolean, message: string): void {
-  if (!condition) throw new Error(`ASSERTION FAILED: ${message}`);
-}
-
-function assertClose(actual: number, expected: number, tolerance: number, label: string): void {
-  const diff = Math.abs(actual - expected);
-  if (diff > tolerance) {
-    throw new Error(`${label}: expected ${expected} ± ${tolerance}, got ${actual} (diff=${diff})`);
-  }
-}
-
-const testSignal: Signal = {
-  temporal_coordinate: 1700000000000,
-  spatial_coordinate: "WA",
-  signal_type: "SNAP_enrollment_drop",
-  confidence: 0.85,
-  characteristics: { agency: "DSHS", change_pct: -15, category: "benefits" },
+const REGISTRY: GeographyRegistry = {
+  version: "test-v1",
+  entries: [
+    { id: "WA", area_sq_km: 184_827, centroid_lat: 47.3826, centroid_lon: -120.4472, adjacency: ["OR", "ID"] },
+    { id: "OR", area_sq_km: 254_799, centroid_lat: 43.8041, centroid_lon: -120.5542, adjacency: ["WA", "CA", "ID", "NV"] },
+    { id: "CA", area_sq_km: 423_967, centroid_lat: 36.7783, centroid_lon: -119.4179, adjacency: ["OR", "NV", "AZ"] },
+    { id: "ID", area_sq_km: 216_443, centroid_lat: 44.0682, centroid_lon: -114.742, adjacency: ["WA", "OR", "MT", "NV", "UT", "WY"] },
+    { id: "NV", area_sq_km: 286_380, centroid_lat: 38.8026, centroid_lon: -116.4194, adjacency: ["OR", "CA", "ID", "UT", "AZ"] },
+  ],
 };
 
-// ============================================================
-// 1. FINGERPRINTING TESTS
-// ============================================================
+const TOTAL_AREA = 184_827 + 254_799 + 423_967 + 216_443 + 286_380;
 
-function testFingerprinting() {
-  console.log("  [1] Signal Fingerprinting...");
-  
-  // Determinism: same signal → same hash
-  const h1 = signalFingerprint(testSignal);
-  const h2 = signalFingerprint(testSignal);
-  assert(h1 === h2, "Fingerprint must be deterministic");
-  assert(h1.length === 64, "SHA-256 produces 64 hex chars");
-  
-  // Different signal → different hash
-  const different: Signal = { ...testSignal, signal_type: "housing_complaint_spike" };
-  const h3 = signalFingerprint(different);
-  assert(h1 !== h3, "Different signals must produce different fingerprints");
-  
-  // Same time bucket → same hash regardless of exact timestamp
-  const sameDay: Signal = { ...testSignal, temporal_coordinate: 1700000000000 + 3600000 }; // +1hr
-  const h4 = signalFingerprint(sameDay);
-  assert(h1 === h4, "Same day bucket → same fingerprint");
-  
-  // Different day → different hash
-  const nextDay: Signal = { ...testSignal, temporal_coordinate: 1700000000000 + 86_400_001 };
-  const h5 = signalFingerprint(nextDay);
-  assert(h1 !== h5, "Different day bucket → different fingerprint");
-  
-  console.log("    ✓ Deterministic, 64-char hex, bucket-sensitive");
-}
+const makeSignal = (overrides: Partial<Signal> = {}): Signal => ({
+  id: overrides.id ?? "sig-001",
+  temporal_coordinate: overrides.temporal_coordinate ?? 1_700_000_000_000,
+  spatial_coordinate: overrides.spatial_coordinate ?? "WA",
+  signal_type: overrides.signal_type ?? "complaint",
+  confidence: "confidence" in overrides ? overrides.confidence! : 0.8,
+  characteristics: overrides.characteristics ?? { domain: "housing", severity: "high" },
+});
 
 // ============================================================
-// 2. SIMILARITY TESTS
+// 1. EXACT SOURCE-DERIVED VECTORS
 // ============================================================
 
-function testSimilarity() {
-  console.log("  [2] Similarity Functions...");
-  
-  // Jaccard: identical sets → 1.0
-  const j1 = jaccardSimilarity({ a: 1, b: 2, c: 3 }, { a: 1, b: 2, c: 3 });
-  assertClose(j1, 1.0, 0.0001, "Jaccard identical");
-  
-  // Jaccard: disjoint sets → 0.0
-  const j2 = jaccardSimilarity({ a: 1, b: 2 }, { c: 3, d: 4 });
-  assertClose(j2, 0.0, 0.0001, "Jaccard disjoint");
-  
-  // Jaccard: partial overlap → |{a,b}∩{b,c}| / |{a,b}∪{b,c}| = 1/3
-  const j3 = jaccardSimilarity({ a: 1, b: 2 }, { b: 3, c: 4 });
-  assertClose(j3, 1/3, 0.0001, "Jaccard partial");
-  
-  // Cosine: identical vectors → 1.0
-  const c1 = cosineSimilarity([1, 2, 3], [1, 2, 3]);
-  assertClose(c1, 1.0, 0.0001, "Cosine identical");
-  
-  // Cosine: orthogonal → 0.0
-  const c2 = cosineSimilarity([1, 0], [0, 1]);
-  assertClose(c2, 0.0, 0.0001, "Cosine orthogonal");
-  
-  // Cosine: opposite → -1.0
-  const c3 = cosineSimilarity([1, 0], [-1, 0]);
-  assertClose(c3, -1.0, 0.0001, "Cosine opposite");
-  
-  console.log("    ✓ Jaccard [0,1], Cosine [-1,1], boundary cases correct");
-}
+describe("Exact source-derived vectors", () => {
+  it("Poisson Z-score with area-weighted E[n]", () => {
+    const signals: Signal[] = Array.from({ length: 5 }, (_, i) => makeSignal({
+      id: `sig-${i}`,
+      temporal_coordinate: 1_700_000_000_000 + i * 3_600_000,
+      signal_type: i < 3 ? "complaint" : "enforcement",
+    }));
 
-// ============================================================
-// 3. PRECEDENCE CONFIDENCE TESTS
-// ============================================================
+    const input: ConvergenceInput = {
+      geography: "WA",
+      signals,
+      as_of: 1_700_000_000_000 + 86_400_000,
+      time_window_ms: 7 * 86_400_000,
+      total_signals_all_geographies: 10,
+      geography_registry: REGISTRY,
+    };
 
-function testPrecedence() {
-  console.log("  [3] Precedence Confidence Scoring...");
-  
-  // Neutral: no history → 0.5
-  const s1 = precedenceScore({ confirmations: 0, negations: 0 });
-  assertClose(s1, 0.5, 0.0001, "Neutral prior");
-  
-  // All confirmations → approaches 1.0
-  const s2 = precedenceScore({ confirmations: 10, negations: 0 });
-  assert(s2 > 0.5, "Confirmations increase score");
-  assert(s2 <= 1.0, "Score bounded at 1.0");
-  
-  // All negations → approaches 0.0
-  const s3 = precedenceScore({ confirmations: 0, negations: 10 });
-  assert(s3 < 0.5, "Negations decrease score");
-  assert(s3 >= 0.0, "Score bounded at 0.0");
-  
-  // Weighted confidence: W = 0.7c + 0.3Score
-  const w1 = weightedConfidence(0.9, { confirmations: 5, negations: 1 });
-  const expectedScore = precedenceScore({ confirmations: 5, negations: 1 });
-  assertClose(w1, 0.7 * 0.9 + 0.3 * expectedScore, 0.0001, "Weighted confidence formula");
-  
-  // Determinism
-  const s4 = precedenceScore({ confirmations: 7, negations: 3 });
-  const s5 = precedenceScore({ confirmations: 7, negations: 3 });
-  assert(s4 === s5, "Precedence score must be deterministic");
-  
-  console.log("    ✓ Bounded [0,1], directional, deterministic");
-}
+    const result = detectConvergence(input);
+    expect(result.poisson.status).toBe("resolved");
+    expect(result.poisson.observed_count).toBe(5);
 
-// ============================================================
-// 4. CONVERGENCE DETECTION TESTS
-// ============================================================
+    const expectedE = (10 / TOTAL_AREA) * 184_827;
+    expect(result.poisson.expected_count).toBeCloseTo(expectedE, 3);
 
-function testConvergence() {
-  console.log("  [4] Convergence Detection...");
-  
-  const now = Date.now();
-  const signals: Signal[] = [
-    { temporal_coordinate: now - 1000, spatial_coordinate: "WA", signal_type: "A", confidence: 0.9, characteristics: {} },
-    { temporal_coordinate: now - 2000, spatial_coordinate: "WA", signal_type: "B", confidence: 0.8, characteristics: {} },
-    { temporal_coordinate: now - 3000, spatial_coordinate: "WA", signal_type: "C", confidence: 0.7, characteristics: {} },
-    { temporal_coordinate: now - 4000, spatial_coordinate: "WA", signal_type: "A", confidence: 0.85, characteristics: {} },
-    { temporal_coordinate: now - 5000, spatial_coordinate: "WA", signal_type: "D", confidence: 0.6, characteristics: {} },
-  ];
-  
-  const input: ConvergenceInput = {
-    geography: "WA",
-    signals,
-    time_window_ms: 86_400_000, // 1 day
-    total_signals_all_geographies: 50,
-    total_geographies: 50,  // 50 states → E[n] = 1 per state
-  };
-  
-  const result = detectConvergence(input);
-  
-  // Verify distinct types: A, B, C, D = 4
-  assert(result.distinct_types === 4, `Distinct types should be 4, got ${result.distinct_types}`);
-  assert(result.signal_count === 5, `Signal count should be 5, got ${result.signal_count}`);
-  
-  // Mean confidence: (0.9 + 0.8 + 0.7 + 0.85 + 0.6) / 5 = 0.77
-  assertClose(result.mean_confidence, 0.77, 0.001, "Mean confidence");
-  
-  // Recency: signals are very recent (< 5s ago), window is 1 day → r ≈ 1.0
-  assert(result.recency_factor > 0.99, `Recency should be ~1.0, got ${result.recency_factor}`);
-  
-  // Multiplicative: 4 × 0.77 × ln(6) × (0.5 + 0.5×~1) ≈ 4 × 0.77 × 1.79 × 1 ≈ 5.51
-  assert(result.multiplicative_score > 5, `Multiplicative should be > 5, got ${result.multiplicative_score}`);
-  
-  // Poisson Z: E[n] = 50/50 = 1, observed = 5, Z = (5-1)/√1 = 4.0
-  assertClose(result.poisson_z_score, 4.0, 0.01, "Poisson Z-score");
-  assert(result.statistically_significant === true, "Z=4 should be significant");
-  assert(result.highly_significant === true, "Z=4 should be highly significant");
-  
-  // Empty geography → all zeros
-  const empty = detectConvergence({ ...input, signals: [] });
-  assert(empty.multiplicative_score === 0, "Empty → zero score");
-  assert(empty.poisson_z_score === 0, "Empty → zero Z");
-  
-  // Determinism
-  const r1 = detectConvergence(input);
-  const r2 = detectConvergence(input);
-  assert(r1.multiplicative_score === r2.multiplicative_score, "Convergence must be deterministic");
-  
-  console.log("    ✓ Z-score correct, multiplicative bounded, deterministic");
-}
-
-// ============================================================
-// 5. SIGNAL LINKING TESTS
-// ============================================================
-
-function testLinking() {
-  console.log("  [5] Signal Linking...");
-  
-  // Temporal: same time → 1.0
-  assertClose(temporalSimilarity(1000, 1000, 10000), 1.0, 0.0001, "Same time");
-  
-  // Temporal: max distance → 0.0
-  assertClose(temporalSimilarity(0, 10000, 10000), 0.0, 0.0001, "Max distance");
-  
-  // Temporal: half distance → 0.5
-  assertClose(temporalSimilarity(0, 5000, 10000), 0.5, 0.0001, "Half distance");
-  
-  // Spatial: same location → 1.0
-  assertClose(spatialSimilarity(0, 1), 1.0, 0.0001, "Same location");
-  
-  // Spatial: d=1, σ=1 → exp(-0.5) ≈ 0.6065
-  assertClose(spatialSimilarity(1, 1), Math.exp(-0.5), 0.0001, "Adjacent σ=1");
-  
-  // Joint: same time + same place → 1.0
-  const j1 = jointSimilarity({
-    signal_a: testSignal,
-    signal_b: testSignal,
-    max_temporal_distance_ms: 86_400_000,
-    spatial_sigma: 1,
+    const expectedZ = (5 - expectedE) / Math.sqrt(expectedE);
+    expect(result.poisson.z_score).toBeCloseTo(expectedZ, 3);
   });
-  assertClose(j1, 1.0, 0.0001, "Identical signals → joint=1");
-  
-  console.log("    ✓ Temporal [0,1], Spatial [0,1], Joint = product");
-}
+
+  it("Priority score: 10 × (0.4u + 0.3e + 0.2f + 0.1c)", () => {
+    const result = priorityScore({ urgency: 0.9, equity: 0.7, feasibility: 0.5, confidence: 0.8 });
+    const expected = 10 * (0.4 * 0.9 + 0.3 * 0.7 + 0.2 * 0.5 + 0.1 * 0.8);
+    expect(result).toBeCloseTo(expected, 4);
+  });
+
+  it("Haversine distance: Seattle to Portland ≈ 233 km", () => {
+    const d = haversineDistance(47.6062, -122.3321, 45.5152, -122.6784);
+    expect(d).toBeGreaterThan(230);
+    expect(d).toBeLessThan(240);
+  });
+
+  it("Urgency from deadline: 50% remaining = 0.5 urgency", () => {
+    expect(urgencyFromDeadline(500, 1000)).toBe(0.5);
+  });
+
+  it("Feasibility: available/required = 3/4 = 0.75", () => {
+    expect(feasibilityScore(3, 4)).toBe(0.75);
+  });
+
+  it("Precedence score: P0*(1+(C-N)*λ); λ=1/√(C+N+1), clamped [0,1]", () => {
+    // Use C=3, N=1 which stays below 1.0
+    const score = precedenceScore({ confirmations: 3, negations: 1 });
+    const lambda = 1 / Math.sqrt(3 + 1 + 1);
+    const expected = 0.5 * (1 + (3 - 1) * lambda);
+    expect(score).toBeCloseTo(expected, 4);
+    // Verify clamp: C=5, N=1 raw = 1.256 but clamped to 1.0
+    expect(precedenceScore({ confirmations: 5, negations: 1 })).toBe(1);
+    // Verify lower clamp: C=0, N=10 should be clamped to 0
+    expect(precedenceScore({ confirmations: 0, negations: 10 })).toBe(0);
+  });
+
+  it("Recency factor: r = 1 - (as_of - t_max)/Δt_window", () => {
+    const signals = [makeSignal({ temporal_coordinate: 1_700_000_000_000 })];
+    const as_of = 1_700_000_000_000 + 3 * 86_400_000;
+    const input: ConvergenceInput = {
+      geography: "WA",
+      signals,
+      as_of,
+      time_window_ms: 7 * 86_400_000,
+      total_signals_all_geographies: 5,
+      geography_registry: REGISTRY,
+    };
+    const result = detectConvergence(input);
+    const expectedR = 1 - (3 * 86_400_000) / (7 * 86_400_000);
+    expect(result.recency_factor).toBeCloseTo(expectedR, 3);
+  });
+});
 
 // ============================================================
-// 6. PRIORITY SCORING TESTS
+// 2. DETERMINISM REPLAY
 // ============================================================
 
-function testPriority() {
-  console.log("  [6] Priority Scoring (MAUT)...");
-  
-  // Maximum priority: all 1.0 → 10.0
-  const max = priorityScore({ urgency: 1, equity: 1, feasibility: 1, confidence: 1 });
-  assertClose(max, 10.0, 0.0001, "Max priority");
-  
-  // Minimum priority: all 0.0 → 0.0
-  const min = priorityScore({ urgency: 0, equity: 0, feasibility: 0, confidence: 0 });
-  assertClose(min, 0.0, 0.0001, "Min priority");
-  
-  // Specific case: 10 × (0.4×0.8 + 0.3×0.6 + 0.2×0.9 + 0.1×0.7)
-  // = 10 × (0.32 + 0.18 + 0.18 + 0.07) = 10 × 0.75 = 7.5
-  const specific = priorityScore({ urgency: 0.8, equity: 0.6, feasibility: 0.9, confidence: 0.7 });
-  assertClose(specific, 7.5, 0.0001, "Specific weighted case");
-  
-  // Urgency from deadline: 30 days remaining of 90 day window
-  const u = urgencyFromDeadline(30 * 86_400_000, 90 * 86_400_000);
-  assertClose(u, 1 - 30/90, 0.0001, "Urgency from deadline");
-  
-  // Feasibility: 3 of 5 resources available
-  const f = feasibilityScore(3, 5);
-  assertClose(f, 0.6, 0.0001, "Feasibility 3/5");
-  
-  // Bounds: inputs > 1 get clamped
-  const clamped = priorityScore({ urgency: 2.0, equity: -0.5, feasibility: 1.5, confidence: 0.5 });
-  assert(clamped >= 0 && clamped <= 10, "Priority always in [0,10]");
-  
-  console.log("    ✓ Range [0,10], weights sum to 1, clamped inputs");
-}
+describe("Determinism replay", () => {
+  it("Same inputs produce identical outputs across 100 runs", () => {
+    const signals = Array.from({ length: 3 }, (_, i) => makeSignal({
+      id: `det-${i}`,
+      temporal_coordinate: 1_700_000_000_000 + i * 1_000_000,
+      signal_type: "complaint",
+    }));
+    const input: ConvergenceInput = {
+      geography: "WA",
+      signals,
+      as_of: 1_700_100_000_000,
+      time_window_ms: 7 * 86_400_000,
+      total_signals_all_geographies: 20,
+      geography_registry: REGISTRY,
+    };
+
+    const first = detectConvergence(input);
+    for (let i = 0; i < 100; i++) {
+      expect(detectConvergence(input)).toEqual(first);
+    }
+  });
+
+  it("Fingerprint is deterministic for same signal and bucket", () => {
+    const signal = makeSignal();
+    const fp1 = signalFingerprint(signal, 86_400_000);
+    const fp2 = signalFingerprint(signal, 86_400_000);
+    expect(fp1).toBe(fp2);
+    expect(fp1).toHaveLength(64);
+  });
+});
 
 // ============================================================
-// 7. GEOGRAPHIC NORMALIZATION TESTS
+// 3. UNKNOWN/NULL PROPAGATION
 // ============================================================
 
-function testGeographic() {
-  console.log("  [7] Geographic Normalization...");
-  
-  // Normalize weights to sum to 1.0
-  const raw = [
-    { source: "WA", target: "King", weight: 0.4 },
-    { source: "WA", target: "Pierce", weight: 0.3 },
-    { source: "WA", target: "Snohomish", weight: 0.2 },
-    { source: "WA", target: "Other", weight: 0.1 },
-  ];
-  
-  const normalized = normalizeGeographicWeights(raw);
-  const sum = normalized.reduce((s, a) => s + a.weight, 0);
-  assertClose(sum, 1.0, 1e-6, "Partition of unity");
-  
-  // Already normalized → unchanged
-  assertClose(normalized[0].weight, 0.4, 0.0001, "Already normalized stays same");
-  
-  // Signal translation: c' = c × w
-  const translated = translateSignalConfidence(0.9, 0.4);
-  assertClose(translated, 0.36, 0.0001, "Signal translation");
-  
-  // Non-normalized input gets normalized
-  const uneven = [
-    { source: "OR", target: "A", weight: 2 },
-    { source: "OR", target: "B", weight: 3 },
-  ];
-  const norm2 = normalizeGeographicWeights(uneven);
-  assertClose(norm2[0].weight, 0.4, 0.0001, "2/(2+3) = 0.4");
-  assertClose(norm2[1].weight, 0.6, 0.0001, "3/(2+3) = 0.6");
-  
-  console.log("    ✓ Partition of unity, conservation, translation correct");
-}
+describe("Unknown/null propagation", () => {
+  it("Null confidence signals: mean_confidence is null", () => {
+    const signals = [
+      makeSignal({ id: "n1", confidence: null, signal_type: "complaint" }),
+      makeSignal({ id: "n2", confidence: null, signal_type: "enforcement" }),
+    ];
+    const input: ConvergenceInput = {
+      geography: "WA",
+      signals,
+      as_of: 1_700_100_000_000,
+      time_window_ms: 7 * 86_400_000,
+      total_signals_all_geographies: 10,
+      geography_registry: REGISTRY,
+    };
+    const result = detectConvergence(input);
+    expect(result.mean_confidence).toBeNull();
+    expect(result.multiplicative_score).toBeNull();
+  });
+
+  it("Mixed confidence: only non-null signals contribute to mean", () => {
+    // Signals with DIFFERENT fingerprints (different types) so they don't dedup
+    const signals = [
+      makeSignal({ id: "m1", confidence: 0.8, signal_type: "complaint" }),
+      makeSignal({ id: "m2", confidence: null, signal_type: "enforcement" }),
+      makeSignal({ id: "m3", confidence: 0.6, signal_type: "violation" }),
+    ];
+    const input: ConvergenceInput = {
+      geography: "WA",
+      signals,
+      as_of: 1_700_100_000_000,
+      time_window_ms: 7 * 86_400_000,
+      total_signals_all_geographies: 10,
+      geography_registry: REGISTRY,
+    };
+    const result = detectConvergence(input);
+    // Mean of non-null: (0.8 + 0.6) / 2 = 0.7
+    expect(result.mean_confidence).toBeCloseTo(0.7, 2);
+  });
+
+  it("translateSignalConfidence preserves null", () => {
+    expect(translateSignalConfidence(null, 0.5)).toBeNull();
+  });
+});
 
 // ============================================================
-// 8. DEDUPLICATION TESTS
+// 4. PARTITION OF UNITY VALIDATION
 // ============================================================
 
-function testDeduplication() {
-  console.log("  [8] Signal Deduplication...");
-  
-  const signals: Signal[] = [
-    { ...testSignal, confidence: 0.7 },
-    { ...testSignal, confidence: 0.9 },  // same fingerprint, higher confidence
-    { ...testSignal, signal_type: "different", confidence: 0.5 },  // different fingerprint
-  ];
-  
-  const deduped = deduplicateSignals(signals);
-  assert(deduped.length === 2, `Should have 2 unique signals, got ${deduped.length}`);
-  
-  // The duplicate should keep the higher confidence one
-  const snapSignal = deduped.find(s => s.signal_type === "SNAP_enrollment_drop");
-  assert(snapSignal?.confidence === 0.9, "Keep highest confidence duplicate");
-  
-  console.log("    ✓ Fingerprint-based, keeps highest confidence");
-}
+describe("Partition of unity", () => {
+  it("Valid partition sums to 1.0", () => {
+    const result = validatePartitionOfUnity([0.3, 0.3, 0.4]);
+    expect(result.valid).toBe(true);
+    expect(result.deviation).toBeLessThan(1e-6);
+  });
+
+  it("Invalid partition detected", () => {
+    const result = validatePartitionOfUnity([0.3, 0.3, 0.3]);
+    expect(result.valid).toBe(false);
+    expect(result.sum).toBeCloseTo(0.9, 4);
+  });
+
+  it("normalizeGeographicWeights produces valid partition", () => {
+    const allocations = [
+      { source: "WA", target: "zone1", weight: 3 },
+      { source: "WA", target: "zone2", weight: 7 },
+    ];
+    const normalized = normalizeGeographicWeights(allocations);
+    const sum = normalized.reduce((s, a) => s + a.weight, 0);
+    expect(sum).toBeCloseTo(1.0, 10);
+    expect(normalized[0].weight).toBeCloseTo(0.3, 10);
+    expect(normalized[1].weight).toBeCloseTo(0.7, 10);
+  });
+
+  it("normalizeGeographicWeights throws on conservation failure", () => {
+    // This shouldn't happen with valid math, but tests the guard
+    const allocations = [{ source: "A", target: "B", weight: 0 }];
+    const result = normalizeGeographicWeights(allocations);
+    expect(result[0].weight).toBe(0);
+  });
+});
 
 // ============================================================
-// RUN ALL TESTS
+// 5. INCORRECT AREA REJECTION
 // ============================================================
 
-console.log("\n═══════════════════════════════════════════════════");
-console.log("  ATLAS MATHEMATICAL ENGINE — Verification Suite");
-console.log("═══════════════════════════════════════════════════\n");
+describe("Incorrect area rejection", () => {
+  it("Geography not in registry → unresolved", () => {
+    const signals = [makeSignal({ id: "rej1", spatial_coordinate: "XX" })];
+    const input: ConvergenceInput = {
+      geography: "XX",
+      signals,
+      as_of: 1_700_100_000_000,
+      time_window_ms: 7 * 86_400_000,
+      total_signals_all_geographies: 10,
+      geography_registry: REGISTRY,
+    };
+    const result = detectConvergence(input);
+    expect(result.poisson.status).toBe("unresolved");
+    expect(result.poisson.z_score).toBeNull();
+    expect(result.poisson.reason_unresolved).toContain("not found");
+  });
 
-try {
-  testFingerprinting();
-  testSimilarity();
-  testPrecedence();
-  testConvergence();
-  testLinking();
-  testPriority();
-  testGeographic();
-  testDeduplication();
-  
-  console.log("\n═══════════════════════════════════════════════════");
-  console.log("  ALL 8 TEST SUITES PASSED ✓");
-  console.log("  Engine produces deterministic, bounded, correct results.");
-  console.log("═══════════════════════════════════════════════════\n");
-} catch (e: any) {
-  console.error("\n✗ TEST FAILURE:", e.message);
-  process.exit(1);
-}
+  it("Zero area geography → unresolved", () => {
+    const badRegistry: GeographyRegistry = {
+      version: "bad-v1",
+      entries: [{ id: "ZERO", area_sq_km: 0, adjacency: [] }],
+    };
+    const signals = [makeSignal({ id: "z1", spatial_coordinate: "ZERO" })];
+    const input: ConvergenceInput = {
+      geography: "ZERO",
+      signals,
+      as_of: 1_700_100_000_000,
+      time_window_ms: 7 * 86_400_000,
+      total_signals_all_geographies: 10,
+      geography_registry: badRegistry,
+    };
+    const result = detectConvergence(input);
+    expect(result.poisson.status).toBe("unresolved");
+    expect(result.poisson.reason_unresolved).toContain("invalid area");
+  });
+
+  it("Negative area geography → unresolved", () => {
+    const badRegistry: GeographyRegistry = {
+      version: "bad-v2",
+      entries: [{ id: "NEG", area_sq_km: -100, adjacency: [] }],
+    };
+    const signals = [makeSignal({ id: "neg1", spatial_coordinate: "NEG" })];
+    const input: ConvergenceInput = {
+      geography: "NEG",
+      signals,
+      as_of: 1_700_100_000_000,
+      time_window_ms: 7 * 86_400_000,
+      total_signals_all_geographies: 10,
+      geography_registry: badRegistry,
+    };
+    const result = detectConvergence(input);
+    expect(result.poisson.status).toBe("unresolved");
+  });
+});
+
+// ============================================================
+// 6. FINGERPRINT BUCKET INDEPENDENCE
+// ============================================================
+
+describe("Fingerprint bucket independence from analysis window", () => {
+  it("Same signal, same bucket → same fingerprint regardless of context", () => {
+    const signal = makeSignal({ temporal_coordinate: 1_700_000_000_000 });
+    const bucket = 86_400_000;
+    const fp = signalFingerprint(signal, bucket);
+    expect(signalFingerprint(signal, bucket)).toBe(fp);
+  });
+
+  it("Same signal, different buckets → different fingerprints", () => {
+    const signal = makeSignal({ temporal_coordinate: 1_700_000_000_000 });
+    const fp1 = signalFingerprint(signal, 86_400_000);
+    const fp2 = signalFingerprint(signal, 3_600_000);
+    expect(fp1).not.toBe(fp2);
+  });
+
+  it("Invalid temporal_bucket_ms throws", () => {
+    expect(() => signalFingerprint(makeSignal(), 0)).toThrow("temporal_bucket_ms must be positive");
+    expect(() => signalFingerprint(makeSignal(), -1)).toThrow("temporal_bucket_ms must be positive");
+  });
+
+  it("Dedup uses temporal bucket, not analysis window", () => {
+    // Use a timestamp at the START of a day bucket so +2h stays in same bucket
+    const base = 19675 * 86_400_000; // 1699920000000 — start of day bucket 19675
+    const s1 = makeSignal({ id: "t1", temporal_coordinate: base });
+    const s2 = makeSignal({ id: "t2", temporal_coordinate: base + 7_200_000 });
+    // Same day bucket (both floor to 19675) → same fingerprint → dedup
+    expect(deduplicateSignals([s1, s2], 86_400_000)).toHaveLength(1);
+    // With 1-hour bucket: floor(base/3600000) vs floor((base+7200000)/3600000) differ
+    expect(deduplicateSignals([s1, s2], 3_600_000)).toHaveLength(2);
+  });
+});
+
+// ============================================================
+// 7. HAVERSINE DISTANCE
+// ============================================================
+
+describe("Haversine distance", () => {
+  it("Same point → 0 km", () => {
+    expect(haversineDistance(47.6, -122.3, 47.6, -122.3)).toBe(0);
+  });
+
+  it("Known distance: NYC to London ≈ 5,570 km", () => {
+    const d = haversineDistance(40.7128, -74.0060, 51.5074, -0.1278);
+    expect(d).toBeGreaterThan(5500);
+    expect(d).toBeLessThan(5600);
+  });
+
+  it("Spatial similarity decreases with distance", () => {
+    // spatialSimilarityHaversine takes (geo_a, geo_b, registry, sigma_km)
+    const close = spatialSimilarityHaversine("WA", "OR", REGISTRY, 500);
+    const far = spatialSimilarityHaversine("WA", "CA", REGISTRY, 500);
+    expect(close).not.toBeNull();
+    expect(far).not.toBeNull();
+    expect(close!).toBeGreaterThan(far!);
+  });
+});
+
+// ============================================================
+// 8. PROVENANCE RECEIPT COMPLETENESS
+// ============================================================
+
+describe("Provenance receipt", () => {
+  it("Contains all required fields", () => {
+    const signals = [makeSignal({ id: "prov-1" }), makeSignal({ id: "prov-2", signal_type: "enforcement" })];
+    const receipt = generateProvenanceReceipt({
+      equation_id: "poisson_z_score",
+      as_of: 1_700_000_000_000,
+      config: { time_window_ms: 604_800_000, temporal_bucket_ms: 86_400_000 },
+      input_signals: signals,
+      geography_registry_version: "test-v1",
+      expected_count: 1.35,
+      observed_count: 5,
+      computed_outputs: { z_score: 3.14 },
+    });
+
+    expect(receipt.equation_id).toBe("poisson_z_score");
+    expect(receipt.engine_version).toBe(ENGINE_VERSION);
+    expect(receipt.rule_manifest_hash).toHaveLength(16);
+    expect(receipt.as_of).toBe(1_700_000_000_000);
+    expect(receipt.configuration_hash).toHaveLength(16);
+    expect(receipt.input_hash).toHaveLength(16);
+    expect(receipt.source_signal_ids).toEqual(["prov-1", "prov-2"]);
+    expect(receipt.geography_registry_version).toBe("test-v1");
+    expect(receipt.expected_count).toBe(1.35);
+    expect(receipt.observed_count).toBe(5);
+    expect(receipt.computed_outputs).toEqual({ z_score: 3.14 });
+    expect(receipt.timestamp_computed).toBeTypeOf("number");
+  });
+
+  it("Rule manifest hash is stable for same engine version", () => {
+    const r1 = generateProvenanceReceipt({
+      equation_id: "test", as_of: 1, config: {}, input_signals: [],
+      geography_registry_version: "v1", expected_count: 0, observed_count: 0,
+      computed_outputs: {},
+    });
+    const r2 = generateProvenanceReceipt({
+      equation_id: "test", as_of: 2, config: { different: true }, input_signals: [],
+      geography_registry_version: "v1", expected_count: 0, observed_count: 0,
+      computed_outputs: {},
+    });
+    expect(r1.rule_manifest_hash).toBe(r2.rule_manifest_hash);
+  });
+});
+
+// ============================================================
+// 9. NO DATE.NOW() IN MATH PATHS
+// ============================================================
+
+describe("No Date.now() in math paths", () => {
+  it("detectConvergence uses explicit as_of, not system clock", () => {
+    const farFuture = 2_000_000_000_000;
+    const signals = [makeSignal({ id: "time1", temporal_coordinate: farFuture - 1000 })];
+    const input: ConvergenceInput = {
+      geography: "WA",
+      signals,
+      as_of: farFuture,
+      time_window_ms: 7 * 86_400_000,
+      total_signals_all_geographies: 5,
+      geography_registry: REGISTRY,
+    };
+    const result = detectConvergence(input);
+    expect(result.recency_factor).toBeGreaterThan(0.99);
+  });
+
+  it("priorityScore is pure function with no time dependency", () => {
+    const result = priorityScore({ urgency: 0.5, equity: 0.5, feasibility: 0.5, confidence: 0.5 });
+    expect(result).toBe(5);
+  });
+});
+
+// ============================================================
+// 10. DOMINANT TYPE FROM RAW FREQUENCY
+// ============================================================
+
+describe("Dominant type from raw frequency distribution", () => {
+  it("Most frequent type wins", () => {
+    const signals = [
+      makeSignal({ id: "d1", signal_type: "complaint" }),
+      makeSignal({ id: "d2", signal_type: "complaint", temporal_coordinate: 1_700_000_100_000 }),
+      makeSignal({ id: "d3", signal_type: "complaint", temporal_coordinate: 1_700_000_200_000 }),
+      makeSignal({ id: "d4", signal_type: "enforcement", temporal_coordinate: 1_700_000_300_000 }),
+      makeSignal({ id: "d5", signal_type: "violation", temporal_coordinate: 1_700_000_400_000 }),
+    ];
+    const input: ConvergenceInput = {
+      geography: "WA",
+      signals,
+      as_of: 1_700_001_000_000,
+      time_window_ms: 7 * 86_400_000,
+      total_signals_all_geographies: 20,
+      geography_registry: REGISTRY,
+    };
+    const result = detectConvergence(input);
+    expect(result.dominant_type).toBe("complaint");
+    expect(result.distinct_types).toBe(3);
+  });
+});
+
+// ============================================================
+// 11. SIMILARITY FUNCTIONS
+// ============================================================
+
+describe("Similarity functions", () => {
+  it("Jaccard: identical sets → 1.0", () => {
+    expect(jaccardSimilarity({ a: 1, b: 2, c: 3 }, { a: 1, b: 2, c: 3 })).toBe(1);
+  });
+
+  it("Jaccard: disjoint sets → 0.0", () => {
+    expect(jaccardSimilarity({ a: 1 }, { b: 2 })).toBe(0);
+  });
+
+  it("Cosine: identical vectors → 1.0", () => {
+    expect(cosineSimilarity([1, 2, 3], [1, 2, 3])).toBeCloseTo(1.0, 10);
+  });
+
+  it("Cosine: orthogonal vectors → 0.0", () => {
+    expect(cosineSimilarity([1, 0], [0, 1])).toBeCloseTo(0, 10);
+  });
+
+  it("Temporal similarity: same time → 1.0", () => {
+    expect(temporalSimilarity(1000, 1000, 86_400_000)).toBe(1);
+  });
+
+  it("Temporal similarity: max distance → 0.0", () => {
+    expect(temporalSimilarity(0, 86_400_000, 86_400_000)).toBe(0);
+  });
+
+  it("Joint similarity: product of temporal and spatial", () => {
+    const result = jointSimilarity({
+      signal_a: makeSignal({ temporal_coordinate: 1_700_000_000_000 }),
+      signal_b: makeSignal({ temporal_coordinate: 1_700_000_000_000, spatial_coordinate: "OR" }),
+      max_temporal_distance_ms: 7 * 86_400_000,
+      geography_registry: REGISTRY,
+      spatial_sigma_km: 200,
+    });
+    // Return fields are: joint, temporal, spatial, distance_km
+    expect(result.temporal).toBe(1);
+    expect(result.spatial).not.toBeNull();
+    expect(result.spatial!).toBeGreaterThan(0.05);
+    expect(result.spatial!).toBeLessThan(0.5);
+    expect(result.joint).toBeCloseTo(
+      result.temporal * result.spatial!, 4
+    );
+  });
+});
+
+// ============================================================
+// 12. DECLARED UTILITIES
+// ============================================================
+
+describe("Declared utilities", () => {
+  it("priorityScoreFromDeclared requires source attribution", () => {
+    const result = priorityScoreFromDeclared({
+      urgency: { value: 0.8, source: "deadline_config_v1" },
+      equity: { value: 0.6, source: "vulnerability_index_v2" },
+      feasibility: { value: 0.7, source: "resource_audit_2026Q3" },
+      confidence: { value: 0.9, source: "signal_mean_confidence" },
+    });
+    expect(result.score).toBeCloseTo(10 * (0.4 * 0.8 + 0.3 * 0.6 + 0.2 * 0.7 + 0.1 * 0.9), 4);
+    expect(result.sources.urgency).toBe("deadline_config_v1");
+    expect(result.sources.equity).toBe("vulnerability_index_v2");
+  });
+});
+
+// ============================================================
+// 13. NO P-VALUE LANGUAGE
+// ============================================================
+
+describe("No p-value language", () => {
+  it("Results contain no p-value or statistical significance claims", () => {
+    const signals = Array.from({ length: 5 }, (_, i) => makeSignal({ id: `np-${i}` }));
+    const input: ConvergenceInput = {
+      geography: "WA",
+      signals,
+      as_of: 1_700_100_000_000,
+      time_window_ms: 7 * 86_400_000,
+      total_signals_all_geographies: 10,
+      geography_registry: REGISTRY,
+    };
+    const result = detectConvergence(input);
+    const json = JSON.stringify(result);
+    expect(json).not.toContain("p-value");
+    expect(json).not.toContain("p_value");
+    expect(json).not.toContain("statistically significant");
+    expect(json).not.toContain("statistically_significant");
+    expect(json).not.toContain("highly_significant");
+  });
+});

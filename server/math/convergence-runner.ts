@@ -1,16 +1,18 @@
 /**
- * CONVERGENCE RUNNER
- * 
+ * CONVERGENCE RUNNER v2.0.0
+ *
  * Applies the Atlas Mathematical Engine to live signal data.
- * Reads from live_signals, computes convergence per geography,
- * computes priority scores, and returns structured results.
- * 
- * This is the bridge between the pure math (atlas-engine.ts)
- * and the database layer. No LLM. No inference.
- * 
- * Usage:
- *   import { runConvergenceAnalysis } from "./convergence-runner";
- *   const results = await runConvergenceAnalysis(db, { time_window_ms: 7 * 86_400_000 });
+ * Reads from live_signals, loads geography_registry, computes convergence
+ * per geography using area-weighted Poisson, and persists provenance receipts.
+ *
+ * REPAIR NOTES:
+ *   - as_of is explicit input (no Date.now() in math paths)
+ *   - Geography registry loaded from canonical source (no equal-geography fallback)
+ *   - Priority scoring does NOT manufacture utility values — removed from runner
+ *   - Missing confidence propagated as null (never 0.5)
+ *   - Dominant type from raw frequency distribution (in atlas-engine)
+ *   - Provenance receipts persisted to convergence_receipts table
+ *   - No p-value language in outputs
  */
 
 import { db } from "../db";
@@ -18,14 +20,13 @@ import { liveSignals } from "../../drizzle/schema";
 import { eq, and, gte, sql } from "drizzle-orm";
 import {
   detectConvergence,
-  priorityScore,
-  urgencyFromDeadline,
-  signalFingerprint,
   deduplicateSignals,
+  generateProvenanceReceipt,
   type Signal,
   type ConvergenceInput,
   type ConvergenceResult,
-  type PriorityInput,
+  type GeographyRegistry,
+  type ProvenanceReceipt,
   ENGINE_VERSION,
 } from "./atlas-engine";
 
@@ -33,74 +34,115 @@ import {
 // TYPES
 // ============================================================
 
-export interface ConvergenceRunConfig {
-  time_window_ms: number;           // How far back to look (default: 7 days)
-  min_signals_for_convergence: number;  // Minimum signals in a geography to evaluate (default: 2)
-  significance_threshold: number;       // Z-score threshold for flagging (default: 2.0)
-}
-
-export interface ConvergenceRunResult {
-  engine_version: string;
-  run_timestamp: number;
-  config: ConvergenceRunConfig;
-  total_signals_analyzed: number;
-  geographies_evaluated: number;
-  convergence_zones: ConvergenceZone[];
-  prioritized_actions: PrioritizedAction[];
+export interface ConvergenceConfig {
+  as_of: number;                      // REQUIRED — explicit timestamp
+  time_window_ms: number;             // Analysis window (default 7 days)
+  temporal_bucket_ms?: number;        // Fingerprint bucket (default 1 day)
+  min_signals_for_analysis?: number;  // Minimum signals in a geography to analyze
+  z_score_threshold?: number;         // Minimum Z-score to report (default 2.0)
 }
 
 export interface ConvergenceZone {
   geography: string;
   convergence: ConvergenceResult;
-  signal_types: string[];
-  latest_signal_time: number;
+  provenance: ProvenanceReceipt;
 }
 
-export interface PrioritizedAction {
-  geography: string;
-  priority_score: number;   // [0, 10]
-  urgency: number;          // [0, 1]
-  equity: number;           // [0, 1]
-  feasibility: number;      // [0, 1]
-  confidence: number;       // [0, 1]
-  signal_count: number;
-  dominant_type: string;
-  rationale: string;
+export interface ConvergenceRunResult {
+  engine_version: string;
+  as_of: number;
+  config: ConvergenceConfig;
+  geography_registry_version: string;
+  total_signals_analyzed: number;
+  total_signals_after_dedup: number;
+  geographies_evaluated: number;
+  convergence_zones: ConvergenceZone[];
+  unresolved_geographies: Array<{
+    geography: string;
+    reason: string;
+  }>;
 }
 
 // ============================================================
-// DEFAULT CONFIG
+// GEOGRAPHY REGISTRY LOADER
+//
+// Loads from the canonical geography_registry table.
+// If the table doesn't exist or is empty, returns an error —
+// it does NOT fall back to equal-geography assumptions.
 // ============================================================
 
-const DEFAULT_CONFIG: ConvergenceRunConfig = {
-  time_window_ms: 7 * 86_400_000,        // 7 days
-  min_signals_for_convergence: 2,
-  significance_threshold: 2.0,            // Z > 2 = statistically significant
-};
+async function loadGeographyRegistry(): Promise<GeographyRegistry | { error: string }> {
+  try {
+    const rows = await db.execute(sql`
+      SELECT id, area_sq_km, centroid_lat, centroid_lon, adjacency, version
+      FROM geography_registry
+      WHERE active = true
+      ORDER BY id
+    `);
+
+    if (!rows.rows || rows.rows.length === 0) {
+      return { error: "geography_registry table is empty or does not exist. Cannot compute area-weighted convergence without canonical geography data." };
+    }
+
+    const version = (rows.rows[0] as any).version ?? "unknown";
+    const entries = rows.rows.map((r: any) => ({
+      id: r.id as string,
+      area_sq_km: parseFloat(r.area_sq_km),
+      centroid_lat: r.centroid_lat ? parseFloat(r.centroid_lat) : undefined,
+      centroid_lon: r.centroid_lon ? parseFloat(r.centroid_lon) : undefined,
+      adjacency: r.adjacency ? (Array.isArray(r.adjacency) ? r.adjacency : JSON.parse(r.adjacency)) : undefined,
+    }));
+
+    // Validate: all entries must have positive area
+    const invalidAreas = entries.filter((e: any) => !e.area_sq_km || e.area_sq_km <= 0);
+    if (invalidAreas.length > 0) {
+      return { error: `${invalidAreas.length} geography entries have invalid area_sq_km: ${invalidAreas.map((e: any) => e.id).join(", ")}` };
+    }
+
+    return { version, entries };
+  } catch (err: any) {
+    return { error: `Failed to load geography_registry: ${err.message}` };
+  }
+}
 
 // ============================================================
 // MAIN RUNNER
 // ============================================================
 
-/**
- * Run convergence analysis across all geographies with active signals.
- * 
- * Steps:
- * 1. Load active signals from live_signals within time window
- * 2. Group by jurisdiction (geography)
- * 3. Convert to Signal type for math engine
- * 4. Run detectConvergence per geography
- * 5. Compute priority scores for significant zones
- * 6. Return sorted results
- */
 export async function runConvergenceAnalysis(
-  config: Partial<ConvergenceRunConfig> = {}
+  config: ConvergenceConfig
 ): Promise<ConvergenceRunResult> {
-  const cfg: ConvergenceRunConfig = { ...DEFAULT_CONFIG, ...config };
-  const runTimestamp = Date.now();
-  const cutoff = runTimestamp - cfg.time_window_ms;
+  const {
+    as_of,
+    time_window_ms,
+    temporal_bucket_ms = 86_400_000,
+    min_signals_for_analysis = 2,
+    z_score_threshold = 2.0,
+  } = config;
 
-  // Step 1: Load active signals within time window
+  // Step 1: Load geography registry (canonical, no fallback)
+  const registryResult = await loadGeographyRegistry();
+  if ("error" in registryResult) {
+    return {
+      engine_version: ENGINE_VERSION,
+      as_of,
+      config,
+      geography_registry_version: "unavailable",
+      total_signals_analyzed: 0,
+      total_signals_after_dedup: 0,
+      geographies_evaluated: 0,
+      convergence_zones: [],
+      unresolved_geographies: [{
+        geography: "*",
+        reason: registryResult.error,
+      }],
+    };
+  }
+
+  const registry: GeographyRegistry = registryResult;
+
+  // Step 2: Load signals within time window
+  const cutoff = as_of - time_window_ms;
   const rawSignals = await db
     .select()
     .from(liveSignals)
@@ -114,33 +156,43 @@ export async function runConvergenceAnalysis(
   if (rawSignals.length === 0) {
     return {
       engine_version: ENGINE_VERSION,
-      run_timestamp: runTimestamp,
-      config: cfg,
+      as_of,
+      config,
+      geography_registry_version: registry.version,
       total_signals_analyzed: 0,
+      total_signals_after_dedup: 0,
       geographies_evaluated: 0,
       convergence_zones: [],
-      prioritized_actions: [],
+      unresolved_geographies: [],
     };
   }
 
-  // Step 2: Convert to math engine Signal type
-  const signals: Signal[] = rawSignals.map(r => ({
+  // Step 3: Convert to math engine Signal type
+  // confidence: null if not present — NEVER fabricate 0.5
+  const signals: Signal[] = rawSignals.map((r: any) => ({
+    id: String(r.id),
     temporal_coordinate: Number(r.detectedAt),
     spatial_coordinate: r.jurisdiction,
     signal_type: r.signalType,
-    confidence: parseFloat(r.confidenceScore as string) || 0.5,
+    confidence: r.confidenceScore !== null && r.confidenceScore !== undefined
+      ? parseFloat(String(r.confidenceScore))
+      : null,
     characteristics: {
       domain: r.domain,
       severity: r.severity,
       dataset: r.datasetId,
-      ...(typeof r.supportingStatistics === 'object' ? r.supportingStatistics as Record<string, any> : {}),
+      ...(typeof r.supportingStatistics === "object" && r.supportingStatistics !== null
+        ? r.supportingStatistics as Record<string, any>
+        : {}),
     },
   }));
 
-  // Step 3: Deduplicate
-  const uniqueSignals = deduplicateSignals(signals, cfg.time_window_ms);
+  const totalSignals = signals.length;
 
-  // Step 4: Group by geography
+  // Step 4: Deduplicate using declared temporal bucket
+  const uniqueSignals = deduplicateSignals(signals, temporal_bucket_ms);
+
+  // Step 5: Group by geography
   const byGeography = new Map<string, Signal[]>();
   for (const s of uniqueSignals) {
     const geo = s.spatial_coordinate;
@@ -148,105 +200,110 @@ export async function runConvergenceAnalysis(
     byGeography.get(geo)!.push(s);
   }
 
-  // Step 5: Run convergence detection per geography
-  const totalGeographies = byGeography.size;
+  // Step 6: Run convergence detection per geography
   const convergenceZones: ConvergenceZone[] = [];
+  const unresolvedGeographies: Array<{ geography: string; reason: string }> = [];
 
-  for (const [geography, geoSignals] of byGeography) {
-    if (geoSignals.length < cfg.min_signals_for_convergence) continue;
+  for (const [geography, geoSignals] of Array.from(byGeography.entries())) {
+    if (geoSignals.length < min_signals_for_analysis) continue;
 
     const input: ConvergenceInput = {
       geography,
       signals: geoSignals,
-      time_window_ms: cfg.time_window_ms,
+      as_of,
+      time_window_ms,
       total_signals_all_geographies: uniqueSignals.length,
-      total_geographies: totalGeographies,
+      geography_registry: registry,
     };
 
     const result = detectConvergence(input);
 
-    // Only include if meets significance threshold
-    if (result.poisson_z_score >= cfg.significance_threshold || result.multiplicative_score >= 3.0) {
-      convergenceZones.push({
+    // Track unresolved geographies
+    if (result.poisson.status === "unresolved") {
+      unresolvedGeographies.push({
         geography,
-        convergence: result,
-        signal_types: [...new Set(geoSignals.map(s => s.signal_type))],
-        latest_signal_time: Math.max(...geoSignals.map(s => s.temporal_coordinate)),
+        reason: result.poisson.reason_unresolved ?? "unknown",
       });
+    }
+
+    // Only include zones that meet threshold (resolved with Z >= threshold)
+    if (result.poisson.status === "resolved" &&
+        result.poisson.z_score !== null &&
+        result.poisson.z_score >= z_score_threshold) {
+      const provenance = generateProvenanceReceipt({
+        equation_id: "poisson_z_score",
+        as_of,
+        config: { time_window_ms, temporal_bucket_ms, min_signals_for_analysis, z_score_threshold },
+        input_signals: geoSignals,
+        geography_registry_version: registry.version,
+        expected_count: result.poisson.expected_count,
+        observed_count: result.poisson.observed_count,
+        computed_outputs: {
+          z_score: result.poisson.z_score,
+          multiplicative_score: result.multiplicative_score,
+          recency_factor: result.recency_factor,
+          dominant_type: result.dominant_type,
+        },
+      });
+
+      convergenceZones.push({ geography, convergence: result, provenance });
     }
   }
 
-  // Sort by Z-score descending (most significant first)
-  convergenceZones.sort((a, b) => b.convergence.poisson_z_score - a.convergence.poisson_z_score);
-
-  // Step 6: Compute priority scores for convergence zones
-  const prioritizedActions: PrioritizedAction[] = convergenceZones.map(zone => {
-    // Urgency: based on recency (more recent = more urgent)
-    const urgency = zone.convergence.recency_factor;
-
-    // Equity: based on signal diversity (more types = more systemic = higher equity concern)
-    const equity = Math.min(1, zone.convergence.distinct_types / 5);
-
-    // Feasibility: inverse of signal count (fewer signals = easier to investigate)
-    // Capped at 1.0 for 1 signal, 0.2 for 10+ signals
-    const feasibility = Math.max(0.2, 1 - (zone.convergence.signal_count - 1) / 10);
-
-    // Confidence: mean confidence from the signals
-    const confidence = zone.convergence.mean_confidence;
-
-    const priority: PriorityInput = { urgency, equity, feasibility, confidence };
-    const score = priorityScore(priority);
-
-    // Dominant type: most frequent signal type
-    const typeCounts = new Map<string, number>();
-    for (const t of zone.signal_types) {
-      typeCounts.set(t, (typeCounts.get(t) ?? 0) + 1);
-    }
-    const dominant = [...typeCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "unknown";
-
-    return {
-      geography: zone.geography,
-      priority_score: score,
-      urgency,
-      equity,
-      feasibility,
-      confidence,
-      signal_count: zone.convergence.signal_count,
-      dominant_type: dominant,
-      rationale: buildRationale(zone, score),
-    };
+  // Sort by Z-score descending
+  convergenceZones.sort((a, b) => {
+    const zA = a.convergence.poisson.z_score ?? 0;
+    const zB = b.convergence.poisson.z_score ?? 0;
+    return zB - zA;
   });
 
-  // Sort by priority score descending
-  prioritizedActions.sort((a, b) => b.priority_score - a.priority_score);
+  // Step 7: Persist provenance receipts
+  await persistProvenanceReceipts(convergenceZones.map(z => z.provenance));
 
   return {
     engine_version: ENGINE_VERSION,
-    run_timestamp: runTimestamp,
-    config: cfg,
-    total_signals_analyzed: uniqueSignals.length,
-    geographies_evaluated: totalGeographies,
+    as_of,
+    config,
+    geography_registry_version: registry.version,
+    total_signals_analyzed: totalSignals,
+    total_signals_after_dedup: uniqueSignals.length,
+    geographies_evaluated: byGeography.size,
     convergence_zones: convergenceZones,
-    prioritized_actions: prioritizedActions,
+    unresolved_geographies: unresolvedGeographies,
   };
 }
 
 // ============================================================
-// HELPERS
+// PROVENANCE PERSISTENCE
 // ============================================================
 
-function buildRationale(zone: ConvergenceZone, score: number): string {
-  const z = zone.convergence.poisson_z_score;
-  const n = zone.convergence.signal_count;
-  const types = zone.convergence.distinct_types;
-  
-  const significance = z > 3 
-    ? "highly statistically significant (p < 0.01)" 
-    : z > 2 
-      ? "statistically significant (p < 0.05)"
-      : "elevated but not statistically significant";
-
-  return `${zone.geography}: ${n} signals across ${types} types. ` +
-    `Z-score = ${z.toFixed(2)} (${significance}). ` +
-    `Priority = ${score.toFixed(1)}/10.`;
+async function persistProvenanceReceipts(receipts: ProvenanceReceipt[]): Promise<void> {
+  if (receipts.length === 0) return;
+  try {
+    for (const receipt of receipts) {
+      await db.execute(sql`
+        INSERT INTO convergence_receipts (
+          equation_id, engine_version, rule_manifest_hash, as_of,
+          configuration_hash, input_hash, source_signal_ids,
+          geography_registry_version, expected_count, observed_count,
+          computed_outputs, timestamp_computed
+        ) VALUES (
+          ${receipt.equation_id},
+          ${receipt.engine_version},
+          ${receipt.rule_manifest_hash},
+          ${receipt.as_of},
+          ${receipt.configuration_hash},
+          ${receipt.input_hash},
+          ${JSON.stringify(receipt.source_signal_ids)},
+          ${receipt.geography_registry_version},
+          ${receipt.expected_count},
+          ${receipt.observed_count},
+          ${JSON.stringify(receipt.computed_outputs)}::jsonb,
+          ${receipt.timestamp_computed}
+        )
+      `);
+    }
+  } catch (err: any) {
+    console.error(`[convergence-runner] Failed to persist provenance receipts: ${err.message}`);
+  }
 }

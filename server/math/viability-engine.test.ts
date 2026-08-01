@@ -1,294 +1,246 @@
 /**
- * VIABILITY ENGINE — Verification Tests
- * 
- * Verifies:
- * 1. Element satisfaction logic (binary per element)
- * 2. Mandatory element blocking
- * 3. Weighted completeness calculation
- * 4. Statute of limitations math
- * 5. Gap analysis
- * 6. Determinism
+ * VIABILITY ENGINE v2.0.0 — Test Suite
+ *
+ * Test categories:
+ *   1. Element satisfaction with 0.6 threshold
+ *   2. Mandatory element blocking
+ *   3. Weighted completeness math
+ *   4. SOL computation
+ *   5. Evidence gap analysis
+ *   6. Claim comparison ordering
+ *   7. Determinism replay
+ *   8. Source traceability
  */
-
+import { describe, expect, it } from "vitest";
 import {
   scoreViability,
   computeSOL,
   compareClaimViability,
   identifyEvidenceGaps,
+  SATISFACTION_THRESHOLD,
   type ClaimDefinition,
   type EvidenceItem,
-  type ClaimInput,
+  type ViabilityInput,
 } from "./viability-engine";
 
 // ============================================================
-// TEST HELPERS
+// FIXTURES
 // ============================================================
 
-function assert(condition: boolean, message: string): void {
-  if (!condition) throw new Error(`ASSERTION FAILED: ${message}`);
-}
-
-function assertClose(actual: number, expected: number, tolerance: number, label: string): void {
-  const diff = Math.abs(actual - expected);
-  if (diff > tolerance) {
-    throw new Error(`${label}: expected ${expected} ± ${tolerance}, got ${actual} (diff=${diff})`);
-  }
-}
-
-// ============================================================
-// TEST DATA
-// ============================================================
-
-const titleVIIClaim: ClaimDefinition = {
+const CLAIM: ClaimDefinition = {
   claim_type: "Title_VII_discrimination",
-  jurisdiction: "federal",
+  jurisdiction: "WA",
   elements: [
-    { id: "e1", name: "Protected class membership", description: "Plaintiff belongs to a protected class", mandatory: true, weight: 0.2 },
-    { id: "e2", name: "Adverse employment action", description: "Plaintiff suffered adverse action", mandatory: true, weight: 0.3 },
-    { id: "e3", name: "Causal connection", description: "Connection between protected class and adverse action", mandatory: true, weight: 0.3 },
-    { id: "e4", name: "Similarly situated comparators", description: "Others outside class treated differently", mandatory: false, weight: 0.1 },
-    { id: "e5", name: "Pretext evidence", description: "Employer's stated reason is pretextual", mandatory: false, weight: 0.1 },
+    { id: "e1", name: "Protected class membership", description: "Plaintiff is member of protected class", mandatory: true, weight: 0.3 },
+    { id: "e2", name: "Adverse action", description: "Employer took adverse action", mandatory: true, weight: 0.3 },
+    { id: "e3", name: "Causal connection", description: "Connection between protected status and action", mandatory: true, weight: 0.25 },
+    { id: "e4", name: "Damages", description: "Plaintiff suffered damages", mandatory: false, weight: 0.15 },
   ],
-  statute_of_limitations_days: 300, // EEOC charge filing deadline
+  statute_of_limitations_days: 300,
+  source_id: "rosetta-title-vii-wa-001",
 };
 
-const strongEvidence: EvidenceItem[] = [
-  { id: "ev1", element_id: "e1", strength: 0.95, source_verified: true, document_type: "record" },
-  { id: "ev2", element_id: "e2", strength: 0.9, source_verified: true, document_type: "document" },
+const STRONG_EVIDENCE: EvidenceItem[] = [
+  { id: "ev1", element_id: "e1", strength: 0.9, source_verified: true, document_type: "record" },
+  { id: "ev2", element_id: "e2", strength: 0.85, source_verified: true, document_type: "document" },
   { id: "ev3", element_id: "e3", strength: 0.7, source_verified: true, document_type: "testimony" },
-  { id: "ev4", element_id: "e4", strength: 0.6, source_verified: true, document_type: "record" },
-  { id: "ev5", element_id: "e5", strength: 0.4, source_verified: false, document_type: "testimony" },
+  { id: "ev4", element_id: "e4", strength: 0.8, source_verified: false, document_type: "correspondence" },
 ];
 
-const now = Date.now();
-const sixMonthsAgo = now - (180 * 86_400_000);
+const INCIDENT_DATE = 1_700_000_000_000;
+const FILING_DATE = INCIDENT_DATE + 100 * 86_400_000; // 100 days later
 
 // ============================================================
-// TESTS
+// 1. ELEMENT SATISFACTION WITH 0.6 THRESHOLD
 // ============================================================
 
-function testElementSatisfaction() {
-  console.log("  [1] Element Satisfaction...");
-  
-  const result = scoreViability({
-    claim: titleVIIClaim,
-    evidence: strongEvidence,
-    incident_date: sixMonthsAgo,
-    filing_date: now,
+describe("Element satisfaction threshold", () => {
+  it("Satisfaction threshold is 0.6", () => {
+    expect(SATISFACTION_THRESHOLD).toBe(0.6);
   });
-  
-  // All elements should be satisfied (all have strength >= 0.3)
-  assert(result.element_satisfaction.every(e => e.satisfied), "All elements satisfied with strong evidence");
-  assert(result.mandatory_elements_met === true, "Mandatory elements met");
-  assert(result.blocking_elements.length === 0, "No blocking elements");
-  assert(result.completeness_ratio === 1.0, "100% completeness");
-  
-  console.log("    ✓ All elements satisfied, mandatory check passes");
-}
 
-function testMandatoryBlocking() {
-  console.log("  [2] Mandatory Element Blocking...");
-  
-  // Remove evidence for mandatory element e3 (causal connection)
-  const weakEvidence = strongEvidence.filter(e => e.element_id !== "e3");
-  
-  const result = scoreViability({
-    claim: titleVIIClaim,
-    evidence: weakEvidence,
-    incident_date: sixMonthsAgo,
-    filing_date: now,
+  it("Evidence at 0.6 satisfies element", () => {
+    const evidence: EvidenceItem[] = [
+      { id: "x1", element_id: "e1", strength: 0.6, source_verified: true, document_type: "record" },
+    ];
+    const result = scoreViability({ claim: CLAIM, evidence, incident_date: INCIDENT_DATE, filing_date: FILING_DATE });
+    const e1 = result.element_satisfaction.find(e => e.element_id === "e1");
+    expect(e1?.satisfied).toBe(true);
   });
-  
-  assert(result.mandatory_elements_met === false, "Missing mandatory element blocks claim");
-  assert(result.blocking_elements.includes("Causal connection"), "Identifies blocking element");
-  assert(result.overall_score < 7, `Score should be reduced, got ${result.overall_score}`);
-  
-  console.log("    ✓ Missing mandatory element correctly blocks claim");
-}
 
-function testWeightedCompleteness() {
-  console.log("  [3] Weighted Completeness...");
-  
-  // Only satisfy e1 (weight 0.2) and e2 (weight 0.3) = 0.5/1.0 = 50% weighted
-  const partialEvidence: EvidenceItem[] = [
-    { id: "ev1", element_id: "e1", strength: 0.9, source_verified: true, document_type: "record" },
-    { id: "ev2", element_id: "e2", strength: 0.8, source_verified: true, document_type: "document" },
-  ];
-  
-  const result = scoreViability({
-    claim: titleVIIClaim,
-    evidence: partialEvidence,
-    incident_date: sixMonthsAgo,
-    filing_date: now,
+  it("Evidence at 0.59 does NOT satisfy element", () => {
+    const evidence: EvidenceItem[] = [
+      { id: "x1", element_id: "e1", strength: 0.59, source_verified: true, document_type: "record" },
+    ];
+    const result = scoreViability({ claim: CLAIM, evidence, incident_date: INCIDENT_DATE, filing_date: FILING_DATE });
+    const e1 = result.element_satisfaction.find(e => e.element_id === "e1");
+    expect(e1?.satisfied).toBe(false);
   });
-  
-  // Weighted: (0.2 + 0.3) / (0.2 + 0.3 + 0.3 + 0.1 + 0.1) = 0.5/1.0 = 0.5
-  assertClose(result.weighted_completeness, 0.5, 0.0001, "Weighted completeness");
-  // Ratio: 2/5 = 0.4
-  assertClose(result.completeness_ratio, 0.4, 0.0001, "Completeness ratio");
-  
-  console.log("    ✓ Weighted completeness correct (0.5), ratio correct (0.4)");
-}
 
-function testStatuteOfLimitations() {
-  console.log("  [4] Statute of Limitations...");
-  
-  // Not expired: 180 days elapsed of 300 day window
-  const sol1 = computeSOL(sixMonthsAgo, now, 300);
-  assert(sol1.expired === false, "Not expired at 180/300 days");
-  assertClose(sol1.days_remaining, 120, 1, "120 days remaining");
-  assertClose(sol1.urgency, 1 - 120/300, 0.01, "Urgency = 1 - remaining/total");
-  
-  // Expired: 400 days elapsed of 300 day window
-  const longAgo = now - (400 * 86_400_000);
-  const sol2 = computeSOL(longAgo, now, 300);
-  assert(sol2.expired === true, "Expired at 400/300 days");
-  assert(sol2.days_remaining === 0, "Zero days remaining when expired");
-  
-  // Just filed: 0 days elapsed
-  const sol3 = computeSOL(now, now, 300);
-  assert(sol3.expired === false, "Not expired on day 0");
-  assertClose(sol3.days_remaining, 300, 1, "Full 300 days remaining");
-  assertClose(sol3.urgency, 0, 0.01, "Zero urgency on day 0");
-  
-  console.log("    ✓ SOL math correct: expired, remaining, urgency");
-}
-
-function testOverallScoring() {
-  console.log("  [5] Overall Score Calculation...");
-  
-  // Perfect case: all elements met, not expired, recent
-  const perfect = scoreViability({
-    claim: titleVIIClaim,
-    evidence: strongEvidence,
-    incident_date: sixMonthsAgo,
-    filing_date: now,
+  it("No evidence → not satisfied", () => {
+    const result = scoreViability({ claim: CLAIM, evidence: [], incident_date: INCIDENT_DATE, filing_date: FILING_DATE });
+    expect(result.element_satisfaction.every(e => !e.satisfied)).toBe(true);
   });
-  
-  // Overall = 10 × (0.5 × 1.0 + 0.3 × 1.0 + 0.2 × sol_factor)
-  // sol_factor = 1 - urgency*0.5 = 1 - (180/300)*0.5 = 1 - 0.3 = 0.7
-  // Overall = 10 × (0.5 + 0.3 + 0.14) = 10 × 0.94 = 9.4
-  assert(perfect.overall_score > 9, `Perfect case should score > 9, got ${perfect.overall_score}`);
-  assert(perfect.overall_score <= 10, "Score bounded at 10");
-  
-  // Expired SOL: score drops significantly
-  const expired = scoreViability({
-    claim: titleVIIClaim,
-    evidence: strongEvidence,
-    incident_date: now - (400 * 86_400_000),
-    filing_date: now,
-  });
-  // sol_factor = 0 (expired)
-  // Overall = 10 × (0.5 × 1.0 + 0.3 × 1.0 + 0.2 × 0) = 8.0
-  assertClose(expired.overall_score, 8.0, 0.1, "Expired SOL score");
-  
-  console.log("    ✓ Overall scoring correct, SOL impact verified");
-}
-
-function testGapAnalysis() {
-  console.log("  [6] Evidence Gap Analysis...");
-  
-  const weakEvidence: EvidenceItem[] = [
-    { id: "ev1", element_id: "e1", strength: 0.9, source_verified: true, document_type: "record" },
-    { id: "ev2", element_id: "e3", strength: 0.1, source_verified: false, document_type: "testimony" }, // below threshold
-  ];
-  
-  const result = scoreViability({
-    claim: titleVIIClaim,
-    evidence: weakEvidence,
-    incident_date: sixMonthsAgo,
-    filing_date: now,
-  });
-  
-  const gaps = identifyEvidenceGaps(result);
-  
-  // Should identify 4 gaps (e2, e3, e4, e5 — e3 has evidence but below threshold)
-  assert(gaps.gaps.length === 4, `Should have 4 gaps, got ${gaps.gaps.length}`);
-  
-  // e3 has evidence but below threshold
-  const e3Gap = gaps.gaps.find(g => g.element_name === "Causal connection");
-  assert(e3Gap !== undefined, "e3 should be in gaps");
-  assert(e3Gap!.current_strength === 0.1, "e3 strength should be 0.1");
-  
-  // Claim is salvageable if mandatory gaps have some evidence
-  // e2 (mandatory) has NO evidence, so not salvageable
-  assert(gaps.claim_salvageable === false, "Not salvageable with zero-evidence mandatory gap");
-  
-  console.log("    ✓ Gap analysis identifies missing elements and salvageability");
-}
-
-function testDeterminism() {
-  console.log("  [7] Determinism...");
-  
-  const input: ClaimInput = {
-    claim: titleVIIClaim,
-    evidence: strongEvidence,
-    incident_date: sixMonthsAgo,
-    filing_date: now,
-  };
-  
-  const r1 = scoreViability(input);
-  const r2 = scoreViability(input);
-  
-  assert(r1.overall_score === r2.overall_score, "Same input → same score");
-  assert(r1.mandatory_elements_met === r2.mandatory_elements_met, "Same input → same mandatory check");
-  assert(r1.completeness_ratio === r2.completeness_ratio, "Same input → same completeness");
-  
-  console.log("    ✓ Deterministic: same input always produces same output");
-}
-
-function testClaimComparison() {
-  console.log("  [8] Claim Comparison...");
-  
-  const fhaClam: ClaimDefinition = {
-    claim_type: "Fair_Housing_Act",
-    jurisdiction: "federal",
-    elements: [
-      { id: "f1", name: "Protected class", description: "", mandatory: true, weight: 0.3 },
-      { id: "f2", name: "Housing denial", description: "", mandatory: true, weight: 0.4 },
-      { id: "f3", name: "Discriminatory intent", description: "", mandatory: true, weight: 0.3 },
-    ],
-    statute_of_limitations_days: 365,
-  };
-  
-  // Evidence only supports Title VII elements, not FHA
-  const results = compareClaimViability(
-    [titleVIIClaim, fhaClam],
-    strongEvidence,
-    sixMonthsAgo,
-    now
-  );
-  
-  assert(results.length === 2, "Both claims evaluated");
-  assert(results[0].overall_score >= results[1].overall_score, "Sorted by score descending");
-  assert(results[0].claim_type === "Title_VII_discrimination", "Title VII should score higher");
-  
-  console.log("    ✓ Comparison sorts by viability, correct claim wins");
-}
+});
 
 // ============================================================
-// RUN ALL TESTS
+// 2. MANDATORY ELEMENT BLOCKING
 // ============================================================
 
-console.log("\n═══════════════════════════════════════════════════");
-console.log("  VIABILITY ENGINE — Verification Suite");
-console.log("═══════════════════════════════════════════════════\n");
+describe("Mandatory element blocking", () => {
+  it("All mandatory satisfied → not blocked", () => {
+    const result = scoreViability({ claim: CLAIM, evidence: STRONG_EVIDENCE, incident_date: INCIDENT_DATE, filing_date: FILING_DATE });
+    expect(result.mandatory_elements_met).toBe(true);
+    expect(result.blocking_elements).toHaveLength(0);
+  });
 
-try {
-  testElementSatisfaction();
-  testMandatoryBlocking();
-  testWeightedCompleteness();
-  testStatuteOfLimitations();
-  testOverallScoring();
-  testGapAnalysis();
-  testDeterminism();
-  testClaimComparison();
-  
-  console.log("\n═══════════════════════════════════════════════════");
-  console.log("  ALL 8 TEST SUITES PASSED ✓");
-  console.log("  Viability engine produces deterministic, correct results.");
-  console.log("═══════════════════════════════════════════════════\n");
-} catch (e: any) {
-  console.error("\n✗ TEST FAILURE:", e.message);
-  process.exit(1);
-}
+  it("One mandatory unsatisfied → blocked", () => {
+    const weakEvidence = STRONG_EVIDENCE.filter(e => e.element_id !== "e3");
+    const result = scoreViability({ claim: CLAIM, evidence: weakEvidence, incident_date: INCIDENT_DATE, filing_date: FILING_DATE });
+    expect(result.mandatory_elements_met).toBe(false);
+    expect(result.blocking_elements).toContain("Causal connection");
+  });
+
+  it("Mandatory blocking reduces overall score", () => {
+    const fullResult = scoreViability({ claim: CLAIM, evidence: STRONG_EVIDENCE, incident_date: INCIDENT_DATE, filing_date: FILING_DATE });
+    const weakEvidence = STRONG_EVIDENCE.filter(e => e.element_id !== "e3");
+    const blockedResult = scoreViability({ claim: CLAIM, evidence: weakEvidence, incident_date: INCIDENT_DATE, filing_date: FILING_DATE });
+    expect(blockedResult.overall_score).toBeLessThan(fullResult.overall_score);
+  });
+});
+
+// ============================================================
+// 3. WEIGHTED COMPLETENESS
+// ============================================================
+
+describe("Weighted completeness", () => {
+  it("All elements satisfied → weighted_completeness = 1.0", () => {
+    const result = scoreViability({ claim: CLAIM, evidence: STRONG_EVIDENCE, incident_date: INCIDENT_DATE, filing_date: FILING_DATE });
+    expect(result.weighted_completeness).toBe(1);
+  });
+
+  it("No elements satisfied → weighted_completeness = 0.0", () => {
+    const result = scoreViability({ claim: CLAIM, evidence: [], incident_date: INCIDENT_DATE, filing_date: FILING_DATE });
+    expect(result.weighted_completeness).toBe(0);
+  });
+
+  it("Partial satisfaction: only e1 (weight 0.3) satisfied", () => {
+    const evidence: EvidenceItem[] = [
+      { id: "x1", element_id: "e1", strength: 0.9, source_verified: true, document_type: "record" },
+    ];
+    const result = scoreViability({ claim: CLAIM, evidence, incident_date: INCIDENT_DATE, filing_date: FILING_DATE });
+    expect(result.weighted_completeness).toBeCloseTo(0.3, 4);
+  });
+
+  it("Overall score formula: 10 × (0.5·wc + 0.3·mf + 0.2·sf)", () => {
+    const result = scoreViability({ claim: CLAIM, evidence: STRONG_EVIDENCE, incident_date: INCIDENT_DATE, filing_date: FILING_DATE });
+    const solStatus = computeSOL(INCIDENT_DATE, FILING_DATE, 300);
+    const sf = 1 - solStatus.urgency * 0.5;
+    const expected = 10 * (0.5 * 1.0 + 0.3 * 1.0 + 0.2 * sf);
+    expect(result.overall_score).toBeCloseTo(expected, 2);
+  });
+});
+
+// ============================================================
+// 4. SOL COMPUTATION
+// ============================================================
+
+describe("SOL computation", () => {
+  it("Within window → not expired", () => {
+    const sol = computeSOL(INCIDENT_DATE, FILING_DATE, 300);
+    expect(sol.expired).toBe(false);
+    expect(sol.days_remaining).toBe(200);
+  });
+
+  it("Past window → expired", () => {
+    const lateFiling = INCIDENT_DATE + 301 * 86_400_000;
+    const sol = computeSOL(INCIDENT_DATE, lateFiling, 300);
+    expect(sol.expired).toBe(true);
+    expect(sol.days_remaining).toBe(0);
+  });
+
+  it("Urgency increases as deadline approaches", () => {
+    const early = computeSOL(INCIDENT_DATE, INCIDENT_DATE + 50 * 86_400_000, 300);
+    const late = computeSOL(INCIDENT_DATE, INCIDENT_DATE + 250 * 86_400_000, 300);
+    expect(late.urgency).toBeGreaterThan(early.urgency);
+  });
+
+  it("Urgency at filing = incident → 0", () => {
+    const sol = computeSOL(INCIDENT_DATE, INCIDENT_DATE, 300);
+    expect(sol.urgency).toBeCloseTo(0, 4);
+    expect(sol.days_remaining).toBe(300);
+  });
+});
+
+// ============================================================
+// 5. EVIDENCE GAP ANALYSIS
+// ============================================================
+
+describe("Evidence gap analysis", () => {
+  it("No gaps when all elements satisfied", () => {
+    const result = scoreViability({ claim: CLAIM, evidence: STRONG_EVIDENCE, incident_date: INCIDENT_DATE, filing_date: FILING_DATE });
+    const gaps = identifyEvidenceGaps(result);
+    expect(gaps.gaps).toHaveLength(0);
+    expect(gaps.claim_salvageable).toBe(true);
+  });
+
+  it("Identifies missing evidence for unsatisfied elements", () => {
+    const result = scoreViability({ claim: CLAIM, evidence: [], incident_date: INCIDENT_DATE, filing_date: FILING_DATE });
+    const gaps = identifyEvidenceGaps(result);
+    expect(gaps.gaps).toHaveLength(4);
+  });
+
+  it("Not salvageable when mandatory has zero evidence", () => {
+    const evidence: EvidenceItem[] = [
+      { id: "x1", element_id: "e1", strength: 0.9, source_verified: true, document_type: "record" },
+    ];
+    const result = scoreViability({ claim: CLAIM, evidence, incident_date: INCIDENT_DATE, filing_date: FILING_DATE });
+    const gaps = identifyEvidenceGaps(result);
+    expect(gaps.claim_salvageable).toBe(false);
+  });
+});
+
+// ============================================================
+// 6. CLAIM COMPARISON
+// ============================================================
+
+describe("Claim comparison", () => {
+  it("Higher viability claims sort first", () => {
+    const weakClaim: ClaimDefinition = {
+      ...CLAIM,
+      claim_type: "weak_claim",
+      source_id: "test-weak",
+      elements: [
+        { id: "w1", name: "Hard element", description: "Very hard to prove", mandatory: true, weight: 1.0 },
+      ],
+    };
+    const results = compareClaimViability([CLAIM, weakClaim], STRONG_EVIDENCE, INCIDENT_DATE, FILING_DATE);
+    expect(results[0].claim_type).toBe("Title_VII_discrimination");
+    expect(results[0].overall_score).toBeGreaterThan(results[1].overall_score);
+  });
+});
+
+// ============================================================
+// 7. DETERMINISM REPLAY
+// ============================================================
+
+describe("Viability determinism", () => {
+  it("Same inputs produce identical outputs across 100 runs", () => {
+    const input: ViabilityInput = { claim: CLAIM, evidence: STRONG_EVIDENCE, incident_date: INCIDENT_DATE, filing_date: FILING_DATE };
+    const first = scoreViability(input);
+    for (let i = 0; i < 100; i++) {
+      expect(scoreViability(input)).toEqual(first);
+    }
+  });
+});
+
+// ============================================================
+// 8. SOURCE TRACEABILITY
+// ============================================================
+
+describe("Source traceability", () => {
+  it("source_claim_id passes through from claim definition", () => {
+    const result = scoreViability({ claim: CLAIM, evidence: STRONG_EVIDENCE, incident_date: INCIDENT_DATE, filing_date: FILING_DATE });
+    expect(result.source_claim_id).toBe("rosetta-title-vii-wa-001");
+  });
+});
