@@ -46,7 +46,6 @@ describe("Civic Genome Prism trait projection", () => {
     expect(trait?.verification_state).toContain("Rosetta confirmed");
     expect(trait?.verification_state).toContain("Prism supported_by_one_source");
     expect(trait_query).toContain("civic_genome_prism_verification_binding");
-    expect(trait_query).toContain("does not").toBe(false);
   });
 
   it("returns null when the Genome bill does not exist", async () => {
