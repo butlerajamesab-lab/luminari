@@ -1,0 +1,25 @@
+import { activate_prism_for_rosetta_assembly } from "./prism-rosetta-activation";
+
+export async function run_prism_rosetta_activation_from_environment(): Promise<void> {
+  const genome_bill_id = process.env.PRISM_ROSETTA_ACTIVATION_GENOME_BILL_ID?.trim();
+  if (!genome_bill_id) return;
+
+  const assembly_run_id = process.env.PRISM_ROSETTA_ACTIVATION_ASSEMBLY_RUN_ID?.trim() || undefined;
+  const result = await activate_prism_for_rosetta_assembly({
+    genome_bill_id,
+    assembly_run_id,
+  });
+
+  console.log("[PrismRosettaActivation] completed", {
+    verification_run_id: result.verification_run_id,
+    genome_bill_id: result.genome_bill_id,
+    assembly_run_id: result.assembly_run_id,
+    expected_trait_count: result.expected_trait_count,
+    receipt_count: result.receipt_count,
+    status_counts: result.status_counts,
+    input_hash: result.input_hash,
+    output_hash: result.output_hash,
+    receipt_manifest_hash: result.receipt_manifest_hash,
+    replayed: result.replayed,
+  });
+}

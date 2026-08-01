@@ -4,7 +4,16 @@ import { z } from "zod";
 export const PRISM_ENGINE_VERSION = "1.0.0";
 export const PRISM_RULE_SET_ID = "prism-core-assertion";
 export const PRISM_RULE_SET_VERSION = "1.0.0";
-export const PRISM_RULE_SET_HASH = "298eaf14df23f17c07dbc253fb6a2abe2f55ac9425942a46ab08f6bdd05401b0";
+export const PRISM_RULE_SET_HASH =
+  "298eaf14df23f17c07dbc253fb6a2abe2f55ac9425942a46ab08f6bdd05401b0";
+
+export const PRISM_ROSETTA_ENGINE_VERSION = "1.1.0";
+export const PRISM_ROSETTA_RULE_SET_ID = "prism-rosetta-structural-binding";
+export const PRISM_ROSETTA_RULE_SET_VERSION = "1.0.0";
+export const PRISM_ROSETTA_RULE_SET_HASH =
+  "f2a93df25b112f443e2e83253b85254c05d4ed5b4c6a4048842a7e738de71a68";
+
+const hash_schema = z.string().regex(/^[a-f0-9]{64}$/i);
 
 export const verification_status_schema = z.enum([
   "user_reported",
@@ -21,18 +30,18 @@ export const verification_status_schema = z.enum([
 export const evidence_reference_schema = z.object({
   evidence_id: z.string().min(1).max(256),
   document_id: z.string().min(1).max(256),
-  evidence_fingerprint: z.string().regex(/^[a-f0-9]{64}$/i),
-  source_content_hash: z.string().regex(/^[a-f0-9]{64}$/i),
+  evidence_fingerprint: hash_schema,
+  source_content_hash: hash_schema,
   relationship: z.enum(["supports", "contradicts", "neutral"]),
   independent_source_id: z.string().min(1).max(256).optional(),
 }).strict();
 
-export const verification_request_schema = z.object({
+export const core_verification_request_schema = z.object({
   request_id: z.string().min(1).max(256),
   lighthouse_case_id: z.string().min(1).max(256),
   evidence_document_id: z.string().min(1).max(256),
-  evidence_fingerprint: z.string().regex(/^[a-f0-9]{64}$/i),
-  source_content_hash: z.string().regex(/^[a-f0-9]{64}$/i),
+  evidence_fingerprint: hash_schema,
+  source_content_hash: hash_schema,
   claim_assertion_id: z.string().min(1).max(256),
   rule_set_id: z.literal(PRISM_RULE_SET_ID),
   rule_set_version: z.literal(PRISM_RULE_SET_VERSION),
@@ -47,28 +56,130 @@ export const verification_request_schema = z.object({
   evidence_refs: z.array(evidence_reference_schema).max(256),
 }).strict();
 
-export const prism_receipt_schema = z.object({
+const rosetta_source_span_schema = z.object({
+  char_offset_start: z.number().int().nonnegative(),
+  char_offset_end: z.number().int().positive(),
+  block_content_hash: hash_schema,
+}).strict().refine(
+  (value) => value.char_offset_end > value.char_offset_start,
+  { message: "source_span_end_must_follow_start" },
+);
+
+export const rosetta_binding_schema = z.object({
+  genome_bill_id: z.string().uuid(),
+  assembly_run_id: z.string().uuid(),
+  source_document_id: z.number().int().positive(),
+  extraction_run_id: z.string().min(1).max(128),
+  trait_id: z.string().uuid(),
+  trait_class: z.enum([
+    "help",
+    "workflow",
+    "accountability",
+    "override",
+    "definition",
+  ]),
+  trait_key: z.string().min(1).max(512),
+  source_object_type: z.string().min(1).max(256),
+  source_object_id: z.string().min(1).max(512),
+  source_block_id: z.string().min(1).max(512),
+  source_span: rosetta_source_span_schema,
+  trait_fingerprint: hash_schema,
+  trait_content_hash: hash_schema,
+  source_trace_hash: hash_schema,
+  assembly_input_hash: hash_schema,
+  assembly_output_hash: hash_schema,
+  rosetta_source_identity_hash: hash_schema,
+  rosetta_source_content_hash: hash_schema,
+  rosetta_output_content_hash: hash_schema,
+  rosetta_rule_manifest_hash: hash_schema,
+  rosetta_configuration_hash: hash_schema,
+}).strict();
+
+export const rosetta_binding_request_schema = z.object({
+  request_id: z.string().min(1).max(256),
+  lighthouse_case_id: z.string().min(1).max(256),
+  evidence_document_id: z.string().min(1).max(256),
+  evidence_fingerprint: hash_schema,
+  source_content_hash: hash_schema,
+  claim_assertion_id: z.string().min(1).max(512),
+  rule_set_id: z.literal(PRISM_ROSETTA_RULE_SET_ID),
+  rule_set_version: z.literal(PRISM_ROSETTA_RULE_SET_VERSION),
+  requested_checks: z.array(z.enum([
+    "verify_identity_chain",
+    "verify_hash_chain",
+    "verify_source_binding",
+    "verify_rule_binding",
+    "classify_support_state",
+  ])).length(5),
+  originating_lighthouse_commit: z.string().regex(/^[a-f0-9]{7,64}$/i),
+  originating_lighthouse_runtime_version: z.string().min(1).max(128),
+  evidence_refs: z.array(evidence_reference_schema).max(1),
+  subject_type: z.literal("civic_genome_trait"),
+  subject_id: z.string().uuid(),
+  rosetta_binding: rosetta_binding_schema,
+}).strict();
+
+export const verification_request_schema = z.discriminatedUnion("rule_set_id", [
+  core_verification_request_schema,
+  rosetta_binding_request_schema,
+]);
+
+const receipt_fields = {
   verification_receipt_id: z.string().uuid(),
   request_id: z.string().min(1),
-  prism_engine_version: z.literal(PRISM_ENGINE_VERSION),
-  rule_set_id: z.literal(PRISM_RULE_SET_ID),
-  rule_set_version: z.literal(PRISM_RULE_SET_VERSION),
-  rule_set_hash: z.literal(PRISM_RULE_SET_HASH),
-  input_hash: z.string().regex(/^[a-f0-9]{64}$/i),
-  output_hash: z.string().regex(/^[a-f0-9]{64}$/i),
+  input_hash: hash_schema,
+  output_hash: hash_schema,
   status: verification_status_schema,
   supported_findings: z.array(z.record(z.unknown())),
   contradictions: z.array(z.record(z.unknown())),
   missing_evidence: z.array(z.record(z.unknown())),
   unresolved_conditions: z.array(z.record(z.unknown())),
   cited_evidence_identifiers: z.array(z.string()),
-  deterministic_replay_key: z.string().regex(/^[a-f0-9]{64}$/i),
+  deterministic_replay_key: hash_schema,
   completion_timestamp: z.string().min(1),
   idempotency_reused: z.boolean(),
+};
+
+const core_prism_receipt_schema = z.object({
+  ...receipt_fields,
+  prism_engine_version: z.literal(PRISM_ENGINE_VERSION),
+  rule_set_id: z.literal(PRISM_RULE_SET_ID),
+  rule_set_version: z.literal(PRISM_RULE_SET_VERSION),
+  rule_set_hash: z.literal(PRISM_RULE_SET_HASH),
 }).strict();
 
+const rosetta_prism_receipt_schema = z.object({
+  ...receipt_fields,
+  prism_engine_version: z.literal(PRISM_ROSETTA_ENGINE_VERSION),
+  rule_set_id: z.literal(PRISM_ROSETTA_RULE_SET_ID),
+  rule_set_version: z.literal(PRISM_ROSETTA_RULE_SET_VERSION),
+  rule_set_hash: z.literal(PRISM_ROSETTA_RULE_SET_HASH),
+}).strict();
+
+export const prism_receipt_schema = z.discriminatedUnion("rule_set_id", [
+  core_prism_receipt_schema,
+  rosetta_prism_receipt_schema,
+]);
+
 export type VerificationRequest = z.infer<typeof verification_request_schema>;
+export type RosettaBindingRequest = z.infer<typeof rosetta_binding_request_schema>;
 export type PrismReceipt = z.infer<typeof prism_receipt_schema>;
+
+export function prism_contract_for_request(request: VerificationRequest): {
+  engine_version: string;
+  rule_set_hash: string;
+} {
+  if (request.rule_set_id === PRISM_ROSETTA_RULE_SET_ID) {
+    return {
+      engine_version: PRISM_ROSETTA_ENGINE_VERSION,
+      rule_set_hash: PRISM_ROSETTA_RULE_SET_HASH,
+    };
+  }
+  return {
+    engine_version: PRISM_ENGINE_VERSION,
+    rule_set_hash: PRISM_RULE_SET_HASH,
+  };
+}
 
 function sort_value(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sort_value);
