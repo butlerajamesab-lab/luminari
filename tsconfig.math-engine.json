@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true,
+    "incremental": false,
+    "tsBuildInfoFile": "./node_modules/typescript/math-engine.tsbuildinfo"
+  },
+  "files": [
+    "server/math/atlas-engine.ts",
+    "server/math/viability-engine.ts",
+    "server/math/convergence-runner.ts",
+    "server/math/replay-proof.ts",
+    "server/routers/math-engine-router.ts"
+  ]
+}
