@@ -21,7 +21,6 @@ import {
 import { get_genome_bill_by_source_id } from "../civic-genome-source-id";
 import { project_docket_cache_to_civic_genome } from "../civic-genome-projection";
 import { resolve_or_assemble_docket_bill } from "../civic-genome-single-bill-assembly";
-import { ingest_docket_bill_to_rosetta_source } from "../civic-genome-rosetta-source-ingestion";
 import { process_docket_bill_through_rosetta_and_genome } from "../civic-genome-rosetta-extraction";
 import {
   get_latest_rosetta_law_view_by_source_document,
@@ -59,7 +58,7 @@ export const civicGenomeRouter = router({
 
   ingest_docket_bill_to_rosetta_source: adminProcedure
     .input(z.object({ source_bill_id: source_bill_id_param }))
-    .mutation(async ({ input }) => ingest_docket_bill_to_rosetta_source(input.source_bill_id)),
+    .mutation(async ({ input }) => process_docket_bill_through_rosetta_and_genome(input.source_bill_id)),
 
   process_docket_bill_through_rosetta: adminProcedure
     .input(z.object({ source_bill_id: source_bill_id_param }))
