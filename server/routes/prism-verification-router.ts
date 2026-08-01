@@ -7,6 +7,7 @@ import {
   run_prism_verification,
 } from "../services/prism-verification-client";
 import { safe_equal } from "../services/prism-verification-contract";
+import { activate_prism_for_rosetta_assembly } from "../services/prism-rosetta-activation";
 
 export const prism_verification_router = Router();
 
@@ -59,6 +60,32 @@ prism_verification_router.get("/health", async (_req, res) => {
     });
   } finally {
     clearTimeout(timeout);
+  }
+});
+
+prism_verification_router.post("/rosetta/verify-assembly", async (req, res) => {
+  if (!require_request_authorization(req)) {
+    return res.status(401).json({ error: "authentication_required" });
+  }
+  try {
+    const input = z.object({
+      genome_bill_id: z.string().uuid(),
+      assembly_run_id: z.string().uuid().optional(),
+    }).strict().parse(req.body);
+    const result = await activate_prism_for_rosetta_assembly(input);
+    return res.status(result.replayed ? 200 : 201).json(result);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "invalid_rosetta_activation_request" });
+    }
+    if (error instanceof PrismBoundaryError) {
+      return boundary_response(res, error);
+    }
+    const message = error instanceof Error ? error.message : "verification_unavailable";
+    return res.status(503).json({
+      error: message,
+      verification_status: "unresolved",
+    });
   }
 });
 
