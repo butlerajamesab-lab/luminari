@@ -63,7 +63,7 @@ function runOnce() {
 const results: string[] = [];
 for (let i = 0; i < 3; i++) {
   const output = runOnce();
-  // Remove timestamp_computed from provenance (it's audit-only, uses Date.now())
+  // timestamp_computed now equals as_of (deterministic) — no exclusion needed
   results.push(JSON.stringify(output));
 }
 

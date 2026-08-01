@@ -106,3 +106,32 @@ CREATE POLICY "service_role_all" ON geography_registry FOR ALL USING (auth.role(
 CREATE POLICY "service_role_all" ON convergence_receipts FOR ALL USING (auth.role() = 'service_role');
 CREATE POLICY "service_role_all" ON claim_definitions FOR ALL USING (auth.role() = 'service_role');
 CREATE POLICY "service_role_all" ON case_evidence FOR ALL USING (auth.role() = 'service_role');
+
+-- ============================================================
+-- IMMUTABLE RECEIPT TRIGGER
+-- convergence_receipts are append-only. No UPDATE or DELETE allowed.
+-- ============================================================
+CREATE OR REPLACE FUNCTION prevent_receipt_mutation()
+RETURNS TRIGGER AS $$
+BEGIN
+  RAISE EXCEPTION 'convergence_receipts are immutable. UPDATE and DELETE are prohibited.';
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS immutable_convergence_receipts ON convergence_receipts;
+CREATE TRIGGER immutable_convergence_receipts
+  BEFORE UPDATE OR DELETE ON convergence_receipts
+  FOR EACH ROW
+  EXECUTE FUNCTION prevent_receipt_mutation();
+
+-- ============================================================
+-- SCHEMA MIGRATIONS RECORD
+-- Record this migration in the project's migration ledger.
+-- ============================================================
+INSERT INTO supabase_migrations.schema_migrations (version, name, statements_applied)
+VALUES (
+  '20260731220000',
+  '20260731_math_engine_v2_tables',
+  1
+)
+ON CONFLICT DO NOTHING;

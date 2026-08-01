@@ -162,7 +162,7 @@ export interface ProvenanceReceipt {
   expected_count: number | null;
   observed_count: number;
   computed_outputs: Record<string, unknown>;
-  timestamp_computed: number;
+  timestamp_computed: number;          // Set to as_of — DB layer adds created_at for wall-clock time
 }
 
 // ============================================================
@@ -278,9 +278,14 @@ export function spatialSimilarityHaversine(
   if (geo_a === geo_b) return 1.0;
   const entryA = registry.entries.find(e => e.id === geo_a);
   const entryB = registry.entries.find(e => e.id === geo_b);
-  if (!entryA?.centroid_lat || !entryA?.centroid_lon ||
-      !entryB?.centroid_lat || !entryB?.centroid_lon) {
+  if (entryA?.centroid_lat === undefined || entryA?.centroid_lat === null ||
+      entryA?.centroid_lon === undefined || entryA?.centroid_lon === null ||
+      entryB?.centroid_lat === undefined || entryB?.centroid_lat === null ||
+      entryB?.centroid_lon === undefined || entryB?.centroid_lon === null) {
     return null; // Cannot compute — missing geometry
+  }
+  if (sigma_km <= 0) {
+    throw new Error("sigma_km must be positive");
   }
   const d = haversineDistance(
     entryA.centroid_lat, entryA.centroid_lon,
@@ -506,7 +511,10 @@ export function jointSimilarity(input: SimilarityInput): {
   const entryA = input.geography_registry.entries.find(e => e.id === input.signal_a.spatial_coordinate);
   const entryB = input.geography_registry.entries.find(e => e.id === input.signal_b.spatial_coordinate);
   let distance_km: number | null = null;
-  if (entryA?.centroid_lat && entryA?.centroid_lon && entryB?.centroid_lat && entryB?.centroid_lon) {
+  if (entryA?.centroid_lat !== undefined && entryA?.centroid_lat !== null &&
+      entryA?.centroid_lon !== undefined && entryA?.centroid_lon !== null &&
+      entryB?.centroid_lat !== undefined && entryB?.centroid_lat !== null &&
+      entryB?.centroid_lon !== undefined && entryB?.centroid_lon !== null) {
     distance_km = round4(haversineDistance(
       entryA.centroid_lat, entryA.centroid_lon,
       entryB.centroid_lat, entryB.centroid_lon
@@ -583,8 +591,15 @@ export function normalizeGeographicWeights(
   allocations: GeographicAllocation[]
 ): GeographicAllocation[] {
   if (allocations.length === 0) return [];
+  // Reject negative weights
+  const negatives = allocations.filter(a => a.weight < 0);
+  if (negatives.length > 0) {
+    throw new Error(`Negative allocation weights detected: ${negatives.map(a => `${a.source}->${a.target}:${a.weight}`).join(', ')}`);
+  }
   const totalWeight = allocations.reduce((sum, a) => sum + a.weight, 0);
-  if (totalWeight === 0) return allocations.map(a => ({ ...a, weight: 0 }));
+  if (totalWeight === 0) {
+    throw new Error("All allocation weights are zero — cannot normalize to partition of unity");
+  }
   const normalized = allocations.map(a => ({
     ...a,
     weight: a.weight / totalWeight,
@@ -658,18 +673,28 @@ export function generateProvenanceReceipt(params: {
 }): ProvenanceReceipt {
   const configHash = crypto.createHash("sha256")
     .update(JSON.stringify(params.config))
-    .digest("hex")
-    .substring(0, 16);
+    .digest("hex"); // Full digest — no truncation
 
+  // Full input identity hash: covers ALL signal fields, not just IDs
+  const fullInputPayload = JSON.stringify({
+    signals: params.input_signals.map(s => ({
+      id: s.id ?? null,
+      temporal_coordinate: s.temporal_coordinate,
+      spatial_coordinate: s.spatial_coordinate,
+      signal_type: s.signal_type,
+      confidence: s.confidence,
+      characteristics: s.characteristics,
+    })),
+    total_signals_context: params.config,
+    geography_registry_version: params.geography_registry_version,
+  });
   const inputHash = crypto.createHash("sha256")
-    .update(JSON.stringify(params.input_signals.map(s => s.id ?? signalFingerprint(s))))
-    .digest("hex")
-    .substring(0, 16);
+    .update(fullInputPayload)
+    .digest("hex"); // Full digest — no truncation
 
   const ruleManifestHash = crypto.createHash("sha256")
     .update(JSON.stringify(ENGINE_EQUATIONS))
-    .digest("hex")
-    .substring(0, 16);
+    .digest("hex"); // Full digest — no truncation
 
   return {
     equation_id: params.equation_id,
@@ -683,7 +708,7 @@ export function generateProvenanceReceipt(params: {
     expected_count: params.expected_count,
     observed_count: params.observed_count,
     computed_outputs: params.computed_outputs,
-    timestamp_computed: Date.now(), // Audit trail only — NOT used in math
+    timestamp_computed: params.as_of, // Deterministic: uses explicit as_of, NOT Date.now()
   };
 }
 

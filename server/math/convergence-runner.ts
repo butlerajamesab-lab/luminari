@@ -17,7 +17,7 @@
 
 import { db } from "../db";
 import { liveSignals } from "../../drizzle/schema";
-import { eq, and, gte, sql } from "drizzle-orm";
+import { eq, and, gte, lte, sql } from "drizzle-orm";
 import {
   detectConvergence,
   deduplicateSignals,
@@ -61,6 +61,7 @@ export interface ConvergenceRunResult {
     geography: string;
     reason: string;
   }>;
+  receipt_ids?: string[];
 }
 
 // ============================================================
@@ -88,8 +89,8 @@ async function loadGeographyRegistry(): Promise<GeographyRegistry | { error: str
     const entries = rows.rows.map((r: any) => ({
       id: r.id as string,
       area_sq_km: parseFloat(r.area_sq_km),
-      centroid_lat: r.centroid_lat ? parseFloat(r.centroid_lat) : undefined,
-      centroid_lon: r.centroid_lon ? parseFloat(r.centroid_lon) : undefined,
+      centroid_lat: r.centroid_lat !== null && r.centroid_lat !== undefined ? parseFloat(r.centroid_lat) : undefined,
+      centroid_lon: r.centroid_lon !== null && r.centroid_lon !== undefined ? parseFloat(r.centroid_lon) : undefined,
       adjacency: r.adjacency ? (Array.isArray(r.adjacency) ? r.adjacency : JSON.parse(r.adjacency)) : undefined,
     }));
 
@@ -141,7 +142,9 @@ export async function runConvergenceAnalysis(
 
   const registry: GeographyRegistry = registryResult;
 
-  // Step 2: Load signals within time window
+  // Step 2: Load signals within time window [cutoff, as_of]
+  // BOTH lower AND upper bounds enforced for deterministic replay.
+  // Signals created after as_of cannot enter a historical run.
   const cutoff = as_of - time_window_ms;
   const rawSignals = await db
     .select()
@@ -149,11 +152,24 @@ export async function runConvergenceAnalysis(
     .where(
       and(
         eq(liveSignals.active, true),
-        gte(liveSignals.detectedAt, cutoff)
+        gte(liveSignals.detectedAt, cutoff),
+        lte(liveSignals.detectedAt, as_of)
       )
     );
 
   if (rawSignals.length === 0) {
+    // Persist empty-run receipt for audit trail
+    const emptyReceipt = generateProvenanceReceipt({
+      equation_id: "poisson_z_score",
+      as_of,
+      config: { time_window_ms, temporal_bucket_ms, min_signals_for_analysis, z_score_threshold },
+      input_signals: [],
+      geography_registry_version: registry.version,
+      expected_count: null,
+      observed_count: 0,
+      computed_outputs: { status: "empty_run", reason: "no_signals_in_window" },
+    });
+    const emptyReceiptIds = await persistProvenanceReceipts([emptyReceipt]);
     return {
       engine_version: ENGINE_VERSION,
       as_of,
@@ -164,6 +180,7 @@ export async function runConvergenceAnalysis(
       geographies_evaluated: 0,
       convergence_zones: [],
       unresolved_geographies: [],
+      receipt_ids: emptyReceiptIds,
     };
   }
 
@@ -226,28 +243,27 @@ export async function runConvergenceAnalysis(
       });
     }
 
-    // Only include zones that meet threshold (resolved with Z >= threshold)
-    if (result.poisson.status === "resolved" &&
-        result.poisson.z_score !== null &&
-        result.poisson.z_score >= z_score_threshold) {
-      const provenance = generateProvenanceReceipt({
-        equation_id: "poisson_z_score",
-        as_of,
-        config: { time_window_ms, temporal_bucket_ms, min_signals_for_analysis, z_score_threshold },
-        input_signals: geoSignals,
-        geography_registry_version: registry.version,
-        expected_count: result.poisson.expected_count,
-        observed_count: result.poisson.observed_count,
-        computed_outputs: {
-          z_score: result.poisson.z_score,
-          multiplicative_score: result.multiplicative_score,
-          recency_factor: result.recency_factor,
-          dominant_type: result.dominant_type,
-        },
-      });
+    // Generate provenance receipt for EVERY evaluated geography (resolved or not)
+    const provenance = generateProvenanceReceipt({
+      equation_id: "poisson_z_score",
+      as_of,
+      config: { time_window_ms, temporal_bucket_ms, min_signals_for_analysis, z_score_threshold },
+      input_signals: geoSignals,
+      geography_registry_version: registry.version,
+      expected_count: result.poisson.expected_count,
+      observed_count: result.poisson.observed_count,
+      computed_outputs: {
+        status: result.poisson.status,
+        z_score: result.poisson.z_score,
+        multiplicative_score: result.multiplicative_score,
+        recency_factor: result.recency_factor,
+        dominant_type: result.dominant_type,
+        reason_unresolved: result.poisson.reason_unresolved ?? null,
+      },
+    });
 
-      convergenceZones.push({ geography, convergence: result, provenance });
-    }
+    // Include ALL zones with provenance (not just threshold-exceeding)
+    convergenceZones.push({ geography, convergence: result, provenance });
   }
 
   // Sort by Z-score descending
@@ -257,8 +273,8 @@ export async function runConvergenceAnalysis(
     return zB - zA;
   });
 
-  // Step 7: Persist provenance receipts
-  await persistProvenanceReceipts(convergenceZones.map(z => z.provenance));
+  // Step 7: Persist ALL provenance receipts (resolved, unresolved, below-threshold)
+  const receiptIds = await persistProvenanceReceipts(convergenceZones.map(z => z.provenance));
 
   return {
     engine_version: ENGINE_VERSION,
@@ -270,6 +286,7 @@ export async function runConvergenceAnalysis(
     geographies_evaluated: byGeography.size,
     convergence_zones: convergenceZones,
     unresolved_geographies: unresolvedGeographies,
+    receipt_ids: receiptIds,
   };
 }
 
@@ -277,33 +294,35 @@ export async function runConvergenceAnalysis(
 // PROVENANCE PERSISTENCE
 // ============================================================
 
-async function persistProvenanceReceipts(receipts: ProvenanceReceipt[]): Promise<void> {
-  if (receipts.length === 0) return;
-  try {
-    for (const receipt of receipts) {
-      await db.execute(sql`
-        INSERT INTO convergence_receipts (
-          equation_id, engine_version, rule_manifest_hash, as_of,
-          configuration_hash, input_hash, source_signal_ids,
-          geography_registry_version, expected_count, observed_count,
-          computed_outputs, timestamp_computed
-        ) VALUES (
-          ${receipt.equation_id},
-          ${receipt.engine_version},
-          ${receipt.rule_manifest_hash},
-          ${receipt.as_of},
-          ${receipt.configuration_hash},
-          ${receipt.input_hash},
-          ${JSON.stringify(receipt.source_signal_ids)},
-          ${receipt.geography_registry_version},
-          ${receipt.expected_count},
-          ${receipt.observed_count},
-          ${JSON.stringify(receipt.computed_outputs)}::jsonb,
-          ${receipt.timestamp_computed}
-        )
-      `);
-    }
-  } catch (err: any) {
-    console.error(`[convergence-runner] Failed to persist provenance receipts: ${err.message}`);
+async function persistProvenanceReceipts(receipts: ProvenanceReceipt[]): Promise<string[]> {
+  if (receipts.length === 0) return [];
+  // FAIL-CLOSED: if persistence fails, the entire run fails.
+  // No silent discard of provenance data.
+  const ids: string[] = [];
+  for (const receipt of receipts) {
+    const result = await db.execute(sql`
+      INSERT INTO convergence_receipts (
+        equation_id, engine_version, rule_manifest_hash, as_of,
+        configuration_hash, input_hash, source_signal_ids,
+        geography_registry_version, expected_count, observed_count,
+        computed_outputs, timestamp_computed
+      ) VALUES (
+        ${receipt.equation_id},
+        ${receipt.engine_version},
+        ${receipt.rule_manifest_hash},
+        ${receipt.as_of},
+        ${receipt.configuration_hash},
+        ${receipt.input_hash},
+        ${JSON.stringify(receipt.source_signal_ids)},
+        ${receipt.geography_registry_version},
+        ${receipt.expected_count},
+        ${receipt.observed_count},
+        ${JSON.stringify(receipt.computed_outputs)}::jsonb,
+        ${receipt.timestamp_computed}
+      ) RETURNING id
+    `);
+    const id = (result.rows?.[0] as any)?.id;
+    if (id) ids.push(id);
   }
+  return ids;
 }

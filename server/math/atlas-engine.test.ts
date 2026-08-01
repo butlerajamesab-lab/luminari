@@ -265,11 +265,14 @@ describe("Partition of unity", () => {
     expect(normalized[1].weight).toBeCloseTo(0.7, 10);
   });
 
-  it("normalizeGeographicWeights throws on conservation failure", () => {
-    // This shouldn't happen with valid math, but tests the guard
+  it("normalizeGeographicWeights throws on all-zero weights", () => {
     const allocations = [{ source: "A", target: "B", weight: 0 }];
-    const result = normalizeGeographicWeights(allocations);
-    expect(result[0].weight).toBe(0);
+    expect(() => normalizeGeographicWeights(allocations)).toThrow("All allocation weights are zero");
+  });
+
+  it("normalizeGeographicWeights throws on negative weights", () => {
+    const allocations = [{ source: "A", target: "B", weight: -0.5 }];
+    expect(() => normalizeGeographicWeights(allocations)).toThrow("Negative allocation weights");
   });
 });
 
@@ -413,16 +416,16 @@ describe("Provenance receipt", () => {
 
     expect(receipt.equation_id).toBe("poisson_z_score");
     expect(receipt.engine_version).toBe(ENGINE_VERSION);
-    expect(receipt.rule_manifest_hash).toHaveLength(16);
+    expect(receipt.rule_manifest_hash).toHaveLength(64);
     expect(receipt.as_of).toBe(1_700_000_000_000);
-    expect(receipt.configuration_hash).toHaveLength(16);
-    expect(receipt.input_hash).toHaveLength(16);
+    expect(receipt.configuration_hash).toHaveLength(64);
+    expect(receipt.input_hash).toHaveLength(64);
     expect(receipt.source_signal_ids).toEqual(["prov-1", "prov-2"]);
     expect(receipt.geography_registry_version).toBe("test-v1");
     expect(receipt.expected_count).toBe(1.35);
     expect(receipt.observed_count).toBe(5);
     expect(receipt.computed_outputs).toEqual({ z_score: 3.14 });
-    expect(receipt.timestamp_computed).toBeTypeOf("number");
+    expect(receipt.timestamp_computed).toBe(1_700_000_000_000); // Must equal as_of, not Date.now()
   });
 
   it("Rule manifest hash is stable for same engine version", () => {
