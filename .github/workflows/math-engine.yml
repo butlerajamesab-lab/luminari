@@ -6,7 +6,9 @@ on:
     paths:
       - 'server/math/**'
       - 'server/routers/math-engine-router.ts'
+      - 'server/ingestion/scheduler.ts'
       - 'supabase/migrations/*math_engine*'
+      - 'tsconfig.math-engine.json'
       - '.github/workflows/math-engine.yml'
 jobs:
   verify:
@@ -20,5 +22,5 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile=false
       - run: pnpm vitest run server/math --reporter=verbose
-      - run: pnpm tsc --noEmit --skipLibCheck
+      - run: pnpm tsc -p tsconfig.math-engine.json --noEmit
       - run: pnpm run build
