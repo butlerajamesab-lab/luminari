@@ -53,6 +53,8 @@ export interface ConvergenceRunResult {
   unresolved_geographies: Array<{ geography: string; reason: string }>;
   receipt_ids: string[];
   replayed_from_snapshot: boolean;
+  /** Compatibility-only. Priority is not manufactured by convergence. */
+  prioritized_actions: [];
 }
 
 export async function runConvergenceAnalysis(config: ConvergenceConfig): Promise<ConvergenceRunResult> {
@@ -82,7 +84,7 @@ export async function runConvergenceAnalysis(config: ConvergenceConfig): Promise
     `);
     if (existing.rows?.length) {
       const payload = parseJson(existing.rows[0].result_payload) as ConvergenceRunResult;
-      return { ...payload, replayed_from_snapshot: true };
+      return { ...payload, prioritized_actions: [], replayed_from_snapshot: true };
     }
 
     const registry = await loadRegistrySnapshot(tx, resolved.geography_registry_version);
@@ -116,7 +118,12 @@ export async function runConvergenceAnalysis(config: ConvergenceConfig): Promise
       receiptIds.push(id);
     }
 
-    const finalResult: ConvergenceRunResult = { ...result, receipt_ids: receiptIds, replayed_from_snapshot: false };
+    const finalResult: ConvergenceRunResult = {
+      ...result,
+      receipt_ids: receiptIds,
+      prioritized_actions: [],
+      replayed_from_snapshot: false,
+    };
     await tx.execute(sql`
       insert into convergence_run_snapshot (
         run_key, engine_version, as_of, configuration,
@@ -145,7 +152,7 @@ async function loadSignalSnapshot(tx: any, config: Required<ConvergenceConfig>):
     gte(liveSignals.detectedAt, cutoff),
     lte(liveSignals.detectedAt, config.as_of),
   ));
-  return rows.map((row: any) => ({
+  return rows.map((row: any): Signal => ({
     id: String(row.id),
     temporal_coordinate: Number(row.detectedAt),
     spatial_coordinate: normalizeGeographyId(row.jurisdiction),
@@ -157,7 +164,7 @@ async function loadSignalSnapshot(tx: any, config: Required<ConvergenceConfig>):
       dataset: row.datasetId ?? null,
       supporting_statistics: normalizeSupportingStatistics(row.supportingStatistics),
     },
-  })).sort((a, b) => a.id.localeCompare(b.id));
+  })).sort((a: Signal, b: Signal) => a.id.localeCompare(b.id));
 }
 
 async function loadRegistrySnapshot(tx: any, version: string): Promise<GeographyRegistry> {
@@ -195,10 +202,16 @@ function computeRunResult(
 
   const zones: ConvergenceZone[] = [];
   const unresolved: Array<{ geography: string; reason: string }> = [];
-  const configForReceipt = { ...config, null_model_id: NULL_MODEL_ID, null_model_assumptions: NULL_MODEL_ASSUMPTIONS };
+  const configForReceipt = {
+    ...config,
+    null_model_id: NULL_MODEL_ID,
+    null_model_assumptions: NULL_MODEL_ASSUMPTIONS,
+  };
 
   if (!registry.entries.length || !rawPopulation.length) {
-    const reason = !registry.entries.length ? `No geography rows for registry version '${registry.version}'` : "No signals in declared time window";
+    const reason = !registry.entries.length
+      ? `No geography rows for registry version '${registry.version}'`
+      : "No signals in declared time window";
     const receipt = generateProvenanceReceipt({
       run_key: runKey,
       geography_id: "*",
@@ -234,12 +247,18 @@ function computeRunResult(
       });
       const enoughSignals = convergence.signal_count >= config.min_signals_for_analysis;
       const thresholdMet = convergence.poisson.status === "resolved" &&
-        convergence.poisson.z_score !== null && convergence.poisson.z_score >= config.z_score_threshold;
+        convergence.poisson.z_score !== null &&
+        convergence.poisson.z_score >= config.z_score_threshold;
       const reasonNotReportable = !enoughSignals
         ? `deduplicated signal count ${convergence.signal_count} is below minimum ${config.min_signals_for_analysis}`
-        : !thresholdMet ? `Z-score does not meet reporting threshold ${config.z_score_threshold}` : null;
+        : !thresholdMet
+          ? `Z-score does not meet reporting threshold ${config.z_score_threshold}`
+          : null;
       if (convergence.poisson.status === "unresolved") {
-        unresolved.push({ geography, reason: convergence.poisson.reason_unresolved ?? "unresolved" });
+        unresolved.push({
+          geography,
+          reason: convergence.poisson.reason_unresolved ?? "unresolved",
+        });
       }
       const receipt = generateProvenanceReceipt({
         run_key: runKey,
@@ -252,13 +271,26 @@ function computeRunResult(
         geography_registry: registry,
         expected_count: convergence.poisson.expected_count,
         observed_count: convergence.poisson.observed_count,
-        computed_outputs: { ...convergence, reportable: enoughSignals && thresholdMet, reason_not_reportable: reasonNotReportable },
+        computed_outputs: {
+          ...convergence,
+          reportable: enoughSignals && thresholdMet,
+          reason_not_reportable: reasonNotReportable,
+        },
       });
-      zones.push({ geography, convergence, provenance: receipt, reportable: enoughSignals && thresholdMet, reason_not_reportable: reasonNotReportable });
+      zones.push({
+        geography,
+        convergence,
+        provenance: receipt,
+        reportable: enoughSignals && thresholdMet,
+        reason_not_reportable: reasonNotReportable,
+      });
     }
   }
 
-  zones.sort((a, b) => (b.convergence.poisson.z_score ?? Number.NEGATIVE_INFINITY) - (a.convergence.poisson.z_score ?? Number.NEGATIVE_INFINITY));
+  zones.sort((a, b) =>
+    (b.convergence.poisson.z_score ?? Number.NEGATIVE_INFINITY) -
+    (a.convergence.poisson.z_score ?? Number.NEGATIVE_INFINITY)
+  );
   return {
     run_key: runKey,
     engine_version: ENGINE_VERSION,
@@ -273,10 +305,16 @@ function computeRunResult(
     unresolved_geographies: unresolved,
     receipt_ids: [],
     replayed_from_snapshot: false,
+    prioritized_actions: [],
   };
 }
 
-function unresolvedResult(geography: string, registry: GeographyRegistry, rawCount: number, reason: string): ConvergenceResult {
+function unresolvedResult(
+  geography: string,
+  registry: GeographyRegistry,
+  rawCount: number,
+  reason: string,
+): ConvergenceResult {
   return {
     geography,
     raw_signal_count: rawCount,
@@ -286,32 +324,68 @@ function unresolvedResult(geography: string, registry: GeographyRegistry, rawCou
     recency_factor: 0,
     multiplicative_score: null,
     dominant_type: "none",
-    poisson: { status: "unresolved", expected_count: null, observed_count: 0, z_score: null, reason_unresolved: reason },
+    poisson: {
+      status: "unresolved",
+      expected_count: null,
+      observed_count: 0,
+      z_score: null,
+      reason_unresolved: reason,
+    },
     source_signal_ids: [],
     deduplicated_signal_ids: [],
-    null_model: { model_id: NULL_MODEL_ID, assumptions: NULL_MODEL_ASSUMPTIONS, geography_registry_version: registry.version, total_area_sq_km: registry.entries.reduce((s, e) => s + e.area_sq_km, 0), geography_area_sq_km: null, total_signals: 0 },
+    null_model: {
+      model_id: NULL_MODEL_ID,
+      assumptions: NULL_MODEL_ASSUMPTIONS,
+      geography_registry_version: registry.version,
+      total_area_sq_km: registry.entries.reduce((sum, entry) => sum + entry.area_sq_km, 0),
+      geography_area_sq_km: null,
+      total_signals: 0,
+    },
   };
 }
 
 function validateConfig(config: Required<ConvergenceConfig>) {
-  if (!Number.isFinite(config.as_of)) throw new Error("as_of is required and must be finite");
-  if (!Number.isFinite(config.time_window_ms) || config.time_window_ms <= 0) throw new Error("time_window_ms must be positive");
-  if (!Number.isFinite(config.temporal_bucket_ms) || config.temporal_bucket_ms <= 0) throw new Error("temporal_bucket_ms must be positive");
-  if (!Number.isInteger(config.min_signals_for_analysis) || config.min_signals_for_analysis < 1) throw new Error("min_signals_for_analysis must be a positive integer");
-  if (!Number.isFinite(config.z_score_threshold)) throw new Error("z_score_threshold must be finite");
-  if (!config.geography_registry_version.trim()) throw new Error("geography_registry_version is required");
+  if (!Number.isFinite(config.as_of)) {
+    throw new Error("as_of is required and must be finite");
+  }
+  if (!Number.isFinite(config.time_window_ms) || config.time_window_ms <= 0) {
+    throw new Error("time_window_ms must be positive");
+  }
+  if (!Number.isFinite(config.temporal_bucket_ms) || config.temporal_bucket_ms <= 0) {
+    throw new Error("temporal_bucket_ms must be positive");
+  }
+  if (!Number.isInteger(config.min_signals_for_analysis) || config.min_signals_for_analysis < 1) {
+    throw new Error("min_signals_for_analysis must be a positive integer");
+  }
+  if (!Number.isFinite(config.z_score_threshold)) {
+    throw new Error("z_score_threshold must be finite");
+  }
+  if (!config.geography_registry_version.trim()) {
+    throw new Error("geography_registry_version is required");
+  }
 }
 
 function parseNullableUnit(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
   const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) throw new Error(`invalid confidence '${String(value)}'`);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
+    throw new Error(`invalid confidence '${String(value)}'`);
+  }
   return parsed;
 }
+
 function normalizeSupportingStatistics(value: unknown): string | number | boolean | null {
   if (value === null || value === undefined) return null;
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return value;
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return value;
+  }
   return JSON.stringify(value);
 }
-function normalizeGeographyId(value: unknown): string { return String(value ?? "").trim().toUpperCase(); }
-function parseJson(value: unknown): unknown { return typeof value === "string" ? JSON.parse(value) : value; }
+
+function normalizeGeographyId(value: unknown): string {
+  return String(value ?? "").trim().toUpperCase();
+}
+
+function parseJson(value: unknown): unknown {
+  return typeof value === "string" ? JSON.parse(value) : value;
+}
