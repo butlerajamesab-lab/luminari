@@ -1,7 +1,6 @@
 import { query_with_diagnostics } from "../db";
 import {
   PRISM_ROSETTA_ENGINE_VERSION,
-  PRISM_ROSETTA_RULE_SET_HASH,
   PRISM_ROSETTA_RULE_SET_ID,
   PRISM_ROSETTA_RULE_SET_VERSION,
   canonical_json,
@@ -301,7 +300,8 @@ async function load_assembly(input: {
   assembly_run_id?: string;
 }): Promise<AssemblyRow> {
   const result = await query_with_diagnostics<AssemblyRow>(
-    `select assembly_run_id::text, genome_bill_id::text, source_document_id,
+    `select assembly_run_id::text, genome_bill_id::text,
+            source_document_id::integer as source_document_id,
             extraction_run_id, input_hash, output_hash, verification_state,
             trait_count, run_status, completed_at,
             rosetta_engine_version, rosetta_rule_set_version,
@@ -353,8 +353,8 @@ async function load_traits(assembly: AssemblyRow): Promise<TraitRow[]> {
     `select trait_id::text, genome_bill_id::text, trait_class, trait_key,
             source_object_type, source_object_id, source_block_id,
             extraction_run_id, trait_fingerprint, source_trace,
-            source_document_id, verification_state, engine_version,
-            rule_version, content_hash
+            source_document_id::integer as source_document_id,
+            verification_state, engine_version, rule_version, content_hash
        from public.civic_genome_trait
       where genome_bill_id = $1::uuid
         and source_document_id = $2
