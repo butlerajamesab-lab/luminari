@@ -4,11 +4,12 @@ import {
   canonical_json,
   prism_receipt_schema,
   rosetta_binding_request_schema,
+  rosetta_semantic_request_payload,
   sha256_hex,
   sign_prism_request,
   type PrismReceipt,
   type RosettaBindingRequest,
-} from "./prism-verification-contract";
+} from "./prism-rosetta-contract-v2";
 import {
   PRISM_BASE_URL,
   PrismBoundaryError,
@@ -26,6 +27,10 @@ function classify_http_failure(status: number): PrismBoundaryError["failure_clas
   return "permanent_upstream";
 }
 
+function semantic_input_hash(request: RosettaBindingRequest): string {
+  return sha256_hex(canonical_json(rosetta_semantic_request_payload(request)));
+}
+
 function validate_receipt_integrity(
   request: RosettaBindingRequest,
   receipt: PrismReceipt,
@@ -33,7 +38,7 @@ function validate_receipt_integrity(
   if (receipt.rule_set_id !== request.rule_set_id) {
     throw new PrismBoundaryError("validation", 502, "prism_rule_set_mismatch");
   }
-  const expected_input_hash = sha256_hex(canonical_json(request));
+  const expected_input_hash = semantic_input_hash(request);
   const semantic_output = {
     prism_engine_version: receipt.prism_engine_version,
     rule_set_id: receipt.rule_set_id,
@@ -66,7 +71,7 @@ function validate_receipt_integrity(
 }
 
 async function record_request(request: RosettaBindingRequest): Promise<string> {
-  const input_hash = sha256_hex(canonical_json(request));
+  const input_hash = semantic_input_hash(request);
   const result = await query_with_diagnostics<{ input_hash: string }>(
     `with inserted as (
        insert into public.lighthouse_prism_verification_requests (
@@ -266,7 +271,7 @@ async function call_prism(
         return { receipt, attempts: attempt, http_status: response.status };
       }
       const failure_class = classify_http_failure(response.status);
-      const error = new PrismBoundaryError(
+      const boundary_error = new PrismBoundaryError(
         failure_class,
         response.status,
         typeof (response_body as Record<string, unknown>).error === "string"
@@ -274,9 +279,9 @@ async function call_prism(
           : "prism_request_failed",
       );
       if (failure_class !== "transient_upstream" || attempt === PRISM_MAX_ATTEMPTS) {
-        throw error;
+        throw boundary_error;
       }
-      last_error = error;
+      last_error = boundary_error;
     } catch (error) {
       if (error instanceof PrismBoundaryError) {
         if (error.failure_class !== "transient_upstream" || attempt === PRISM_MAX_ATTEMPTS) {
