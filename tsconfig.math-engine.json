@@ -6,6 +6,8 @@
     "incremental": false,
     "tsBuildInfoFile": "./node_modules/typescript/math-engine.tsbuildinfo"
   },
+  "include": [],
+  "exclude": [],
   "files": [
     "server/math/atlas-engine.ts",
     "server/math/viability-engine.ts",
