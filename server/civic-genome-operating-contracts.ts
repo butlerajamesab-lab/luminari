@@ -39,6 +39,9 @@ type local_contract_counts = {
   relationship_count: string;
   comparison_matrix_count: string;
   comparison_state_cell_count: string;
+  prism_binding_count: string;
+  prism_run_count: string;
+  latest_prism_bound_at: string | null;
 };
 
 type atlas_contract_counts = {
@@ -61,7 +64,10 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
        (select count(*)::text from public.civic_genome_assembly_run where run_status = 'completed') as rosetta_assembly_count,
        (select count(*)::text from public.civic_genome_relationship where validation_state <> 'rejected') as relationship_count,
        (select count(*)::text from public.civic_genome_comparison_matrix) as comparison_matrix_count,
-       (select count(*)::text from public.civic_genome_comparison_state_cell) as comparison_state_cell_count`,
+       (select count(*)::text from public.civic_genome_comparison_state_cell) as comparison_state_cell_count,
+       (select count(*)::text from public.civic_genome_prism_verification_binding) as prism_binding_count,
+       (select count(*)::text from public.civic_genome_prism_verification_run where receipt_count = expected_trait_count) as prism_run_count,
+       (select max(created_at)::text from public.civic_genome_prism_verification_binding) as latest_prism_bound_at`,
   );
   const local = local_result.rows[0];
 
@@ -76,7 +82,6 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
     atlas = atlas_result.rows[0] ?? null;
   } catch {
     // The verified Atlas export is optional in local/test environments.
-    // Its absence is reported as unavailable; raw Atlas tables are never used.
   }
 
   const bill_count = count(local?.bill_count);
@@ -86,6 +91,8 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
   const relationship_count = count(local?.relationship_count);
   const comparison_matrix_count = count(local?.comparison_matrix_count);
   const comparison_state_cell_count = count(local?.comparison_state_cell_count);
+  const prism_binding_count = count(local?.prism_binding_count);
+  const prism_run_count = count(local?.prism_run_count);
 
   return {
     generated_at: new Date().toISOString(),
@@ -131,14 +138,14 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
       {
         service_key: "prism",
         display_name: "Prism",
-        role: "Reasoning and findings",
-        state: "not_established",
-        state_label: "Contract not established",
-        detail: "No deterministic bill or family identity seam to Prism is materialized.",
-        observed_count: 0,
-        bound_count: 0,
-        last_observed_at: null,
-        boundary: "Rosetta may feed a Prism ingest envelope; Civic Genome never writes Prism findings, contradictions, or recommendations.",
+        role: "Deterministic source-binding verification",
+        state: prism_run_count > 0 ? "operational" : prism_binding_count > 0 ? "available_unbound" : "ready_empty",
+        state_label: prism_run_count > 0 ? "Operational" : prism_binding_count > 0 ? "Bindings available" : "No verification receipts",
+        detail: `${prism_binding_count} immutable trait bindings and ${prism_run_count} complete verification runs are materialized.`,
+        observed_count: prism_binding_count,
+        bound_count: prism_binding_count,
+        last_observed_at: local?.latest_prism_bound_at ?? null,
+        boundary: "Prism verifies immutable identity, source, rule, assembly, and hash bindings. It does not independently re-execute Rosetta's legal classification.",
       },
       {
         service_key: "viewfinder",

@@ -66,17 +66,20 @@ beforeEach(() => {
 });
 
 describe("Civic Genome operating contracts", () => {
-  it("reports retrieved Atlas signals as available but explicitly unbound", async () => {
+  it("reports Atlas as unbound and Prism as an operational verification seam", async () => {
     query
       .mockResolvedValueOnce({
         rows: [{
           bill_count: "813",
           latest_bill_observed_at: "2026-07-31T00:00:00.000Z",
-          rosetta_binding_count: "0",
-          rosetta_assembly_count: "0",
+          rosetta_binding_count: "31",
+          rosetta_assembly_count: "1",
           relationship_count: "0",
           comparison_matrix_count: "0",
           comparison_state_cell_count: "0",
+          prism_binding_count: "31",
+          prism_run_count: "1",
+          latest_prism_bound_at: "2026-08-01T16:32:10.000Z",
         }],
       })
       .mockResolvedValueOnce({
@@ -90,7 +93,10 @@ describe("Civic Genome operating contracts", () => {
     expect(atlas?.state).toBe("available_unbound");
     expect(atlas?.observed_count).toBe(63);
     expect(atlas?.bound_count).toBe(0);
-    expect(prism?.state).toBe("not_established");
+    expect(prism?.state).toBe("operational");
+    expect(prism?.observed_count).toBe(31);
+    expect(prism?.bound_count).toBe(31);
+    expect(prism?.boundary).toContain("does not independently re-execute");
   });
 
   it("never enables assembly for an in-progress Rosetta run", async () => {
