@@ -9,6 +9,7 @@ import App from "./App";
 import { getLoginUrl } from "./const";
 import { initializeValidationSession } from "./_core/validation-session";
 import { ClickToReadProvider } from "./contexts/ClickToReadContext";
+import { CivicGenomeRosettaProgressControl } from "./components/CivicGenomeRosettaProgressControl";
 import "./index.css";
 
 // Initialize validation session for /intake and /case/:id routes
@@ -206,6 +207,7 @@ function AppWithProviders() {
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <ClickToReadProvider>
           <App />
+          <CivicGenomeRosettaProgressControl />
         </ClickToReadProvider>
       </trpc.Provider>
     </QueryClientProvider>

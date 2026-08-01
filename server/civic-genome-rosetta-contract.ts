@@ -1,4 +1,5 @@
 import type { ProvenanceState, RosettaLawObject, RosettaLawView, RosettaLayer } from "./civic-genome/assembly-contract";
+import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 
 const rosetta_layers: RosettaLayer[] = [
   "help",
@@ -189,6 +190,9 @@ async function request_rosetta_rows(query: URLSearchParams): Promise<rosetta_exp
   const base_url = get_required_environment("ROSETTA_SUPABASE_URL");
   const service_role_key = get_required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
   const url = `${base_url}/rest/v1/v_civic_genome_law_view_v1?${query.toString()}`;
+  const headers = create_rosetta_supabase_headers(service_role_key, {
+    accept: "application/json",
+  });
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), ROSETTA_CONTRACT_TIMEOUT_MS);
@@ -196,11 +200,7 @@ async function request_rosetta_rows(query: URLSearchParams): Promise<rosetta_exp
   try {
     response = await fetch(url, {
       method: "GET",
-      headers: {
-        apikey: service_role_key,
-        authorization: `Bearer ${service_role_key}`,
-        accept: "application/json",
-      },
+      headers,
       signal: controller.signal,
     });
   } catch (error) {

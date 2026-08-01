@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import { getPool } from "./db";
 import { resolve_or_assemble_docket_bill } from "./civic-genome-single-bill-assembly";
+import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 
 const ROSETTA_CORPUS_NAME = "Lighthouse Docket";
 const ROSETTA_CORPUS_TYPE = "legislative";
@@ -43,15 +44,13 @@ async function rosetta_request(
 ): Promise<rosetta_row[]> {
   const base_url = required_environment("ROSETTA_SUPABASE_URL");
   const service_role_key = required_environment("ROSETTA_SUPABASE_SERVICE_ROLE_KEY");
+  const headers = create_rosetta_supabase_headers(service_role_key, init.headers);
+  headers.set("accept", "application/json");
+  headers.set("content-type", "application/json");
+
   const response = await fetch(`${base_url}/rest/v1/${path}`, {
     ...init,
-    headers: {
-      apikey: service_role_key,
-      authorization: `Bearer ${service_role_key}`,
-      accept: "application/json",
-      "content-type": "application/json",
-      ...(init.headers ?? {}),
-    },
+    headers,
   });
 
   if (!response.ok) {
