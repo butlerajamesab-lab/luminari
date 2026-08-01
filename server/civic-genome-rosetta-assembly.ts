@@ -410,28 +410,28 @@ export async function assemble_rosetta_structural_dna(
 
     await client.query(
       `update public.civic_genome_bill
-          set rosetta_extraction_run_id = $2,
-              structural_dna_hash = $3,
+          set rosetta_extraction_run_id = $2::text,
+              structural_dna_hash = $3::text,
               structural_dna_json = coalesce(structural_dna_json, '{}'::jsonb)
                 || jsonb_build_object(
                   'rosetta_source_receipt', $11::jsonb,
                   'rosetta_assembly',
                   jsonb_build_object(
-                    'engine_version', $4,
-                    'rule_version', $5,
-                    'source_document_id', $6,
-                    'extraction_run_id', $2,
-                    'input_hash', $7,
-                    'output_hash', $3,
-                    'verification_state', $8,
+                    'engine_version', $4::text,
+                    'rule_version', $5::text,
+                    'source_document_id', $6::bigint,
+                    'extraction_run_id', $2::text,
+                    'input_hash', $7::text,
+                    'output_hash', $3::text,
+                    'verification_state', $8::text,
                     'coverage', $9::jsonb,
-                    'trait_count', $10,
-                    'rosetta_engine_version', $12,
-                    'rosetta_rule_set_version', $13,
-                    'rosetta_rule_manifest_hash', $14,
-                    'rosetta_configuration_hash', $15,
-                    'rosetta_source_content_hash', $16,
-                    'rosetta_output_content_hash', $17
+                    'trait_count', $10::integer,
+                    'rosetta_engine_version', $12::text,
+                    'rosetta_rule_set_version', $13::text,
+                    'rosetta_rule_manifest_hash', $14::text,
+                    'rosetta_configuration_hash', $15::text,
+                    'rosetta_source_content_hash', $16::text,
+                    'rosetta_output_content_hash', $17::text
                   )
                 ),
               updated_at = now()
