@@ -6,7 +6,7 @@ Status: source-controlled design contract; no constitutional claims are promoted
 
 Civic Powers and Constraints is a neutral, source-bound Lighthouse knowledge layer for answering:
 
-> Which government actor may take which action, under what authority, through what procedure, subject to which limits, checks, review mechanisms, and unresolved disputes?
+> Which government actor may take which action, under what authority, through what procedure, subject to which limits, checks, review mechanisms, institutional-capacity conditions, and unresolved disputes?
 
 The layer is administration-independent and party-independent. It evaluates offices, institutions, legal instruments, and actions under the same declared rules.
 
@@ -16,7 +16,7 @@ The platform MUST preserve these layers as separate records:
 
 1. **Primary source** — constitutional text, amendment, statute, regulation, executive instrument, court judgment, or official procedural rule.
 2. **Interpretation** — a sourced explanation, holding, doctrine, or historical practice describing the source's legal meaning.
-3. **Current application** — a time-bounded action, dispute, lawsuit, order, enforcement event, or institutional position applying the authority.
+3. **Current application** — a time-bounded action, dispute, lawsuit, order, enforcement event, personnel action, quorum change, or institutional position applying the authority.
 4. **Projection** — a declared conditional consequence or response path. Projection is not source truth and is not a legal holding.
 
 `source != interpretation != current_application != projection`
@@ -154,7 +154,7 @@ Core edge types:
 
 A time-bounded real-world application of authority.
 
-Examples include an executive order, bill, enacted law, agency rule, funding directive, deployment order, court case, injunction, judgment, congressional vote, confirmation, veto, or override.
+Examples include an executive order, bill, enacted law, agency rule, funding directive, deployment order, personnel removal, appointment, confirmation, quorum loss or restoration event, court case, injunction, judgment, congressional vote, veto, or override.
 
 Required fields:
 
@@ -173,9 +173,36 @@ Required fields:
 - `verification_state`
 - `content_hash`
 
+### `civic_power_application_actor`
+
+An immutable role binding between an application and every participating actor.
+
+A single application may have issuers, implementing agencies, litigants, adjudicators, removing authorities, removed officers, confirming bodies, remaining members, and affected governments. Participation does not itself establish coordination, motive, or common purpose.
+
+### `civic_power_application_edge`
+
+A sourced relationship between two applications.
+
+Noncausal relationships include:
+
+- `produces_similar_effect`
+- `parallel`
+- `depends_on` when dependency is procedural rather than causal
+
+Causal relationships include:
+
+- `implements`
+- `causes`
+- `causes_delay`
+- `enables`
+- `disables`
+- `restores_capacity`
+
+A causal relation requires direct documentary support. Similarity, timing, shared actors, or political alignment is insufficient.
+
 ### `civic_power_status_receipt`
 
-An immutable observation of current legal or procedural status at a declared time.
+An immutable observation of current legal, procedural, or institutional status at a declared time.
 
 Required fields:
 
@@ -223,6 +250,26 @@ The knowledge layer must support:
 
 An office is distinct from its current officeholder. Canonical authority attaches to the office unless a source specifically grants authority to a named individual.
 
+## Institutional capacity
+
+Government power may exist legally while an institution temporarily lacks the capacity to exercise it.
+
+Examples include:
+
+- loss of a statutory quorum;
+- vacancy in a required office;
+- absence of confirmed leadership;
+- lapse of appropriations;
+- expiration of delegated authority;
+- a stay or injunction preventing action;
+- restoration of quorum, funding, appointment, or delegated power.
+
+The platform MUST separate:
+
+`legal_authority != procedural_capacity != operative_action`
+
+A capacity interruption may delay or disable an action without changing the underlying source of legal authority.
+
 ## Deterministic identity
 
 Each canonical record must bind:
@@ -243,8 +290,8 @@ The Lighthouse UI will provide four initial views:
 
 1. **Explore Powers** — browse by branch, office, jurisdiction, authority type, and source.
 2. **Checks Matrix** — inspect which actor may check, review, fund, block, confirm, remove, or constrain another actor.
-3. **Can Government Do This?** — structured lookup returning authority, prerequisites, limits, checks, remedies, disputes, and source chain. It must not synthesize legal conclusions without governed records.
-4. **Follow an Action** — trace an actual instrument from claimed authority through procedure, challenges, judicial treatment, operative status, and downstream effects.
+3. **Can Government Do This?** — structured lookup returning authority, prerequisites, limits, checks, remedies, disputes, institutional-capacity conditions, and source chain. It must not synthesize legal conclusions without governed records.
+4. **Follow an Action** — trace an actual instrument from claimed authority through procedure, challenges, personnel and quorum events, judicial treatment, operative status, and downstream effects.
 
 Every displayed statement must identify whether it is:
 
@@ -256,7 +303,7 @@ Every displayed statement must identify whether it is:
 
 ## Kaleidoscope boundary
 
-Civic Powers supplies the lawful authority and constraint baseline.
+Civic Powers supplies the lawful authority, procedural-capacity, and constraint baseline.
 
 Kaleidoscope may compare an incoming instrument against this baseline and resolve conditional consequence and response paths. Kaleidoscope may not alter Civic Powers source records, and its projections must carry separate rules, hashes, assumptions, and receipts.
 
@@ -264,7 +311,7 @@ Kaleidoscope may compare an incoming instrument against this baseline and resolv
 
 - Rosetta may decompose source instruments into deterministic legal objects.
 - Civic Powers may bind those source objects to branch-power and authority identities.
-- Prism verifies claims and evidence supporting interpretations, applications, and status receipts.
+- Prism verifies claims and evidence supporting interpretations, applications, causal edges, and status receipts.
 - A Rosetta extraction state is not a Prism verification state.
 
 ## Pass-1 acceptance criteria
@@ -276,6 +323,8 @@ A first production release is acceptable only when:
 - grants, limits, duties, and checks are stored as sourced edges rather than prose-only summaries;
 - interpretation records are separate from verbatim source text;
 - current disputes use time-bounded status receipts;
+- personnel, quorum, vacancy, and institutional-capacity events are separately represented;
+- causal and noncausal application edges cannot be silently conflated;
 - superseded and contradictory interpretations remain preserved;
 - the UI exposes source chains and uncertainty;
 - no party, administration, officeholder, or policy program is embedded into the core authority rules;
@@ -286,7 +335,7 @@ A first production release is acceptable only when:
 - corruption or motive classification;
 - partisan scoring;
 - prediction of litigation outcomes;
-- unsourced claims of coordination between branches;
+- unsourced claims of coordination between branches or outside actors;
 - automated legal advice;
 - silent conversion of policy proposals into current law;
 - reuse of internal Luminari constitutional doctrine as United States constitutional law.
