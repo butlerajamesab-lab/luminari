@@ -15,7 +15,7 @@ describe("Atlas stream bridge contract", () => {
   const run_store_source = read_sibling("../atlas-ingest-run-store.ts");
   const scheduler_source = read_sibling("../scheduler.ts");
   const sequence_migration = read_sibling(
-    "../../../supabase/migrations/20260729154500_ingest_runs_sequence_alignment.sql",
+    "../../../supabase/migrations/20260729154229_ingest_runs_sequence_alignment.sql",
   );
 
   it("preserves Atlas stream and event identities", () => {
