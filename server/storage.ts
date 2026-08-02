@@ -291,6 +291,11 @@ export function is_supabase_storage_key(storage_key: string): boolean {
   return storage_key.startsWith(SUPABASE_KEY_SCHEME);
 }
 
+// Compatibility aliases preserve the existing TypeScript call surface while
+// the owned backend implementation remains snake_case.
+export const getDocumentStorageMode = get_document_storage_mode;
+export const isSupabaseStorageKey = is_supabase_storage_key;
+
 export async function storagePut(
   rel_key: string,
   data: Buffer | Uint8Array | string,
