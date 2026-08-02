@@ -23,7 +23,7 @@ const allowlist = [
   { file: 'server/routers/governance-router.ts', pattern: /tableName: input\.tableName/, reason: 'legacy internal hook input passthrough' },
   { file: 'server/routers/session76-router.ts', pattern: /\.input\(z\.object\(\{ tableName: z\.string\(\) \}\)\)/, reason: 'legacy UI input schema, not response payload' },
   { file: 'server/_core/user-resolver.ts', pattern: /const USER_SELECT = `select id, open_id as "openId"/, reason: 'legacy drizzle User mapper boundary; internal DB compatibility only' },
-  { file: 'supabase/migrations/20260528_runtime_hotfix_sync.sql', pattern: /compat\.detected_signals_base.*"createdAt"/, reason: 'explicit compat schema view for legacy consumers' },
+  { file: 'supabase/migration_sources/legacy_unversioned/20260528_runtime_hotfix_sync.sql', pattern: /compat\.detected_signals_base.*"createdAt"/, reason: 'archived compat schema source for legacy consumers' },
 ];
 const findings = [];
 
