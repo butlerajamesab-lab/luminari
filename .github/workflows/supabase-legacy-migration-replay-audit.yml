@@ -13,5 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: List migration files without exact 14-digit versions
+      - name: Reject migration files without exact 14-digit versions
         run: python3 scripts/audit-legacy-migration-filenames.py
+      - name: Reject executable references to archived legacy migrations
+        run: python3 scripts/audit-legacy-migration-references.py
