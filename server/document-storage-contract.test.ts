@@ -2,14 +2,12 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   getDocumentStorageMode,
   isSupabaseStorageKey,
-  storagePut,
+  uses_supabase_document_storage,
 } from "./storage";
 
 const original_environment = {
   LIGHTHOUSE_DOCUMENT_STORAGE_BACKEND:
     process.env.LIGHTHOUSE_DOCUMENT_STORAGE_BACKEND,
-  BUILT_IN_FORGE_API_URL: process.env.BUILT_IN_FORGE_API_URL,
-  BUILT_IN_FORGE_API_KEY: process.env.BUILT_IN_FORGE_API_KEY,
   OPENAI_BASE_URL: process.env.OPENAI_BASE_URL,
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
 };
@@ -22,8 +20,6 @@ function restore_environment_value(key: keyof typeof original_environment): void
 
 afterEach(() => {
   restore_environment_value("LIGHTHOUSE_DOCUMENT_STORAGE_BACKEND");
-  restore_environment_value("BUILT_IN_FORGE_API_URL");
-  restore_environment_value("BUILT_IN_FORGE_API_KEY");
   restore_environment_value("OPENAI_BASE_URL");
   restore_environment_value("OPENAI_API_KEY");
 });
@@ -45,15 +41,30 @@ describe("case document storage boundary", () => {
     ).toBe(false);
   });
 
-  it("does not treat OpenAI credentials as Forge storage credentials", async () => {
-    process.env.LIGHTHOUSE_DOCUMENT_STORAGE_BACKEND = "forge";
+  it("routes only the case document namespace to Supabase", () => {
+    process.env.LIGHTHOUSE_DOCUMENT_STORAGE_BACKEND = "supabase";
+
+    expect(
+      uses_supabase_document_storage(
+        "cases/2/documents/fixture-evidence.pdf",
+      ),
+    ).toBe(true);
+    expect(
+      uses_supabase_document_storage("exports/case-2/attorney-packet.pdf"),
+    ).toBe(false);
+    expect(
+      uses_supabase_document_storage("docket/wa/hb1234.pdf"),
+    ).toBe(false);
+  });
+
+  it("does not allow OpenAI variables to override the case storage mode", () => {
+    process.env.LIGHTHOUSE_DOCUMENT_STORAGE_BACKEND = "supabase";
     process.env.OPENAI_BASE_URL = "https://api.openai.com/v1";
     process.env.OPENAI_API_KEY = "test-openai-key";
-    delete process.env.BUILT_IN_FORGE_API_URL;
-    delete process.env.BUILT_IN_FORGE_API_KEY;
 
-    await expect(
-      storagePut("cases/2/documents/test.txt", "test", "text/plain"),
-    ).rejects.toThrow("Forge storage credentials missing");
+    expect(getDocumentStorageMode()).toBe("supabase");
+    expect(
+      uses_supabase_document_storage("cases/2/documents/test.txt"),
+    ).toBe(true);
   });
 });
