@@ -146,9 +146,9 @@ describe("handoff-specific validation and accounting", () => {
   });
 });
 
-describe("queue status compatibility migration", () => {
-  it("allows a row 271-equivalent pending SQL handoff to be claimed and completed", () => {
-    const migration = fs.readFileSync(new URL("../supabase/migrations/202607170001_sql_handoff_pending_compatibility.sql", import.meta.url), "utf8");
+describe("queue status compatibility source receipt", () => {
+  it("preserves the row 271-equivalent pending SQL handoff contract", () => {
+    const migration = fs.readFileSync(new URL("../supabase/migration_sources/legacy_unversioned/202607170001_sql_handoff_pending_compatibility.sql", import.meta.url), "utf8");
     expect(migration).toContain("q.import_status in ('pending_bucket_content_scan', 'pending')");
     expect(migration).toContain("q.import_status = 'pending' then 'pending_bucket_content_scan'");
     expect(migration).toContain("target_hint in ('cream_substrate_sql_handoff', 'full_substrate_sql_handoff')");

@@ -154,8 +154,8 @@ jobs:
       - name: Apply namespace migration
         run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260511000001_operational_core_namespace_activation.sql
 
-      - name: Apply runtime hotfix migration
-        run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20260528_runtime_hotfix_sync.sql
+      - name: Apply archived runtime hotfix source
+        run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/migration_sources/legacy_unversioned/20260528_runtime_hotfix_sync.sql
 
       - name: Verify runtime hotfix schema contract
         run: psql "$SCHEMA_GUARD_DB_URL" -v ON_ERROR_STOP=1 -f supabase/verification/runtime_hotfix_verification.sql

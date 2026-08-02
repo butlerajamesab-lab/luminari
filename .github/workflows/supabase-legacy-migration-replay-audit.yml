@@ -1,0 +1,19 @@
+name: Supabase legacy migration replay audit
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject migration files without exact 14-digit versions
+        run: python3 scripts/audit-legacy-migration-filenames.py
+      - name: Reject executable references to archived legacy migrations
+        run: python3 scripts/audit-legacy-migration-references.py
