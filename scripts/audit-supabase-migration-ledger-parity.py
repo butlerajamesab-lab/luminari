@@ -4,13 +4,14 @@ from collections import defaultdict
 from pathlib import Path
 
 REMOTE_FIXTURE = Path("supabase/verification/production_migration_versions_20260802.txt")
-EXPECTED_NEW = {"20260803000100"}
+RECORDED_AFTER_FIXTURE = {"20260803000100"}
+EXPECTED_NEW = {"20260803000200"}
 
 remote_versions = {
     line.strip()
     for line in REMOTE_FIXTURE.read_text(encoding="utf-8").splitlines()
     if line.strip()
-}
+} | RECORDED_AFTER_FIXTURE
 
 local_by_version: dict[str, list[str]] = defaultdict(list)
 for path in sorted(Path("supabase/migrations").glob("*.sql")):
@@ -29,6 +30,7 @@ duplicates = {
 }
 
 print(f"REMOTE_FIXTURE_COUNT={len(remote_versions)}")
+print(f"RECORDED_AFTER_FIXTURE_COUNT={len(RECORDED_AFTER_FIXTURE)}")
 print(f"LOCAL_14_DIGIT_COUNT={len(local_versions)}")
 print(f"EXPECTED_NEW_COUNT={len(EXPECTED_NEW)}")
 print(f"MISSING_REMOTE_COUNT={len(missing_remote)}")
