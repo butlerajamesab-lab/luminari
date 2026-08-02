@@ -13,6 +13,7 @@ type SupabaseStorageConfig = {
 const DEFAULT_DOCUMENT_BUCKET = "case-documents";
 const SUPABASE_KEY_SCHEME = "supabase://";
 const SIGNED_URL_TTL_SECONDS = 15 * 60;
+const CASE_DOCUMENT_PATH_PATTERN = /^cases\/\d+\/documents\//;
 
 let supabase_storage_client: SupabaseClient | null = null;
 let supabase_storage_client_key = "";
@@ -25,7 +26,7 @@ function ensure_trailing_slash(value: string): string {
   return value.endsWith("/") ? value : `${value}/`;
 }
 
-function resolve_storage_mode(): StorageMode {
+function resolve_case_document_storage_mode(): StorageMode {
   const requested_mode = process.env.LIGHTHOUSE_DOCUMENT_STORAGE_BACKEND
     ?.trim()
     .toLowerCase();
@@ -39,6 +40,10 @@ function resolve_storage_mode(): StorageMode {
   }
 
   return "forge";
+}
+
+function is_case_document_path(rel_key: string): boolean {
+  return CASE_DOCUMENT_PATH_PATTERN.test(normalize_key(rel_key));
 }
 
 function get_supabase_storage_config(): SupabaseStorageConfig {
@@ -174,14 +179,14 @@ async function supabase_storage_get(
 }
 
 function get_forge_storage_config(): ForgeStorageConfig {
-  // Document storage must never inherit OpenAI API credentials. Forge storage
-  // is a separate service boundary with separate credentials.
-  const base_url = process.env.BUILT_IN_FORGE_API_URL ?? "";
-  const api_key = process.env.BUILT_IN_FORGE_API_KEY ?? "";
+  // Preserve the existing Forge configuration for every non-case-document
+  // caller. Only the case document namespace is routed to Supabase.
+  const base_url = ENV.forgeApiUrl;
+  const api_key = ENV.forgeApiKey;
 
   if (!base_url || !api_key) {
     throw new Error(
-      "Forge storage credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY, or configure Lighthouse Supabase document storage",
+      "Storage proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY",
     );
   }
 
@@ -284,11 +289,18 @@ async function forge_storage_get(rel_key: string): Promise<StorageResult> {
 }
 
 export function get_document_storage_mode(): StorageMode {
-  return resolve_storage_mode();
+  return resolve_case_document_storage_mode();
 }
 
 export function is_supabase_storage_key(storage_key: string): boolean {
   return storage_key.startsWith(SUPABASE_KEY_SCHEME);
+}
+
+export function uses_supabase_document_storage(rel_key: string): boolean {
+  return (
+    is_case_document_path(rel_key) &&
+    resolve_case_document_storage_mode() === "supabase"
+  );
 }
 
 // Compatibility aliases preserve the existing TypeScript call surface while
@@ -301,7 +313,7 @@ export async function storagePut(
   data: Buffer | Uint8Array | string,
   content_type = "application/octet-stream",
 ): Promise<StorageResult> {
-  if (resolve_storage_mode() === "supabase") {
+  if (uses_supabase_document_storage(rel_key)) {
     return supabase_storage_put(rel_key, data, content_type);
   }
   return forge_storage_put(rel_key, data, content_type);
