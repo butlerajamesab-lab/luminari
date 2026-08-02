@@ -11,7 +11,8 @@ create table if not exists public.civic_power_application_actor (
     'issuer','author','sponsor','implementing_agency','enforcing_agency',
     'plaintiff','defendant','petitioner','respondent','intervenor','movant',
     'adjudicator','appellant','appellee','amicus','local_continuation_actor',
-    'affected_government','other'
+    'affected_government','removing_authority','removed_officer',
+    'appointing_authority','confirming_body','remaining_member','other'
   )),
   valid_from timestamptz,
   valid_to timestamptz,
@@ -37,7 +38,8 @@ create table if not exists public.civic_power_application_edge (
   relation_type text not null check (relation_type in (
     'initiates','implements','challenges','responds_to','stays','enjoins',
     'vacates','affirms','reverses','remands','supersedes','continues_locally',
-    'incorporates','produces_similar_effect','depends_on','other'
+    'incorporates','produces_similar_effect','depends_on','causes',
+    'causes_delay','enables','disables','restores_capacity','other'
   )),
   to_application_id uuid not null references public.civic_power_application(application_id),
   directness text not null check (directness in ('direct','indirect','parallel','unknown')),
@@ -101,7 +103,7 @@ revoke all on table public.civic_power_application_edge_source from anon, authen
 comment on table public.civic_power_application_actor is
   'Immutable many-to-many application actor roles. Actor participation does not itself establish coordination, motive, or causation.';
 comment on table public.civic_power_application_edge is
-  'Immutable sourced relationships between civic-power applications. produces_similar_effect is noncausal unless separate evidence supports a direct relation.';
+  'Immutable sourced relationships between civic-power applications. produces_similar_effect is noncausal. causes and causes_delay are causal claims and require direct documentary support.';
 comment on table public.civic_power_application_edge_source is
   'Primary, supporting, contradicting, procedural, and status sources for one application-chain edge.';
 
