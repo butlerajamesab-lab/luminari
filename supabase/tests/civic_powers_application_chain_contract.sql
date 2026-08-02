@@ -92,6 +92,43 @@ where conrelid = 'public.civic_power_application_edge'::regclass
   and pg_get_constraintdef(oid) like '%relation_type%'
 limit 1;
 
+insert into civic_power_application_chain_results
+select
+  'causal_delay_relation_exists',
+  pg_get_constraintdef(oid) like '%causes_delay%',
+  'The chain taxonomy can preserve a source-supported institutional delay without collapsing it into policy implementation.'
+from pg_constraint
+where conrelid = 'public.civic_power_application_edge'::regclass
+  and contype = 'c'
+  and pg_get_constraintdef(oid) like '%relation_type%'
+limit 1;
+
+insert into civic_power_application_chain_results
+select
+  'institutional_capacity_relations_exist',
+  pg_get_constraintdef(oid) like '%enables%'
+  and pg_get_constraintdef(oid) like '%disables%'
+  and pg_get_constraintdef(oid) like '%restores_capacity%',
+  'Quorum loss and restoration can be represented as separate institutional-capacity events.'
+from pg_constraint
+where conrelid = 'public.civic_power_application_edge'::regclass
+  and contype = 'c'
+  and pg_get_constraintdef(oid) like '%relation_type%'
+limit 1;
+
+insert into civic_power_application_chain_results
+select
+  'removal_actor_roles_exist',
+  pg_get_constraintdef(oid) like '%removing_authority%'
+  and pg_get_constraintdef(oid) like '%removed_officer%'
+  and pg_get_constraintdef(oid) like '%confirming_body%',
+  'Removal, vacancy, appointment, confirmation, and quorum events retain distinct actor roles.'
+from pg_constraint
+where conrelid = 'public.civic_power_application_actor'::regclass
+  and contype = 'c'
+  and pg_get_constraintdef(oid) like '%role_type%'
+limit 1;
+
 select *
 from civic_power_application_chain_results
 order by check_name;
