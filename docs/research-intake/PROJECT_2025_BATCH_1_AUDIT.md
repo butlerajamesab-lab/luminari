@@ -105,7 +105,7 @@ The Commission rescinded more than the court expressly required because the cour
 
 `commissioner removals -> quorum loss -> Commission unable to modify or rescind guidance by vote -> quorum restoration -> Commission action becomes institutionally possible`
 
-The removals are causally connected to quorum loss and the period during which a Commission vote was unavailable. They are not, without separate evidence, proof of coordination with the private/state litigation or proof of motive.
+The removals are causally connected to quorum loss and the period during which a Commission vote was unavailable. The asserted legal validity and asserted policy reasons for the removals are separate disputed questions. The removal event is not, without separate evidence, proof of coordination with the private/state litigation or proof of motive.
 
 ### Required relationship posture
 
@@ -138,6 +138,7 @@ The removals are causally connected to quorum loss and the period during which a
 - `Texas v. EEOC`, Memorandum Opinion and Order, ECF No. 59, May 15, 2025.
 - EEOC, “Federal Court Vacates Portions of EEOC Harassment Guidance,” May 20, 2025.
 - EEOC records stating loss of quorum as of January 28, 2025.
+- Statements from the removed commissioners identifying January 27, 2025 as the removal date.
 - EEOC, “Brittany Bull Panuccio Begins Tenure as EEOC Commissioner,” confirming October 7 confirmation and October 27 swearing-in/quorum restoration.
 - EEOC open-meeting transcript, January 22, 2026.
 - EEOC, “EEOC Commission Votes to Rescind 2024 Harassment Guidance,” January 23, 2026.
