@@ -8,7 +8,7 @@ Audit date: 2026-08-02
 
 `research_claim != verified_source_record != legal_interpretation != current_status != Kaleidoscope_projection`
 
-The submitted batch is useful because it demonstrates that an implementation mechanism is usually a graph of instruments, actors, litigation, decisions, and local responses rather than one linear proposal-to-policy event. It is not yet an admissible seed because material claims still depend on secondary reporting and one current-status statement is obsolete.
+The submitted batch is useful because it demonstrates that an implementation mechanism is usually a graph of instruments, actors, litigation, decisions, institutional-capacity changes, and local responses rather than one linear proposal-to-policy event. It is not yet an admissible seed because material claims still require complete primary-source receipts and governed status resolution.
 
 ## P25-DOJ-01 — police consent decrees
 
@@ -43,36 +43,111 @@ The Minneapolis and Louisville matters described by the Department of Justice on
 
 ### Research value
 
-This is the strongest dossier in the batch. The instrument chain is supported at the guidance and enforcement-posture level:
+This remains the strongest dossier in the batch, but its first implementation-chain diagram was causally wrong. The verified chronology is a set of independent pathways converging on the same agency guidance.
 
-1. Executive Order 14168 stated an administration-wide definition and directed agency review.
-2. On May 15, 2025, the Northern District of Texas vacated portions of the 2024 EEOC harassment guidance nationwide.
-3. On January 22, 2026, the EEOC voted 2-1 to rescind the guidance in full.
+### Mandatory chronology correction
 
-### Required scope correction
+- April 2024: the EEOC approved the Enforcement Guidance on Harassment in the Workplace by a 3-2 vote.
+- August 15, 2024: Texas and The Heritage Foundation filed `Texas v. EEOC`, No. 2:24-cv-00173, challenging the guidance before the 2024 election, transition, inauguration, or Executive Order 14168.
+- October-November 2024: summary-judgment motions and briefing proceeded while the prior administration remained in office.
+- January 20, 2025: Executive Order 14168 issued while the lawsuit was already pending.
+- January 27, 2025: the President removed Commissioners Charlotte Burrows and Jocelyn Samuels. Public statements and reporting appeared on January 28-29. The removal event should therefore be dated January 27, not January 29.
+- January 28, 2025: the EEOC publicly reported that it lacked the three-member quorum required for Commission action.
+- May 15, 2025: the Northern District of Texas entered its memorandum opinion and order.
+- October 27, 2025: Commissioner Brittany Bull Panuccio was sworn in, restoring the Commission's quorum after her October 7 Senate confirmation.
+- January 22, 2026: the Commission voted 2-1 to rescind the entire 2024 guidance.
 
-The exact match is to rescission of agency guidance and alteration of the agency’s enforcement posture. It is **not** an exact reversal of Title VII or of `Bostock v. Clayton County`.
+The absence of a quorum lasted from late January through October 27, 2025, not eleven full months. The rescission occurred roughly three months after quorum restoration. The removals caused the quorum loss and prevented a Commission vote during that period; the additional time between quorum restoration and the January vote is a separate timing fact and must not be attributed automatically to the quorum loss.
 
-The EEOC’s own rescission announcement states that federal employment-discrimination law and Supreme Court precedent remain in place.
+### Exact vacatur scope
+
+The May 15, 2025 memorandum opinion and order identifies four vacated categories:
+
+1. all language defining Title VII `sex` to include `sexual orientation` and `gender identity`;
+2. the entirety of Section II(A)(5)(c), addressing harassment based on sexual orientation and gender identity;
+3. Example 46, the repeated-misgendering hypothetical; and
+4. all language defining sexual orientation and gender identity as protected classes.
+
+The ruling therefore reached both sexual orientation and gender identity. Any earlier summary characterizing the vacatur as gender-identity-only is incomplete.
+
+### Remedy scope
+
+The court used APA vacatur and rejected party-limited relief, relying on Fifth Circuit precedent concerning universal vacatur. The vacated provisions were treated by the EEOC as vacated nationwide. The court did not merely issue a party-specific injunction.
+
+The research record must still distinguish:
+
+- vacatur from injunction;
+- nationwide practical effect from nationwide binding precedent;
+- district-court reasoning from Supreme Court precedent;
+- removal of guidance language from reversal of `Bostock`.
+
+### Four independent paths
+
+#### Path A — preexisting litigation
+
+`2024 guidance -> Texas and Heritage Foundation challenge -> summary judgment -> partial nationwide vacatur`
+
+The lawsuit preceded Executive Order 14168 and was not initiated by it.
+
+#### Path B — executive policy direction
+
+`Executive Order 14168 -> direction to federal agencies and EEOC -> review or rescission instruction`
+
+This path was independent of the lawsuit, although both paths targeted overlapping guidance provisions.
+
+#### Path C — Commission action after quorum restoration
+
+`Senate confirmation -> commissioner sworn in -> quorum restored -> January 2026 Commission vote -> entire guidance rescinded`
+
+The Commission rescinded more than the court expressly required because the court vacated specified categories while the Commission later rescinded the whole guidance.
+
+#### Path D — institutional-capacity interruption
+
+`commissioner removals -> quorum loss -> Commission unable to modify or rescind guidance by vote -> quorum restoration -> Commission action becomes institutionally possible`
+
+The removals are causally connected to quorum loss and the period during which a Commission vote was unavailable. They are not, without separate evidence, proof of coordination with the private/state litigation or proof of motive.
+
+### Required relationship posture
+
+- `2024_guidance challenged_by Texas_v_EEOC`
+- `EO_14168 directs_review_or_rescission_by EEOC`
+- `Texas_v_EEOC adjudicates_validity_of specified_guidance_provisions`
+- `district_court_order vacates specified_guidance_provisions`
+- `EO_14168 produces_similar_effect district_court_order`
+- `commissioner_removals causes quorum_loss`
+- `quorum_loss causes_delay Commission_vote_capacity`
+- `Panuccio_swearing_in restores_capacity EEOC_Commission`
+- `quorum_restoration enables rescission_vote`
+- `Commission_vote rescinds entire_2024_guidance`
+
+`produces_similar_effect` is noncausal. `causes`, `causes_delay`, `enables`, and `restores_capacity` are causal relations and require direct documentary support.
 
 ### Revised match posture
 
 - Match target: rescission of EEOC sub-regulatory harassment guidance and changed enforcement posture.
-- Classification: `exact_structural_match` at the guidance-rescission level.
-- Classification against underlying statutory or Supreme Court protection: `no_verified_match` to reversal; `Bostock` remains controlling unless later modified by a competent court.
-- Directness: the executive order, court vacatur, and later Commission vote must remain separate applications connected by sourced edges.
+- Court vacatur: `partial_structural_match` or level-specific exact match to the challenged categories, depending on the Project 2025 text being compared.
+- Commission rescission: `exact_structural_match` at the entire-guidance-rescission level if the proposal specifically called for full rescission.
+- Executive Order 14168: independent executive-policy path; do not label the preexisting litigation as its implementation.
+- Classification against underlying statutory or Supreme Court protection: `no_verified_match` to reversal. Title VII and `Bostock` remain separate legal layers.
 
 ### Primary-source locators
 
-- Executive Order 14168, Federal Register publication, January 2025.
+- `Texas v. EEOC`, No. 2:24-cv-00173, Complaint, August 15, 2024.
+- Cross-motions and summary-judgment briefing, October-November 2024.
+- Executive Order 14168, dated January 20, 2025.
+- `Texas v. EEOC`, Memorandum Opinion and Order, ECF No. 59, May 15, 2025.
 - EEOC, “Federal Court Vacates Portions of EEOC Harassment Guidance,” May 20, 2025.
+- EEOC records stating loss of quorum as of January 28, 2025.
+- EEOC, “Brittany Bull Panuccio Begins Tenure as EEOC Commissioner,” confirming October 7 confirmation and October 27 swearing-in/quorum restoration.
 - EEOC open-meeting transcript, January 22, 2026.
 - EEOC, “EEOC Commission Votes to Rescind 2024 Harassment Guidance,” January 23, 2026.
 
 ### Still unresolved
 
-- Party identities, pleadings, and the precise relief requested in the Texas litigation need direct docket-document receipts before any coordination or ancestry claim is admitted.
-- Similarity between a policy proposal and a litigant’s requested relief does not itself prove coordination or causation.
+- Complete primary-source receipts for every pleading and docket event remain required.
+- The legal validity and later treatment of the commissioner removals belong in a separate removal-power application chain.
+- Any claimed motive for the removals must remain disputed or unresolved unless supported by admissible evidence.
+- Similarity among Project 2025, the executive order, litigant positions, and the ultimate agency vote does not itself prove common authorship, coordination, or causal implementation.
 
 ## P25-HHS-01 — mifepristone, REMS, and Comstock
 
@@ -115,6 +190,9 @@ One application may include many actors in different roles:
 - implementing or enforcing agency;
 - plaintiff, defendant, petitioner, respondent, or intervenor;
 - adjudicating court;
+- removing authority and removed officer;
+- appointing authority and confirming body;
+- remaining Commission member;
 - state or local continuation actor;
 - affected government.
 
@@ -132,21 +210,31 @@ The system must preserve separately sourced relations such as:
 - vacates;
 - continues locally;
 - produces a similar effect;
-- depends on.
+- depends on;
+- causes;
+- causes delay;
+- enables;
+- disables;
+- restores institutional capacity.
 
 `produces_similar_effect` is deliberately noncausal. It cannot be upgraded to `implements` without separate documentary support.
+
+`causes`, `causes_delay`, `enables`, `disables`, and `restores_capacity` are affirmative causal claims. Each requires direct source support identifying the institutional or procedural consequence.
 
 ### Scoped match classification
 
 A match classification must always identify the compared object and level:
 
 - exact guidance rescission;
+- partial judicial vacatur;
+- executive policy direction;
+- institutional-capacity interruption;
 - partial statutory mechanism;
 - related practical outcome;
 - superficial language similarity;
 - no verified match.
 
-One mechanism may have different classifications at the proposal, instrument, procedure, legal-authority, and practical-effect levels.
+One mechanism may have different classifications at the proposal, instrument, procedure, legal-authority, institutional-capacity, and practical-effect levels.
 
 ### Current-status receipts
 
@@ -155,14 +243,14 @@ Every current claim requires:
 - a declared `as_of` timestamp;
 - an operative status;
 - a primary status source;
-- separate records for stays, injunctions, affirmances, reversals, remands, rescissions, and supersession.
+- separate records for stays, injunctions, affirmances, reversals, remands, rescissions, quorum loss, quorum restoration, and supersession.
 
-A later order never overwrites the earlier order. It changes the current view through a later receipt.
+A later order or institutional event never overwrites an earlier event. It changes the current view through a later receipt.
 
 ## Promotion decision
 
 - P25-DOJ-01: hold for corrected scope and Louisville primary-source completion.
-- P25-DOL-01: hold for direct docket receipts and level-specific match records.
+- P25-DOL-01: hold for complete primary-source packet, but chronology, vacatur scope, remedy scope, and quorum path are now materially corrected.
 - P25-HHS-01: reject current batch status as stale; retain research evidence and issue a corrected status chain.
 
 No canonical promotion is authorized by this audit.
