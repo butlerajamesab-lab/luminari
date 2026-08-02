@@ -15,10 +15,10 @@ const governance_dashboard = read("../../client/src/pages/GovernanceDashboard.ts
 const verify_page = read("../../client/src/pages/Verify.tsx");
 const governance_log = read("../governance-log.ts");
 const sequence_migration = read(
-  "../../supabase/migrations/20260727120400_admin_change_log_sequence_alignment.sql",
+  "../../supabase/migrations/20260727161445_admin_change_log_sequence_alignment.sql",
 );
 const snapshot_migration = read(
-  "../../supabase/migrations/20260727120500_governance_snapshots.sql",
+  "../../supabase/migrations/20260727161504_governance_snapshots.sql",
 );
 
 describe("Sovereign Continuity source contract", () => {

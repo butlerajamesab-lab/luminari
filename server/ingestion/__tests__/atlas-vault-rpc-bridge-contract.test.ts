@@ -13,7 +13,7 @@ describe("Atlas Vault-backed RPC bridge contract", () => {
   const adapter = read("../atlas-stream-adapter.ts");
   const client = read("../atlas-bridge-client.ts");
   const lighthouse_migration = read(
-    "../../../supabase/migrations/20260729151500_atlas_bridge_vault_config.sql",
+    "../../../supabase/migrations/20260729151238_atlas_bridge_vault_config.sql",
   );
   const atlas_migration = read(
     "../../../atlas/supabase/migrations/20260729151000_lighthouse_stream_export_contract.sql",

@@ -3,7 +3,7 @@ name: Signal architecture contracts
 on:
   pull_request:
     paths:
-      - "supabase/migrations/20260731190500_signal_architecture_ground_truth.sql"
+      - "supabase/migrations/20260731185401_signal_architecture_ground_truth.sql"
       - "server/routers/enforcement-intel.ts"
       - "server/signal-architecture-ground-truth.test.ts"
       - "client/src/pages/SignalRegistry.tsx"
@@ -12,7 +12,7 @@ on:
     branches:
       - main
     paths:
-      - "supabase/migrations/20260731190500_signal_architecture_ground_truth.sql"
+      - "supabase/migrations/20260731185401_signal_architecture_ground_truth.sql"
       - "server/routers/enforcement-intel.ts"
       - "server/signal-architecture-ground-truth.test.ts"
       - "client/src/pages/SignalRegistry.tsx"

@@ -9,7 +9,7 @@ describe("notification runtime source contract", () => {
     "utf8"
   );
   const migrationSource = readFileSync(
-    "supabase/migrations/20260731195000_notifications_runtime_contract.sql",
+    "supabase/migrations/20260731194411_notifications_runtime_contract.sql",
     "utf8"
   );
 

@@ -7,10 +7,10 @@ function read(relativePath: string): string {
 }
 
 const migration = read(
-  "../supabase/migrations/20260729022000_geocode_worker_cron_auth.sql",
+  "../supabase/migrations/20260729022336_geocode_worker_cron_auth.sql",
 );
 const timeoutMigration = read(
-  "../supabase/migrations/20260729105500_geocode_worker_request_timeout.sql",
+  "../supabase/migrations/20260729110336_geocode_worker_request_timeout.sql",
 );
 const worker = read("../supabase/functions/geocode-queue-worker/index.ts");
 

@@ -8,10 +8,10 @@ function read_repo_file(relative_path: string): string {
 
 describe("canonical three-domain signal architecture", () => {
   const migration = read_repo_file(
-    "../supabase/migrations/20260731190500_signal_architecture_ground_truth.sql",
+    "../supabase/migrations/20260731185401_signal_architecture_ground_truth.sql",
   );
   const identity_projection = read_repo_file(
-    "../supabase/migrations/20260731194000_atlas_observation_identity_projection.sql",
+    "../supabase/migrations/20260731192928_atlas_observation_identity_projection.sql",
   );
   const router = read_repo_file("./routers/enforcement-intel.ts");
   const page = read_repo_file("../client/src/pages/SignalRegistry.tsx");
