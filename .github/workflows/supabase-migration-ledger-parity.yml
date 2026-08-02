@@ -1,0 +1,17 @@
+name: Supabase migration ledger parity
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify production-ledger parity and bounded new migration
+        run: python3 scripts/audit-supabase-migration-ledger-parity.py
