@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import multer from "multer";
 import { createHash } from "crypto";
-import { storagePut } from "./storage";
+import { isSupabaseStorageKey, storageGet, storagePut } from "./storage";
 import { nanoid } from "nanoid";
 import * as dbHelpers from "./db";
 import { sdk } from "./_core/sdk";
@@ -29,7 +29,70 @@ function classifyFileType(mimeType: string): string {
 // Server-enforced batch cap
 const MAX_BATCH_SIZE = 50;
 
+function buildDocumentAccessUrl(caseId: number, storageKey: string): string {
+  const query = new URLSearchParams({ key: storageKey });
+  return `/api/cases/${caseId}/documents/file?${query.toString()}`;
+}
+
+function resolvePersistedDocumentUrl(
+  caseId: number,
+  storedObject: { key: string; url: string },
+): string {
+  return isSupabaseStorageKey(storedObject.key)
+    ? buildDocumentAccessUrl(caseId, storedObject.key)
+    : storedObject.url;
+}
+
 export function registerUploadRoute(app: Express) {
+  // Private case documents are exposed only through this authenticated bridge.
+  // Existing Forge/CloudFront documents retain their historical direct URLs.
+  app.get("/api/cases/:caseId/documents/file", async (req: Request, res: Response) => {
+    try {
+      let user;
+      try {
+        user = await sdk.authenticateRequest(req);
+      } catch {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const caseId = parseInt(req.params.caseId);
+      const storageKey = typeof req.query.key === "string" ? req.query.key : "";
+      if (!caseId || isNaN(caseId) || !storageKey) {
+        res.status(400).json({ error: "Valid caseId and document key are required" });
+        return;
+      }
+
+      const [caseRow] = await db.select({ id: cases.id })
+        .from(cases)
+        .where(and(eq(cases.id, caseId), eq(cases.userId, user.id)));
+      if (!caseRow) {
+        res.status(403).json({ error: "Access denied: you do not own this case" });
+        return;
+      }
+
+      const [documentRow] = await db.select({
+        id: documents.id,
+        filename: documents.filename,
+        mimeType: documents.mimeType,
+        s3Key: documents.s3Key,
+      })
+        .from(documents)
+        .where(and(eq(documents.caseId, caseId), eq(documents.s3Key, storageKey)));
+      if (!documentRow) {
+        res.status(404).json({ error: "Document storage object not found for this case" });
+        return;
+      }
+
+      const { url } = await storageGet(documentRow.s3Key);
+      res.setHeader("Cache-Control", "private, no-store");
+      res.redirect(302, url);
+    } catch (err: any) {
+      console.error("[Upload] Document download bridge error:", err);
+      res.status(500).json({ error: err.message || "Document download failed" });
+    }
+  });
+
   app.post("/api/upload", upload.array("files", MAX_BATCH_SIZE), async (req: Request, res: Response) => {
     try {
       // Authenticate
@@ -124,13 +187,15 @@ export function registerUploadRoute(app: Express) {
             // ── Duplicate → Replacement Conversion (Scoped Override) ──
             // Deterministic rule: if existing doc is resolved (corrupted/excluded/superseded)
             // OR failed_permanent, convert duplicate into replacement override.
-            const existingResolution = (existing as any).documentResolution ?? 'active';
-            const isFailedPermanent = existing.status === 'failed_permanent';
-            const isResolved = ['corrupted', 'excluded', 'superseded'].includes(existingResolution);
+            const existingResolution = (existing as any).documentResolution ?? "active";
+            const isFailedPermanent = existing.status === "failed_permanent";
+            const isResolved = ["corrupted", "excluded", "superseded"].includes(existingResolution);
             if (isFailedPermanent || isResolved) {
               const suffix = nanoid(8);
-              const overrideS3Key = `cases/${caseId}/documents/${sha256Hash.slice(0, 8)}-${suffix}-${file.originalname}`;
-              const { url: overrideS3Url } = await storagePut(overrideS3Key, file.buffer, file.mimetype);
+              const requestedStorageKey = `cases/${caseId}/documents/${sha256Hash.slice(0, 8)}-${suffix}-${file.originalname}`;
+              const storedObject = await storagePut(requestedStorageKey, file.buffer, file.mimetype);
+              const overrideS3Key = storedObject.key;
+              const overrideS3Url = resolvePersistedDocumentUrl(caseId, storedObject);
 
               const overrideResult = await dbHelpers.performDuplicateOverride(
                 existing.id,
@@ -185,10 +250,12 @@ export function registerUploadRoute(app: Express) {
           }
 
           const suffix = nanoid(8);
-          const s3Key = `cases/${caseId}/documents/${sha256Hash.slice(0, 8)}-${suffix}-${file.originalname}`;
+          const requestedStorageKey = `cases/${caseId}/documents/${sha256Hash.slice(0, 8)}-${suffix}-${file.originalname}`;
 
-          // Upload to S3
-          const { url: s3Url } = await storagePut(s3Key, file.buffer, file.mimetype);
+          // Upload to the configured document storage backend.
+          const storedObject = await storagePut(requestedStorageKey, file.buffer, file.mimetype);
+          const s3Key = storedObject.key;
+          const s3Url = resolvePersistedDocumentUrl(caseId, storedObject);
 
           // Create document record
           const docId = await dbHelpers.createDocument({
@@ -334,8 +401,8 @@ export function registerUploadRoute(app: Express) {
           eq(documents.caseId, caseId),
         ));
       if (hashConflict && hashConflict.id !== documentId) {
-        const conflictResolution = (hashConflict as any).documentResolution ?? 'active';
-        if (conflictResolution === 'active' && hashConflict.status !== 'failed_permanent') {
+        const conflictResolution = (hashConflict as any).documentResolution ?? "active";
+        if (conflictResolution === "active" && hashConflict.status !== "failed_permanent") {
           res.status(409).json({
             error: "DUPLICATE_ACTIVE",
             message: `This file matches active document "${hashConflict.filename}" (ID: ${hashConflict.id}). Cannot replace — hash belongs to a different active document.`,
@@ -344,10 +411,12 @@ export function registerUploadRoute(app: Express) {
         }
       }
 
-      // Upload to S3
+      // Upload to the configured document storage backend.
       const suffix = nanoid(8);
-      const s3Key = `cases/${caseId}/documents/${sha256Hash.slice(0, 8)}-${suffix}-${file.originalname}`;
-      const { url: s3Url } = await storagePut(s3Key, file.buffer, file.mimetype);
+      const requestedStorageKey = `cases/${caseId}/documents/${sha256Hash.slice(0, 8)}-${suffix}-${file.originalname}`;
+      const storedObject = await storagePut(requestedStorageKey, file.buffer, file.mimetype);
+      const s3Key = storedObject.key;
+      const s3Url = resolvePersistedDocumentUrl(caseId, storedObject);
 
       // Perform scoped override
       const overrideResult = await dbHelpers.performDuplicateOverride(

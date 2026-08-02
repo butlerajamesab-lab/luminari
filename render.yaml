@@ -38,3 +38,7 @@ services:
         value: https://wepxlinwbjrkqdzkqpar.supabase.co
       - key: LIGHTHOUSE_SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      - key: LIGHTHOUSE_DOCUMENT_STORAGE_BACKEND
+        value: supabase
+      - key: LIGHTHOUSE_DOCUMENT_STORAGE_BUCKET
+        value: case-documents
