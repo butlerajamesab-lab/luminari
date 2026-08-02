@@ -10,8 +10,8 @@ on:
       - "server/ingestion/__tests__/atlas-*.test.ts"
       - "server/unified-queries.ts"
       - "drizzle/schema.ts"
-      - "supabase/migrations/20260729143000_atlas_stream_registry_recovery.sql"
-      - "supabase/migrations/20260729151500_atlas_bridge_vault_config.sql"
+      - "supabase/migrations/20260729150409_atlas_stream_registry_recovery.sql"
+      - "supabase/migrations/20260729151238_atlas_bridge_vault_config.sql"
       - "atlas/supabase/migrations/20260729151000_lighthouse_stream_export_contract.sql"
       - ".github/workflows/atlas-stream-recovery-contract.yml"
   workflow_dispatch:
