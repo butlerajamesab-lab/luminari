@@ -283,11 +283,11 @@ async function forge_storage_get(rel_key: string): Promise<StorageResult> {
   };
 }
 
-export function getDocumentStorageMode(): StorageMode {
+export function get_document_storage_mode(): StorageMode {
   return resolve_storage_mode();
 }
 
-export function isSupabaseStorageKey(storage_key: string): boolean {
+export function is_supabase_storage_key(storage_key: string): boolean {
   return storage_key.startsWith(SUPABASE_KEY_SCHEME);
 }
 
@@ -303,7 +303,7 @@ export async function storagePut(
 }
 
 export async function storageGet(rel_key: string): Promise<StorageResult> {
-  if (isSupabaseStorageKey(rel_key)) {
+  if (is_supabase_storage_key(rel_key)) {
     return supabase_storage_get(rel_key);
   }
   return forge_storage_get(rel_key);
