@@ -47,6 +47,8 @@ The canonical signal architecture contains three independent source domains:
 
 The three domains must never be mixed at source. `signal_convergences` may reference one independently governed record from each source domain only after all three exist.
 
+Atlas mathematical convergence is a separate Atlas-owned computation over its governed signal population and declared geography/time configuration. It may produce an Atlas convergence run and per-geography receipts even when Lighthouse contains no Domain 1, Domain 2, or Domain 3 canonical rows. It is not the same object as Lighthouse three-domain convergence, and neither convergence type is automatically a Civic Genome relationship, event, or momentum component.
+
 There is no direct raw Atlas → Civic Genome mutation contract. A Civic Genome attachment requires an explicit, governed identity/effect binding that identifies:
 
 - the Atlas signal or convergence receipt;
@@ -59,7 +61,7 @@ There is no direct raw Atlas → Civic Genome mutation contract. A Civic Genome 
 
 Atlas must not create families, rewrite Rosetta-derived traits, or turn statistical association into legal causation. An Atlas observation may remain useful to Kaleidoscope as a separate upstream observation bundle even when it has no Civic Genome attachment.
 
-**Current implementation state:** Atlas/Lighthouse Domain 3 substrate exists, but the canonical Lighthouse source-domain tables and convergence tables are empty and no Atlas → Civic Genome binding is established.
+**Current implementation state:** Atlas has its own event, resolution, candidate, bridge-attempt, and mathematical-convergence substrates. Lighthouse's canonical source-domain and three-domain convergence tables remain unpopulated, and no Atlas → Civic Genome binding is established.
 
 ## 4. Viewfinder ↔ Civic Genome
 
@@ -109,7 +111,7 @@ A valid Kaleidoscope binding requires:
 
 Kaleidoscope may transform the accepted snapshot into its own projection-owned state representation. It must preserve the upstream snapshot identity and hash and must not write projection results back as Genome facts.
 
-**Current implementation state:** no Civic Genome external snapshot producer, no immutable export receipt, and no source-controlled adapter are established.
+**Current implementation state:** no Civic Genome external snapshot producer, no immutable export receipt, and no live source-controlled adapter are established.
 
 ## 6. External snapshot component catalog
 
