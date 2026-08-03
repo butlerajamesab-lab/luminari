@@ -27,7 +27,8 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
       - name: Run snapshot contract and producer tests
         run: >-
           npx vitest run
