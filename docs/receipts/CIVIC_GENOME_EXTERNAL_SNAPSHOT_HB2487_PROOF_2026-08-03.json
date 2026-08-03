@@ -73,7 +73,9 @@
   "post_proof_cleanup": {
     "proof_environment_variables_cleared": true,
     "cleanup_deploy_id": "dep-d9ohpvoae00c73ak2qdg",
-    "cleanup_deploy_state_at_receipt_creation": "build_in_progress"
+    "cleanup_deploy_state": "live",
+    "cleanup_deploy_finished_at": "2026-08-03T22:59:28.852852Z",
+    "proof_reran_after_cleanup": false
   },
   "explicit_non_claims": [
     "Kaleidoscope has not received or accepted this live snapshot payload.",
