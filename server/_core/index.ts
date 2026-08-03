@@ -30,6 +30,7 @@ import { initializeScheduler } from "../ingestion/scheduler";
 import { run_with_database_request_context } from "../db-request-context";
 import { run_rosetta_control_repair_from_environment } from "../civic-genome-rosetta-control-repair";
 import { run_prism_rosetta_activation_from_environment } from "../services/prism-rosetta-startup-activation";
+import { run_civic_genome_external_snapshot_proof_from_environment } from "../civic-genome-external-snapshot-startup-proof";
 
 const runtime_fingerprint = Object.freeze({
   render_git_commit: process.env.RENDER_GIT_COMMIT || null,
@@ -204,6 +205,12 @@ async function startServer() {
     });
     void run_prism_rosetta_activation_from_environment().catch(error => {
       console.error("[PrismRosettaActivation] failed", {
+        error_class: error instanceof Error ? error.name : "unknown",
+        error_message: error instanceof Error ? error.message : "unknown",
+      });
+    });
+    void run_civic_genome_external_snapshot_proof_from_environment().catch(error => {
+      console.error("[CivicGenomeExternalSnapshotProof] failed", {
         error_class: error instanceof Error ? error.name : "unknown",
         error_message: error instanceof Error ? error.message : "unknown",
       });

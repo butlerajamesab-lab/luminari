@@ -1,0 +1,410 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://luminari.org/civic-genome/contracts/external-snapshot.v1.schema.json",
+  "title": "Civic Genome External Snapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "contract_version",
+    "canonical_owner",
+    "snapshot_id",
+    "snapshot_kind",
+    "immutable",
+    "scope",
+    "as_of",
+    "methodology_version",
+    "components",
+    "component_count",
+    "unresolved_conditions",
+    "excluded_component_types",
+    "completeness_state",
+    "snapshot_hash",
+    "export_receipt"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "civic_genome.external_snapshot.v1"
+    },
+    "contract_version": {
+      "const": "1.0.0"
+    },
+    "canonical_owner": {
+      "const": "lighthouse/civic_genome"
+    },
+    "snapshot_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "snapshot_kind": {
+      "const": "baseline_export"
+    },
+    "immutable": {
+      "const": true
+    },
+    "scope": {
+      "$ref": "#/$defs/scope"
+    },
+    "as_of": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "methodology_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/component"
+      }
+    },
+    "component_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "unresolved_conditions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "excluded_component_types": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/component_type"
+      }
+    },
+    "completeness_state": {
+      "enum": [
+        "complete",
+        "bounded_complete",
+        "incomplete"
+      ]
+    },
+    "snapshot_hash": {
+      "$ref": "#/$defs/hash"
+    },
+    "export_receipt": {
+      "$ref": "#/$defs/export_receipt"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "completeness_state": {
+            "const": "incomplete"
+          }
+        },
+        "required": [
+          "completeness_state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "unresolved_conditions": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "nullable_hash": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/hash"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "component_type": {
+      "enum": [
+        "family",
+        "bill",
+        "trait",
+        "relationship",
+        "lineage_edge",
+        "event",
+        "momentum_component",
+        "momentum_snapshot",
+        "comparison_matrix",
+        "comparison_state_cell",
+        "unresolved_family_candidate"
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope_type",
+        "scope_ids",
+        "jurisdiction_codes"
+      ],
+      "properties": {
+        "scope_type": {
+          "enum": [
+            "bill",
+            "family",
+            "jurisdiction",
+            "comparison_matrix",
+            "bounded_set"
+          ]
+        },
+        "scope_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "jurisdiction_codes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "source_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner_service",
+        "record_type",
+        "record_id",
+        "receipt_id",
+        "content_hash",
+        "engine_id",
+        "engine_version",
+        "rule_id",
+        "rule_version"
+      ],
+      "properties": {
+        "owner_service": {
+          "enum": [
+            "docket",
+            "rosetta",
+            "atlas",
+            "prism",
+            "civic_genome"
+          ]
+        },
+        "record_type": {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "const": "civic_genome_projection_checkpoint"
+          }
+        },
+        "record_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "receipt_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "content_hash": {
+          "$ref": "#/$defs/nullable_hash"
+        },
+        "engine_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "engine_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rule_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rule_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "source_verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner_service",
+        "state",
+        "receipt_id",
+        "evidence_hash",
+        "mapping_state"
+      ],
+      "properties": {
+        "owner_service": {
+          "enum": [
+            "docket",
+            "rosetta",
+            "atlas",
+            "prism",
+            "civic_genome"
+          ]
+        },
+        "state": {
+          "type": "string",
+          "minLength": 1
+        },
+        "receipt_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "evidence_hash": {
+          "$ref": "#/$defs/nullable_hash"
+        },
+        "mapping_state": {
+          "const": "source_native_preserved"
+        }
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component_id",
+        "component_type",
+        "canonical_record_id",
+        "inclusion_state",
+        "jurisdiction_code",
+        "temporal_scope",
+        "value",
+        "source_bindings",
+        "source_verification",
+        "unresolved_conditions",
+        "component_hash"
+      ],
+      "properties": {
+        "component_id": {
+          "type": "string",
+          "pattern": "^civic_genome:"
+        },
+        "component_type": {
+          "$ref": "#/$defs/component_type"
+        },
+        "canonical_record_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "inclusion_state": {
+          "enum": [
+            "current",
+            "historical",
+            "unresolved",
+            "rejected"
+          ]
+        },
+        "jurisdiction_code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "temporal_scope": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "value": true,
+        "source_bindings": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/source_binding"
+          }
+        },
+        "source_verification": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/source_verification"
+          }
+        },
+        "unresolved_conditions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "component_hash": {
+          "$ref": "#/$defs/hash"
+        }
+      }
+    },
+    "export_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "export_receipt_id",
+        "export_receipt_hash",
+        "snapshot_hash",
+        "deterministic_replay_key",
+        "replay_state",
+        "source_commit_sha",
+        "generated_at"
+      ],
+      "properties": {
+        "export_receipt_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "export_receipt_hash": {
+          "$ref": "#/$defs/hash"
+        },
+        "snapshot_hash": {
+          "$ref": "#/$defs/hash"
+        },
+        "deterministic_replay_key": {
+          "$ref": "#/$defs/hash"
+        },
+        "replay_state": {
+          "enum": [
+            "original",
+            "identical_replay"
+          ]
+        },
+        "source_commit_sha": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}
