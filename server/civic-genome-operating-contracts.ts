@@ -4,6 +4,7 @@ import {
   get_latest_rosetta_law_view_by_document_identifier,
   type civic_genome_rosetta_law_view,
 } from "./civic-genome-rosetta-contract";
+import { get_kaleidoscope_civic_genome_contract } from "./civic-genome-kaleidoscope-contract";
 
 export type civic_genome_contract_state =
   | "operational"
@@ -159,18 +160,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
         last_observed_at: null,
         boundary: "Viewfinder reads Civic Genome comparison projections and does not mutate source observations.",
       },
-      {
-        service_key: "kaleidoscope",
-        display_name: "Kaleidoscope",
-        role: "Projection reference",
-        state: "not_established",
-        state_label: "Contract not established",
-        detail: "No source-controlled Civic Genome projection adapter is materialized.",
-        observed_count: 0,
-        bound_count: 0,
-        last_observed_at: null,
-        boundary: "Projection outputs must reference evidence without mutating observations, traits, or findings.",
-      },
+      get_kaleidoscope_civic_genome_contract(),
       {
         service_key: "esquire",
         display_name: "Esquire",
