@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 /**
  * Determinism helpers: ordering, stable sort, canonical serialization
  * Ensures reproducible interpretation across identical snapshots
@@ -26,19 +28,19 @@ export function canonicalSerialize(obj: unknown): string {
   if (obj === null || obj === undefined) {
     return "null";
   }
-  
+
   if (typeof obj === "string") {
     return JSON.stringify(obj);
   }
-  
+
   if (typeof obj === "number" || typeof obj === "boolean") {
     return String(obj);
   }
-  
+
   if (Array.isArray(obj)) {
     return `[${obj.map(canonicalSerialize).join(",")}]`;
   }
-  
+
   if (typeof obj === "object") {
     const keys = Object.keys(obj).sort();
     const pairs = keys.map(
@@ -46,17 +48,19 @@ export function canonicalSerialize(obj: unknown): string {
     );
     return `{${pairs.join(",")}}`;
   }
-  
+
   return String(obj);
 }
 
 /**
- * Compute canonical hash for determinism verification
+ * Compute canonical hash for determinism verification.
+ *
+ * The production server bundle is ESM, so this helper must use a static
+ * Node built-in import rather than a runtime CommonJS require.
  */
 export function computeCanonicalHash(obj: unknown): string {
-  const crypto = require("crypto");
   const serialized = canonicalSerialize(obj);
-  return crypto.createHash("sha256").update(serialized).digest("hex");
+  return createHash("sha256").update(serialized).digest("hex");
 }
 
 /**
@@ -70,7 +74,7 @@ export function sortByFields<T extends Record<string, unknown>>(
     for (const field of fields) {
       const aVal = a[field];
       const bVal = b[field];
-      
+
       if (aVal < bVal) return -1;
       if (aVal > bVal) return 1;
     }
@@ -89,6 +93,6 @@ export function verifyDeterminism(
 ): boolean {
   const hash1 = computeCanonicalHash({ input: input1, output: output1 });
   const hash2 = computeCanonicalHash({ input: input2, output: output2 });
-  
+
   return hash1 === hash2;
 }
