@@ -1,0 +1,86 @@
+{
+  "receipt_id": "civic_genome_external_snapshot_hb2487_live_proof_2026_08_03",
+  "receipt_version": "1.0.0",
+  "contract_id": "civic_genome.external_snapshot.v1",
+  "contract_version": "1.0.0",
+  "methodology_version": "civic_genome_external_family_snapshot.1.0.0",
+  "proof_state": "completed",
+  "proof_scope": {
+    "scope_type": "family",
+    "family_id": "a9620a24-9ae4-487d-a55b-5e646c729432",
+    "specimen_label": "WA HB2487",
+    "as_of": "2026-08-03T22:24:00.000Z"
+  },
+  "source_control": {
+    "repository": "butlerajamesab-lab/luminari",
+    "producer_pr": 293,
+    "producer_merge_sha": "f0949e0933a9151d5fdad21db66020f6a912d616",
+    "runtime_repair_pr": 294,
+    "runtime_repair_merge_sha": "6f08eb03af9ffcef6a496ebf0d088b70a7ae5845"
+  },
+  "render": {
+    "service_id": "srv-d7t4381j2pic73agtepg",
+    "service_name": "luminari",
+    "workspace_id": "tea-d7rogkegvqtc73bli0o0",
+    "successful_deploy_id": "dep-d9ohokbbc2fs739h93tg",
+    "successful_instance_id": "srv-d7t4381j2pic73agtepg-cpqxz",
+    "proof_completed_at": "2026-08-03T22:56:34.596971092Z"
+  },
+  "snapshot": {
+    "snapshot_id": "cg-family-snapshot-9a0a395f6da900b746351f3e7df3305b",
+    "snapshot_hash": "1947e73003f8090fe9135236546a3e798410fe4f88a113cc675f6c1c265f6882",
+    "export_receipt_id": "cg-export-51cdc925bb0a91e968fc427a58f6a717",
+    "export_receipt_hash": "defd79f9f60202fa8d0d2ff9654086f11ee961c335bcdcfe9101086f92a8779c",
+    "deterministic_replay_key": "51cdc925bb0a91e968fc427a58f6a7172aec86503ceedcf0260b562d035f7f2a",
+    "completeness_state": "bounded_complete",
+    "component_count": 62,
+    "component_type_counts": {
+      "family": 1,
+      "bill": 1,
+      "trait": 31,
+      "event": 2,
+      "momentum_snapshot": 23,
+      "unresolved_family_candidate": 4
+    },
+    "unresolved_condition_count": 4
+  },
+  "replay": {
+    "first_replay_state": "original",
+    "second_replay_state": "identical_replay",
+    "identical": {
+      "snapshot_id": true,
+      "snapshot_hash": true,
+      "export_receipt_id": true,
+      "export_receipt_hash": true,
+      "deterministic_replay_key": true,
+      "component_count": true
+    }
+  },
+  "write_boundary": {
+    "database_write_count": 0,
+    "transaction_contract": "repeatable_read_read_only",
+    "source_payload_logged": false
+  },
+  "initial_failed_attempt": {
+    "deploy_id": "dep-d9ohkuq5slgs739b4gc0",
+    "commit_sha": "f0949e0933a9151d5fdad21db66020f6a912d616",
+    "failure": "Dynamic require of \"crypto\" is not supported",
+    "snapshot_emitted": false,
+    "receipt_emitted": false,
+    "database_write_count": 0,
+    "resolution": "Replaced runtime CommonJS crypto require with static node:crypto ESM import in PR 294."
+  },
+  "post_proof_cleanup": {
+    "proof_environment_variables_cleared": true,
+    "cleanup_deploy_id": "dep-d9ohpvoae00c73ak2qdg",
+    "cleanup_deploy_state": "live",
+    "cleanup_deploy_finished_at": "2026-08-03T22:59:28.852852Z",
+    "proof_reran_after_cleanup": false
+  },
+  "explicit_non_claims": [
+    "Kaleidoscope has not received or accepted this live snapshot payload.",
+    "No verification-state mapping rule has been declared for an accepted Kaleidoscope binding.",
+    "No Kaleidoscope projection has executed.",
+    "No Atlas observation, Viewfinder matrix, relationship, or lineage record was invented by this proof."
+  ]
+}
