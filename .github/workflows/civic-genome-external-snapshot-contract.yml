@@ -5,11 +5,15 @@ on:
     paths:
       - "contracts/civic_genome_external_snapshot.v1.schema.json"
       - "docs/CIVIC_GENOME_EXTERNAL_CONTRACTS_V1.md"
+      - "docs/receipts/CIVIC_GENOME_EXTERNAL_SNAPSHOT_HB2487_PROOF_2026-08-03.json"
       - "server/civic-genome-external-snapshot-contract.ts"
       - "server/civic-genome-external-snapshot-contract.test.ts"
       - "server/civic-genome-external-snapshot-producer.ts"
       - "server/civic-genome-external-snapshot-producer.test.ts"
       - "server/civic-genome-external-snapshot-startup-proof.ts"
+      - "server/civic-genome-kaleidoscope-contract.ts"
+      - "server/civic-genome-kaleidoscope-contract.test.ts"
+      - "server/civic-genome-operating-contracts.ts"
       - "server/lib/determinism.ts"
       - "server/lib/determinism.test.ts"
       - "server/_core/index.ts"
@@ -31,9 +35,10 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm install --legacy-peer-deps
-      - name: Run snapshot contract, producer, and hashing tests
+      - name: Run snapshot, hashing, and Kaleidoscope ledger contracts
         run: >-
           npx vitest run
           server/civic-genome-external-snapshot-contract.test.ts
           server/civic-genome-external-snapshot-producer.test.ts
+          server/civic-genome-kaleidoscope-contract.test.ts
           server/lib/determinism.test.ts
