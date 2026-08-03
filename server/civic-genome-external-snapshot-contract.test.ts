@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   assert_civic_genome_external_snapshot_v1,
@@ -129,6 +130,44 @@ function valid_snapshot(): civic_genome_external_snapshot_v1 {
 }
 
 describe("Civic Genome external snapshot contract", () => {
+  it("publishes a portable schema matching the runtime contract", () => {
+    const schema = JSON.parse(
+      readFileSync(new URL("../contracts/civic_genome_external_snapshot.v1.schema.json", import.meta.url), "utf8"),
+    ) as {
+      $schema: string;
+      $id: string;
+      properties: Record<string, { const?: unknown }>;
+      $defs: {
+        component_type: { enum: string[] };
+        source_binding: {
+          properties: { record_type: { not: { const: string } } };
+        };
+      };
+    };
+
+    expect(schema.$schema).toBe("https://json-schema.org/draft/2020-12/schema");
+    expect(schema.$id).toBe("https://luminari.org/civic-genome/contracts/external-snapshot.v1.schema.json");
+    expect(schema.properties.contract_id.const).toBe("civic_genome.external_snapshot.v1");
+    expect(schema.properties.contract_version.const).toBe("1.0.0");
+    expect(schema.properties.immutable.const).toBe(true);
+    expect(schema.$defs.component_type.enum).toEqual([
+      "family",
+      "bill",
+      "trait",
+      "relationship",
+      "lineage_edge",
+      "event",
+      "momentum_component",
+      "momentum_snapshot",
+      "comparison_matrix",
+      "comparison_state_cell",
+      "unresolved_family_candidate",
+    ]);
+    expect(schema.$defs.source_binding.properties.record_type.not.const).toBe(
+      "civic_genome_projection_checkpoint",
+    );
+  });
+
   it("accepts an immutable source-bound bounded snapshot", () => {
     const snapshot = assert_civic_genome_external_snapshot_v1(valid_snapshot());
     expect(snapshot.component_count).toBe(2);
