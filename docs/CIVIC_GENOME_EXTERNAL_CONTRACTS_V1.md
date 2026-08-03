@@ -1,6 +1,6 @@
 # Civic Genome External Contracts v1
 
-**Status:** Source-controlled contract definition only. No database migration, producer, external bridge, or production write is included.
+**Status:** Source-controlled contract and read-only producer implementation. No database migration, public route, external bridge, production write, or completed live replay proof is included yet.
 
 ## 1. Canonical ownership
 
@@ -47,8 +47,6 @@ The canonical signal architecture contains three independent source domains:
 
 The three domains must never be mixed at source. `signal_convergences` may reference one independently governed record from each source domain only after all three exist.
 
-Atlas mathematical convergence is a separate Atlas-owned computation over its governed signal population and declared geography/time configuration. It may produce an Atlas convergence run and per-geography receipts even when Lighthouse contains no Domain 1, Domain 2, or Domain 3 canonical rows. It is not the same object as Lighthouse three-domain convergence, and neither convergence type is automatically a Civic Genome relationship, event, or momentum component.
-
 There is no direct raw Atlas → Civic Genome mutation contract. A Civic Genome attachment requires an explicit, governed identity/effect binding that identifies:
 
 - the Atlas signal or convergence receipt;
@@ -61,7 +59,9 @@ There is no direct raw Atlas → Civic Genome mutation contract. A Civic Genome 
 
 Atlas must not create families, rewrite Rosetta-derived traits, or turn statistical association into legal causation. An Atlas observation may remain useful to Kaleidoscope as a separate upstream observation bundle even when it has no Civic Genome attachment.
 
-**Current implementation state:** Atlas has its own event, resolution, candidate, bridge-attempt, and mathematical-convergence substrates. Lighthouse's canonical source-domain and three-domain convergence tables remain unpopulated, and no Atlas → Civic Genome binding is established.
+Atlas mathematical convergence is also distinct from Lighthouse three-domain convergence. An Atlas mathematical receipt proves the declared Atlas equation over its governed source population and geography. It does not establish an intake/legal/live-data intersection and does not become a Civic Genome relationship by itself.
+
+**Current implementation state:** Atlas has 54 current entity-resolution rows, all unresolved; 10 historical failed Domain 3 v1.0.0 candidates; 10 pending v1.1.0 candidates; zero candidates bridged into Lighthouse; and one Washington mathematical-convergence receipt with no convergence detected. Lighthouse's canonical source-domain and three-domain convergence tables remain empty. No Atlas → Civic Genome binding is established.
 
 ## 4. Viewfinder ↔ Civic Genome
 
@@ -111,7 +111,7 @@ A valid Kaleidoscope binding requires:
 
 Kaleidoscope may transform the accepted snapshot into its own projection-owned state representation. It must preserve the upstream snapshot identity and hash and must not write projection results back as Genome facts.
 
-**Current implementation state:** no Civic Genome external snapshot producer, no immutable export receipt, and no live source-controlled adapter are established.
+**Current implementation state:** the source contract, portable JSON Schema, TypeScript validator, read-only repeatable-read family producer, deterministic receipt builder, and environment-gated replay proof runner are source-controlled in draft. They have passed focused contract tests but have not yet produced a merged/deployed live snapshot receipt.
 
 ## 6. External snapshot component catalog
 
@@ -160,6 +160,8 @@ The snapshot hash must be calculated over a canonical hash basis containing only
 Transport time, request ID, deployment ID, host name, and other non-semantic metadata must not participate in deterministic identity.
 
 Identical complete source state, scope, methodology, and as-of time must produce the same canonical payload hash. A changed canonical record or source receipt must produce a different hash.
+
+The v1 producer reads one family through a PostgreSQL `REPEATABLE READ READ ONLY` transaction. The optional startup proof reads the same family twice at the same declared as-of time and requires identical snapshot IDs, snapshot hashes, export receipt identities and hashes, replay keys, and component counts. It logs hashes and counts only and performs no database write.
 
 ## 8. Acceptance gates
 
