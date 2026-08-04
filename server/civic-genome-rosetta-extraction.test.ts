@@ -16,7 +16,7 @@ const handoff_source = readFileSync(
   "utf8",
 );
 
-// Lock source identity, normalization, and attempt ordering before any live Rosetta retry.
+// Lock source identity, wrapper preservation, normalization, and attempt ordering before any live Rosetta retry.
 describe("deterministic Docket -> Rosetta extraction boundary", () => {
   it("normalizes official Washington HTML without semantic rewriting", () => {
     const source = "\uFEFF<html>\r\n<body><p>Sec. 1.&nbsp;There shall be a license &amp; review.</p>\n<p>\"Board\" means the agency.</p></body></html>";
