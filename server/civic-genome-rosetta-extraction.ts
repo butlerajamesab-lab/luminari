@@ -255,7 +255,7 @@ export function normalize_official_html(html: string): string {
   const body = body_match?.[1] ?? html;
   const without_chrome = body
     .replace(/<!--([\s\S]*?)-->/g, " ")
-    .replace(/<(script|style|noscript|svg|form|nav|header|footer)\b[^>]*>[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<(script|style|noscript|svg|nav|footer|button)\b[^>]*>[\s\S]*?<\/\1>/gi, " ")
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/(?:p|div|section|article|tr|li|h[1-6]|pre|table)>/gi, "\n")
     .replace(/<[^>]+>/g, " ");

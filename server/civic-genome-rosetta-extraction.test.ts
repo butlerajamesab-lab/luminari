@@ -56,7 +56,7 @@ describe("deterministic Docket -> Rosetta extraction boundary", () => {
     expect(handoff_source).not.toContain("reusable_run_statuses");
   });
 
-  it("extracts visible legislative HTML while excluding executable page chrome", () => {
+  it("preserves bill text inside form and header wrappers while excluding executable chrome", () => {
     const source = `
       <!doctype html>
       <html>
@@ -64,12 +64,15 @@ describe("deterministic Docket -> Rosetta extraction boundary", () => {
         <body>
           <nav>Search Bills</nav>
           <script>window.secret = "not law";</script>
-          <main>
-            <h1>S.B.&nbsp;No.&nbsp;268</h1>
+          <form id="bill-form">
+            <header><h1>S.B.&nbsp;No.&nbsp;268</h1></header>
+            <button type="button">Print bill</button>
+            <main>
             <p>AN ACT relating to health care practitioners.</p>
             <p>SECTION 1. A licensing entity shall promptly forward the complaint.</p>
             <p>SECTION 2. This Act takes effect September 1, 2025. The licensing entity shall preserve the complaint, identify the receiving authority, record the transfer date, and maintain the official referral record for inspection.</p>
-          </main>
+            </main>
+          </form>
           <footer>Website footer</footer>
         </body>
       </html>`;
@@ -79,6 +82,7 @@ describe("deterministic Docket -> Rosetta extraction boundary", () => {
     expect(normalized).toContain("shall promptly forward the complaint");
     expect(normalized).not.toContain("window.secret");
     expect(normalized).not.toContain("Search Bills");
+    expect(normalized).not.toContain("Print bill");
     expect(normalized).not.toContain("Website footer");
   });
 
