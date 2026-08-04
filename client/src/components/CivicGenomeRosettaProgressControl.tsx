@@ -4,14 +4,22 @@ import { useRoute } from "wouter";
 import { useAuth } from "@/core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 
+export type rosetta_progress_action = "extract_and_assemble" | "assemble_only" | null;
+
+export function get_rosetta_progress_action(
+  contract_state: string | null | undefined,
+): rosetta_progress_action {
+  if (contract_state === "waiting_for_extraction") return "extract_and_assemble";
+  if (contract_state === "ready_for_assembly") return "assemble_only";
+  return null;
+}
+
 /**
  * Bounded recovery control for the exact transition that follows source handoff.
  *
- * CivicGenome historically disabled its handoff button as soon as a Rosetta
- * source_document existed, while assembly correctly remained closed until the
- * deterministic extraction became completed and admissible. This route-scoped
- * control exposes the already-canonical full pipeline mutation only for that
- * bound-but-incomplete state. It does not create a second extraction path.
+ * The server contract distinguishes extraction work from assembly work. Completed
+ * and already-assembled runs never render an action, so this control cannot
+ * accidentally invoke Rosetta again merely because `can_assemble` is false.
  */
 export function CivicGenomeRosettaProgressControl() {
   const [matches, params] = useRoute("/civic-genome/bill/:bill_id");
@@ -39,31 +47,49 @@ export function CivicGenomeRosettaProgressControl() {
     },
   );
   const utils = trpc.useUtils();
+
+  const refresh_pipeline_state = async () => {
+    await Promise.all([
+      pipeline.refetch(),
+      utils.civicGenome.operating_contracts.invalidate(),
+      utils.civicGenome.get_bill_by_source_id.invalidate(),
+      utils.civicGenome.get_bill_detail.invalidate(),
+    ]);
+  };
+
   const process_pipeline = trpc.civicGenome.process_docket_bill_through_rosetta.useMutation({
     onSuccess: async result => {
       set_operation_message(
         `Completed Rosetta run ${result.extraction.extraction_run_id} and Civic Genome assembly ${result.assembly.assembly_run_id}.`,
       );
-      await Promise.all([
-        pipeline.refetch(),
-        utils.civicGenome.operating_contracts.invalidate(),
-        utils.civicGenome.get_bill_by_source_id.invalidate(),
-        utils.civicGenome.get_bill_detail.invalidate(),
-      ]);
+      await refresh_pipeline_state();
     },
   });
 
-  const bound_but_incomplete = Boolean(
-    pipeline.data?.source_document_id
-      && (
-        pipeline.data.run_status !== "completed"
-        || !pipeline.data.can_assemble
-      ),
-  );
+  const assemble_pipeline = trpc.civicGenome.assemble_rosetta_structural_dna.useMutation({
+    onSuccess: async result => {
+      set_operation_message(
+        `Completed Civic Genome assembly ${result.assembly_run_id} from the existing Rosetta extraction.`,
+      );
+      await refresh_pipeline_state();
+    },
+  });
 
-  if (!matches || !valid_source_bill_id || auth_loading || !is_admin || !bound_but_incomplete) {
+  const progress_action = get_rosetta_progress_action(pipeline.data?.contract_state);
+
+  if (!matches || !valid_source_bill_id || auth_loading || !is_admin || !progress_action) {
     return null;
   }
+
+  const mutation_pending = process_pipeline.isPending || assemble_pipeline.isPending;
+  const mutation_error = process_pipeline.error ?? assemble_pipeline.error;
+  const button_label = progress_action === "assemble_only"
+    ? mutation_pending
+      ? "Assembling completed Rosetta extraction…"
+      : "Assemble completed Rosetta extraction"
+    : mutation_pending
+      ? "Running deterministic Rosetta extraction…"
+      : "Run deterministic Rosetta extraction and assembly";
 
   return (
     <aside
@@ -88,14 +114,30 @@ export function CivicGenomeRosettaProgressControl() {
         Exact Rosetta transition
       </div>
       <div style={{ marginTop: ".35rem", fontFamily: "'Inter', system-ui, sans-serif", fontSize: ".76rem", lineHeight: 1.45, color: "#91a9a0" }}>
-        Source document {pipeline.data?.source_document_id} is bound, but extraction run {pipeline.data?.extraction_run_id ?? "not created"} is not yet completed and admissible.
+        {pipeline.data?.contract_message}
       </div>
       <button
         type="button"
-        disabled={process_pipeline.isPending}
+        disabled={mutation_pending}
         onClick={() => {
           if (source_bill_id === null) return;
           set_operation_message(null);
+
+          if (progress_action === "assemble_only") {
+            const genome_bill_id = pipeline.data?.genome_bill_id;
+            const source_document_id = pipeline.data?.source_document_id;
+            const extraction_run_id = pipeline.data?.extraction_run_id;
+            if (!genome_bill_id || source_document_id === null || extraction_run_id === null) {
+              return;
+            }
+            assemble_pipeline.mutate({
+              genome_bill_id,
+              source_document_id,
+              extraction_run_id,
+            });
+            return;
+          }
+
           process_pipeline.mutate({ source_bill_id });
         }}
         style={{
@@ -105,23 +147,21 @@ export function CivicGenomeRosettaProgressControl() {
           padding: ".58rem .8rem",
           background: "rgba(89,216,156,.12)",
           color: "#59d89c",
-          cursor: process_pipeline.isPending ? "wait" : "pointer",
+          cursor: mutation_pending ? "wait" : "pointer",
           fontFamily: "inherit",
           fontSize: ".68rem",
         }}
       >
-        {process_pipeline.isPending
-          ? "Running deterministic Rosetta extraction…"
-          : "Run deterministic Rosetta extraction and assembly"}
+        {button_label}
       </button>
       {operation_message && (
         <div style={{ marginTop: ".5rem", color: "#59d89c", fontSize: ".64rem" }}>
           {operation_message}
         </div>
       )}
-      {process_pipeline.error && (
+      {mutation_error && (
         <div style={{ marginTop: ".5rem", color: "#ef8b8b", fontSize: ".64rem", overflowWrap: "anywhere" }}>
-          Rosetta pipeline failed: {process_pipeline.error.message}
+          Rosetta transition failed: {mutation_error.message}
         </div>
       )}
     </aside>

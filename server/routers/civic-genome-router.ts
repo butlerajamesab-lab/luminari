@@ -6,6 +6,7 @@
  *
  * Principle: Observe. Do not assert. Projection never calls LegiScan directly.
  */
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { router, publicProcedure, adminProcedure } from "../_core/trpc";
 import {
@@ -39,6 +40,17 @@ const uuid_param = z.string().uuid();
 const source_bill_id_param = z.coerce.number().int().positive();
 const positive_integer_param = z.coerce.number().int().positive();
 
+async function process_rosetta_pipeline_once(source_bill_id: number) {
+  const status = await get_civic_genome_rosetta_pipeline_status(source_bill_id);
+  if (status.contract_state === "assembled") {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message: "rosetta_pipeline_already_completed_and_assembled",
+    });
+  }
+  return process_docket_bill_through_rosetta_and_genome(source_bill_id);
+}
+
 export const civicGenomeRouter = router({
   stats: publicProcedure.query(async () => get_genome_stats()),
 
@@ -58,11 +70,11 @@ export const civicGenomeRouter = router({
 
   ingest_docket_bill_to_rosetta_source: adminProcedure
     .input(z.object({ source_bill_id: source_bill_id_param }))
-    .mutation(async ({ input }) => process_docket_bill_through_rosetta_and_genome(input.source_bill_id)),
+    .mutation(async ({ input }) => process_rosetta_pipeline_once(input.source_bill_id)),
 
   process_docket_bill_through_rosetta: adminProcedure
     .input(z.object({ source_bill_id: source_bill_id_param }))
-    .mutation(async ({ input }) => process_docket_bill_through_rosetta_and_genome(input.source_bill_id)),
+    .mutation(async ({ input }) => process_rosetta_pipeline_once(input.source_bill_id)),
 
   get_rosetta_law_view_by_extraction_run: adminProcedure
     .input(z.object({ extraction_run_id: positive_integer_param }))
