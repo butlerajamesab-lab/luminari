@@ -8,7 +8,7 @@ import {
 
 const migration = readFileSync(
   new URL(
-    "../../supabase/migrations/20260804122500_civic_genome_prism_verification_queue.sql",
+    "../../supabase/migrations/20260804123525_civic_genome_prism_verification_queue.sql",
     import.meta.url,
   ),
   "utf8",
