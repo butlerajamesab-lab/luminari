@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - fix/rosetta-source-handoff-terminality
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
 
 permissions:
   contents: write
