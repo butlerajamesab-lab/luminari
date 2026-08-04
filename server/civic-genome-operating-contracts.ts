@@ -50,6 +50,8 @@ type atlas_contract_counts = {
   latest_bridged_at: string | null;
 };
 
+const ROSETTA_STANDALONE_URL = "https://rosetta-v3-platform.onrender.com";
+
 const count = (value: string | undefined): number => {
   const parsed = Number.parseInt(value ?? "0", 10);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -116,11 +118,11 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
         role: "Structural law extraction",
         state: rosetta_assembly_count > 0 ? "operational" : "waiting",
         state_label: rosetta_assembly_count > 0 ? "Operational" : "Waiting for validated extraction",
-        detail: `${rosetta_binding_count} explicit source bindings and ${rosetta_assembly_count} completed assemblies are materialized.`,
+        detail: `${rosetta_binding_count} explicit source bindings and ${rosetta_assembly_count} completed assemblies are materialized. Standalone service: ${ROSETTA_STANDALONE_URL}.`,
         observed_count: rosetta_assembly_count,
         bound_count: rosetta_binding_count,
         last_observed_at: null,
-        boundary: "Rosetta owns five-layer extraction. Civic Genome accepts only completed, provenance-valid law-view outputs.",
+        boundary: "Rosetta owns five-layer extraction. Civic Genome accepts only completed, provenance-valid law-view outputs; Lighthouse links to the standalone service without duplicating it.",
       },
       {
         service_key: "atlas",
