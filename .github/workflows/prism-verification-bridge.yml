@@ -22,4 +22,5 @@ jobs:
           server/services/prism-verification-contract.test.ts
           server/services/prism-rosetta-activation.test.ts
           server/services/prism-rosetta-startup-activation.test.ts
+          server/services/prism-rosetta-queue-worker.test.ts
       - run: pnpm run build
