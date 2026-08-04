@@ -1,0 +1,109 @@
+{
+  "receipt_id": "civic_genome_kaleidoscope_authenticated_handoff_hb2487_2026_08_04",
+  "receipt_version": "1.0.0",
+  "delivery_contract_id": "kaleidoscope.civic_genome_snapshot_delivery.v1",
+  "delivery_contract_version": "1.0.0",
+  "proof_state": "completed",
+  "proof_scope": {
+    "scope_type": "family",
+    "family_id": "a9620a24-9ae4-487d-a55b-5e646c729432",
+    "specimen_label": "WA HB2487",
+    "as_of": "2026-08-04T00:00:00.000Z",
+    "canonical_as_of_floor_observed": "2026-08-03T23:58:10.924644Z"
+  },
+  "source_contract": {
+    "schema_id": "https://luminari.org/civic-genome/contracts/external-snapshot.v1.schema.json",
+    "contract_id": "civic_genome.external_snapshot.v1",
+    "contract_version": "1.0.0",
+    "canonical_owner": "lighthouse/civic_genome"
+  },
+  "source_control": {
+    "lighthouse_repository": "butlerajamesab-lab/luminari",
+    "lighthouse_pull_request": 297,
+    "lighthouse_merge_sha": "835c6f4316b598cabb756890b32e0a698be2ca27",
+    "kaleidoscope_repository": "butlerajamesab-lab/Kaleidoscope",
+    "kaleidoscope_pull_request": 5,
+    "kaleidoscope_merge_sha": "7a180da4001c06c3c9b49c934ad81eb76c14935c"
+  },
+  "authentication": {
+    "scheme": "hmac-sha256",
+    "key_id": "lighthouse-civic-genome-v1",
+    "canonical_envelope_authenticated": true,
+    "shared_secret_logged": false,
+    "source_payload_logged": false
+  },
+  "lighthouse_sender": {
+    "service_id": "srv-d7t4381j2pic73agtepg",
+    "successful_deploy_id": "dep-d9oiq59t0dsc73b5m7s0",
+    "successful_instance_id": "srv-d7t4381j2pic73agtepg-hs2mx",
+    "handoff_started_at": "2026-08-04T00:08:13.746812368Z",
+    "handoff_completed_at": "2026-08-04T00:08:14.424646269Z",
+    "cleanup_deploy_id": "dep-d9oiramgekts73e3n68g",
+    "cleanup_deploy_state": "live",
+    "cleanup_deploy_finished_at": "2026-08-04T00:10:51.802022Z",
+    "handoff_reran_after_cleanup": false
+  },
+  "kaleidoscope_receiver": {
+    "service_id": "srv-d9ob6re417fc73euovag",
+    "service_url": "https://kaleidoscope-zm5d.onrender.com",
+    "configured_receiver_deploy_id": "dep-d9oio2b7uimc739gusq0",
+    "configured_receiver_instance_id": "srv-d9ob6re417fc73euovag-wn7sp",
+    "request_method": "POST",
+    "request_path": "/v1/civic-genome/snapshots/validate",
+    "response_status": 200,
+    "response_time_ms": 402,
+    "validated_at": "2026-08-04T00:08:14.383154007Z",
+    "cleanup_deploy_id": "dep-d9oiscad0e5s73bmjqbg",
+    "cleanup_deploy_state": "live",
+    "cleanup_deploy_finished_at": "2026-08-04T00:12:04.628401Z",
+    "cleanup_instance_id": "srv-d9ob6re417fc73euovag-zh7bp",
+    "cleanup_root_probe_status": 200,
+    "temporary_credentials_cleared": true
+  },
+  "source_snapshot": {
+    "snapshot_id": "cg-family-snapshot-441f296c7e806cf6160f571a95150bbe",
+    "snapshot_hash": "833e7389742454bb6f966166bf1e2c37e0c58457e01cd2ce30daacc845838c24",
+    "export_receipt_id": "cg-export-eaf54ad63492ba4baaf3f0f27027b350",
+    "export_receipt_hash": "c3d786cccbe37a75d285a84a92742f921796e1b18f00a50e614b0571d8cb938f",
+    "component_count": 62
+  },
+  "delivery_receipt": {
+    "delivery_receipt_id": "kcg-delivery-7221ab1cd354fa759754dc618ea5226f",
+    "delivery_receipt_hash": "7221ab1cd354fa759754dc618ea5226fc34ab0effd3fd63cea72bc2f11d4030c",
+    "validation_state": "validated_unbound",
+    "authenticated": true
+  },
+  "binding": {
+    "binding_id": "kcg-binding-de3a938dede6ff77d8b9a8457847a360",
+    "binding_hash": "fa28473fd1bc06f8c15a11aeaafecf9be7aa78f6066eb87dec893bc60338807c",
+    "binding_state": "unresolved",
+    "verification_mapping_state": "unmapped_source_native",
+    "binding_errors": [
+      "source_snapshot_validated_not_persisted",
+      "verification_mapping_rule_not_declared"
+    ]
+  },
+  "write_and_execution_boundary": {
+    "lighthouse_database_write_count": 0,
+    "kaleidoscope_persisted": false,
+    "kaleidoscope_projection_executed": false,
+    "upstream_mutation": false
+  },
+  "initial_failed_attempt": {
+    "deploy_id": "dep-d9oiomi5slgs739bs980",
+    "source_commit_sha": "835c6f4316b598cabb756890b32e0a698be2ca27",
+    "declared_as_of": "2026-08-03T22:24:00.000Z",
+    "failure": "family was not found or as_of precedes the current canonical record state",
+    "receiver_request_sent": false,
+    "delivery_receipt_created": false,
+    "database_write_count": 0,
+    "resolution": "Observed the current canonical as-of floor and reran with the explicit bounded as-of 2026-08-04T00:00:00.000Z."
+  },
+  "explicit_non_claims": [
+    "The source snapshot was validated transiently and was not persisted by Kaleidoscope.",
+    "No source-native verification state was mapped into a Kaleidoscope verification state.",
+    "No Civic Genome binding was accepted.",
+    "No Kaleidoscope projection executed.",
+    "No Docket, Rosetta, Prism, Atlas, Viewfinder, Civic Genome, or Supabase record was mutated by the handoff."
+  ]
+}
