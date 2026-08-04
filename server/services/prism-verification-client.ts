@@ -164,7 +164,11 @@ async function call_prism(
 
 async function record_request(request: VerificationRequest): Promise<string> {
   const input_hash = sha256_hex(canonical_json(request));
-  const result = await query_with_diagnostics<{ input_hash: string }>(
+  const result = await query_with_diagnostics<{
+    input_hash: string;
+    bridge_state: string;
+    superseded_by_request_id: string | null;
+  }>(
     `with inserted as (
        insert into public.lighthouse_prism_verification_requests (
          request_id, lighthouse_case_id, evidence_document_id,
@@ -174,11 +178,11 @@ async function record_request(request: VerificationRequest): Promise<string> {
          input_hash, bridge_state
        ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12,'pending')
        on conflict (request_id) do nothing
-       returning input_hash
+       returning input_hash, bridge_state, superseded_by_request_id
      )
-     select input_hash from inserted
+     select input_hash, bridge_state, superseded_by_request_id from inserted
      union all
-     select input_hash
+     select input_hash, bridge_state, superseded_by_request_id
      from public.lighthouse_prism_verification_requests
      where request_id = $1
      limit 1`,
@@ -198,8 +202,12 @@ async function record_request(request: VerificationRequest): Promise<string> {
     ],
     { label: "prism_record_request", pool_acquire_timeout_ms: 1_000, query_timeout_ms: 5_000 },
   );
-  if (result.rows[0]?.input_hash !== input_hash) {
+  const recorded = result.rows[0];
+  if (recorded?.input_hash !== input_hash) {
     throw new PrismBoundaryError("request_id_conflict", 409, "request_id_conflict");
+  }
+  if (recorded.bridge_state === "superseded" || recorded.superseded_by_request_id) {
+    throw new PrismBoundaryError("request_id_conflict", 409, "request_id_superseded");
   }
   return input_hash;
 }
