@@ -6,6 +6,11 @@ on:
       - fix/california-official-pdf-session
     paths:
       - .github/workflows/apply-california-official-pdf-session.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/apply-california-official-pdf-session.yml
 
 permissions:
   contents: write
