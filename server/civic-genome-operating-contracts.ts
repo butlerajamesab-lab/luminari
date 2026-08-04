@@ -17,6 +17,7 @@ export type civic_genome_contract_state =
 export type civic_genome_operating_contract = {
   service_key: "docket" | "rosetta" | "atlas" | "prism" | "viewfinder" | "kaleidoscope" | "esquire";
   display_name: string;
+  external_url: string | null;
   role: string;
   state: civic_genome_contract_state;
   state_label: string;
@@ -49,6 +50,8 @@ type atlas_contract_counts = {
   signal_count: string;
   latest_bridged_at: string | null;
 };
+
+const ROSETTA_STANDALONE_URL = "https://rosetta-v3-platform.onrender.com";
 
 const count = (value: string | undefined): number => {
   const parsed = Number.parseInt(value ?? "0", 10);
@@ -101,6 +104,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
       {
         service_key: "docket",
         display_name: "Docket Room",
+        external_url: null,
         role: "Source observation",
         state: bill_count > 0 ? "operational" : "ready_empty",
         state_label: bill_count > 0 ? "Operational" : "No materialized bills",
@@ -113,6 +117,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
       {
         service_key: "rosetta",
         display_name: "Rosetta",
+        external_url: ROSETTA_STANDALONE_URL,
         role: "Structural law extraction",
         state: rosetta_assembly_count > 0 ? "operational" : "waiting",
         state_label: rosetta_assembly_count > 0 ? "Operational" : "Waiting for validated extraction",
@@ -120,11 +125,12 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
         observed_count: rosetta_assembly_count,
         bound_count: rosetta_binding_count,
         last_observed_at: null,
-        boundary: "Rosetta owns five-layer extraction. Civic Genome accepts only completed, provenance-valid law-view outputs.",
+        boundary: "Rosetta owns five-layer extraction. Civic Genome accepts only completed, provenance-valid law-view outputs; Lighthouse links to the standalone service without duplicating it.",
       },
       {
         service_key: "atlas",
         display_name: "Atlas",
+        external_url: null,
         role: "Verified signal reference",
         state: atlas === null ? "unavailable" : atlas_signal_count > 0 ? "available_unbound" : "ready_empty",
         state_label: atlas === null ? "Verified export unavailable" : atlas_signal_count > 0 ? "Available, not Genome-bound" : "Verified export empty",
@@ -139,6 +145,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
       {
         service_key: "prism",
         display_name: "Prism",
+        external_url: null,
         role: "Deterministic source-binding verification",
         state: prism_run_count > 0 ? "operational" : prism_binding_count > 0 ? "available_unbound" : "ready_empty",
         state_label: prism_run_count > 0 ? "Operational" : prism_binding_count > 0 ? "Bindings available" : "No verification receipts",
@@ -151,6 +158,7 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
       {
         service_key: "viewfinder",
         display_name: "Viewfinder",
+        external_url: null,
         role: "Jurisdiction comparison",
         state: comparison_matrix_count > 0 ? "operational" : "ready_empty",
         state_label: comparison_matrix_count > 0 ? "Operational" : "Substrate ready, no matrices",
@@ -160,10 +168,14 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
         last_observed_at: null,
         boundary: "Viewfinder reads Civic Genome comparison projections and does not mutate source observations.",
       },
-      get_kaleidoscope_civic_genome_contract(),
+      {
+        ...get_kaleidoscope_civic_genome_contract(),
+        external_url: null,
+      },
       {
         service_key: "esquire",
         display_name: "Esquire",
+        external_url: null,
         role: "Action packaging",
         state: relationship_count > 0 ? "available_unbound" : "not_established",
         state_label: relationship_count > 0 ? "Genome evidence available, unbound" : "Contract not established",
