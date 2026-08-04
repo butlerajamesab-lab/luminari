@@ -66,7 +66,7 @@ beforeEach(() => {
 });
 
 describe("Civic Genome operating contracts", () => {
-  it("reports Atlas as unbound and Prism as an operational verification seam", async () => {
+  it("reports Atlas as unbound, Prism as operational, and the standalone Rosetta service visibly without duplicating it", async () => {
     query
       .mockResolvedValueOnce({
         rows: [{
@@ -87,9 +87,12 @@ describe("Civic Genome operating contracts", () => {
       });
 
     const result = await get_civic_genome_operating_contracts();
+    const rosetta = result.contracts.find(contract => contract.service_key === "rosetta");
     const atlas = result.contracts.find(contract => contract.service_key === "atlas");
     const prism = result.contracts.find(contract => contract.service_key === "prism");
 
+    expect(rosetta?.detail).toContain("https://rosetta-v3-platform.onrender.com");
+    expect(rosetta?.boundary).toContain("without duplicating it");
     expect(atlas?.state).toBe("available_unbound");
     expect(atlas?.observed_count).toBe(63);
     expect(atlas?.bound_count).toBe(0);
