@@ -1,6 +1,9 @@
 import { activate_prism_for_rosetta_assembly } from "./prism-rosetta-activation";
+import { start_prism_rosetta_queue_worker } from "./prism-rosetta-queue-worker";
 
 export async function run_prism_rosetta_activation_from_environment(): Promise<void> {
+  start_prism_rosetta_queue_worker();
+
   const genome_bill_id = process.env.PRISM_ROSETTA_ACTIVATION_GENOME_BILL_ID?.trim();
   if (!genome_bill_id) return;
 
