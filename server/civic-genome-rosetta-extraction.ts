@@ -12,11 +12,13 @@ import {
   type rosetta_family_orchestration_result,
 } from "./civic-genome-rosetta-family-orchestration";
 import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
+import { fetch_california_official_pdf } from "./california-legislative-source";
 
 const PDF_PARSE_VERSION = "2.4.5";
 const WA_HTML_EXTRACTOR_VERSION = "wa-official-session-law-html-strip-v1";
 const OFFICIAL_HTML_EXTRACTOR_VERSION = "official-legislative-html-strip-v1";
 const PDF_EXTRACTOR_VERSION = `pdf-parse-${PDF_PARSE_VERSION}-getText-v1`;
+const CA_PDF_EXTRACTOR_VERSION = `ca-official-bill-pdf-v1+${PDF_EXTRACTOR_VERSION}`;
 const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
 
 export type rosetta_extraction_receipt = {
@@ -319,12 +321,19 @@ async function extract_source(
   const document_type = String(document.type ?? "official").trim() || "official";
   if (!selected_source_url || !doc_id) throw new Error("docket_document_identity_incomplete");
 
-  const source_url = derive_california_official_text_url(selected_source_url)
-    ?? selected_source_url;
-  const official = await fetch_bytes(source_url);
+  const california_page_url = derive_california_official_text_url(selected_source_url);
+  const california_pdf = california_page_url
+    ? await fetch_california_official_pdf(selected_source_url)
+    : null;
+  const source_url = california_pdf?.source_url ?? selected_source_url;
+  const official = california_pdf
+    ? { bytes: california_pdf.bytes, content_type: "application/pdf" }
+    : await fetch_bytes(source_url);
   const source_byte_hash = sha256(official.bytes);
   const is_pdf = official.bytes.subarray(0, 5).toString("ascii") === "%PDF-";
-  const html_url = is_pdf ? derive_wa_official_html_url(source_url) : null;
+  const html_url = is_pdf && !california_pdf
+    ? derive_wa_official_html_url(source_url)
+    : null;
 
   let source_text: string;
   let source_version: string;
@@ -345,8 +354,12 @@ async function extract_source(
     extraction_text_byte_hash = sha256(html.bytes);
   } else if (is_pdf) {
     source_text = await extract_pdf_text(official.bytes);
-    source_version = `legiscan_text:${doc_id}:${document_type}:${PDF_EXTRACTOR_VERSION}`;
-    extractor_version = PDF_EXTRACTOR_VERSION;
+    source_version = california_pdf
+      ? `legiscan_text:${doc_id}:${document_type}:${CA_PDF_EXTRACTOR_VERSION}`
+      : `legiscan_text:${doc_id}:${document_type}:${PDF_EXTRACTOR_VERSION}`;
+    extractor_version = california_pdf
+      ? CA_PDF_EXTRACTOR_VERSION
+      : PDF_EXTRACTOR_VERSION;
     media_type = "application/pdf";
   } else if (source_is_html(official.bytes, official.content_type)) {
     source_text = normalize_official_html(official.bytes.toString("utf8"));
@@ -379,6 +392,8 @@ async function extract_source(
       docket_source_url: source_url,
       provider_state_link: selected_source_url,
       source_url_rewritten: source_url !== selected_source_url,
+      california_bill_page_url: california_pdf?.bill_page_url ?? null,
+      california_session_bootstrapped: california_pdf?.session_bootstrapped ?? false,
       docket_source_content_type: official.content_type,
       extraction_text_url,
       extraction_text_byte_hash,
