@@ -1,35 +1,40 @@
-import snapshot_proof from "../docs/receipts/CIVIC_GENOME_EXTERNAL_SNAPSHOT_HB2487_PROOF_2026-08-03.json";
+import handoff_receipt from "../docs/receipts/CIVIC_GENOME_KALEIDOSCOPE_AUTHENTICATED_HANDOFF_HB2487_2026-08-04.json";
 import type { civic_genome_operating_contract } from "./civic-genome-operating-contracts";
 
-type kaleidoscope_snapshot_proof = typeof snapshot_proof;
+type kaleidoscope_authenticated_handoff_receipt = typeof handoff_receipt;
 
 export function build_kaleidoscope_civic_genome_contract(
-  proof: kaleidoscope_snapshot_proof,
+  receipt: kaleidoscope_authenticated_handoff_receipt,
 ): civic_genome_operating_contract {
-  const completed = proof.proof_state === "completed"
-    && proof.replay.first_replay_state === "original"
-    && proof.replay.second_replay_state === "identical_replay"
-    && Object.values(proof.replay.identical).every(value => value === true)
-    && proof.write_boundary.database_write_count === 0;
+  const completed = receipt.proof_state === "completed"
+    && receipt.authentication.canonical_envelope_authenticated === true
+    && receipt.delivery_receipt.validation_state === "validated_unbound"
+    && receipt.delivery_receipt.authenticated === true
+    && receipt.binding.binding_state === "unresolved"
+    && receipt.binding.verification_mapping_state === "unmapped_source_native"
+    && receipt.write_and_execution_boundary.lighthouse_database_write_count === 0
+    && receipt.write_and_execution_boundary.kaleidoscope_persisted === false
+    && receipt.write_and_execution_boundary.kaleidoscope_projection_executed === false
+    && receipt.write_and_execution_boundary.upstream_mutation === false;
 
   return {
     service_key: "kaleidoscope",
     display_name: "Kaleidoscope",
-    role: "Immutable baseline consumer",
+    role: "Authenticated immutable baseline consumer",
     state: completed ? "available_unbound" : "not_established",
     state_label: completed
-      ? "Snapshot producer proven, consumer unbound"
-      : "Contract proof incomplete",
+      ? "Authenticated snapshot validated, binding unresolved"
+      : "Authenticated handoff proof incomplete",
     detail: completed
-      ? `${proof.snapshot.component_count} bounded Civic Genome components replayed identically; Kaleidoscope has not received or accepted the source payload.`
-      : "The Civic Genome external snapshot proof is not complete.",
+      ? `${receipt.source_snapshot.component_count} bounded Civic Genome components were authenticated and validated by Kaleidoscope; the source was not persisted, verification mapping remains undeclared, and no projection executed.`
+      : "The authenticated Civic Genome to Kaleidoscope handoff proof is incomplete.",
     observed_count: completed ? 1 : 0,
     bound_count: 0,
-    last_observed_at: completed ? proof.render.proof_completed_at : null,
-    boundary: "Kaleidoscope may consume only content-addressed immutable Civic Genome snapshots through a declared verification mapping. Projection outputs never mutate Civic Genome observations, traits, relationships, events, or findings.",
+    last_observed_at: completed ? receipt.kaleidoscope_receiver.validated_at : null,
+    boundary: "Kaleidoscope may authenticate and validate content-addressed immutable Civic Genome snapshots, but the binding remains unresolved until a declared verification mapping exists. Validation never mutates Civic Genome state and does not authorize projection execution.",
   };
 }
 
 export function get_kaleidoscope_civic_genome_contract(): civic_genome_operating_contract {
-  return build_kaleidoscope_civic_genome_contract(snapshot_proof);
+  return build_kaleidoscope_civic_genome_contract(handoff_receipt);
 }
