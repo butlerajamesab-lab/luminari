@@ -120,6 +120,51 @@ where assembly.run_status = 'completed'
 on conflict (assembly_run_id, prism_rule_set_id, prism_rule_set_version)
   do nothing;
 
+create or replace function public.enqueue_civic_genome_prism_verification()
+returns trigger
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+begin
+  if new.run_status = 'completed'
+     and new.verification_state = 'complete'
+     and new.trait_count > 0 then
+    insert into public.civic_genome_prism_verification_queue (
+      assembly_run_id,
+      genome_bill_id,
+      prism_rule_set_id,
+      prism_rule_set_version,
+      queue_state,
+      expected_trait_count,
+      receipt_count,
+      eligible_at,
+      next_attempt_at
+    ) values (
+      new.assembly_run_id,
+      new.genome_bill_id,
+      'prism-rosetta-structural-binding',
+      '1.0.1',
+      'eligible',
+      new.trait_count,
+      0,
+      coalesce(new.completed_at, new.created_at, now()),
+      now()
+    )
+    on conflict (assembly_run_id, prism_rule_set_id, prism_rule_set_version)
+      do nothing;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists civic_genome_assembly_enqueue_prism_verification
+  on public.civic_genome_assembly_run;
+create trigger civic_genome_assembly_enqueue_prism_verification
+after insert or update of run_status, verification_state, trait_count, completed_at
+on public.civic_genome_assembly_run
+for each row execute function public.enqueue_civic_genome_prism_verification();
+
 create or replace view public.v_civic_genome_prism_verification_queue_status
 with (security_invoker = true)
 as
@@ -155,6 +200,8 @@ alter table public.civic_genome_prism_verification_queue force row level securit
 revoke all on table public.civic_genome_prism_verification_queue
   from public, anon, authenticated;
 revoke all on table public.v_civic_genome_prism_verification_queue_status
+  from public, anon, authenticated;
+revoke execute on function public.enqueue_civic_genome_prism_verification()
   from public, anon, authenticated;
 
 grant select, insert, update on table public.civic_genome_prism_verification_queue
