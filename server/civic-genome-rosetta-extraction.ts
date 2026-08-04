@@ -204,6 +204,27 @@ function derive_wa_official_html_url(pdf_url: string): string | null {
   return pdf_url.replace(/\/Pdf\//i, "/Htm/").replace(/\.pdf$/i, ".htm");
 }
 
+/**
+ * California's state_link uses a client-side JSF billText route whose
+ * fragment is not sent to the server. The official billNav route is the
+ * server-rendered text surface for the same bill identity.
+ */
+export function derive_california_official_text_url(source_url: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(source_url);
+  } catch {
+    return null;
+  }
+  if (parsed.hostname.toLowerCase() !== "leginfo.legislature.ca.gov") return null;
+  if (!/\/faces\/billTextClient\.xhtml$/i.test(parsed.pathname)) return null;
+  const bill_id = parsed.searchParams.get("bill_id")?.trim();
+  if (!bill_id) return null;
+  const canonical = new URL("https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml");
+  canonical.searchParams.set("bill_id", bill_id);
+  return canonical.toString();
+}
+
 /** Mirrors the declared SQL control extractor exactly. It deliberately preserves
  * an initial UTF-8 BOM because PostgreSQL POSIX whitespace normalization does not
  * consume it. No semantic rewriting is performed. */
@@ -293,11 +314,13 @@ async function extract_source(
   cached: cached_docket_bill,
   document: docket_text_document,
 ): Promise<extracted_source> {
-  const source_url = String(document.state_link ?? "").trim();
+  const selected_source_url = String(document.state_link ?? "").trim();
   const doc_id = String(document.doc_id ?? "").trim();
   const document_type = String(document.type ?? "official").trim() || "official";
-  if (!source_url || !doc_id) throw new Error("docket_document_identity_incomplete");
+  if (!selected_source_url || !doc_id) throw new Error("docket_document_identity_incomplete");
 
+  const source_url = derive_california_official_text_url(selected_source_url)
+    ?? selected_source_url;
   const official = await fetch_bytes(source_url);
   const source_byte_hash = sha256(official.bytes);
   const is_pdf = official.bytes.subarray(0, 5).toString("ascii") === "%PDF-";
@@ -354,6 +377,8 @@ async function extract_source(
       provider_text_hash: document.text_hash ?? null,
       provider_text_size: document.text_size ?? null,
       docket_source_url: source_url,
+      provider_state_link: selected_source_url,
+      source_url_rewritten: source_url !== selected_source_url,
       docket_source_content_type: official.content_type,
       extraction_text_url,
       extraction_text_byte_hash,
