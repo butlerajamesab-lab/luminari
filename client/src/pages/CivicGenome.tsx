@@ -34,6 +34,7 @@ const stable_read_options = { retry: false, refetchOnWindowFocus: false } as con
 type operating_contract = {
   service_key: string;
   display_name: string;
+  external_url: string | null;
   role: string;
   state: string;
   state_label: string;
@@ -183,6 +184,7 @@ export default function CivicGenomePage() {
       {
         service_key: "atlas",
         display_name: "Atlas",
+        external_url: null,
         role: "Verified signal reference",
         state: "not_established",
         state_label: "No Genome binding",
@@ -195,6 +197,7 @@ export default function CivicGenomePage() {
       {
         service_key: "prism",
         display_name: "Prism",
+        external_url: null,
         role: "Reasoning and findings",
         state: "not_established",
         state_label: "Contract not established",
@@ -207,6 +210,7 @@ export default function CivicGenomePage() {
       {
         service_key: "viewfinder",
         display_name: "Viewfinder",
+        external_url: null,
         role: "Comparison materialization",
         state: "not_established",
         state_label: "No materialized comparison",
@@ -219,6 +223,7 @@ export default function CivicGenomePage() {
       {
         service_key: "kaleidoscope",
         display_name: "Kaleidoscope",
+        external_url: null,
         role: "Projection and scenario reference",
         state: "not_established",
         state_label: "Contract not established",
@@ -306,6 +311,7 @@ export default function CivicGenomePage() {
             </div>
             <div style={{ fontFamily: mono, color: p.green, fontSize: ".61rem" }}>{contract.role}</div>
             <div style={{ fontFamily: sans, color: p.muted, fontSize: ".73rem", lineHeight: 1.45 }}>{contract.detail}</div>
+            {contract.external_url && <a href={contract.external_url} target="_blank" rel="noopener noreferrer" style={{ alignSelf: "flex-start", color: "#7dd3fc", fontFamily: mono, fontSize: ".62rem", fontWeight: 700, textDecoration: "underline", textUnderlineOffset: 3 }}>Open {contract.display_name} service</a>}
             <div style={{ display: "flex", gap: ".8rem", flexWrap: "wrap", fontFamily: mono, color: p.muted, fontSize: ".58rem" }}>
               <span>observed {contract.observed_count ?? "not reported"}</span>
               <span>bound {contract.bound_count ?? "not reported"}</span>
