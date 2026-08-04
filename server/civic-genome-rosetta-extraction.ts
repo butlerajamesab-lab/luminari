@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { PDFParse } from "pdf-parse";
 
 import { getPool } from "./db";
+import { get_bill } from "./services/legiscan";
 import {
   ingest_docket_bill_to_rosetta_source,
   type rosetta_source_ingestion_result,
@@ -14,6 +15,7 @@ import { create_rosetta_supabase_headers } from "./rosetta-supabase-auth";
 
 const PDF_PARSE_VERSION = "2.4.5";
 const WA_HTML_EXTRACTOR_VERSION = "wa-official-session-law-html-strip-v1";
+const OFFICIAL_HTML_EXTRACTOR_VERSION = "official-legislative-html-strip-v1";
 const PDF_EXTRACTOR_VERSION = `pdf-parse-${PDF_PARSE_VERSION}-getText-v1`;
 const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
 
@@ -56,6 +58,7 @@ type docket_text_document = {
   state_link?: string;
   text_hash?: string;
   text_size?: number | string;
+  mime?: string;
 };
 
 type docket_bill_payload = Record<string, unknown> & {
@@ -78,6 +81,7 @@ type extracted_source = {
   source_byte_hash: string;
   source_url: string;
   source_version: string;
+  media_type: string;
   provider_hash: string | null;
   extractor_version: string;
   source_metadata: Record<string, unknown>;
@@ -118,7 +122,7 @@ function document_score(document: docket_text_document): number {
   return 100;
 }
 
-function select_official_document(bill: docket_bill_payload): docket_text_document {
+export function select_official_document(bill: docket_bill_payload): docket_text_document {
   const candidates = collect_text_documents(bill.texts)
     .filter(document => {
       const source_url = String(document.state_link ?? "").trim();
@@ -140,8 +144,11 @@ function select_official_document(bill: docket_bill_payload): docket_text_docume
   return selected;
 }
 
-async function load_cached_docket_bill(source_bill_id: number): Promise<cached_docket_bill> {
-  const { rows } = await getPool().query<cached_docket_bill>(
+async function load_or_refresh_cached_docket_bill(
+  source_bill_id: number,
+): Promise<cached_docket_bill> {
+  const pool = getPool();
+  const { rows } = await pool.query<cached_docket_bill>(
     `select bill, fetched_at::text
        from public.docket_bill_detail_cache
       where bill_id = $1
@@ -149,9 +156,29 @@ async function load_cached_docket_bill(source_bill_id: number): Promise<cached_d
       limit 1`,
     [source_bill_id],
   );
-  const row = rows[0];
-  if (!row || !as_record(row.bill)) throw new Error("docket_bill_detail_cache_record_not_found");
-  return row;
+  const existing = rows[0];
+  if (existing && as_record(existing.bill)) return existing;
+
+  const refreshed = await get_bill(source_bill_id);
+  if (!as_record(refreshed)) throw new Error("docket_bill_detail_refresh_invalid");
+  const fetched_at = new Date().toISOString();
+
+  await pool.query(
+    `insert into public.docket_bill_detail_cache
+       (bill_id, bill, fetched_at, source, created_at, updated_at)
+     values ($1, $2::jsonb, $3::timestamptz, 'legiscan_get_bill', now(), now())
+     on conflict (bill_id) do update
+       set bill = excluded.bill,
+           fetched_at = excluded.fetched_at,
+           source = excluded.source,
+           updated_at = now()`,
+    [source_bill_id, JSON.stringify(refreshed), fetched_at],
+  );
+
+  return {
+    bill: refreshed as docket_bill_payload,
+    fetched_at,
+  };
 }
 
 async function fetch_bytes(url: string): Promise<{ bytes: Buffer; content_type: string | null }> {
@@ -195,6 +222,51 @@ export function normalize_wa_official_html(html: string): string {
   return `${bom}${normalized}`;
 }
 
+function decode_html_entities(value: string): string {
+  return value
+    .replace(/&nbsp;|&#160;|&#xA0;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, "\"")
+    .replace(/&apos;|&#39;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&#(\d+);/g, (_match, code: string) => {
+      const value = Number(code);
+      return Number.isInteger(value) && value >= 0 && value <= 0x10ffff
+        ? String.fromCodePoint(value)
+        : " ";
+    })
+    .replace(/&#x([0-9a-f]+);/gi, (_match, code: string) => {
+      const value = Number.parseInt(code, 16);
+      return Number.isInteger(value) && value >= 0 && value <= 0x10ffff
+        ? String.fromCodePoint(value)
+        : " ";
+    });
+}
+
+/**
+ * Deterministic structural extraction for official legislative HTML sources.
+ * It removes executable/page-navigation containers, preserves visible source
+ * order, decodes declared entities, and normalizes whitespace only. It does not
+ * paraphrase, summarize, or infer legal meaning.
+ */
+export function normalize_official_html(html: string): string {
+  const body_match = html.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i);
+  const body = body_match?.[1] ?? html;
+  const without_chrome = body
+    .replace(/<!--([\s\S]*?)-->/g, " ")
+    .replace(/<(script|style|noscript|svg|form|nav|header|footer)\b[^>]*>[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(?:p|div|section|article|tr|li|h[1-6]|pre|table)>/gi, "\n")
+    .replace(/<[^>]+>/g, " ");
+  const normalized = decode_html_entities(without_chrome)
+    .replace(/\r/g, "")
+    .replace(/[ \t\n\v\f]+/g, " ")
+    .trim();
+  if (normalized.length < 200) throw new Error("docket_html_text_incomplete");
+  return normalized;
+}
+
 async function extract_pdf_text(pdf_bytes: Buffer): Promise<string> {
   if (pdf_bytes.subarray(0, 5).toString("ascii") !== "%PDF-") {
     throw new Error("docket_source_is_not_pdf");
@@ -210,6 +282,12 @@ async function extract_pdf_text(pdf_bytes: Buffer): Promise<string> {
   }
 }
 
+function source_is_html(bytes: Buffer, content_type: string | null): boolean {
+  if (String(content_type ?? "").toLowerCase().includes("html")) return true;
+  const prefix = bytes.subarray(0, Math.min(bytes.length, 512)).toString("utf8").toLowerCase();
+  return prefix.includes("<!doctype html") || prefix.includes("<html") || prefix.includes("<body");
+}
+
 async function extract_source(
   source_bill_id: number,
   cached: cached_docket_bill,
@@ -220,16 +298,15 @@ async function extract_source(
   const document_type = String(document.type ?? "official").trim() || "official";
   if (!source_url || !doc_id) throw new Error("docket_document_identity_incomplete");
 
-  const pdf = await fetch_bytes(source_url);
-  if (pdf.bytes.subarray(0, 5).toString("ascii") !== "%PDF-") {
-    throw new Error("docket_official_source_not_pdf");
-  }
-  const source_byte_hash = sha256(pdf.bytes);
-  const html_url = derive_wa_official_html_url(source_url);
+  const official = await fetch_bytes(source_url);
+  const source_byte_hash = sha256(official.bytes);
+  const is_pdf = official.bytes.subarray(0, 5).toString("ascii") === "%PDF-";
+  const html_url = is_pdf ? derive_wa_official_html_url(source_url) : null;
 
   let source_text: string;
   let source_version: string;
   let extractor_version: string;
+  let media_type: string;
   let extraction_text_url: string = source_url;
   let extraction_text_byte_hash: string = source_byte_hash;
 
@@ -240,12 +317,21 @@ async function extract_source(
     if (source_text.trim().length < 200) throw new Error("docket_html_text_incomplete");
     source_version = `legiscan_text:${doc_id}:${document_type}`;
     extractor_version = WA_HTML_EXTRACTOR_VERSION;
+    media_type = "application/pdf";
     extraction_text_url = html_url;
     extraction_text_byte_hash = sha256(html.bytes);
-  } else {
-    source_text = await extract_pdf_text(pdf.bytes);
+  } else if (is_pdf) {
+    source_text = await extract_pdf_text(official.bytes);
     source_version = `legiscan_text:${doc_id}:${document_type}:${PDF_EXTRACTOR_VERSION}`;
     extractor_version = PDF_EXTRACTOR_VERSION;
+    media_type = "application/pdf";
+  } else if (source_is_html(official.bytes, official.content_type)) {
+    source_text = normalize_official_html(official.bytes.toString("utf8"));
+    source_version = `legiscan_text:${doc_id}:${document_type}:${OFFICIAL_HTML_EXTRACTOR_VERSION}`;
+    extractor_version = OFFICIAL_HTML_EXTRACTOR_VERSION;
+    media_type = "text/html";
+  } else {
+    throw new Error("docket_official_source_format_unsupported");
   }
 
   const source_content_hash = sha256(source_text);
@@ -255,6 +341,7 @@ async function extract_source(
     source_byte_hash,
     source_url,
     source_version,
+    media_type,
     provider_hash: document.text_hash ? String(document.text_hash) : null,
     extractor_version,
     source_metadata: {
@@ -267,7 +354,7 @@ async function extract_source(
       provider_text_hash: document.text_hash ?? null,
       provider_text_size: document.text_size ?? null,
       docket_source_url: source_url,
-      docket_source_content_type: pdf.content_type,
+      docket_source_content_type: official.content_type,
       extraction_text_url,
       extraction_text_byte_hash,
       fetched_at: cached.fetched_at,
@@ -295,7 +382,7 @@ async function invoke_rosetta_extraction(
       p_expected_source_content_hash: source.source_content_hash,
       p_source_url: source.source_url,
       p_source_version: source.source_version,
-      p_media_type: "application/pdf",
+      p_media_type: source.media_type,
       p_source_byte_hash: source.source_byte_hash,
       p_source_provider_hash: source.provider_hash,
       p_reference_date: reference_date,
@@ -324,10 +411,13 @@ function deterministic_reference_date(cached: cached_docket_bill): string {
 export async function run_docket_bill_through_rosetta(
   source_bill_id: number,
 ): Promise<{ ingestion: rosetta_source_ingestion_result; extraction: rosetta_extraction_receipt }> {
-  const ingestion = await ingest_docket_bill_to_rosetta_source(source_bill_id);
-  const cached = await load_cached_docket_bill(source_bill_id);
+  // Validate and hash the official source before a Rosetta extraction attempt is
+  // created. This prevents source-fetch or parser failures from leaving an
+  // indefinitely in-progress handoff row.
+  const cached = await load_or_refresh_cached_docket_bill(source_bill_id);
   const document = select_official_document(cached.bill);
   const source = await extract_source(source_bill_id, cached, document);
+  const ingestion = await ingest_docket_bill_to_rosetta_source(source_bill_id);
   const extraction = await invoke_rosetta_extraction(
     ingestion.source_document_id,
     source,
