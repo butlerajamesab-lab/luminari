@@ -3,6 +3,7 @@ import {
   summarize_civic_genome_external_snapshot_v1,
 } from "./civic-genome-external-snapshot-producer";
 import { run_civic_genome_kaleidoscope_handoff_from_environment } from "./civic-genome-kaleidoscope-handoff-startup";
+import { run_civic_genome_prism_snapshot_handoff_from_environment } from "./civic-genome-prism-snapshot-handoff-startup";
 
 const FAMILY_ENV = "CIVIC_GENOME_EXTERNAL_SNAPSHOT_PROOF_FAMILY_ID";
 const AS_OF_ENV = "CIVIC_GENOME_EXTERNAL_SNAPSHOT_PROOF_AS_OF";
@@ -28,10 +29,9 @@ function required_pair(): { family_id: string; as_of: string } | null {
 /**
  * Optional bounded production acceptance lane.
  *
- * The original replay proof remains available through its exact environment
- * pair. The authenticated Kaleidoscope handoff has its own complete
- * environment contract and runs through this same startup acceptance lane so
- * normal deployments remain no-ops. Neither path writes database state.
+ * Each external consumer has its own complete environment contract and runs
+ * through this no-op-by-default startup lane. These paths produce immutable
+ * read-only snapshots and perform no Civic Genome database write.
  */
 export async function run_civic_genome_external_snapshot_proof_from_environment(): Promise<void> {
   const configured = required_pair();
@@ -81,4 +81,5 @@ export async function run_civic_genome_external_snapshot_proof_from_environment(
   }
 
   await run_civic_genome_kaleidoscope_handoff_from_environment();
+  await run_civic_genome_prism_snapshot_handoff_from_environment();
 }
