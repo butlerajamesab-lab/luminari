@@ -16,6 +16,9 @@ on:
       - "server/civic-genome-kaleidoscope-handoff.ts"
       - "server/civic-genome-kaleidoscope-handoff-startup.ts"
       - "server/civic-genome-kaleidoscope-handoff.test.ts"
+      - "server/civic-genome-prism-snapshot-handoff.ts"
+      - "server/civic-genome-prism-snapshot-handoff-startup.ts"
+      - "server/civic-genome-prism-snapshot-handoff.test.ts"
       - "server/civic-genome-operating-contracts.ts"
       - "server/lib/determinism.ts"
       - "server/lib/determinism.test.ts"
@@ -38,11 +41,12 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm install --legacy-peer-deps
-      - name: Run snapshot, hashing, Kaleidoscope ledger, and authenticated handoff contracts
+      - name: Run snapshot, hashing, Kaleidoscope, and Prism handoff contracts
         run: >-
           npx vitest run
           server/civic-genome-external-snapshot-contract.test.ts
           server/civic-genome-external-snapshot-producer.test.ts
           server/civic-genome-kaleidoscope-contract.test.ts
           server/civic-genome-kaleidoscope-handoff.test.ts
+          server/civic-genome-prism-snapshot-handoff.test.ts
           server/lib/determinism.test.ts
