@@ -1,0 +1,84 @@
+name: Patch Civic Genome Rosetta link
+
+on:
+  push:
+    branches:
+      - fix/civic-genome-rosetta-standalone-ledger-url
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - name: Apply exact bounded UI patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("client/src/pages/CivicGenome.tsx")
+          text = path.read_text(encoding="utf-8")
+
+          type_before = "  display_name: string;\n  role: string;"
+          type_after = "  display_name: string;\n  external_url: string | null;\n  role: string;"
+          if text.count(type_before) != 1:
+              raise SystemExit("unexpected operating_contract type shape")
+          text = text.replace(type_before, type_after, 1)
+
+          start = text.index("const explicit_empty_contracts")
+          end = text.index("const returned_keys", start)
+          fallback = text[start:end]
+          pattern = re.compile(
+              r'(?P<prefix>\s+service_key: "(?:atlas|prism|viewfinder|kaleidoscope)",\n'
+              r'\s+display_name: "[^"]+",\n)'
+              r'(?P<indent>\s+)role:'
+          )
+          fallback, count = pattern.subn(
+              lambda match: match.group("prefix") + match.group("indent")
+              + "external_url: null,\n" + match.group("indent") + "role:",
+              fallback,
+          )
+          if count != 4:
+              raise SystemExit(f"expected four fallback contracts, patched {count}")
+          text = text[:start] + fallback + text[end:]
+
+          detail = '                  <div style={{ fontSize: 13, lineHeight: 1.5, color: "#c8d5ea" }}>{contract.detail}</div>\n'
+          if text.count(detail) != 1:
+              raise SystemExit("unexpected operating-contract detail shape")
+          link = detail + '''                  {contract.external_url && (
+                    <a
+                      href={contract.external_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        alignSelf: "flex-start",
+                        color: "#7dd3fc",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        textDecoration: "underline",
+                        textUnderlineOffset: 3,
+                      }}
+                    >
+                      Open {contract.display_name} service
+                    </a>
+                  )}
+'''
+          text = text.replace(detail, link, 1)
+          path.write_text(text, encoding="utf-8")
+          PY
+      - name: Commit bounded UI patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add client/src/pages/CivicGenome.tsx
+          git diff --cached --check
+          git diff --cached --quiet && exit 1
+          git commit -m "Render Rosetta operating contract as external link"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
