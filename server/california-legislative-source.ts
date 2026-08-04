@@ -118,6 +118,35 @@ export function derive_california_official_text_url(source_url: string): string 
   return canonical.toString();
 }
 
+/**
+ * California encodes the selected document version in the provider fragment and
+ * uses a stable billPdf URL identity. Derive only when the complete current
+ * session/bill/version grammar is present; never guess a missing version.
+ */
+export function derive_california_declared_pdf_url(
+  provider_state_link: string,
+): string | null {
+  let provider: URL;
+  try {
+    provider = new URL(provider_state_link);
+  } catch {
+    return null;
+  }
+  if (provider.hostname.toLowerCase() !== CALIFORNIA_HOST) return null;
+  if (!/\/faces\/billTextClient\.xhtml$/i.test(provider.pathname)) return null;
+
+  const bill_id = provider.searchParams.get("bill_id")?.trim() ?? "";
+  const document_version = provider.hash.replace(/^#/, "").trim().toUpperCase();
+  if (!/^\d{8}0[A-Z0-9-]+$/.test(bill_id)) return null;
+  if (!/^\d{2}[A-Z]{3}$/.test(document_version)) return null;
+
+  const pdf_version = `${bill_id.slice(0, 4)}${bill_id.slice(8)}${document_version}`;
+  const pdf = new URL(`https://${CALIFORNIA_HOST}/faces/billPdf.xhtml`);
+  pdf.searchParams.set("bill_id", bill_id);
+  pdf.searchParams.set("version", pdf_version);
+  return pdf.toString();
+}
+
 export function extract_california_official_pdf_url(
   html: string,
   bill_page_url: string,
@@ -179,7 +208,10 @@ export async function fetch_california_official_pdf(
   provider_state_link: string,
 ): Promise<california_official_pdf_receipt> {
   const bill_page_url = derive_california_official_text_url(provider_state_link);
-  if (!bill_page_url) throw new Error("california_bill_page_identity_invalid");
+  const declared_pdf_url = derive_california_declared_pdf_url(provider_state_link);
+  if (!bill_page_url || !declared_pdf_url) {
+    throw new Error("california_bill_pdf_identity_invalid");
+  }
 
   let session_bootstrapped = false;
   let page = await fetch_bill_page(bill_page_url, provider_state_link);
@@ -200,10 +232,9 @@ export async function fetch_california_official_pdf(
     session_bootstrapped = true;
   }
 
-  if (!page.pdf_url) throw new Error("california_official_pdf_link_not_found");
-
+  const source_url = page.pdf_url ?? declared_pdf_url;
   const pdf = await fetch_bounded(
-    page.pdf_url,
+    source_url,
     pdf_headers(bill_page_url, page.cookie_header),
   );
   if (pdf.bytes.subarray(0, 5).toString("ascii") !== "%PDF-") {
@@ -212,7 +243,7 @@ export async function fetch_california_official_pdf(
 
   return {
     bytes: pdf.bytes,
-    source_url: page.pdf_url,
+    source_url,
     bill_page_url,
     provider_state_link,
     session_bootstrapped,

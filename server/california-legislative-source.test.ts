@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  derive_california_declared_pdf_url,
   derive_california_official_text_url,
   extract_california_official_pdf_url,
   merge_cookie_headers,
@@ -10,10 +11,25 @@ const provider_state_link =
   "https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260AB635#97AMD";
 const bill_page_url =
   "https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202520260AB635";
+const official_pdf_url =
+  "https://leginfo.legislature.ca.gov/faces/billPdf.xhtml?bill_id=202520260AB635&version=20250AB63597AMD";
 
 describe("California official legislative PDF source", () => {
   it("maps the exact JSF wrapper to the official bill page", () => {
     expect(derive_california_official_text_url(provider_state_link)).toBe(bill_page_url);
+  });
+
+  it("derives the exact official PDF from the declared bill and version identity", () => {
+    expect(derive_california_declared_pdf_url(provider_state_link)).toBe(official_pdf_url);
+  });
+
+  it("does not derive a PDF without the complete California version fragment", () => {
+    expect(derive_california_declared_pdf_url(
+      "https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202520260AB635",
+    )).toBeNull();
+    expect(derive_california_declared_pdf_url(
+      "https://example.org/faces/billTextClient.xhtml?bill_id=202520260AB635#97AMD",
+    )).toBeNull();
   });
 
   it("extracts the exact same-version official PDF link", () => {
@@ -28,9 +44,7 @@ describe("California official legislative PDF source", () => {
       html,
       bill_page_url,
       provider_state_link,
-    )).toBe(
-      "https://leginfo.legislature.ca.gov/faces/billPdf.xhtml?bill_id=202520260AB635&version=20250AB63597AMD",
-    );
+    )).toBe(official_pdf_url);
   });
 
   it("rejects another bill or another document version", () => {
