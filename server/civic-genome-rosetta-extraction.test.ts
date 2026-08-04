@@ -6,6 +6,7 @@ import {
   select_official_document,
 } from "./civic-genome-rosetta-extraction";
 
+// Lock source normalization and terminal-document selection before any live Rosetta retry.
 describe("Rosetta official source extraction contracts", () => {
   it("preserves the locked Washington HTML normalization contract", () => {
     expect(normalize_wa_official_html("\uFEFF<p>SECTION&nbsp;1 &amp; duty</p>\r\n")).toBe(
