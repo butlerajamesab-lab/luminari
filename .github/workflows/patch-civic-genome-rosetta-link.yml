@@ -4,18 +4,25 @@ on:
   push:
     branches:
       - fix/civic-genome-rosetta-standalone-ledger-url
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
 
 permissions:
   contents: write
 
 jobs:
   patch:
-    if: github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]' && (github.ref_name == 'fix/civic-genome-rosetta-standalone-ledger-url' || github.head_ref == 'fix/civic-genome-rosetta-standalone-ledger-url')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: fix/civic-genome-rosetta-standalone-ledger-url
           fetch-depth: 0
       - name: Apply exact bounded UI patch
         run: |
@@ -81,4 +88,4 @@ jobs:
           git diff --cached --check
           git diff --cached --quiet && exit 1
           git commit -m "Render Rosetta operating contract as external link"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git push origin "HEAD:fix/civic-genome-rosetta-standalone-ledger-url"
