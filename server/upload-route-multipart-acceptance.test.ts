@@ -186,7 +186,7 @@ describe("authenticated multipart document upload", () => {
     expect(state.storage_put.mock.calls[0]?.[1]).toBeInstanceOf(Buffer);
     expect(state.storage_put.mock.calls[0]?.[1].toString("utf8")).toBe(contents);
     expect(state.storage_put).toHaveBeenCalledWith(
-      expect.stringMatching(new RegExp(`^cases/44/documents/${expected_hash.slice(0, 8)}-[^-]+-acceptance\\.txt$`)),
+      expect.stringMatching(new RegExp(`^cases/44/documents/${expected_hash.slice(0, 8)}-[A-Za-z0-9_-]{8}-acceptance\\.txt$`)),
       expect.any(Buffer),
       "text/plain",
     );
