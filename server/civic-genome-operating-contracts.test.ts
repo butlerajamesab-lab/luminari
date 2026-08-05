@@ -66,7 +66,7 @@ beforeEach(() => {
 });
 
 describe("Civic Genome operating contracts", () => {
-  it("reports Atlas as unbound, Prism as operational, and only Rosetta with a standalone external service", async () => {
+  it("reports Atlas as unbound, active deep Prism verification, and only Rosetta with a standalone external service", async () => {
     query
       .mockResolvedValueOnce({
         rows: [{
@@ -77,9 +77,10 @@ describe("Civic Genome operating contracts", () => {
           relationship_count: "0",
           comparison_matrix_count: "0",
           comparison_state_cell_count: "0",
-          prism_binding_count: "31",
-          prism_run_count: "1",
-          latest_prism_bound_at: "2026-08-01T16:32:10.000Z",
+          prism_deep_binding_count: "31",
+          prism_deep_run_count: "1",
+          prism_legacy_binding_count: "31",
+          latest_prism_deep_bound_at: "2026-08-05T16:54:44.000Z",
         }],
       })
       .mockResolvedValueOnce({
@@ -90,6 +91,8 @@ describe("Civic Genome operating contracts", () => {
     const rosetta = result.contracts.find(contract => contract.service_key === "rosetta");
     const atlas = result.contracts.find(contract => contract.service_key === "atlas");
     const prism = result.contracts.find(contract => contract.service_key === "prism");
+    const local_query = query.mock.calls[0]?.[0] as string;
+    const local_params = query.mock.calls[0]?.[1] as string[];
 
     expect(rosetta?.external_url).toBe("https://rosetta-v3-platform.onrender.com");
     expect(rosetta?.detail).not.toContain("https://");
@@ -99,9 +102,17 @@ describe("Civic Genome operating contracts", () => {
     expect(atlas?.observed_count).toBe(63);
     expect(atlas?.bound_count).toBe(0);
     expect(prism?.state).toBe("operational");
+    expect(prism?.role).toBe("Deterministic source replay and structural verification");
     expect(prism?.observed_count).toBe(31);
     expect(prism?.bound_count).toBe(31);
-    expect(prism?.boundary).toContain("does not independently re-execute");
+    expect(prism?.detail).toContain("31 legacy binding-only receipts remain preserved");
+    expect(prism?.boundary).toContain("independently replays immutable Rosetta source snapshots");
+    expect(prism?.boundary).toContain("without rewriting Rosetta-owned extraction output");
+    expect(local_query).toContain("prism_rule_set_version = $2");
+    expect(local_params).toEqual([
+      "prism-rosetta-structural-binding",
+      "2.0.0",
+    ]);
   });
 
   it("never enables assembly for an in-progress Rosetta run", async () => {
