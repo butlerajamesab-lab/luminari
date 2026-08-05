@@ -25,4 +25,5 @@ jobs:
           server/services/prism-rosetta-queue-worker.test.ts
           server/civic-genome-legislative-version-spine.test.ts
           server/civic-genome-legislative-version-queue-worker.test.ts
+          server/civic-genome-prism-v21-version-state.test.ts
       - run: pnpm run build
