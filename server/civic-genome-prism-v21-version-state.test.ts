@@ -11,29 +11,14 @@ const migration = readFileSync(
   ),
   "utf8",
 );
-const contract = readFileSync(
-  join(process.cwd(), "server", "services", "prism-verification-contract.ts"),
-  "utf8",
-);
-const wrapper = readFileSync(
-  join(process.cwd(), "server", "services", "prism-rosetta-contract-v2.ts"),
-  "utf8",
-);
-const queue = readFileSync(
-  join(process.cwd(), "server", "services", "prism-rosetta-queue-worker.ts"),
-  "utf8",
-);
 
-describe("Prism Rosetta 2.1 legislative-version state", () => {
-  it("pins the same governed 2.1 contract across Lighthouse boundaries", () => {
-    for (const source of [contract, wrapper]) {
-      expect(source).toContain('PRISM_ROSETTA_ENGINE_VERSION = "2.1.0"');
-      expect(source).toContain('PRISM_ROSETTA_RULE_SET_VERSION = "2.1.0"');
-      expect(source).toContain(
-        "ea6fd66d1f7475842a74fef09fecc4f728bbaef59ab3f0edae83ec7906f1cf46",
-      );
-    }
-    expect(queue).toContain('from "./prism-rosetta-contract-v2"');
+describe("preserved Prism Rosetta 2.1 legislative-version generation", () => {
+  it("preserves the governed 2.1 queue generation in source history", () => {
+    expect(migration).toContain("'prism-rosetta-structural-binding'");
+    expect(migration).toContain("'2.1.0'");
+    expect(migration).toContain(
+      "on conflict (assembly_run_id, prism_rule_set_id, prism_rule_set_version)",
+    );
   });
 
   it("distinguishes full receipt coverage containing findings", () => {
@@ -46,19 +31,12 @@ describe("Prism Rosetta 2.1 legislative-version state", () => {
     expect(migration).toContain("else 'verified'");
   });
 
-  it("queues future completed assemblies under Prism Rosetta 2.1", () => {
-    expect(migration).toContain("create or replace function public.enqueue_civic_genome_prism_verification");
-    expect(migration).toContain("'prism-rosetta-structural-binding'");
-    expect(migration).toContain("'2.1.0'");
-    expect(migration).toContain("on conflict (assembly_run_id, prism_rule_set_id, prism_rule_set_version)");
-  });
-
   it("preserves completed and permanent legislative-version queue terminals", () => {
     expect(migration).toContain("queue_state in (''completed'', ''permanent_failure'')");
     expect(migration).toContain("processing_state not in (''verified'', ''verified_with_findings'')");
   });
 
-  it("does not delete preserved Prism 2.0 generations", () => {
+  it("does not delete or rewrite preserved Prism generations", () => {
     expect(migration).not.toMatch(/delete\s+from\s+public\.civic_genome_prism/i);
     expect(migration).not.toMatch(/truncate\s+public\.civic_genome_prism/i);
     expect(migration).not.toMatch(/update\s+public\.civic_genome_prism_verification_run/i);
