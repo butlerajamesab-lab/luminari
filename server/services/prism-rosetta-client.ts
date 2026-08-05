@@ -7,9 +7,10 @@ import {
   rosetta_semantic_request_payload,
   sha256_hex,
   sign_prism_request,
+  type DeepRosettaBindingRequest,
   type PrismReceipt,
-  type RosettaBindingRequest,
 } from "./prism-rosetta-contract-v2";
+import { enrich_rosetta_binding_request } from "./prism-rosetta-structural-context";
 import {
   PRISM_BASE_URL,
   PrismBoundaryError,
@@ -17,7 +18,7 @@ import {
 
 const PRISM_REQUEST_TIMEOUT_MS = 8_000;
 const PRISM_MAX_ATTEMPTS = 3;
-const PRISM_MAX_REQUEST_BYTES = 256 * 1024;
+const PRISM_MAX_REQUEST_BYTES = 2 * 1024 * 1024;
 
 function classify_http_failure(status: number): PrismBoundaryError["failure_class"] {
   if (status === 401 || status === 403) return "authentication";
@@ -27,12 +28,12 @@ function classify_http_failure(status: number): PrismBoundaryError["failure_clas
   return "permanent_upstream";
 }
 
-function semantic_input_hash(request: RosettaBindingRequest): string {
+function semantic_input_hash(request: DeepRosettaBindingRequest): string {
   return sha256_hex(canonical_json(rosetta_semantic_request_payload(request)));
 }
 
 function validate_receipt_integrity(
-  request: RosettaBindingRequest,
+  request: DeepRosettaBindingRequest,
   receipt: PrismReceipt,
 ): PrismReceipt {
   if (receipt.rule_set_id !== request.rule_set_id) {
@@ -70,7 +71,7 @@ function validate_receipt_integrity(
   return receipt;
 }
 
-async function record_request(request: RosettaBindingRequest): Promise<string> {
+async function record_request(request: DeepRosettaBindingRequest): Promise<string> {
   const input_hash = semantic_input_hash(request);
   const result = await query_with_diagnostics<{ input_hash: string }>(
     `with inserted as (
@@ -220,7 +221,7 @@ async function mirror_receipt(receipt: PrismReceipt): Promise<void> {
 }
 
 async function call_prism(
-  request: RosettaBindingRequest,
+  request: DeepRosettaBindingRequest,
   options: { base_url?: string; timeout_ms?: number } = {},
 ): Promise<{ receipt: PrismReceipt; attempts: number; http_status: number }> {
   const secret = process.env.PRISM_BRIDGE_SECRET;
@@ -308,7 +309,8 @@ export async function submit_rosetta_prism_request(
   raw_request: unknown,
   options: { base_url?: string; timeout_ms?: number } = {},
 ): Promise<PrismReceipt> {
-  const request = rosetta_binding_request_schema.parse(raw_request);
+  const base_request = rosetta_binding_request_schema.parse(raw_request);
+  const request = await enrich_rosetta_binding_request(base_request);
   const input_hash = await record_request(request);
   try {
     const response = await call_prism(request, options);

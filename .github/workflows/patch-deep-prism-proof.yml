@@ -1,0 +1,33 @@
+name: Deep Prism proof gate
+
+on:
+  pull_request:
+    paths:
+      - client/src/components/civic-genome/PrismProof.tsx
+      - client/src/pages/CivicGenome.tsx
+      - server/civic-genome-bill-detail.ts
+      - server/civic-genome-bill-detail.test.ts
+      - server/services/prism-rosetta-structural-context.ts
+      - server/services/prism-rosetta-client.ts
+      - server/services/prism-verification-contract.ts
+      - server/services/prism-rosetta-contract-v2.ts
+      - server/services/prism-rosetta-contract-v2.test.ts
+      - supabase/migrations/20260805163200_civic_genome_prism_deep_verification_v2.sql
+      - .github/workflows/patch-deep-prism-proof.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm vitest run server/services/prism-rosetta-contract-v2.test.ts server/civic-genome-bill-detail.test.ts
+      - run: pnpm run build
