@@ -4,7 +4,7 @@ import { activate_prism_for_rosetta_assembly } from "./prism-rosetta-activation"
 import {
   PRISM_ROSETTA_RULE_SET_ID,
   PRISM_ROSETTA_RULE_SET_VERSION,
-} from "./prism-verification-contract";
+} from "./prism-rosetta-contract-v2";
 import { PrismBoundaryError } from "./prism-verification-client";
 
 const DEFAULT_POLL_INTERVAL_MS = 10_000;
