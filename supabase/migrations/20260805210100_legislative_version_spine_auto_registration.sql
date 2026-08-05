@@ -10,7 +10,6 @@ begin
   begin
     perform public.register_docket_legislative_version_spine(new.bill_id, true);
   exception
-    when no_data_found then null;
     when sqlstate 'P0002' then null;
   end;
   return new;
@@ -40,7 +39,6 @@ begin
   return new;
 exception
   when invalid_text_representation then return new;
-  when no_data_found then return new;
   when sqlstate 'P0002' then return new;
 end;
 $$;
