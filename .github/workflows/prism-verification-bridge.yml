@@ -23,4 +23,6 @@ jobs:
           server/services/prism-rosetta-activation.test.ts
           server/services/prism-rosetta-startup-activation.test.ts
           server/services/prism-rosetta-queue-worker.test.ts
+          server/civic-genome-legislative-version-spine.test.ts
+          server/civic-genome-legislative-version-queue-worker.test.ts
       - run: pnpm run build
