@@ -25,6 +25,12 @@ export type persisted_genome_trait = {
   prism_output_hash: string | null;
   prism_deterministic_replay_key: string | null;
   prism_bound_at: string | null;
+  prism_proof_scope: "independent_source_replay" | "binding_only" | null;
+  prism_supported_findings: unknown[];
+  prism_contradictions: unknown[];
+  prism_missing_evidence: unknown[];
+  prism_unresolved_conditions: unknown[];
+  prism_cited_evidence_identifiers: string[];
   trait_fingerprint: string;
   engine_version: string;
   rule_version: string;
@@ -123,6 +129,16 @@ export async function get_civic_genome_bill_detail(
          prism.output_hash as prism_output_hash,
          prism.deterministic_replay_key as prism_deterministic_replay_key,
          prism.created_at::text as prism_bound_at,
+         case
+           when prism.binding_id is null then null
+           when prism.prism_rule_set_version = '2.0.0' then 'independent_source_replay'
+           else 'binding_only'
+         end as prism_proof_scope,
+         coalesce(prism.supported_findings, '[]'::jsonb) as prism_supported_findings,
+         coalesce(prism.contradictions, '[]'::jsonb) as prism_contradictions,
+         coalesce(prism.missing_evidence, '[]'::jsonb) as prism_missing_evidence,
+         coalesce(prism.unresolved_conditions, '[]'::jsonb) as prism_unresolved_conditions,
+         coalesce(prism.cited_evidence_identifiers, '[]'::jsonb) as prism_cited_evidence_identifiers,
          trait.trait_fingerprint,
          trait.engine_version,
          trait.rule_version,
@@ -132,8 +148,15 @@ export async function get_civic_genome_bill_detail(
          trait.updated_at
        from public.civic_genome_trait trait
        left join lateral (
-         select binding.*
+         select binding.*,
+                receipt.supported_findings,
+                receipt.contradictions,
+                receipt.missing_evidence,
+                receipt.unresolved_conditions,
+                receipt.cited_evidence_identifiers
            from public.civic_genome_prism_verification_binding binding
+           left join public.lighthouse_prism_verification_receipts receipt
+             on receipt.request_id = binding.request_id
           where binding.trait_id = trait.trait_id
           order by binding.created_at desc, binding.binding_id desc
           limit 1
