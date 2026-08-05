@@ -7,11 +7,11 @@ export const PRISM_RULE_SET_VERSION = "1.0.0";
 export const PRISM_RULE_SET_HASH =
   "298eaf14df23f17c07dbc253fb6a2abe2f55ac9425942a46ab08f6bdd05401b0";
 
-export const PRISM_ROSETTA_ENGINE_VERSION = "1.1.1";
+export const PRISM_ROSETTA_ENGINE_VERSION = "2.0.0";
 export const PRISM_ROSETTA_RULE_SET_ID = "prism-rosetta-structural-binding";
-export const PRISM_ROSETTA_RULE_SET_VERSION = "1.0.1";
+export const PRISM_ROSETTA_RULE_SET_VERSION = "2.0.0";
 export const PRISM_ROSETTA_RULE_SET_HASH =
-  "4ca3bd0361bb0056496c88f201e4cc692b2d2cd3f189567949dc937f7ef058b7";
+  "669f9f0f923df678a4d7f0ff7bfe74d2f4e0c89a175ff3cada450cbefc823ce6";
 
 const hash_schema = z.string().regex(/^[a-f0-9]{64}$/i);
 
@@ -65,19 +65,34 @@ const rosetta_source_span_schema = z.object({
   { message: "source_span_end_must_follow_start" },
 );
 
+const rosetta_trait_class_schema = z.enum([
+  "help",
+  "workflow",
+  "accountability",
+  "override",
+  "definition",
+]);
+
+const rosetta_required_check_schema = z.enum([
+  "verify_identity_chain",
+  "verify_hash_chain",
+  "verify_source_binding",
+  "verify_rule_binding",
+  "recompute_source_hash",
+  "locate_source_evidence",
+  "verify_section_binding",
+  "verify_trait_structure",
+  "detect_cross_trait_conflicts",
+  "classify_support_state",
+]);
+
 export const rosetta_binding_schema = z.object({
   genome_bill_id: z.string().uuid(),
   assembly_run_id: z.string().uuid(),
   source_document_id: z.number().int().positive(),
   extraction_run_id: z.string().min(1).max(128),
   trait_id: z.string().uuid(),
-  trait_class: z.enum([
-    "help",
-    "workflow",
-    "accountability",
-    "override",
-    "definition",
-  ]),
+  trait_class: rosetta_trait_class_schema,
   trait_key: z.string().min(1).max(512),
   source_object_type: z.string().min(1).max(256),
   source_object_id: z.string().min(1).max(512),
@@ -95,6 +110,11 @@ export const rosetta_binding_schema = z.object({
   rosetta_configuration_hash: hash_schema,
 }).strict();
 
+/**
+ * Base envelope assembled from Lighthouse-owned persisted identifiers.
+ * The Prism client enriches this envelope with the immutable Rosetta source
+ * snapshot and the complete peer-trait manifest before transmission.
+ */
 export const rosetta_binding_request_schema = z.object({
   request_id: z.string().min(1).max(256),
   lighthouse_case_id: z.string().min(1).max(256),
@@ -104,13 +124,7 @@ export const rosetta_binding_request_schema = z.object({
   claim_assertion_id: z.string().min(1).max(512),
   rule_set_id: z.literal(PRISM_ROSETTA_RULE_SET_ID),
   rule_set_version: z.literal(PRISM_ROSETTA_RULE_SET_VERSION),
-  requested_checks: z.array(z.enum([
-    "verify_identity_chain",
-    "verify_hash_chain",
-    "verify_source_binding",
-    "verify_rule_binding",
-    "classify_support_state",
-  ])).length(5),
+  requested_checks: z.array(rosetta_required_check_schema).min(5).max(10),
   originating_lighthouse_commit: z.string().regex(/^[a-f0-9]{7,64}$/i),
   originating_lighthouse_runtime_version: z.string().min(1).max(128),
   evidence_refs: z.array(evidence_reference_schema).max(1),
@@ -119,9 +133,37 @@ export const rosetta_binding_request_schema = z.object({
   rosetta_binding: rosetta_binding_schema,
 }).strict();
 
+export const rosetta_source_snapshot_schema = z.object({
+  source_text: z.string().min(1).max(2_000_000),
+  source_url: z.string().url(),
+  source_version: z.string().min(1).max(512),
+  media_type: z.string().min(1).max(128),
+  source_identity_hash: hash_schema,
+  source_content_hash: hash_schema,
+}).strict();
+
+export const rosetta_peer_trait_schema = z.object({
+  trait_id: z.string().uuid(),
+  trait_class: rosetta_trait_class_schema,
+  trait_key: z.string().min(1).max(512),
+  source_object_type: z.string().min(1).max(256),
+  source_object_id: z.string().min(1).max(512),
+  source_block_id: z.string().min(1).max(512),
+  content_hash: hash_schema,
+  normalized_value: z.record(z.unknown()),
+}).strict();
+
+export const deep_rosetta_binding_request_schema = rosetta_binding_request_schema.extend({
+  requested_checks: z.array(rosetta_required_check_schema).length(10),
+  source_snapshot: rosetta_source_snapshot_schema,
+  trait_payload: z.record(z.unknown()),
+  trait_payload_hash: hash_schema,
+  peer_traits: z.array(rosetta_peer_trait_schema).min(1).max(4096),
+}).strict();
+
 export const verification_request_schema = z.discriminatedUnion("rule_set_id", [
   core_verification_request_schema,
-  rosetta_binding_request_schema,
+  deep_rosetta_binding_request_schema,
 ]);
 
 const receipt_fields = {
@@ -163,6 +205,7 @@ export const prism_receipt_schema = z.discriminatedUnion("rule_set_id", [
 
 export type VerificationRequest = z.infer<typeof verification_request_schema>;
 export type RosettaBindingRequest = z.infer<typeof rosetta_binding_request_schema>;
+export type DeepRosettaBindingRequest = z.infer<typeof deep_rosetta_binding_request_schema>;
 export type PrismReceipt = z.infer<typeof prism_receipt_schema>;
 
 export function prism_contract_for_request(request: VerificationRequest): {
