@@ -1,0 +1,36 @@
+name: Apply deep Prism proof UI patch
+
+on:
+  push:
+    branches:
+      - feature/deep-prism-proof-v2
+    paths:
+      - .github/workflows/patch-deep-prism-proof.yml
+      - scripts/patch-civic-genome-prism-proof.mjs
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/deep-prism-proof-v2
+          fetch-depth: 0
+      - name: Apply proof UI patch
+        run: |
+          if [ -f scripts/patch-civic-genome-prism-proof.mjs ]; then
+            node scripts/patch-civic-genome-prism-proof.mjs
+          fi
+      - name: Commit patched page
+        run: |
+          if git diff --quiet -- client/src/pages/CivicGenome.tsx; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add client/src/pages/CivicGenome.tsx
+          git commit -m "Show inspectable Prism proof receipts in Civic Genome"
+          git push origin HEAD:feature/deep-prism-proof-v2
