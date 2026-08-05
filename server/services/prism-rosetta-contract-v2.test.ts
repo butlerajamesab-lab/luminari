@@ -21,14 +21,14 @@ const trait_payload = {
 
 function request(commit: string, runtime: string) {
   return deep_rosetta_binding_request_schema.parse({
-    request_id: `prism-rosetta-v2-${h("a")}`,
+    request_id: `prism-rosetta-v21-${h("a")}`,
     lighthouse_case_id: "f17747ae-24c6-40b3-a389-4ca24825ad0c",
     evidence_document_id: "rosetta-source-document:17",
     evidence_fingerprint: h("b"),
     source_content_hash,
     claim_assertion_id: "td-v1-source-001",
     rule_set_id: "prism-rosetta-structural-binding",
-    rule_set_version: "2.0.0",
+    rule_set_version: "2.1.0",
     requested_checks: [
       "verify_identity_chain",
       "verify_hash_chain",
@@ -105,10 +105,10 @@ function request(commit: string, runtime: string) {
 
 describe("Prism Rosetta deployment-stable identity", () => {
   it("uses the installed deep replay contract", () => {
-    expect(PRISM_ROSETTA_ENGINE_VERSION).toBe("2.0.0");
-    expect(PRISM_ROSETTA_RULE_SET_VERSION).toBe("2.0.0");
+    expect(PRISM_ROSETTA_ENGINE_VERSION).toBe("2.1.0");
+    expect(PRISM_ROSETTA_RULE_SET_VERSION).toBe("2.1.0");
     expect(PRISM_ROSETTA_RULE_SET_HASH).toBe(
-      "669f9f0f923df678a4d7f0ff7bfe74d2f4e0c89a175ff3cada450cbefc823ce6",
+      "ea6fd66d1f7475842a74fef09fecc4f728bbaef59ab3f0edae83ec7906f1cf46",
     );
   });
 
