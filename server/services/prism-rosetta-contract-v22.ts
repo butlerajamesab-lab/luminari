@@ -1,8 +1,8 @@
 import { z } from "zod";
 import {
   canonical_json,
-  deep_rosetta_binding_request_schema as v2_deep_rosetta_binding_request_schema,
-  rosetta_binding_request_schema as v2_rosetta_binding_request_schema,
+  deep_rosetta_binding_request_schema as base_deep_rosetta_binding_request_schema,
+  rosetta_binding_request_schema as base_rosetta_binding_request_schema,
   sha256_hex,
   sign_prism_request,
 } from "./prism-verification-contract";
@@ -26,7 +26,7 @@ const verification_status_schema = z.enum([
   "verified",
 ]);
 
-export const rosetta_binding_request_schema = v2_rosetta_binding_request_schema
+export const rosetta_binding_request_schema = base_rosetta_binding_request_schema
   .omit({ rule_set_version: true })
   .extend({
     rule_set_version: z.literal(PRISM_ROSETTA_RULE_SET_VERSION),
@@ -34,7 +34,7 @@ export const rosetta_binding_request_schema = v2_rosetta_binding_request_schema
   .strict();
 
 export const deep_rosetta_binding_request_schema =
-  v2_deep_rosetta_binding_request_schema
+  base_deep_rosetta_binding_request_schema
     .omit({ rule_set_version: true })
     .extend({
       rule_set_version: z.literal(PRISM_ROSETTA_RULE_SET_VERSION),
