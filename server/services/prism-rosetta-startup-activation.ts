@@ -1,8 +1,14 @@
+import { run_rosetta_generation_activation_from_environment } from "../civic-genome-rosetta-generation-activation";
 import { activate_prism_for_rosetta_assembly } from "./prism-rosetta-activation";
 import { start_prism_rosetta_queue_worker } from "./prism-rosetta-queue-worker";
 
 export async function run_prism_rosetta_activation_from_environment(): Promise<void> {
   start_prism_rosetta_queue_worker();
+
+  // An explicitly configured Rosetta generation is assembled first. The queue
+  // worker is already running, so the resulting completed assembly is claimed
+  // through the normal Prism queue rather than a parallel verification path.
+  await run_rosetta_generation_activation_from_environment();
 
   const genome_bill_id = process.env.PRISM_ROSETTA_ACTIVATION_GENOME_BILL_ID?.trim();
   if (!genome_bill_id) return;
