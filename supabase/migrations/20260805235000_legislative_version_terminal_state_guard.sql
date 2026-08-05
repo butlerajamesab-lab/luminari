@@ -5,9 +5,11 @@ returns trigger
 language plpgsql
 set search_path = pg_catalog, public
 as $$
+declare
+  v_attempted_state text := new.processing_state;
 begin
   if old.processing_state in ('verified', 'verified_with_findings')
-     and new.processing_state in (
+     and v_attempted_state in (
        'source_ingested',
        'extracted',
        'assembled',
@@ -22,7 +24,7 @@ begin
       || jsonb_build_object(
         'terminal_state_regression_prevented', jsonb_build_object(
           'preserved_state', old.processing_state,
-          'attempted_state', new.processing_state,
+          'attempted_state', v_attempted_state,
           'preserved_prism_verification_run_id', old.prism_verification_run_id,
           'recorded_at', clock_timestamp()
         )
