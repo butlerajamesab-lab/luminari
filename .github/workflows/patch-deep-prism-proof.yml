@@ -1,36 +1,34 @@
-name: Apply deep Prism proof UI patch
+name: Deep Prism proof gate
 
 on:
-  push:
-    branches:
-      - feature/deep-prism-proof-v2
+  pull_request:
     paths:
+      - client/src/components/civic-genome/PrismProof.tsx
+      - client/src/pages/CivicGenome.tsx
+      - server/civic-genome-bill-detail.ts
+      - server/services/prism-rosetta-structural-context.ts
+      - server/services/prism-rosetta-client.ts
+      - server/services/prism-verification-contract.ts
+      - server/services/prism-rosetta-contract-v2.ts
+      - server/services/prism-rosetta-contract-v2.test.ts
+      - supabase/migrations/20260805163200_civic_genome_prism_deep_verification_v2.sql
       - .github/workflows/patch-deep-prism-proof.yml
-      - scripts/patch-civic-genome-prism-proof.mjs
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  patch:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
-          ref: feature/deep-prism-proof-v2
-          fetch-depth: 0
-      - name: Apply proof UI patch
-        run: |
-          if [ -f scripts/patch-civic-genome-prism-proof.mjs ]; then
-            node scripts/patch-civic-genome-prism-proof.mjs
-          fi
-      - name: Commit patched page
-        run: |
-          if git diff --quiet -- client/src/pages/CivicGenome.tsx; then
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add client/src/pages/CivicGenome.tsx
-          git commit -m "Show inspectable Prism proof receipts in Civic Genome"
-          git push origin HEAD:feature/deep-prism-proof-v2
+          version: 10.4.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm vitest run server/services/prism-rosetta-contract-v2.test.ts server/civic-genome-bill-detail.test.ts
+      - run: pnpm run check
