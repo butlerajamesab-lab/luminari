@@ -41,9 +41,10 @@ type local_contract_counts = {
   relationship_count: string;
   comparison_matrix_count: string;
   comparison_state_cell_count: string;
-  prism_binding_count: string;
-  prism_run_count: string;
-  latest_prism_bound_at: string | null;
+  prism_deep_binding_count: string;
+  prism_deep_run_count: string;
+  prism_legacy_binding_count: string;
+  latest_prism_deep_bound_at: string | null;
 };
 
 type atlas_contract_counts = {
@@ -52,6 +53,8 @@ type atlas_contract_counts = {
 };
 
 const ROSETTA_STANDALONE_URL = "https://rosetta-v3-platform.onrender.com";
+const PRISM_DEEP_RULE_SET_ID = "prism-rosetta-structural-binding";
+const PRISM_DEEP_RULE_SET_VERSION = "2.0.0";
 
 const count = (value: string | undefined): number => {
   const parsed = Number.parseInt(value ?? "0", 10);
@@ -69,9 +72,24 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
        (select count(*)::text from public.civic_genome_relationship where validation_state <> 'rejected') as relationship_count,
        (select count(*)::text from public.civic_genome_comparison_matrix) as comparison_matrix_count,
        (select count(*)::text from public.civic_genome_comparison_state_cell) as comparison_state_cell_count,
-       (select count(*)::text from public.civic_genome_prism_verification_binding) as prism_binding_count,
-       (select count(*)::text from public.civic_genome_prism_verification_run where receipt_count = expected_trait_count) as prism_run_count,
-       (select max(created_at)::text from public.civic_genome_prism_verification_binding) as latest_prism_bound_at`,
+       (select count(*)::text
+          from public.civic_genome_prism_verification_binding
+         where prism_rule_set_id = $1
+           and prism_rule_set_version = $2) as prism_deep_binding_count,
+       (select count(*)::text
+          from public.civic_genome_prism_verification_run
+         where receipt_count = expected_trait_count
+           and prism_rule_set_id = $1
+           and prism_rule_set_version = $2) as prism_deep_run_count,
+       (select count(*)::text
+          from public.civic_genome_prism_verification_binding
+         where prism_rule_set_id = $1
+           and prism_rule_set_version <> $2) as prism_legacy_binding_count,
+       (select max(created_at)::text
+          from public.civic_genome_prism_verification_binding
+         where prism_rule_set_id = $1
+           and prism_rule_set_version = $2) as latest_prism_deep_bound_at`,
+    [PRISM_DEEP_RULE_SET_ID, PRISM_DEEP_RULE_SET_VERSION],
   );
   const local = local_result.rows[0];
 
@@ -95,8 +113,9 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
   const relationship_count = count(local?.relationship_count);
   const comparison_matrix_count = count(local?.comparison_matrix_count);
   const comparison_state_cell_count = count(local?.comparison_state_cell_count);
-  const prism_binding_count = count(local?.prism_binding_count);
-  const prism_run_count = count(local?.prism_run_count);
+  const prism_deep_binding_count = count(local?.prism_deep_binding_count);
+  const prism_deep_run_count = count(local?.prism_deep_run_count);
+  const prism_legacy_binding_count = count(local?.prism_legacy_binding_count);
 
   return {
     generated_at: new Date().toISOString(),
@@ -146,14 +165,14 @@ export async function get_civic_genome_operating_contracts(): Promise<civic_geno
         service_key: "prism",
         display_name: "Prism",
         external_url: null,
-        role: "Deterministic source-binding verification",
-        state: prism_run_count > 0 ? "operational" : prism_binding_count > 0 ? "available_unbound" : "ready_empty",
-        state_label: prism_run_count > 0 ? "Operational" : prism_binding_count > 0 ? "Bindings available" : "No verification receipts",
-        detail: `${prism_binding_count} immutable trait bindings and ${prism_run_count} complete verification runs are materialized.`,
-        observed_count: prism_binding_count,
-        bound_count: prism_binding_count,
-        last_observed_at: local?.latest_prism_bound_at ?? null,
-        boundary: "Prism verifies immutable identity, source, rule, assembly, and hash bindings. It does not independently re-execute Rosetta's legal classification.",
+        role: "Deterministic source replay and structural verification",
+        state: prism_deep_run_count > 0 ? "operational" : prism_deep_binding_count > 0 ? "available_unbound" : "ready_empty",
+        state_label: prism_deep_run_count > 0 ? "Operational" : prism_deep_binding_count > 0 ? "Deep receipts available" : "No deep verification receipts",
+        detail: `${prism_deep_binding_count} independently replayed trait receipts across ${prism_deep_run_count} complete deep verification runs are materialized; ${prism_legacy_binding_count} legacy binding-only receipts remain preserved.`,
+        observed_count: prism_deep_binding_count,
+        bound_count: prism_deep_binding_count,
+        last_observed_at: local?.latest_prism_deep_bound_at ?? null,
+        boundary: "Prism independently replays immutable Rosetta source snapshots and re-executes declared structural verification rules. It records support, contradictions, missing evidence, and unresolved conditions without rewriting Rosetta-owned extraction output.",
       },
       {
         service_key: "viewfinder",
