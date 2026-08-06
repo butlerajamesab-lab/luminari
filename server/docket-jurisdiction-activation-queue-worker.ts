@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { project_docket_cache_to_civic_genome } from "./civic-genome-projection";
 import { query_with_diagnostics } from "./db";
 import { get_bill, type legiscan_bill_detail } from "./services/legiscan";
 
@@ -14,6 +15,7 @@ const UNKNOWN_FAILURE_LIMIT = 5;
 export type docket_bill_activation_job = {
   queue_id: string;
   source_bill_id: number;
+  state: string;
   summary_fingerprint: string;
   observed_change_hash: string | null;
   attempt_count: number;
@@ -41,6 +43,7 @@ export type docket_bill_activation_failure_decision = {
 let queue_timer: NodeJS.Timeout | null = null;
 let queue_cycle_running = false;
 let queue_stopped = false;
+const state_projection_in_flight = new Map<string, Promise<void>>();
 const queue_worker_id = [
   process.env.RENDER_SERVICE_ID ?? "lighthouse",
   "docket-jurisdiction-activation",
@@ -85,6 +88,14 @@ function as_record(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
     : null;
+}
+
+function normalize_state(value: string): string {
+  const state = value.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(state)) {
+    throw new Error("invalid_docket_activation_state");
+  }
+  return state;
 }
 
 function safe_error_code(error: unknown): string {
@@ -138,8 +149,16 @@ export function classify_docket_bill_activation_failure(input: {
 async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> {
   const result = await query_with_diagnostics<docket_bill_activation_job>(
     `with candidate as (
-       select queue.queue_id
+       select queue.queue_id,
+              jurisdiction.state
          from public.docket_bill_processing_queue queue
+         cross join lateral (
+           select binding.state
+             from public.docket_jurisdiction_activation_bill binding
+            where binding.queue_id = queue.queue_id
+            order by binding.created_at desc, binding.activation_id desc
+            limit 1
+         ) jurisdiction
         where queue.next_attempt_at <= now()
           and (
             queue.queue_state in ('eligible', 'degraded')
@@ -165,6 +184,7 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
       where queue.queue_id = candidate.queue_id
       returning queue.queue_id::text,
                 queue.source_bill_id,
+                candidate.state,
                 queue.summary_fingerprint,
                 queue.observed_change_hash,
                 queue.attempt_count`,
@@ -178,7 +198,7 @@ async function claim_jobs(limit: number): Promise<docket_bill_activation_job[]> 
   return result.rows;
 }
 
-async function assert_civic_genome_bill_ready(source_bill_id: number): Promise<void> {
+async function civic_genome_bill_ready(source_bill_id: number): Promise<boolean> {
   const result = await query_with_diagnostics<{ ready: boolean }>(
     `select exists (
        select 1
@@ -192,8 +212,45 @@ async function assert_civic_genome_bill_ready(source_bill_id: number): Promise<v
       query_timeout_ms: 5_000,
     },
   );
-  if (!result.rows[0]?.ready) {
-    throw new Error("docket_civic_genome_projection_pending");
+  return result.rows[0]?.ready === true;
+}
+
+async function project_state_once(state: string): Promise<void> {
+  const normalized_state = normalize_state(state);
+  const existing = state_projection_in_flight.get(normalized_state);
+  if (existing) {
+    await existing;
+    return;
+  }
+
+  const projection = (async () => {
+    const result = await project_docket_cache_to_civic_genome({
+      state_code: normalized_state,
+    });
+    console.log("[DocketJurisdictionActivation] projected_state", {
+      state: normalized_state,
+      bills_seen: result.bills_seen,
+      inserted_count: result.inserted_count,
+      updated_count: result.updated_count,
+      unchanged_count: result.unchanged_count,
+    });
+  })();
+
+  state_projection_in_flight.set(normalized_state, projection);
+  try {
+    await projection;
+  } finally {
+    if (state_projection_in_flight.get(normalized_state) === projection) {
+      state_projection_in_flight.delete(normalized_state);
+    }
+  }
+}
+
+async function ensure_civic_genome_bill_ready(job: docket_bill_activation_job): Promise<void> {
+  if (await civic_genome_bill_ready(job.source_bill_id)) return;
+  await project_state_once(job.state);
+  if (!await civic_genome_bill_ready(job.source_bill_id)) {
+    throw new Error("docket_civic_genome_projection_missing_after_refresh");
   }
 }
 
@@ -302,6 +359,7 @@ async function mark_job_terminal(input: {
   console.log("[DocketJurisdictionActivation] completed", {
     queue_id: input.job.queue_id,
     source_bill_id: input.job.source_bill_id,
+    state: input.job.state,
     queue_state: input.queue_state,
     registered_document_count: input.receipt.registered_document_count,
     text_version_count: input.receipt.text_version_count,
@@ -353,6 +411,7 @@ async function mark_job_failed(input: {
   console.error("[DocketJurisdictionActivation] failed", {
     queue_id: input.job.queue_id,
     source_bill_id: input.job.source_bill_id,
+    state: input.job.state,
     queue_state: input.decision.queue_state,
     failure_class: input.decision.failure_class,
     error_code: input.decision.error_code,
@@ -364,7 +423,7 @@ export async function process_docket_bill_activation_job(
   job: docket_bill_activation_job,
 ): Promise<void> {
   try {
-    await assert_civic_genome_bill_ready(job.source_bill_id);
+    await ensure_civic_genome_bill_ready(job);
     const bill = await get_bill(job.source_bill_id);
     await cache_bill_detail(job.source_bill_id, bill);
     const receipt = await register_legislative_versions(job.source_bill_id);
