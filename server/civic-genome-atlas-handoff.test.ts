@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { computeCanonicalHash } from "./lib/determinism";
 import type { civic_genome_external_snapshot_v1 } from "./civic-genome-external-snapshot-contract";
@@ -30,4 +31,5 @@ describe("Civic Genome Atlas handoff",()=>{
  it("signs canonical body deterministically",()=>{const body=build_civic_genome_atlas_delivery_body_v1(snapshot());expect(sign_civic_genome_atlas_delivery_v1(body,KEY_ID,SECRET)).toBe(sign_civic_genome_atlas_delivery_v1(JSON.parse(JSON.stringify(body)),KEY_ID,SECRET));});
  it("accepts only persisted no-projection source-native receipt",async()=>{const source=snapshot();let headers:any;const receipt=await deliver_civic_genome_snapshot_to_atlas_v1({snapshot:source,url:`https://atlas.example${CIVIC_GENOME_ATLAS_DELIVERY_PATH}`,key_id:KEY_ID,secret:SECRET,fetcher:async(_u,init)=>{headers=init?.headers;return {ok:true,status:200,text:async()=>JSON.stringify(receiverReceipt(source))} as Response;}});expect(headers["x-atlas-civic-genome-key-id"]).toBe(KEY_ID);expect(receipt.persisted).toBe(true);expect(receipt.projection_executed).toBe(false);});
  it("requires complete environment",()=>{expect(civic_genome_atlas_handoff_configuration_from_environment({})).toBeNull();expect(()=>civic_genome_atlas_handoff_configuration_from_environment({CIVIC_GENOME_ATLAS_HANDOFF_FAMILY_ID:"a9620a24-9ae4-487d-a55b-5e646c729432"})).toThrow(/complete_configuration/);});
+ it("uses the governed producer instead of the pure dataset builder",()=>{const startup=readFileSync(new URL("./civic-genome-atlas-handoff-startup.ts",import.meta.url),"utf8");expect(startup).toContain("produce_civic_genome_family_snapshot_v1");expect(startup).not.toContain("build_civic_genome_family_snapshot_v1");});
 });

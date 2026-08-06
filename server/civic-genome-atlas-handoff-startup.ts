@@ -1,4 +1,4 @@
-import { build_civic_genome_family_snapshot_v1 } from "./civic-genome-external-snapshot-producer";
+import { produce_civic_genome_family_snapshot_v1 } from "./civic-genome-external-snapshot-producer";
 import { deliver_civic_genome_snapshot_to_atlas_v1 } from "./civic-genome-atlas-handoff";
 
 export type civic_genome_atlas_handoff_configuration = {
@@ -45,10 +45,11 @@ export async function run_civic_genome_atlas_handoff_from_environment(
 ) {
   const configuration = civic_genome_atlas_handoff_configuration_from_environment(environment);
   if (!configuration) return null;
-  const snapshot = await build_civic_genome_family_snapshot_v1({
+  const snapshot = await produce_civic_genome_family_snapshot_v1({
     family_id: configuration.family_id,
     as_of: configuration.as_of,
     source_commit_sha: process.env.RENDER_GIT_COMMIT ?? null,
+    generated_at: new Date().toISOString(),
   });
   return deliver_civic_genome_snapshot_to_atlas_v1({
     snapshot,
