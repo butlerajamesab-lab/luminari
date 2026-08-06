@@ -14,6 +14,7 @@ import { systemVisibilityRouter } from "../routes/system-visibility-router";
 import { conveyorRouter } from "../routes/conveyor-router";
 import { civicMapRouter } from "../routes/civic-map-router";
 import { atlasProxyRouter } from "../routes/atlas-proxy-router";
+import { atlas_domain3_receipt_router } from "../routes/atlas-domain3-receipt-router";
 import { ingestion_control_read_cache_router } from "../routes/ingestion_control_read_cache_router";
 import { ingestion_control_rest_router } from "../routes/ingestion_control_router";
 import { substrate_readiness_router } from "../routes/substrate_readiness_router";
@@ -170,6 +171,7 @@ async function startServer() {
   app.use("/api/conveyor", requireExpressAdmin, conveyorRouter);
   app.use("/api/civic-map", civicMapRouter);
   app.use("/api/atlas", atlasProxyRouter);
+  app.use("/api/atlas-domain3", atlas_domain3_receipt_router);
   app.use("/api/ingestion-control", requireExpressAdmin);
   app.use("/api/ingestion-control", ingestion_control_read_cache_router);
   app.use("/api/ingestion-control", substrate_readiness_router);
