@@ -1,0 +1,103 @@
+import { Router } from "express";
+import { query_with_diagnostics } from "../db";
+
+const TOKEN_HEADER = "x-atlas-domain3-token";
+
+type live_data_signal_transport_receipt = {
+  live_data_signal_id: string;
+  signal_hash: string;
+  governance_status: string;
+  registered_at: string | Date;
+};
+
+function is_record(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function is_authentication_error(error: unknown): boolean {
+  const candidate = error as { code?: string; message?: string };
+  return candidate?.code === "28000" ||
+    String(candidate?.message ?? "").includes("signal_bridge_authentication_failed");
+}
+
+export const atlas_domain3_receipt_router = Router();
+
+atlas_domain3_receipt_router.post("/receipt", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+
+  const bridge_token = req.get(TOKEN_HEADER)?.trim() ?? "";
+  if (bridge_token.length < 32) {
+    return res.status(401).json({
+      ok: false,
+      error: "signal_bridge_authentication_failed",
+    });
+  }
+
+  if (!is_record(req.body)) {
+    return res.status(400).json({
+      ok: false,
+      error: "live_data_signal_record_required",
+    });
+  }
+
+  try {
+    const result = await query_with_diagnostics<live_data_signal_transport_receipt>(
+      `with authorized as (
+         select private.require_signal_bridge_token_v1(
+           $1::text,
+           'live_data_signal_write'::text
+         )
+       )
+       select receipt.live_data_signal_id::text,
+              receipt.signal_hash,
+              receipt.governance_status,
+              receipt.registered_at
+         from authorized
+         cross join lateral public.register_live_data_signal_transport_receipt_v1(
+           $2::jsonb
+         ) receipt`,
+      [bridge_token, JSON.stringify(req.body)],
+      {
+        label: "atlas_domain3_receipt",
+        pool_acquire_timeout_ms: 2_000,
+        query_timeout_ms: 10_000,
+      },
+    );
+
+    const receipt = result.rows[0];
+    if (!receipt || !receipt.live_data_signal_id || !receipt.signal_hash) {
+      console.error("[AtlasDomain3Receipt] incomplete_receipt", {
+        row_count: result.rowCount,
+      });
+      return res.status(500).json({
+        ok: false,
+        error: "live_data_signal_transport_receipt_incomplete",
+      });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      live_data_signal_id: receipt.live_data_signal_id,
+      signal_hash: receipt.signal_hash,
+      governance_status: receipt.governance_status,
+      registered_at: new Date(receipt.registered_at).toISOString(),
+    });
+  } catch (error) {
+    if (is_authentication_error(error)) {
+      return res.status(401).json({
+        ok: false,
+        error: "signal_bridge_authentication_failed",
+      });
+    }
+
+    const candidate = error as { code?: string; name?: string };
+    console.error("[AtlasDomain3Receipt] registration_failed", {
+      error_code: candidate?.code ?? "unknown",
+      error_class: candidate?.name ?? "unknown",
+    });
+    return res.status(500).json({
+      ok: false,
+      error: "live_data_signal_registration_failed",
+    });
+  }
+});
