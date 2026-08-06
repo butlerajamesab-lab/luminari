@@ -10,7 +10,8 @@ describe("Prism 2.2 continuity and canonical signal boundary", () => {
   const migration = read_repo_file(
     "../supabase/migrations/20260806160000_prism_v22_late_binding_continuity.sql",
   );
-  const retired_batch = read_repo_file("./process-signals-batch.ts");
+  const retired_direct_batch = read_repo_file("./process-signals-batch.ts");
+  const retired_startup_backfill = read_repo_file("./sunam-backfill.ts");
 
   it("queues a completed assembly when its legislative version is linked late", () => {
     expect(migration).toContain(
@@ -34,11 +35,16 @@ describe("Prism 2.2 continuity and canonical signal boundary", () => {
   });
 
   it("fails closed instead of promoting legacy rows record by record", () => {
-    expect(retired_batch).toContain("process_signals_batch_retired");
-    expect(retired_batch).toContain("canonical Atlas detection candidate to live_data_signals receipt path");
-    expect(retired_batch).not.toContain('from "./sunam-gate"');
-    expect(retired_batch).not.toContain("INSERT INTO detected_signals");
-    expect(retired_batch).not.toContain("FROM live_signals");
-    expect(retired_batch).not.toContain("processSignalThroughGate");
+    expect(retired_direct_batch).toContain("process_signals_batch_retired");
+    expect(retired_startup_backfill).toContain("sunam_backfill_retired");
+
+    for (const retired_source of [retired_direct_batch, retired_startup_backfill]) {
+      expect(retired_source).toContain(
+        "canonical Atlas detection candidate to live_data_signals receipt path",
+      );
+      expect(retired_source).not.toContain("INSERT INTO detected_signals");
+      expect(retired_source).not.toContain("FROM live_signals");
+      expect(retired_source).not.toContain("processSignalThroughGate");
+    }
   });
 });
