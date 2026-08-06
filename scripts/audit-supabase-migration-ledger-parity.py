@@ -4,7 +4,11 @@ from collections import defaultdict
 from pathlib import Path
 
 REMOTE_FIXTURE = Path("supabase/verification/production_migration_versions_20260802.txt")
-RECORDED_AFTER_FIXTURE = {"20260803000100"}
+RECORDED_AFTER_FIXTURE = {
+    "20260803000100",
+    "20260806035615",
+    "20260806043309",
+}
 EXPECTED_NEW = {
     "20260803000200",
     "20260804063920",
