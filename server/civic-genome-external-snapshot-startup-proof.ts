@@ -4,6 +4,7 @@ import {
 } from "./civic-genome-external-snapshot-producer";
 import { run_civic_genome_kaleidoscope_handoff_from_environment } from "./civic-genome-kaleidoscope-handoff-startup";
 import { run_civic_genome_prism_snapshot_handoff_from_environment } from "./civic-genome-prism-snapshot-handoff-startup";
+import { run_civic_genome_atlas_handoff_from_environment } from "./civic-genome-atlas-handoff-startup";
 
 const FAMILY_ENV = "CIVIC_GENOME_EXTERNAL_SNAPSHOT_PROOF_FAMILY_ID";
 const AS_OF_ENV = "CIVIC_GENOME_EXTERNAL_SNAPSHOT_PROOF_AS_OF";
@@ -82,4 +83,5 @@ export async function run_civic_genome_external_snapshot_proof_from_environment(
 
   await run_civic_genome_kaleidoscope_handoff_from_environment();
   await run_civic_genome_prism_snapshot_handoff_from_environment();
+  await run_civic_genome_atlas_handoff_from_environment();
 }
