@@ -10,6 +10,9 @@ describe("Docket jurisdiction to Rosetta activation contract", () => {
   const migration = read_repo_file(
     "../supabase/migrations/20260806182000_docket_jurisdiction_rosetta_activation.sql",
   );
+  const continuity_migration = read_repo_file(
+    "../supabase/migrations/20260806185000_docket_activation_projection_chamber_continuity.sql",
+  );
   const activation_worker = read_repo_file("./docket-jurisdiction-activation-queue-worker.ts");
   const version_worker = read_repo_file("./civic-genome-legislative-version-queue-worker.ts");
   const startup = read_repo_file("./services/prism-rosetta-startup-activation.ts");
@@ -36,6 +39,22 @@ describe("Docket jurisdiction to Rosetta activation contract", () => {
     expect(activation_worker).not.toContain("submit_prism_verification_request");
   });
 
+  it("repairs historical Civic Genome projection before bill-detail retrieval", () => {
+    expect(activation_worker).toContain("project_docket_cache_to_civic_genome");
+    expect(activation_worker).toContain("state_projection_in_flight");
+    expect(activation_worker).toContain("await ensure_civic_genome_bill_ready(job)");
+    expect(activation_worker.indexOf("await ensure_civic_genome_bill_ready(job)")).toBeLessThan(
+      activation_worker.indexOf("await get_bill(job.source_bill_id)"),
+    );
+  });
+
+  it("preserves bounded provider chamber metadata without false H/S assignment", () => {
+    expect(continuity_migration).toContain("char_length(chamber) between 1 and 32");
+    expect(continuity_migration).toContain("chamber = upper(chamber)");
+    expect(continuity_migration).toContain("docket_bill_source_document_chamber_check");
+    expect(continuity_migration).toContain("civic_genome_bill_version_chamber_check");
+  });
+
   it("keeps external retrieval bounded but removes the one-version-per-ten-second Rosetta bottleneck", () => {
     expect(activation_worker).toContain("DOCKET_BILL_ACTIVATION_CONCURRENCY");
     expect(activation_worker).toContain("Promise.all(jobs.map");
@@ -57,5 +76,7 @@ describe("Docket jurisdiction to Rosetta activation contract", () => {
     expect(activation_worker).toContain("source_unavailable");
     expect(migration).not.toMatch(/delete\s+from\s+public\.docket_bill_source_document/i);
     expect(migration).not.toMatch(/truncate/i);
+    expect(continuity_migration).not.toMatch(/delete\s+from/i);
+    expect(continuity_migration).not.toMatch(/truncate/i);
   });
 });
